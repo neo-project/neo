@@ -2,6 +2,8 @@ using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Consensus;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
@@ -14,10 +16,34 @@ namespace Neo.UnitTests.Consensus
     [TestClass]
     public class UT_ConsensusContext : TestKit
     {
+        ConsensusContext _context;
+        KeyPair[] _validatorKeys;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+
+            var rand = new Random();
+            var mockWallet = new Mock<Wallet>();
+            mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
+
+            // Create dummy validators
+
+            _validatorKeys = new KeyPair[7];
+            for (int x = 0; x < _validatorKeys.Length; x++)
+            {
+                var pk = new byte[32];
+                rand.NextBytes(pk);
+
+                _validatorKeys[x] = new KeyPair(pk);
+            }
+
+            _context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore())
+            {
+                Validators = _validatorKeys.Select(u => u.PublicKey).ToArray()
+            };
+            _context.Reset(0);
         }
 
         [TestCleanup]
@@ -29,54 +55,42 @@ namespace Neo.UnitTests.Consensus
         [TestMethod]
         public void TestMaxBlockSize_Good()
         {
-            var mockWallet = new Mock<Wallet>();
-
-            mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
-            ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
-            context.Reset(0);
-
             // Only one tx, is included
 
             var tx1 = CreateTransactionWithSize(200);
-            context.EnsureMaxBlockSize(new Transaction[] { tx1 });
-            EnsureContext(context, tx1);
+            _context.EnsureMaxBlockSize(new Transaction[] { tx1 });
+            EnsureContext(_context, tx1);
 
             // All txs included
 
-            var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(context.Snapshot);
+            var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(_context.Snapshot);
             var txs = new Transaction[max];
 
             for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
 
-            context.EnsureMaxBlockSize(txs);
-            EnsureContext(context, txs);
+            _context.EnsureMaxBlockSize(txs);
+            EnsureContext(_context, txs);
         }
 
         [TestMethod]
         public void TestMaxBlockSize_Exceed()
         {
-            var mockWallet = new Mock<Wallet>();
-
-            mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
-            ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
-            context.Reset(0);
-
             // Two tx, the last one exceed the size rule, only the first will be included
 
             var tx1 = CreateTransactionWithSize(200);
             var tx2 = CreateTransactionWithSize(256 * 1024);
-            context.EnsureMaxBlockSize(new Transaction[] { tx1, tx2 });
-            EnsureContext(context, tx1);
+            _context.EnsureMaxBlockSize(new Transaction[] { tx1, tx2 });
+            EnsureContext(_context, tx1);
 
             // Exceed txs number, just MaxTransactionsPerBlock included
 
-            var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(context.Snapshot);
+            var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(_context.Snapshot);
             var txs = new Transaction[max + 1];
 
             for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
 
-            context.EnsureMaxBlockSize(txs);
-            EnsureContext(context, txs.Take(max).ToArray());
+            _context.EnsureMaxBlockSize(txs);
+            EnsureContext(_context, txs.Take(max).ToArray());
         }
 
         private Transaction CreateTransactionWithSize(int v)
@@ -100,6 +114,20 @@ namespace Neo.UnitTests.Consensus
             return tx;
         }
 
+        private void SignBlock(ConsensusContext context)
+        {
+            context.Block.MerkleRoot = null;
+
+            for (int x = 0; x < _validatorKeys.Length; x++)
+            {
+                _context.MyIndex = x;
+                _context.SetKeyPar(_validatorKeys[x]);
+
+                var com = _context.MakeCommit();
+                _context.CommitPayloads[_context.MyIndex] = com;
+            }
+        }
+
         private void EnsureContext(ConsensusContext context, params Transaction[] expected)
         {
             // Check all tx
@@ -112,10 +140,9 @@ namespace Neo.UnitTests.Consensus
 
             // Ensure length
 
-            // TODO:  Should check the size? we need to mock the signatures
-
-            //var block = context.CreateBlock();
-            //Assert.IsTrue(block.Size < NativeContract.Policy.GetMaxBlockSize(context.Snapshot));
+            SignBlock(context);
+            var block = context.CreateBlock();
+            Assert.IsTrue(block.Size < NativeContract.Policy.GetMaxBlockSize(context.Snapshot));
         }
     }
 }

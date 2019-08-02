@@ -214,7 +214,7 @@ namespace Neo.Consensus
             var transactions = txs.ToList();
             // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
             TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
-            
+
             Block.Transactions = new Transaction[0];
             // TODO: Real expected witness
             Block.Witness = new Witness()
@@ -250,7 +250,7 @@ namespace Neo.Consensus
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
             EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
-            
+
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
                 Timestamp = Block.Timestamp,
@@ -301,6 +301,11 @@ namespace Neo.Consensus
             });
         }
 
+        internal void SetKeyPar(KeyPair key)
+        {
+            keyPair = key;
+        }
+
         public void Reset(byte viewNumber)
         {
             if (viewNumber == 0)
@@ -325,13 +330,13 @@ namespace Neo.Consensus
                     for (int i = 0; i < Validators.Length; i++)
                         LastSeenMessage[i] = -1;
                 }
-                keyPair = null;
+                SetKeyPar(null);
                 for (int i = 0; i < Validators.Length; i++)
                 {
                     WalletAccount account = wallet?.GetAccount(Validators[i]);
                     if (account?.HasKey != true) continue;
                     MyIndex = i;
-                    keyPair = account.GetKey();
+                    SetKeyPar(account.GetKey());
                     break;
                 }
             }
