@@ -1,7 +1,7 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
-using System;
+using Neo.VM;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -23,9 +23,7 @@ namespace Neo.Network.P2P.Payloads
                 return _scriptHash;
             }
         }
-        public int Size =>
-          InvocationScript.GetVarSize() +
-          VerificationScript.GetVarSize();
+        public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
