@@ -27,7 +27,7 @@ namespace Neo.UnitTests.Consensus
         }
 
         [TestMethod]
-        public void TestMaxBlockSize()
+        public void TestMaxBlockSize_Good()
         {
             var mockWallet = new Mock<Wallet>();
 
@@ -35,19 +35,40 @@ namespace Neo.UnitTests.Consensus
             ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
             context.Reset(0);
 
-            // Only one tx
+            // Only one tx, is included
 
             var tx1 = CreateTransactionWithSize(200);
             context.EnsureMaxBlockSize(new Transaction[] { tx1 });
             EnsureContext(context, tx1);
 
-            // Two tx, the last one exceed
+            // All txs included
 
+            var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(context.Snapshot);
+            var txs = new Transaction[max];
+
+            for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
+
+            context.EnsureMaxBlockSize(txs);
+            EnsureContext(context, txs);
+        }
+
+        [TestMethod]
+        public void TestMaxBlockSize_Exceed()
+        {
+            var mockWallet = new Mock<Wallet>();
+
+            mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
+            ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
+            context.Reset(0);
+
+            // Two tx, the last one exceed the size rule, only the first will be included
+
+            var tx1 = CreateTransactionWithSize(200);
             var tx2 = CreateTransactionWithSize(256 * 1024);
             context.EnsureMaxBlockSize(new Transaction[] { tx1, tx2 });
             EnsureContext(context, tx1);
 
-            // Exceed txs
+            // Exceed txs number, just MaxTransactionsPerBlock included
 
             var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(context.Snapshot);
             var txs = new Transaction[max + 1];
@@ -56,13 +77,6 @@ namespace Neo.UnitTests.Consensus
 
             context.EnsureMaxBlockSize(txs);
             EnsureContext(context, txs.Take(max).ToArray());
-
-            // All txs
-
-            txs = txs.Take(max).ToArray();
-
-            context.EnsureMaxBlockSize(txs);
-            EnsureContext(context, txs);
         }
 
         private Transaction CreateTransactionWithSize(int v)
