@@ -153,29 +153,29 @@ namespace Neo.SmartContract
                     CosignerUsage usage = attribute.Data.AsSerializable<CosignerUsage>();
                     if (usage.ScriptHash != hash) continue;
 
-                    switch (usage.Scope.Type)
+                    switch (usage.Scope)
                     {
-                        case WitnessScopeType.Global: ret = true; break;
-                        case WitnessScopeType.CustomScriptHash:
+                        case WitnessScope.Global: ret = true; break;
+                        case WitnessScope.CustomScriptHash:
                             {
                                 // verify if context is correct for execution
-                                if (engine.CurrentScriptHash != new UInt160(usage.Scope.ScopeData)) return false;
+                                if (engine.CurrentScriptHash != new UInt160(usage.ScopeData)) return false;
                                 ret = true;
                                 break;
                             }
-                        case WitnessScopeType.EntryOnly:
+                        case WitnessScope.EntryOnly:
                             {
                                 // verify if context is correct for execution
                                 if (engine.CallingScriptHash != engine.EntryScriptHash) return false;
                                 ret = true;
                                 break;
                             }
-                        case WitnessScopeType.ExecutingGroupPubKey:
+                        case WitnessScope.ExecutingGroupPubKey:
                             {
                                 var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                                 if (contract == null || contract.Manifest.Groups == null) return false;
                                 // check if current group is the required one
-                                if (!contract.Manifest.Groups.All(u => u.IsValid(new UInt160(usage.Scope.ScopeData)))) return false;
+                                if (!contract.Manifest.Groups.All(u => u.IsValid(new UInt160(usage.ScopeData)))) return false;
                                 ret = true;
                                 break;
                             }

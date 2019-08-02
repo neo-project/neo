@@ -15,6 +15,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new CosignerUsage()
             {
                 Scope = WitnessScope.Global,
+                ScopeData = new byte[0],
                 ScriptHash = UInt160.Zero
             };
 
@@ -23,8 +24,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
 
@@ -33,7 +34,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = new WitnessScope() { Type = WitnessScopeType.EntryOnly, ScopeData = new byte[0] },
+                Scope = WitnessScope.EntryOnly,
+                ScopeData = new byte[0],
                 ScriptHash = UInt160.Zero
             };
 
@@ -42,8 +44,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
 
@@ -52,7 +54,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = new WitnessScope() { Type = WitnessScopeType.CustomScriptHash, ScopeData = new byte[1] { 0x55 } },
+                Scope = WitnessScope.CustomScriptHash,
+                ScopeData = new byte[1] { 0x55 },
                 ScriptHash = UInt160.Zero
             };
 
@@ -61,8 +64,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
 
@@ -71,7 +74,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = new WitnessScope() { Type = WitnessScopeType.ExecutingGroupPubKey, ScopeData = new byte[1] { 0x55 } },
+                Scope = WitnessScope.ExecutingGroupPubKey,
+                ScopeData = new byte[1] { 0x55 },
                 ScriptHash = UInt160.Zero
             };
 
@@ -80,8 +84,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
 
@@ -90,17 +94,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = new WitnessScope() { Type = WitnessScopeType.Global, ScopeData = new byte[0] },
+                Scope = WitnessScope.Global,
+                ScopeData = new byte[0],
                 ScriptHash = UInt160.Zero
             };
 
-            var json = "{\"scope\":{\"type\":\"00\",\"scopeData\":\"\"},\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"scope\":\"00\",\"scopeData\":\"\",\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
 
@@ -109,17 +114,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = new WitnessScope() { Type = WitnessScopeType.EntryOnly, ScopeData = new byte[0] },
+                Scope = WitnessScope.EntryOnly,
+                ScopeData = new byte[0],
                 ScriptHash = UInt160.Zero
             };
 
-            var json = "{\"scope\":{\"type\":\"01\",\"scopeData\":\"\"},\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"scope\":\"01\",\"scopeData\":\"\",\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
 
@@ -128,17 +134,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = new WitnessScope() { Type = WitnessScopeType.CustomScriptHash, ScopeData = new byte[1] { 0x55 } },
+                Scope = WitnessScope.CustomScriptHash,
+                ScopeData = new byte[1] { 0x55 },
                 ScriptHash = UInt160.Zero
             };
 
-            var json = "{\"scope\":{\"type\":\"02\",\"scopeData\":\"55\"},\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"scope\":\"02\",\"scopeData\":\"55\",\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
 
@@ -147,17 +154,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = new WitnessScope() { Type = WitnessScopeType.ExecutingGroupPubKey, ScopeData = new byte[1] { 0x55 } },
+                Scope = WitnessScope.ExecutingGroupPubKey,
+                ScopeData = new byte[1] { 0x55 },
                 ScriptHash = UInt160.Zero
             };
 
-            var json = "{\"scope\":{\"type\":\"04\",\"scopeData\":\"55\"},\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"scope\":\"04\",\"scopeData\":\"55\",\"scriptHash\":\"0x0000000000000000000000000000000000000000\"}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope.Type, copy.Scope.Type);
-            CollectionAssert.AreEqual(attr.Scope.ScopeData, copy.Scope.ScopeData);
+            Assert.AreEqual(attr.Scope, copy.Scope);
+            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
             Assert.AreEqual(attr.ScriptHash, copy.ScriptHash);
         }
     }

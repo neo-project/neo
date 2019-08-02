@@ -7,27 +7,35 @@ namespace Neo.Network.P2P.Payloads
     public class CosignerUsage : ISerializable
     {
         public WitnessScope Scope;
+        public byte[] ScopeData;
         public UInt160 ScriptHash;
+
         public int Size =>
-          Scope.Size +
-          ScriptHash.Size;
+            sizeof(WitnessScope) +                  // Type
+            (HasData ? ScopeData.GetVarSize() : 0) +    // ScopeData
+            ScriptHash.Size;                            // ScriptHash
+
+        public bool HasData => (Scope == WitnessScope.CustomScriptHash) || (Scope == WitnessScope.ExecutingGroupPubKey);
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Scope = reader.ReadSerializable<WitnessScope>();
+            Scope = (WitnessScope)reader.ReadByte();
+            ScopeData = (HasData ? reader.ReadVarBytes(65536) : new byte[0]);
             ScriptHash = reader.ReadSerializable<UInt160>();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Scope);
+            writer.Write((byte)Scope);
+            if (HasData) writer.WriteVarBytes(ScopeData);
             writer.Write(ScriptHash);
         }
 
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["scope"] = Scope.ToJson();
+            json["scope"] = (new byte[] { (byte)Scope }).ToHexString();
+            json["scopeData"] = ScopeData.ToHexString();
             json["scriptHash"] = ScriptHash.ToString();
             return json;
         }
@@ -35,7 +43,8 @@ namespace Neo.Network.P2P.Payloads
         public static CosignerUsage FromJson(JObject json)
         {
             CosignerUsage usage = new CosignerUsage();
-            usage.Scope = WitnessScope.FromJson(json["scope"]);
+            usage.Scope = (WitnessScope)json["scope"].AsString().HexToBytes()[0];
+            usage.ScopeData = json["scopeData"].AsString().HexToBytes();
             usage.ScriptHash = UInt160.Parse(json["scriptHash"].AsString());
             return usage;
         }

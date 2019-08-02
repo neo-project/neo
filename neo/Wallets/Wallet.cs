@@ -271,12 +271,9 @@ namespace Neo.Wallets
                             Usage = TransactionAttributeUsage.Cosigner,
                             Data = new CosignerUsage
                             {
-                                Scope = new WitnessScope
-                                {
-                                    // default access for transfers should be valid only for first invocation
-                                    Type = WitnessScopeType.EntryOnly,
-                                    ScopeData = new byte[0] // no extra data is needed for entry only
-                                },
+                                // default access for transfers should be valid only for first invocation
+                                Scope = WitnessScope.EntryOnly,
+                                ScopeData = new byte[0], // no extra data is needed for entry only
                                 ScriptHash = new UInt160(p.ToArray())
                             }.ToArray()
                         }).ToArray();

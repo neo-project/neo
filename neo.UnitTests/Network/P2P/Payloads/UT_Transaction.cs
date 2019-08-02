@@ -473,11 +473,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Data = new CosignerUsage
                         {
                             ScriptHash = acc.ScriptHash,
-                            Scope = new WitnessScope
-                            {
-                                Type = WitnessScopeType.CustomScriptHash,
-                                ScopeData = NativeContract.GAS.Hash.ToArray()
-                            }
+                            Scope = WitnessScope.CustomScriptHash,
+                            ScopeData = NativeContract.GAS.Hash.ToArray()
                         }.ToArray()
                     }
                 };
@@ -582,11 +579,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Data = new CosignerUsage
                         {
                             ScriptHash = acc.ScriptHash,
-                            Scope = new WitnessScope
-                            {
-                                Type = WitnessScopeType.CustomScriptHash,
-                                ScopeData = NativeContract.NEO.Hash.ToArray()
-                            }
+                            Scope = WitnessScope.CustomScriptHash,
+                            ScopeData = NativeContract.NEO.Hash.ToArray()
                         }.ToArray()
                     }
                 };
