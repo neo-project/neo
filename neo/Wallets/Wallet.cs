@@ -319,7 +319,6 @@ namespace Neo.Wallets
                     Attributes = attributes
                 };
 
-                UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
@@ -335,6 +334,8 @@ namespace Neo.Wallets
                             tx.SystemFee -= remainder;
                     }
                 }
+
+                UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
                 // base size for transaction: includes const_header + attributes (including cosigners with scopes) + script + { hashes (what's this ???) }
                 int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
