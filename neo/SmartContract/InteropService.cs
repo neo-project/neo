@@ -145,6 +145,8 @@ namespace Neo.SmartContract
         {
             if (engine.ScriptContainer is Transaction tx)
             {
+                var ret = false;
+
                 foreach (var attribute in tx.Attributes)
                 {
                     if (attribute.Usage != TransactionAttributeUsage.Cosigner) continue;
@@ -153,27 +155,35 @@ namespace Neo.SmartContract
 
                     switch (usage.Scope.Type)
                     {
-                        case WitnessScopeType.Global: return true;
+                        case WitnessScopeType.Global: ret = true; break;
                         case WitnessScopeType.CustomScriptHash:
                             {
                                 // verify if context is correct for execution
-                                return engine.CurrentScriptHash == new UInt160(usage.Scope.ScopeData);
+                                if (engine.CurrentScriptHash != new UInt160(usage.Scope.ScopeData)) return false;
+                                ret = true;
+                                break;
                             }
                         case WitnessScopeType.EntryOnly:
                             {
                                 // verify if context is correct for execution
-                                return engine.CallingScriptHash == engine.EntryScriptHash;
+                                if (engine.CallingScriptHash != engine.EntryScriptHash) return false;
+                                ret = true;
+                                break;
                             }
                         case WitnessScopeType.ExecutingGroupPubKey:
                             {
                                 var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                                 if (contract == null || contract.Manifest.Groups == null) return false;
                                 // check if current group is the required one
-                                return contract.Manifest.Groups.All(u => u.IsValid(new UInt160(usage.Scope.ScopeData)));
+                                if (!contract.Manifest.Groups.All(u => u.IsValid(new UInt160(usage.Scope.ScopeData)))) return false;
+                                ret = true;
+                                break;
                             }
                         default: return false;
                     }
                 }
+
+                if (ret) return true;
             }
 
             var hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
