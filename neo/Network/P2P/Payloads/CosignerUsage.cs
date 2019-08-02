@@ -1,6 +1,5 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
-using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -29,14 +28,14 @@ namespace Neo.Network.P2P.Payloads
         {
             JObject json = new JObject();
             json["scope"] = Scope.ToJson();
-            json["scripthash"] = ScriptHash.ToString();
+            json["scriptHash"] = ScriptHash.ToString();
             return json;
         }
 
         public static CosignerUsage FromJson(JObject json)
         {
             CosignerUsage usage = new CosignerUsage();
-            usage.Scope = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scope"].AsString());
+            usage.Scope = WitnessScope.FromJson(json["scope"]);
             usage.ScriptHash = UInt160.Parse(json["scriptHash"].AsString());
             return usage;
         }
