@@ -85,7 +85,8 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache[new MyKey("key2")].Should().Be(new MyValue("value2"));
             cloneCache[new MyKey("key3")].Should().Be(new MyValue("value3"));
 
-            Action action = () => {
+            Action action = () =>
+            {
                 var item = cloneCache[new MyKey("key4")];
             };
             action.ShouldThrow<KeyNotFoundException>();

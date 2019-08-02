@@ -83,7 +83,7 @@ namespace Neo.SmartContract
                 return true;
             return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
-        
+
         private static Block CreateDummyBlock(Snapshot snapshot)
         {
             var currentBlock = snapshot.Blocks[snapshot.CurrentBlockHash];

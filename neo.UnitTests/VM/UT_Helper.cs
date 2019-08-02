@@ -27,7 +27,7 @@ namespace Neo.UnitTests.IO
             tempArray[0] = 0x00;//0
             tempArray[1] = 0xC5;//OpCode.NEWARRAY 
             tempArray[2] = 5;//operation.Length
-            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"),0, tempArray,3, 5);//operation.data
+            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 3, 5);//operation.data
             tempArray[8] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 9, 20);//operation.data
             uint api = InteropService.System_Contract_Call;
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.IO
         {
             //format:(ContractParameter[])ContractParameter+(byte)OpCode.PACK+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitAppCall(UInt160.Zero, "AAAAA",new ContractParameter[] {new ContractParameter(ContractParameterType.Integer)});
+            sb.EmitAppCall(UInt160.Zero, "AAAAA", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
             byte[] tempArray = new byte[35];
             tempArray[0] = 0x00;//0
             tempArray[1] = 0x51;//ContractParameter.Length 
