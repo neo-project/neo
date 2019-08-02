@@ -80,8 +80,8 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"header {header} hash {header.Hash} timestamp {timestampVal}");
 
             timestampVal.Should().Be(328665601001);    // GMT: Sunday, June 1, 1980 12:00:01.001 AM
-                                                  // check basic ConsensusContext
-                                                  //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
+                                                       // check basic ConsensusContext
+                                                       //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
             // ============================================================================
             //                      creating ConsensusService actor

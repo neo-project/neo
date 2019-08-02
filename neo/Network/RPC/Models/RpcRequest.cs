@@ -6,11 +6,11 @@ namespace Neo.Network.RPC.Models
     public class RpcRequest
     {
         public int Id { get; set; }
-        
+
         public string Jsonrpc { get; set; }
-        
+
         public string Method { get; set; }
-        
+
         public JObject[] Params { get; set; }
 
         public static RpcRequest FromJson(JObject json)

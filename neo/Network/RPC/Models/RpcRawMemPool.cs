@@ -6,16 +6,16 @@ namespace Neo.Network.RPC.Models
     public class RpcRawMemPool
     {
         public uint Height { get; set; }
-        
+
         public string[] Verified { get; set; }
-        
+
         public string[] UnVerified { get; set; }
 
         public JObject ToJson()
         {
             JObject json = new JObject();
             json["height"] = Height;
-            json["verified"] = new JArray(Verified.Select(p=>(JObject)p));
+            json["verified"] = new JArray(Verified.Select(p => (JObject)p));
             json["unverified"] = new JArray(UnVerified.Select(p => (JObject)p));
             return json;
         }

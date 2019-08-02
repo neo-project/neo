@@ -47,7 +47,7 @@ namespace Neo.Network.RPC.Models
     public class RpcStack
     {
         public string Type { get; set; }
-        
+
         public string Value { get; set; }
 
         public JObject ToJson()

@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Cryptography
     {
         public UInt256 GetByteArrayHash(byte[] byteArray)
         {
-            if(byteArray == null || byteArray.Length == 0) throw new ArgumentNullException(); 
+            if (byteArray == null || byteArray.Length == 0) throw new ArgumentNullException();
             var hash = new UInt256(Crypto.Default.Hash256(byteArray));
             return hash;
         }
@@ -26,13 +26,13 @@ namespace Neo.UnitTests.Cryptography
             action.ShouldThrow<ArgumentException>();
 
             byte[] array1 = { 0x01 };
-            var hash1 = GetByteArrayHash(array1); 
+            var hash1 = GetByteArrayHash(array1);
 
             byte[] array2 = { 0x02 };
             var hash2 = GetByteArrayHash(array2);
 
             byte[] array3 = { 0x03 };
-            var hash3 = GetByteArrayHash(array3);          
+            var hash3 = GetByteArrayHash(array3);
 
             IReadOnlyList<UInt256> hashes = new UInt256[] { hash1, hash2, hash3 };
             MerkleTree tree = new MerkleTree(hashes);

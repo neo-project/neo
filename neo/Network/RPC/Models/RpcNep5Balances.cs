@@ -7,7 +7,7 @@ namespace Neo.Network.RPC.Models
     public class RpcNep5Balances
     {
         public string Address { get; set; }
-        
+
         public RpcNep5Balance[] Balances { get; set; }
 
         public JObject ToJson()
@@ -31,9 +31,9 @@ namespace Neo.Network.RPC.Models
     public class RpcNep5Balance
     {
         public UInt160 AssetHash { get; set; }
-        
+
         public BigInteger Amount { get; set; }
-        
+
         public uint LastUpdatedBlock { get; set; }
 
         public JObject ToJson()

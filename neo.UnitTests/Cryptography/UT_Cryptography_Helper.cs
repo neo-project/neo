@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] key = Encoding.ASCII.GetBytes("1234567812345678");
             byte[] result = block.AES256Encrypt(key);
             string encryptString = result.ToHexString();
-            encryptString.Should().Be("f69e0923d8247eef417d6a78944a4b39f69e0923d8247eef417d6a78944a4b39");    
+            encryptString.Should().Be("f69e0923d8247eef417d6a78944a4b39f69e0923d8247eef417d6a78944a4b39");
         }
 
         [TestMethod]
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] wrongIv = Encoding.ASCII.GetBytes("12345678123456780"); ;
             action = () => data.AesDecrypt(key, wrongIv);
             action.ShouldThrow<ArgumentException>();
-        } 
+        }
 
         [TestMethod]
         public void TestBase58CheckDecode()
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestSha256()
         {
-            byte[] value = Encoding.ASCII.GetBytes("hello world");      
+            byte[] value = Encoding.ASCII.GetBytes("hello world");
             byte[] result = value.Sha256(0, value.Length);
             string resultStr = result.ToHexString();
             resultStr.Should().Be("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.Cryptography
             string password = "hello world";
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
             byte[] byteArray = new byte[string1.Length / 2];
-            byteArray = string1.HexToBytes();            
+            byteArray = string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
         }
 

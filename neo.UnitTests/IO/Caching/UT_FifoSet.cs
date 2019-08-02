@@ -59,10 +59,10 @@ namespace Neo.UnitTests.IO.Caching
             Action action1 = () => new FIFOSet<UInt256>(-1);
             action1.ShouldThrow<ArgumentOutOfRangeException>();
 
-            Action action2 = () => new FIFOSet<UInt256>(1,-1);
+            Action action2 = () => new FIFOSet<UInt256>(1, -1);
             action2.ShouldThrow<ArgumentOutOfRangeException>();
 
-            Action action3 = () => new FIFOSet<UInt256>(1,2);
+            Action action3 = () => new FIFOSet<UInt256>(1, 2);
             action3.ShouldThrow<ArgumentOutOfRangeException>();
         }
 
