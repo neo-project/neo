@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +12,6 @@ namespace Neo.Plugins
     {
         public static readonly List<Plugin> Plugins = new List<Plugin>();
         private static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
-        internal static readonly List<IPolicyPlugin> Policies = new List<IPolicyPlugin>();
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
         internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
@@ -51,20 +49,11 @@ namespace Neo.Plugins
 
             if (this is ILogPlugin logger) Loggers.Add(logger);
             if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
-            if (this is IPolicyPlugin policy) Policies.Add(policy);
             if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
             if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
 
             Configure();
-        }
-
-        public static bool CheckPolicy(Transaction tx)
-        {
-            foreach (IPolicyPlugin plugin in Policies)
-                if (!plugin.FilterForMemoryPool(tx))
-                    return false;
-            return true;
         }
 
         public abstract void Configure();

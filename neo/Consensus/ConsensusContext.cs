@@ -4,7 +4,6 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
@@ -249,16 +248,9 @@ namespace Neo.Consensus
             byte[] buffer = new byte[sizeof(ulong)];
             random.NextBytes(buffer);
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
-
-            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
-            foreach (IPolicyPlugin plugin in Plugin.Policies)
-                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
-
-            EnsureMaxBlockSize(memoryPoolTransactions);
-
-            // Create valid request
-
+            EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
+            
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
                 Timestamp = Block.Timestamp,

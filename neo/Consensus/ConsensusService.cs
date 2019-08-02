@@ -67,7 +67,7 @@ namespace Neo.Consensus
                 RequestChangeView(ChangeViewReason.TxInvalid);
                 return false;
             }
-            if (!Plugin.CheckPolicy(tx))
+            if (!NativeContract.Policy.CheckPolicy(tx, context.Snapshot))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
@@ -185,6 +185,7 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
+            Console.WriteLine($"[{DateTime.Now.TimeOfDay:hh\\:mm\\:ss\\.fff}] {message}");
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
