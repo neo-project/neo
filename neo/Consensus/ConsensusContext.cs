@@ -214,8 +214,9 @@ namespace Neo.Consensus
             var transactions = txs.ToList();
             // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
             TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
-
+            Transactions = new Dictionary<UInt256, Transaction>();
             Block.Transactions = new Transaction[0];
+
             // TODO: Real expected witness
             Block.Witness = new Witness()
             {
@@ -223,7 +224,6 @@ namespace Neo.Consensus
                 VerificationScript = new byte[0]
             };
 
-            Transactions = new Dictionary<UInt256, Transaction>();
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
             var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
             Block.Witness = null;
