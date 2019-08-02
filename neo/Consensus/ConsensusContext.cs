@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -41,6 +42,10 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
         private readonly Store store;
         private readonly Random random = new Random();
+        /// <summary>
+        /// Used for know what is the expected size of the witness
+        /// </summary>
+        private Witness _fakeWitness;
 
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
@@ -212,21 +217,19 @@ namespace Neo.Consensus
         internal void EnsureMaxBlockSize(IEnumerable<Transaction> txs)
         {
             var transactions = txs.ToList();
+            uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
+
             // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
             TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
             Transactions = new Dictionary<UInt256, Transaction>();
             Block.Transactions = new Transaction[0];
 
-            // TODO: Real expected witness
-            Block.Witness = new Witness()
-            {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
-            };
+            // We need to know the expected header size
 
-            uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
+            Block.Witness = _fakeWitness;
             var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
             Block.Witness = null;
+
             for (int x = 0, max = TransactionHashes.Length; x < max; x++)
             {
                 var tx = transactions[x];
@@ -319,7 +322,25 @@ namespace Neo.Consensus
                     NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot).ToArray()),
                     ConsensusData = new ConsensusData()
                 };
+                var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
+                if (_fakeWitness == null || pv != null && pv.Length != Validators.Length)
+                {
+                    // If there are no fake witness or validators change, we need to compute the fakeWitness
+                    Contract contract = Contract.CreateMultiSigContract(M, Validators);
+                    using (ScriptBuilder sb = new ScriptBuilder())
+                    {
+                        for (int x = 0; x < M; x++)
+                        {
+                            sb.EmitPush(new byte[64]);
+                        }
+                        _fakeWitness = new Witness
+                        {
+                            InvocationScript = sb.ToArray(),
+                            VerificationScript = contract.Script ?? new byte[0]
+                        };
+                    }
+                }
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
