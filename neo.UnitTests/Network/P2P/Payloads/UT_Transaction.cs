@@ -596,55 +596,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
                 catch (System.Exception e)
                 {
-                    // will trigger 'InvalidOperationException'
-                    // don't know exactly why... TODO
+                    // expects FAULT on execution of 'transfer' Application script
+                    // due to lack of a valid witness validation
                     Assert.IsTrue(e is InvalidOperationException);
                 }
 
                 Assert.IsNull(tx);
-                //Assert.IsNotNull(tx);
-                //Assert.IsNull(tx.Witnesses);
-
-                /*
-                // ----
-                // Sign
-                // ----
-
-                var data = new ContractParametersContext(tx);
-                bool signed = wallet.Sign(data);
-                Assert.IsTrue(signed);
-
-                // get witnesses from signed 'data'
-                tx.Witnesses = data.GetWitnesses();
-                tx.Witnesses.Length.Should().Be(1);
-
-                //Assert.IsNotNull(tx.Witnesses);
-                //tx.Witnesses = new Witness[0]{};
-
-                // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
-
-                // Check
-                long verificationGas = 0;
-                foreach (var witness in tx.Witnesses)
-                {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
-                    {
-                        engine.LoadScript(witness.VerificationScript);
-                        engine.LoadScript(witness.InvocationScript);
-                        Assert.AreEqual(VMState.HALT, engine.Execute());
-                        Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                        verificationGas += engine.GasConsumed;
-                    }
-                }
-                // get sizeGas
-                var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-                // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(verificationGas + sizeGas, 1279240);
-                // final assert
-                Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
-                */
             }
         }
 
@@ -829,47 +786,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 Assert.IsNull(tx);
-
-                /*
-                // ----
-                // Sign
-                // ----
-                //var data = new ContractParametersContext(tx);
-                //bool signed = wallet.Sign(data);
-                //Assert.IsTrue(signed);
-
-                tx.Witnesses = new Witness[0] { };
-                // get witnesses from signed 'data'
-                //tx.Witnesses = data.GetWitnesses();
-                //tx.Witnesses.Length.Should().Be(1);
-
-                // Fast check (should FAIL! no witness)
-                Assert.IsFalse(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
-
-                // Check
-                long verificationGas = 0;
-                foreach (var witness in tx.Witnesses)
-                {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
-                    {
-                        engine.LoadScript(witness.VerificationScript);
-                        engine.LoadScript(witness.InvocationScript);
-                        Assert.AreEqual(VMState.HALT, engine.Execute());
-                        Assert.AreEqual(1, engine.ResultStack.Count);
-                        // should return false (no witness)
-                        Assert.IsFalse(engine.ResultStack.Pop().GetBoolean());
-                        verificationGas += engine.GasConsumed;
-                    }
-                }
-                // get sizeGas
-                Assert.AreEqual(tx.Size, 129); // TODO: check step-by-step
-                var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-                Assert.AreEqual(sizeGas, 129000);
-                // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(verificationGas + sizeGas, 129000);
-                // final assert
-                Assert.AreEqual(tx.NetworkFee, 1235240); // != (verificationGas + sizeGas);
-                */
             }
         }
 
@@ -879,17 +795,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.SystemFee = 4200000000;
-            uut.Attributes = new TransactionAttribute[]{
-                /*
-                    new TransactionAttribute {
-                        Usage = TransactionAttributeUsage.Cosigner,
-                        Data = new CosignerUsage
-                        {
-                            Scope = WitnessScope.Global.Clone()
-                        }.ToArray()
-                    }
-                    */
-                };
+            uut.Attributes = new TransactionAttribute[] { };
             uut.Witnesses = new[]
             {
                 new Witness
