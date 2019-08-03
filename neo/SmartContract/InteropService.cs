@@ -175,12 +175,7 @@ namespace Neo.SmartContract
                                 var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                                 if (contract == null || contract.Manifest.Groups == null) return false;
                                 // check if current group is the required one
-                                ECPoint pubkey;
-                                using (MemoryStream ms = new MemoryStream(usage.ScopeData, false))
-                                using (BinaryReader reader = new BinaryReader(ms))
-                                {
-                                    pubkey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
-                                }
+                                ECPoint pubkey = usage.GetPubKey();
                                 if (!contract.Manifest.Groups.All(g => g.PubKey == pubkey)) return false;
                                 ret = true;
                                 break;

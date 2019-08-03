@@ -1,5 +1,7 @@
-﻿using Neo.IO;
+﻿using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.IO.Json;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -29,6 +31,15 @@ namespace Neo.Network.P2P.Payloads
             writer.Write((byte)Scope);
             if (HasData) writer.WriteVarBytes(ScopeData);
             writer.Write(ScriptHash);
+        }
+
+        public ECPoint GetPubKey()
+        {
+            using (MemoryStream ms = new MemoryStream(ScopeData, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                return ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
+            }
         }
 
         public JObject ToJson()
