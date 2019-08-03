@@ -145,10 +145,14 @@ namespace Neo.SmartContract
         {
             if (engine.ScriptContainer is Transaction tx)
             {
+                // will return false, unless some scope matches witness requirement
                 var ret = false;
 
                 foreach (var attribute in tx.Attributes)
                 {
+                    // check if some scope already fulfilled witness requirement
+                    if (ret) break;
+
                     if (attribute.Usage != TransactionAttributeUsage.Cosigner) continue;
                     CosignerUsage usage = attribute.Data.AsSerializable<CosignerUsage>();
                     if (usage.Account != hash) continue;
@@ -159,33 +163,38 @@ namespace Neo.SmartContract
                         case WitnessScope.CustomScriptHash:
                             {
                                 // verify if context is correct for execution
-                                if (engine.CurrentScriptHash != new UInt160(usage.ScopeData)) return false;
-                                ret = true;
+                                if (engine.CurrentScriptHash == new UInt160(usage.ScopeData)) ret = true;
                                 break;
                             }
                         case WitnessScope.CalledByEntry:
                             {
                                 // verify if context is correct for execution
-                                if (engine.CallingScriptHash != engine.EntryScriptHash) return false;
-                                ret = true;
+                                if (engine.CallingScriptHash == engine.EntryScriptHash) ret = true;
                                 break;
                             }
                         case WitnessScope.ExecutingGroupPubKey:
                             {
                                 var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
-                                if (contract == null || contract.Manifest.Groups == null) return false;
+                                if (contract == null || contract.Manifest.Groups == null)
+                                    break;
                                 // check if current group is the required one
                                 ECPoint pubkey = usage.GetPubKey();
-                                if (!contract.Manifest.Groups.All(g => g.PubKey == pubkey)) return false;
+                                if (!contract.Manifest.Groups.All(g => g.PubKey == pubkey))
+                                    break;
                                 ret = true;
                                 break;
                             }
-                        default: return false;
+                        default:
+                            {
+                                return false;
+                            }
                     }
                 }
 
-                if (ret) return true;
+                return ret;
             }
+
+            // only for non-Transaction types (Block, etc)
 
             var hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
             return hashes_for_verifying.Contains(hash);

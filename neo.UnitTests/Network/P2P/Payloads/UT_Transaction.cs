@@ -600,10 +600,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 Assert.IsNull(tx);
+                //Assert.IsNotNull(tx);
+                //Assert.IsNull(tx.Witnesses);
 
                 /*
-                Assert.IsNull(tx.Witnesses);
-
                 // ----
                 // Sign
                 // ----
@@ -643,6 +643,124 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
                 */
+            }
+        }
+
+        [TestMethod]
+        public void FeeIsSignatureContract_TestScope_CurrentHash_NEO_GAS()
+        {
+            var wallet = GenerateTestWallet();
+            var snapshot = store.GetSnapshot();
+
+            // no password on this wallet
+            using (var unlock = wallet.Unlock(""))
+            {
+                var acc = wallet.CreateAccount();
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = new Nep5AccountState().ToByteArray()
+                });
+
+                entry.Value = new Nep5AccountState()
+                {
+                    Balance = 10000 * NativeContract.GAS.Factor
+                }
+                .ToByteArray();
+
+                // Make transaction
+
+                // could use this...
+                // public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
+
+                // ------------------------
+                // Manually creating script
+
+                byte[] script;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    // self-transfer of 1e-8 GAS
+                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.Emit(OpCode.THROWIFNOT);
+                    script = sb.ToArray();
+                }
+
+                // trying two custom hashes, for same target account
+                TransactionAttribute[] attributes = new TransactionAttribute[]{
+                    new TransactionAttribute {
+                        Usage = TransactionAttributeUsage.Cosigner,
+                        Data = new CosignerUsage
+                        {
+                            Account = acc.ScriptHash,
+                            Scope = WitnessScope.CustomScriptHash,
+                            ScopeData = NativeContract.NEO.Hash.ToArray()
+                        }.ToArray()
+                    },
+                    new TransactionAttribute {
+                        Usage = TransactionAttributeUsage.Cosigner,
+                        Data = new CosignerUsage
+                        {
+                            Account = acc.ScriptHash,
+                            Scope = WitnessScope.CustomScriptHash,
+                            ScopeData = NativeContract.GAS.Hash.ToArray()
+                        }.ToArray()
+                    }
+                };
+
+                // using this...
+                // public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
+
+                var tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
+
+                Assert.IsNotNull(tx);
+                Assert.IsNull(tx.Witnesses);
+
+                // ----
+                // Sign
+                // ----
+
+                var data = new ContractParametersContext(tx);
+                bool signed = wallet.Sign(data);
+                Assert.IsTrue(signed);
+
+                // get witnesses from signed 'data'
+                tx.Witnesses = data.GetWitnesses();
+                // only a single witness should exist
+                tx.Witnesses.Length.Should().Be(1);
+                // two attributes must exist
+                tx.Attributes.Length.Should().Be(2);
+
+                //Assert.IsNotNull(tx.Witnesses);
+                //tx.Witnesses = new Witness[0]{};
+
+                // Fast check
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+
+                // Check
+                long verificationGas = 0;
+                foreach (var witness in tx.Witnesses)
+                {
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    {
+                        engine.LoadScript(witness.VerificationScript);
+                        engine.LoadScript(witness.InvocationScript);
+                        Assert.AreEqual(VMState.HALT, engine.Execute());
+                        Assert.AreEqual(1, engine.ResultStack.Count);
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        verificationGas += engine.GasConsumed;
+                    }
+                }
+                // get sizeGas
+                var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+                // final check on sum: verification_cost + tx_size
+                Assert.AreEqual(verificationGas + sizeGas, 1323240);
+                // final assert
+                Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
         }
 
@@ -696,11 +814,20 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // using this...
                 // public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
 
-                var tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
+                Transaction tx = null;
+                try
+                {
+                tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
+                }
+                catch(System.Exception)
+                {
+                    // expects FAULT on execution of 'transfer' Application script
+                    // due to lack of a valid witness validation
+                }
 
-                Assert.IsNotNull(tx);
-                Assert.IsNull(tx.Witnesses);
+                Assert.IsNull(tx);
 
+                /*
                 // ----
                 // Sign
                 // ----
@@ -739,6 +866,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(verificationGas + sizeGas, 129000);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, 1235240); // != (verificationGas + sizeGas);
+                */
             }
         }
 
