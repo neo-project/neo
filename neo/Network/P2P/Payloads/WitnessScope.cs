@@ -32,7 +32,7 @@
 
         // 0x06 -> composition of Group + Custom. Probably, Group hash should be considered instead of CustomHash.
         // 0x06 should be equivalent to 0x04
-        
+
         // 0x07 -> this should be equivalent to 0x05 (since 0x06 -> 0x04) + 0x01
     }
 }
