@@ -12,6 +12,7 @@ using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -593,10 +594,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
                 }
-                catch (System.Exception)
+                catch (System.Exception e)
                 {
                     // will trigger 'InvalidOperationException'
                     // don't know exactly why... TODO
+                    Assert.IsTrue(e is InvalidOperationException);
                 }
 
                 Assert.IsNull(tx);
@@ -817,12 +819,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Transaction tx = null;
                 try
                 {
-                tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
+                    tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
                 }
-                catch(System.Exception)
+                catch (System.Exception e)
                 {
                     // expects FAULT on execution of 'transfer' Application script
                     // due to lack of a valid witness validation
+                    Assert.IsTrue(e is InvalidOperationException);
                 }
 
                 Assert.IsNull(tx);

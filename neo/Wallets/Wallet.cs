@@ -315,7 +315,7 @@ namespace Neo.Wallets
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
                     Attributes = attributes
                 };
-                
+
                 // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
                 {
