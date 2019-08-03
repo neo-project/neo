@@ -10,30 +10,34 @@ namespace Neo.Cryptography
         // standard elliptic curve: secp256r1
         public ECPoint Data;
 
-        public int Size => Data.Length;
+        public int Size => Data.Size;
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Data = reader.ReadBytes(64);
+            Data = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Data);
+            writer.Write(Data.ToArray());
         }
 
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["data"] = Data.ToHexString();
+            json["data"] = Data.ToArray().ToHexString();
             return json;
         }
 
-        public static Signature FromJson(JObject json)
+        public static PublicKey FromJson(JObject json)
         {
-            Signature signature = new Signature();
-            signature.Data = json["data"].AsString().HexToBytes();
-            return signature;
+            PublicKey pubkey = new PublicKey();
+            using (MemoryStream ms = new MemoryStream(json["data"].AsString().HexToBytes(), false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                pubkey.Data = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
+            }
+            return pubkey;
         }
     }
 }
