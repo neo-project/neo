@@ -1,7 +1,6 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -10,12 +9,12 @@ namespace Neo.Network.P2P.Payloads
     {
         public WitnessScope Scope;
         public byte[] ScopeData;
-        public UInt160 ScriptHash;
+        public UInt160 Account;
 
         public int Size =>
             sizeof(WitnessScope) +                      // Type
             (HasData ? ScopeData.GetVarSize() : 0) +    // ScopeData
-            ScriptHash.Size;                            // ScriptHash
+            UInt160.Length;                             // ScriptHash
 
         public bool HasData => (Scope == WitnessScope.CustomScriptHash) || (Scope == WitnessScope.ExecutingGroupPubKey);
 
@@ -23,14 +22,14 @@ namespace Neo.Network.P2P.Payloads
         {
             Scope = (WitnessScope)reader.ReadByte();
             ScopeData = (HasData ? reader.ReadVarBytes(65536) : new byte[0]);
-            ScriptHash = reader.ReadSerializable<UInt160>();
+            Account = reader.ReadSerializable<UInt160>();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Scope);
             if (HasData) writer.WriteVarBytes(ScopeData);
-            writer.Write(ScriptHash);
+            writer.Write(Account);
         }
 
         public ECPoint GetPubKey()
@@ -47,7 +46,7 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new JObject();
             json["scope"] = (new byte[] { (byte)Scope }).ToHexString();
             json["scopeData"] = ScopeData.ToHexString();
-            json["scriptHash"] = ScriptHash.ToString();
+            json["account"] = Account.ToString();
             return json;
         }
 
@@ -56,7 +55,7 @@ namespace Neo.Network.P2P.Payloads
             CosignerUsage usage = new CosignerUsage();
             usage.Scope = (WitnessScope)json["scope"].AsString().HexToBytes()[0];
             usage.ScopeData = json["scopeData"].AsString().HexToBytes();
-            usage.ScriptHash = UInt160.Parse(json["scriptHash"].AsString());
+            usage.Account = UInt160.Parse(json["account"].AsString());
             return usage;
         }
     }

@@ -151,7 +151,7 @@ namespace Neo.SmartContract
                 {
                     if (attribute.Usage != TransactionAttributeUsage.Cosigner) continue;
                     CosignerUsage usage = attribute.Data.AsSerializable<CosignerUsage>();
-                    if (usage.ScriptHash != hash) continue;
+                    if (usage.Account != hash) continue;
 
                     switch (usage.Scope)
                     {

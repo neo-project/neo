@@ -367,7 +367,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
                         {
-                            ScriptHash = acc.ScriptHash,
+                            Account = acc.ScriptHash,
                             Scope = WitnessScope.Global
                         }.ToArray()
                     }
@@ -472,7 +472,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
                         {
-                            ScriptHash = acc.ScriptHash,
+                            Account = acc.ScriptHash,
                             Scope = WitnessScope.CustomScriptHash,
                             ScopeData = NativeContract.GAS.Hash.ToArray()
                         }.ToArray()
@@ -578,7 +578,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
                         {
-                            ScriptHash = acc.ScriptHash,
+                            Account = acc.ScriptHash,
                             Scope = WitnessScope.CustomScriptHash,
                             ScopeData = NativeContract.NEO.Hash.ToArray()
                         }.ToArray()

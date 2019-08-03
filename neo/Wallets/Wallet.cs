@@ -274,7 +274,7 @@ namespace Neo.Wallets
                                 // default access for transfers should be valid only for first invocation
                                 Scope = WitnessScope.EntryOnly,
                                 ScopeData = new byte[0], // no extra data is needed for entry only
-                                ScriptHash = new UInt160(p.ToArray())
+                                Account = new UInt160(p.ToArray())
                             }.ToArray()
                         }).ToArray();
                 return MakeTransaction(snapshot, attributes, script, balances_gas);
