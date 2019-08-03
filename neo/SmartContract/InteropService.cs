@@ -163,7 +163,7 @@ namespace Neo.SmartContract
                                 ret = true;
                                 break;
                             }
-                        case WitnessScope.EntryOnly:
+                        case WitnessScope.CalledByEntry:
                             {
                                 // verify if context is correct for execution
                                 if (engine.CallingScriptHash != engine.EntryScriptHash) return false;

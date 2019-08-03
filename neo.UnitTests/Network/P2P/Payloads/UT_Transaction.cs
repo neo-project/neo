@@ -245,7 +245,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var data = new ContractParametersContext(tx);
                 // 'from' is always required as witness
-                // if not included on cosigner with a scope, its scope should be considered 'EntryOnly'
+                // if not included on cosigner with a scope, its scope should be considered 'CalledByEntry'
                 data.ScriptHashes.Count.Should().Be(1);
                 data.ScriptHashes[0].ShouldBeEquivalentTo(acc.ScriptHash);
                 // will sign tx

@@ -30,11 +30,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Serialize_Deserialize_EntryOnly()
+        public void Serialize_Deserialize_CalledByEntry()
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.EntryOnly,
+                Scope = WitnessScope.CalledByEntry,
                 ScopeData = new byte[0],
                 Account = UInt160.Zero
             };
@@ -110,11 +110,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Json_EntryOnly()
+        public void Json_CalledByEntry()
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.EntryOnly,
+                Scope = WitnessScope.CalledByEntry,
                 ScopeData = new byte[0],
                 Account = UInt160.Zero
             };
