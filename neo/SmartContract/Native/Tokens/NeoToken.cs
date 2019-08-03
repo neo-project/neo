@@ -201,7 +201,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(Snapshot snapshot)
         {
-            return snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
+            byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, new[] { Prefix_Validator });
+            return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
                 ValidatorState.FromByteArray(p.Value.Value).Votes
