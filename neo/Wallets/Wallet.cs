@@ -272,8 +272,7 @@ namespace Neo.Wallets
                             Data = new CosignerUsage
                             {
                                 // default access for transfers should be valid only for first invocation
-                                Scope = WitnessScope.CalledByEntry,
-                                ScopeData = new byte[0], // no extra data is needed if called by entry
+                                Scopes = WitnessScope.CalledByEntry,
                                 Account = new UInt160(p.ToArray())
                             }.ToArray()
                         }).ToArray();

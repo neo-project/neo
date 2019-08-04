@@ -1,62 +1,70 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class CosignerUsage : ISerializable
     {
-        public WitnessScope Scope;
-        public byte[] ScopeData;
         public UInt160 Account;
+        public WitnessScope Scopes;
+        public UInt160[] AllowedContracts;
+        public ECPoint[] AllowedGroups;
 
         public int Size =>
-            sizeof(WitnessScope) +                      // Type
-            (HasData ? ScopeData.GetVarSize() : 0) +    // ScopeData
-            UInt160.Length;                             // ScriptHash
-
-        public bool HasData => (Scope == WitnessScope.CustomScriptHash) || (Scope == WitnessScope.ExecutingGroupPubKey);
+            /*Account*/             UInt160.Length +
+            /*Scopes*/              sizeof(WitnessScope) +
+            /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
+            /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0);
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Scope = (WitnessScope)reader.ReadByte();
-            ScopeData = (HasData ? reader.ReadVarBytes(65536) : new byte[0]);
             Account = reader.ReadSerializable<UInt160>();
+            Scopes = (WitnessScope)reader.ReadByte();
+            if (Scopes.HasFlag(WitnessScope.Global) && (Scopes & ~WitnessScope.Global) != 0)
+                throw new FormatException();
+            AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
+                ? reader.ReadSerializableArray<UInt160>(16)
+                : new UInt160[0];
+            AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
+                ? reader.ReadSerializableArray<ECPoint>(16)
+                : new ECPoint[0];
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write((byte)Scope);
-            if (HasData) writer.WriteVarBytes(ScopeData);
             writer.Write(Account);
-        }
-
-        public ECPoint GetPubKey()
-        {
-            using (MemoryStream ms = new MemoryStream(ScopeData, false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                return ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
-            }
+            writer.Write((byte)Scopes);
+            if (Scopes.HasFlag(WitnessScope.CustomContracts))
+                writer.Write(AllowedContracts);
+            if (Scopes.HasFlag(WitnessScope.CustomGroups))
+                writer.Write(AllowedGroups);
         }
 
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["scope"] = (new byte[] { (byte)Scope }).ToHexString();
-            json["scopeData"] = ScopeData.ToHexString();
             json["account"] = Account.ToString();
+            json["scopes"] = Scopes;
+            if (Scopes.HasFlag(WitnessScope.CustomContracts))
+                json["allowedContracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
+            if (Scopes.HasFlag(WitnessScope.CustomGroups))
+                json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
             return json;
         }
 
         public static CosignerUsage FromJson(JObject json)
         {
-            CosignerUsage usage = new CosignerUsage();
-            usage.Scope = (WitnessScope)json["scope"].AsString().HexToBytes()[0];
-            usage.ScopeData = json["scopeData"].AsString().HexToBytes();
-            usage.Account = UInt160.Parse(json["account"].AsString());
-            return usage;
+            return new CosignerUsage
+            {
+                Account = UInt160.Parse(json["account"].AsString()),
+                Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scopes"].AsString()),
+                AllowedContracts = ((JArray)json["allowedContracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray(),
+                AllowedGroups = ((JArray)json["allowedGroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
+            };
         }
     }
 }

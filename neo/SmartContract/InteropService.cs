@@ -145,53 +145,31 @@ namespace Neo.SmartContract
         {
             if (engine.ScriptContainer is Transaction tx)
             {
-                // will return false, unless some scope matches witness requirement
-                var ret = false;
-
-                foreach (var attribute in tx.Attributes)
+                CosignerUsage usage = tx.Attributes
+                    .Where(p => p.Usage == TransactionAttributeUsage.Cosigner)
+                    .Select(p => p.Data.AsSerializable<CosignerUsage>())
+                    .FirstOrDefault(p => p.Account.Equals(hash));
+                if (usage is null) return false;
+                if (usage.Scopes.HasFlag(WitnessScope.Global))
+                    return true;
+                if (usage.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
-                    // check if some scope already fulfilled witness requirement
-                    if (ret) break;
-
-                    if (attribute.Usage != TransactionAttributeUsage.Cosigner) continue;
-                    CosignerUsage usage = attribute.Data.AsSerializable<CosignerUsage>();
-                    if (usage.Account != hash) continue;
-
-                    switch (usage.Scope)
-                    {
-                        case WitnessScope.Global: ret = true; break;
-                        case WitnessScope.CustomScriptHash:
-                            {
-                                // verify if context is correct for execution
-                                if (engine.CurrentScriptHash == new UInt160(usage.ScopeData)) ret = true;
-                                break;
-                            }
-                        case WitnessScope.CalledByEntry:
-                            {
-                                // verify if context is correct for execution
-                                if (engine.CallingScriptHash == engine.EntryScriptHash) ret = true;
-                                break;
-                            }
-                        case WitnessScope.ExecutingGroupPubKey:
-                            {
-                                var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
-                                if (contract == null || contract.Manifest.Groups == null)
-                                    break;
-                                // check if current group is the required one
-                                ECPoint pubkey = usage.GetPubKey();
-                                if (!contract.Manifest.Groups.All(g => g.PubKey == pubkey))
-                                    break;
-                                ret = true;
-                                break;
-                            }
-                        default:
-                            {
-                                return false;
-                            }
-                    }
+                    if (engine.CallingScriptHash == engine.EntryScriptHash)
+                        return true;
                 }
-
-                return ret;
+                if (usage.Scopes.HasFlag(WitnessScope.CustomContracts))
+                {
+                    if (usage.AllowedContracts.Contains(engine.CurrentScriptHash))
+                        return true;
+                }
+                if (usage.Scopes.HasFlag(WitnessScope.CustomGroups))
+                {
+                    var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
+                    // check if current group is the required one
+                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(usage.AllowedGroups).Any())
+                        return true;
+                }
+                return false;
             }
 
             // only for non-Transaction types (Block, etc)
