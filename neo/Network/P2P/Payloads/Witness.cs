@@ -23,6 +23,7 @@ namespace Neo.Network.P2P.Payloads
                 return _scriptHash;
             }
         }
+
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)
