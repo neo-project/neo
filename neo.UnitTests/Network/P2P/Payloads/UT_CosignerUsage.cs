@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
@@ -14,18 +15,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.Global,
-                ScopeData = new byte[0],
+                Scopes = WitnessScope.Global,
                 Account = UInt160.Zero
             };
 
-            var hex = "000000000000000000000000000000000000000000";
+            var hex = "000000000000000000000000000000000000000080";
             attr.ToArray().ToHexString().Should().Be(hex);
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -34,18 +33,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.CalledByEntry,
-                ScopeData = new byte[0],
+                Scopes = WitnessScope.CalledByEntry,
                 Account = UInt160.Zero
             };
 
-            var hex = "010000000000000000000000000000000000000000";
+            var hex = "000000000000000000000000000000000000000001";
             attr.ToArray().ToHexString().Should().Be(hex);
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -54,18 +51,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.CustomScriptHash,
-                ScopeData = new byte[1] { 0x55 },
+                Scopes = WitnessScope.CustomContracts,
+                AllowedContracts = new[] { UInt160.Zero },
                 Account = UInt160.Zero
             };
 
-            var hex = "0201550000000000000000000000000000000000000000";
+            var hex = "000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
             attr.ToArray().ToHexString().Should().Be(hex);
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
+            CollectionAssert.AreEqual(attr.AllowedContracts, copy.AllowedContracts);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -74,18 +71,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.ExecutingGroupPubKey,
-                ScopeData = new byte[1] { 0x55 },
+                Scopes = WitnessScope.CustomGroups,
+                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
                 Account = UInt160.Zero
             };
 
-            var hex = "0401550000000000000000000000000000000000000000";
+            var hex = "0000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
             attr.ToArray().ToHexString().Should().Be(hex);
 
             var copy = hex.HexToBytes().AsSerializable<CosignerUsage>();
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
+            CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -94,18 +91,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.Global,
-                ScopeData = new byte[0],
+                Scopes = WitnessScope.Global,
                 Account = UInt160.Zero
             };
 
-            var json = "{\"scope\":\"00\",\"scopeData\":\"\",\"account\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"Global\"}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -114,18 +109,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.CalledByEntry,
-                ScopeData = new byte[0],
+                Scopes = WitnessScope.CalledByEntry,
                 Account = UInt160.Zero
             };
 
-            var json = "{\"scope\":\"01\",\"scopeData\":\"\",\"account\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CalledByEntry\"}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -134,18 +127,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.CustomScriptHash,
-                ScopeData = new byte[1] { 0x55 },
+                Scopes = WitnessScope.CustomContracts,
+                AllowedContracts = new[] { UInt160.Zero },
                 Account = UInt160.Zero
             };
 
-            var json = "{\"scope\":\"02\",\"scopeData\":\"55\",\"account\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomContracts\",\"allowedContracts\":[\"0x0000000000000000000000000000000000000000\"]}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
+            CollectionAssert.AreEqual(attr.AllowedContracts, copy.AllowedContracts);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -154,18 +147,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var attr = new CosignerUsage()
             {
-                Scope = WitnessScope.ExecutingGroupPubKey,
-                ScopeData = new byte[1] { 0x55 },
+                Scopes = WitnessScope.CustomGroups,
+                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
                 Account = UInt160.Zero
             };
 
-            var json = "{\"scope\":\"04\",\"scopeData\":\"55\",\"account\":\"0x0000000000000000000000000000000000000000\"}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomGroups\",\"allowedGroups\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}";
             attr.ToJson().ToString().Should().Be(json);
 
             var copy = CosignerUsage.FromJson(JObject.Parse(json));
 
-            Assert.AreEqual(attr.Scope, copy.Scope);
-            CollectionAssert.AreEqual(attr.ScopeData, copy.ScopeData);
+            Assert.AreEqual(attr.Scopes, copy.Scopes);
+            CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);
             Assert.AreEqual(attr.Account, copy.Account);
         }
     }

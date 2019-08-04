@@ -369,7 +369,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Data = new CosignerUsage
                         {
                             Account = acc.ScriptHash,
-                            Scope = WitnessScope.Global
+                            Scopes = WitnessScope.Global
                         }.ToArray()
                     }
                 };
@@ -474,8 +474,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Data = new CosignerUsage
                         {
                             Account = acc.ScriptHash,
-                            Scope = WitnessScope.CustomScriptHash,
-                            ScopeData = NativeContract.GAS.Hash.ToArray()
+                            Scopes = WitnessScope.CustomContracts,
+                            AllowedContracts = new[] { NativeContract.GAS.Hash }
                         }.ToArray()
                     }
                 };
@@ -580,8 +580,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Data = new CosignerUsage
                         {
                             Account = acc.ScriptHash,
-                            Scope = WitnessScope.CustomScriptHash,
-                            ScopeData = NativeContract.NEO.Hash.ToArray()
+                            Scopes = WitnessScope.CustomContracts,
+                            AllowedContracts = new[] { NativeContract.NEO.Hash }
                         }.ToArray()
                     }
                 };
@@ -656,17 +656,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Data = new CosignerUsage
                         {
                             Account = acc.ScriptHash,
-                            Scope = WitnessScope.CustomScriptHash,
-                            ScopeData = NativeContract.NEO.Hash.ToArray()
-                        }.ToArray()
-                    },
-                    new TransactionAttribute {
-                        Usage = TransactionAttributeUsage.Cosigner,
-                        Data = new CosignerUsage
-                        {
-                            Account = acc.ScriptHash,
-                            Scope = WitnessScope.CustomScriptHash,
-                            ScopeData = NativeContract.GAS.Hash.ToArray()
+                            Scopes = WitnessScope.CustomContracts,
+                            AllowedContracts = new[] { NativeContract.NEO.Hash, NativeContract.GAS.Hash }
                         }.ToArray()
                     }
                 };
@@ -692,7 +683,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // only a single witness should exist
                 tx.Witnesses.Length.Should().Be(1);
                 // two attributes must exist
-                tx.Attributes.Length.Should().Be(2);
+                tx.Attributes.Length.Should().Be(1);
 
                 //Assert.IsNotNull(tx.Witnesses);
                 //tx.Witnesses = new Witness[0]{};
@@ -717,7 +708,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(verificationGas + sizeGas, 1323240);
+                Assert.AreEqual(verificationGas + sizeGas, 1299240);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
