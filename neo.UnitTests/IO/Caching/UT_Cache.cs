@@ -25,6 +25,35 @@ namespace Neo.UnitTests.IO.Caching
         }
     }
 
+    class CacheDisposableEntry : IDisposable
+    {
+        public int Key { get; set; }
+        public bool IsDisposed { get; private set; }
+
+        public void Dispose()
+        {
+            IsDisposed = true;
+        }
+    }
+
+    class MyDisposableCache : Cache<int, CacheDisposableEntry>
+    {
+        public MyDisposableCache(int max_capacity) : base(max_capacity) { }
+
+        protected override int GetKeyForItem(CacheDisposableEntry item)
+        {
+            return item.Key;
+        }
+
+        protected override void OnAccess(CacheItem item) { }
+
+        public IEnumerator MyGetEnumerator()
+        {
+            IEnumerable enumerable = this;
+            return enumerable.GetEnumerator();
+        }
+    }
+
     [TestClass]
     public class UT_Cache
     {
@@ -131,6 +160,19 @@ namespace Neo.UnitTests.IO.Caching
             cache.Remove("hello".GetHashCode()).Should().BeTrue();
             cache.Remove("world".GetHashCode()).Should().BeFalse();
             cache.Contains("hello").Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestRemoveDisposableKey()
+        {
+            var entry = new CacheDisposableEntry() { Key = 1 };
+            var dcache = new MyDisposableCache(100);
+            dcache.Add(entry);
+
+            entry.IsDisposed.Should().BeFalse();
+            dcache.Remove(entry.Key).Should().BeTrue();
+            dcache.Remove(entry.Key).Should().BeFalse();
+            entry.IsDisposed.Should().BeTrue();
         }
 
         [TestMethod]
