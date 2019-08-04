@@ -296,7 +296,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(tx.Attributes[0].Size, 23);
                 Assert.AreEqual(tx.Attributes[0].Data.GetVarSize(), 22);
                 Assert.AreEqual(tx.Attributes[0].Usage, TransactionAttributeUsage.Cosigner);
-                CosignerUsage usage = tx.Attributes[0].Data.AsSerializable<CosignerUsage>();
+                Cosigner usage = tx.Attributes[0].Data.AsSerializable<Cosigner>();
                 Assert.IsNotNull(usage);
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
                 Assert.AreEqual(usage.Size, 21);
@@ -366,7 +366,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TransactionAttribute[] attributes = new TransactionAttribute[]{
                     new TransactionAttribute{
                         Usage = TransactionAttributeUsage.Cosigner,
-                        Data = new CosignerUsage
+                        Data = new Cosigner
                         {
                             Account = acc.ScriptHash,
                             Scopes = WitnessScope.Global
@@ -471,7 +471,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TransactionAttribute[] attributes = new TransactionAttribute[]{
                     new TransactionAttribute{
                         Usage = TransactionAttributeUsage.Cosigner,
-                        Data = new CosignerUsage
+                        Data = new Cosigner
                         {
                             Account = acc.ScriptHash,
                             Scopes = WitnessScope.CustomContracts,
@@ -577,7 +577,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TransactionAttribute[] attributes = new TransactionAttribute[]{
                     new TransactionAttribute{
                         Usage = TransactionAttributeUsage.Cosigner,
-                        Data = new CosignerUsage
+                        Data = new Cosigner
                         {
                             Account = acc.ScriptHash,
                             Scopes = WitnessScope.CustomContracts,
@@ -644,7 +644,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TransactionAttribute[] attributes = new TransactionAttribute[]{
                     new TransactionAttribute {
                         Usage = TransactionAttributeUsage.Cosigner,
-                        Data = new CosignerUsage
+                        Data = new Cosigner
                         {
                             Account = acc.ScriptHash,
                             Scopes = WitnessScope.CustomContracts,

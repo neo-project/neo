@@ -269,7 +269,7 @@ namespace Neo.Wallets
                         new TransactionAttribute
                         {
                             Usage = TransactionAttributeUsage.Cosigner,
-                            Data = new CosignerUsage
+                            Data = new Cosigner
                             {
                                 // default access for transfers should be valid only for first invocation
                                 Scopes = WitnessScope.CalledByEntry,
