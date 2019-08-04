@@ -587,20 +587,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 };
 
                 // using this...
-                // public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
 
+                // expects FAULT on execution of 'transfer' Application script
+                // due to lack of a valid witness validation
                 Transaction tx = null;
-                try
-                {
-                    tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
-                }
-                catch (System.Exception e)
-                {
-                    // expects FAULT on execution of 'transfer' Application script
-                    // due to lack of a valid witness validation
-                    Assert.IsTrue(e is InvalidOperationException);
-                }
-
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash));
                 Assert.IsNull(tx);
             }
         }
@@ -762,20 +753,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TransactionAttribute[] attributes = new TransactionAttribute[] { };
 
                 // using this...
-                // public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
 
+                // expects FAULT on execution of 'transfer' Application script
+                // due to lack of a valid witness validation
                 Transaction tx = null;
-                try
-                {
-                    tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash);
-                }
-                catch (System.Exception e)
-                {
-                    // expects FAULT on execution of 'transfer' Application script
-                    // due to lack of a valid witness validation
-                    Assert.IsTrue(e is InvalidOperationException);
-                }
-
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(attributes, script, acc.ScriptHash));
                 Assert.IsNull(tx);
             }
         }
