@@ -47,7 +47,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Serialize_Deserialize_CustomScriptHash()
+        public void Serialize_Deserialize_CustomContracts()
         {
             var attr = new CosignerUsage()
             {
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Serialize_Deserialize_ExecutingGroupPubKey()
+        public void Serialize_Deserialize_CustomGroups()
         {
             var attr = new CosignerUsage()
             {
@@ -123,7 +123,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Json_CustomScriptHash()
+        public void Json_CustomContracts()
         {
             var attr = new CosignerUsage()
             {
@@ -143,7 +143,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Json_ExecutingGroupPubKey()
+        public void Json_CustomGroups()
         {
             var attr = new CosignerUsage()
             {
