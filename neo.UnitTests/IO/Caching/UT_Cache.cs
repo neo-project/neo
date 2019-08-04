@@ -175,7 +175,6 @@ namespace Neo.UnitTests.IO.Caching
             entry.IsDisposed.Should().BeTrue();
         }
 
-
         [TestMethod]
         public void TestRemoveValue()
         {
