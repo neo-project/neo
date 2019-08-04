@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native.Tokens
                 }
                 amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
             }
-            amount += GAS.GetSysFeeAmount(snapshot, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(snapshot, start - 1));
+            amount += (GAS.GetSysFeeAmount(snapshot, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(snapshot, start - 1))) / GAS.Factor;
             return value * amount * GAS.Factor / TotalAmount;
         }
 
