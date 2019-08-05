@@ -39,13 +39,10 @@ namespace Neo.Consensus
 
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
+        private int _witnessSize;
         private readonly Wallet wallet;
         private readonly Store store;
         private readonly Random random = new Random();
-        /// <summary>
-        /// Used for know what is the expected size of the witness
-        /// </summary>
-        private Witness _fakeWitness;
 
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
@@ -226,16 +223,27 @@ namespace Neo.Consensus
 
             // We need to know the expected header size
 
-            Block.Witness = _fakeWitness;
-            var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
-            Block.Witness = null;
+            var fixedSize =
+                // BlockBase
+                sizeof(uint) +       //Version
+                UInt256.Length +     //PrevHash
+                UInt256.Length +     //MerkleRoot
+                sizeof(ulong) +      //Timestamp
+                sizeof(uint) +       //Index
+                UInt160.Length +     //NextConsensus
+                1 +                  //
+                _witnessSize +       //Witness   
+                                     // Block
+                Block.ConsensusData.Size + //ConsensusData
+                IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Tx => ensure that the var size grows without exceed the max size
 
             for (int x = 0, max = TransactionHashes.Length; x < max; x++)
             {
                 var tx = transactions[x];
 
                 // Check if maximum block size has been already exceeded with the current selected set
-                if (fixedSize + UInt256.Length + tx.Size > maxBlockSize) break;
+                fixedSize += tx.Size;
+                if (fixedSize > maxBlockSize) break;
 
                 TransactionHashes[x] = tx.Hash;
                 Transactions.Add(tx.Hash, tx);
@@ -324,20 +332,20 @@ namespace Neo.Consensus
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
-                if (_fakeWitness == null || pv != null && pv.Length != Validators.Length)
+                if (_witnessSize == 0 || pv != null && pv.Length != Validators.Length)
                 {
-                    // If there are no fake witness or validators change, we need to compute the fakeWitness
+                    // Compute the expected size of the witness
                     using (ScriptBuilder sb = new ScriptBuilder())
                     {
                         for (int x = 0; x < M; x++)
                         {
                             sb.EmitPush(new byte[64]);
                         }
-                        _fakeWitness = new Witness
+                        _witnessSize = new Witness
                         {
                             InvocationScript = sb.ToArray(),
                             VerificationScript = Contract.CreateMultiSigRedeemScript(M, Validators)
-                        };
+                        }.Size;
                     }
                 }
                 MyIndex = -1;
