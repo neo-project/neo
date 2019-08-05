@@ -10,15 +10,15 @@ namespace Neo.IO.Caching
     {
         protected class CacheItem
         {
-            public TKey Key;
-            public TValue Value;
-            public DateTime Time;
+            public readonly TKey Key;
+            public readonly TValue Value;
+            public readonly DateTime Time;
 
             public CacheItem(TKey key, TValue value)
             {
                 this.Key = key;
                 this.Value = value;
-                this.Time = DateTime.Now;
+                this.Time = TimeProvider.Current.UtcNow;
             }
         }
 
@@ -60,13 +60,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        public bool IsReadOnly
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool IsReadOnly => false;
 
         public Cache(int max_capacity)
         {
@@ -97,7 +91,7 @@ namespace Neo.IO.Caching
             {
                 if (InnerDictionary.Count >= max_capacity)
                 {
-                    //TODO: 对PLINQ查询进行性能测试，以便确定此处使用何种算法更优（并行或串行）
+                    //TODO: Perform a performance test on the PLINQ query to determine which algorithm is better here (parallel or not)
                     foreach (CacheItem item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(InnerDictionary.Count - max_capacity + 1))
                     {
                         RemoveInternal(item_del);
