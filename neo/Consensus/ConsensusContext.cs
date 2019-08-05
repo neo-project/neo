@@ -232,8 +232,10 @@ namespace Neo.Consensus
                 sizeof(uint) +       //Index
                 UInt160.Length +     //NextConsensus
                 1 +                  //
-                _witnessSize +       //Witness   
-                                     // Block
+                _witnessSize;        //Witness
+
+            fixedSize +=
+                // Block
                 Block.ConsensusData.Size + //ConsensusData
                 IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Tx => ensure that the var size grows without exceed the max size
 
