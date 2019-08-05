@@ -1,9 +1,9 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
-using FluentAssertions;
 using System;
-using System.Linq;
 using System.Collections;
+using System.Linq;
 
 namespace Neo.UnitTests.IO.Json
 {
@@ -48,9 +48,11 @@ namespace Neo.UnitTests.IO.Json
         [TestMethod]
         public void TestAdd()
         {
-            var jArray = new JArray();
-            jArray.Add(alice);
-            jArray.Add(bob);
+            var jArray = new JArray
+            {
+                alice,
+                bob
+            };
             var jAlice = jArray[0];
             var jBob = jArray[1];
             jAlice["name"].ToString().Should().Be(alice["name"].ToString());
@@ -104,9 +106,10 @@ namespace Neo.UnitTests.IO.Json
         [TestMethod]
         public void TestContains()
         {
-            var jArray = new JArray();
-            jArray.Add(alice);
-
+            var jArray = new JArray
+            {
+                alice
+            };
             jArray.Contains(alice).Should().BeTrue();
             jArray.Contains(bob).Should().BeFalse();
         }
