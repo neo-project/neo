@@ -29,7 +29,7 @@ namespace Neo.SDK.TX
         /// </summary>
         public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script)
         {
-            uint height = rpcClient.GetBlockCount();
+            uint height = rpcClient.GetBlockCount() - 1;
             Transaction tx = new Transaction
             {
                 Version = 0,
