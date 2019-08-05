@@ -6,9 +6,9 @@ namespace Neo.Network.RPC.Models
     public class RpcPlugin
     {
         public string Name { get; set; }
-        
+
         public string Version { get; set; }
-        
+
         public string[] Interfaces { get; set; }
 
         public JObject ToJson()
