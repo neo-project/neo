@@ -221,9 +221,9 @@ namespace Neo.Consensus
             Transactions = new Dictionary<UInt256, Transaction>();
             Block.Transactions = new Transaction[0];
 
-            // We need to know the expected header size
+            // We need to know the expected block size
 
-            var fixedSize =
+            var blockSize =
                 // BlockBase
                 sizeof(uint) +       //Version
                 UInt256.Length +     //PrevHash
@@ -234,24 +234,27 @@ namespace Neo.Consensus
                 1 +                  //
                 _witnessSize;        //Witness
 
-            fixedSize +=
+            blockSize +=
                 // Block
                 Block.ConsensusData.Size + //ConsensusData
                 IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Tx => ensure that the var size grows without exceed the max size
+
+            // Iterate transaction until reach the size
 
             for (int x = 0, max = TransactionHashes.Length; x < max; x++)
             {
                 var tx = transactions[x];
 
                 // Check if maximum block size has been already exceeded with the current selected set
-                fixedSize += tx.Size;
-                if (fixedSize > maxBlockSize) break;
+                blockSize += tx.Size;
+                if (blockSize > maxBlockSize) break;
 
                 TransactionHashes[x] = tx.Hash;
                 Transactions.Add(tx.Hash, tx);
             }
 
-            // Truncate null values
+            // Truncate null values [Tx1,Tx2,null,null,null]
+
             if (TransactionHashes.Length > Transactions.Count)
                 Array.Resize(ref TransactionHashes, Transactions.Count);
         }
