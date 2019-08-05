@@ -7,7 +7,9 @@ namespace Neo.Cryptography
 {
     public class PublicKey : ISerializable
     {
-        // standard elliptic curve: secp256r1
+        /// <summary>
+        /// Standard elliptic curve: secp256r1
+        /// </summary>
         public ECPoint Data;
 
         public int Size => Data.Size;

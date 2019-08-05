@@ -6,7 +6,9 @@ namespace Neo.Cryptography
 {
     public class Signature : ISerializable
     {
-        // standard size for secp256r1: 64 bytes 
+        /// <summary>
+        /// Standard size for secp256r1: 64 bytes 
+        /// </summary>
         public byte[] Data;
 
         public int Size => Data.Length;
