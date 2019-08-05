@@ -104,9 +104,9 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Gets the number of blocks in the main chain.
         /// </summary>
-        public virtual int GetBlockCount()
+        public virtual uint GetBlockCount()
         {
-            return (int)RpcSend("getblockcount").AsNumber();
+            return (uint)RpcSend("getblockcount").AsNumber();
         }
 
         /// <summary>
@@ -252,9 +252,9 @@ namespace Neo.Network.RPC
         /// Returns the result after passing a script through the VM.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        public virtual RpcInvokeResult InvokeScript(string script)
+        public virtual RpcInvokeResult InvokeScript(byte[] script)
         {
-            return RpcInvokeResult.FromJson(RpcSend("invokescript", script));
+            return RpcInvokeResult.FromJson(RpcSend("invokescript", script.ToHexString()));
         }
 
         /// <summary>

@@ -1,13 +1,14 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Moq.Protected;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
 using Neo.SDK.TX;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using System.Threading;
+using Neo.VM;
+using System.Numerics;
 
 namespace Neo.UnitTests.SDK.TX
 {
@@ -16,24 +17,13 @@ namespace Neo.UnitTests.SDK.TX
     {
         TxManager txManager;
         Mock<RpcClient> rpcClientMock;
-        Mock<UInt160> senderMock;
+        readonly UInt160 sender = UInt160.Zero;
 
         [TestInitialize]
         public void TestSetup()
         {
             rpcClientMock = new Mock<RpcClient>(MockBehavior.Strict, "http://seed1.neo.org:10331");
-            senderMock = new Mock<UInt160>(MockBehavior.Strict);
-            MockHashCode();
-            MockInvoke1();
-            txManager = new TxManager(rpcClientMock.Object, senderMock.Object);
-        }
-
-        private void MockHashCode()
-        {
-            senderMock
-                .Setup(p => p.GetHashCode())
-                .Returns(0)
-                .Verifiable();
+            txManager = new TxManager(rpcClientMock.Object, sender);
         }
 
         private void MockHeight()
@@ -44,17 +34,23 @@ namespace Neo.UnitTests.SDK.TX
                .Verifiable();
         }
 
-        private void MockInvoke1()
+        private void MockGasBalance()
         {
-            string script = "14000000000000000000000000000000000000000051c10962616c616e63654f66142582d1b275e86c8f0e93a9b2facd5fdb760976a168627d5b52";
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitAppCall(NativeContract.GAS.Hash, "balanceOf", sender);
+                script = sb.ToArray();
+            }
+
             RpcInvokeResult result = new RpcInvokeResult()
             {
-                Stack = new RpcStack[1]
+                Stack = new[]
                 {
-                    new RpcStack()
+                    new ContractParameter()
                     {
-                        Type = "Integer",
-                        Value = "10000000000000000"
+                        Type = ContractParameterType.Integer,
+                        Value = BigInteger.Parse("10000000000000000")
                     }
                 }
             };
@@ -65,12 +61,36 @@ namespace Neo.UnitTests.SDK.TX
                 .Verifiable();
         }
 
-        private void MockInvoke2()
+        private void MockEmptyScript()
         {
-            string script = "00";
+            byte[] script = new byte[1];
+
             RpcInvokeResult result = new RpcInvokeResult()
             {
                 GasConsumed = "100"
+            };
+
+            rpcClientMock
+                .Setup(p => p.InvokeScript(script))
+                .Returns(result)
+                .Verifiable();
+        }
+
+        private void MockFeePerByte()
+        {
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitAppCall(NativeContract.Policy.Hash, "getFeePerByte");
+                script = sb.ToArray();
+            }
+
+            RpcInvokeResult result = new RpcInvokeResult()
+            {
+                Stack = new[] {new ContractParameter() {
+                      Type = ContractParameterType.Integer,
+                      Value = (BigInteger)1000
+                 }}
             };
 
             rpcClientMock
@@ -83,7 +103,9 @@ namespace Neo.UnitTests.SDK.TX
         public void TestMakeTransaction()
         {
             MockHeight();
-            MockInvoke2();
+            MockEmptyScript();
+            MockFeePerByte();
+            MockGasBalance();
 
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
@@ -104,13 +126,6 @@ namespace Neo.UnitTests.SDK.TX
             Assert.AreEqual(size * 1000, tx.NetworkFee);
         }
 
-        [TestMethod]
-        public void TestMakeScript()
-        {
-            byte[] testScript = txManager.MakeScript(NativeContract.GAS.Hash, "balanceOf", senderMock.Object);
 
-            Assert.AreEqual("14000000000000000000000000000000000000000051c10962616c616e63654f66142582d1b275e86c8f0e93a9b2facd5fdb760976a168627d5b52",
-                            testScript.ToHexString());
-        }
     }
 }

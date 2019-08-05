@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using Neo.Ledger;
+﻿using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
-using Neo.VM;
-using Neo.Wallets;
-using Neo.Persistence;
-using Neo.SmartContract.Native;
 using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
-using Neo.IO;
+using Neo.SDK.SC;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using System;
 
 namespace Neo.SDK.TX
 {
@@ -21,39 +14,33 @@ namespace Neo.SDK.TX
     /// </summary>
     public class TxManager
     {
-        public long FeePerByte { get; set; }
-
         private static readonly Random rand = new Random();
-        private readonly RpcClient _neoRpc;
-        private readonly UInt160 _sender;
-        private readonly BigInteger _gasBalance;
+        private readonly RpcClient rpcClient;
+        private readonly UInt160 sender;
 
-        public TxManager(RpcClient neoRpc, UInt160 sender, long feePerByte = 1000)
+        public TxManager(RpcClient neoRpc, UInt160 sender)
         {
-            FeePerByte = feePerByte;
-            _neoRpc = neoRpc;
-            _sender = sender;
-            _gasBalance = GetTokenBalance(NativeContract.GAS.Hash, _sender);
+            rpcClient = neoRpc;
+            this.sender = sender;
         }
-        
+
         /// <summary>
         /// Create an unsigned Transaction object with given parameters.
         /// </summary>
         public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script)
         {
-            uint height = (uint)_neoRpc.GetBlockCount();
+            uint height = rpcClient.GetBlockCount();
             Transaction tx = new Transaction
             {
                 Version = 0,
                 Nonce = (uint)rand.Next(),
                 Script = script,
-                Sender = _sender,
+                Sender = sender,
                 ValidUntilBlock = height + Transaction.MaxValidUntilBlockIncrement,
                 Attributes = attributes
             };
-            
-            // call rpc to test run 
-            RpcInvokeResult result = _neoRpc.InvokeScript(script.ToHexString());
+
+            RpcInvokeResult result = rpcClient.InvokeScript(script);
             tx.SystemFee = Math.Max(long.Parse(result.GasConsumed) - ApplicationEngine.GasFree, 0);
             if (tx.SystemFee > 0)
             {
@@ -66,35 +53,13 @@ namespace Neo.SDK.TX
             }
             UInt160[] hashes = tx.GetScriptHashesForVerifying(null);
             int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
-            
-            tx.NetworkFee += size * FeePerByte; // FeePerByte:1000, hard coded here
-            if (_gasBalance >= tx.SystemFee + tx.NetworkFee) return tx;
+
+            long feePerByte = new PolicyAPI(rpcClient).GetFeePerByte();
+            tx.NetworkFee += size * feePerByte;
+            var gasBalance = new Nep5API(rpcClient).BalanceOf(NativeContract.GAS.Hash, sender);
+            if (gasBalance >= tx.SystemFee + tx.NetworkFee) return tx;
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        /// <summary>
-        /// Generate scripts to call a specific method from a specific contract.
-        /// </summary>
-        public byte[] MakeScript(UInt160 scriptHash, string operation, params object[] args)
-        {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                if (args.Length > 0)
-                    sb.EmitAppCall(scriptHash, operation, args);
-                else
-                    sb.EmitAppCall(scriptHash, operation);
-                return sb.ToArray();
-            }
-        }
-
-        /// <summary>
-        /// Use RPC method to get the balance of a specific NEP-5 token from a specific address.
-        /// </summary>
-        private BigInteger GetTokenBalance(UInt160 assetId, UInt160 account)
-        {
-            byte[] balanceScript = MakeScript(NativeContract.GAS.Hash, "balanceOf", account);
-            BigInteger balance = BigInteger.Parse(_neoRpc.InvokeScript(balanceScript.ToHexString()).Stack.Single().Value);
-            return balance;
-        }
     }
 }
