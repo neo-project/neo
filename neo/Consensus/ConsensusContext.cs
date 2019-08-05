@@ -337,7 +337,7 @@ namespace Neo.Consensus
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
-                if (_witnessSize == 0 || pv != null && pv.Length != Validators.Length)
+                if (_witnessSize == 0 || (pv != null && pv.Length != Validators.Length))
                 {
                     // Compute the expected size of the witness
                     using (ScriptBuilder sb = new ScriptBuilder())
