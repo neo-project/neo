@@ -10,7 +10,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.IO;
 using System.Linq;
 using VMArray = Neo.VM.Types.Array;
 
@@ -345,22 +344,7 @@ namespace Neo.SmartContract
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(engine, context)) return false;
                 byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-                byte[] prefix_key;
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    int index = 0;
-                    int remain = prefix.Length;
-                    while (remain >= 16)
-                    {
-                        ms.Write(prefix, index, 16);
-                        ms.WriteByte(16);
-                        index += 16;
-                        remain -= 16;
-                    }
-                    if (remain > 0)
-                        ms.Write(prefix, index, remain);
-                    prefix_key = context.ScriptHash.ToArray().Concat(ms.ToArray()).ToArray();
-                }
+                byte[] prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
                 StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.Take(prefix.Length).SequenceEqual(prefix)).GetEnumerator()));
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
                 return true;
