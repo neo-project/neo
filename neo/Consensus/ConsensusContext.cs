@@ -327,7 +327,6 @@ namespace Neo.Consensus
                 if (_fakeWitness == null || pv != null && pv.Length != Validators.Length)
                 {
                     // If there are no fake witness or validators change, we need to compute the fakeWitness
-                    Contract contract = Contract.CreateMultiSigContract(M, Validators);
                     using (ScriptBuilder sb = new ScriptBuilder())
                     {
                         for (int x = 0; x < M; x++)
@@ -337,7 +336,7 @@ namespace Neo.Consensus
                         _fakeWitness = new Witness
                         {
                             InvocationScript = sb.ToArray(),
-                            VerificationScript = contract.Script ?? new byte[0]
+                            VerificationScript = Contract.CreateMultiSigRedeemScript(M, Validators)
                         };
                     }
                 }
