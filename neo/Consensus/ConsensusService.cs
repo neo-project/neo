@@ -81,11 +81,10 @@ namespace Neo.Consensus
                 if (context.IsPrimary || context.WatchOnly) return true;
 
                 // Check policy
-                var block = context.CreateBlock();
 
-                if (block.Size > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
+                if (context.GetExpectedBlockSize(context.Transactions.Values) > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
                 {
-                    Log($"rejected block: {block.Hash}{Environment.NewLine} The size '{block.Size}' exceed the policy", LogLevel.Warning);
+                    Log($"rejected block: {context.Block.Index}{Environment.NewLine} The size exceed the policy", LogLevel.Warning);
                     RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
                     return false;
                 }

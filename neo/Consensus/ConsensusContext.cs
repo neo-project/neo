@@ -208,6 +208,40 @@ namespace Neo.Consensus
         }
 
         /// <summary>
+        /// Return the expected block size
+        /// </summary>
+        internal int GetExpectedBlockSize(IEnumerable<Transaction> txs = null)
+        {
+            var blockSize =
+                // BlockBase
+                sizeof(uint) +       //Version
+                UInt256.Length +     //PrevHash
+                UInt256.Length +     //MerkleRoot
+                sizeof(ulong) +      //Timestamp
+                sizeof(uint) +       //Index
+                UInt160.Length +     //NextConsensus
+                1 +                  //
+                _witnessSize;        //Witness
+
+            blockSize +=
+                // Block
+                Block.ConsensusData.Size; //ConsensusData
+
+            // Txs
+
+            if (txs != null)
+            {
+                blockSize += txs.Sum(u => u.Size)+ IO.Helper.GetVarSize(txs.Count() + 1);
+            }
+            else
+            {
+                blockSize += IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Tx => ensure that the var size grows without exceed the max size
+            }
+
+            return blockSize;
+        }
+
+        /// <summary>
         /// Prevent that block exceed the max size
         /// </summary>
         /// <param name="txs">Ordered transactions</param>
@@ -223,21 +257,7 @@ namespace Neo.Consensus
 
             // We need to know the expected block size
 
-            var blockSize =
-                // BlockBase
-                sizeof(uint) +       //Version
-                UInt256.Length +     //PrevHash
-                UInt256.Length +     //MerkleRoot
-                sizeof(ulong) +      //Timestamp
-                sizeof(uint) +       //Index
-                UInt160.Length +     //NextConsensus
-                1 +                  //
-                _witnessSize;        //Witness
-
-            blockSize +=
-                // Block
-                Block.ConsensusData.Size + //ConsensusData
-                IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Tx => ensure that the var size grows without exceed the max size
+            var blockSize = GetExpectedBlockSize();
 
             // Iterate transaction until reach the size
 
