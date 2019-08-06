@@ -322,17 +322,17 @@ namespace Neo.Wallets
                 int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
                 foreach (UInt160 hash in hashes)
                 {
-                    script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
-                    if (script is null) continue;
-                    if (script.IsSignatureContract())
+                    byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
+                    if (witness_script is null) continue;
+                    if (witness_script.IsSignatureContract())
                     {
-                        size += 66 + script.GetVarSize();
+                        size += 66 + witness_script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
                     }
-                    else if (script.IsMultiSigContract(out int m, out int n))
+                    else if (witness_script.IsMultiSigContract(out int m, out int n))
                     {
                         int size_inv = 65 * m;
-                        size += IO.Helper.GetVarSize(size_inv) + size_inv + script.GetVarSize();
+                        size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
                         using (ScriptBuilder sb = new ScriptBuilder())
                             tx.NetworkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
