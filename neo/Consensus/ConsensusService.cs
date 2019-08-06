@@ -82,7 +82,7 @@ namespace Neo.Consensus
 
                 // Check policy
 
-                if (context.GetExpectedBlockSize(context.Transactions.Values) > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
+                if (context.GetExpectedBlockSize(true) > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
                 {
                     Log($"rejected block: {context.Block.Index}{Environment.NewLine} The size exceed the policy", LogLevel.Warning);
                     RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);

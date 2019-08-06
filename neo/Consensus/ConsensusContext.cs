@@ -210,7 +210,8 @@ namespace Neo.Consensus
         /// <summary>
         /// Return the expected block size
         /// </summary>
-        internal int GetExpectedBlockSize(IEnumerable<Transaction> txs = null)
+        /// <param name="computeTransactionSize">Compute the block size with the Transactions</param>
+        internal int GetExpectedBlockSize(bool computeTransactionSize)
         {
             var blockSize =
                 // BlockBase
@@ -225,17 +226,15 @@ namespace Neo.Consensus
 
             blockSize +=
                 // Block
-                Block.ConsensusData.Size; //ConsensusData
+                Block.ConsensusData.Size + //ConsensusData
+                IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Transactions count
+
 
             // Txs
 
-            if (txs != null)
+            if (computeTransactionSize)
             {
-                blockSize += txs.Sum(u => u.Size)+ IO.Helper.GetVarSize(txs.Count() + 1);
-            }
-            else
-            {
-                blockSize += IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Tx => ensure that the var size grows without exceed the max size
+                blockSize += Transactions.Values.Sum(u => u.Size) + IO.Helper.GetVarSize(Transactions.Count() + 1);
             }
 
             return blockSize;
@@ -257,7 +256,7 @@ namespace Neo.Consensus
 
             // We need to know the expected block size
 
-            var blockSize = GetExpectedBlockSize();
+            var blockSize = GetExpectedBlockSize(false);
 
             // Iterate transaction until reach the size
 
