@@ -330,11 +330,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 .ToByteArray();
 
                 // Make transaction
-
-                // could use this...
-                // public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
-
-                // ------------------------
                 // Manually creating script
 
                 byte[] script;
@@ -524,11 +519,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 .ToByteArray();
 
                 // Make transaction
-
-                // could use this...
-                // public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
-
-                // ------------------------
                 // Manually creating script
 
                 byte[] script;

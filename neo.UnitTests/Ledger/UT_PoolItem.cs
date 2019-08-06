@@ -136,7 +136,6 @@ namespace Neo.UnitTests.Ledger
 
             tx.Attributes.Length.Should().Be(0);
             tx.Cosigners.Length.Should().Be(0);
-            //tx.Attributes[0].Usage.Should().Be(TransactionAttributeUsage.Cosigner);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();
