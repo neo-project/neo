@@ -145,10 +145,7 @@ namespace Neo.SmartContract
         {
             if (engine.ScriptContainer is Transaction tx)
             {
-                Cosigner usage = tx.Attributes
-                    .Where(p => p.Usage == TransactionAttributeUsage.Cosigner)
-                    .Select(p => p.Data.AsSerializable<Cosigner>())
-                    .FirstOrDefault(p => p.Account.Equals(hash));
+                Cosigner usage = tx.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
                 if (usage is null) return false;
                 if (usage.Scopes.HasFlag(WitnessScope.Global))
                     return true;

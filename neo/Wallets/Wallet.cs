@@ -223,7 +223,7 @@ namespace Neo.Wallets
             }
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                HashSet<UInt160> cosigners = new HashSet<UInt160>();
+                HashSet<UInt160> cosignerList = new HashSet<UInt160>();
                 byte[] script;
                 List<(UInt160 Account, BigInteger Value)> balances_gas = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -250,7 +250,7 @@ namespace Neo.Wallets
                         {
                             balances = balances.OrderBy(p => p.Value).ToList();
                             var balances_used = FindPayingAccounts(balances, output.Value.Value);
-                            cosigners.UnionWith(balances_used.Select(p => p.Account));
+                            cosignerList.UnionWith(balances_used.Select(p => p.Account));
                             foreach (var (account, value) in balances_used)
                             {
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
@@ -265,22 +265,19 @@ namespace Neo.Wallets
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-                var attributes = cosigners.Select(p =>
-                        new TransactionAttribute
-                        {
-                            Usage = TransactionAttributeUsage.Cosigner,
-                            Data = new Cosigner
-                            {
-                                // default access for transfers should be valid only for first invocation
-                                Scopes = WitnessScope.CalledByEntry,
-                                Account = new UInt160(p.ToArray())
-                            }.ToArray()
-                        }).ToArray();
-                return MakeTransaction(snapshot, attributes, script, balances_gas);
+                var cosigners = cosignerList.Select(p =>
+                         new Cosigner
+                         {
+                             // default access for transfers should be valid only for first invocation
+                             Scopes = WitnessScope.CalledByEntry,
+                             Account = new UInt160(p.ToArray())
+                         }).ToArray();
+
+                return MakeTransaction(snapshot, new TransactionAttribute[0], script, cosigners, balances_gas);
             }
         }
 
-        public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
+        public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, Cosigner[] cosigners = null, UInt160 sender = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -296,11 +293,11 @@ namespace Neo.Wallets
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, attributes, script, balances_gas);
+                return MakeTransaction(snapshot, attributes, script, cosigners, balances_gas);
             }
         }
 
-        private Transaction MakeTransaction(Snapshot snapshot, TransactionAttribute[] attributes, byte[] script, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(Snapshot snapshot, TransactionAttribute[] attributes, byte[] script, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
@@ -311,8 +308,9 @@ namespace Neo.Wallets
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,
+                    Cosigners = cosigners ?? new Cosigner[0],
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = attributes
+                    Attributes = attributes ?? new TransactionAttribute[0]
                 };
 
                 // will try to execute 'transfer' script to check if it works
@@ -335,7 +333,7 @@ namespace Neo.Wallets
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
                 // base size for transaction: includes const_header + attributes (including cosigners with scopes) + script + { hashes (what's this ???) }
-                int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+                int size = Transaction.HeaderSize + attributes.GetVarSize() + cosigners.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
 
                 foreach (UInt160 hash in hashes)
                 {
