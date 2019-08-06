@@ -227,7 +227,11 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.Version.StartHeight)
+            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks)
+                && (Blockchain.Singleton.HeaderHeight < session.Version.StartHeight
+                    || (Blockchain.Singleton.Height == Blockchain.Singleton.HeaderHeight
+                        && Blockchain.Singleton.HeaderHeight >= sessions.Select(x => x.Value.Version.StartHeight).Max()
+                        && TimeProvider.Current.UtcNow.ToTimestamp() - 60 >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)))
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
