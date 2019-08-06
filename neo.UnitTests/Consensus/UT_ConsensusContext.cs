@@ -154,6 +154,8 @@ namespace Neo.UnitTests.Consensus
             // Ensure length
 
             var block = SignBlock(context);
+
+            Assert.AreEqual(context.GetExpectedBlockSize(true), block.Size);
             Assert.IsTrue(block.Size < NativeContract.Policy.GetMaxBlockSize(context.Snapshot));
         }
     }
