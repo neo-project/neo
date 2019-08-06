@@ -229,12 +229,11 @@ namespace Neo.Consensus
                 Block.ConsensusData.Size + //ConsensusData
                 IO.Helper.GetVarSize(TransactionHashes.Length + 1); // Transactions count
 
-
             // Txs
 
             if (computeTransactionSize)
             {
-                blockSize += Transactions.Values.Sum(u => u.Size) + IO.Helper.GetVarSize(Transactions.Count() + 1);
+                blockSize += Transactions.Values.Sum(u => u.Size);
             }
 
             return blockSize;
