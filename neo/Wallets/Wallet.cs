@@ -316,7 +316,9 @@ namespace Neo.Wallets
                             }
                             ApplicationEngine engine = ApplicationEngine.Run(script);
                             if (engine.State.HasFlag(VMState.FAULT)) return null;
-                            balances.Add((account, engine.ResultStack.Pop().GetBigInteger()));
+                            var result = engine.ResultStack.Pop().GetBigInteger();
+                            if (result == 0) continue;
+                            balances.Add((account, result));
                         }
                         BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
                         if (sum < output.Value) return null;
