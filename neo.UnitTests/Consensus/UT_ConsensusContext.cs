@@ -2,9 +2,9 @@ using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Consensus;
-using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
@@ -114,18 +114,31 @@ namespace Neo.UnitTests.Consensus
             return tx;
         }
 
-        private void SignBlock(ConsensusContext context)
+        private Block SignBlock(ConsensusContext context)
         {
             context.Block.MerkleRoot = null;
 
             for (int x = 0; x < _validatorKeys.Length; x++)
             {
                 _context.MyIndex = x;
-                _context.SetKeyPar(_validatorKeys[x]);
 
                 var com = _context.MakeCommit();
                 _context.CommitPayloads[_context.MyIndex] = com;
             }
+
+            // Manual block sign
+
+            Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
+            ContractParametersContext sc = new ContractParametersContext(context.Block);
+            for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
+            {
+                if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber != context.ViewNumber) continue;
+                sc.AddSignature(contract, context.Validators[i], context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
+                j++;
+            }
+            context.Block.Witness = sc.GetWitnesses()[0];
+            context.Block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+            return context.Block;
         }
 
         private void EnsureContext(ConsensusContext context, params Transaction[] expected)
@@ -140,8 +153,7 @@ namespace Neo.UnitTests.Consensus
 
             // Ensure length
 
-            SignBlock(context);
-            var block = context.CreateBlock();
+            var block = SignBlock(context);
             Assert.IsTrue(block.Size < NativeContract.Policy.GetMaxBlockSize(context.Snapshot));
         }
     }

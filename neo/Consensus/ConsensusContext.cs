@@ -317,11 +317,6 @@ namespace Neo.Consensus
             });
         }
 
-        internal void SetKeyPar(KeyPair key)
-        {
-            keyPair = key;
-        }
-
         public void Reset(byte viewNumber)
         {
             if (viewNumber == 0)
@@ -363,13 +358,13 @@ namespace Neo.Consensus
                     for (int i = 0; i < Validators.Length; i++)
                         LastSeenMessage[i] = -1;
                 }
-                SetKeyPar(null);
+                keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
                     WalletAccount account = wallet?.GetAccount(Validators[i]);
                     if (account?.HasKey != true) continue;
                     MyIndex = i;
-                    SetKeyPar(account.GetKey());
+                    keyPair = account.GetKey();
                     break;
                 }
             }
