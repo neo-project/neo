@@ -1,6 +1,8 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests.IO.Caching
 {
@@ -82,6 +84,46 @@ namespace Neo.UnitTests.IO.Caching
             i.Should().Be(1);
             od.TryGetValue("d", out uint j).Should().BeFalse();
             j.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestCollectionAddAndContains()
+        {
+            var pair = new KeyValuePair<string, uint>("d", 4);
+            ICollection<KeyValuePair<string, uint>> collection = od;
+            collection.Add(pair);
+            collection.Contains(pair).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestCollectionCopyTo()
+        {
+            var arr = new KeyValuePair<string, uint>[3];
+            ICollection<KeyValuePair<string, uint>> collection = od;
+            collection.CopyTo(arr, 0);
+            arr[0].Key.Should().Be("a");
+            arr[0].Value.Should().Be(1);
+            arr[1].Key.Should().Be("b");
+            arr[1].Value.Should().Be(2);
+            arr[2].Key.Should().Be("c");
+            arr[2].Value.Should().Be(3);
+        }
+
+        [TestMethod]
+        public void TestCollectionRemove()
+        {
+            ICollection<KeyValuePair<string, uint>> collection = od;
+            var pair = new KeyValuePair<string, uint>("a", 1);
+            collection.Remove(pair);
+            collection.Contains(pair).Should().BeFalse();
+            collection.Count.Should().Be(2);
+        }
+
+        [TestMethod]
+        public void TestGetEnumerator()
+        {
+            IEnumerable collection = od;
+            collection.GetEnumerator().MoveNext().Should().BeTrue();
         }
     }
 }

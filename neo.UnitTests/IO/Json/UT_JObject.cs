@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using System;
 using System.IO;
-using System.Reflection;
 
 namespace Neo.UnitTests.IO.Json
 {
