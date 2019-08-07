@@ -128,6 +128,20 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.Result.Should().BeTrue();
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // New validator
+            
+            // Check GetRegisteredValidators
+
+            var validators = NativeContract.NEO.GetRegisteredValidators(snapshot).OrderBy(u => u.PublicKey).ToArray();
+            var check = Blockchain.StandbyValidators.Select(u => u.EncodePoint(true)).ToList();
+            check.Add(point); // Add the new member
+
+            for (int x = 0; x < validators.Length; x++)
+            {
+                Assert.AreEqual(1, check.RemoveAll(u => u.SequenceEqual(validators[x].PublicKey.EncodePoint(true))));
+                Assert.AreEqual(0, validators[x].Votes);
+            }
+
+            Assert.AreEqual(0, check.Count);
         }
 
         [TestMethod]

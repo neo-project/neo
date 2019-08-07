@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native.Tokens
                 }
                 amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
             }
-            amount += GAS.GetSysFeeAmount(snapshot, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(snapshot, start - 1));
+            amount += (GAS.GetSysFeeAmount(snapshot, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(snapshot, start - 1))) / GAS.Factor;
             return value * amount * GAS.Factor / TotalAmount;
         }
 
@@ -201,7 +201,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(Snapshot snapshot)
         {
-            return snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
+            byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, new[] { Prefix_Validator });
+            return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
                 ValidatorState.FromByteArray(p.Value.Value).Votes

@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
+using System.Collections;
 using System.Linq;
 
 namespace Neo.UnitTests.IO.Caching
@@ -81,10 +82,36 @@ namespace Neo.UnitTests.IO.Caching
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x02
             });
-            var set = new FIFOSet<UInt256>(1, 1);
-            set.Add(a);
-            set.Add(b);
+            var set = new FIFOSet<UInt256>(1, 1)
+            {
+                a,
+                b
+            };
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b });
+        }
+
+        [TestMethod]
+        public void TestGetEnumerator()
+        {
+            var a = new UInt256(new byte[32] {
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01
+            });
+            var b = new UInt256(new byte[32] {
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x02
+            });
+            var set = new FIFOSet<UInt256>(1, 1)
+            {
+                a,
+                b
+            };
+            IEnumerable ie = set;
+            ie.GetEnumerator().Should().NotBeNull();
         }
 
         [TestMethod]
@@ -109,10 +136,12 @@ namespace Neo.UnitTests.IO.Caching
                 0x01, 0x03
             });
 
-            var set = new FIFOSet<UInt256>(10);
-            set.Add(a);
-            set.Add(b);
-            set.Add(c);
+            var set = new FIFOSet<UInt256>(10)
+            {
+                a,
+                b,
+                c
+            };
             set.ExceptWith(new UInt256[] { b, c });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a });
         }
