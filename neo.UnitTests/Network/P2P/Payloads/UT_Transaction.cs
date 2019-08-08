@@ -13,6 +13,7 @@ using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Numerics;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -712,6 +713,96 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, acc.ScriptHash, attributes, cosigners));
                 Assert.IsNull(tx);
             }
+        }
+
+        [TestMethod]
+        public void Transaction_Serialize_Deserialize_Simple()
+        {
+            // good and simple transaction
+            Transaction txSimple = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 0x01020304,
+                Attributes = new TransactionAttribute[0] { },
+                Cosigners = new Cosigner[0] { },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            byte[] sTx = txSimple.ToArray();
+
+            // detailed hexstring info (basic checking)
+            sTx.ToHexString().Should().Be("00" + // version
+            "04030201" + // nonce
+            "0000000000000000000000000000000000000000" + // sender
+            "00e1f50500000000" + // system fee (1 GAS)
+            "0100000000000000" + // network fee (1 satoshi)
+            "04030201" + // timelimit 
+            "00" + // no attributes
+            "00" + // no cosigners
+            "0151" + // push1 script
+            "00"); // no witnesses
+
+            // try to deserialize
+            Transaction tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx);
+
+            tx2.Version.Should().Be(0x00);
+            tx2.Nonce.Should().Be(0x01020304);
+            tx2.Sender.Should().Be(UInt160.Zero);
+            tx2.SystemFee.Should().Be(0x0000000005f5e100); // 1 GAS (long)BigInteger.Pow(10, 8)
+            tx2.NetworkFee.Should().Be(0x0000000000000001);
+            tx2.ValidUntilBlock.Should().Be(0x01020304);
+            tx2.Attributes.Should().BeEquivalentTo(new TransactionAttribute[0] { });
+            tx2.Cosigners.Should().BeEquivalentTo(new Cosigner[0] { });
+            tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
+            tx2.Witnesses.Should().BeEquivalentTo(new Witness[0] { });
+        }
+
+        [TestMethod]
+        public void Transaction_Serialize_Deserialize_DistinctCosigners()
+        {
+            // cosigners must be distinct (regarding account)
+
+            Transaction txDoubleCosigners = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 0x01020304,
+                Attributes = new TransactionAttribute[0] { },
+                Cosigners = new Cosigner[] {
+                    new Cosigner
+                    {
+                        Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
+                        Scopes = WitnessScope.Global
+                    },
+                    new Cosigner
+                    {
+                        Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
+                        Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
+                    }
+                },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            byte[] sTx = txDoubleCosigners.ToArray();
+
+            // no need for detailed hexstring here (see basic tests for it)
+            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f505000000000100000000000000040302010002090807060504030201000908070605040302010080090807060504030201000908070605040302010001015100");
+
+            // back to transaction (should fail, due to non-distinct cosigners)
+            Transaction tx2 = null;
+            Assert.ThrowsException<FormatException>(() =>
+                tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx)
+            );
+            Assert.IsNull(tx2);
         }
 
         [TestMethod]
