@@ -245,11 +245,12 @@ namespace Neo.Consensus
         /// <param name="txs">Ordered transactions</param>
         internal void EnsureMaxBlockSize(IEnumerable<Transaction> txs)
         {
-            var transactions = txs.ToList();
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
+            uint maxTransactionsPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot);
 
             // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
-            TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
+            txs = txs.Take((int)maxTransactionsPerBlock);
+            List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
             Block.Transactions = new Transaction[0];
 
@@ -259,22 +260,17 @@ namespace Neo.Consensus
 
             // Iterate transaction until reach the size
 
-            for (int x = 0, max = TransactionHashes.Length; x < max; x++)
+            foreach (Transaction tx in txs)
             {
-                var tx = transactions[x];
-
                 // Check if maximum block size has been already exceeded with the current selected set
                 blockSize += tx.Size;
                 if (blockSize > maxBlockSize) break;
 
-                TransactionHashes[x] = tx.Hash;
+                hashes.Add(tx.Hash);
                 Transactions.Add(tx.Hash, tx);
             }
 
-            // Truncate null values [Tx1,Tx2,null,null,null]
-
-            if (TransactionHashes.Length > Transactions.Count)
-                Array.Resize(ref TransactionHashes, Transactions.Count);
+            TransactionHashes = hashes.ToArray();
         }
 
         public ConsensusPayload MakePrepareRequest()
