@@ -272,10 +272,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(tx.Size, 257);
 
                 // will verify tx size, step by step
-                //tx.Size  =>  HeaderSize +
-                //Attributes.GetVarSize() +   //Attributes
-                //Script.GetVarSize() +       //Script
-                //Witnesses.GetVarSize();     //Witnesses
 
                 // Part I
                 Assert.AreEqual(Transaction.HeaderSize, 45);
@@ -369,9 +365,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses = data.GetWitnesses();
                 tx.Witnesses.Length.Should().Be(1);
 
-                //Assert.IsNotNull(tx.Witnesses);
-                //tx.Witnesses = new Witness[0]{};
-
                 // Fast check
                 Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
 
@@ -464,9 +457,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses = data.GetWitnesses();
                 tx.Witnesses.Length.Should().Be(1);
 
-                //Assert.IsNotNull(tx.Witnesses);
-                //tx.Witnesses = new Witness[0]{};
-
                 // Fast check
                 Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
 
@@ -558,9 +548,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get witnesses from signed 'data'
                 tx.Witnesses = data.GetWitnesses();
                 tx.Witnesses.Length.Should().Be(1);
-
-                //Assert.IsNotNull(tx.Witnesses);
-                //tx.Witnesses = new Witness[0]{};
 
                 // Fast check
                 Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
@@ -673,11 +660,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 .ToByteArray();
 
                 // Make transaction
-
-                // could use this...
-                // public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
-
-                // ------------------------
                 // Manually creating script
 
                 byte[] script;
@@ -699,7 +681,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 } };
 
                 // using this...
-                // public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
 
                 var tx = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], cosigners);
 
@@ -722,9 +703,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Attributes.Length.Should().Be(0);
                 // one cosigner must exist
                 tx.Cosigners.Length.Should().Be(1);
-
-                //Assert.IsNotNull(tx.Witnesses);
-                //tx.Witnesses = new Witness[0]{};
 
                 // Fast check
                 Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
@@ -779,11 +757,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 .ToByteArray();
 
                 // Make transaction
-
-                // could use this...
-                // public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
-
-                // ------------------------
                 // Manually creating script
 
                 byte[] script;
