@@ -14,6 +14,9 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] AllowedContracts;
         public ECPoint[] AllowedGroups;
 
+        // This limits maximum number of AllowedContracts or AllowedGroups here
+        private int MaxSubitems = 16;
+
         public int Size =>
             /*Account*/             UInt160.Length +
             /*Scopes*/              sizeof(WitnessScope) +
@@ -27,10 +30,10 @@ namespace Neo.Network.P2P.Payloads
             if (Scopes.HasFlag(WitnessScope.Global) && (Scopes & ~WitnessScope.Global) != 0)
                 throw new FormatException();
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
-                ? reader.ReadSerializableArray<UInt160>(16)
+                ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
                 : new UInt160[0];
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
-                ? reader.ReadSerializableArray<ECPoint>(16)
+                ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
                 : new ECPoint[0];
         }
 
