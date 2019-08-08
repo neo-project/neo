@@ -303,7 +303,7 @@ namespace Neo.Wallets
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
                     Attributes = attributes
                 };
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
