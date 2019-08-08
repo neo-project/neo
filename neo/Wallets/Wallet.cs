@@ -273,11 +273,11 @@ namespace Neo.Wallets
                              Account = new UInt160(p.ToArray())
                          }).ToArray();
 
-                return MakeTransaction(snapshot, new TransactionAttribute[0], script, cosigners, balances_gas);
+                return MakeTransaction(snapshot, script, new TransactionAttribute[0], cosigners, balances_gas);
             }
         }
 
-        public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, Cosigner[] cosigners = null, UInt160 sender = null)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -293,11 +293,11 @@ namespace Neo.Wallets
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, attributes, script, cosigners, balances_gas);
+                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas);
             }
         }
 
-        private Transaction MakeTransaction(Snapshot snapshot, TransactionAttribute[] attributes, byte[] script, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(Snapshot snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
@@ -308,9 +308,9 @@ namespace Neo.Wallets
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,
-                    Cosigners = cosigners ?? new Cosigner[0],
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = attributes ?? new TransactionAttribute[0]
+                    Attributes = attributes,
+                    Cosigners = cosigners
                 };
 
                 // will try to execute 'transfer' script to check if it works
