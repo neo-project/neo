@@ -278,8 +278,11 @@ namespace Neo.Consensus
         }
 
         private void TryToSaveFuturePayloads(ConsensusPayload payload)
-        {         
-            if (payload.BlockIndex > context.Block.Index)
+        {       
+            // Limit the maximum future payload to be saved, 
+            // avoiding caching payload when node is lagged behind by more than furtherPayloadToSave locks
+            uint furtherPayloadToSave = 10;
+            if ((payload.BlockIndex >= context.Block.Index + 1) && (payload.BlockIndex <= context.Block.Index + furtherPayloadToSave))
             {
                 ConsensusMessage futureMessage;
                 try
