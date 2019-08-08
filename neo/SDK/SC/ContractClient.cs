@@ -6,7 +6,7 @@ namespace Neo.SDK.SC
 {
     public class ContractClient
     {
-        readonly RpcClient rpcClient;
+        protected readonly RpcClient rpcClient;
 
         public ContractClient(RpcClient rpc)
         {

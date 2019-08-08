@@ -1,0 +1,21 @@
+﻿using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Neo.SDK.TX
+{
+    public class TransactionContext : ContractParametersContext
+    {
+        public TransactionContext(Transaction tx) : base(tx) { }
+
+        public override IReadOnlyList<UInt160> ScriptHashes
+        {
+            get
+            {
+                return Verifiable.GetScriptHashesForVerifying(null);
+            }
+        }
+    }
+}

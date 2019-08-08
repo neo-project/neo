@@ -73,7 +73,7 @@ namespace Neo.SmartContract
         }
 
         private UInt160[] _ScriptHashes = null;
-        public IReadOnlyList<UInt160> ScriptHashes
+        public virtual IReadOnlyList<UInt160> ScriptHashes
         {
             get
             {
@@ -97,6 +97,17 @@ namespace Neo.SmartContract
             ContextItem item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
+            return true;
+        }
+
+        public bool Add(Contract contract, params object[] parameters)
+        {
+            ContextItem item = CreateItem(contract);
+            if (item == null) return false;
+            for (int index = 0; index < parameters.Length; index++)
+            {
+                item.Parameters[index].Value = parameters[index];
+            }
             return true;
         }
 
