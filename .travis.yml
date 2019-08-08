@@ -10,16 +10,26 @@ osx_image: xcode9.1
 mono: none
 dotnet: 2.2.300
 
+env:
+- TEST_SUITE="without-cultures"
+- TEST_SUITE="cultures"
+
 before_install:
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
+script: |
+  if [[ "$TEST_SUITE" == cultures ]]; then 
+      dotnet restore
+      dotnet test
+  else
+      dotnet restore
+      find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
+      dotnet test -v n --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+  fi
+after_success: |
+  if [[ "$TEST_SUITE" == "without-cultures" ]]; then 
+    echo "Test Success - Branch($TRAVIS_BRANCH) Pull Request($TRAVIS_PULL_REQUEST) Tag($TRAVIS_TAG)"
+    bash <(curl -s https://codecov.io/bash) -v
+  fi
 
-script:
- - dotnet restore
- - find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
- - dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 
-after_success:
-  # After all tests OK, Send CodeDov report
-  - echo "Test Success - Branch($TRAVIS_BRANCH) Pull Request($TRAVIS_PULL_REQUEST) Tag($TRAVIS_TAG)"
-  - bash <(curl -s https://codecov.io/bash) -v
