@@ -351,7 +351,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(new TransactionAttribute[0], script, cosigners, acc.ScriptHash);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], cosigners);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -446,7 +446,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(new TransactionAttribute[0], script, cosigners, acc.ScriptHash);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], cosigners);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -545,7 +545,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // due to lack of a valid witness validation
                 Transaction tx = null;
                 Assert.ThrowsException<InvalidOperationException>(() =>
-                    tx = wallet.MakeTransaction(new TransactionAttribute[0], script, cosigners, acc.ScriptHash));
+                    tx = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], cosigners));
                 Assert.IsNull(tx);
             }
         }
@@ -605,7 +605,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // using this...
                 // public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
 
-                var tx = wallet.MakeTransaction(new TransactionAttribute[0], script, cosigners, acc.ScriptHash);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], cosigners);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -709,7 +709,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // expects FAULT on execution of 'transfer' Application script
                 // due to lack of a valid witness validation
                 Transaction tx = null;
-                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(attributes, script, cosigners, acc.ScriptHash));
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, acc.ScriptHash, attributes, cosigners));
                 Assert.IsNull(tx);
             }
         }
