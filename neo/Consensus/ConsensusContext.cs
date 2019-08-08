@@ -238,8 +238,8 @@ namespace Neo.Consensus
 
             blockSize +=
                 // Block
-                Block.ConsensusData.Size + //ConsensusData
-                IO.Helper.GetVarSize(expectedTransactions + 1); // Transactions count
+                Block.ConsensusData.Size +                      //ConsensusData
+                IO.Helper.GetVarSize(expectedTransactions + 1); //Transactions count
 
             return blockSize;
         }
