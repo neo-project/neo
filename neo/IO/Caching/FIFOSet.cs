@@ -43,8 +43,7 @@ namespace Neo.IO.Caching
 
         public bool HasItem(T item)
         {
-            if (dictionary.Contains(item)) return true;
-            return false;
+            return dictionary.Contains(item);
         }
 
         public void ExceptWith(IEnumerable<UInt256> hashes)
