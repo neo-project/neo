@@ -805,6 +805,89 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsNull(tx2);
         }
 
+
+        [TestMethod]
+        public void Transaction_Serialize_Deserialize_MaxSizeCosigners()
+        {
+            // cosigners must respect count
+
+            int maxCosigners = 16;
+
+            // --------------------------------------
+            // this should pass (respecting max size)
+
+            var cosigners1 = new Cosigner[maxCosigners];
+            for (int i = 0; i < cosigners1.Length; i++)
+            {
+                string hex = i.ToString("X4");
+                while (hex.Length < 40)
+                    hex = hex.Insert(0, "0");
+                cosigners1[i] = new Cosigner
+                {
+                    Account = UInt160.Parse(hex)
+                };
+            }
+
+            Transaction txCosigners1 = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 0x01020304,
+                Attributes = new TransactionAttribute[0] { },
+                Cosigners = cosigners1, // max + 1 (should fail)
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            byte[] sTx1 = txCosigners1.ToArray();
+
+            // back to transaction (should fail, due to non-distinct cosigners)
+            Transaction tx1 = Neo.IO.Helper.AsSerializable<Transaction>(sTx1);
+            Assert.IsNotNull(tx1);
+
+            // ----------------------------
+            // this should fail (max + 1)
+
+            var cosigners = new Cosigner[maxCosigners + 1];
+            for (var i = 0; i < maxCosigners + 1; i++)
+            {
+                string hex = i.ToString("X4");
+                while (hex.Length < 40)
+                    hex = hex.Insert(0, "0");
+                cosigners[i] = new Cosigner
+                {
+                    Account = UInt160.Parse(hex)
+                };
+            }
+
+            Transaction txCosigners = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 0x01020304,
+                Attributes = new TransactionAttribute[0] { },
+                Cosigners = cosigners, // max + 1 (should fail)
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            byte[] sTx2 = txCosigners.ToArray();
+
+            // back to transaction (should fail, due to non-distinct cosigners)
+            Transaction tx2 = null;
+            Assert.ThrowsException<FormatException>(() =>
+                tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx2)
+            );
+            Assert.IsNull(tx2);
+        }
+
+
         [TestMethod]
         public void ToJson()
         {
