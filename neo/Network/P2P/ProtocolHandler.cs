@@ -254,8 +254,7 @@ namespace Neo.Network.P2P
         private void OnInvMessageReceived(InvPayload payload)
         {
             UInt256[] hashes = payload.Hashes.Where(p => knownHashes.Add(p) && !sentHashes.HasItem(p)).ToArray();
-            bool sentByMe = payload.Hashes.Any(p => sentHashes.HasItem(p));
-            if (hashes.Length == 0 || sentByMe) return;
+            if (hashes.Length == 0) return;
             switch (payload.Type)
             {
                 case InventoryType.Block:
