@@ -35,7 +35,7 @@ namespace Neo.SDK.TX
         /// </summary>
         public TxManager MakeTransaction(TransactionAttribute[] attributes, byte[] script, long networkFee)
         {
-            uint height = rpcClient.GetBlockCount();
+            uint height = rpcClient.GetBlockCount() - 1;
             Tx = new Transaction
             {
                 Version = 0,
