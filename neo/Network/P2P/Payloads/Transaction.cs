@@ -21,6 +21,10 @@ namespace Neo.Network.P2P.Payloads
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         private const int MaxTransactionAttributes = 16;
+        /// <summary>
+        /// Maximum number of cosigners that can be contained within a transaction
+        /// </summary>
+        private const int MaxCosigners = 16;
 
         public byte Version;
         public uint Nonce;
@@ -94,7 +98,7 @@ namespace Neo.Network.P2P.Payloads
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
-            Cosigners = reader.ReadSerializableArray<Cosigner>();
+            Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
