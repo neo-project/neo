@@ -41,7 +41,7 @@ namespace Neo.IO.Caching
             return true;
         }
 
-        public bool HasItem(T item)
+        public bool Contains(T item)
         {
             return dictionary.Contains(item);
         }
