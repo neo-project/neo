@@ -180,23 +180,20 @@ namespace Neo.Network.P2P
             UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
             foreach (UInt256 hash in hashes)
             {
-                Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory);
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
-                        if (inventory == null)
-                            inventory = Blockchain.Singleton.GetTransaction(hash);
-                        if (inventory is Transaction)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, inventory));
+                        IInventory inventoryTx = Blockchain.Singleton.GetTransaction(hash);
+                        if (inventoryTx is Transaction)
+                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, inventoryTx));
                         break;
                     case InventoryType.Block:
-                        if (inventory == null)
-                            inventory = Blockchain.Singleton.GetBlock(hash);
-                        if (inventory is Block block)
+                        IInventory inventoryBlock = Blockchain.Singleton.GetBlock(hash);
+                        if (inventoryBlock is Block block)
                         {
                             if (bloom_filter == null)
                             {
-                                Context.Parent.Tell(Message.Create(MessageCommand.Block, inventory));
+                                Context.Parent.Tell(Message.Create(MessageCommand.Block, inventoryBlock));
                             }
                             else
                             {
@@ -206,8 +203,9 @@ namespace Neo.Network.P2P
                         }
                         break;
                     case InventoryType.Consensus:
-                        if (inventory != null)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventory));
+                        Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory consensusInventory);
+                        if (consensusInventory != null)
+                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, consensusInventory));
                         break;
                 }
             }
