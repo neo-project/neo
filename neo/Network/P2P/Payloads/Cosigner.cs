@@ -14,6 +14,11 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] AllowedContracts;
         public ECPoint[] AllowedGroups;
 
+        public Cosigner()
+        {
+            this.Scopes = WitnessScope.Global;
+        }
+
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private int MaxSubitems = 16;
 

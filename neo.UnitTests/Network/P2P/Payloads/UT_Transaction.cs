@@ -866,7 +866,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f505000000000100000000000000040302010002090807060504030201000908070605040302010080090807060504030201000908070605040302010001015100");
+            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f505000000000100000000000000040302010002090807060504030201000908070605040302010000090807060504030201000908070605040302010001015100");
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
@@ -959,10 +959,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void FeeIsSignatureContract_TestScope_Global_CurrentHash_NEO()
+        public void FeeIsSignatureContract_TestScope_Global_Default()
         {
-            // this test tries the combination between Global and Custom Hash NEO
-            // Global is supposed to prevail (even when transferring GAS)
+            // Global is supposed to be default
+
+            Cosigner cosigner = new Cosigner();
+            cosigner.Scopes.Should().Be(WitnessScope.Global);
 
             var wallet = GenerateTestWallet();
             var snapshot = store.GetSnapshot();
@@ -1000,14 +1002,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     script = sb.ToArray();
                 }
 
-                // trying global scope
+                // default to global scope
                 var cosigners = new Cosigner[]{ new Cosigner
                 {
-                    Account = acc.ScriptHash,
-                    // This is an OR between Global and NEO asset
-                    // we will transfer GAS, so Global is supposed to allow that
-                    Scopes = WitnessScope.Global | WitnessScope.CustomContracts,
-                    AllowedContracts = new[] { NativeContract.NEO.Hash }
+                    Account = acc.ScriptHash
                 } };
 
                 // using this...
@@ -1049,7 +1047,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(verificationGas + sizeGas, 1278240);
+                Assert.AreEqual(verificationGas + sizeGas, 1257240);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }

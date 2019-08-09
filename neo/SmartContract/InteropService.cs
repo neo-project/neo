@@ -147,7 +147,7 @@ namespace Neo.SmartContract
             {
                 Cosigner usage = tx.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
                 if (usage is null) return false;
-                if (usage.Scopes.HasFlag(WitnessScope.Global)) return true;
+                if (usage.Scopes == WitnessScope.Global) return true;
                 if (usage.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
                     if (engine.CallingScriptHash == engine.EntryScriptHash)
