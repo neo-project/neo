@@ -12,6 +12,7 @@ using Neo.Ledger;
 using System.Linq;
 using Neo.Persistence;
 using Neo.Cryptography;
+using Neo.SmartContract.Native.Tokens;
 using VMArray = Neo.VM.Types.Array;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
@@ -148,11 +149,36 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        private StackItem GetVoteDetails(UInt256 txId)
+        private StackItem GetVoteDetails(ApplicationEngine engine, VMArray args)
         {
-            return true;
+            UInt256 TxHash = new UInt256(args[0].GetByteArray());
+            var id = new Crypto().Hash160(CreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
+            StorageItem create_state = engine.Snapshot.Storages.TryGet(create_key);
+            if (create_state is null) return null;
+            return create_state.Value;
         }
 
+        private StackItem GetStatistic(ApplicationEngine engine, VMArray args)
+        {
+            if (args[0] == null) return false;
+            UInt256 TxHash = new UInt256(args[0].GetByteArray());
+            var id = new Crypto().Hash160(CreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+
+            StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
+            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(index_key.Key);
+
+            if (pairs.Count() == 0) return false;
+
+            foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
+            {
+                VoteState vote_state = VoteState.FromByteArray(pair.Value.Value);
+                StorageKey account_key = new NeoToken().
+                vote_state.GetCandidate().GetByteArray();
+            }
+
+
+        }
         private StackItem AccessControl(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null || args[1] == null || args[2] == null ) return false;
@@ -233,8 +259,8 @@ namespace Neo.SmartContract.Native
         {
             if (users == null) return new byte[0];
             using (MemoryStream memoryStream = new MemoryStream())
+            using (BinaryWriter bw = new BinaryWriter(memoryStream))
             {
-                BinaryWriter bw = new BinaryWriter(memoryStream);
                 foreach (var user in users)
                 {
                     bw.Write(user);
@@ -442,6 +468,47 @@ namespace Neo.SmartContract.Native
                     throw e;
                 }
 
+            }
+        }
+    }
+
+    internal class CalculatedVote
+    {
+
+    }
+
+    internal class Statistic
+    {
+        UInt256 id;
+        UInt160 originator;
+        string title;
+        string description;
+        int[] candidate;
+        int[][] resultMatrix;
+
+        public byte[] ToByteArray()
+        {
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                binaryFormatter.Serialize(memoryStream, this);
+                return memoryStream.ToArray();
+            }
+        }
+
+        public static Statistic FromByteArray(byte[] data)
+        {
+            using (MemoryStream memoryStream = new MemoryStream(data))
+            {
+                try
+                {
+                    BinaryFormatter binaryFormatter = new BinaryFormatter();
+                    return binaryFormatter.Deserialize(memoryStream) as Statistic;
+                }
+                catch
+                {
+                    return null;
+                }
             }
         }
     }
