@@ -866,7 +866,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f505000000000100000000000000040302010002090807060504030201000908070605040302010000090807060504030201000908070605040302010001015100");
+            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f505000000000100000000000000040302010002090807060504030201000908070605040302010080090807060504030201000908070605040302010001015100");
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
@@ -959,10 +959,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void FeeIsSignatureContract_TestScope_Global_CurrentHash_GAS()
+        public void FeeIsSignatureContract_TestScope_Global_CurrentHash_NEO()
         {
-            // this test tries the combination between Global and Custom Hash GAS
-            // Global is supposed to prevail
+            // this test tries the combination between Global and Custom Hash NEO
+            // Global is supposed to prevail (even when transferring GAS)
 
             var wallet = GenerateTestWallet();
             var snapshot = store.GetSnapshot();
