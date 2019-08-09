@@ -33,7 +33,7 @@ namespace Neo.SDK.TX
         /// <summary>
         /// Create an unsigned Transaction object with given parameters.
         /// </summary>
-        public TxManager MakeTransaction(TransactionAttribute[] attributes, byte[] script, long networkFee)
+        public TxManager MakeTransaction(TransactionAttribute[] attributes, byte[] script, long networkFee = 0)
         {
             uint height = rpcClient.GetBlockCount() - 1;
             Tx = new Transaction
@@ -63,7 +63,7 @@ namespace Neo.SDK.TX
             long feePerByte = new PolicyAPI(rpcClient).GetFeePerByte();
             long leastNetworkFee = size * feePerByte;
 
-            Tx.NetworkFee = networkFee;
+            Tx.NetworkFee = networkFee == 0 ? leastNetworkFee : networkFee;
             Context = new TransactionContext(Tx);
 
             var gasBalance = new Nep5API(rpcClient).BalanceOf(NativeContract.GAS.Hash, sender);

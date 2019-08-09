@@ -39,16 +39,16 @@ namespace Neo.SDK.SC
             return TestInvoke(scriptHash, "totalSupply").Stack.Single().ToStackItem().GetBigInteger();
         }
 
-        public bool Transfer(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee)
+        public bool Transfer(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
         {
             var sender = fromKey.ScriptHash;
-            var txManager = new TxManager(rpcClient, sender);
 
             byte[] script = MakeScript(scriptHash, "transfer", sender, to, amount);
-            txManager.MakeTransaction(null, script, networkFee);
-            txManager.AddSignature(fromKey).Sign();
-
-            Transaction tx = txManager.Tx;
+            Transaction tx = new TxManager(rpcClient, sender)
+                .MakeTransaction(null, script, networkFee)
+                .AddSignature(fromKey)
+                .Sign()
+                .Tx;
 
             return rpcClient.SendRawTransaction(tx.ToArray().ToHexString());
         }
