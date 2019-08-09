@@ -203,9 +203,9 @@ namespace Neo.Network.P2P
                         }
                         break;
                     case InventoryType.Consensus:
-                        Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory consensusInventory);
-                        if (consensusInventory != null)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, consensusInventory));
+                        Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus);
+                        if (inventoryConsensus != null)
+                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventoryConsensus));
                         break;
                 }
             }
