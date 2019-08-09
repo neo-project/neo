@@ -526,6 +526,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var cosigners = new Cosigner[]{ new Cosigner
                 {
                     Account = acc.ScriptHash,
+                    // This combination is supposed to actually be an OR,
+                    // where it's valid in both Entry and also for Custom hash provided (in any execution level)
+                    // it would be better to test this in the future including situations where a deeper call level uses this custom witness successfully
                     Scopes = WitnessScope.CustomContracts | WitnessScope.CalledByEntry,
                     AllowedContracts = new[] { NativeContract.GAS.Hash }
                 } };
@@ -955,6 +958,102 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsNull(tx2);
         }
 
+        [TestMethod]
+        public void FeeIsSignatureContract_TestScope_Global_CurrentHash_GAS()
+        {
+            // this test tries the combination between Global and Custom Hash GAS
+            // Global is supposed to prevail
+
+            var wallet = GenerateTestWallet();
+            var snapshot = store.GetSnapshot();
+
+            // no password on this wallet
+            using (var unlock = wallet.Unlock(""))
+            {
+                var acc = wallet.CreateAccount();
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = new Nep5AccountState().ToByteArray()
+                });
+
+                entry.Value = new Nep5AccountState()
+                {
+                    Balance = 10000 * NativeContract.GAS.Factor
+                }
+                .ToByteArray();
+
+                // Make transaction
+                // Manually creating script
+
+                byte[] script;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    // self-transfer of 1e-8 GAS
+                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.Emit(OpCode.THROWIFNOT);
+                    script = sb.ToArray();
+                }
+
+                // trying global scope
+                var cosigners = new Cosigner[]{ new Cosigner
+                {
+                    Account = acc.ScriptHash,
+                    // This is an OR between Global and NEO asset
+                    // we will transfer GAS, so Global is supposed to allow that
+                    Scopes = WitnessScope.Global | WitnessScope.CustomContracts,
+                    AllowedContracts = new[] { NativeContract.NEO.Hash }
+                } };
+
+                // using this...
+
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], cosigners);
+
+                Assert.IsNotNull(tx);
+                Assert.IsNull(tx.Witnesses);
+
+                // ----
+                // Sign
+                // ----
+
+                var data = new ContractParametersContext(tx);
+                bool signed = wallet.Sign(data);
+                Assert.IsTrue(signed);
+
+                // get witnesses from signed 'data'
+                tx.Witnesses = data.GetWitnesses();
+                tx.Witnesses.Length.Should().Be(1);
+
+                // Fast check
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+
+                // Check
+                long verificationGas = 0;
+                foreach (var witness in tx.Witnesses)
+                {
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    {
+                        engine.LoadScript(witness.VerificationScript);
+                        engine.LoadScript(witness.InvocationScript);
+                        Assert.AreEqual(VMState.HALT, engine.Execute());
+                        Assert.AreEqual(1, engine.ResultStack.Count);
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        verificationGas += engine.GasConsumed;
+                    }
+                }
+                // get sizeGas
+                var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+                // final check on sum: verification_cost + tx_size
+                Assert.AreEqual(verificationGas + sizeGas, 1278240);
+                // final assert
+                Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
+            }
+        }
 
         [TestMethod]
         public void ToJson()
