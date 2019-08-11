@@ -275,5 +275,42 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
             jObj["sys_fee"].AsNumber().Should().Be(42);
         }
+
+        [TestMethod]
+        public void Infinite_Loop_Not_Allowed_On_Verification()
+        {
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.JMP, new byte[] { 0, 0, 0, 0 });
+                script = sb.ToArray();
+            }
+
+            long netfee = 100000000; // network fee
+
+            // Check Application
+            long appGas = 0;
+            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, null, null, netfee, false))
+            {
+                engine.LoadScript(script);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.AreEqual(0, engine.ResultStack.Count);
+                appGas += engine.GasConsumed;
+            }
+            // many gas are spent before fault
+            Assert.AreEqual(appGas, 100000040);
+
+            // Check Verification
+            long verificationGas = 0;
+            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, null, null, netfee, false))
+            {
+                engine.LoadScript(script);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.AreEqual(0, engine.ResultStack.Count);
+                verificationGas += engine.GasConsumed;
+            }
+            // no gas is spent (backwards jump is not allowed)
+            Assert.AreEqual(verificationGas, 0);
+        }
     }
 }

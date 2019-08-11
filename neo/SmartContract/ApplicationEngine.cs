@@ -15,8 +15,6 @@ namespace Neo.SmartContract
         public const long GasFree = 0;
         private readonly long gas_amount;
         private readonly bool testMode;
-        // limited mode (disallow backward jumps and recursive calls)
-        private readonly bool isLimited;
         private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
@@ -31,11 +29,10 @@ namespace Neo.SmartContract
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false, bool isLimited = false)
+        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false)
         {
             this.gas_amount = GasFree + gas;
             this.testMode = testMode;
-            this.isLimited = isLimited;
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
@@ -91,11 +88,11 @@ namespace Neo.SmartContract
                 case OpCode.JMP:
                 case OpCode.JMPIF:
                 case OpCode.JMPIFNOT:
-                case OpCode.CALL:
+                //case OpCode.CALL:
                 {
-                    if(isLimited)
+                    if(Trigger == TriggerType.Verification)
                     {
-                        // no backwards jump in limited mode
+                        // no backwards jump in verification mode
                         if(instruction.TokenI16 <= 0)
                         {
                             return false;
