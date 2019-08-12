@@ -392,7 +392,7 @@ namespace Neo.UnitTests.Wallets
         public void TestMakeTransaction2()
         {
             MyWallet wallet = new MyWallet();
-            Action action = () => wallet.MakeTransaction(new TransactionAttribute[] { }, new byte[] { }, UInt160.Zero);
+            Action action = () => wallet.MakeTransaction(new byte[] { }, UInt160.Zero, new TransactionAttribute[] { });
             action.ShouldThrow<ArgumentException>();
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
@@ -412,10 +412,10 @@ namespace Neo.UnitTests.Wallets
             }
             .ToByteArray();
 
-            var tx = wallet.MakeTransaction(new TransactionAttribute[] { }, new byte[] { }, account.ScriptHash);
+            var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new TransactionAttribute[] { });
             tx.Should().NotBeNull();
 
-            tx = wallet.MakeTransaction(new TransactionAttribute[] { }, new byte[] { });
+            tx = wallet.MakeTransaction(new byte[] { }, null, new TransactionAttribute[] { });
             tx.Should().NotBeNull();
 
             entry.Value = new NeoToken.AccountState()
