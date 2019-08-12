@@ -1,3 +1,9 @@
 [submodule "neo-vm"]
 	path = neo-vm
 	url = https://github.com/neo-project/neo-vm
+[submodule "neo-cli"]
+	path = neo-cli
+	url = https://github.com/neo-project/neo-cli.git
+[submodule "neo-plugins"]
+	path = neo-plugins
+	url = https://github.com/neo-project/neo-plugins.git
