@@ -1,8 +1,11 @@
-﻿using Neo.IO;
+﻿using FluentAssertions;
+using Neo.IO;
+using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
+using Neo.Wallets.NEP6;
 using System;
 using System.IO;
 
@@ -21,6 +24,18 @@ namespace Neo.UnitTests
                 array[i] = 0x20;
             }
             return array;
+        }
+
+        public static NEP6Wallet GenerateTestWallet()
+        {
+            JObject wallet = new JObject();
+            wallet["name"] = "noname";
+            wallet["version"] = new System.Version().ToString();
+            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
+            wallet["accounts"] = new JArray();
+            wallet["extra"] = null;
+            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"0.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":null}");
+            return new NEP6Wallet(wallet);
         }
 
         public static Transaction GetTransaction()

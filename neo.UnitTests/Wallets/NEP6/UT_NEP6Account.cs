@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.UnitTests.Network.P2P.Payloads;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 
@@ -18,7 +19,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestInitialize]
         public void TestSetup()
         {
-            wallet = new NEP6Wallet("a");
+            wallet = TestUtils.GenerateTestWallet();
             byte[] array1 = { 0x01 };
             hash = new UInt160(Crypto.Default.Hash160(array1));
             account = new NEP6Account(wallet, hash);
