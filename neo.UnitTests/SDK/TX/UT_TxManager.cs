@@ -6,6 +6,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
+using Neo.SDK.SC;
 using Neo.SDK.TX;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -29,91 +30,46 @@ namespace Neo.UnitTests.SDK.TX
         [TestInitialize]
         public void TestSetup()
         {
-            rpcClientMock = new Mock<RpcClient>(MockBehavior.Strict, "http://seed1.neo.org:10331");
-            MockHeight();
-            MockEmptyScript();
-            MockFeePerByte();
+            rpcClientMock = MockRpcClient(Sender, new byte[1]);
         }
 
-        private void MockHeight()
+        public static Mock<RpcClient> MockRpcClient(UInt160 sender, byte[] script)
         {
-            rpcClientMock
-               .Setup(p => p.GetBlockCount())
-               .Returns(100)
-               .Verifiable();
-        }
+            var mockRpc = new Mock<RpcClient>(MockBehavior.Strict, "http://seed1.neo.org:10331");
 
-        private void MockGasBalance(UInt160 sender)
-        {
-            byte[] script;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitAppCall(NativeContract.GAS.Hash, "balanceOf", sender);
-                script = sb.ToArray();
-            }
+            // MockHeight
+            mockRpc.Setup(p => p.GetBlockCount()).Returns(100).Verifiable();
 
-            RpcInvokeResult result = new RpcInvokeResult()
+            // MockGasBalance
+            byte[] balanceScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", sender);
+            RpcInvokeResult balanceResult = new RpcInvokeResult()
             {
-                Stack = new[]
-                {
-                    new ContractParameter()
-                    {
-                        Type = ContractParameterType.Integer,
-                        Value = BigInteger.Parse("10000000000000000")
-                    }
-                }
+                Stack = new[] { new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("10000000000000000") } },
             };
 
-            rpcClientMock
-                .Setup(p => p.InvokeScript(script))
-                .Returns(result)
-                .Verifiable();
-        }
+            mockRpc.Setup(p => p.InvokeScript(balanceScript)).Returns(balanceResult).Verifiable();
 
-        private void MockEmptyScript()
-        {
-            byte[] script = new byte[1];
-
-            RpcInvokeResult result = new RpcInvokeResult()
+            // MockFeePerByte
+            byte[] policyScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getFeePerByte");
+            RpcInvokeResult policyResult = new RpcInvokeResult()
             {
-                GasConsumed = "100"
+                Stack = new[] { new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("1000") } },
             };
 
-            rpcClientMock
-                .Setup(p => p.InvokeScript(script))
-                .Returns(result)
-                .Verifiable();
-        }
+            mockRpc.Setup(p => p.InvokeScript(policyScript)).Returns(policyResult).Verifiable();
 
-        private void MockFeePerByte()
-        {
-            byte[] script;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitAppCall(NativeContract.Policy.Hash, "getFeePerByte");
-                script = sb.ToArray();
-            }
+            // MockGasConsumed
+            RpcInvokeResult result = new RpcInvokeResult() { GasConsumed = "100" };
 
-            RpcInvokeResult result = new RpcInvokeResult()
-            {
-                Stack = new[] {new ContractParameter() {
-                      Type = ContractParameterType.Integer,
-                      Value = (BigInteger)1000
-                 }}
-            };
+            mockRpc.Setup(p => p.InvokeScript(script)).Returns(result).Verifiable();
 
-            rpcClientMock
-                .Setup(p => p.InvokeScript(script))
-                .Returns(result)
-                .Verifiable();
+            return mockRpc;
         }
 
         [TestMethod]
         public void TestMakeTransaction()
         {
             txManager = new TxManager(rpcClientMock.Object, Sender);
-
-            MockGasBalance(Sender);
 
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
@@ -138,8 +94,6 @@ namespace Neo.UnitTests.SDK.TX
         {
             txManager = new TxManager(rpcClientMock.Object, Sender);
 
-            MockGasBalance(Sender);
-
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
                 new TransactionAttribute
@@ -150,8 +104,9 @@ namespace Neo.UnitTests.SDK.TX
             };
 
             byte[] script = new byte[1];
-            txManager.MakeTransaction(attributes, script, 100000);
-            txManager.AddSignature(keyPair1).Sign();
+            txManager.MakeTransaction(attributes, script, 100000)
+                .AddSignature(keyPair1)
+                .Sign();
 
             // get signature from Witnesses
             var tx = txManager.Tx;
@@ -172,7 +127,6 @@ namespace Neo.UnitTests.SDK.TX
         {
             txManager = new TxManager(rpcClientMock.Object, Sender);
 
-            MockGasBalance(Sender);
             var multiContract = Contract.CreateMultiSigContract(2, keyPair1.PublicKey, keyPair2.PublicKey);
 
             // Cosigner needs multi signature
@@ -186,11 +140,11 @@ namespace Neo.UnitTests.SDK.TX
             };
 
             byte[] script = new byte[1];
-            txManager.MakeTransaction(attributes, script, 0_10000000);
-            txManager.AddMultiSig(keyPair1, keyPair1.PublicKey, keyPair2.PublicKey);
-            txManager.AddMultiSig(keyPair2, keyPair1.PublicKey, keyPair2.PublicKey);
-            txManager.AddSignature(keyPair1);
-            txManager.Sign();
+            txManager.MakeTransaction(attributes, script, 0_10000000)
+                .AddMultiSig(keyPair1, keyPair1.PublicKey, keyPair2.PublicKey)
+                .AddMultiSig(keyPair2, keyPair1.PublicKey, keyPair2.PublicKey)
+                .AddSignature(keyPair1)
+                .Sign();
 
             var store = TestBlockchain.GetStore();
             var snapshot = store.GetSnapshot();
@@ -204,9 +158,7 @@ namespace Neo.UnitTests.SDK.TX
         {
             txManager = new TxManager(rpcClientMock.Object, Sender);
 
-            MockGasBalance(Sender);
-
-            // Cosigner needs multi signature
+            // Cosigner as contract scripthash
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
                 new TransactionAttribute

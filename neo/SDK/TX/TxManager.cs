@@ -59,7 +59,7 @@ namespace Neo.SDK.TX
                     Tx.SystemFee -= remainder;
             }
             UInt160[] hashes = Tx.GetScriptHashesForVerifying(null);
-            int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+            int size = Transaction.HeaderSize + Tx.Attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
             long feePerByte = new PolicyAPI(rpcClient).GetFeePerByte();
             long leastNetworkFee = size * feePerByte;
 
@@ -129,6 +129,11 @@ namespace Neo.SDK.TX
         /// </summary>
         public TxManager Sign()
         {
+            if (!Context.Completed)
+            {
+                throw new Exception($"Please add signature or witness first!");
+            }
+
             Tx.Witnesses = Context.GetWitnesses();
             return this;
         }
