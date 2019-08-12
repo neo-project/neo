@@ -216,7 +216,7 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
-        public override WalletAccount Import(string nep2, string passphrase, int N = 16348, int r = 8, int p = 8)
+        public override WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
             KeyPair key = new KeyPair(GetPrivateKeyFromNEP2(nep2, passphrase, N, r, p));
             NEP6Contract contract = new NEP6Contract
