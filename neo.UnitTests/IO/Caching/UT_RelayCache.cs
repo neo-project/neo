@@ -27,6 +27,7 @@ namespace Neo.UnitTests.IO.Caching
                 SystemFee = 0,
                 NetworkFee = 0,
                 ValidUntilBlock = 100,
+                Cosigners = new Cosigner[0],
                 Attributes = new TransactionAttribute[0],
                 Script = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04 },
                 Witnesses = new Witness[0]

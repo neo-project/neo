@@ -143,8 +143,35 @@ namespace Neo.SmartContract
 
         internal static bool CheckWitness(ApplicationEngine engine, UInt160 hash)
         {
-            var _hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
-            return _hashes_for_verifying.Contains(hash);
+            if (engine.ScriptContainer is Transaction tx)
+            {
+                Cosigner usage = tx.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
+                if (usage is null) return false;
+                if (usage.Scopes == WitnessScope.Global) return true;
+                if (usage.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                {
+                    if (engine.CallingScriptHash == engine.EntryScriptHash)
+                        return true;
+                }
+                if (usage.Scopes.HasFlag(WitnessScope.CustomContracts))
+                {
+                    if (usage.AllowedContracts.Contains(engine.CurrentScriptHash))
+                        return true;
+                }
+                if (usage.Scopes.HasFlag(WitnessScope.CustomGroups))
+                {
+                    var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
+                    // check if current group is the required one
+                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(usage.AllowedGroups).Any())
+                        return true;
+                }
+                return false;
+            }
+
+            // only for non-Transaction types (Block, etc)
+
+            var hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
+            return hashes_for_verifying.Contains(hash);
         }
 
         private static bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)

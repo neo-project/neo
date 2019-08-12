@@ -128,7 +128,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.Result.Should().BeTrue();
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // New validator
-            
+
             // Check GetRegisteredValidators
 
             var validators = NativeContract.NEO.GetRegisteredValidators(snapshot).OrderBy(u => u.PublicKey).ToArray();

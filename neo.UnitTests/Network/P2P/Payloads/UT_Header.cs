@@ -1,8 +1,8 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System.IO;
-using System.Text;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -22,7 +22,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
-            // blockbase 4 + 64 + 32 + 4 + 4 + 20 + 4
+            // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
             uut.Size.Should().Be(105);
         }
@@ -35,10 +35,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 233, 19, 255, 133, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000000f29b0d748a9ccf8c5af3cde10db3e36ec9a5f720643a2bcb4add76b3daf41d8e913ff854c0000000000000000000000000000000000000000000000000000000100015100";
 
-            int index = 0;
-            using (MemoryStream ms = new MemoryStream(requiredData, index, requiredData.Length - index, false))
+            using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
             {
                 using (BinaryReader reader = new BinaryReader(ms))
                 {
@@ -97,24 +96,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
 
-            byte[] data;
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
-                {
-                    uut.Serialize(writer);
-                    data = stream.ToArray();
-                }
-            }
-
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 233, 19, 255, 133, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
-
-            data.Length.Should().Be(requiredData.Length);
-
-            for (int i = 0; i < data.Length; i++)
-            {
-                data[i].Should().Be(requiredData[i]);
-            }
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000000f29b0d748a9ccf8c5af3cde10db3e36ec9a5f720643a2bcb4add76b3daf41d8e913ff854c0000000000000000000000000000000000000000000000000000000100015100";
+            uut.ToArray().ToHexString().Should().Be(hex);
         }
     }
 }

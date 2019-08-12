@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -36,10 +37,10 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PoolItem_CompareTo_Fee()
         {
-            int size1 = 50;
+            int size1 = 51;
             int netFeeSatoshi1 = 1;
             var tx1 = GenerateTx(netFeeSatoshi1, size1);
-            int size2 = 50;
+            int size2 = 51;
             int netFeeSatoshi2 = 2;
             var tx2 = GenerateTx(netFeeSatoshi2, size2);
 
@@ -56,7 +57,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PoolItem_CompareTo_Hash()
         {
-            int sizeFixed = 50;
+            int sizeFixed = 51;
             int netFeeSatoshiFixed = 1;
 
             for (int testRuns = 0; testRuns < 30; testRuns++)
@@ -122,6 +123,7 @@ namespace Neo.UnitTests.Ledger
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
                 Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
                 Witnesses = new[]
                 {
                     new Witness
@@ -131,6 +133,9 @@ namespace Neo.UnitTests.Ledger
                     }
                 }
             };
+
+            tx.Attributes.Length.Should().Be(0);
+            tx.Cosigners.Length.Should().Be(0);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();

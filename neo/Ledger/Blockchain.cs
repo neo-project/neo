@@ -153,6 +153,7 @@ namespace Neo.Ledger
                 Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
                 SystemFee = 0,
                 Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
                 Witnesses = new[]
                 {
                     new Witness
