@@ -71,8 +71,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.InvocationScript.Should().BeNull();
         }
 
-        [TestMethod]
-        public void MaxSize()
+        private Witness PrepareDummyWitness(int maxAccounts)
         {
             var store = TestBlockchain.GetStore();
             var wallet = UT_Transaction.GenerateTestWallet();
@@ -80,7 +79,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Prepare
 
-            var maxAccounts = 14;
             var address = new WalletAccount[maxAccounts];
             var wallets = new NEP6Wallet[maxAccounts];
             var walletsUnlocks = new IDisposable[maxAccounts];
@@ -111,16 +109,33 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             }
 
             Assert.IsTrue(data.Completed);
-            var witnesses = data.GetWitnesses()[0];
+            return data.GetWitnesses()[0];
+        }
+
+        [TestMethod]
+        public void MaxSize_OK()
+        {
+            var witness = PrepareDummyWitness(14);
 
             // Check max size
 
-            Assert.IsTrue(witnesses.Size < 1500);
+            Assert.IsTrue(witness.Size < 1400);
 
-            var copy = witnesses.ToArray().AsSerializable<Witness>();
+            var copy = witness.ToArray().AsSerializable<Witness>();
 
-            CollectionAssert.AreEqual(witnesses.InvocationScript, copy.InvocationScript);
-            CollectionAssert.AreEqual(witnesses.VerificationScript, copy.VerificationScript);
+            CollectionAssert.AreEqual(witness.InvocationScript, copy.InvocationScript);
+            CollectionAssert.AreEqual(witness.VerificationScript, copy.VerificationScript);
+        }
+
+        [TestMethod]
+        public void MaxSize_Error()
+        {
+            var witness = PrepareDummyWitness(15);
+
+            // Check max size
+
+            Assert.IsTrue(witness.Size > 1400);
+            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
         }
 
         [TestMethod]
