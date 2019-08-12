@@ -551,7 +551,7 @@ namespace Neo.Consensus
                 {
                     var reason = ChangeViewReason.Timeout;
 
-                    if (context.Block != null && context.TransactionHashes.Count() > context.Transactions.Count)
+                    if (context.Block != null && context.TransactionHashes?.Count() > context.Transactions?.Count)
                     {
                         reason = ChangeViewReason.TxNotFound;
                     }
