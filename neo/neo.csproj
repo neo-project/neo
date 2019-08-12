@@ -38,7 +38,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="SmartContract\Native\Votes\" />
+    <Folder Include="SmartContract\Native\Votes\Model\" />
+    <Folder Include="SmartContract\Native\Votes\Method\" />
   </ItemGroup>
 
 </Project>
