@@ -183,17 +183,17 @@ namespace Neo.Network.P2P
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
-                        IInventory inventoryTx = Blockchain.Singleton.GetTransaction(hash);
-                        if (inventoryTx is Transaction)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, inventoryTx));
+                        Transaction tx = Blockchain.Singleton.GetTransaction(hash);
+                        if (tx != null)
+                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, tx));
                         break;
                     case InventoryType.Block:
-                        IInventory inventoryBlock = Blockchain.Singleton.GetBlock(hash);
-                        if (inventoryBlock is Block block)
+                        Block block = Blockchain.Singleton.GetBlock(hash);
+                        if (block != null)
                         {
                             if (bloom_filter == null)
                             {
-                                Context.Parent.Tell(Message.Create(MessageCommand.Block, inventoryBlock));
+                                Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
                             }
                             else
                             {
@@ -203,8 +203,7 @@ namespace Neo.Network.P2P
                         }
                         break;
                     case InventoryType.Consensus:
-                        Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus);
-                        if (inventoryConsensus != null)
+                        if (Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus))
                             Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventoryConsensus));
                         break;
                 }
