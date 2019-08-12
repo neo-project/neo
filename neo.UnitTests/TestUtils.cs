@@ -1,5 +1,7 @@
 ﻿using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
 using System.IO;
@@ -33,6 +35,15 @@ namespace Neo.UnitTests
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 } }
+            };
+        }
+
+        internal static ContractState GetContract()
+        {
+            return new ContractState
+            {
+                Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
+                Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
         }
 
@@ -106,6 +117,14 @@ namespace Neo.UnitTests
             }
 
             return newObj;
+        }
+
+        public static void DeleteFile(string file)
+        {
+            if (File.Exists(file))
+            {
+                File.Delete(file);
+            }
         }
     }
 }
