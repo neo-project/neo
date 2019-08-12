@@ -41,6 +41,11 @@ namespace Neo.IO.Caching
             return true;
         }
 
+        public bool Contains(T item)
+        {
+            return dictionary.Contains(item);
+        }
+
         public void ExceptWith(IEnumerable<UInt256> hashes)
         {
             foreach (var hash in hashes)
