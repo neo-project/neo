@@ -158,7 +158,6 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestCreateAccountWithPrivateKey()
         {
-
             bool result = uut.Contains(testScriptHash);
             Assert.AreEqual(false, result);
             uut.Unlock("123");

@@ -93,7 +93,6 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestGetKeyWithString()
         {
-
             account.GetKey("Satoshi").Should().BeNull();
             string nep2 = "6PYRjVE1gAbCRyv81FTiFz62cxuPGw91vMjN4yPa68bnoqJtioreTznezn";
             account = new NEP6Account(wallet, hash, nep2);
