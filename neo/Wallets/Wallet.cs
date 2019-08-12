@@ -200,7 +200,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public virtual WalletAccount Import(string nep2, string passphrase, int N = 16348, int r = 8, int p = 8)
+        public virtual WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
             byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, N, r, p);
             WalletAccount account = CreateAccount(privateKey);
