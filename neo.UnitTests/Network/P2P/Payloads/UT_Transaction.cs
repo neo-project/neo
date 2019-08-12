@@ -84,7 +84,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Size.Should().Be(83);
         }
 
-        private NEP6Wallet GenerateTestWallet()
+        internal static NEP6Wallet GenerateTestWallet()
         {
             JObject wallet = new JObject();
             wallet["name"] = "noname";

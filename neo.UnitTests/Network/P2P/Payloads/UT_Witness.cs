@@ -1,13 +1,62 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
     [TestClass]
     public class UT_Witness
     {
+        class dummyVerificable : IVerifiable
+        {
+            private UInt160 _hash;
+
+            public Witness[] Witnesses { get; set; }
+
+            public int Size => 1;
+
+            public dummyVerificable(UInt160 hash)
+            {
+                _hash = hash;
+            }
+
+            public void Deserialize(BinaryReader reader)
+            {
+                DeserializeUnsigned(reader);
+                Witnesses = reader.ReadSerializableArray<Witness>(16);
+            }
+
+            public void DeserializeUnsigned(BinaryReader reader)
+            {
+                reader.ReadByte();
+            }
+
+            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+            {
+                return new UInt160[] { _hash };
+            }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                SerializeUnsigned(writer);
+                writer.Write(Witnesses);
+            }
+
+            public void SerializeUnsigned(BinaryWriter writer)
+            {
+                writer.Write((byte)1);
+            }
+        }
+
         Witness uut;
 
         [TestInitialize]
@@ -20,6 +69,58 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void InvocationScript_Get()
         {
             uut.InvocationScript.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void MaxSize()
+        {
+            var store = TestBlockchain.GetStore();
+            var wallet = UT_Transaction.GenerateTestWallet();
+            var snapshot = store.GetSnapshot();
+
+            // Prepare
+
+            var maxAccounts = 14;
+            var address = new WalletAccount[maxAccounts];
+            var wallets = new NEP6Wallet[maxAccounts];
+            var walletsUnlocks = new IDisposable[maxAccounts];
+
+            for (int x = 0; x < maxAccounts; x++)
+            {
+                wallets[x] = UT_Transaction.GenerateTestWallet();
+                walletsUnlocks[x] = wallets[x].Unlock("123");
+                address[x] = wallets[x].CreateAccount();
+            }
+
+            // Generate multisignature
+
+            var multiSignContract = Contract.CreateMultiSigContract(maxAccounts, address.Select(a => a.GetKey().PublicKey).ToArray());
+
+            for (int x = 0; x < maxAccounts; x++)
+            {
+                wallets[x].CreateAccount(multiSignContract, address[x].GetKey());
+            }
+
+            // Sign
+
+            var data = new ContractParametersContext(new dummyVerificable(multiSignContract.ScriptHash));
+
+            for (int x = 0; x < maxAccounts; x++)
+            {
+                Assert.IsTrue(wallets[x].Sign(data));
+            }
+
+            Assert.IsTrue(data.Completed);
+            var witnesses = data.GetWitnesses()[0];
+
+            // Check max size
+
+            Assert.IsTrue(witnesses.Size < 1500);
+
+            var copy = witnesses.ToArray().AsSerializable<Witness>();
+
+            CollectionAssert.AreEqual(witnesses.InvocationScript, copy.InvocationScript);
+            CollectionAssert.AreEqual(witnesses.VerificationScript, copy.VerificationScript);
         }
 
         [TestMethod]
