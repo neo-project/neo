@@ -218,7 +218,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(string nep2, string passphrase, int N = 16348, int r = 8, int p = 8)
         {
-            KeyPair key = new KeyPair(GetPrivateKeyFromNEP2(nep2, passphrase));
+            KeyPair key = new KeyPair(GetPrivateKeyFromNEP2(nep2, passphrase, N, r, p));
             NEP6Contract contract = new NEP6Contract
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
