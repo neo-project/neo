@@ -17,13 +17,9 @@ namespace Neo.UnitTests.Wallets.NEP6
     public class UT_NEP6Wallet
     {
         private NEP6Wallet uut;
-
         private static string wPath;
-
         private static KeyPair keyPair;
-
         private static string nep2key;
-
         private static UInt160 testScriptHash;
 
         public static string GetRandomPath()
