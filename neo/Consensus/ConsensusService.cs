@@ -80,7 +80,8 @@ namespace Neo.Consensus
                 // previously sent prepare request, then we don't want to send a prepare response.
                 if (context.IsPrimary || context.WatchOnly) return true;
 
-                // Check maximum block size via Native.Contract policy
+                // Check policy
+
                 if (context.GetExpectedBlockSize() > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
                 {
                     Log($"rejected block: {context.Block.Index}{Environment.NewLine} The size exceed the policy", LogLevel.Warning);
