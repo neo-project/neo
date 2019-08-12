@@ -212,11 +212,8 @@ namespace Neo.Consensus
         /// </summary>
         internal int GetExpectedBlockSize()
         {
-            var blockSize = GetExpectedBlockSizeWithoutTransactions(Transactions.Count);
-
-            // Sum Txs
-
-            return blockSize + Transactions.Values.Sum(u => u.Size);
+            return GetExpectedBlockSizeWithoutTransactions(Transactions.Count) + // Base size
+                Transactions.Values.Sum(u => u.Size);   // Sum Txs
         }
 
         /// <summary>
