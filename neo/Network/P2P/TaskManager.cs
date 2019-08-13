@@ -228,17 +228,19 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
+            uint maxStartHeight = sessions.Select(x => x.Value.Version.StartHeight).Max();
             if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks)
                 && (Blockchain.Singleton.HeaderHeight < session.Version.StartHeight
                     || (Blockchain.Singleton.Height == Blockchain.Singleton.HeaderHeight
-                        && Blockchain.Singleton.HeaderHeight >= sessions.Select(x => x.Value.Version.StartHeight).Max()
+                        && Blockchain.Singleton.HeaderHeight >= maxStartHeight
                         && TimeProvider.Current.UtcNow.ToTimestamp() - 60 >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)))
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
                 session.RemoteNode.Tell(Message.Create("getheaders", GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
             }
-            else if (Blockchain.Singleton.Height < session.Version.StartHeight)
+            else if (Blockchain.Singleton.Height < session.Version.StartHeight
+                || (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight && Blockchain.Singleton.Height >= maxStartHeight))
             {
                 UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
                 for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
