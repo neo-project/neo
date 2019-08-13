@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SDK.TX
             };
 
             byte[] script = new byte[1];
-            txManager.MakeTransaction(attributes, script, 60000);
+            txManager.MakeTransaction(script, attributes, null, 60000);
 
             var tx = txManager.Tx;
             Assert.AreEqual("53616d706c6555726c", tx.Attributes[0].Data.ToHexString());
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SDK.TX
             };
 
             byte[] script = new byte[1];
-            txManager.MakeTransaction(attributes, script)
+            txManager.MakeTransaction(script, attributes)
                 .AddSignature(keyPair1)
                 .Sign();
 
@@ -130,17 +130,17 @@ namespace Neo.UnitTests.SDK.TX
             var multiContract = Contract.CreateMultiSigContract(2, keyPair1.PublicKey, keyPair2.PublicKey);
 
             // Cosigner needs multi signature
-            TransactionAttribute[] attributes = new TransactionAttribute[1]
+            Cosigner[] cosigners = new Cosigner[1]
             {
-                new TransactionAttribute
+                new Cosigner
                 {
-                    Usage = TransactionAttributeUsage.Cosigner,
-                    Data = multiContract.ScriptHash.ToArray()
+                    Account = multiContract.ScriptHash,
+                    Scopes = WitnessScope.Global
                 }
             };
 
             byte[] script = new byte[1];
-            txManager.MakeTransaction(attributes, script, 0_10000000)
+            txManager.MakeTransaction(script, null, cosigners, 0_10000000)
                 .AddMultiSig(keyPair1, keyPair1.PublicKey, keyPair2.PublicKey)
                 .AddMultiSig(keyPair2, keyPair1.PublicKey, keyPair2.PublicKey)
                 .AddSignature(keyPair1)
@@ -159,17 +159,17 @@ namespace Neo.UnitTests.SDK.TX
             txManager = new TxManager(rpcClientMock.Object, Sender);
 
             // Cosigner as contract scripthash
-            TransactionAttribute[] attributes = new TransactionAttribute[1]
+            Cosigner[] cosigners = new Cosigner[1]
             {
-                new TransactionAttribute
+                new Cosigner
                 {
-                    Usage = TransactionAttributeUsage.Cosigner,
-                    Data = UInt160.Zero.ToArray()
+                    Account = UInt160.Zero,
+                    Scopes = WitnessScope.Global
                 }
             };
 
             byte[] script = new byte[1];
-            txManager.MakeTransaction(attributes, script, 0_10000000);
+            txManager.MakeTransaction(script, null, cosigners, 0_10000000);
             txManager.AddWitness(UInt160.Zero);
             txManager.AddSignature(keyPair1);
             txManager.Sign();

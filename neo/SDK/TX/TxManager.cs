@@ -35,7 +35,7 @@ namespace Neo.SDK.TX
         /// Create an unsigned Transaction object with given parameters.
         /// will set 
         /// </summary>
-        public TxManager MakeTransaction(TransactionAttribute[] attributes, byte[] script, long networkFee = 0)
+        public TxManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
             uint height = rpcClient.GetBlockCount() - 1;
             Tx = new Transaction
@@ -46,6 +46,7 @@ namespace Neo.SDK.TX
                 Sender = sender,
                 ValidUntilBlock = height + Transaction.MaxValidUntilBlockIncrement,
                 Attributes = attributes ?? new TransactionAttribute[0],
+                Cosigners = cosigners ?? new Cosigner[0],
                 Witnesses = new Witness[0]
             };
 

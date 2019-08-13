@@ -45,7 +45,7 @@ namespace Neo.SDK.SC
 
             byte[] script = MakeScript(scriptHash, "transfer", sender, to, amount);
             Transaction tx = new TxManager(rpcClient, sender)
-                .MakeTransaction(null, script, networkFee)
+                .MakeTransaction(script, null, null, networkFee)
                 .AddSignature(fromKey)
                 .Sign()
                 .Tx;
