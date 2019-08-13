@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.IO.Json;
 using Neo.SmartContract;
-using Neo.UnitTests.Network.P2P.Payloads;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 
@@ -15,6 +14,16 @@ namespace Neo.UnitTests.Wallets.NEP6
         NEP6Account account;
         UInt160 hash;
         NEP6Wallet wallet;
+        private static string nep2;
+        private static KeyPair keyPair;
+
+        [ClassInitialize]
+        public static void ClassSetup(TestContext context) {
+            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            keyPair = new KeyPair(privateKey);
+            nep2 = keyPair.Export("Satoshi", 0, 0, 0);
+        }
 
         [TestInitialize]
         public void TestSetup()
@@ -39,9 +48,6 @@ namespace Neo.UnitTests.Wallets.NEP6
             NEP6Wallet wallet = new NEP6Wallet("a");
             byte[] array1 = { 0x01 };
             var hash = new UInt160(Crypto.Default.Hash160(array1));
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            KeyPair keyPair = new KeyPair(privateKey);
             string password = "hello world";
             NEP6Account account = new NEP6Account(wallet, hash, keyPair, password);
             account.ScriptHash.Should().Be(hash);
@@ -60,7 +66,6 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["lock"] = false;
             json["contract"] = null;
             json["extra"] = null;
-            NEP6Wallet wallet = new NEP6Wallet("a");
             NEP6Account account = NEP6Account.FromJson(json, wallet);
             account.ScriptHash.Should().Be("ARxgjcH2K1yeW5f5ryuRQNaBzSa9TZzmVS".ToScriptHash());
             account.Label.Should().BeNull();
@@ -82,12 +87,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             account.GetKey().Should().BeNull();
             wallet.Unlock("Satoshi");
-            string nep2 = "6PYRjVE1gAbCRyv81FTiFz62cxuPGw91vMjN4yPa68bnoqJtioreTznezn";
             account = new NEP6Account(wallet, hash, nep2);
-
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            KeyPair keyPair = new KeyPair(privateKey);
             account.GetKey().Should().Be(keyPair);
         }
 
@@ -95,12 +95,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestGetKeyWithString()
         {
             account.GetKey("Satoshi").Should().BeNull();
-            string nep2 = "6PYRjVE1gAbCRyv81FTiFz62cxuPGw91vMjN4yPa68bnoqJtioreTznezn";
             account = new NEP6Account(wallet, hash, nep2);
-
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            KeyPair keyPair = new KeyPair(privateKey);
             account.GetKey("Satoshi").Should().Be(keyPair);
         }
 
@@ -136,7 +131,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestVerifyPassword()
         {
-            string nep2 = "6PYRjVE1gAbCRyv81FTiFz62cxuPGw91vMjN4yPa68bnoqJtioreTznezn";
+            account = new NEP6Account(wallet, hash, nep2);
             account = new NEP6Account(wallet, hash, nep2);
             account.VerifyPassword("Satoshi").Should().BeTrue();
             account.VerifyPassword("b").Should().BeFalse();
