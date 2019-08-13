@@ -265,10 +265,23 @@ namespace Neo.VM
                     stackItem = (bool)parameter.Value;
                     break;
                 case ContractParameterType.ByteArray:
+                case ContractParameterType.Signature:
                     stackItem = (byte[])parameter.Value;
                     break;
                 case ContractParameterType.Integer:
                     stackItem = (BigInteger)parameter.Value;
+                    break;
+                case ContractParameterType.Hash160:
+                    stackItem = ((UInt160)parameter.Value).ToArray();
+                    break;
+                case ContractParameterType.Hash256:
+                    stackItem = ((UInt256)parameter.Value).ToArray();
+                    break;
+                case ContractParameterType.PublicKey:
+                    stackItem = ((ECPoint)parameter.Value).EncodePoint(true);
+                    break;
+                case ContractParameterType.String:
+                    stackItem = (string)parameter.Value;
                     break;
                 case ContractParameterType.InteropInterface:
                     break;

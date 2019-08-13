@@ -43,7 +43,7 @@ namespace Neo.UnitTests.SDK.SC
         public void TestInvoke()
         {
             byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", UInt160.Zero);
-            MockInvokeScript(testScript, new RpcInvokeResult { GasConsumed = "0_01000000", Stack = new[] { new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() } } });
+            MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() } } });
 
             ContractClient contractClient = new ContractClient(rpcClientMock.Object);
             var result = contractClient.TestInvoke(NativeContract.GAS.Hash, "balanceOf", UInt160.Zero);

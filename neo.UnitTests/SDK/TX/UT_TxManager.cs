@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SDK.TX
             };
 
             byte[] script = new byte[1];
-            txManager.MakeTransaction(attributes, script, 100000)
+            txManager.MakeTransaction(attributes, script)
                 .AddSignature(keyPair1)
                 .Sign();
 

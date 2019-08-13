@@ -223,6 +223,13 @@ namespace Neo.SmartContract
             return item.Parameters;
         }
 
+        public byte[] GetScript(UInt160 scriptHash)
+        {
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+                return null;
+            return item.Script;
+        }
+
         public Witness[] GetWitnesses()
         {
             if (!Completed) throw new InvalidOperationException();

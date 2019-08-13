@@ -1,8 +1,6 @@
 ﻿using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.SDK.TX
 {

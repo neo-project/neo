@@ -6,6 +6,7 @@ using Neo.Network.RPC.Models;
 using Neo.SDK.SC;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 
@@ -32,6 +33,7 @@ namespace Neo.SDK.TX
 
         /// <summary>
         /// Create an unsigned Transaction object with given parameters.
+        /// will set 
         /// </summary>
         public TxManager MakeTransaction(TransactionAttribute[] attributes, byte[] script, long networkFee = 0)
         {
@@ -58,17 +60,63 @@ namespace Neo.SDK.TX
                 else if (remainder < 0)
                     Tx.SystemFee -= remainder;
             }
-            UInt160[] hashes = Tx.GetScriptHashesForVerifying(null);
-            int size = Transaction.HeaderSize + Tx.Attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
-            long feePerByte = new PolicyAPI(rpcClient).GetFeePerByte();
-            long leastNetworkFee = size * feePerByte;
 
-            Tx.NetworkFee = networkFee == 0 ? leastNetworkFee : networkFee;
             Context = new TransactionContext(Tx);
 
+            // set networkfee to least cost when networkFee is 0
+            Tx.NetworkFee = networkFee == 0 ? EstimateNetwotkFee() : networkFee;
+
             var gasBalance = new Nep5API(rpcClient).BalanceOf(NativeContract.GAS.Hash, sender);
-            if (gasBalance >= Tx.SystemFee + Tx.NetworkFee && Tx.NetworkFee >= leastNetworkFee) return this;
+            if (gasBalance >= Tx.SystemFee + Tx.NetworkFee) return this;
             throw new InvalidOperationException("Insufficient GAS");
+        }
+
+        /// <summary>
+        /// Estimate NetwotkFee, assuming the witnesses are single Signature
+        /// </summary>
+        private long EstimateNetwotkFee()
+        {
+            long networkFee = 0;
+            UInt160[] hashes = Tx.GetScriptHashesForVerifying(null);
+            int size = Transaction.HeaderSize + Tx.Attributes.GetVarSize() + Tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+
+            // assume the hashes are single Signature
+            foreach (var hash in hashes)
+            {
+                size += 166;
+                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
+            }
+
+            networkFee += size * new PolicyAPI(rpcClient).GetFeePerByte();
+            return networkFee;
+        }
+
+        /// <summary>
+        /// Calculate NetworkFee with context items
+        /// </summary>
+        private long CalculateNetworkFee()
+        {
+            long networkFee = 0;
+            UInt160[] hashes = Tx.GetScriptHashesForVerifying(null);
+            int size = Transaction.HeaderSize + Tx.Attributes.GetVarSize() + Tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+            foreach (UInt160 hash in hashes)
+            {
+                byte[] witness_script = Context.GetScript(hash);
+                if (witness_script is null)
+                {
+                    try
+                    {
+                        witness_script = rpcClient.GetContractState(hash.ToString())?.Script;
+                    }
+                    catch { }
+                }
+
+                if (witness_script is null) continue;
+
+                networkFee += Wallet.CalculateNetWorkFee(witness_script, ref size);
+            }
+            networkFee += size * new PolicyAPI(rpcClient).GetFeePerByte();
+            return networkFee;
         }
 
         /// <summary>
@@ -129,9 +177,17 @@ namespace Neo.SDK.TX
         /// </summary>
         public TxManager Sign()
         {
+            // Verify witness count
             if (!Context.Completed)
             {
                 throw new Exception($"Please add signature or witness first!");
+            }
+
+            // Calculate NetworkFee
+            long leastNetworkFee = CalculateNetworkFee();
+            if (Tx.NetworkFee < leastNetworkFee)
+            {
+                throw new InvalidOperationException("Insufficient NetworkFee");
             }
 
             Tx.Witnesses = Context.GetWitnesses();
