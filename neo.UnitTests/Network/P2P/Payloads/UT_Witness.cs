@@ -16,7 +16,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Witness
     {
-        class dummyVerificable : IVerifiable
+        class DummyVerificable : IVerifiable
         {
             private UInt160 _hash;
 
@@ -24,7 +24,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             public int Size => 1;
 
-            public dummyVerificable(UInt160 hash)
+            public DummyVerificable(UInt160 hash)
             {
                 _hash = hash;
             }
@@ -101,7 +101,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(new dummyVerificable(multiSignContract.ScriptHash));
+            var data = new ContractParametersContext(new DummyVerificable(multiSignContract.ScriptHash));
 
             for (int x = 0; x < maxAccounts; x++)
             {
