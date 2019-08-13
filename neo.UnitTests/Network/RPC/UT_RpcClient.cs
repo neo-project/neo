@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Network.RPC
             MockResponse(response.ToString());
 
             var result = rpc.GetBlockCount();
-            Assert.AreEqual(100, result);
+            Assert.AreEqual((uint)100, result);
         }
 
         [TestMethod]
@@ -476,7 +476,7 @@ namespace Neo.UnitTests.Network.RPC
             response["result"] = json;
             MockResponse(response.ToString());
 
-            var result = rpc.InvokeScript("00046e616d656724058e5e1b6008847cd662728549088a9ee82191");
+            var result = rpc.InvokeScript("00046e616d656724058e5e1b6008847cd662728549088a9ee82191".HexToBytes());
             Assert.AreEqual(json.ToString(), result.ToJson().ToString());
         }
 

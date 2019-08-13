@@ -72,16 +72,8 @@ namespace Neo.SmartContract
             }
         }
 
-        /// <summary>
-        /// Cache for public ScriptHashes field
-        /// </summary>
         private UInt160[] _ScriptHashes = null;
-
-        /// <summary>
-        /// ScriptHashes are the verifiable ScriptHashes from Verifiable element
-        /// Equivalent to: Verifiable.GetScriptHashesForVerifying(Blockchain.Singleton.GetSnapshot())
-        /// </summary>
-        public IReadOnlyList<UInt160> ScriptHashes
+        public virtual IReadOnlyList<UInt160> ScriptHashes
         {
             get
             {
@@ -105,6 +97,17 @@ namespace Neo.SmartContract
             ContextItem item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
+            return true;
+        }
+
+        public bool Add(Contract contract, params object[] parameters)
+        {
+            ContextItem item = CreateItem(contract);
+            if (item == null) return false;
+            for (int index = 0; index < parameters.Length; index++)
+            {
+                item.Parameters[index].Value = parameters[index];
+            }
             return true;
         }
 
@@ -218,6 +221,13 @@ namespace Neo.SmartContract
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
                 return null;
             return item.Parameters;
+        }
+
+        public byte[] GetScript(UInt160 scriptHash)
+        {
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+                return null;
+            return item.Script;
         }
 
         public Witness[] GetWitnesses()

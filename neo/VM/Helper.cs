@@ -228,5 +228,67 @@ namespace Neo.VM
             }
             return parameter;
         }
+
+        public static StackItem ToStackItem(this ContractParameter parameter)
+        {
+            return ToStackItem(parameter, null);
+        }
+
+        private static StackItem ToStackItem(ContractParameter parameter, List<Tuple<StackItem, ContractParameter>> context)
+        {
+            StackItem stackItem = null;
+            switch (parameter.Type)
+            {
+                case ContractParameterType.Array:
+                    if (context is null)
+                        context = new List<Tuple<StackItem, ContractParameter>>();
+                    else
+                        stackItem = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter))?.Item1;
+                    if (stackItem is null)
+                    {
+                        stackItem = ((IList<ContractParameter>)parameter.Value).Select(p => ToStackItem(p, context)).ToList();
+                        context.Add(new Tuple<StackItem, ContractParameter>(stackItem, parameter));
+                    }
+                    break;
+                case ContractParameterType.Map:
+                    if (context is null)
+                        context = new List<Tuple<StackItem, ContractParameter>>();
+                    else
+                        stackItem = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter))?.Item1;
+                    if (stackItem is null)
+                    {
+                        stackItem = new Map(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).ToDictionary(p => ToStackItem(p.Key, context), p => ToStackItem(p.Value, context)));
+                        context.Add(new Tuple<StackItem, ContractParameter>(stackItem, parameter));
+                    }
+                    break;
+                case ContractParameterType.Boolean:
+                    stackItem = (bool)parameter.Value;
+                    break;
+                case ContractParameterType.ByteArray:
+                case ContractParameterType.Signature:
+                    stackItem = (byte[])parameter.Value;
+                    break;
+                case ContractParameterType.Integer:
+                    stackItem = (BigInteger)parameter.Value;
+                    break;
+                case ContractParameterType.Hash160:
+                    stackItem = ((UInt160)parameter.Value).ToArray();
+                    break;
+                case ContractParameterType.Hash256:
+                    stackItem = ((UInt256)parameter.Value).ToArray();
+                    break;
+                case ContractParameterType.PublicKey:
+                    stackItem = ((ECPoint)parameter.Value).EncodePoint(true);
+                    break;
+                case ContractParameterType.String:
+                    stackItem = (string)parameter.Value;
+                    break;
+                case ContractParameterType.InteropInterface:
+                    break;
+                default:
+                    throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");
+            }
+            return stackItem;
+        }
     }
 }
