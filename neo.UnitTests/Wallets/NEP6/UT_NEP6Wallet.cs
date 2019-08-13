@@ -43,16 +43,7 @@ namespace Neo.UnitTests.Wallets.NEP6
 
         private NEP6Wallet CreateWallet()
         {
-            JObject wallet = new JObject();
-            wallet["name"] = "name";
-            wallet["version"] = new System.Version().ToString();
-            wallet["scrypt"] = new ScryptParameters(0,0,0).ToJson();
-            ScryptParameters.FromJson(wallet["scrypt"]).Should().NotBeNull();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = new JObject();
-            wallet.ToString().Should().Be("{\"name\":\"name\",\"version\":\"0.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":{}}");
-            NEP6Wallet w = new NEP6Wallet(wallet);
-            return w;
+            return TestUtils.GenerateTestWallet();
         }
 
         private string CreateWalletFile()
@@ -108,7 +99,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestGetName()
         {
-            Assert.AreEqual("name", uut.Name);
+            Assert.AreEqual("noname", uut.Name);
         }
 
         [TestMethod]
@@ -402,7 +393,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_NEP6Wallet_Json()
         {
-            uut.Name.Should().Be("name");
+            uut.Name.Should().Be("noname");
             uut.Version.Should().Be(new Version());
             uut.Scrypt.Should().NotBeNull();
             uut.Scrypt.N.Should().Be(new ScryptParameters(0, 0, 0).N);
