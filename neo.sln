@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApplicationLogs", "neo-plug
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{79AA084E-BD22-4AE9-A495-753CE78076D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "neo-cli", "neo-cli\neo-cli\neo-cli.csproj", "{6265C273-AC0E-48DC-B29F-8307D872C288}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{A75A1EDB-1DDC-44F2-AE58-1716FB47DAD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A75A1EDB-1DDC-44F2-AE58-1716FB47DAD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A75A1EDB-1DDC-44F2-AE58-1716FB47DAD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6265C273-AC0E-48DC-B29F-8307D872C288}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6265C273-AC0E-48DC-B29F-8307D872C288}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6265C273-AC0E-48DC-B29F-8307D872C288}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6265C273-AC0E-48DC-B29F-8307D872C288}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
