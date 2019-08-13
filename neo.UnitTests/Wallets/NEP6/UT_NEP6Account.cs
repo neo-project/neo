@@ -132,7 +132,6 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestVerifyPassword()
         {
             account = new NEP6Account(wallet, hash, nep2);
-            account = new NEP6Account(wallet, hash, nep2);
             account.VerifyPassword("Satoshi").Should().BeTrue();
             account.VerifyPassword("b").Should().BeFalse();
         }
