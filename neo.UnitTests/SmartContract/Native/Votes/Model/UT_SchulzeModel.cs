@@ -11,16 +11,6 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestCalculateVote()
         {
-            Dictionary<String, int> votes = new Dictionary<String, int>();
-            votes.Add("0,2,1,4,3", 5);
-            votes.Add("0,3,4,2,1", 5);
-            votes.Add("1,4,3,0,2", 8);
-            votes.Add("2,0,1,4,3", 3);
-            votes.Add("2,0,4,1,3", 7);
-            votes.Add("2,1,0,3,4", 2);
-            votes.Add("3,2,4,1,0", 7);
-            votes.Add("4,1,0,3,2", 8);
-
             List<SchulzeVoteUnit> voteList = new List<SchulzeVoteUnit>();
             voteList.Add(new SchulzeVoteUnit(5,new List<int>()  { 0, 2, 1, 4, 3 }));
             voteList.Add(new SchulzeVoteUnit(5, new List<int>() { 0, 3, 4, 2, 1 }));
