@@ -12,6 +12,9 @@ The issue list is reserved exclusively for bug reports and features discussions.
 ### dApp Development
 This document does not relate to dApp development. If you are looking to build a dApp using Neo, please [start here](https://neo.org/dev).
 
+### Contributing to open source projects
+If you are new to open-source development, please [read here](https://opensource.guide/how-to-contribute/#opening-a-pull-request) how to submit your code.
+
 ## Developer Guidance
 We try to have as few rules as possible,  just enough to keep the project organized:
 
@@ -19,6 +22,8 @@ We try to have as few rules as possible,  just enough to keep the project organi
 1.  **Discuss before coding**. Proposals must be discussed before being implemented.  
 Avoid implementing issues with the discussion tag.
 2. **Tests during code review**. We expect reviewers to test the issue before approving or requesting changes.
+
+3. **Wait for at least 2 reviews before merging**. Changes can be merged after 2 approvals, for Neo 3.x branch, and 3 approvals for Neo 2.x branch.
 
 3. **Give time to other developers review an issue**. Even if the code has been approved, you should leave at least 24 hours for others to review it before merging the code.
 
