@@ -7,16 +7,16 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native.Tokens;
+using Neo.SmartContract.Native.Votes.Model;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.Serialization.Formatters.Binary;
 using VMArray = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native.Votes
 {
     public sealed class VoteContract : NativeContract
     {
@@ -25,19 +25,20 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_CreateVote = 10;
         private const byte Prefix_Vote = 11;
         private const byte Prefix_AccessControl = 12;
+        private const byte Prefix_Result = 13;
 
         private StackItem CreateMultiVote(ApplicationEngine engine, VMArray args)
         {
             UInt160 originator = new UInt160(args[0].GetByteArray());
             if (!InteropService.CheckWitness(engine, originator)) return false;
             var tx = engine.ScriptContainer as Transaction;
-            CreateState createState = new CreateState
+            VoteCreateState createState = new VoteCreateState
                 (tx.Hash,
                 engine.CallingScriptHash,
                 originator,
-                args[1].GetString(), 
+                args[1].GetString(),
                 args[2].GetString(),
-                ((VMArray)args[3]).Select(p => p.GetBigInteger()).ToArray(),
+                (int)args[3].GetBigInteger(),
                 true);
             if (RegisterVote(engine.Snapshot, createState))
             {
@@ -48,19 +49,18 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
-
         private StackItem CreateSingleVote(ApplicationEngine engine, VMArray args)
         {
             UInt160 originator = new UInt160(args[0].GetByteArray());
             if (!InteropService.CheckWitness(engine, originator)) return false;
             var tx = engine.ScriptContainer as Transaction;
-            CreateState createState = new CreateState
-                (tx.Hash, 
+            VoteCreateState createState = new VoteCreateState
+                (tx.Hash,
                 engine.CallingScriptHash,
                 originator,
-                args[1].GetString(), 
+                args[1].GetString(),
                 args[2].GetString(),
-                ((VMArray)args[3]).Select(p => p.GetBigInteger()).ToArray(),
+                (int)args[3].GetBigInteger(),
                 false);
             if (RegisterVote(engine.Snapshot, createState))
             {
@@ -71,12 +71,11 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
-
         private StackItem MultiVote(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null || args[1] == null || args[2] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(CreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
 
             UInt160 voter = new UInt160(args[1].GetByteArray());
             if (!InteropService.CheckWitness(engine, voter)) return false;
@@ -90,13 +89,22 @@ namespace Neo.SmartContract.Native
                 {
                     return false;
                 }
+            }
+
+            StorageKey InfoKey = CreateStorageKey(Prefix_CreateVote, id);
+            StorageItem info_state = engine.Snapshot.Storages.TryGet(InfoKey);
+            int voteLength = 0;
+            if (!(info_state is null))
+            {
+                voteLength = (int)VoteCreateState.FromByteArray(info_state.Value).CandidateNumber;
             }
 
             MultiCandidate candidate = new MultiCandidate();
-            if (candidate.SetByteArray(args[2].GetByteArray()))
+            List<int> state = candidate.GetCandidate();
+            if (candidate.SetByteArray(args[2].GetByteArray()) && voteLength == state.Count() && state.Max() < voteLength)
             {
-                VoteState voteState = new VoteState(id, voter,candidate);
-                if (AddVote(engine.Snapshot, voteState))
+                VoteState voteState = new VoteState(voter, candidate);
+                if (AddVote(engine.Snapshot, voteState, id))
                 {
                     return true;
                 }
@@ -108,13 +116,12 @@ namespace Neo.SmartContract.Native
             else
             {
                 return false;
-            }            
+            }
         }
-
         private StackItem SingleVote(ApplicationEngine engine, VMArray args)
         {
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(CreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
 
             UInt160 voter = new UInt160(args[1].GetByteArray());
             if (!InteropService.CheckWitness(engine, voter)) return false;
@@ -130,11 +137,19 @@ namespace Neo.SmartContract.Native
                 }
             }
 
-            SingleCandidate candidate = new SingleCandidate();
-            if (candidate.SetByteArray(args[2].GetByteArray()))
+            StorageKey InfoKey = CreateStorageKey(Prefix_CreateVote, id);
+            StorageItem info_state = engine.Snapshot.Storages.TryGet(InfoKey);
+            int voteLength = 0;
+            if (!(info_state is null))
             {
-                VoteState voteState = new VoteState(id, voter, candidate);
-                if (AddVote(engine.Snapshot, voteState))
+                voteLength = (int)VoteCreateState.FromByteArray(info_state.Value).CandidateNumber;
+            }
+
+            SingleCandidate candidate = new SingleCandidate();
+            if (candidate.SetByteArray(args[2].GetByteArray()) && candidate.GetCandidate() <= voteLength)
+            {
+                VoteState voteState = new VoteState(voter, candidate);
+                if (AddVote(engine.Snapshot, voteState, id))
                 {
                     return true;
                 }
@@ -148,60 +163,108 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
-
         private StackItem GetVoteDetails(ApplicationEngine engine, VMArray args)
         {
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(CreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_state = engine.Snapshot.Storages.TryGet(create_key);
             if (create_state is null) return null;
             return create_state.Value;
         }
-
         private StackItem GetMultiStatistic(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(CreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
-            
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
-            CreateState create_state = CreateState.FromByteArray(create_byte.Value);
+            VoteCreateState create_state = VoteCreateState.FromByteArray(create_byte.Value);
             if (!create_state.IsSequence) return false;
+            if (!InteropService.CheckWitness(engine, create_state.Originator)) return false;
 
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
             IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(index_key.Key);
 
             if (pairs.Count() == 0) return false;
 
-            Statistic result = new Statistic();
+            MultiStatistic result = new MultiStatistic();
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
                 VoteState vote_state = VoteState.FromByteArray(pair.Value.Value);
-                BigInteger account_balance = new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
+                int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
                 MultiCandidate candidate = new MultiCandidate();
                 if (candidate.SetByteArray(vote_state.ToByteArray()))
                 {
-                    result.AddVote(new CalculatedVote
+                    result.AddVote(new CalculatedMultiVote
                     {
                         balance = account_balance,
                         vote = candidate.GetCandidate()
-                    });               
+                    });
                 }
                 else
                 {
                     //TODO: error handle
                 }
             }
-            //TODO: calculate result by different model
+            //TODO: calculate result
+            var resultMatrix = result.ShowResult();
+            if (!AddResult(engine.Snapshot, resultMatrix, id))
+            {
+                return false;
+            }
+            return result.ToByteArray();
+        }
+        private StackItem GetSingleStatistic(ApplicationEngine engine, VMArray args)
+        {
+            if (args[0] == null) return false;
+            UInt256 TxHash = new UInt256(args[0].GetByteArray());
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+
+            StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
+            StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
+            VoteCreateState create_state = VoteCreateState.FromByteArray(create_byte.Value);
+            if (create_state.IsSequence) return false;
+            if (!InteropService.CheckWitness(engine, create_state.Originator)) return false;
+
+            StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
+            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(index_key.Key);
+
+            if (pairs.Count() == 0) return false;
+
+            SingleStatistic result = new SingleStatistic();
+            foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
+            {
+                VoteState vote_state = VoteState.FromByteArray(pair.Value.Value);
+                int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
+                SingleCandidate candidate = new SingleCandidate();
+                if (candidate.SetByteArray(vote_state.ToByteArray()))
+                {
+                    result.AddVote(new CalculatedSingleVote
+                    {
+                        balance = account_balance,
+                        vote = candidate.GetCandidate()
+                    });
+                }
+                else
+                {
+                    //TODO; error handle
+                }
+            }
+            //TODO: calculate result
+            var resultMatrix = result.ShowResult();
+            if (!AddResult(engine.Snapshot, resultMatrix, id))
+            {
+                return false;
+            }
             return result.ToByteArray();
         }
         private StackItem AccessControl(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] == null || args[1] == null || args[2] == null ) return false;
+            if (args[0] == null || args[1] == null || args[2] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(CreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
 
             List<UInt160> newVoter = ConvertBytesToUserArray(args[1].GetByteArray());
 
@@ -237,8 +300,7 @@ namespace Neo.SmartContract.Native
                 return true;
             }
         }
-
-        private bool RegisterVote(Snapshot snapshot, CreateState createState)
+        private bool RegisterVote(Snapshot snapshot, VoteCreateState createState)
         {
             StorageKey key = CreateStorageKey(Prefix_CreateVote, createState.GetId());
             if (snapshot.Storages.TryGet(key) != null) return false;
@@ -248,10 +310,9 @@ namespace Neo.SmartContract.Native
             });
             return true;
         }
-
-        private bool AddVote(Snapshot snapshot, VoteState voteState)
+        private bool AddVote(Snapshot snapshot, VoteState voteState, byte[] id)
         {
-            StorageKey key = CreateStorageKey(Prefix_Vote, GetVoteKey(snapshot, voteState.GetId().ToScriptHash()));
+            StorageKey key = CreateStorageKey(Prefix_Vote, GetVoteKey(snapshot, id));
             if (snapshot.Storages.TryGet(key) != null) return false;
             snapshot.Storages.Add(key, new StorageItem
             {
@@ -259,20 +320,27 @@ namespace Neo.SmartContract.Native
             });
             return true;
         }
-
-        private byte[] GetVoteKey(Snapshot snapshot, UInt160 id)
+        private bool AddResult(Snapshot snapshot, byte[] Result, byte[] id)
         {
-            StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
+            StorageKey key = CreateStorageKey(Prefix_Result, id);
+            if (snapshot.Storages.TryGet(key) != null) return false;
+            snapshot.Storages.Add(key, new StorageItem
+            {
+                Value = Result
+            });
+            return true;
+        }
+        private byte[] GetVoteKey(Snapshot snapshot, byte[] id)
+        {
+            StorageKey index_key = CreateStorageKey(Prefix_Vote, id);
             int count = GetVoteCount(snapshot, index_key);
             UInt160 Index_Number = snapshot.Storages.GetAndChange(index_key).Value.ToScriptHash();
-            return CreateState.ConcatByte(id.ToArray(),Index_Number.ToArray());
+            return VoteCreateState.ConcatByte(id.ToArray(), Index_Number.ToArray());
         }
-
         private int GetVoteCount(Snapshot snapshot, StorageKey index_key)
         {
             return snapshot.Storages.Find(index_key.Key).Count();
         }
-
         static byte[] ConvertUserArrayToBytes(List<UInt160> users)
         {
             if (users == null) return new byte[0];
@@ -286,7 +354,6 @@ namespace Neo.SmartContract.Native
                 return memoryStream.ToArray();
             }
         }
-
         static List<UInt160> ConvertBytesToUserArray(byte[] data)
         {
             if (data == null) return null;
@@ -300,117 +367,6 @@ namespace Neo.SmartContract.Native
                     result.Add(br.ReadBytes(20).ToScriptHash());
                 }
                 return result;
-            }
-        }
-    }
-
-    internal class CreateState
-    {
-        public readonly byte[] Id;
-        private UInt256 TransactionHash;
-        private UInt160 CallingScriptHash;
-        private readonly UInt160 Originator;
-        private string Title;
-        private string Description;
-        private BigInteger[] VoteCandidate;
-        public readonly bool IsSequence;
-
-        public CreateState() { }
-
-        public CreateState(UInt256 transactionHash, UInt160 callingScriptHash, UInt160 originator, string title, string description, BigInteger[] candidate, bool IsSeq)
-        {
-            TransactionHash = transactionHash;
-            CallingScriptHash = callingScriptHash;
-            Originator = originator;
-            Title = title;
-            Description = description;
-            VoteCandidate = candidate;
-            IsSequence = IsSeq;
-
-            Id = new Crypto().Hash160(ConcatByte(TransactionHash.ToArray(), CallingScriptHash.ToArray()));
-        }
-
-        public byte[] ToByteArray()
-        {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                BinaryFormatter binaryFormatter = new BinaryFormatter();
-                binaryFormatter.Serialize(memoryStream, this);
-                return memoryStream.ToArray();
-            }
-        }
-
-        public static CreateState FromByteArray(byte[] data)
-        {
-            using (MemoryStream memoryStream = new MemoryStream(data))
-            {
-                try
-                {
-                    BinaryFormatter binaryFormatter = new BinaryFormatter();
-                    return binaryFormatter.Deserialize(memoryStream) as CreateState;
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-
-            }
-        }
-
-        public byte[] GetId()
-        {
-            return this.Id;
-        }
-
-        public static byte[] ConcatByte(byte[] byteSource, byte[] newData)
-        {
-            List<byte> result = new List<byte>(byteSource);
-            result.AddRange(newData);
-            return result.ToArray();
-        }
-    }
-
-    internal class VoteState
-    {
-        private readonly byte[] Id;
-        private readonly UInt160 Voter;
-        private readonly ICandidate Records;
-
-        public VoteState(byte[] id, UInt160 voter, ICandidate candidate)
-        {
-            Id = id;
-            Voter = voter;
-            Records = candidate;
-        }
-
-        public byte[] GetId() => this.Id;
-        public UInt160 GetVoter() => this.Voter;
-        public ICandidate GetCandidate() => this.Records;
-
-        public byte[] ToByteArray()
-        {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                BinaryFormatter binaryFormatter = new BinaryFormatter();
-                binaryFormatter.Serialize(memoryStream, this);
-                return memoryStream.ToArray();
-            }
-        }
-
-        public static VoteState FromByteArray(byte[] data)
-        {
-            using (MemoryStream memoryStream = new MemoryStream(data))
-            {
-                try
-                {
-                    BinaryFormatter binaryFormatter = new BinaryFormatter();
-                    return binaryFormatter.Deserialize(memoryStream) as VoteState;
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-                
             }
         }
     }
@@ -447,7 +403,7 @@ namespace Neo.SmartContract.Native
                     this.candidateList = binaryFormatter.Deserialize(memoryStream) as List<int>;
                     return true;
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw e;
                 }
@@ -462,10 +418,10 @@ namespace Neo.SmartContract.Native
     }
     internal class SingleCandidate : ICandidate
     {
-        public SingleCandidate() => this.candidate = null;
+        public SingleCandidate() { }
         public SingleCandidate(int candidate) => this.candidate = candidate;
 
-        private int? candidate;
+        private int candidate;
         public byte[] GetByteArray()
         {
             using (MemoryStream memoryStream = new MemoryStream())
@@ -483,44 +439,37 @@ namespace Neo.SmartContract.Native
                 try
                 {
                     BinaryFormatter binaryFormatter = new BinaryFormatter();
-                    this.candidate = binaryFormatter.Deserialize(memoryStream) as int?;
+                    this.candidate = (int)binaryFormatter.Deserialize(memoryStream);
                     return true;
                 }
-                catch (Exception e)
+                catch
                 {
-                    throw e;
+                    return false;
                 }
 
             }
         }
 
-        public int? GetCandidate()
+        public int GetCandidate()
         {
             return candidate;
         }
     }
 
-    internal class CalculatedVote
+    internal class CalculatedMultiVote
     {
-        public BigInteger balance;
+        public int balance;
         public List<int> vote;
     }
-
-    internal class Statistic
+    internal class MultiStatistic
     {
-        UInt256 id;
-        UInt160 originator;
-        string title;
-        string description;
-        int[] candidate;
-        List<CalculatedVote> Matrix;
+        List<CalculatedMultiVote> Matrix;
         int[][] resultMatrix;
 
-        public void AddVote(CalculatedVote vote)
+        public void AddVote(CalculatedMultiVote vote)
         {
             Matrix.Add(vote);
         }
-
         public byte[] ToByteArray()
         {
             using (MemoryStream memoryStream = new MemoryStream())
@@ -530,15 +479,14 @@ namespace Neo.SmartContract.Native
                 return memoryStream.ToArray();
             }
         }
-
-        public static Statistic FromByteArray(byte[] data)
+        public static MultiStatistic FromByteArray(byte[] data)
         {
             using (MemoryStream memoryStream = new MemoryStream(data))
             {
                 try
                 {
                     BinaryFormatter binaryFormatter = new BinaryFormatter();
-                    return binaryFormatter.Deserialize(memoryStream) as Statistic;
+                    return binaryFormatter.Deserialize(memoryStream) as MultiStatistic;
                 }
                 catch
                 {
@@ -547,11 +495,81 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public bool CalculateResult(IVoteModel Model)
+        public byte[] ShowResult()
+        {
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                binaryFormatter.Serialize(memoryStream, this.resultMatrix);
+                return memoryStream.ToArray();
+            }
+        }
+        public bool CalculateResult(IMultiVoteModel Model)
         {
             try
             {
-                resultMatrix = Model.GetResult();
+                resultMatrix = Model.GetResult(this.Matrix);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+    internal class CalculatedSingleVote
+    {
+        public int balance;
+        public int vote;
+    }
+    internal class SingleStatistic
+    {
+        List<CalculatedSingleVote> Matrix;
+        int[] result;
+
+        public void AddVote(CalculatedSingleVote vote)
+        {
+            Matrix.Add(vote);
+        }
+        public byte[] ToByteArray()
+        {
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                binaryFormatter.Serialize(memoryStream, this);
+                return memoryStream.ToArray();
+            }
+        }
+        public static SingleStatistic FromByteArray(byte[] data)
+        {
+            using (MemoryStream memoryStream = new MemoryStream(data))
+            {
+                try
+                {
+                    BinaryFormatter binaryFormatter = new BinaryFormatter();
+                    return binaryFormatter.Deserialize(memoryStream) as SingleStatistic;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+        }
+        public byte[] ShowResult()
+        {
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                binaryFormatter.Serialize(memoryStream, this.result);
+                return memoryStream.ToArray();
+            }
+        }
+        public bool CalculateResult(ISingleVoteModel Model)
+        {
+            try
+            {
+                result = Model.GetResult(this.Matrix);
                 return true;
             }
             catch
@@ -561,9 +579,14 @@ namespace Neo.SmartContract.Native
         }
     }
 
-    interface IVoteModel
+    interface IMultiVoteModel
     {
         //TODO: details for interface
-        int[][] GetResult();
+        int[][] GetResult(List<CalculatedMultiVote> votes);
+    }
+
+    interface ISingleVoteModel
+    {
+        int[] GetResult(List<CalculatedSingleVote> votes);
     }
 }

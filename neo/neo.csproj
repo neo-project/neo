@@ -40,4 +40,11 @@
     <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
   </ItemGroup>
 
+<<<<<<< HEAD
+=======
+  <ItemGroup>
+    <Folder Include="SmartContract\Native\Votes\Method\" />
+  </ItemGroup>
+
+>>>>>>> 8cd17c2cc6547c5190144b34e1b946c3c3e3f7b0
 </Project>
