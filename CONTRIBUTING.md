@@ -35,7 +35,7 @@ Usually, issues follow the ![](./.github/images/discussion.png) ![](./.github/im
 
 ![](./.github/images/discussion.png) Whenever someone posts a new feature request, the tag discussion is added. This means that there is no consensus if the feature should be implemented or not. Avoid creating PR to solve issues in this state since it may be completely discarded.
 
-![](./.github/images/solution-design.png) When a feature request is accepted by the team, but there is no consensus about the implementation, the issue is tagged with solution-design. We recommend the team to agree in the solution design before anyone attempts to implement it, using text or UML. It is not recommended, but developers can also present their solution using code.  
+![](./.github/images/solution-design.png) When a feature request is accepted by the team, but there is no consensus about the implementation, the issue is tagged with design. We recommend the team to agree in the solution design before anyone attempts to implement it, using text or UML. It is not recommended, but developers can also present their solution using code.  
 Note that PRs for issues in this state may also be discarded if the team disagree with the proposed solution.
 
 ![](./.github/images/ready-to-implement.png) Once the team has agreed on feature and the proposed solution, the issue is tagged with ready-to-implement. When implementing it, please follow the solution accepted by the team.
