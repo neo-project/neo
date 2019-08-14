@@ -28,8 +28,11 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            InvocationScript = reader.ReadVarBytes(1024);
-            VerificationScript = reader.ReadVarBytes(512);
+            // This is designed to allow a MultiSig 10/10 (around 1000 bytes)
+            // Invocation = 10 * 64 + 10 = 650
+            InvocationScript = reader.ReadVarBytes(650);
+            // Verification = 10 * 33 = 330 ~ 350
+            VerificationScript = reader.ReadVarBytes(350);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
