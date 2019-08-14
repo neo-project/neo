@@ -28,6 +28,7 @@ namespace Neo.SmartContract.Native.Votes
         private const byte Prefix_CreateVote = 10;
         private const byte Prefix_Vote = 11;
         private const byte Prefix_AccessControl = 12;
+        private const byte Prefix_Result = 13;
 
         private StackItem CreateMultiVote(ApplicationEngine engine, VMArray args)
         {
@@ -195,7 +196,7 @@ namespace Neo.SmartContract.Native.Votes
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
                 VoteState vote_state = VoteState.FromByteArray(pair.Value.Value);
-                BigInteger account_balance = new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
+                int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
                 MultiCandidate candidate = new MultiCandidate();
                 if (candidate.SetByteArray(vote_state.ToByteArray()))
                 {
@@ -210,10 +211,14 @@ namespace Neo.SmartContract.Native.Votes
                     //TODO: error handle
                 }
             }
-            //TODO: calculate result by different model
-            return result.ToByteArray();
+            //TODO: calculate result
+            var resultMatrix = result.ShowResult();
+            if (!AddResult(engine.Snapshot, resultMatrix , id))
+            {
+                return false;
+            }
+            return result.ToByteArray();          
         }
-
         private StackItem GetSingleStatistic(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null) return false;
@@ -235,7 +240,7 @@ namespace Neo.SmartContract.Native.Votes
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
                 VoteState vote_state = VoteState.FromByteArray(pair.Value.Value);
-                BigInteger account_balance = new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
+                int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
                 SingleCandidate candidate = new SingleCandidate();
                 if (candidate.SetByteArray(vote_state.ToByteArray()))
                 {
@@ -250,7 +255,12 @@ namespace Neo.SmartContract.Native.Votes
                     //TODO; error handle
                 }
             }
-            //TODO: Add result
+            //TODO: calculate result
+            var resultMatrix = result.ShowResult();
+            if (!AddResult(engine.Snapshot, resultMatrix, id))
+            {
+                return false;
+            }           
             return result.ToByteArray();
         }
         private StackItem AccessControl(ApplicationEngine engine, VMArray args)
@@ -313,11 +323,16 @@ namespace Neo.SmartContract.Native.Votes
             });
             return true;
         }
-        private bool AddResult(Snapshot snapshot)
+        private bool AddResult(Snapshot snapshot, byte[] Result, byte[] id)
         {
-            //TODO: 
+            StorageKey key = CreateStorageKey(Prefix_Result, id);
+            if (snapshot.Storages.TryGet(key) != null) return false;
+            snapshot.Storages.Add(key, new StorageItem
+            {
+                Value = Result
+            });
             return true;
-        }
+        }      
         private byte[] GetVoteKey(Snapshot snapshot, byte[] id)
         {
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id);
@@ -446,7 +461,7 @@ namespace Neo.SmartContract.Native.Votes
 
     internal class CalculatedMultiVote
     {
-        public BigInteger balance;
+        public int balance;
         public List<int> vote;
     }
     internal class MultiStatistic
@@ -507,7 +522,7 @@ namespace Neo.SmartContract.Native.Votes
     }
     internal class CalculatedSingleVote
     {
-        public BigInteger balance;
+        public int balance;
         public int vote;
     }
     internal class SingleStatistic
