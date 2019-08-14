@@ -1,22 +1,20 @@
 ﻿#pragma warning disable IDE0051
 #pragma warning disable IDE0060
 
+using Neo.Cryptography;
+using Neo.IO;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract.Native.Tokens;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Neo.VM;
-using Neo.VM.Types;
-using Neo.IO;
-using Neo.Network.P2P.Payloads;
-using Neo.Ledger;
-using System.Linq;
-using Neo.Persistence;
-using Neo.Cryptography;
-using Neo.SmartContract.Native.Tokens;
-using VMArray = Neo.VM.Types.Array;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using System.Linq;
 using System.Numerics;
+using System.Runtime.Serialization.Formatters.Binary;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
