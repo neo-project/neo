@@ -62,13 +62,11 @@ namespace Neo.UnitTests.SDK.SC
             }
 
             MockInvokeScript(script, new RpcInvokeResult { GasConsumed = "100" });
-            rpcClientMock.Setup(p => p.SendRawTransaction(It.IsAny<string>())).Returns(true);
 
             ContractClient contractClient = new ContractClient(rpcClientMock.Object);
             var result = contractClient.DeployContract(new byte[1], true, true, keyPair1);
 
-            Assert.IsTrue(result);
+            Assert.IsNotNull(result);
         }
-
     }
 }

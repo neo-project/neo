@@ -44,9 +44,9 @@ namespace Neo.SDK.SC
         }
 
         /// <summary>
-        /// Deploy Contract
+        /// Deploy Contract, return signed transaction
         /// </summary>
-        public bool DeployContract(byte[] contractScript, bool hasStorage, bool isPayable, KeyPair sender, long networkFee = 0)
+        public Transaction DeployContract(byte[] contractScript, bool hasStorage, bool isPayable, KeyPair sender, long networkFee = 0)
         {
             ContractFeatures properties = ContractFeatures.NoProperty;
             if (hasStorage) properties |= ContractFeatures.HasStorage;
@@ -65,8 +65,7 @@ namespace Neo.SDK.SC
                 .Sign()
                 .Tx;
 
-            return rpcClient.SendRawTransaction(tx.ToArray().ToHexString());
-
+            return tx;
         }
     }
 }

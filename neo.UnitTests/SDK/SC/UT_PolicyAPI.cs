@@ -60,6 +60,5 @@ namespace Neo.UnitTests.SDK.SC
             var result = policyAPI.GetBlockedAccounts();
             Assert.AreEqual(UInt160.Zero, result[0]);
         }
-
     }
 }

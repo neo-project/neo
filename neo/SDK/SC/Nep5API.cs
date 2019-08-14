@@ -39,7 +39,7 @@ namespace Neo.SDK.SC
             return TestInvoke(scriptHash, "totalSupply").Stack.Single().ToStackItem().GetBigInteger();
         }
 
-        public bool Transfer(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
+        public Transaction Transfer(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
         {
             var sender = fromKey.ScriptHash;
 
@@ -50,7 +50,7 @@ namespace Neo.SDK.SC
                 .Sign()
                 .Tx;
 
-            return rpcClient.SendRawTransaction(tx.ToArray().ToHexString());
+            return tx;
         }
     }
 }

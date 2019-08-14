@@ -86,12 +86,10 @@ namespace Neo.UnitTests.SDK.SC
         {
             byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "transfer", Sender, UInt160.Zero, new BigInteger(1_00000000));
             MockInvokeScript(testScript, new RpcInvokeResult { GasConsumed = "1000000" });
-            rpcClientMock.Setup(p => p.SendRawTransaction(It.IsAny<string>())).Returns(true);
 
             var result = nep5API.Transfer(NativeContract.GAS.Hash, keyPair1, UInt160.Zero, new BigInteger(1_00000000));
 
-            Assert.AreEqual(true, result);
+            Assert.IsNotNull(result);
         }
-
     }
 }

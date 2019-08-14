@@ -31,17 +31,19 @@ namespace Neo.Network.RPC
         public async Task<RpcResponse> SendAsync(RpcRequest request)
         {
             var requestJson = request.ToJson().ToString();
-            var result = await httpClient.PostAsync(httpClient.BaseAddress, new StringContent(requestJson, Encoding.UTF8));
-            var content = await result.Content.ReadAsStringAsync();
-            var response = RpcResponse.FromJson(JObject.Parse(content));
-            response.RawResponse = content;
-
-            if (response.Error != null)
+            using (var result = await httpClient.PostAsync(httpClient.BaseAddress, new StringContent(requestJson, Encoding.UTF8)))
             {
-                throw new RpcException(response.Error.Code, response.Error.Message);
-            }
+                var content = await result.Content.ReadAsStringAsync();
+                var response = RpcResponse.FromJson(JObject.Parse(content));
+                response.RawResponse = content;
 
-            return response;
+                if (response.Error != null)
+                {
+                    throw new RpcException(response.Error.Code, response.Error.Message);
+                }
+
+                return response;
+            }
         }
 
         public RpcResponse Send(RpcRequest request)
@@ -187,7 +189,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public virtual RpcRawMemPool GetRawMempoolBoth()
         {
-            return RpcRawMemPool.FromJson(RpcSend("getrawmempool"));
+            return RpcRawMemPool.FromJson(RpcSend("getrawmempool", true));
         }
 
         /// <summary>

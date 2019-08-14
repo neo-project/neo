@@ -33,7 +33,7 @@ namespace Neo.SDK.TX
 
         /// <summary>
         /// Create an unsigned Transaction object with given parameters.
-        /// will set 
+        /// will set networkfee to estimate value (with only basic signatures) when networkFee is 0
         /// </summary>
         public TxManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
@@ -64,16 +64,16 @@ namespace Neo.SDK.TX
 
             Context = new TransactionContext(Tx);
 
-            // set networkfee to least cost when networkFee is 0
+            // set networkfee to estimate value when networkFee is 0
             Tx.NetworkFee = networkFee == 0 ? EstimateNetwotkFee() : networkFee;
 
             var gasBalance = new Nep5API(rpcClient).BalanceOf(NativeContract.GAS.Hash, sender);
             if (gasBalance >= Tx.SystemFee + Tx.NetworkFee) return this;
-            throw new InvalidOperationException("Insufficient GAS");
+            throw new InvalidOperationException($"Insufficient GAS in address: {sender.ToAddress()}");
         }
 
         /// <summary>
-        /// Estimate NetwotkFee, assuming the witnesses are single Signature
+        /// Estimate NetwotkFee, assuming the witnesses are basic Signature Contract
         /// </summary>
         private long EstimateNetwotkFee()
         {

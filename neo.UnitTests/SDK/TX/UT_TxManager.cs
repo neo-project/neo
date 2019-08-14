@@ -179,7 +179,5 @@ namespace Neo.UnitTests.SDK.TX
             Assert.AreEqual(0, tx.Witnesses[0].VerificationScript.Length);
             Assert.AreEqual(0, tx.Witnesses[0].InvocationScript.Length);
         }
-
-
     }
 }
