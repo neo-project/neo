@@ -104,6 +104,5 @@ namespace Neo.SmartContract
                 ParameterList = parameterList
             };
         }
-
     }
 }
