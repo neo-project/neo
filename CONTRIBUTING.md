@@ -1,6 +1,6 @@
 
 # Contributing to NEO
-Neo is an open-source project and it depends on its contributors and constant community feedback to implement the features required for an smart economy.  
+Neo is an open-source project and it depends on its contributors and constant community feedback to implement the features required for a smart economy.  
 
 You are more than welcome to join us in the development of Neo.  
 
@@ -17,9 +17,6 @@ This document does not relate to dApp development. If you are looking to build a
 ### Developer Guidance
 We try to have as few rules as possible, just enough to keep the project organized. If you want to suggest any changes, please create an issue or message us on Discord.
 
-##### Use complete titles
-Use a comprehensive title and descriptions in your PRs. This is important because this information is used in our monthly development report.
-
 ##### Discuss before coding
 Proposals must be discussed before being implemented. Create a new issue if you have an idea of a new feature or enhancement. Avoid implementing issues with the ![](./.github/images/discussion.png) tag.
 
@@ -29,9 +26,6 @@ We expect reviewers to test the issue before approving or requesting changes.
 ##### Give time to other developers review an issue
 Even if the code has been approved, you should leave at least 24 hours for others to review it before merging the code.
 
-##### Read the PR template
-Make sure you follow the instructions in our PR template to ensure your code is not rejected.
-
 ##### Create unit tests
 Since all issues must be tested by the reviewers, it is important that the developer includes basic unit tests.
 
@@ -39,8 +33,8 @@ Since all issues must be tested by the reviewers, it is important that the devel
 If a developer wants to work in a specific issue, he may ask the team to assign it to himself. The proposer of an issue has priority in task assignment.
 
 
-### Issues for begginners
-If you are looking to start contributing to NEO, we suggest you start working on issues with ![](./.github/images/cosmetic.png) or ![](./.github/images/house-keeping.png) tags, since they usually do not depend on extensive NEO platform knowledge. 
+### Issues for beginners
+If you are looking to start contributing to NEO, we suggest you start working on issues with ![](./.github/images/cosmetic.png) or ![](./.github/images/house-keeping.png) tags since they usually do not depend on extensive NEO platform knowledge. 
 
 ### Issues States
 Usually, issues follow the ![](./.github/images/discussion.png) ![](./.github/images/solution-design-2.png) ![](./.github/images/ready-to-implement.png) ![](./.github/images/to-review.png)  flow, but this is not strictly mandatory.
@@ -62,7 +56,7 @@ Some issues need to be reviewed by the team. This tag may be used in issues that
 
 #### Type: ![](./.github/images/cosmetic.png)
 
-Issues with the ![](./.github/images/cosmetic.png) tag are usually changes in code or documentation that improve user experience without affecting current functionality. These issues are recommended for begginners because they require little to no knowledge about Neo platform.
+Issues with the ![](./.github/images/cosmetic.png) tag are usually changes in code or documentation that improve user experience without affecting current functionality. These issues are recommended for beginners because they require little to no knowledge about Neo platform.
 
 #### Type: ![](./.github/images/enhancement.png)
 
@@ -74,10 +68,10 @@ New features may include large changes in the code base. Some are complex, but s
 
 #### Type: ![](./.github/images/migration.png)
 
-Issues related to the migration from Neo 2 to Neo 3 are tagged with ![](./.github/images/migration.png). These issues are usually the most complicated ones, since they require a deep knowledge in both versions.
+Issues related to the migration from Neo 2 to Neo 3 are tagged with ![](./.github/images/migration.png). These issues are usually the most complicated ones since they require a deep knowledge in both versions.
 
 ### Tags for Project Modules 
-These tags do not necessarily represent each module at code level. Modules ![](./.github/images/consensus.png) and ![](./.github/images/compiler.png) are not recommended for begginers.
+These tags do not necessarily represent each module at code level. Modules ![](./.github/images/consensus.png) and ![](./.github/images/compiler.png) are not recommended for beginners.
 
 #### Module: ![](./.github/images/compiler.png)
 Issues that are related or influence the behavior of our C# compiler. Note that the compiler itself is hosted in the [neo-devpack-dotnet](https://github.com/neo-project/neo-devpack-dotnet) repository.
@@ -98,7 +92,7 @@ Identify issues that affect the network-policy like fees, access list or other r
 This module includes peer-to-peer message exchange and network optmizations, at TCP or UDP level (not HTTP).
 
 #### Module: ![](./.github/images/rpc.png)
-All HTTP communication is handled by the RPC module. This module usually provides support methods, since the main communication protocol takes place at the ![](./.github/images/p2p.png) module.
+All HTTP communication is handled by the RPC module. This module usually provides support methods since the main communication protocol takes place at the ![](./.github/images/p2p.png) module.
 
 #### Module: ![](./.github/images/vm.png)
 New features that affect the Neo Virtual Machine or the Interop layer have this tag.
@@ -109,15 +103,6 @@ Neo provides an SDK to help developers to interact with the blockchain. Changes 
 #### Module: ![](./.github/images/wallet.png)
 Wallets are used to track funds and interact with the blockchain. Note that this module depends on a full node implementation (data stored on local disk).
 
-### Commit and PR messages
-It is recommended that we use clear commit and PR messages.
-
-Examples:  
-- `persistence - rocksdb - Replacing LevelDB with RocksDB`;
-- `network - ProtocolHandler - Adding mempool flush methods`;
-
-You can select one module from the list above or use a different word, one that best communicates what has been changed.
-A PR should not be denied because of its title.
 
 
 
