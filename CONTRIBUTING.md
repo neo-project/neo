@@ -31,7 +31,6 @@ Avoid implementing issues with the discussion tag.
 If you are looking to start contributing to NEO, we suggest you start working on issues with ![](./.github/images/cosmetic.png) or ![](./.github/images/house-keeping.png) tags since they usually do not depend on extensive NEO platform knowledge. 
 
 ### Tags for Issues States
-Usually, issues follow the ![](./.github/images/discussion.png) ![](./.github/images/solution-design.png) ![](./.github/images/ready-to-implement.png) ![](./.github/images/to-review.png)  flow, but this is not strictly mandatory.
 
 ![](./.github/images/discussion.png) Whenever someone posts a new feature request, the tag discussion is added. This means that there is no consensus if the feature should be implemented or not. Avoid creating PR to solve issues in this state since it may be completely discarded.
 
@@ -39,8 +38,6 @@ Usually, issues follow the ![](./.github/images/discussion.png) ![](./.github/im
 Note that PRs for issues in this state may also be discarded if the team disagree with the proposed solution.
 
 ![](./.github/images/ready-to-implement.png) Once the team has agreed on feature and the proposed solution, the issue is tagged with ready-to-implement. When implementing it, please follow the solution accepted by the team.
-
-![](./.github/images/to-review.png) Some issues need to be reviewed by the team. This tag may be used in issues that need attention or to create task lists.
 
 ### Tags for Issue Types
 
