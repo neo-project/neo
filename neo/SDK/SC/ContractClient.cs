@@ -1,5 +1,4 @@
-﻿using Neo.IO;
-using Neo.Network.P2P.Payloads;
+﻿using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
 using Neo.SDK.TX;
@@ -59,7 +58,7 @@ namespace Neo.SDK.SC
                 script = sb.ToArray();
             }
 
-            Transaction tx = new TxManager(rpcClient, sender.ScriptHash)
+            Transaction tx = new TransactionManager(rpcClient, sender.ScriptHash)
                 .MakeTransaction(script, null, null, networkFee)
                 .AddSignature(sender)
                 .Sign()

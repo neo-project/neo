@@ -15,7 +15,7 @@ namespace Neo.SDK.TX
     /// <summary>
     /// This class helps to create transactions manually.
     /// </summary>
-    public class TxManager
+    public class TransactionManager
     {
         private static readonly Random rand = new Random();
         private readonly RpcClient rpcClient;
@@ -25,7 +25,7 @@ namespace Neo.SDK.TX
 
         public TransactionContext Context { private set; get; }
 
-        public TxManager(RpcClient neoRpc, UInt160 sender)
+        public TransactionManager(RpcClient neoRpc, UInt160 sender)
         {
             rpcClient = neoRpc;
             this.sender = sender;
@@ -33,9 +33,13 @@ namespace Neo.SDK.TX
 
         /// <summary>
         /// Create an unsigned Transaction object with given parameters.
-        /// will set networkfee to estimate value (with only basic signatures) when networkFee is 0
         /// </summary>
-        public TxManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
+        /// <param name="script">Transaction Script</param>
+        /// <param name="attributes">Transaction Attributes</param>
+        /// <param name="cosigners">Transaction Cosigners</param>
+        /// <param name="networkFee">Transaction NetworkFee, will set networkfee to estimate value (with only basic signatures) when networkFee is 0</param>
+        /// <returns></returns>
+        public TransactionManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
             uint height = rpcClient.GetBlockCount() - 1;
             Tx = new Transaction
@@ -65,7 +69,7 @@ namespace Neo.SDK.TX
             Context = new TransactionContext(Tx);
 
             // set networkfee to estimate value when networkFee is 0
-            Tx.NetworkFee = networkFee == 0 ? EstimateNetwotkFee() : networkFee;
+            Tx.NetworkFee = networkFee == 0 ? EstimateNetworkFee() : networkFee;
 
             var gasBalance = new Nep5API(rpcClient).BalanceOf(NativeContract.GAS.Hash, sender);
             if (gasBalance >= Tx.SystemFee + Tx.NetworkFee) return this;
@@ -75,7 +79,7 @@ namespace Neo.SDK.TX
         /// <summary>
         /// Estimate NetwotkFee, assuming the witnesses are basic Signature Contract
         /// </summary>
-        private long EstimateNetwotkFee()
+        private long EstimateNetworkFee()
         {
             long networkFee = 0;
             UInt160[] hashes = Tx.GetScriptHashesForVerifying(null);
@@ -123,7 +127,9 @@ namespace Neo.SDK.TX
         /// <summary>
         /// Add Signature
         /// </summary>
-        public TxManager AddSignature(KeyPair key)
+        /// <param name="key">The KeyPair to sign transction</param>
+        /// <returns></returns>
+        public TransactionManager AddSignature(KeyPair key)
         {
             var contract = Contract.CreateSignatureContract(key.PublicKey);
 
@@ -139,7 +145,9 @@ namespace Neo.SDK.TX
         /// <summary>
         /// Add Multi-Signature
         /// </summary>
-        public TxManager AddMultiSig(KeyPair key, params ECPoint[] publicKeys)
+        /// <param name="key">The KeyPair to sign transction</param>
+        /// <param name="publicKeys">The Public Keys construct the multiple signature contract</param>
+        public TransactionManager AddMultiSig(KeyPair key, params ECPoint[] publicKeys)
         {
             Contract contract = Contract.CreateMultiSigContract(publicKeys.Length, publicKeys);
 
@@ -155,7 +163,9 @@ namespace Neo.SDK.TX
         /// <summary>
         /// Add Witness with contract
         /// </summary>
-        public TxManager AddWitness(Contract contract, params object[] parameters)
+        /// <param name="contract">The witness verification contract</param>
+        /// <param name="parameters">The witness invocation parameters</param>
+        public TransactionManager AddWitness(Contract contract, params object[] parameters)
         {
             if (!Context.Add(contract, parameters))
             {
@@ -167,7 +177,9 @@ namespace Neo.SDK.TX
         /// <summary>
         /// Add Witness with scriptHash
         /// </summary>
-        public TxManager AddWitness(UInt160 scriptHash, params object[] parameters)
+        /// <param name="scriptHash">The witness verification contract hash</param>
+        /// <param name="parameters">The witness invocation parameters</param>
+        public TransactionManager AddWitness(UInt160 scriptHash, params object[] parameters)
         {
             var contract = Contract.Create(scriptHash);
             return AddWitness(contract, parameters);
@@ -176,7 +188,7 @@ namespace Neo.SDK.TX
         /// <summary>
         /// Verify Witness count and add witnesses
         /// </summary>
-        public TxManager Sign()
+        public TransactionManager Sign()
         {
             // Verify witness count
             if (!Context.Completed)

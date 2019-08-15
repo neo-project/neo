@@ -22,7 +22,7 @@ namespace Neo.UnitTests.SDK.SC
         [TestInitialize]
         public void TestSetup()
         {
-            rpcClientMock = UT_TxManager.MockRpcClient(Sender, new byte[0]);
+            rpcClientMock = UT_TransactionManager.MockRpcClient(Sender, new byte[0]);
             nep5API = new Nep5API(rpcClientMock.Object);
         }
 
@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SDK.SC
             byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "name");
             MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.String, Value = NativeContract.GAS.Name } } });
 
-            var result = nep5API.GetName(NativeContract.GAS.Hash);
+            var result = nep5API.Name(NativeContract.GAS.Hash);
             Assert.AreEqual(NativeContract.GAS.Name, result);
         }
 
@@ -57,7 +57,7 @@ namespace Neo.UnitTests.SDK.SC
             byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "symbol");
             MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.String, Value = NativeContract.GAS.Symbol } } });
 
-            var result = nep5API.GetSymbol(NativeContract.GAS.Hash);
+            var result = nep5API.Symbol(NativeContract.GAS.Hash);
             Assert.AreEqual(NativeContract.GAS.Symbol, result);
         }
 
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SDK.SC
             byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "decimals");
             MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(NativeContract.GAS.Decimals) } } });
 
-            var result = nep5API.GetDecimals(NativeContract.GAS.Hash);
+            var result = nep5API.Decimals(NativeContract.GAS.Hash);
             Assert.AreEqual(NativeContract.GAS.Decimals, (byte)result);
         }
 
@@ -77,7 +77,7 @@ namespace Neo.UnitTests.SDK.SC
             byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "totalSupply");
             MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_00000000) } } });
 
-            var result = nep5API.GetTotalSupply(NativeContract.GAS.Hash);
+            var result = nep5API.TotalSupply(NativeContract.GAS.Hash);
             Assert.AreEqual(1_00000000, (int)result);
         }
 

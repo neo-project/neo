@@ -10,7 +10,6 @@ using Neo.SDK.SC;
 using Neo.SDK.TX;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Linq;
@@ -19,9 +18,9 @@ using System.Numerics;
 namespace Neo.UnitTests.SDK.TX
 {
     [TestClass]
-    public class UT_TxManager
+    public class UT_TransactionManager
     {
-        TxManager txManager;
+        TransactionManager txManager;
         Mock<RpcClient> rpcClientMock;
         readonly KeyPair keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
         readonly KeyPair keyPair2 = new KeyPair(Wallet.GetPrivateKeyFromWIF("L2LGkrwiNmUAnWYb1XGd5mv7v2eDf6P4F3gHyXSrNJJR4ArmBp7Q"));
@@ -69,7 +68,7 @@ namespace Neo.UnitTests.SDK.TX
         [TestMethod]
         public void TestMakeTransaction()
         {
-            txManager = new TxManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, Sender);
 
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
@@ -92,7 +91,7 @@ namespace Neo.UnitTests.SDK.TX
         [TestMethod]
         public void TestSign()
         {
-            txManager = new TxManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, Sender);
 
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
@@ -125,7 +124,7 @@ namespace Neo.UnitTests.SDK.TX
         [TestMethod]
         public void TestSignMulti()
         {
-            txManager = new TxManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, Sender);
 
             var multiContract = Contract.CreateMultiSigContract(2, keyPair1.PublicKey, keyPair2.PublicKey);
 
@@ -156,7 +155,7 @@ namespace Neo.UnitTests.SDK.TX
         [TestMethod]
         public void TestAddWitness()
         {
-            txManager = new TxManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, Sender);
 
             // Cosigner as contract scripthash
             Cosigner[] cosigners = new Cosigner[1]

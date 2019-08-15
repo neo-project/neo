@@ -1,5 +1,4 @@
-﻿using Neo.IO;
-using Neo.Network.P2P.Payloads;
+﻿using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.SDK.TX;
 using Neo.VM;
@@ -19,22 +18,22 @@ namespace Neo.SDK.SC
             return balance;
         }
 
-        public string GetName(UInt160 scriptHash)
+        public string Name(UInt160 scriptHash)
         {
             return TestInvoke(scriptHash, "name").Stack.Single().ToStackItem().GetString();
         }
 
-        public string GetSymbol(UInt160 scriptHash)
+        public string Symbol(UInt160 scriptHash)
         {
             return TestInvoke(scriptHash, "symbol").Stack.Single().ToStackItem().GetString();
         }
 
-        public uint GetDecimals(UInt160 scriptHash)
+        public uint Decimals(UInt160 scriptHash)
         {
             return (uint)TestInvoke(scriptHash, "decimals").Stack.Single().ToStackItem().GetBigInteger();
         }
 
-        public BigInteger GetTotalSupply(UInt160 scriptHash)
+        public BigInteger TotalSupply(UInt160 scriptHash)
         {
             return TestInvoke(scriptHash, "totalSupply").Stack.Single().ToStackItem().GetBigInteger();
         }
@@ -44,7 +43,7 @@ namespace Neo.SDK.SC
             var sender = fromKey.ScriptHash;
 
             byte[] script = MakeScript(scriptHash, "transfer", sender, to, amount);
-            Transaction tx = new TxManager(rpcClient, sender)
+            Transaction tx = new TransactionManager(rpcClient, sender)
                 .MakeTransaction(script, null, null, networkFee)
                 .AddSignature(fromKey)
                 .Sign()

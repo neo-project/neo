@@ -1,6 +1,5 @@
 ﻿using Neo.IO.Json;
 using Neo.SmartContract;
-using Newtonsoft.Json;
 using System.Linq;
 
 namespace Neo.Network.RPC.Models

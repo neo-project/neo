@@ -22,7 +22,7 @@ namespace Neo.UnitTests.SDK.SC
         [TestInitialize]
         public void TestSetup()
         {
-            rpcClientMock = UT_TxManager.MockRpcClient(Sender, new byte[0]);
+            rpcClientMock = UT_TransactionManager.MockRpcClient(Sender, new byte[0]);
         }
 
         private void MockInvokeScript(byte[] script, RpcInvokeResult result)
