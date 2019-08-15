@@ -270,17 +270,17 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Broadcasts a transaction over the NEO network.
         /// </summary>
-        public virtual bool SendRawTransaction(string rawTransaction)
+        public virtual bool SendRawTransaction(byte[] rawTransaction)
         {
-            return RpcSend("sendrawtransaction", rawTransaction).AsBoolean();
+            return RpcSend("sendrawtransaction", rawTransaction.ToHexString()).AsBoolean();
         }
 
         /// <summary>
         /// Broadcasts a raw block over the NEO network.
         /// </summary>
-        public virtual bool SubmitBlock(string block)
+        public virtual bool SubmitBlock(byte[] block)
         {
-            return RpcSend("submitblock", block).AsBoolean();
+            return RpcSend("submitblock", block.ToHexString()).AsBoolean();
         }
 
         /// <summary>

@@ -21,9 +21,9 @@ namespace Neo.SDK.TX
         private readonly RpcClient rpcClient;
         private readonly UInt160 sender;
 
-        public Transaction Tx { private set; get; }
+        public Transaction Tx { get; private set; }
 
-        public TransactionContext Context { private set; get; }
+        public TransactionContext Context { get; private set; }
 
         public TransactionManager(RpcClient neoRpc, UInt160 sender)
         {
@@ -37,7 +37,7 @@ namespace Neo.SDK.TX
         /// <param name="script">Transaction Script</param>
         /// <param name="attributes">Transaction Attributes</param>
         /// <param name="cosigners">Transaction Cosigners</param>
-        /// <param name="networkFee">Transaction NetworkFee, will set networkfee to estimate value (with only basic signatures) when networkFee is 0</param>
+        /// <param name="networkFee">Transaction NetworkFee, will set to estimate value(with only basic signatures) when networkFee is 0</param>
         /// <returns></returns>
         public TransactionManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
