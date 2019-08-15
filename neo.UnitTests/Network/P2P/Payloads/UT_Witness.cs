@@ -115,11 +115,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void MaxSize_OK()
         {
-            var witness = PrepareDummyWitness(14);
+            var witness = PrepareDummyWitness(10);
 
             // Check max size
 
-            Assert.IsTrue(witness.Size < 1400);
+            witness.Size.Should().Be(1003);
+            witness.InvocationScript.GetVarSize().Should().Be(653);
+            witness.VerificationScript.GetVarSize().Should().Be(350);
+            
+            Assert.IsTrue(witness.Size <= 1024);
 
             var copy = witness.ToArray().AsSerializable<Witness>();
 
