@@ -63,11 +63,11 @@ These tags do not necessarily represent each module at code level. Modules conse
 
 ![](./.github/images/ledger.png) The ledger is our 'database', any changes in the way we store information or the data-structures have this tag.
 
-![](./.github/images/house-keeping.png) 'Small' enhancements that need to be done in order to keep the project organized and ensure overall quality. These changes may be applied in any place in code, as long as they are small or do not alter current behavior.
+![](./.github/images/house-keeping.png) 'Small' enhancements that need to be done in order to keep the project organised and ensure overall quality. These changes may be applied in any place in code, as long as they are small or do not alter current behavior.
 
 ![](./.github/images/network-policy.png) Identify issues that affect the network-policy like fees, access list or other related issues. Voting may also be related to the network policy module.
 
-![](./.github/images/p2p.png) This module includes peer-to-peer message exchange and network optmizations, at TCP or UDP level (not HTTP).
+![](./.github/images/p2p.png) This module includes peer-to-peer message exchange and network optimisations, at TCP or UDP level (not HTTP).
 
 ![](./.github/images/rpc.png) All HTTP communication is handled by the RPC module. This module usually provides support methods since the main communication protocol takes place at the p2p module.
 
