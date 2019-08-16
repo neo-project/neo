@@ -82,11 +82,12 @@ namespace Neo.SmartContract
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
 
+            Instruction instruction = CurrentContext.CurrentInstruction;
+
             if (Trigger == TriggerType.Verification)
             {
                 // no backwards jump in verification mode
 
-                Instruction instruction = CurrentContext.CurrentInstruction;
                 switch (instruction.OpCode)
                 {
                     case OpCode.JMP:
@@ -103,7 +104,7 @@ namespace Neo.SmartContract
                 }
             }
 
-            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+            return AddGas(OpCodePrices[instruction.OpCode]);
         }
 
         private static Block CreateDummyBlock(Snapshot snapshot)
