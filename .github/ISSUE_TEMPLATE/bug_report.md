@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Create a report to report an error or unexpected behavior
 title: ''
 labels: ''
 assignees: ''
@@ -12,10 +12,9 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Go to '...'
-2. Type '....'
-3. Scroll down to '....'
-4. See error
+1. Open the project, run '...'
+2. Type '...' or do '...'
+3. ...
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.

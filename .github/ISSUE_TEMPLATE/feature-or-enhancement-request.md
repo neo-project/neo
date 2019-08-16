@@ -1,6 +1,6 @@
 ---
 name: Feature or enhancement request
-about: Suggest an idea for this project
+about: Suggest an idea for Neo
 title: ''
 labels: discussion
 assignees: ''
@@ -8,13 +8,19 @@ assignees: ''
 ---
 
 **Summary**
-A summary of the problem you want to solve.
+A summary of the problem you want to solve or metric you want to improve
 
 **Do you have any solution you want to propose?**
-A clear and concise description of what you want to happen.
+A clear and concise description of what you expect with this change.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
+**Where in software does this update applies to?**
+[ ] Compiler
+[ ] Consensus
+[ ] CLI
+[ ] Ledger
+[ ] Network Policy
+[ ] P2P (TCP)
+[ ] RPC (HTTP)
+[ ] SDK
+[ ] VM
+[ ] Other: 
