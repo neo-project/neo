@@ -123,12 +123,12 @@ namespace Neo.Wallets.SQLite
                     }
                     //add address
                     {
-                        Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
+                        Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
                         if (db_address == null)
                         {
                             ctx.Addresses.Add(new Address
                             {
-                                ScriptHash = account.Contract.ScriptHash.ToArray()
+                                ScriptHash = account.ScriptHash.ToArray()
                             });
                         }
                     }

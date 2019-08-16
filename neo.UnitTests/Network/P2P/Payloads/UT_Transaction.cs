@@ -84,24 +84,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Size.Should().Be(83);
         }
 
-        private NEP6Wallet GenerateTestWallet()
-        {
-            JObject wallet = new JObject();
-            wallet["name"] = "noname";
-            wallet["version"] = new System.Version().ToString();
-            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
-            wallet["accounts"] = new JArray();
-            wallet["extra"] = null;
-            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"0.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":null}");
-            return new NEP6Wallet(wallet);
-        }
-
         [TestMethod]
         public void FeeIsMultiSigContract()
         {
             var store = TestBlockchain.GetStore();
-            var walletA = GenerateTestWallet();
-            var walletB = GenerateTestWallet();
+            var walletA = TestUtils.GenerateTestWallet();
+            var walletB = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             using (var unlockA = walletA.Unlock("123"))
@@ -188,7 +176,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContractDetailed()
         {
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             using (var unlock = wallet.Unlock("123"))
@@ -303,7 +291,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_Global()
         {
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // no password on this wallet
@@ -394,7 +382,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_GAS()
         {
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // no password on this wallet
@@ -486,7 +474,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CalledByEntry_Plus_GAS()
         {
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // no password on this wallet
@@ -581,7 +569,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_NEO_FAULT()
         {
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // no password on this wallet
@@ -639,7 +627,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_NEO_GAS()
         {
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // no password on this wallet
@@ -736,7 +724,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_NoScopeFAULT()
         {
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // no password on this wallet
@@ -966,7 +954,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Cosigner cosigner = new Cosigner();
             cosigner.Scopes.Should().Be(WitnessScope.Global);
 
-            var wallet = GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // no password on this wallet

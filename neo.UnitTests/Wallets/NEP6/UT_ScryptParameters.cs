@@ -46,5 +46,15 @@ namespace Neo.UnitTests.Wallets.NEP6
             uut2.R.Should().Be(ScryptParameters.Default.R);
             uut2.P.Should().Be(ScryptParameters.Default.P);
         }
+
+        [TestMethod]
+        public void TestScryptParametersConstructor()
+        {
+            int n = 1, r = 2, p = 3;
+            ScryptParameters parameter = new ScryptParameters(n, r, p);
+            parameter.N.Should().Be(n);
+            parameter.R.Should().Be(r);
+            parameter.P.Should().Be(p);
+        }
     }
 }
