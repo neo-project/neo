@@ -23,4 +23,4 @@ A clear and concise description of what you expect with this change.
 [ ] RPC (HTTP)
 [ ] SDK
 [ ] VM
-[ ] Other: 
+[ ] Other:
