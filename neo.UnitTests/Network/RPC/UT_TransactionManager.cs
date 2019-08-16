@@ -6,8 +6,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
-using Neo.SDK.SC;
-using Neo.SDK.TX;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;

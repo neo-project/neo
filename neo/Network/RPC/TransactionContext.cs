@@ -2,7 +2,7 @@
 using Neo.SmartContract;
 using System.Collections.Generic;
 
-namespace Neo.SDK.TX
+namespace Neo.Network.RPC
 {
     public class TransactionContext : ContractParametersContext
     {

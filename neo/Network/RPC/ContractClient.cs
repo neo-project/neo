@@ -1,13 +1,11 @@
 ﻿using Neo.Network.P2P.Payloads;
-using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
-using Neo.SDK.TX;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.Wallets;
 
-namespace Neo.SDK.SC
+namespace Neo.Network.RPC
 {
     public class ContractClient
     {

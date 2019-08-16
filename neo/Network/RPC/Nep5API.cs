@@ -1,12 +1,10 @@
 ﻿using Neo.Network.P2P.Payloads;
-using Neo.Network.RPC;
-using Neo.SDK.TX;
 using Neo.VM;
 using Neo.Wallets;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.SDK.SC
+namespace Neo.Network.RPC
 {
     public class Nep5API : ContractClient
     {

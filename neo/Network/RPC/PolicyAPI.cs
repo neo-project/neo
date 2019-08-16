@@ -1,9 +1,8 @@
-﻿using Neo.Network.RPC;
-using Neo.SmartContract.Native;
+﻿using Neo.SmartContract.Native;
 using Neo.VM;
 using System.Linq;
 
-namespace Neo.SDK.SC
+namespace Neo.Network.RPC
 {
     public class PolicyAPI : ContractClient
     {

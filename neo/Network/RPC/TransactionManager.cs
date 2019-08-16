@@ -1,16 +1,14 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
-using Neo.SDK.SC;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
 
-namespace Neo.SDK.TX
+namespace Neo.Network.RPC
 {
     /// <summary>
     /// This class helps to create transactions manually.

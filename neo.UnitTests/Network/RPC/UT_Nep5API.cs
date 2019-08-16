@@ -2,7 +2,6 @@
 using Moq;
 using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
-using Neo.SDK.SC;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.SDK.TX;
