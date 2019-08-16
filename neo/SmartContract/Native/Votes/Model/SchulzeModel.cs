@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Neo.SmartContract.Native.Votes;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native.Votes.Model
 {
-    public class SchulzeModel
+    public class SchulzeModel : IMultiVoteModel
     {
-        public int[,] CalculateVote(List<SchulzeVoteUnit> voteList)
+        public int[,] CalculateVote(List<CalculatedMultiVote> voteList)
         {
             if (voteList == null || voteList.Count == 0) {
                 throw new FormatException();
@@ -16,7 +17,7 @@ namespace Neo.SmartContract.Native
             {
                 for (int j = 0; j < dArray.GetLength(1); j++)
                 {
-                    foreach (SchulzeVoteUnit e in voteList)
+                    foreach (CalculatedMultiVote e in voteList)
                     {
                         List<int> key = e.vote;
                         if (key[i] < key[j])

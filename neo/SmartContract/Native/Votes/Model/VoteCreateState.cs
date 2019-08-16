@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Runtime.Serialization;
 using Neo.Cryptography;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Neo.SmartContract.Native.Votes.Model
 {
-    internal class VoteCreateState
+    internal class VoteCreateState : ISerializable
     {
         private UInt256 TransactionHash;
         private UInt160 CallingScriptHash;
@@ -55,13 +56,18 @@ namespace Neo.SmartContract.Native.Votes.Model
                 }
             }
         }
-        public byte[] GetId() => new Crypto().Hash160(ConcatByte(TransactionHash.ToArray(), CallingScriptHash.ToArray()));
-
+        //public byte[] GetId() => new Crypto().Hash160(ConcatByte(TransactionHash.ToArray(), CallingScriptHash.ToArray()));
+        public byte[] GetId() => UInt160.Zero.ToArray();
         public static byte[] ConcatByte(byte[] byteSource, byte[] newData)
         {
             List<byte> result = new List<byte>(byteSource);
             result.AddRange(newData);
             return result.ToArray();
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            throw new NotImplementedException();
         }
     }
 }

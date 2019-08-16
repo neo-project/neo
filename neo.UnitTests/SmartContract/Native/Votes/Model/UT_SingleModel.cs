@@ -3,6 +3,7 @@ using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Neo.SmartContract.Native.Votes.Model;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -12,12 +13,12 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestCalculateVote()
         {
-            List<SingleVoteUnit> votes = new List<SingleVoteUnit>();
-            votes.Add(new SingleVoteUnit(new BigInteger(2),1));
-            votes.Add(new SingleVoteUnit(new BigInteger(2), 2));
-            votes.Add(new SingleVoteUnit(new BigInteger(1), 2));
-            votes.Add(new SingleVoteUnit(new BigInteger(2), 1));
-            votes.Add(new SingleVoteUnit(new BigInteger(5), 3));
+            List<CalculatedSingleVote> votes = new List<CalculatedSingleVote>();
+            votes.Add(new CalculatedSingleVote(2,1));
+            votes.Add(new CalculatedSingleVote(2, 2));
+            votes.Add(new CalculatedSingleVote(1, 2));
+            votes.Add(new CalculatedSingleVote(2, 1));
+            votes.Add(new CalculatedSingleVote(5, 3));
             SingleModel singleModel = new SingleModel();
             int[] result=singleModel.CalculateVote(votes);
             Assert.AreEqual("3,1,2", String.Join(",",result));
