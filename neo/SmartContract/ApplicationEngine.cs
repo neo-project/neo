@@ -81,24 +81,25 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            
-            Instruction instruction = CurrentContext.CurrentInstruction;
-            switch(instruction.OpCode)
+
+            if (Trigger == TriggerType.Verification)
             {
-                case OpCode.JMP:
-                case OpCode.JMPIF:
-                case OpCode.JMPIFNOT:
-                //case OpCode.CALL:
+                // no backwards jump in verification mode
+
+                Instruction instruction = CurrentContext.CurrentInstruction;
+                switch (instruction.OpCode)
                 {
-                    if(Trigger == TriggerType.Verification)
-                    {
-                        // no backwards jump in verification mode
-                        if(instruction.TokenI16 <= 0)
+                    case OpCode.JMP:
+                    case OpCode.JMPIF:
+                    case OpCode.JMPIFNOT:
+                        //case OpCode.CALL:
                         {
-                            return false;
+                            if (instruction.TokenI16 <= 0)
+                            {
+                                return false;
+                            }
+                            break;
                         }
-                    }
-                    break;
                 }
             }
 
