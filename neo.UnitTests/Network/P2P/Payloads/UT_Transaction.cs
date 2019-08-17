@@ -1121,7 +1121,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
 
         [TestMethod]
-        public void Recursion_Not_Allowed_On_Verification()
+        public void Recursion_Not_Allowed_On_Application()
         {
             // example for recursion (no local variables or parameters)
             /*
