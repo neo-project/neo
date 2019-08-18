@@ -1083,7 +1083,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Infinite_Loop_Not_Allowed_On_Verification()
+        public void Infinite_Loop_Not_Allowed_On_Application()
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -1103,8 +1103,22 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(0, engine.ResultStack.Count);
                 appGas += engine.GasConsumed;
             }
+
             // many gas are spent before fault
             Assert.AreEqual(appGas, 100000040);
+        }
+
+        [TestMethod]
+        public void Infinite_Loop_Not_Allowed_On_Verification()
+        {
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.JMP, new byte[] { 0, 0, 0, 0 });
+                script = sb.ToArray();
+            }
+
+            long netfee = 100000000; // network fee
 
             // Check Verification
             long verificationGas = 0;
@@ -1115,10 +1129,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(0, engine.ResultStack.Count);
                 verificationGas += engine.GasConsumed;
             }
+
             // no gas is spent (backwards jump is not allowed)
             Assert.AreEqual(verificationGas, 0);
         }
-
 
         [TestMethod]
         public void Recursion_Not_Allowed_On_Application()
@@ -1156,6 +1170,32 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             }
             // many gas are spent before fault
             Assert.AreEqual(appGas, 22528000);
+        }
+
+        [TestMethod]
+        public void Recursion_Not_Allowed_On_Verification()
+        {
+            // example for recursion (no local variables or parameters)
+            /*
+            00 11: PUSH0  #An empty array of bytes is pushed onto the stack
+            c5 12: NEWARRAY  #
+            6b 13: TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+            61 14: NOP  # Does nothing.
+            65 15: CALL fcff # -4
+            61 18: NOP  # Does nothing.
+            6c 19: FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+            75 20: DROP  # Removes the top stack item.
+            66 21: RET  #
+            */
+
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.CALL, new byte[] { 0, 0, 0, 0 });
+                script = sb.ToArray();
+            }
+
+            long netfee = 100000000; // network fee
 
             // Check Verification
             long verificationGas = 0;
