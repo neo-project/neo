@@ -1,19 +1,45 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.Cryptography;
+using Neo.IO;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
+using Neo.SmartContract;
+using Neo.VM;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.UnitTests.Ledger
 {
+    internal class TestIMemoryPoolTxObserverPlugin : Plugin, IMemoryPoolTxObserverPlugin
+    {
+        public override void Configure()
+        {
+        }
+
+        public void TransactionAdded(Transaction tx)
+        {
+        }
+
+        public void TransactionsRemoved(MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions)
+        {
+        }
+    }
+
     [TestClass]
     public class UT_MemoryPool
     {
+        private const byte Prefix_MaxTransactionsPerBlock = 23;
+        private const byte Prefix_FeePerByte = 10;
         private MemoryPool _unit;
+        private MemoryPool _unit2;
+        private TestIMemoryPoolTxObserverPlugin plugin;
 
         [TestInitialize]
         public void TestSetup()
@@ -33,6 +59,14 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.ShouldBeEquivalentTo(0);
             _unit.UnVerifiedCount.ShouldBeEquivalentTo(0);
             _unit.Count.ShouldBeEquivalentTo(0);
+            _unit2 = new MemoryPool(TheNeoSystem, 0);
+            plugin = new TestIMemoryPoolTxObserverPlugin();
+        }
+
+        [TestCleanup]
+        public void CleanUp()
+        {
+            Plugin.TxObserverPlugins.Remove(plugin);
         }
 
         long LongRandom(long min, long max, Random rand)
@@ -252,6 +286,206 @@ namespace Neo.UnitTests.Ledger
             _unit.InvalidateAllTransactions();
             _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(30);
             _unit.SortedTxCount.ShouldBeEquivalentTo(0);
+        }
+
+        [TestMethod]
+        public void TestContainsKey()
+        {
+            AddTransactions(10);
+
+            var txToAdd = CreateTransaction();
+            _unit.TryAdd(txToAdd.Hash, txToAdd);
+            _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
+            _unit.InvalidateVerifiedTransactions();
+            _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestGetEnumerator()
+        {
+            AddTransactions(10);
+            _unit.InvalidateVerifiedTransactions();
+            IEnumerator<Transaction> enumerator = _unit.GetEnumerator();
+            foreach (Transaction tx in _unit)
+            {
+                enumerator.MoveNext();
+                enumerator.Current.Should().BeSameAs(tx);
+            }
+        }
+
+        [TestMethod]
+        public void TestIEnumerableGetEnumerator()
+        {
+            AddTransactions(10);
+            _unit.InvalidateVerifiedTransactions();
+            IEnumerable enumerable = _unit;
+            var enumerator = enumerable.GetEnumerator();
+            foreach (Transaction tx in _unit)
+            {
+                enumerator.MoveNext();
+                enumerator.Current.Should().BeSameAs(tx);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetVerifiedTransactions()
+        {
+            var tx1 = CreateTransaction();
+            var tx2 = CreateTransaction();
+            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.InvalidateVerifiedTransactions();
+            _unit.TryAdd(tx2.Hash, tx2);
+            IEnumerable<Transaction> enumerable = _unit.GetVerifiedTransactions();
+            enumerable.Count().Should().Be(1);
+            var enumerator = enumerable.GetEnumerator();
+            enumerator.MoveNext();
+            enumerator.Current.Should().BeSameAs(tx2);
+        }
+
+        [TestMethod]
+        public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
+        {
+            NeoSystem TheNeoSystem = TestBlockchain.InitializeMockNeoSystem();
+            var s = Blockchain.Singleton.Height;
+            _unit = new MemoryPool(TheNeoSystem, 600);
+            _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
+            AddTransactions(2);
+            _unit.InvalidateVerifiedTransactions();
+            AddTransactions(513);
+            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.VerifiedCount.Should().Be(514);
+            _unit.UnVerifiedCount.Should().Be(1);
+            result.Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestTryAdd()
+        {
+            var tx1 = CreateTransaction();
+            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.TryAdd(tx1.Hash, tx1).Should().BeFalse();
+            _unit2.TryAdd(tx1.Hash, tx1).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestTryGetValue()
+        {
+            var tx1 = CreateTransaction();
+            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
+            tx.ShouldBeEquivalentTo(tx1);
+
+            _unit.InvalidateVerifiedTransactions();
+            _unit.TryGetValue(tx1.Hash, out tx).Should().BeTrue();
+            tx.ShouldBeEquivalentTo(tx1);
+
+            var tx2 = CreateTransaction();
+            _unit.TryGetValue(tx2.Hash, out tx).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestUpdatePoolForBlockPersisted()
+        {
+            var mockSnapshot = new Mock<Snapshot>();
+            byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 };
+            byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            StorageItem item1 = new StorageItem
+            {
+                Value = transactionsPerBlock
+            };
+            StorageItem item2 = new StorageItem
+            {
+                Value = feePerByte
+            };
+            var myDataCache = new MyDataCache<StorageKey, StorageItem>();
+            var key1 = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
+            var key2 = CreateStorageKey(Prefix_FeePerByte);
+            var ServiceHash = "Neo.Native.Policy".ToInteropMethodHash();
+            byte[] script = null;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitSysCall(ServiceHash);
+                script = sb.ToArray();
+            }
+            var Hash = script.ToScriptHash();
+            key1.ScriptHash = Hash;
+            key2.ScriptHash = Hash;
+            myDataCache.Add(key1, item1);
+            myDataCache.Add(key2, item2);
+            mockSnapshot.SetupGet(p => p.Storages).Returns(myDataCache);
+
+            var tx1 = CreateTransaction();
+            var tx2 = CreateTransaction();
+            var tx3 = CreateTransaction();
+            Transaction[] transactions = { tx1, tx2 };
+            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.TryAdd(tx3.Hash, tx3);
+            var block = new Block { Transactions = transactions };
+
+            _unit.UnVerifiedCount.Should().Be(0);
+            _unit.VerifiedCount.Should().Be(2);
+
+            _unit.UpdatePoolForBlockPersisted(block, mockSnapshot.Object);
+
+            _unit.UnVerifiedCount.Should().Be(0);
+            _unit.VerifiedCount.Should().Be(0);
+        }
+
+        public StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                ScriptHash = null,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            if (key != null)
+                Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
+            return storageKey;
+        }
+    }
+
+    public class MyDataCache<TKey, TValue> : DataCache<TKey, TValue>
+        where TKey : IEquatable<TKey>, ISerializable
+        where TValue : class, ICloneable<TValue>, ISerializable, new()
+    {
+        private readonly TValue _defaultValue;
+
+        public MyDataCache()
+        {
+            _defaultValue = null;
+        }
+
+        public MyDataCache(TValue defaultValue)
+        {
+            this._defaultValue = defaultValue;
+        }
+        public override void DeleteInternal(TKey key)
+        {
+        }
+
+        protected override void AddInternal(TKey key, TValue value)
+        {
+            Add(key, value);
+        }
+
+        protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
+        {
+            return Enumerable.Empty<KeyValuePair<TKey, TValue>>();
+        }
+
+        protected override TValue GetInternal(TKey key)
+        {
+            return TryGet(key);
+        }
+
+        protected override TValue TryGetInternal(TKey key)
+        {
+            return _defaultValue;
+        }
+
+        protected override void UpdateInternal(TKey key, TValue value)
+        {
         }
     }
 }

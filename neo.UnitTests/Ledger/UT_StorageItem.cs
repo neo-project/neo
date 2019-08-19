@@ -106,5 +106,15 @@ namespace Neo.UnitTests.Ledger
             }
         }
 
+        [TestMethod]
+        public void TestFromReplica()
+        {
+            uut.Value = TestUtils.GetByteArray(10, 0x42);
+            uut.IsConstant = true;
+            StorageItem dest = new StorageItem();
+            ((ICloneable<StorageItem>)dest).FromReplica(uut);
+            dest.Value.Should().BeEquivalentTo(uut.Value);
+            dest.IsConstant.Should().Be(uut.IsConstant);
+        }
     }
 }
