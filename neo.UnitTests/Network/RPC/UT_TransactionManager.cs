@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Network.RPC
         Mock<RpcClient> rpcClientMock;
         readonly KeyPair keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
         readonly KeyPair keyPair2 = new KeyPair(Wallet.GetPrivateKeyFromWIF("L2LGkrwiNmUAnWYb1XGd5mv7v2eDf6P4F3gHyXSrNJJR4ArmBp7Q"));
-        UInt160 Sender => keyPair1.ScriptHash;
+        UInt160 Sender => Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
 
         [TestInitialize]
         public void TestSetup()

@@ -14,7 +14,7 @@ namespace Neo.UnitTests.Network.RPC
     {
         Mock<RpcClient> rpcClientMock;
         readonly KeyPair keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
-        UInt160 Sender => keyPair1.ScriptHash;
+        UInt160 Sender => Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
         Nep5API nep5API;
 
         [TestInitialize]

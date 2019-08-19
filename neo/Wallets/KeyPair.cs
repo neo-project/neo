@@ -13,8 +13,6 @@ namespace Neo.Wallets
 
         public UInt160 PublicKeyHash => PublicKey.EncodePoint(true).ToScriptHash();
 
-        public UInt160 ScriptHash => Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
-
         public KeyPair(byte[] privateKey)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)

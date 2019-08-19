@@ -105,7 +105,7 @@ namespace Neo.Network.RPC
             foreach (UInt160 hash in hashes)
             {
                 byte[] witness_script = Context.GetScript(hash);
-                if (witness_script is null)
+                if (witness_script is null || witness_script.Length == 0)
                 {
                     try
                     {

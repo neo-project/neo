@@ -43,7 +43,7 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Deploy Contract, return signed transaction
         /// </summary>
-        public Transaction DeployContract(byte[] contractScript, bool hasStorage, bool isPayable, KeyPair sender, long networkFee = 0)
+        public Transaction DeployContract(byte[] contractScript, bool hasStorage, bool isPayable, KeyPair key, long networkFee = 0)
         {
             ContractFeatures properties = ContractFeatures.NoProperty;
             if (hasStorage) properties |= ContractFeatures.HasStorage;
@@ -56,9 +56,9 @@ namespace Neo.Network.RPC
                 script = sb.ToArray();
             }
 
-            Transaction tx = new TransactionManager(rpcClient, sender.ScriptHash)
+            Transaction tx = new TransactionManager(rpcClient, Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash())
                 .MakeTransaction(script, null, null, networkFee)
-                .AddSignature(sender)
+                .AddSignature(key)
                 .Sign()
                 .Tx;
 
