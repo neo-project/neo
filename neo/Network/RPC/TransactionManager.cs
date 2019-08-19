@@ -75,7 +75,7 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Estimate NetwotkFee, assuming the witnesses are basic Signature Contract
+        /// Estimate NetworkFee, assuming the witnesses are basic Signature Contract
         /// </summary>
         private long EstimateNetworkFee()
         {

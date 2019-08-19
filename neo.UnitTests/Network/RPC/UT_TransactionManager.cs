@@ -2,6 +2,7 @@
 using Moq;
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
@@ -35,32 +36,41 @@ namespace Neo.UnitTests.Network.RPC
             var mockRpc = new Mock<RpcClient>(MockBehavior.Strict, "http://seed1.neo.org:10331");
 
             // MockHeight
-            mockRpc.Setup(p => p.GetBlockCount()).Returns(100).Verifiable();
+            mockRpc.Setup(p => p.RpcSend("getblockcount")).Returns(100).Verifiable();
 
             // MockGasBalance
             byte[] balanceScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", sender);
-            RpcInvokeResult balanceResult = new RpcInvokeResult()
-            {
-                Stack = new[] { new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("10000000000000000") } },
-            };
+            var balanceResult = new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("10000000000000000") };
 
-            mockRpc.Setup(p => p.InvokeScript(balanceScript)).Returns(balanceResult).Verifiable();
+            MockInvokeScript(mockRpc, balanceScript, balanceResult);
 
             // MockFeePerByte
             byte[] policyScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getFeePerByte");
-            RpcInvokeResult policyResult = new RpcInvokeResult()
-            {
-                Stack = new[] { new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("1000") } },
-            };
+            var policyResult = new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("1000") };
 
-            mockRpc.Setup(p => p.InvokeScript(policyScript)).Returns(policyResult).Verifiable();
+            MockInvokeScript(mockRpc, policyScript, policyResult);
 
             // MockGasConsumed
-            RpcInvokeResult result = new RpcInvokeResult() { GasConsumed = "100" };
-
-            mockRpc.Setup(p => p.InvokeScript(script)).Returns(result).Verifiable();
+            var result = new ContractParameter();
+            MockInvokeScript(mockRpc, script, result);
 
             return mockRpc;
+        }
+
+        public static void MockInvokeScript(Mock<RpcClient> mockClient, byte[] script, params ContractParameter[] parameters)
+        {
+            var result = new RpcInvokeResult()
+            {
+                Stack = parameters,
+                GasConsumed = "100",
+                Script = script.ToHexString(),
+                State = "",
+                Tx = ""
+            };
+
+            mockClient.Setup(p => p.RpcSend("invokescript", It.Is<JObject>(j => j.AsString() == script.ToHexString())))
+                .Returns(result.ToJson())
+                .Verifiable();
         }
 
         [TestMethod]

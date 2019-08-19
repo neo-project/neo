@@ -24,16 +24,11 @@ namespace Neo.UnitTests.Network.RPC
             policyAPI = new PolicyAPI(rpcClientMock.Object);
         }
 
-        private void MockInvokeScript(byte[] script, RpcInvokeResult result)
-        {
-            rpcClientMock.Setup(p => p.InvokeScript(script)).Returns(result).Verifiable();
-        }
-
         [TestMethod]
         public void TestGetMaxTransactionsPerBlock()
         {
             byte[] testScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getMaxTransactionsPerBlock");
-            MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(512) } } });
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(512) });
 
             var result = policyAPI.GetMaxTransactionsPerBlock();
             Assert.AreEqual(512, (int)result);
@@ -43,7 +38,7 @@ namespace Neo.UnitTests.Network.RPC
         public void TestGetFeePerByte()
         {
             byte[] testScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getFeePerByte");
-            MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) } } });
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) });
 
             var result = policyAPI.GetFeePerByte();
             Assert.AreEqual(1000, (int)result);
@@ -53,7 +48,7 @@ namespace Neo.UnitTests.Network.RPC
         public void TestGetBlockedAccounts()
         {
             byte[] testScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getBlockedAccounts");
-            MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.Array, Value = new[] { new ContractParameter { Type = ContractParameterType.Hash160, Value = UInt160.Zero } } } } });
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Array, Value = new[] { new ContractParameter { Type = ContractParameterType.Hash160, Value = UInt160.Zero } } });
 
             var result = policyAPI.GetBlockedAccounts();
             Assert.AreEqual(UInt160.Zero, result[0]);

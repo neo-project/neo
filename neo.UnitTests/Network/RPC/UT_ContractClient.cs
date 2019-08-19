@@ -23,11 +23,6 @@ namespace Neo.UnitTests.Network.RPC
             rpcClientMock = UT_TransactionManager.MockRpcClient(Sender, new byte[0]);
         }
 
-        private void MockInvokeScript(byte[] script, RpcInvokeResult result)
-        {
-            rpcClientMock.Setup(p => p.InvokeScript(script)).Returns(result).Verifiable();
-        }
-
         [TestMethod]
         public void TestMakeScript()
         {
@@ -41,7 +36,7 @@ namespace Neo.UnitTests.Network.RPC
         public void TestInvoke()
         {
             byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", UInt160.Zero);
-            MockInvokeScript(testScript, new RpcInvokeResult { Stack = new[] { new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() } } });
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() });
 
             ContractClient contractClient = new ContractClient(rpcClientMock.Object);
             var result = contractClient.TestInvoke(NativeContract.GAS.Hash, "balanceOf", UInt160.Zero);
@@ -59,7 +54,7 @@ namespace Neo.UnitTests.Network.RPC
                 script = sb.ToArray();
             }
 
-            MockInvokeScript(script, new RpcInvokeResult { GasConsumed = "100" });
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, script, new ContractParameter());
 
             ContractClient contractClient = new ContractClient(rpcClientMock.Object);
             var result = contractClient.DeployContract(new byte[1], true, true, keyPair1);
