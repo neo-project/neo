@@ -86,10 +86,19 @@ namespace Neo.SmartContract
             get
             {
                 if (_ScriptHashes == null)
+                {
+                    // snapshot is not necessary for Transaction
+                    if (Verifiable is Transaction)
+                    {
+                        _ScriptHashes = Verifiable.GetScriptHashesForVerifying(null);
+                        return _ScriptHashes;
+                    }
+
                     using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     {
                         _ScriptHashes = Verifiable.GetScriptHashesForVerifying(snapshot);
                     }
+                }
                 return _ScriptHashes;
             }
         }

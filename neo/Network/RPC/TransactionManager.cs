@@ -21,7 +21,7 @@ namespace Neo.Network.RPC
 
         public Transaction Tx { get; private set; }
 
-        public TransactionContext Context { get; private set; }
+        public ContractParametersContext Context { get; private set; }
 
         public TransactionManager(RpcClient neoRpc, UInt160 sender)
         {
@@ -64,7 +64,7 @@ namespace Neo.Network.RPC
                     Tx.SystemFee -= remainder;
             }
 
-            Context = new TransactionContext(Tx);
+            Context = new ContractParametersContext(Tx);
 
             // set networkfee to estimate value when networkFee is 0
             Tx.NetworkFee = networkFee == 0 ? EstimateNetworkFee() : networkFee;
@@ -144,10 +144,11 @@ namespace Neo.Network.RPC
         /// Add Multi-Signature
         /// </summary>
         /// <param name="key">The KeyPair to sign transction</param>
+        /// <param name="m">The least count of signatures needed for multiple signature contract</param>
         /// <param name="publicKeys">The Public Keys construct the multiple signature contract</param>
-        public TransactionManager AddMultiSig(KeyPair key, params ECPoint[] publicKeys)
+        public TransactionManager AddMultiSig(KeyPair key, int m, params ECPoint[] publicKeys)
         {
-            Contract contract = Contract.CreateMultiSigContract(publicKeys.Length, publicKeys);
+            Contract contract = Contract.CreateMultiSigContract(m, publicKeys);
 
             byte[] signature = Tx.Sign(key);
             if (!Context.AddSignature(contract, key.PublicKey, signature))
