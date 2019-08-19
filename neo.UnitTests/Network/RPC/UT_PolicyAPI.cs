@@ -4,11 +4,10 @@ using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.SDK.TX;
 using Neo.Wallets;
 using System.Numerics;
 
-namespace Neo.UnitTests.SDK.SC
+namespace Neo.UnitTests.Network.RPC
 {
     [TestClass]
     public class UT_PolicyAPI

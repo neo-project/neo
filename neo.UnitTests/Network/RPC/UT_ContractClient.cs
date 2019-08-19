@@ -5,11 +5,10 @@ using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.SDK.TX;
 using Neo.VM;
 using Neo.Wallets;
 
-namespace Neo.UnitTests.SDK.SC
+namespace Neo.UnitTests.Network.RPC
 {
     [TestClass]
     public class UT_ContractClient

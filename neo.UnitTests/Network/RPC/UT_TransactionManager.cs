@@ -13,7 +13,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.UnitTests.SDK.TX
+namespace Neo.UnitTests.Network.RPC
 {
     [TestClass]
     public class UT_TransactionManager
@@ -138,8 +138,8 @@ namespace Neo.UnitTests.SDK.TX
 
             byte[] script = new byte[1];
             txManager.MakeTransaction(script, null, cosigners, 0_10000000)
-                .AddMultiSig(keyPair1, keyPair1.PublicKey, keyPair2.PublicKey)
-                .AddMultiSig(keyPair2, keyPair1.PublicKey, keyPair2.PublicKey)
+                .AddMultiSig(keyPair1, 2, keyPair1.PublicKey, keyPair2.PublicKey)
+                .AddMultiSig(keyPair2, 2, keyPair1.PublicKey, keyPair2.PublicKey)
                 .AddSignature(keyPair1)
                 .Sign();
 
