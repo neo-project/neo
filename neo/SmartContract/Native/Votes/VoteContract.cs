@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Native
                 originator,
                 args[1].GetString(),
                 args[2].GetString(),
-                (int)args[3].GetBigInteger(),
+                (UInt32)args[3].GetBigInteger(),
                 true);
             if (RegisterVote(engine.Snapshot, createState))
             {
@@ -52,16 +52,17 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
         private StackItem CreateSingleVote(ApplicationEngine engine, VMArray args)
         {
+            engine.LoadScript(NativeContract.NEO.Script);
             UInt160 originator = new UInt160(args[0].GetByteArray());
             //if (!InteropService.CheckWitness(engine, originator)) return false;
             var tx = engine.ScriptContainer as Transaction;
             VoteCreateState createState = new VoteCreateState
-                (tx.Hash,
+                (UInt256.Zero,
                 engine.CallingScriptHash,
                 originator,
                 args[1].GetString(),
                 args[2].GetString(),
-                (int)args[3].GetBigInteger(),
+                (UInt32)args[3].GetBigInteger(),
                 false);
             if (RegisterVote(engine.Snapshot, createState))
             {
@@ -301,8 +302,8 @@ namespace Neo.SmartContract.Native
             if (snapshot.Storages.TryGet(key) != null) return false;
             snapshot.Storages.Add(key, new StorageItem
             {
-                Value = createState.ToByteArray()
-            });
+                Value = createState.Serialize()
+            }); ;
             return true;
         }
         private bool AddVote(Snapshot snapshot, VoteState voteState, byte[] id)

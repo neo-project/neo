@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
-using System.Runtime.Serialization;
-using Neo.Cryptography;
-using System.Runtime.Serialization.Formatters.Binary;
+using Neo.IO;
 
 namespace Neo.SmartContract.Native.Votes.Model
 {
@@ -12,15 +9,17 @@ namespace Neo.SmartContract.Native.Votes.Model
     {
         private UInt256 TransactionHash;
         private UInt160 CallingScriptHash;
-        public readonly UInt160 Originator;
-        public readonly string Title;
-        public readonly string Description;
-        public readonly int CandidateNumber;
-        public readonly bool IsSequence;
+        public  UInt160 Originator;
+        public  string Title;
+        public  string Description;
+        public  UInt32 CandidateNumber;
+        public  bool IsSequence;
+
+        public int Size => throw new NotImplementedException();
 
         public VoteCreateState() { }
 
-        public VoteCreateState(UInt256 transactionHash, UInt160 callingScriptHash, UInt160 originator, string title, string description, int candidate, bool IsSeq)
+        public VoteCreateState(UInt256 transactionHash, UInt160 callingScriptHash, UInt160 originator, string title, string description, UInt32 candidate, bool IsSeq)
         {
             TransactionHash = transactionHash;
             CallingScriptHash = callingScriptHash;
@@ -29,32 +28,6 @@ namespace Neo.SmartContract.Native.Votes.Model
             Description = description;
             CandidateNumber = candidate;
             IsSequence = IsSeq;
-        }
-
-        public byte[] ToByteArray()
-        {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                BinaryFormatter binaryFormatter = new BinaryFormatter();
-                binaryFormatter.Serialize(memoryStream, this);
-                return memoryStream.ToArray();
-            }
-        }
-
-        public static VoteCreateState FromByteArray(byte[] data)
-        {
-            using (MemoryStream memoryStream = new MemoryStream(data))
-            {
-                try
-                {
-                    BinaryFormatter binaryFormatter = new BinaryFormatter();
-                    return binaryFormatter.Deserialize(memoryStream) as VoteCreateState;
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-            }
         }
         //public byte[] GetId() => new Crypto().Hash160(ConcatByte(TransactionHash.ToArray(), CallingScriptHash.ToArray()));
         public byte[] GetId() => UInt160.Zero.ToArray();
@@ -65,9 +38,27 @@ namespace Neo.SmartContract.Native.Votes.Model
             return result.ToArray();
         }
 
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        public void Serialize(BinaryWriter writer)
         {
-            throw new NotImplementedException();
+            writer.Write(TransactionHash);
+            writer.Write(CallingScriptHash);
+            writer.Write(Originator);
+            writer.Write(System.Text.Encoding.UTF8.GetBytes(Title));
+            writer.Write(System.Text.Encoding.UTF8.GetBytes(Description));
+            writer.Write(CandidateNumber);
+            writer.Write(IsSequence);
+
+        }
+
+        public void Deserialize(BinaryReader reader)
+        {
+            TransactionHash = new UInt256(reader.ReadBytes(42));
+            CallingScriptHash = reader.ReadBytes(20).ToScriptHash();
+            Originator = reader.ReadBytes(20).ToScriptHash();
+            Title = reader.ReadString();
+            Description = reader.ReadString();
+            CandidateNumber = reader.ReadUInt32();
+            IsSequence = reader.ReadBoolean();
         }
     }
 }

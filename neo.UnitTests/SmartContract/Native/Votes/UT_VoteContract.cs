@@ -71,56 +71,12 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
                 Script = new byte[0],
                 Witnesses = new Witness[0]           
             };
-            var engine = new ApplicationEngine(TriggerType.Application, TestTx, snapshot, 0, true);
-            engine.LoadScript(NativeContract.Vote.Script);
-
-            var script = new ScriptBuilder();
-
-            for (var i = createParameters.Length - 1; i >= 0; i--)
+            object[] parameter = new object[] { UInt160.Zero, "Title", "Descritpion", 1 };
+            using (ScriptBuilder sb = new ScriptBuilder())
             {
-                script.EmitPush(createParameters[i]);
-            }
-
-            script.EmitPush(createParameters.Length);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("createSingleVote");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() != VMState.HALT)
-            {
-                throw new System.Exception();
-            }
-            engine.ResultStack.Pop().Should().BeOfType<bool>();
-
-
-
-            ContractParameter[] parameters = new ContractParameter[]
-            {
-                new ContractParameter(ContractParameterType.Hash256){ Value = new UInt256()}
-            };
-            var engine1 = new ApplicationEngine(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, 0, true);
-
-
-            engine1.LoadScript(NativeContract.Vote.Script);
-
-            script = new ScriptBuilder();
-
-            for (var i = parameters.Length - 1; i >= 0; i--)
-            {
-                script.EmitPush(parameters[i]);
-            }
-
-            script.EmitPush(parameters.Length);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("getVoteDetails");
-            engine1.LoadScript(script.ToArray());
-
-            if (engine1.Execute() != VMState.HALT)
-            {
-                throw new System.Exception();
-            }
-
-            engine.ResultStack.Pop().Should().BeOfType<byte[]>();
+                sb.EmitAppCall(NativeContract.Vote.Hash , "createSingleVote",parameter );
+                var result = ApplicationEngine.Run(sb.ToArray(),TestTx, testMode: true);
+            }     
         }
     }
 }
