@@ -213,7 +213,6 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
-            Console.WriteLine($"[{DateTime.Now.TimeOfDay:hh\\:mm\\:ss\\.fff}] {message}");
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
@@ -639,7 +638,7 @@ namespace Neo.Consensus
                 {
                     var reason = ChangeViewReason.Timeout;
 
-                    if (context.Block != null && context.TransactionHashes.Count() > context.Transactions.Count)
+                    if (context.Block != null && context.TransactionHashes?.Count() > context.Transactions?.Count)
                     {
                         reason = ChangeViewReason.TxNotFound;
                     }
