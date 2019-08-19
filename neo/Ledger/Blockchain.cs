@@ -60,15 +60,15 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        internal readonly RelayCache RelayCache = new RelayCache(100);
+        internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
         public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
-        public uint HeaderHeight => (uint)header_index.Count - 1;
+        public uint HeaderHeight => currentSnapshot.HeaderHeight;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
-        public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
+        public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -153,6 +153,7 @@ namespace Neo.Ledger
                 Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
                 SystemFee = 0,
                 Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
                 Witnesses = new[]
                 {
                     new Witness
@@ -327,7 +328,7 @@ namespace Neo.Ledger
         {
             if (!payload.Verify(currentSnapshot)) return RelayResultReason.Invalid;
             system.Consensus?.Tell(payload);
-            RelayCache.Add(payload);
+            ConsensusRelayCache.Add(payload);
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
             return RelayResultReason.Succeed;
         }

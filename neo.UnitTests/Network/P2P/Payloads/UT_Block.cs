@@ -1,9 +1,9 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using System.IO;
-using System.Text;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
-            // blockbase 4 + 64 + 32 + 4 + 4 + 20 + 4
+            // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // block 9 + 1
             uut.Size.Should().Be(114);
         }
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction()
             };
 
-            uut.Size.Should().Be(165);
+            uut.Size.Should().Be(166);
         }
 
         [TestMethod]
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction()
             };
 
-            uut.Size.Should().Be(267);
+            uut.Size.Should().Be(270);
         }
 
         [TestMethod]
@@ -84,22 +84,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 1);
 
-            byte[] data;
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
-                {
-                    uut.Serialize(writer);
-                    data = stream.ToArray();
-                }
-            }
-
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 233, 19, 255, 133, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0 };
-            data.Length.Should().Be(requiredData.Length);
-            for (int i = 0; i < data.Length; i++)
-            {
-                data[i].Should().Be(requiredData[i]);
-            }
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000000f29b0d748a9ccf8c5af3cde10db3e36ec9a5f720643a2bcb4add76b3daf41d8e913ff854c000000000000000000000000000000000000000000000000000000010001510200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100010000";
+            uut.ToArray().ToHexString().Should().Be(hex);
         }
 
         [TestMethod]
@@ -108,17 +94,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(new Block(), val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 
-            uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c000000000000000000000000000000000000000000000000000000010001510200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100010000";
 
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 233, 19, 255, 133, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0 };
-
-            int index = 0;
-            using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
+            using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
+            using (BinaryReader reader = new BinaryReader(ms))
             {
-                using (BinaryReader reader = new BinaryReader(ms))
-                {
-                    uut.Deserialize(reader);
-                }
+                uut.Deserialize(reader);
+                merkRoot = uut.MerkleRoot;
             }
 
             assertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal, transactionsVal);
@@ -218,7 +200,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0x4e1d8392e7c44830e7e45c18e5e0e3ef3c36af883868846d3691a436a62494b2");
-            jObj["size"].AsNumber().Should().Be(165);
+            jObj["size"].AsNumber().Should().Be(166);
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
             jObj["merkleroot"].AsString().Should().Be("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
@@ -232,10 +214,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
-            txObj[0]["hash"].AsString().Should().Be("0x64ed4e0d79407c60bde534feb44fbbd19bd065282d27ecd3a1a7a647f66affa6");
-            txObj[0]["size"].AsNumber().Should().Be(51);
+            txObj[0]["hash"].AsString().Should().Be("0xf374032ea013e3d9272f7a25dc1fe497a489ae36e94aa06270b26e60ab693435");
+            txObj[0]["size"].AsNumber().Should().Be(52);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
+            ((JArray)txObj[0]["cosigners"]).Count.Should().Be(0);
             txObj[0]["net_fee"].AsString().Should().Be("0");
         }
     }
