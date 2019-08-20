@@ -11,7 +11,7 @@ using System;
 namespace Neo.Network.RPC
 {
     /// <summary>
-    /// This class helps to create transactions manually.
+    /// This class helps to create transaction with RPC API.
     /// </summary>
     public class TransactionManager
     {

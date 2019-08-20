@@ -7,8 +7,15 @@ using System.Numerics;
 
 namespace Neo.Network.RPC
 {
+    /// <summary>
+    /// Call NEP5 methods with RPC API
+    /// </summary>
     public class Nep5API : ContractClient
     {
+        /// <summary>
+        /// Nep5API Constructor
+        /// </summary>
+        /// <param name="rpcClient">the RPC client to call NEO RPC methods</param>
         public Nep5API(RpcClient rpcClient) : base(rpcClient) { }
 
         /// <summary>

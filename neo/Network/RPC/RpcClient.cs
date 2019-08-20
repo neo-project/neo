@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Neo.Network.RPC
 {
+    /// <summary>
+    /// The RPC client to call NEO RPC methods
+    /// </summary>
     public class RpcClient : IDisposable
     {
         private readonly HttpClient httpClient;

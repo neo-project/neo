@@ -4,10 +4,17 @@ using System.Linq;
 
 namespace Neo.Network.RPC
 {
+    /// <summary>
+    /// Get Policy info by RPC API
+    /// </summary>
     public class PolicyAPI : ContractClient
     {
         readonly UInt160 scriptHash = NativeContract.Policy.Hash;
 
+        /// <summary>
+        /// PolicyAPI Constructor
+        /// </summary>
+        /// <param name="rpcClient">the RPC client to call NEO RPC methods</param>
         public PolicyAPI(RpcClient rpcClient) : base(rpcClient) { }
 
         /// <summary>
