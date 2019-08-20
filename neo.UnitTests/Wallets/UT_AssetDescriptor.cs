@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
+using System;
 
 namespace Neo.UnitTests.Wallets
 {
@@ -18,11 +19,22 @@ namespace Neo.UnitTests.Wallets
         }
 
         [TestMethod]
+        public void TestConstructorWithNonexistAssetId()
+        {
+            Action action = () =>
+            {
+                var descriptor = new Neo.Wallets.AssetDescriptor(UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
+            };
+            action.ShouldThrow<ArgumentException>();
+        }
+
+        [TestMethod]
         public void Check_GAS()
         {
             var descriptor = new Neo.Wallets.AssetDescriptor(NativeContract.GAS.Hash);
             descriptor.AssetId.Should().Be(NativeContract.GAS.Hash);
             descriptor.AssetName.Should().Be("GAS");
+            descriptor.ToString().Should().Be("GAS");
             descriptor.Decimals.Should().Be(8);
         }
 
@@ -32,6 +44,7 @@ namespace Neo.UnitTests.Wallets
             var descriptor = new Neo.Wallets.AssetDescriptor(NativeContract.NEO.Hash);
             descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
             descriptor.AssetName.Should().Be("NEO");
+            descriptor.ToString().Should().Be("NEO");
             descriptor.Decimals.Should().Be(0);
         }
     }
