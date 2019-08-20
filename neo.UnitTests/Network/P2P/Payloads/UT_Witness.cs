@@ -74,7 +74,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         private Witness PrepareDummyWitness(int maxAccounts)
         {
             var store = TestBlockchain.GetStore();
-            var wallet = UT_Transaction.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             // Prepare
@@ -85,7 +85,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             for (int x = 0; x < maxAccounts; x++)
             {
-                wallets[x] = UT_Transaction.GenerateTestWallet();
+                wallets[x] = TestUtils.GenerateTestWallet();
                 walletsUnlocks[x] = wallets[x].Unlock("123");
                 address[x] = wallets[x].CreateAccount();
             }
