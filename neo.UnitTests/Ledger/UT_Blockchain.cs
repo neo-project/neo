@@ -46,6 +46,7 @@ namespace Neo.UnitTests.Ledger
             return header;
         }
     }
+
     [TestClass]
     public class UT_Blockchain
     {
