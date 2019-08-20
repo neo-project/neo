@@ -362,7 +362,7 @@ namespace Neo.UnitTests.Ledger
         public void TestTryAdd()
         {
             var tx1 = CreateTransaction();
-            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.TryAdd(tx1.Hash, tx1).Should().BeTrue();
             _unit.TryAdd(tx1.Hash, tx1).Should().BeFalse();
             _unit2.TryAdd(tx1.Hash, tx1).Should().BeFalse();
         }

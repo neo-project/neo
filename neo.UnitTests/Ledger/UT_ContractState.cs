@@ -91,9 +91,9 @@ namespace Neo.UnitTests.Ledger
         public void TestToJson()
         {
             JObject json = contract.ToJson();
-            json["hash"].ToString().Should().Be("\"0x820944cfdc70976602d71b0091445eedbc661bc5\"");
-            json["script"].ToString().Should().Be("\"01\"");
-            json["manifest"].ToString().Should().Be(manifest.ToJson().ToString());
+            json["hash"].AsString().Should().Be("0x820944cfdc70976602d71b0091445eedbc661bc5");
+            json["script"].AsString().Should().Be("01");
+            json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
         }
     }
 }

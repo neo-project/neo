@@ -43,13 +43,21 @@ namespace Neo.UnitTests.Ledger
         public void TestGetBlock()
         {
             var cache = new TestDataCache<UInt256, TransactionState>();
-            var tx1 = TestUtils.CreateRandomHashTransaction();
+            var tx1 = TestUtils.GetTransaction();
+            tx1.Script = new byte[] { 0x01,0x01,0x01,0x01,
+                                      0x01,0x01,0x01,0x01,
+                                      0x01,0x01,0x01,0x01,
+                                      0x01,0x01,0x01,0x01 };
             var state1 = new TransactionState
             {
                 Transaction = tx1,
                 BlockIndex = 1
             };
-            var tx2 = TestUtils.CreateRandomHashTransaction();
+            var tx2 = TestUtils.GetTransaction();
+            tx2.Script = new byte[] { 0x01,0x01,0x01,0x01,
+                                      0x01,0x01,0x01,0x01,
+                                      0x01,0x01,0x01,0x01,
+                                      0x01,0x01,0x01,0x02 };
             var state2 = new TransactionState
             {
                 Transaction = tx2,
@@ -65,6 +73,7 @@ namespace Neo.UnitTests.Ledger
             block.Index.Should().Be(1);
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
             block.Transactions.Length.Should().Be(1);
+            block.Transactions[0].Hash.Should().Be(tx2.Hash);
         }
 
         [TestMethod]
