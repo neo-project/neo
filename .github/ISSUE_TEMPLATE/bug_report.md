@@ -26,5 +26,5 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. Windows 10 x64]
  - Version [e.g. neo-cli 2.10.2]
 
-**Additional context**
+**(Optional) Additional context**
 Add any other context about the problem here.
