@@ -19,6 +19,10 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Generate scripts to call a specific method from a specific contract.
         /// </summary>
+        /// <param name="scriptHash">contract script hash</param>
+        /// <param name="operation">contract operation</param>
+        /// <param name="args">operation arguments</param>
+        /// <returns></returns>
         public static byte[] MakeScript(UInt160 scriptHash, string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -34,6 +38,10 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Use RPC method to test invoke operation.
         /// </summary>
+        /// <param name="scriptHash">contract script hash</param>
+        /// <param name="operation">contract operation</param>
+        /// <param name="args">operation arguments</param>
+        /// <returns></returns>
         public RpcInvokeResult TestInvoke(UInt160 scriptHash, string operation, params object[] args)
         {
             byte[] script = MakeScript(scriptHash, operation, args);
@@ -43,6 +51,12 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Deploy Contract, return signed transaction
         /// </summary>
+        /// <param name="contractScript">contract script</param>
+        /// <param name="hasStorage">hasStorage attribute</param>
+        /// <param name="isPayable">isPayable attribute</param>
+        /// <param name="key">sender KeyPair</param>
+        /// <param name="networkFee">transaction NetworkFee, set to be 0 if you don't need higher priority</param>
+        /// <returns></returns>
         public Transaction DeployContract(byte[] contractScript, bool hasStorage, bool isPayable, KeyPair key, long networkFee = 0)
         {
             ContractFeatures properties = ContractFeatures.NoProperty;

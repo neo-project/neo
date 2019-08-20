@@ -19,13 +19,24 @@ namespace Neo.Network.RPC
         private readonly RpcClient rpcClient;
         private readonly UInt160 sender;
 
+        /// <summary>
+        /// The Transaction context to manage the witnesses
+        /// </summary>
+        private ContractParametersContext context;
+
+        /// <summary>
+        /// The Transaction managed by this class
+        /// </summary>
         public Transaction Tx { get; private set; }
 
-        public ContractParametersContext Context { get; private set; }
-
-        public TransactionManager(RpcClient neoRpc, UInt160 sender)
+        /// <summary>
+        /// TransactionManager Constructor
+        /// </summary>
+        /// <param name="rpc">the RPC client to call NEO RPC API</param>
+        /// <param name="sender">the account script hash of sender</param>
+        public TransactionManager(RpcClient rpc, UInt160 sender)
         {
-            rpcClient = neoRpc;
+            rpcClient = rpc;
             this.sender = sender;
         }
 
@@ -64,7 +75,7 @@ namespace Neo.Network.RPC
                     Tx.SystemFee -= remainder;
             }
 
-            Context = new ContractParametersContext(Tx);
+            context = new ContractParametersContext(Tx);
 
             // set networkfee to estimate value when networkFee is 0
             Tx.NetworkFee = networkFee == 0 ? EstimateNetworkFee() : networkFee;
@@ -104,7 +115,7 @@ namespace Neo.Network.RPC
             int size = Transaction.HeaderSize + Tx.Attributes.GetVarSize() + Tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
             foreach (UInt160 hash in hashes)
             {
-                byte[] witness_script = Context.GetScript(hash);
+                byte[] witness_script = context.GetScript(hash);
                 if (witness_script is null || witness_script.Length == 0)
                 {
                     try
@@ -132,7 +143,7 @@ namespace Neo.Network.RPC
             var contract = Contract.CreateSignatureContract(key.PublicKey);
 
             byte[] signature = Tx.Sign(key);
-            if (!Context.AddSignature(contract, key.PublicKey, signature))
+            if (!context.AddSignature(contract, key.PublicKey, signature))
             {
                 throw new Exception("AddSignature failed!");
             }
@@ -151,7 +162,7 @@ namespace Neo.Network.RPC
             Contract contract = Contract.CreateMultiSigContract(m, publicKeys);
 
             byte[] signature = Tx.Sign(key);
-            if (!Context.AddSignature(contract, key.PublicKey, signature))
+            if (!context.AddSignature(contract, key.PublicKey, signature))
             {
                 throw new Exception("AddMultiSig failed!");
             }
@@ -166,7 +177,7 @@ namespace Neo.Network.RPC
         /// <param name="parameters">The witness invocation parameters</param>
         public TransactionManager AddWitness(Contract contract, params object[] parameters)
         {
-            if (!Context.Add(contract, parameters))
+            if (!context.Add(contract, parameters))
             {
                 throw new Exception("AddWitness failed!");
             };
@@ -190,7 +201,7 @@ namespace Neo.Network.RPC
         public TransactionManager Sign()
         {
             // Verify witness count
-            if (!Context.Completed)
+            if (!context.Completed)
             {
                 throw new Exception($"Please add signature or witness first!");
             }
@@ -202,7 +213,7 @@ namespace Neo.Network.RPC
                 throw new InvalidOperationException("Insufficient NetworkFee");
             }
 
-            Tx.Witnesses = Context.GetWitnesses();
+            Tx.Witnesses = context.GetWitnesses();
             return this;
         }
     }
