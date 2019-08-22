@@ -70,6 +70,8 @@ namespace Neo.SmartContract
         private static bool Native_Deploy(ApplicationEngine engine)
         {
             if (engine.Snapshot.PersistingBlock.Index != 0) return false;
+            if (engine.CurrentContext.GetState<ExecutionContextState>().ReadOnly) return false;
+
             foreach (NativeContract contract in NativeContract.Contracts)
             {
                 engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
@@ -242,6 +244,7 @@ namespace Neo.SmartContract
 
         private static bool Contract_Create(ApplicationEngine engine)
         {
+            if (engine.CurrentContext.GetState<ExecutionContextState>().ReadOnly) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
 
@@ -266,6 +269,7 @@ namespace Neo.SmartContract
 
         private static bool Contract_Update(ApplicationEngine engine)
         {
+            if (engine.CurrentContext.GetState<ExecutionContextState>().ReadOnly) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
