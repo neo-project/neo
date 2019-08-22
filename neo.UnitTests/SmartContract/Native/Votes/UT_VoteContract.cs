@@ -23,27 +23,6 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
             store = TestBlockchain.GetStore();
         }
 
-
-
-        //[TestMethod]
-        //public void Check_CreateSingleVote()
-        //{
-        //    var snapshot = store.GetSnapshot().Clone();
-
-        //    snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-        //    snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
-
-
-        //    ContractParameter[] parameters = new ContractParameter[] {
-        //        new ContractParameter(ContractParameterType.Hash160){ Value = UInt160.Zero},
-        //        new ContractParameter(ContractParameterType.String){ Value = "TitleTest"},
-        //        new ContractParameter(ContractParameterType.String){ Value = "DescriptionTest"},
-        //        new ContractParameter(ContractParameterType.Integer){ Value = 1}
-        //    };
-        //    var ret = NativeContract.Vote.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero), "creatSingleVote", parameters);
-        //    ret.Should().BeOfType<UInt160>();
-        //}
-
         [TestMethod]
         public void Check_GetVoteDetails()
         {
@@ -61,22 +40,33 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
             };
             Transaction TestTx = new Transaction
             {
-                Version = 01,
+                Version = 0,
                 Nonce = 1,
                 Sender = UInt160.Zero,
                 SystemFee = 0,
                 NetworkFee = 0,
                 ValidUntilBlock = 1,
                 Attributes = new TransactionAttribute[0] { },
+                Cosigners = new Cosigner[0],
                 Script = new byte[0],
                 Witnesses = new Witness[0]           
             };
             object[] parameter = new object[] { UInt160.Zero, "Title", "Descritpion", 1 };
+            byte[] result;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitAppCall(NativeContract.Vote.Hash , "createSingleVote",parameter );
-                var result = ApplicationEngine.Run(sb.ToArray(),TestTx, testMode: true);
-            }     
+                var engine = ApplicationEngine.Run(sb.ToArray(),TestTx, testMode: true);
+                result = engine.ResultStack.Pop().GetByteArray();
+                UInt256 test = new UInt256(result);
+            }
+
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitAppCall(NativeContract.Vote.Hash, "getVoteDetails", result);
+                var engine = ApplicationEngine.Run(sb.ToArray(), TestTx, testMode: true);
+                result = engine.ResultStack.Pop().GetByteArray();
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
-using Neo.SmartContract.Native.Votes;
+using Neo.SmartContract.Native.Votes.Interface;
 
 namespace Neo.SmartContract.Native.Votes.Model
 {
