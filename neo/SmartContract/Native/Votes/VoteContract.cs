@@ -402,13 +402,18 @@ namespace Neo.SmartContract.Native
         {
             if (data == null) return null;
             HashSet<UInt160> result = new HashSet<UInt160>();
-
             using (var br = new BinaryReader(new MemoryStream(data)))
             {
-                var Count = data.Length / 20;
-                for (int i = 0; i < Count; i++)
+                while (true)
                 {
-                    result.Add(br.ReadBytes(20).ToScriptHash());
+                    try
+                    {
+                        result.Add(br.ReadBytes(20).ToScriptHash());
+                    }
+                    catch
+                    {
+                        break;
+                    }
                 }
                 return result;
             }
