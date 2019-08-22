@@ -15,7 +15,6 @@ namespace Neo.SmartContract
         public const long GasFree = 0;
         private readonly long gas_amount;
         private readonly bool testMode;
-        private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
@@ -23,9 +22,9 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public Snapshot Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
-        public UInt160 CurrentScriptHash => hashes.Count > 0 ? hashes.Peek() : null;
-        public UInt160 CallingScriptHash => hashes.Count > 1 ? hashes.Peek(1) : null;
-        public UInt160 EntryScriptHash => hashes.Count > 0 ? hashes.Peek(hashes.Count - 1) : null;
+        public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 CallingScriptHash => InvocationStack.Count > 1 ? InvocationStack.Peek(1).GetState<ExecutionContextState>().ScriptHash : null;
+        public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
 
@@ -50,15 +49,15 @@ namespace Neo.SmartContract
             return testMode || GasConsumed <= gas_amount;
         }
 
-        protected override void ContextUnloaded(ExecutionContext context)
-        {
-            hashes.Pop();
-            base.ContextUnloaded(context);
-        }
-
         protected override void LoadContext(ExecutionContext context)
         {
-            hashes.Push(((byte[])context.Script).ToScriptHash());
+            // Set default execution context state
+
+            context.SetState(new ExecutionContextState()
+            {
+                ScriptHash = ((byte[])context.Script).ToScriptHash()
+            });
+
             base.LoadContext(context);
         }
 
