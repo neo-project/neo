@@ -70,7 +70,6 @@ namespace Neo.SmartContract
         private static bool Native_Deploy(ApplicationEngine engine)
         {
             if (engine.Snapshot.PersistingBlock.Index != 0) return false;
-
             foreach (NativeContract contract in NativeContract.Contracts)
             {
                 engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
