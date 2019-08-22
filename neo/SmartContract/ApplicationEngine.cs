@@ -36,8 +36,6 @@ namespace Neo.SmartContract
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
-            ContextLoaded += ApplicationEngine_ContextLoaded;
-            ContextUnloaded += ApplicationEngine_ContextUnloaded;
         }
 
         internal T AddDisposable<T>(T disposable) where T : IDisposable
@@ -52,14 +50,16 @@ namespace Neo.SmartContract
             return testMode || GasConsumed <= gas_amount;
         }
 
-        private void ApplicationEngine_ContextLoaded(object sender, ExecutionContext e)
-        {
-            hashes.Push(((byte[])e.Script).ToScriptHash());
-        }
-
-        private void ApplicationEngine_ContextUnloaded(object sender, ExecutionContext e)
+        protected override void ContextUnloaded(ExecutionContext context)
         {
             hashes.Pop();
+            base.ContextUnloaded(context);
+        }
+
+        protected override void LoadContext(ExecutionContext context)
+        {
+            hashes.Push(((byte[])context.Script).ToScriptHash());
+            base.LoadContext(context);
         }
 
         public override void Dispose()
