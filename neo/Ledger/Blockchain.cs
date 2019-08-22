@@ -228,7 +228,7 @@ namespace Neo.Ledger
             foreach (Block block in blocks)
             {
                 if (block.Index <= Height) continue;
-                if (block.Index != Height + 1)
+                if (block.Index != Height + 1 || block.PrevHash != CurrentBlockHash)
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
