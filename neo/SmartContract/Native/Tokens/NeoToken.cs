@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, SafeMethod = true)]
+        [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, ReadOnly = true)]
         private StackItem UnclaimedGas(ApplicationEngine engine, VMArray args)
         {
             UInt160 account = new UInt160(args[0].GetByteArray());
@@ -193,7 +193,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, ReadOnly = true)]
         private StackItem GetRegisteredValidators(ApplicationEngine engine, VMArray args)
         {
             return GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
@@ -209,7 +209,7 @@ namespace Neo.SmartContract.Native.Tokens
             ));
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, ReadOnly = true)]
         private StackItem GetValidators(ApplicationEngine engine, VMArray args)
         {
             return GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
@@ -234,7 +234,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, ReadOnly = true)]
         private StackItem GetNextBlockValidators(ApplicationEngine engine, VMArray args)
         {
             return GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
