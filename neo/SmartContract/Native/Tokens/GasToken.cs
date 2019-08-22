@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "index" }, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "index" }, ReadOnly = true)]
         private StackItem GetSysFeeAmount(ApplicationEngine engine, VMArray args)
         {
             uint index = (uint)args[0].GetBigInteger();
