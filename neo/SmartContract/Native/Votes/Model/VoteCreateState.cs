@@ -15,8 +15,17 @@ namespace Neo.SmartContract.Native.Votes.Model
         public  string Description;
         public  UInt32 CandidateNumber;
         public  bool IsSequence;
+        public int Size => GetSize();
 
-        public int Size => throw new NotImplementedException();
+        internal int GetSize()
+        {
+            using (MemoryStream memoryStream = new MemoryStream())
+            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
+            {
+                this.Serialize(binaryWriter);
+                return (int)memoryStream.Length;
+            }
+        }
 
         public VoteCreateState() { }
 

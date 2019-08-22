@@ -21,7 +21,7 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
         }
 
         [TestMethod]
-        public void Check_Constructor()
+        public void Check_VoteCreateState()
         {
             createState = new VoteCreateState
                 (
@@ -51,6 +51,7 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
             {
                 createState1.Deserialize(binaryReader);
                 createState1.GetId().ShouldBeEquivalentTo(createState.GetId());
+                createState.Size.ShouldBeEquivalentTo(createState1.Size);
             }
         }
 

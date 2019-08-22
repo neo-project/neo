@@ -23,14 +23,19 @@ namespace Neo.SmartContract.Native.Votes.Interface
                 write.Write(candidate);
             }
         }
-
         public void Deserialize(BinaryReader reader)
         {
-            List<int> temp = new List<int>();
-            int Count = (int)reader.BaseStream.Length / 4;
-            for (int i = 0; i < Count; i++)
+            candidateList = new List<int>();
+            while (true)
             {
-                temp.Add(reader.ReadInt32());
+                try
+                {
+                    candidateList.Add(reader.ReadInt32());
+                }
+                catch
+                {
+                    break;
+                }
             }
         }
 

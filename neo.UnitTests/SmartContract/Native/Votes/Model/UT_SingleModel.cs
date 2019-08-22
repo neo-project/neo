@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Neo.SmartContract.Native.Votes.Model;
+using Neo.SmartContract.Native.Votes.Interface;
 
 namespace Neo.UnitTests.SmartContract.Native
 {

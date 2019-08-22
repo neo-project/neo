@@ -4,10 +4,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.Extensions;
 using Neo.VM;
-using Neo.Network.P2P.Payloads;
-using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native.Votes
 {

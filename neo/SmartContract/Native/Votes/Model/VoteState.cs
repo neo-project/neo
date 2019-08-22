@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native.Votes.Model
         public void Deserialize(BinaryReader reader)
         {
             Voter = new UInt160(reader.ReadBytes(20));
-            if (reader.BaseStream.Length == 4)
+            if (reader.BaseStream.Length - UInt160.Length <= 4)
             {
                 SingleCandidate candidate = new SingleCandidate();
                 candidate.Deserialize(reader);
@@ -42,33 +42,6 @@ namespace Neo.SmartContract.Native.Votes.Model
                 MultiCandidate candidate = new MultiCandidate();
                 candidate.Deserialize(reader);
                 Records = candidate;
-            }
-        }
-        
-        public byte[] ToByteArray()
-        {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                BinaryFormatter binaryFormatter = new BinaryFormatter();
-                binaryFormatter.Serialize(memoryStream, this);
-                return memoryStream.ToArray();
-            }
-        }
-
-        public static VoteState FromByteArray(byte[] data)
-        {
-            using (MemoryStream memoryStream = new MemoryStream(data))
-            {
-                try
-                {
-                    BinaryFormatter binaryFormatter = new BinaryFormatter();
-                    return binaryFormatter.Deserialize(memoryStream) as VoteState;
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-
             }
         }
     }

@@ -17,7 +17,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Neo.SmartContract.Native.Votes.Interface;
 using VMArray = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.Native.Votes
+namespace Neo.SmartContract.Native
 {
     public sealed class VoteContract : NativeContract
     {
@@ -353,11 +353,16 @@ namespace Neo.SmartContract.Native.Votes
         {
             StorageKey key = CreateStorageKey(Prefix_Vote, GetVoteKey(snapshot, id));
             if (snapshot.Storages.TryGet(key) != null) return false;
-            snapshot.Storages.Add(key, new StorageItem
+            using (MemoryStream memoryStream = new MemoryStream())
+            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
             {
-                Value = voteState.ToByteArray()
-            });
-            return true;
+                voteState.Serialize(binaryWriter);
+                snapshot.Storages.Add(key, new StorageItem
+                {
+                    Value = memoryStream.ToArray()
+                }) ;
+                return true;
+            }
         }
         private bool AddResult(Snapshot snapshot, byte[] Result, byte[] id)
         {
