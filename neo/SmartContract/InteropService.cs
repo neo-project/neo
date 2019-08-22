@@ -471,6 +471,7 @@ namespace Neo.SmartContract
 
         private static bool Storage_GetContext(ApplicationEngine engine)
         {
+            if (engine.CurrentContext.GetState<ExecutionContextState>().ReadOnly) return false;
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
             {
                 ScriptHash = engine.CurrentScriptHash,
@@ -537,9 +538,10 @@ namespace Neo.SmartContract
 
             StackItem method = engine.CurrentContext.EvaluationStack.Pop();
             StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+            string methodStr = method.GetString();
             ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
-            if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
+            if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, methodStr))
                 return false;
 
             if (engine.InvocationCounter.TryGetValue(contract.ScriptHash, out var counter))
@@ -552,6 +554,9 @@ namespace Neo.SmartContract
             }
 
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+            context_new.GetState<ExecutionContextState>().ReadOnly =
+                currentManifest.SafeMethods.IsWildcard || currentManifest.SafeMethods.Contains(methodStr);
+
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
             return true;
@@ -559,6 +564,8 @@ namespace Neo.SmartContract
 
         private static bool Contract_Destroy(ApplicationEngine engine)
         {
+            if (engine.CurrentContext.GetState<ExecutionContextState>().ReadOnly) return false;
+
             UInt160 hash = engine.CurrentScriptHash;
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null) return true;
