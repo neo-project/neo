@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Vote = 11;
         private const byte Prefix_AccessControl = 12;
         private const byte Prefix_Result = 13;
-
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
         private StackItem CreateMultiVote(ApplicationEngine engine, VMArray args)
         {
             UInt160 originator = new UInt160(args[0].GetByteArray());
@@ -35,7 +35,7 @@ namespace Neo.SmartContract.Native
             var tx = engine.ScriptContainer as Transaction;
             VoteCreateState createState = new VoteCreateState
                 (tx.Hash,
-                engine.CallingScriptHash,
+                engine.CallingScriptHash??this.Hash,
                 originator,
                 args[1].GetString(),
                 args[2].GetString(),
@@ -58,7 +58,7 @@ namespace Neo.SmartContract.Native
             var tx = engine.ScriptContainer as Transaction;
             VoteCreateState createState = new VoteCreateState
                 (tx.Hash,
-                engine.CallingScriptHash,
+                engine.CallingScriptHash ?? this.Hash,
                 originator,
                 args[1].GetString(),
                 args[2].GetString(),
@@ -77,7 +77,7 @@ namespace Neo.SmartContract.Native
         {
             if (args[0] == null || args[1] == null || args[2] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash??this.Hash).ToArray()));
 
             UInt160 voter = new UInt160(args[1].GetByteArray());
             if (!InteropService.CheckWitness(engine, voter)) return false;
@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
         private StackItem SingleVote(ApplicationEngine engine, VMArray args)
         {
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash??this.Hash).ToArray()));
 
             UInt160 voter = new UInt160(args[1].GetByteArray());
             if (!InteropService.CheckWitness(engine, voter)) return false;
@@ -178,17 +178,16 @@ namespace Neo.SmartContract.Native
         private StackItem GetVoteDetails(ApplicationEngine engine, VMArray args)
         {
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash??this.Hash).ToArray()));
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_state = engine.Snapshot.Storages.TryGet(create_key);
-            if (create_state is null) return null;
             return create_state.Value;
         }
         private StackItem GetMultiStatistic(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash??this.Hash).ToArray()));
 
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
@@ -242,7 +241,7 @@ namespace Neo.SmartContract.Native
         {
             if (args[0] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash??this.Hash).ToArray()));
 
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
@@ -297,7 +296,7 @@ namespace Neo.SmartContract.Native
         {
             if (args[0] == null || args[1] == null || args[2] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), engine.CallingScriptHash.ToArray()));
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash??this.Hash).ToArray()));
 
             HashSet<UInt160> newVoter = new HashSet<UInt160>(args[1].GetByteArray().AsSerializableArray<UInt160>());
 
@@ -333,6 +332,7 @@ namespace Neo.SmartContract.Native
                 return true;
             }
         }
+
         private bool RegisterVote(Snapshot snapshot, VoteCreateState createState)
         {
             StorageKey key = CreateStorageKey(Prefix_CreateVote, createState.GetId());
@@ -342,12 +342,19 @@ namespace Neo.SmartContract.Native
             {
                 createState.Serialize(binaryWriter);
                 binaryWriter.Flush();
-                snapshot.Storages.Add(key, new StorageItem
+                try
                 {
-                    Value = memoryStream.ToArray()
-                });
-            }
-            return true;
+                    snapshot.Storages.Add(key, new StorageItem
+                    {
+                        Value = memoryStream.ToArray()
+                    });
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }           
         }
         private bool AddVote(Snapshot snapshot, VoteState voteState, byte[] id)
         {
