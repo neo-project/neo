@@ -101,7 +101,6 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
                 CheckPreparations();
             }
-
             return true;
         }
 
@@ -437,7 +436,7 @@ namespace Neo.Consensus
 
             if (context.TransactionHashes.Length == 0)
             {
-                // There are no tx so we should act like if all the transactions was filled
+                // There are no tx so we should act like if all the transactions were filled
                 CheckPrepareResponse();
                 return;
             }
