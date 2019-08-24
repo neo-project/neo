@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;

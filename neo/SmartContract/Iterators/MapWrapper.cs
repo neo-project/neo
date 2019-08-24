@@ -1,4 +1,4 @@
-﻿using Neo.VM;
+using Neo.VM;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators

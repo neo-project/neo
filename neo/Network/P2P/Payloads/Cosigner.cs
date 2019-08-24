@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography.ECC;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using System;

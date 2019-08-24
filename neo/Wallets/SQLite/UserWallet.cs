@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.SmartContract;

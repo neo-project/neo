@@ -1,4 +1,4 @@
-﻿namespace Neo.Consensus
+namespace Neo.Consensus
 {
     public enum ChangeViewReason : byte
     {
