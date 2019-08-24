@@ -1,13 +1,62 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
     [TestClass]
     public class UT_Witness
     {
+        class DummyVerificable : IVerifiable
+        {
+            private UInt160 _hash;
+
+            public Witness[] Witnesses { get; set; }
+
+            public int Size => 1;
+
+            public DummyVerificable(UInt160 hash)
+            {
+                _hash = hash;
+            }
+
+            public void Deserialize(BinaryReader reader)
+            {
+                DeserializeUnsigned(reader);
+                Witnesses = reader.ReadSerializableArray<Witness>(16);
+            }
+
+            public void DeserializeUnsigned(BinaryReader reader)
+            {
+                reader.ReadByte();
+            }
+
+            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+            {
+                return new UInt160[] { _hash };
+            }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                SerializeUnsigned(writer);
+                writer.Write(Witnesses);
+            }
+
+            public void SerializeUnsigned(BinaryWriter writer)
+            {
+                writer.Write((byte)1);
+            }
+        }
+
         Witness uut;
 
         [TestInitialize]
@@ -20,6 +69,77 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void InvocationScript_Get()
         {
             uut.InvocationScript.Should().BeNull();
+        }
+
+        private Witness PrepareDummyWitness(int maxAccounts)
+        {
+            var store = TestBlockchain.GetStore();
+            var wallet = TestUtils.GenerateTestWallet();
+            var snapshot = store.GetSnapshot();
+
+            // Prepare
+
+            var address = new WalletAccount[maxAccounts];
+            var wallets = new NEP6Wallet[maxAccounts];
+            var walletsUnlocks = new IDisposable[maxAccounts];
+
+            for (int x = 0; x < maxAccounts; x++)
+            {
+                wallets[x] = TestUtils.GenerateTestWallet();
+                walletsUnlocks[x] = wallets[x].Unlock("123");
+                address[x] = wallets[x].CreateAccount();
+            }
+
+            // Generate multisignature
+
+            var multiSignContract = Contract.CreateMultiSigContract(maxAccounts, address.Select(a => a.GetKey().PublicKey).ToArray());
+
+            for (int x = 0; x < maxAccounts; x++)
+            {
+                wallets[x].CreateAccount(multiSignContract, address[x].GetKey());
+            }
+
+            // Sign
+
+            var data = new ContractParametersContext(new DummyVerificable(multiSignContract.ScriptHash));
+
+            for (int x = 0; x < maxAccounts; x++)
+            {
+                Assert.IsTrue(wallets[x].Sign(data));
+            }
+
+            Assert.IsTrue(data.Completed);
+            return data.GetWitnesses()[0];
+        }
+
+        [TestMethod]
+        public void MaxSize_OK()
+        {
+            var witness = PrepareDummyWitness(10);
+
+            // Check max size
+
+            witness.Size.Should().Be(1003);
+            witness.InvocationScript.GetVarSize().Should().Be(653);
+            witness.VerificationScript.GetVarSize().Should().Be(350);
+
+            Assert.IsTrue(witness.Size <= 1024);
+
+            var copy = witness.ToArray().AsSerializable<Witness>();
+
+            CollectionAssert.AreEqual(witness.InvocationScript, copy.InvocationScript);
+            CollectionAssert.AreEqual(witness.VerificationScript, copy.VerificationScript);
+        }
+
+        [TestMethod]
+        public void MaxSize_Error()
+        {
+            var witness = PrepareDummyWitness(11);
+
+            // Check max size
+
+            Assert.IsTrue(witness.Size > 1024);
+            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
         }
 
         [TestMethod]
