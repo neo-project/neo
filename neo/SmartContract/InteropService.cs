@@ -55,8 +55,8 @@ namespace Neo.SmartContract
         public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400, TriggerType.Application);
         public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 0_00000400, TriggerType.All);
         public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
-        public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
-        public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application, true);
+        public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application, true);
         public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400, TriggerType.Application);
         public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000, TriggerType.Application);
         public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice, TriggerType.Application);
@@ -88,19 +88,21 @@ namespace Neo.SmartContract
                 return false;
             if (!descriptor.AllowedTriggers.HasFlag(engine.Trigger))
                 return false;
+            if (descriptor.RequireWriteAccess && engine.CurrentContext.GetState<ExecutionContextState>().ReadOnly)
+                return false;
             return descriptor.Handler(engine);
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers)
+        private static uint Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, bool requireWriteAccess = false)
         {
-            InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers);
+            InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers, requireWriteAccess);
             methods.Add(descriptor.Hash, descriptor);
             return descriptor.Hash;
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<RandomAccessStack<StackItem>, long> priceCalculator, TriggerType allowedTriggers)
+        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<RandomAccessStack<StackItem>, long> priceCalculator, TriggerType allowedTriggers, bool requireWriteAccess = false)
         {
-            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers);
+            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers, requireWriteAccess);
             methods.Add(descriptor.Hash, descriptor);
             return descriptor.Hash;
         }
@@ -537,9 +539,10 @@ namespace Neo.SmartContract
 
             StackItem method = engine.CurrentContext.EvaluationStack.Pop();
             StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+            string methodStr = method.GetString();
             ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
-            if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
+            if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, methodStr))
                 return false;
 
             if (engine.InvocationCounter.TryGetValue(contract.ScriptHash, out var counter))
@@ -552,6 +555,9 @@ namespace Neo.SmartContract
             }
 
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+            context_new.GetState<ExecutionContextState>().ReadOnly = currentManifest != null &&
+                (currentManifest.ReadOnlyMethods.IsWildcard || currentManifest.ReadOnlyMethods.Contains(methodStr));
+
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
             return true;

@@ -17,7 +17,7 @@ namespace Neo.SmartContract
 {
     static partial class InteropService
     {
-        public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application);
+        public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application, true);
         public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000, TriggerType.All);
         public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice, TriggerType.All);
         public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400, TriggerType.Application);
@@ -27,8 +27,8 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 0_00010000, TriggerType.All);
         public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
-        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
-        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application);
+        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application, true);
+        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application, true);
         public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 0_00000400, TriggerType.Application);
         public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 0_00000400, TriggerType.Application);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application);
