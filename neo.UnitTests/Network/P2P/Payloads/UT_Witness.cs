@@ -122,7 +122,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             witness.Size.Should().Be(1003);
             witness.InvocationScript.GetVarSize().Should().Be(653);
             witness.VerificationScript.GetVarSize().Should().Be(350);
-            
+
             Assert.IsTrue(witness.Size <= 1024);
 
             var copy = witness.ToArray().AsSerializable<Witness>();
