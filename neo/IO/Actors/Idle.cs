@@ -1,4 +1,4 @@
-﻿namespace Neo.IO.Actors
+namespace Neo.IO.Actors
 {
     internal sealed class Idle
     {
