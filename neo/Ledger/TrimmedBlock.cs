@@ -1,4 +1,4 @@
-﻿using Neo.IO;
+using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;

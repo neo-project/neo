@@ -1,4 +1,4 @@
-﻿using K4os.Compression.LZ4;
+using K4os.Compression.LZ4;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Buffers;
