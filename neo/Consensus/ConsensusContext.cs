@@ -254,8 +254,10 @@ namespace Neo.Consensus
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
+            Block.Transactions = new Transaction[0];
 
-            // Expected block size
+            // We need to know the expected block size
+
             var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
 
             // Iterate transaction until reach the size
