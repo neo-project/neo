@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography.ECC;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.SmartContract;
 using Neo.VM.Types;
