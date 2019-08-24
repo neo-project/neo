@@ -1,4 +1,4 @@
-using Neo.IO.Json;
+﻿using Neo.IO.Json;
 
 namespace Neo.Wallets.NEP6
 {

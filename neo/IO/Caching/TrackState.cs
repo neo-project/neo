@@ -1,4 +1,4 @@
-namespace Neo.IO.Caching
+﻿namespace Neo.IO.Caching
 {
     public enum TrackState : byte
     {

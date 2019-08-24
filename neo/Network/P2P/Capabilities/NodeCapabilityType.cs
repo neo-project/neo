@@ -1,4 +1,4 @@
-namespace Neo.Network.P2P.Capabilities
+﻿namespace Neo.Network.P2P.Capabilities
 {
     public enum NodeCapabilityType : byte
     {

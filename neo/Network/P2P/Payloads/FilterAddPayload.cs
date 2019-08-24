@@ -1,4 +1,4 @@
-using Neo.IO;
+﻿using Neo.IO;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads

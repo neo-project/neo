@@ -1,4 +1,4 @@
-namespace Neo.IO.Caching
+﻿namespace Neo.IO.Caching
 {
     internal class CloneMetaCache<T> : MetaDataCache<T>
         where T : class, ICloneable<T>, ISerializable, new()

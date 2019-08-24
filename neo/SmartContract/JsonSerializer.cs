@@ -1,4 +1,4 @@
-using Neo.IO.Json;
+﻿using Neo.IO.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
