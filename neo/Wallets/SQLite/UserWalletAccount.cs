@@ -1,4 +1,4 @@
-﻿namespace Neo.Wallets.SQLite
+namespace Neo.Wallets.SQLite
 {
     internal class UserWalletAccount : WalletAccount
     {

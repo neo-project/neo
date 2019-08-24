@@ -1,4 +1,4 @@
-﻿namespace Neo.Ledger
+namespace Neo.Ledger
 {
     public enum RelayResultReason : byte
     {

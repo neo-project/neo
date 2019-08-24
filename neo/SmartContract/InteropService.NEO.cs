@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;

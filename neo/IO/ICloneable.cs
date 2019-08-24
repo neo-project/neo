@@ -1,4 +1,4 @@
-﻿namespace Neo.IO
+namespace Neo.IO
 {
     public interface ICloneable<T>
     {
