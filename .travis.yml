@@ -23,7 +23,8 @@ before_script:
   - export PATH="$PATH:$HOME/.dotnet/tools"
 script: |
   echo "Checking format..." 
-  dotnet format --check --dry-run
+  dotnet format --check --dry-run -w ../neo
+  dotnet format --check --dry-run -w .
   if [[ "$TEST_SUITE" == cultures ]]; then 
       dotnet restore
       dotnet test
