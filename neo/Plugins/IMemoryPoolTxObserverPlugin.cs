@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.Plugins

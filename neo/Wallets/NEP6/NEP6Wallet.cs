@@ -1,4 +1,4 @@
-using Neo.IO.Json;
+﻿using Neo.IO.Json;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;

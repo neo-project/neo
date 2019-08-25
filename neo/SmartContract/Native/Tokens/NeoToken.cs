@@ -1,4 +1,4 @@
-#pragma warning disable IDE0051
+﻿#pragma warning disable IDE0051
 #pragma warning disable IDE0060
 
 using Neo.Cryptography.ECC;

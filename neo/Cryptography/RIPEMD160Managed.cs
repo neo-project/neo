@@ -1,4 +1,4 @@
-#if !NET47
+﻿#if !NET47
 using System;
 using System.Runtime.InteropServices;
 using System.Security;

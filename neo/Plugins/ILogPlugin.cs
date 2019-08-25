@@ -1,4 +1,4 @@
-namespace Neo.Plugins
+﻿namespace Neo.Plugins
 {
     public interface ILogPlugin
     {

@@ -1,4 +1,4 @@
-using Neo.SmartContract.Iterators;
+﻿using Neo.SmartContract.Iterators;
 using Neo.VM;
 
 namespace Neo.SmartContract.Enumerators

@@ -1,4 +1,4 @@
-using Neo.Consensus;
+﻿using Neo.Consensus;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;

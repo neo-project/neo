@@ -1,4 +1,4 @@
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.IO.Caching;
 using System;
 using System.IO;
