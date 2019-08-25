@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;

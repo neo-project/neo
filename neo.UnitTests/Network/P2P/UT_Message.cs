@@ -1,4 +1,4 @@
-using Akka.IO;
+﻿using Akka.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;

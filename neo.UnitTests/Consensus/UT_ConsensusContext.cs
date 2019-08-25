@@ -1,4 +1,4 @@
-using Akka.TestKit.Xunit2;
+﻿using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Consensus;

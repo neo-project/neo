@@ -1,4 +1,4 @@
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.IO.Caching;
 
 namespace Neo.UnitTests
