@@ -20,7 +20,7 @@ before_install:
 script: |
   echo "Checking format..." 
   dotnet tool install -g dotnet-format
-  dotnet format --check --dry-run
+  ./$HOME/.dotnet/tools/dotnet-format --check --dry-run
   if [[ "$TEST_SUITE" == cultures ]]; then 
       dotnet restore
       dotnet test
