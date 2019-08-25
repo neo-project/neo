@@ -18,6 +18,9 @@ before_install:
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
 script: |
+  echo "Checking format..." 
+  dotnet tool install -g dotnet-format
+  dotnet format --check --dry-run
   if [[ "$TEST_SUITE" == cultures ]]; then 
       dotnet restore
       dotnet test
