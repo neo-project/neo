@@ -11,8 +11,8 @@ mono: none
 dotnet: 2.2.300
 
 env:
-- TEST_SUITE="without-cultures"
-- TEST_SUITE="cultures"
+  - TEST_SUITE="without-cultures"
+  - TEST_SUITE="cultures"
 
 before_install:
   - cd neo.UnitTests
@@ -20,7 +20,7 @@ before_install:
 install:
   - dotnet tool install -g dotnet-format
 before_script:
-  export PATH="$PATH:$HOME/.dotnet/tools"
+  - export PATH="$PATH:$HOME/.dotnet/tools"
 script: |
   echo "Checking format..." 
   dotnet format --check --dry-run
