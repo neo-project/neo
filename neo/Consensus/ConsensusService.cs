@@ -74,6 +74,11 @@ namespace Neo.Consensus
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
+            return CheckPrepareResponse();
+        }
+
+        private bool CheckPrepareResponse()
+        {
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
                 // if we are the primary for this view, but acting as a backup because we recovered our own
@@ -428,6 +433,14 @@ namespace Neo.Consensus
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
+
+            if (context.TransactionHashes.Length == 0)
+            {
+                // There are no tx so we should act like if all the transactions were filled
+                CheckPrepareResponse();
+                return;
+            }
+
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes)
