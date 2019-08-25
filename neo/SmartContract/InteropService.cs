@@ -535,7 +535,7 @@ namespace Neo.SmartContract
                 contract = _interface;
             else
                 contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractOrHash.GetByteArray()));
-            if (contract is null) return false;
+            if (contract == null || contract.Manifest == null) return false;
 
             StackItem method = engine.CurrentContext.EvaluationStack.Pop();
             StackItem args = engine.CurrentContext.EvaluationStack.Pop();
@@ -555,7 +555,7 @@ namespace Neo.SmartContract
             }
 
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
-            context_new.GetState<ExecutionContextState>().ReadOnly = 
+            context_new.GetState<ExecutionContextState>().ReadOnly =
                 (contract.Manifest.ReadOnlyMethods.IsWildcard || contract.Manifest.ReadOnlyMethods.Contains(methodStr));
 
             context_new.EvaluationStack.Push(args);
