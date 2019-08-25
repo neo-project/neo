@@ -1,4 +1,4 @@
-﻿using Neo.Persistence;
+using Neo.Persistence;
 
 namespace Neo.Network.P2P.Payloads
 {

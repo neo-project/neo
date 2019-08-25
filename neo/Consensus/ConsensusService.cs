@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Configuration;
 using Neo.Cryptography;
 using Neo.IO;
@@ -74,11 +74,24 @@ namespace Neo.Consensus
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
+            return CheckPrepareResponse();
+        }
+
+        private bool CheckPrepareResponse()
+        {
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
                 // if we are the primary for this view, but acting as a backup because we recovered our own
                 // previously sent prepare request, then we don't want to send a prepare response.
                 if (context.IsPrimary || context.WatchOnly) return true;
+
+                // Check maximum block size via Native Contract policy
+                if (context.GetExpectedBlockSize() > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
+                {
+                    Log($"rejected block: {context.Block.Index}{Environment.NewLine} The size exceed the policy", LogLevel.Warning);
+                    RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
+                    return false;
+                }
 
                 // Timeout extension due to prepare response sent
                 // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
@@ -175,7 +188,6 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
-            Console.WriteLine($"[{DateTime.Now.TimeOfDay:hh\\:mm\\:ss\\.fff}] {message}");
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
@@ -421,6 +433,14 @@ namespace Neo.Consensus
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
+
+            if (context.TransactionHashes.Length == 0)
+            {
+                // There are no tx so we should act like if all the transactions were filled
+                CheckPrepareResponse();
+                return;
+            }
+
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes)

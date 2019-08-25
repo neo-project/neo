@@ -1,4 +1,4 @@
-﻿using Neo.SmartContract;
+using Neo.SmartContract;
 using Neo.VM;
 using System;
 
