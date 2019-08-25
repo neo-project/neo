@@ -20,7 +20,7 @@ before_install:
 install:
   - dotnet tool install -g dotnet-format
   - export PATH="$PATH:$HOME/.dotnet/tools"
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then apt install dos2unix; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt install dos2unix; fi
 before_script:
   - echo "Checking format..." 
   - dotnet format --check --dry-run -w ../neo
