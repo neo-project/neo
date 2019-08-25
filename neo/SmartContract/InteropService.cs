@@ -555,8 +555,8 @@ namespace Neo.SmartContract
             }
 
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
-            context_new.GetState<ExecutionContextState>().ReadOnly = currentManifest != null &&
-                (currentManifest.ReadOnlyMethods.IsWildcard || currentManifest.ReadOnlyMethods.Contains(methodStr));
+            context_new.GetState<ExecutionContextState>().ReadOnly = 
+                (contract.Manifest.ReadOnlyMethods.IsWildcard || contract.Manifest.ReadOnlyMethods.Contains(methodStr));
 
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
