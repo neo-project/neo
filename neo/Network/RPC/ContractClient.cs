@@ -70,10 +70,15 @@ namespace Neo.Network.RPC
             if (hasStorage) properties |= ContractFeatures.HasStorage;
             if (isPayable) properties |= ContractFeatures.Payable;
 
+            ContractManifest manifest = new ContractManifest
+            {
+                Features = properties
+            };
+
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(InteropService.Neo_Contract_Create, contractScript, properties);
+                sb.EmitSysCall(InteropService.Neo_Contract_Create, contractScript, manifest.ToJson().ToString());
                 script = sb.ToArray();
             }
 
