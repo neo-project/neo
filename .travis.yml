@@ -21,6 +21,7 @@ install:
   - export PATH="$PATH:$HOME/.dotnet/tools"
 before_script:
   - echo "Checking format..." 
+  - dotnet-format --version
   - dotnet format --check --dry-run -w . -v diagnostic # check C# formatting for neo.sln
 script: |
   cd neo.UnitTests
