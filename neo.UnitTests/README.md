@@ -1,4 +1,4 @@
-﻿NEO Unit Tests
+NEO Unit Tests
 ====================
 
 This project is a work in progress, aiming to provide unit test coverage for the core NEO code.

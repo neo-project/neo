@@ -1,4 +1,4 @@
-﻿using Neo.IO.Json;
+using Neo.IO.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;

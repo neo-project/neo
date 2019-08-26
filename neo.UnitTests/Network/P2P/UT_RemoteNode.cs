@@ -1,4 +1,4 @@
-﻿using Akka.IO;
+using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

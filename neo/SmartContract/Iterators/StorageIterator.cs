@@ -1,4 +1,4 @@
-﻿using Neo.Ledger;
+using Neo.Ledger;
 using Neo.VM;
 using System.Collections.Generic;
 

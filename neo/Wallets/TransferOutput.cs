@@ -1,4 +1,4 @@
-﻿namespace Neo.Wallets
+namespace Neo.Wallets
 {
     public class TransferOutput
     {

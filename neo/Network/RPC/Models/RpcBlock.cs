@@ -1,4 +1,4 @@
-﻿using Neo.IO.Json;
+using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.Network.RPC.Models

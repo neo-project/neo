@@ -1,4 +1,4 @@
-﻿using Neo.IO.Caching;
+using Neo.IO.Caching;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
 
