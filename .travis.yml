@@ -11,18 +11,31 @@ mono: none
 dotnet: 2.2.300
 
 env:
-- TEST_SUITE="without-cultures"
-- TEST_SUITE="cultures"
+  - TEST_SUITE="without-cultures"
+  - TEST_SUITE="cultures"
 
 before_install:
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
+install:
+  - dotnet tool install -g dotnet-format
+  - export PATH="$PATH:$HOME/.dotnet/tools"
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget http://mirrors.kernel.org/ubuntu/pool/universe/d/dos2unix/dos2unix_7.4.0-1_amd64.deb && sudo dpkg -i dos2unix_7.4.0-1_amd64.deb; fi
+before_script:
+  - echo "Checking format..." 
+  - dotnet format --check --dry-run -w ../neo   # check C# formatting for neo/
+  - dotnet format --check --dry-run -w .        # check C# formatting for neo.UnitTests/
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then find ../neo -type f -print0 | xargs -0 dos2unix -ic ; fi           # just display, to help finding errors (if any)
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then find ../neo.UnitTests -type f -print0 | xargs -0 dos2unix -ic ; fi # just display, to help finding errors (if any)
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test "0" -eq `find ../neo -type f -print0 | xargs -0 dos2unix -ic | wc -l` ; fi            # check crlf
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test "0" -eq `find ../neo.UnitTests -type f -print0 | xargs -0 dos2unix -ic | wc -l` ; fi  # check crlf
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test `find ../neo -type f | wc -l` -eq `find ../neo -type f -print0 | xargs -0 dos2unix -ib | grep no_bom | wc -l`; fi                     # check no_bom prefix
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test `find ../neo.UnitTests -type f | wc -l` -eq `find ../neo.UnitTests -type f -print0 | xargs -0 dos2unix -ib | grep no_bom | wc -l`; fi # check no_bom prefix
 script: |
+  dotnet restore
   if [[ "$TEST_SUITE" == cultures ]]; then 
-      dotnet restore
       dotnet test
   else
-      dotnet restore
       find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
       dotnet test -v n --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   fi
