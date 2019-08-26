@@ -66,14 +66,12 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public Transaction DeployContract(byte[] contractScript, bool hasStorage, bool isPayable, KeyPair key, long networkFee = 0)
         {
-            ContractFeatures properties = ContractFeatures.NoProperty;
-            if (hasStorage) properties |= ContractFeatures.HasStorage;
-            if (isPayable) properties |= ContractFeatures.Payable;
+            ContractFeatures features = ContractFeatures.NoProperty;
+            if (hasStorage) features |= ContractFeatures.HasStorage;
+            if (isPayable) features |= ContractFeatures.Payable;
 
-            ContractManifest manifest = new ContractManifest
-            {
-                Features = properties
-            };
+            ContractManifest manifest = ContractManifest.CreateDefault(contractScript.ToScriptHash());
+            manifest.Features = features;
 
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
