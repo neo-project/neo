@@ -77,15 +77,15 @@ namespace Neo.SmartContract
             return methods[hash].GetPrice(stack);
         }
 
-		public static Dictionary<uint, string> SupportedMethods()
-		{
-			var output = new Dictionary<uint, string>();
-			foreach (uint callHash in methods.Keys)
-			{
-				output[callHash] = methods[callHash].Method;
-			}
-			return output;
-		}
+        public static Dictionary<uint, string> SupportedMethods()
+        {
+            var output = new Dictionary<uint, string>();
+            foreach (uint callHash in methods.Keys)
+            {
+                output[callHash] = methods[callHash].Method;
+            }
+            return output;
+        }
 
         private static long GetStoragePrice(RandomAccessStack<StackItem> stack)
         {
