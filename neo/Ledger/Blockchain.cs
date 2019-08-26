@@ -53,6 +53,7 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
+        private readonly static byte[] onPersistNativeContractScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -83,6 +84,15 @@ namespace Neo.Ledger
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
+
+            NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                foreach (NativeContract contract in contracts)
+                    sb.EmitAppCall(contract.Hash, "onPersist");
+
+                onPersistNativeContractScript = sb.ToArray();
+            }
         }
 
         public Blockchain(NeoSystem system, Store store)
@@ -416,15 +426,9 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
                     {
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                        {
-                            foreach (NativeContract contract in contracts)
-                                sb.EmitAppCall(contract.Hash, "onPersist");
-                            engine.LoadScript(sb.ToArray());
-                        }
+                        engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
