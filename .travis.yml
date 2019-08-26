@@ -18,9 +18,9 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
 install:
   - dotnet tool install -g dotnet-format --version 4.0.40103 --add-source https://dotnet.myget.org/F/format/api/v3/index.json
+  - export PATH="$PATH:$HOME/.dotnet/tools"
   - dotnet-format --version
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget http://mirrors.kernel.org/ubuntu/pool/universe/d/dos2unix/dos2unix_7.4.0-1_amd64.deb && sudo dpkg -i dos2unix_7.4.0-1_amd64.deb; fi
-  - export PATH="$PATH:$HOME/.dotnet/tools"
 before_script:
   - echo "Checking format..." 
   - dotnet format --check --dry-run -w . -v diagnostic # check C# formatting for neo.sln
