@@ -25,8 +25,8 @@ before_script:
   - echo "Checking format..." 
   - dotnet format --check --dry-run -w ../neo
   - dotnet format --check --dry-run -w .
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then find ../neo -type f -print0 | xargs -0 dos2unix -ic | test ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then find ../neo.UnitTests -type f -print0 | xargs -0 dos2unix -ic | test ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test "0" -eq `find ../neo -type f -print0 | xargs -0 dos2unix -ic | wc -l` ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test "0" -eq `find ../neo.UnitTests -type f -print0 | xargs -0 dos2unix -ic | wc -l` ; fi
 script: |
   dotnet restore
   if [[ "$TEST_SUITE" == cultures ]]; then 
