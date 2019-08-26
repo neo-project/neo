@@ -27,6 +27,8 @@ before_script:
   - dotnet format --check --dry-run -w .
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test "0" -eq `find ../neo -type f -print0 | xargs -0 dos2unix -ic | wc -l` ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test "0" -eq `find ../neo.UnitTests -type f -print0 | xargs -0 dos2unix -ic | wc -l` ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test `find ../neo -type f | wc -l` -eq `find ../neo -type f -print0 | xargs -0 dos2unix -ib | grep no_bom | wc -l`; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test `find ./neo.UnitTests -type f | wc -l` -eq `find ./neo.UnitTests -type f -print0 | xargs -0 dos2unix -ib | grep no_bom | wc -l`; fi
 script: |
   dotnet restore
   if [[ "$TEST_SUITE" == cultures ]]; then 
