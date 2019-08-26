@@ -48,11 +48,11 @@ namespace Neo.UnitTests.Network.RPC
         public void TestDeployContract()
         {
             byte[] script;
-            var mainfest = ContractManifest.CreateDefault(new byte[1].ToScriptHash());
-            mainfest.Features = ContractFeatures.HasStorage | ContractFeatures.Payable;
+            var manifest = ContractManifest.CreateDefault(new byte[1].ToScriptHash());
+            manifest.Features = ContractFeatures.HasStorage | ContractFeatures.Payable;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(InteropService.Neo_Contract_Create, new byte[1], mainfest.ToString());
+                sb.EmitSysCall(InteropService.Neo_Contract_Create, new byte[1], manifest.ToString());
                 script = sb.ToArray();
             }
 
