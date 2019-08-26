@@ -1,0 +1,7 @@
+###############################
+# Core EditorConfig Options   #
+###############################
+
+# Code files
+insert_final_newline = true
+charset = utf-8
