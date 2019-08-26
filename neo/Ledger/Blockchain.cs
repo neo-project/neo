@@ -455,13 +455,11 @@ namespace Neo.Ledger
                         all_application_executed.Add(application_executed);
                     }
                 }
-                snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
-                snapshot.BlockHashIndex.GetAndChange().Index = block.Index;
+                snapshot.BlockHashIndex.GetAndChange().Set(block);
                 if (block.Index == header_index.Count)
                 {
                     header_index.Add(block.Hash);
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
+                    snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
