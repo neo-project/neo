@@ -23,7 +23,7 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget http://mirrors.kernel.org/ubuntu/pool/universe/d/dos2unix/dos2unix_7.4.0-1_amd64.deb && sudo dpkg -i dos2unix_7.4.0-1_amd64.deb; fi
 before_script:
   - echo "Checking format..." 
-  - dotnet format --check --dry-run -w ../   # check C# formatting for neo.sln
+  - dotnet format --check --dry-run -w ../ -v diagnostic # check C# formatting for neo.sln
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then find ../neo -type f -print0 | xargs -0 dos2unix -ic ; fi           # just display, to help finding errors (if any)
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then find ../neo.UnitTests -type f -print0 | xargs -0 dos2unix -ic ; fi # just display, to help finding errors (if any)
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then test "0" -eq `find ../neo -type f -print0 | xargs -0 dos2unix -ic | wc -l` ; fi            # check crlf
