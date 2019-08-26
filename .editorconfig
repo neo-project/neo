@@ -14,5 +14,5 @@ root = true
 insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
-#end_of_line = crlf  # TODO
+end_of_line = lf
 #indent_style = tab  # TODO
