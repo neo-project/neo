@@ -2,6 +2,9 @@
 # Core EditorConfig Options   #
 ###############################
 
+root = true
+
 # Code files
 insert_final_newline = true
 charset = utf-8
+end_of_line = crlf
