@@ -2,6 +2,9 @@
 # Core EditorConfig Options   #
 ###############################
 
+# dotnet-format requires version 3.1.37601
+# dotnet tool update -g dotnet-format
+
 root = true
 
 # Every file
@@ -10,5 +13,5 @@ root = true
 insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
-#end_of_line = crlf
+#end_of_line = crlf  # TODO
 #indent_style = tab  # TODO
