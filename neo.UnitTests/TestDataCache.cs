@@ -11,16 +11,25 @@ namespace Neo.UnitTests
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
         private readonly TValue _defaultValue;
+        private readonly TKey _defaultKey;
 
         public TestDataCache()
         {
             _defaultValue = null;
+            _defaultKey = default(TKey);
         }
 
         public TestDataCache(TValue defaultValue)
         {
             this._defaultValue = defaultValue;
         }
+
+        public TestDataCache(TKey key, TValue value)
+        {
+            this._defaultValue = value;
+            this._defaultKey = key;
+        }
+
         public override void DeleteInternal(TKey key)
         {
         }
@@ -31,7 +40,15 @@ namespace Neo.UnitTests
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
         {
-            return Enumerable.Empty<KeyValuePair<TKey, TValue>>();
+            if (_defaultValue is null)
+            {
+                return Enumerable.Empty<KeyValuePair<TKey, TValue>>();
+            }
+            var list = new List<KeyValuePair<TKey, TValue>>
+            {
+                new KeyValuePair<TKey, TValue>(_defaultKey, _defaultValue)
+            };
+            return list;
         }
 
         protected override TValue GetInternal(TKey key)
