@@ -32,7 +32,7 @@ namespace Neo.IO.Data.RocksDB
             }
         }
 
-        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options,  ISerializable key) where T : class, ISerializable, new()
+        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key) where T : class, ISerializable, new()
         {
             return db.Get(family, options, key.ToArray()).AsSerializable<T>();
         }
