@@ -1,10 +1,12 @@
 using Neo.IO;
 using Neo.IO.Caching;
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Data;
+using Neo.IO.Data.RocksDB;
+using RocksDbSharp;
 using System;
 using System.Collections.Generic;
 
-namespace Neo.Persistence.LevelDB
+namespace Neo.Persistence.RocksDB
 {
     public class DbCache<TKey, TValue> : DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable, new()
@@ -18,7 +20,7 @@ namespace Neo.Persistence.LevelDB
         public DbCache(DB db, ReadOptions options, WriteBatch batch, byte prefix)
         {
             this.db = db;
-            this.options = options ?? ReadOptions.Default;
+            this.options = options ?? DB.ReadDefault;
             this.batch = batch;
             this.prefix = prefix;
         }

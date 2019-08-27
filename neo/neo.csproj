@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>2015-2019 The Neo Project</Copyright>
@@ -31,6 +31,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00033" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
+    <PackageReference Include="RocksDbNative" Version="5.4.6.10" />
+    <PackageReference Include="RocksDbSharp" Version="5.4.6.11" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net47'">

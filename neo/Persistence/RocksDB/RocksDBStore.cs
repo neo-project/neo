@@ -1,32 +1,39 @@
 using Neo.IO.Caching;
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Data;
+using Neo.IO.Data.RocksDB;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
+using RocksDbSharp;
 using System;
 using System.Reflection;
+using System.Text;
 
-namespace Neo.Persistence.LevelDB
+namespace Neo.Persistence.RocksDB
 {
-    public class LevelDBStore : Store, IDisposable
+    public class RocksDBStore : Store, IDisposable
     {
         private readonly DB db;
 
-        public LevelDBStore(string path)
+        public RocksDBStore(string path)
         {
-            this.db = DB.Open(path, new Options { CreateIfMissing = true });
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(Prefixes.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.9.1"))
+            db = DB.Open(new Options { CreateIfMissing = true, FilePath = path });
+            if (db.TryGet(DB.ReadDefault, SliceBuilder.Begin(Prefixes.SYS_Version), out var value) &&
+                Version.TryParse(Encoding.UTF8.GetString(value), out var version) && version >= Version.Parse("2.9.1"))
                 return;
-            WriteBatch batch = new WriteBatch();
-            ReadOptions options = new ReadOptions { FillCache = false };
-            using (Iterator it = db.NewIterator(options))
+
+            var batch = new WriteBatch();
+            var options = new ReadOptions();
+            options.SetFillCache(false);
+
+            using (var it = db.NewIterator(options))
             {
                 for (it.SeekToFirst(); it.Valid(); it.Next())
                 {
                     batch.Delete(it.Key());
                 }
             }
-            db.Put(WriteOptions.Default, SliceBuilder.Begin(Prefixes.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
-            db.Write(WriteOptions.Default, batch);
+            db.Put(DB.WriteDefault, SliceBuilder.Begin(Prefixes.SYS_Version), Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName().Version.ToString()));
+            db.Write(DB.WriteDefault, batch);
         }
 
         public void Dispose()
@@ -36,9 +43,9 @@ namespace Neo.Persistence.LevelDB
 
         public override byte[] Get(byte prefix, byte[] key)
         {
-            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(prefix).Add(key), out Slice slice))
+            if (!db.TryGet(DB.ReadDefault, SliceBuilder.Begin(prefix).Add(key), out var value))
                 return null;
-            return slice.ToArray();
+            return value;
         }
 
         public override DataCache<UInt256, TrimmedBlock> GetBlocks()
@@ -83,12 +90,12 @@ namespace Neo.Persistence.LevelDB
 
         public override void Put(byte prefix, byte[] key, byte[] value)
         {
-            db.Put(WriteOptions.Default, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(DB.WriteDefault, SliceBuilder.Begin(prefix).Add(key), value);
         }
 
         public override void PutSync(byte prefix, byte[] key, byte[] value)
         {
-            db.Put(new WriteOptions { Sync = true }, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(DB.WriteDefaultSync, SliceBuilder.Begin(prefix).Add(key), value);
         }
     }
 }

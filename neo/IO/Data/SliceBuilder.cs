@@ -2,55 +2,53 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Data
 {
     public class SliceBuilder
     {
-        private List<byte> data = new List<byte>();
+        private readonly List<byte> _data = new List<byte>();
 
-        private SliceBuilder()
-        {
-        }
+        private SliceBuilder() { }
 
         public SliceBuilder Add(byte value)
         {
-            data.Add(value);
+            _data.Add(value);
             return this;
         }
 
         public SliceBuilder Add(ushort value)
         {
-            data.AddRange(BitConverter.GetBytes(value));
+            _data.AddRange(BitConverter.GetBytes(value));
             return this;
         }
 
         public SliceBuilder Add(uint value)
         {
-            data.AddRange(BitConverter.GetBytes(value));
+            _data.AddRange(BitConverter.GetBytes(value));
             return this;
         }
 
         public SliceBuilder Add(long value)
         {
-            data.AddRange(BitConverter.GetBytes(value));
+            _data.AddRange(BitConverter.GetBytes(value));
             return this;
         }
 
         public SliceBuilder Add(IEnumerable<byte> value)
         {
-            data.AddRange(value);
+            _data.AddRange(value);
             return this;
         }
 
         public SliceBuilder Add(string value)
         {
-            data.AddRange(Encoding.UTF8.GetBytes(value));
+            _data.AddRange(Encoding.UTF8.GetBytes(value));
             return this;
         }
 
         public SliceBuilder Add(ISerializable value)
         {
-            data.AddRange(value.ToArray());
+            _data.AddRange(value.ToArray());
             return this;
         }
 
@@ -66,7 +64,12 @@ namespace Neo.IO.Data.LevelDB
 
         public static implicit operator Slice(SliceBuilder value)
         {
-            return value.data.ToArray();
+            return value._data.ToArray();
+        }
+
+        public static implicit operator byte[](SliceBuilder value)
+        {
+            return value._data.ToArray();
         }
     }
 }

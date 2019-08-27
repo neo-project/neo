@@ -1,19 +1,21 @@
 using Neo.Cryptography;
 using System;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Data
 {
     public struct Slice : IComparable<Slice>, IEquatable<Slice>
     {
-        internal byte[] buffer;
+        private readonly byte[] buffer;
 
-        internal Slice(IntPtr data, UIntPtr length)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="input">Input</param>
+        internal Slice(byte[] input)
         {
-            buffer = new byte[(int)length];
-            Marshal.Copy(data, buffer, 0, (int)length);
+            buffer = input;
         }
 
         public int CompareTo(Slice other)
@@ -34,9 +36,8 @@ namespace Neo.IO.Data.LevelDB
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (!(obj is Slice)) return false;
-            return Equals((Slice)obj);
+            if (!(obj is Slice slide)) return false;
+            return Equals(slide);
         }
 
         public override int GetHashCode()
@@ -151,64 +152,69 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
+        public static implicit operator byte[](Slice value)
+        {
+            return value.buffer;
+        }
+
         public static implicit operator Slice(byte[] data)
         {
-            return new Slice { buffer = data };
+            return new Slice(data);
         }
 
         public static implicit operator Slice(bool data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(byte data)
         {
-            return new Slice { buffer = new[] { data } };
+            return new Slice(new[] { data });
         }
 
         public static implicit operator Slice(double data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(short data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(int data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(long data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(float data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(string data)
         {
-            return new Slice { buffer = Encoding.UTF8.GetBytes(data) };
+            return new Slice(Encoding.UTF8.GetBytes(data));
         }
 
         public static implicit operator Slice(ushort data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(uint data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static implicit operator Slice(ulong data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
         public static bool operator <(Slice x, Slice y)

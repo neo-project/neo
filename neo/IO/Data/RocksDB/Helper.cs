@@ -1,8 +1,9 @@
+using RocksDbSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Data.RocksDB
 {
     public static class Helper
     {
@@ -18,15 +19,14 @@ namespace Neo.IO.Data.LevelDB
 
         public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, Slice prefix, Func<Slice, Slice, T> resultSelector)
         {
-            using (Iterator it = db.NewIterator(options))
+            using (var it = db.NewIterator(options))
             {
                 for (it.Seek(prefix); it.Valid(); it.Next())
                 {
-                    Slice key = it.Key();
-                    byte[] x = key.ToArray();
+                    var key = it.Key();
                     byte[] y = prefix.ToArray();
-                    if (x.Length < y.Length) break;
-                    if (!x.Take(y.Length).SequenceEqual(y)) break;
+                    if (key.Length < y.Length) break;
+                    if (!key.Take(y.Length).SequenceEqual(y)) break;
                     yield return resultSelector(key, it.Value());
                 }
             }
@@ -34,7 +34,7 @@ namespace Neo.IO.Data.LevelDB
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<T>();
+            return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).AsSerializable<T>();
         }
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector)
@@ -49,18 +49,16 @@ namespace Neo.IO.Data.LevelDB
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            Slice slice;
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
+            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out var value))
                 return null;
-            return slice.ToArray().AsSerializable<T>();
+            return value.AsSerializable<T>();
         }
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
         {
-            Slice slice;
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
+            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out var value))
                 return null;
-            return resultSelector(slice);
+            return resultSelector(value);
         }
     }
 }

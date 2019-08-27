@@ -1,15 +1,15 @@
 using Neo.IO.Caching;
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Data.RocksDB;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
-using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
+using RocksDbSharp;
 
-namespace Neo.Persistence.LevelDB
+namespace Neo.Persistence.RocksDB
 {
     internal class DbSnapshot : Snapshot
     {
         private readonly DB db;
-        private readonly LSnapshot snapshot;
+        private readonly RocksDbSharp.Snapshot snapshot;
         private readonly WriteBatch batch;
 
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
@@ -25,7 +25,11 @@ namespace Neo.Persistence.LevelDB
             this.db = db;
             this.snapshot = db.GetSnapshot();
             this.batch = new WriteBatch();
-            ReadOptions options = new ReadOptions { FillCache = false, Snapshot = snapshot };
+
+            var options = new ReadOptions();
+            options.SetFillCache(false);
+            options.SetSnapshot(snapshot);
+
             Blocks = new DbCache<UInt256, TrimmedBlock>(db, options, batch, Prefixes.DATA_Block);
             Transactions = new DbCache<UInt256, TransactionState>(db, options, batch, Prefixes.DATA_Transaction);
             Contracts = new DbCache<UInt160, ContractState>(db, options, batch, Prefixes.ST_Contract);
@@ -38,12 +42,13 @@ namespace Neo.Persistence.LevelDB
         public override void Commit()
         {
             base.Commit();
-            db.Write(WriteOptions.Default, batch);
+            db.Write(DB.WriteDefault, batch);
         }
 
         public override void Dispose()
         {
             snapshot.Dispose();
+            batch.Dispose();
         }
     }
 }
