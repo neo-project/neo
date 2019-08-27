@@ -387,8 +387,8 @@ namespace Neo.UnitTests.Ledger
         public void TestUpdatePoolForBlockPersisted()
         {
             var mockSnapshot = new Mock<Snapshot>();
-            byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 };
-            byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 }; // 24
+            byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }; // 1048576
             StorageItem item1 = new StorageItem
             {
                 Value = transactionsPerBlock
@@ -400,16 +400,8 @@ namespace Neo.UnitTests.Ledger
             var myDataCache = new MyDataCache<StorageKey, StorageItem>();
             var key1 = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
             var key2 = CreateStorageKey(Prefix_FeePerByte);
-            var ServiceHash = "Neo.Native.Policy".ToInteropMethodHash();
-            byte[] script = null;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitSysCall(ServiceHash);
-                script = sb.ToArray();
-            }
-            var Hash = script.ToScriptHash();
-            key1.ScriptHash = Hash;
-            key2.ScriptHash = Hash;
+            key1.ScriptHash = NativeContract.Policy.Hash;
+            key2.ScriptHash = NativeContract.Policy.Hash;
             myDataCache.Add(key1, item1);
             myDataCache.Add(key2, item2);
             mockSnapshot.SetupGet(p => p.Storages).Returns(myDataCache);
@@ -418,8 +410,8 @@ namespace Neo.UnitTests.Ledger
             var tx2 = CreateTransaction();
             var tx3 = CreateTransaction();
             Transaction[] transactions = { tx1, tx2 };
-            _unit.TryAdd(tx1.Hash, tx1);
-            _unit.TryAdd(tx3.Hash, tx3);
+            Assert.IsTrue(_unit.TryAdd(tx1.Hash, tx1));
+            Assert.IsTrue(_unit.TryAdd(tx3.Hash, tx3));
             var block = new Block { Transactions = transactions };
 
             _unit.UnVerifiedCount.Should().Be(0);
