@@ -21,19 +21,21 @@ namespace Neo.Persistence.RocksDB
                 Version.TryParse(Encoding.UTF8.GetString(value), out var version) && version >= Version.Parse("2.9.1"))
                 return;
 
-            var batch = new WriteBatch();
-            var options = new ReadOptions();
-            options.SetFillCache(false);
-
-            using (var it = db.NewIterator(options))
+            using (var batch = new WriteBatch())
             {
-                for (it.SeekToFirst(); it.Valid(); it.Next())
+                var options = new ReadOptions();
+                options.SetFillCache(false);
+
+                using (var it = db.NewIterator(options))
                 {
-                    batch.Delete(it.Key());
+                    for (it.SeekToFirst(); it.Valid(); it.Next())
+                    {
+                        batch.Delete(it.Key());
+                    }
                 }
+                db.Put(DB.WriteDefault, SliceBuilder.Begin(Prefixes.SYS_Version), Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName().Version.ToString()));
+                db.Write(DB.WriteDefault, batch);
             }
-            db.Put(DB.WriteDefault, SliceBuilder.Begin(Prefixes.SYS_Version), Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName().Version.ToString()));
-            db.Write(DB.WriteDefault, batch);
         }
 
         public void Dispose()
