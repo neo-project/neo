@@ -59,20 +59,12 @@ namespace Neo.Network.RPC
         /// Deploy Contract, return signed transaction
         /// </summary>
         /// <param name="contractScript">contract script</param>
-        /// <param name="hasStorage">hasStorage attribute</param>
-        /// <param name="isPayable">isPayable attribute</param>
+        /// <param name="manifest">contract manifest</param>
         /// <param name="key">sender KeyPair</param>
         /// <param name="networkFee">transaction NetworkFee, set to be 0 if you don't need higher priority</param>
         /// <returns></returns>
-        public Transaction DeployContract(byte[] contractScript, bool hasStorage, bool isPayable, KeyPair key, long networkFee = 0)
+        public Transaction DeployContract(byte[] contractScript, ContractManifest manifest, KeyPair key, long networkFee = 0)
         {
-            ContractFeatures features = ContractFeatures.NoProperty;
-            if (hasStorage) features |= ContractFeatures.HasStorage;
-            if (isPayable) features |= ContractFeatures.Payable;
-
-            ContractManifest manifest = ContractManifest.CreateDefault(contractScript.ToScriptHash());
-            manifest.Features = features;
-
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {

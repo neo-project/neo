@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Network.RPC
             UT_TransactionManager.MockInvokeScript(rpcClientMock, script, new ContractParameter());
 
             ContractClient contractClient = new ContractClient(rpcClientMock.Object);
-            var result = contractClient.DeployContract(new byte[1], true, true, keyPair1);
+            var result = contractClient.DeployContract(new byte[1], manifest, keyPair1);
 
             Assert.IsNotNull(result);
         }
