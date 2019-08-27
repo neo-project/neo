@@ -28,7 +28,7 @@ namespace Neo.IO.Data.RocksDB
         /// SetBlockSize sets the approximate size of user data packed per block.
         /// The default is roughly 4096 uncompressed bytes. A better setting depends on your use case.
         /// </summary>
-        public int BlockSize { get; set; } = 4096;
+        public ulong BlockSize { get; set; } = 4096;
 
         /// <summary>
         /// SetParanoidChecks, when called with true, will cause the database to do
@@ -47,17 +47,18 @@ namespace Neo.IO.Data.RocksDB
         /// </summary>
         public DbOptions Build()
         {
+            var blockOpts = new BlockBasedTableOptions();
+
+            blockOpts.SetBlockSize(BlockSize);
+
             var options = new DbOptions();
 
-            if (CreateIfMissing)
-            {
-                options.SetCreateIfMissing();
-            }
-
+            options.SetCreateIfMissing(CreateIfMissing);
             options.SetErrorIfExists(ErrorIfExists);
             options.SetMaxOpenFiles(MaxOpenFiles);
             options.SetParanoidChecks(ParanoidChecks);
             options.SetWriteBufferSize(WriteBufferSize);
+            options.SetBlockBasedTableFactory(blockOpts);
 
             return options;
         }
