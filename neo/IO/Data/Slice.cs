@@ -2,13 +2,25 @@ using Neo.Cryptography;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Neo.IO.Data
 {
     public struct Slice : IComparable<Slice>, IEquatable<Slice>
     {
-        private readonly byte[] buffer;
+        internal readonly byte[] buffer;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="data">Data</param>
+        /// <param name="length">Length</param>
+        internal Slice(IntPtr data, UIntPtr length)
+        {
+            buffer = new byte[(int)length];
+            Marshal.Copy(data, buffer, 0, (int)length);
+        }
 
         /// <summary>
         /// Constructor
