@@ -57,6 +57,7 @@ namespace Neo.Persistence.LevelDB
         public override void Dispose()
         {
             snapshot.Dispose();
+            batch.Dispose();
         }
     }
 }
