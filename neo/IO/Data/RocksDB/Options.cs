@@ -40,7 +40,7 @@ namespace Neo.IO.Data.RocksDB
         /// SetWriteBufferSize sets the number of bytes the database will build up in
         /// memory (backed by an unsorted log on disk) before converting to a sorted on-disk file.
         /// </summary>
-        public ulong WriteBufferSize { get;  set; } = 4 << 20;
+        public ulong WriteBufferSize { get; set; } = 4 << 20;
 
         /// <summary>
         /// Build the current options
