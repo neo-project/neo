@@ -13,20 +13,19 @@ namespace Neo.IO.Data.LevelDB
 
         public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, byte prefix) where T : class, ISerializable, new()
         {
-            return Find(db, options, SliceBuilder.Begin(prefix), (k, v) => v.ToArray().AsSerializable<T>());
+            return Find(db, options, SliceBuilder.Begin(prefix), (k, v) => v.AsSerializable<T>());
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, Slice prefix, Func<Slice, Slice, T> resultSelector)
+        public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, Slice prefix, Func<byte[], byte[], T> resultSelector)
         {
             using (Iterator it = db.NewIterator(options))
             {
                 for (it.Seek(prefix); it.Valid(); it.Next())
                 {
-                    Slice key = it.Key();
-                    byte[] x = key.ToArray();
+                    byte[] key = it.Key();
                     byte[] y = prefix.ToArray();
-                    if (x.Length < y.Length) break;
-                    if (!x.Take(y.Length).SequenceEqual(y)) break;
+                    if (key.Length < y.Length) break;
+                    if (!key.Take(y.Length).SequenceEqual(y)) break;
                     yield return resultSelector(key, it.Value());
                 }
             }
@@ -37,7 +36,7 @@ namespace Neo.IO.Data.LevelDB
             return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<T>();
         }
 
-        public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector)
+        public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<byte[], T> resultSelector)
         {
             return resultSelector(db.Get(options, SliceBuilder.Begin(prefix).Add(key)));
         }
