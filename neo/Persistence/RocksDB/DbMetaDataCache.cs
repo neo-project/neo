@@ -9,11 +9,15 @@ namespace Neo.Persistence.RocksDB
     internal class DbMetaDataCache<T> : MetaDataCache<T>
         where T : class, ICloneable<T>, ISerializable, new()
     {
+        /// <summary>
+        /// In RocksDB we use the family as prefix, so we don't need a key for MetaDataCache
+        /// </summary>
+        private static readonly byte[] EmptyKey = new byte[0];
+
         private readonly DB db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
         private readonly ColumnFamilyHandle family;
-        private readonly byte[] key;
 
         /// <summary>
         /// Constructor
@@ -30,24 +34,23 @@ namespace Neo.Persistence.RocksDB
             this.options = options ?? DB.ReadDefault;
             this.batch = batch;
             this.family = family;
-            this.key = new byte[0];
         }
 
         protected override void AddInternal(T item)
         {
-            batch?.Put(key, item.ToArray(), family);
+            batch?.Put(EmptyKey, item.ToArray(), family);
         }
 
         protected override T TryGetInternal()
         {
-            if (!db.TryGet(family, options, key, out var value))
+            if (!db.TryGet(family, options, EmptyKey, out var value))
                 return null;
             return value.AsSerializable<T>();
         }
 
         protected override void UpdateInternal(T item)
         {
-            batch?.Put(key, item.ToArray(), family);
+            batch?.Put(EmptyKey, item.ToArray(), family);
         }
     }
 }
