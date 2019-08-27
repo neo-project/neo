@@ -5,7 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Neo.UnitTests.IO.Data.LevelDb
+namespace Neo.UnitTests.IO.Data
 {
     public class Test { }
 
