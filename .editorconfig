@@ -1,0 +1,18 @@
+###############################
+# Core EditorConfig Options   #
+###############################
+
+# dotnet-format requires version 3.1.37601
+# dotnet tool update -g dotnet-format
+# remember to have: git config --global core.autocrlf false  #(which is usually default)
+
+root = true
+
+# Every file
+
+[*]
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
+#indent_style = tab  # TODO
