@@ -1,10 +1,9 @@
 ---
 name: Bug report
-about: Create a report to report an error or unexpected behavior
+about: Create a report to detail an error or unexpected behavior
 title: ''
 labels: ''
 assignees: ''
-
 ---
 
 **Describe the bug**
