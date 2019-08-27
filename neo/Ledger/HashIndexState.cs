@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Network.P2P.Payloads;
 using System.IO;
 
 namespace Neo.Ledger
@@ -35,6 +36,12 @@ namespace Neo.Ledger
         {
             writer.Write(Hash);
             writer.Write(Index);
+        }
+
+        internal void Set(BlockBase block)
+        {
+            Hash = block.Hash;
+            Index = block.Index;
         }
     }
 }
