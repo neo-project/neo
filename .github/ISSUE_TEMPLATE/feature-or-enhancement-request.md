@@ -17,6 +17,7 @@ A clear and concise description of what you expect with this change.
 [ ] Compiler
 [ ] Consensus
 [ ] CLI
+[ ] Plugins
 [ ] Ledger
 [ ] Network Policy
 [ ] P2P (TCP)
