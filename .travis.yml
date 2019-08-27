@@ -11,18 +11,24 @@ mono: none
 dotnet: 2.2.300
 
 env:
-- TEST_SUITE="without-cultures"
-- TEST_SUITE="cultures"
+  - TEST_SUITE="without-cultures"
+  - TEST_SUITE="cultures"
 
 before_install:
-  - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
+install:
+  - dotnet tool install -g dotnet-format --version 4.0.40103 --add-source https://dotnet.myget.org/F/format/api/v3/index.json
+  - export PATH="$PATH:$HOME/.dotnet/tools"
+  - dotnet-format --version
+before_script:
+  - echo "Checking format..." 
+  - dotnet format --check --dry-run -w . -v diagnostic # check C# formatting for neo.sln
+  - cd neo.UnitTests
 script: |
+  dotnet restore
   if [[ "$TEST_SUITE" == cultures ]]; then 
-      dotnet restore
       dotnet test
   else
-      dotnet restore
       find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
       dotnet test -v n --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   fi
