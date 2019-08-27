@@ -1,6 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.IO.Data;
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -17,12 +16,15 @@ namespace Neo.UnitTests.IO.Data
         [TestMethod]
         public void TestConstructor()
         {
-            var parr = new byte[] { 0x01 };
-            sliceTest = new Slice(parr);
+            IntPtr parr = Marshal.AllocHGlobal(1);
+            Marshal.WriteByte(parr, 0x01);
+            UIntPtr plength = new UIntPtr(1);
+            sliceTest = new Slice(parr, plength);
             Assert.IsNotNull(sliceTest);
             Assert.IsInstanceOfType(sliceTest, typeof(Slice));
             Slice slice = (byte)0x01;
             Assert.AreEqual(slice, sliceTest);
+            Marshal.FreeHGlobal(parr);
         }
 
         [TestMethod]
@@ -102,7 +104,8 @@ namespace Neo.UnitTests.IO.Data
             {
                 Marshal.WriteByte(parr + i, 0x01);
             }
-            Slice slice = new Slice(arr);
+            UIntPtr plength = new UIntPtr((uint)arr.Length);
+            Slice slice = new Slice(parr, plength);
             sliceTest = arr;
             Assert.AreEqual(slice, sliceTest);
             Marshal.FreeHGlobal(parr);
