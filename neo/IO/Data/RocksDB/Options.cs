@@ -10,7 +10,7 @@ namespace Neo.IO.Data.RocksDB
         public string FilePath { get; set; }
 
         /// <summary>
-        /// Create if missing
+        /// SetCreateIfMissing causes Open to create a new database on disk if it does not already exist.
         /// </summary>
         public bool CreateIfMissing { get; set; } = true;
 
