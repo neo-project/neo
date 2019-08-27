@@ -37,7 +37,7 @@ namespace Neo.Persistence.RocksDB
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
         {
-            return db.Find(family, options, SliceBuilder.Begin().Add(key_prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(), v.ToArray().AsSerializable<TValue>()));
+            return db.Find(family, options, SliceBuilder.Begin().Add(key_prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.AsSerializable<TKey>(), v.AsSerializable<TValue>()));
         }
 
         protected override TValue GetInternal(TKey key)

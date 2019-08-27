@@ -17,7 +17,7 @@ namespace Neo.IO.Data.RocksDB
             return Find(db, family, options, new byte[0], (k, v) => v.ToArray().AsSerializable<T>());
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, Slice prefix, Func<Slice, Slice, T> resultSelector)
+        public static IEnumerable<T> Find<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, Slice prefix, Func<byte[], byte[], T> resultSelector)
         {
             using (var it = db.NewIterator(family, options))
             {
@@ -37,7 +37,7 @@ namespace Neo.IO.Data.RocksDB
             return db.Get(family, options, key.ToArray()).AsSerializable<T>();
         }
 
-        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<Slice, T> resultSelector)
+        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<byte[], T> resultSelector)
         {
             return resultSelector(db.Get(family, options, key.ToArray()));
         }
@@ -54,7 +54,7 @@ namespace Neo.IO.Data.RocksDB
             return value.AsSerializable<T>();
         }
 
-        public static T TryGet<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<Slice, T> resultSelector) where T : class
+        public static T TryGet<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<byte[], T> resultSelector) where T : class
         {
             if (!db.TryGet(family, options, key.ToArray(), out var value))
                 return null;
