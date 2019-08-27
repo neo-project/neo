@@ -44,7 +44,7 @@ namespace Neo.Persistence.RocksDB
             }
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             db.Dispose();
         }

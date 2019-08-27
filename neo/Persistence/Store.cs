@@ -1,10 +1,11 @@
 using Neo.IO.Caching;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
+using System;
 
 namespace Neo.Persistence
 {
-    public abstract class Store : IPersistence
+    public abstract class Store : IPersistence, IDisposable
     {
         DataCache<UInt256, TrimmedBlock> IPersistence.Blocks => GetBlocks();
         DataCache<UInt256, TransactionState> IPersistence.Transactions => GetTransactions();
@@ -27,5 +28,6 @@ namespace Neo.Persistence
         public abstract void PutSync(byte prefix, byte[] key, byte[] value);
 
         public abstract Snapshot GetSnapshot();
+        public abstract void Dispose();
     }
 }
