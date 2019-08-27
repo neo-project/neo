@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.IO.Data
@@ -52,21 +53,25 @@ namespace Neo.IO.Data
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SliceBuilder Begin()
         {
             return new SliceBuilder();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SliceBuilder Begin(byte prefix)
         {
             return new SliceBuilder().Add(prefix);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(SliceBuilder value)
         {
             return value._data.ToArray();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator byte[](SliceBuilder value)
         {
             return value._data.ToArray();
