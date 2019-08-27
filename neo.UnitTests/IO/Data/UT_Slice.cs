@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.IO.Data;
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
