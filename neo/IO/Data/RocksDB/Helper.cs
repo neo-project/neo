@@ -7,19 +7,19 @@ namespace Neo.IO.Data.RocksDB
 {
     public static class Helper
     {
-        public static void Delete(this WriteBatch batch, byte prefix, ISerializable key)
+        public static void Delete(this WriteBatch batch, ColumnFamilyHandle family, ISerializable key)
         {
-            batch.Delete(SliceBuilder.Begin(prefix).Add(key));
+            batch.Delete(key.ToArray(), family);
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, byte prefix) where T : class, ISerializable, new()
+        public static IEnumerable<T> Find<T>(this DB db, ColumnFamilyHandle family, ReadOptions options) where T : class, ISerializable, new()
         {
-            return Find(db, options, SliceBuilder.Begin(prefix), (k, v) => v.ToArray().AsSerializable<T>());
+            return Find(db, family, options, new byte[0], (k, v) => v.ToArray().AsSerializable<T>());
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, Slice prefix, Func<Slice, Slice, T> resultSelector)
+        public static IEnumerable<T> Find<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, Slice prefix, Func<Slice, Slice, T> resultSelector)
         {
-            using (var it = db.NewIterator(options))
+            using (var it = db.NewIterator(family, options))
             {
                 for (it.Seek(prefix); it.Valid(); it.Next())
                 {
@@ -32,31 +32,31 @@ namespace Neo.IO.Data.RocksDB
             }
         }
 
-        public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
+        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options,  ISerializable key) where T : class, ISerializable, new()
         {
-            return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).AsSerializable<T>();
+            return db.Get(family, options, key.ToArray()).AsSerializable<T>();
         }
 
-        public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector)
+        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<Slice, T> resultSelector)
         {
-            return resultSelector(db.Get(options, SliceBuilder.Begin(prefix).Add(key)));
+            return resultSelector(db.Get(family, options, key.ToArray()));
         }
 
-        public static void Put(this WriteBatch batch, byte prefix, ISerializable key, ISerializable value)
+        public static void Put(this WriteBatch batch, ColumnFamilyHandle family, ISerializable key, ISerializable value)
         {
-            batch.Put(SliceBuilder.Begin(prefix).Add(key), value.ToArray());
+            batch.Put(key.ToArray(), value.ToArray(), family);
         }
 
-        public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
+        public static T TryGet<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key) where T : class, ISerializable, new()
         {
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out var value))
+            if (!db.TryGet(family, options, key.ToArray(), out var value))
                 return null;
             return value.AsSerializable<T>();
         }
 
-        public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
+        public static T TryGet<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<Slice, T> resultSelector) where T : class
         {
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out var value))
+            if (!db.TryGet(family, options, key.ToArray(), out var value))
                 return null;
             return resultSelector(value);
         }

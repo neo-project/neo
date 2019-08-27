@@ -15,44 +15,44 @@ namespace Neo.Persistence.RocksDB
         private readonly DB db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
-        private readonly byte prefix;
+        private readonly ColumnFamilyHandle family;
 
-        public DbCache(DB db, ReadOptions options, WriteBatch batch, byte prefix)
+        public DbCache(DB db, ReadOptions options, WriteBatch batch, ColumnFamilyHandle family)
         {
             this.db = db;
             this.options = options ?? DB.ReadDefault;
             this.batch = batch;
-            this.prefix = prefix;
+            this.family = family;
         }
 
         protected override void AddInternal(TKey key, TValue value)
         {
-            batch?.Put(prefix, key, value);
+            batch?.Put(family, key, value);
         }
 
         public override void DeleteInternal(TKey key)
         {
-            batch?.Delete(prefix, key);
+            batch?.Delete(family, key);
         }
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
         {
-            return db.Find(options, SliceBuilder.Begin(prefix).Add(key_prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(1), v.ToArray().AsSerializable<TValue>()));
+            return db.Find(family, options, SliceBuilder.Begin().Add(key_prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(), v.ToArray().AsSerializable<TValue>()));
         }
 
         protected override TValue GetInternal(TKey key)
         {
-            return db.Get<TValue>(options, prefix, key);
+            return db.Get<TValue>(family, options, key);
         }
 
         protected override TValue TryGetInternal(TKey key)
         {
-            return db.TryGet<TValue>(options, prefix, key);
+            return db.TryGet<TValue>(family, options, key);
         }
 
         protected override void UpdateInternal(TKey key, TValue value)
         {
-            batch?.Put(prefix, key, value);
+            batch?.Put(family, key, value);
         }
     }
 }

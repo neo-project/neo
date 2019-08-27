@@ -53,6 +53,7 @@ namespace Neo.IO.Data.RocksDB
 
             var options = new DbOptions();
 
+            options.SetCreateMissingColumnFamilies(true);
             options.SetCreateIfMissing(CreateIfMissing);
             options.SetErrorIfExists(ErrorIfExists);
             options.SetMaxOpenFiles(MaxOpenFiles);

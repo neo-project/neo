@@ -12,32 +12,34 @@ namespace Neo.Persistence.RocksDB
         private readonly DB db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
-        private readonly byte[] prefix;
+        private readonly ColumnFamilyHandle family;
+        private readonly byte[] key;
 
-        public DbMetaDataCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, Func<T> factory = null)
+        public DbMetaDataCache(DB db, ReadOptions options, WriteBatch batch, ColumnFamilyHandle family, Func<T> factory = null)
             : base(factory)
         {
             this.db = db;
             this.options = options ?? DB.ReadDefault;
             this.batch = batch;
-            this.prefix = new byte[] { prefix };
+            this.family = family;
+            this.key = new byte[0];
         }
 
         protected override void AddInternal(T item)
         {
-            batch?.Put(prefix, item.ToArray());
+            batch?.Put(key, item.ToArray(), family);
         }
 
         protected override T TryGetInternal()
         {
-            if (!db.TryGet(options, prefix, out var value))
+            if (!db.TryGet(family, options, key, out var value))
                 return null;
             return value.AsSerializable<T>();
         }
 
         protected override void UpdateInternal(T item)
         {
-            batch?.Put(prefix, item.ToArray());
+            batch?.Put(key, item.ToArray(), family);
         }
     }
 }
