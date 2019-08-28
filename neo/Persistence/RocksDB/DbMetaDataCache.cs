@@ -14,7 +14,7 @@ namespace Neo.Persistence.RocksDB
         /// </summary>
         private static readonly byte[] EmptyKey = new byte[0];
 
-        private readonly DB db;
+        private readonly RocksDBCore db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
         private readonly ColumnFamilyHandle family;
@@ -27,12 +27,12 @@ namespace Neo.Persistence.RocksDB
         /// <param name="options">Options</param>
         /// <param name="batch">Batch</param>
         /// <param name="factory">Factory</param>
-        public DbMetaDataCache(DB db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
+        public DbMetaDataCache(RocksDBCore db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
             : base(factory)
         {
             this.db = db;
             this.family = family;
-            this.options = options ?? DB.ReadDefault;
+            this.options = options ?? RocksDBCore.ReadDefault;
             this.batch = batch;
         }
 

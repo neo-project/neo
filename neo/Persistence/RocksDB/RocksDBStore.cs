@@ -12,13 +12,13 @@ namespace Neo.Persistence.RocksDB
 {
     public class RocksDBStore : Store, IDisposable
     {
-        private readonly DB db;
+        private readonly RocksDBCore db;
 
         public RocksDBStore(string path)
         {
-            db = DB.Open(new Options { CreateIfMissing = true, FilePath = path });
+            db = RocksDBCore.Open(new Options { CreateIfMissing = true, FilePath = path });
 
-            if (db.TryGet(db.SYS_Version, DB.ReadDefault, new byte[0], out var value) &&
+            if (db.TryGet(db.SYS_Version, RocksDBCore.ReadDefault, new byte[0], out var value) &&
                 Version.TryParse(Encoding.UTF8.GetString(value), out var version) && version >= Version.Parse("2.9.1"))
                 return;
 
@@ -39,8 +39,8 @@ namespace Neo.Persistence.RocksDB
 
                 // Update version
 
-                db.Put(db.SYS_Version, DB.WriteDefault, new byte[0], Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName().Version.ToString()));
-                db.Write(DB.WriteDefault, batch);
+                db.Put(db.SYS_Version, RocksDBCore.WriteDefault, new byte[0], Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName().Version.ToString()));
+                db.Write(RocksDBCore.WriteDefault, batch);
             }
         }
 
@@ -91,19 +91,19 @@ namespace Neo.Persistence.RocksDB
 
         public override byte[] Get(byte prefix, byte[] key)
         {
-            if (!db.TryGet(db.DefaultFamily, DB.ReadDefault, SliceBuilder.Begin(prefix).Add(key), out var value))
+            if (!db.TryGet(db.DefaultFamily, RocksDBCore.ReadDefault, SliceBuilder.Begin(prefix).Add(key), out var value))
                 return null;
             return value;
         }
 
         public override void Put(byte prefix, byte[] key, byte[] value)
         {
-            db.Put(db.DefaultFamily, DB.WriteDefault, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(db.DefaultFamily, RocksDBCore.WriteDefault, SliceBuilder.Begin(prefix).Add(key), value);
         }
 
         public override void PutSync(byte prefix, byte[] key, byte[] value)
         {
-            db.Put(db.DefaultFamily, DB.WriteDefaultSync, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(db.DefaultFamily, RocksDBCore.WriteDefaultSync, SliceBuilder.Begin(prefix).Add(key), value);
         }
     }
 }

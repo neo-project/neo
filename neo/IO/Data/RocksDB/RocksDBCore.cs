@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Data.RocksDB
 {
-    public class DB : IDisposable
+    public class RocksDBCore : IDisposable
     {
         public static readonly Options OptionsDefault = new Options();
         public static readonly ReadOptions ReadDefault = new ReadOptions();
@@ -30,7 +30,7 @@ namespace Neo.IO.Data.RocksDB
 
         #endregion
 
-        static DB()
+        static RocksDBCore()
         {
             WriteDefaultSync.SetSync(true);
         }
@@ -41,7 +41,7 @@ namespace Neo.IO.Data.RocksDB
         /// Constructor
         /// </summary>
         /// <param name="db">Database</param>
-        private DB(RocksDb db)
+        private RocksDBCore(RocksDb db)
         {
             _rocksDb = db;
 
@@ -88,7 +88,7 @@ namespace Neo.IO.Data.RocksDB
         /// Open database
         /// </summary>
         /// <returns>DB</returns>
-        public static DB Open()
+        public static RocksDBCore Open()
         {
             return Open(OptionsDefault);
         }
@@ -98,7 +98,7 @@ namespace Neo.IO.Data.RocksDB
         /// </summary>
         /// <param name="config">Configuration</param>
         /// <returns>DB</returns>
-        public static DB Open(Options config)
+        public static RocksDBCore Open(Options config)
         {
             var families = new ColumnFamilies
             {
@@ -114,7 +114,7 @@ namespace Neo.IO.Data.RocksDB
                 { Prefixes.SYS_Version.ToString("x2"), new ColumnFamilyOptions() }
             };
 
-            return new DB(RocksDb.Open(config.Build(), config.FilePath, families));
+            return new RocksDBCore(RocksDb.Open(config.Build(), config.FilePath, families));
         }
 
         /// <summary>

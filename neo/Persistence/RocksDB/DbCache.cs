@@ -12,16 +12,16 @@ namespace Neo.Persistence.RocksDB
         where TKey : IEquatable<TKey>, ISerializable, new()
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
-        private readonly DB db;
+        private readonly RocksDBCore db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
         private readonly ColumnFamilyHandle family;
 
-        public DbCache(DB db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null)
+        public DbCache(RocksDBCore db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null)
         {
             this.db = db;
             this.family = family;
-            this.options = options ?? DB.ReadDefault;
+            this.options = options ?? RocksDBCore.ReadDefault;
             this.batch = batch;
         }
 

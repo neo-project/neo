@@ -2,7 +2,7 @@ using System;
 
 namespace Neo.IO.Data.LevelDB
 {
-    public class DB : IDisposable
+    public class LevelDBCore : IDisposable
     {
         private IntPtr handle;
 
@@ -11,7 +11,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public bool IsDisposed => handle == IntPtr.Zero;
 
-        private DB(IntPtr handle)
+        private LevelDBCore(IntPtr handle)
         {
             this.handle = handle;
         }
@@ -57,16 +57,16 @@ namespace Neo.IO.Data.LevelDB
             return new Iterator(Native.leveldb_create_iterator(handle, options.handle));
         }
 
-        public static DB Open(string name)
+        public static LevelDBCore Open(string name)
         {
             return Open(name, Options.Default);
         }
 
-        public static DB Open(string name, Options options)
+        public static LevelDBCore Open(string name, Options options)
         {
             IntPtr handle = Native.leveldb_open(options.handle, name, out var error);
             NativeHelper.CheckError(error);
-            return new DB(handle);
+            return new LevelDBCore(handle);
         }
 
         public void Put(WriteOptions options, Slice key, Slice value)

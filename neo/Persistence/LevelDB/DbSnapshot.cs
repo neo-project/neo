@@ -8,7 +8,7 @@ namespace Neo.Persistence.LevelDB
 {
     internal class DbSnapshot : Snapshot
     {
-        private readonly DB db;
+        private readonly LevelDBCore db;
         private readonly LSnapshot snapshot;
         private readonly WriteBatch batch;
 
@@ -20,7 +20,7 @@ namespace Neo.Persistence.LevelDB
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
-        public DbSnapshot(DB db)
+        public DbSnapshot(LevelDBCore db)
         {
             this.db = db;
             this.snapshot = db.GetSnapshot();

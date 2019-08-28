@@ -9,12 +9,12 @@ namespace Neo.Persistence.LevelDB
     internal class DbMetaDataCache<T> : MetaDataCache<T>
         where T : class, ICloneable<T>, ISerializable, new()
     {
-        private readonly DB db;
+        private readonly LevelDBCore db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
         private readonly byte prefix;
 
-        public DbMetaDataCache(DB db, byte prefix, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
+        public DbMetaDataCache(LevelDBCore db, byte prefix, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
             : base(factory)
         {
             this.db = db;

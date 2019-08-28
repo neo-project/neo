@@ -11,12 +11,12 @@ namespace Neo.Persistence.LevelDB
         where TKey : IEquatable<TKey>, ISerializable, new()
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
-        private readonly DB db;
+        private readonly LevelDBCore db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
         private readonly byte prefix;
 
-        public DbCache(DB db, byte prefix, ReadOptions options = null, WriteBatch batch = null)
+        public DbCache(LevelDBCore db, byte prefix, ReadOptions options = null, WriteBatch batch = null)
         {
             this.db = db;
             this.options = options ?? ReadOptions.Default;

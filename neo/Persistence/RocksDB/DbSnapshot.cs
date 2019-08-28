@@ -8,7 +8,7 @@ namespace Neo.Persistence.RocksDB
 {
     internal class DbSnapshot : Snapshot
     {
-        private readonly DB db;
+        private readonly RocksDBCore db;
         private readonly RocksDbSharp.Snapshot snapshot;
         private readonly WriteBatch batch;
 
@@ -20,7 +20,7 @@ namespace Neo.Persistence.RocksDB
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
-        public DbSnapshot(DB db)
+        public DbSnapshot(RocksDBCore db)
         {
             this.db = db;
             this.snapshot = db.GetSnapshot();
@@ -42,7 +42,7 @@ namespace Neo.Persistence.RocksDB
         public override void Commit()
         {
             base.Commit();
-            db.Write(DB.WriteDefault, batch);
+            db.Write(RocksDBCore.WriteDefault, batch);
         }
 
         public override void Dispose()

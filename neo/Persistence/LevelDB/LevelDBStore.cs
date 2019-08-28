@@ -10,11 +10,11 @@ namespace Neo.Persistence.LevelDB
 {
     public class LevelDBStore : Store
     {
-        private readonly DB db;
+        private readonly LevelDBCore db;
 
         public LevelDBStore(string path)
         {
-            this.db = DB.Open(path, new Options { CreateIfMissing = true });
+            this.db = LevelDBCore.Open(path, new Options { CreateIfMissing = true });
             if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(Prefixes.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.9.1"))
                 return;
             WriteBatch batch = new WriteBatch();

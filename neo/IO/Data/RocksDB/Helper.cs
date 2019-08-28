@@ -12,12 +12,12 @@ namespace Neo.IO.Data.RocksDB
             batch.Delete(key.ToArray(), family);
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, ColumnFamilyHandle family, ReadOptions options) where T : class, ISerializable, new()
+        public static IEnumerable<T> Find<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options) where T : class, ISerializable, new()
         {
             return Find(db, family, options, new byte[0], (k, v) => v.ToArray().AsSerializable<T>());
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, Slice prefix, Func<byte[], byte[], T> resultSelector)
+        public static IEnumerable<T> Find<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options, Slice prefix, Func<byte[], byte[], T> resultSelector)
         {
             using (var it = db.NewIterator(family, options))
             {
@@ -32,12 +32,12 @@ namespace Neo.IO.Data.RocksDB
             }
         }
 
-        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key) where T : class, ISerializable, new()
+        public static T Get<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options, ISerializable key) where T : class, ISerializable, new()
         {
             return db.Get(family, options, key.ToArray()).AsSerializable<T>();
         }
 
-        public static T Get<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<byte[], T> resultSelector)
+        public static T Get<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<byte[], T> resultSelector)
         {
             return resultSelector(db.Get(family, options, key.ToArray()));
         }
@@ -47,14 +47,14 @@ namespace Neo.IO.Data.RocksDB
             batch.Put(key.ToArray(), value.ToArray(), family);
         }
 
-        public static T TryGet<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key) where T : class, ISerializable, new()
+        public static T TryGet<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options, ISerializable key) where T : class, ISerializable, new()
         {
             if (!db.TryGet(family, options, key.ToArray(), out var value))
                 return null;
             return value.AsSerializable<T>();
         }
 
-        public static T TryGet<T>(this DB db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<byte[], T> resultSelector) where T : class
+        public static T TryGet<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options, ISerializable key, Func<byte[], T> resultSelector) where T : class
         {
             if (!db.TryGet(family, options, key.ToArray(), out var value))
                 return null;
