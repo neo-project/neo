@@ -17,12 +17,12 @@ namespace Neo.Persistence.RocksDB
         private readonly WriteBatch batch;
         private readonly ColumnFamilyHandle family;
 
-        public DbCache(DB db, ReadOptions options, WriteBatch batch, ColumnFamilyHandle family)
+        public DbCache(DB db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null)
         {
             this.db = db;
+            this.family = family;
             this.options = options ?? DB.ReadDefault;
             this.batch = batch;
-            this.family = family;
         }
 
         protected override void AddInternal(TKey key, TValue value)

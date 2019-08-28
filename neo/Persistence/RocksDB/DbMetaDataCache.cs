@@ -23,17 +23,17 @@ namespace Neo.Persistence.RocksDB
         /// Constructor
         /// </summary>
         /// <param name="db">DB</param>
+        /// <param name="family">Column familiy, is used as a prefix</param>
         /// <param name="options">Options</param>
         /// <param name="batch">Batch</param>
-        /// <param name="family">Column familiy, is used as a prefix</param>
         /// <param name="factory">Factory</param>
-        public DbMetaDataCache(DB db, ReadOptions options, WriteBatch batch, ColumnFamilyHandle family, Func<T> factory = null)
+        public DbMetaDataCache(DB db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
             : base(factory)
         {
             this.db = db;
+            this.family = family;
             this.options = options ?? DB.ReadDefault;
             this.batch = batch;
-            this.family = family;
         }
 
         protected override void AddInternal(T item)

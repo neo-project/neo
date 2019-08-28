@@ -16,7 +16,7 @@ namespace Neo.Persistence.LevelDB
         private readonly WriteBatch batch;
         private readonly byte prefix;
 
-        public DbCache(DB db, ReadOptions options, WriteBatch batch, byte prefix)
+        public DbCache(DB db, byte prefix, ReadOptions options = null, WriteBatch batch = null)
         {
             this.db = db;
             this.options = options ?? ReadOptions.Default;

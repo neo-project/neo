@@ -14,13 +14,13 @@ namespace Neo.Persistence.LevelDB
         private readonly WriteBatch batch;
         private readonly byte prefix;
 
-        public DbMetaDataCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, Func<T> factory = null)
+        public DbMetaDataCache(DB db, byte prefix, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
             : base(factory)
         {
             this.db = db;
+            this.prefix = prefix;
             this.options = options ?? ReadOptions.Default;
             this.batch = batch;
-            this.prefix = prefix;
         }
 
         protected override void AddInternal(T item)

@@ -44,12 +44,12 @@ namespace Neo.Persistence.LevelDB
 
         public override DataCache<UInt256, TrimmedBlock> GetBlocks()
         {
-            return new DbCache<UInt256, TrimmedBlock>(db, null, null, Prefixes.DATA_Block);
+            return new DbCache<UInt256, TrimmedBlock>(db, Prefixes.DATA_Block);
         }
 
         public override DataCache<UInt160, ContractState> GetContracts()
         {
-            return new DbCache<UInt160, ContractState>(db, null, null, Prefixes.ST_Contract);
+            return new DbCache<UInt160, ContractState>(db, Prefixes.ST_Contract);
         }
 
         public override Snapshot GetSnapshot()
@@ -59,27 +59,27 @@ namespace Neo.Persistence.LevelDB
 
         public override DataCache<StorageKey, StorageItem> GetStorages()
         {
-            return new DbCache<StorageKey, StorageItem>(db, null, null, Prefixes.ST_Storage);
+            return new DbCache<StorageKey, StorageItem>(db, Prefixes.ST_Storage);
         }
 
         public override DataCache<UInt256, TransactionState> GetTransactions()
         {
-            return new DbCache<UInt256, TransactionState>(db, null, null, Prefixes.DATA_Transaction);
+            return new DbCache<UInt256, TransactionState>(db, Prefixes.DATA_Transaction);
         }
 
         public override DataCache<UInt32Wrapper, HeaderHashList> GetHeaderHashList()
         {
-            return new DbCache<UInt32Wrapper, HeaderHashList>(db, null, null, Prefixes.IX_HeaderHashList);
+            return new DbCache<UInt32Wrapper, HeaderHashList>(db, Prefixes.IX_HeaderHashList);
         }
 
         public override MetaDataCache<HashIndexState> GetBlockHashIndex()
         {
-            return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentBlock);
+            return new DbMetaDataCache<HashIndexState>(db, Prefixes.IX_CurrentBlock);
         }
 
         public override MetaDataCache<HashIndexState> GetHeaderHashIndex()
         {
-            return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentHeader);
+            return new DbMetaDataCache<HashIndexState>(db, Prefixes.IX_CurrentHeader);
         }
 
         public override void Put(byte prefix, byte[] key, byte[] value)
