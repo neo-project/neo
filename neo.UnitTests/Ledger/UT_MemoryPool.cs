@@ -91,9 +91,9 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransaction(long fee=-1)
+        private Transaction CreateTransaction(long fee = -1)
         {
-            if (fee!=-1)
+            if (fee != -1)
                 return CreateTransactionWithFee(fee);
             return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
         }
@@ -353,10 +353,10 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(4);
             _unit.UnVerifiedCount.Should().Be(0);
 
-            _unit.InvalidateVerifiedTransactions();            
+            _unit.InvalidateVerifiedTransactions();
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(4);
-            
+
             AddTransactions(511); // Max per block currently is 512
             _unit.VerifiedCount.Should().Be(511);
             _unit.UnVerifiedCount.Should().Be(4);
