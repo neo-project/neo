@@ -4,7 +4,7 @@ namespace Neo.IO.Data.LevelDB
 {
     public class Iterator : IDisposable
     {
-        private IntPtr handle;
+        private readonly IntPtr handle;
 
         internal Iterator(IntPtr handle)
         {
@@ -13,8 +13,7 @@ namespace Neo.IO.Data.LevelDB
 
         private void CheckError()
         {
-            IntPtr error;
-            Native.leveldb_iter_get_error(handle, out error);
+            Native.leveldb_iter_get_error(handle, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -29,8 +28,7 @@ namespace Neo.IO.Data.LevelDB
 
         public Slice Key()
         {
-            UIntPtr length;
-            IntPtr key = Native.leveldb_iter_key(handle, out length);
+            IntPtr key = Native.leveldb_iter_key(handle, out var length);
             CheckError();
             return new Slice(key, length);
         }
@@ -69,8 +67,7 @@ namespace Neo.IO.Data.LevelDB
 
         public Slice Value()
         {
-            UIntPtr length;
-            IntPtr value = Native.leveldb_iter_value(handle, out length);
+            IntPtr value = Native.leveldb_iter_value(handle, out var length);
             CheckError();
             return new Slice(value, length);
         }

@@ -48,16 +48,14 @@ namespace Neo.IO.Data.LevelDB
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            Slice slice;
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
+            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out var slice))
                 return null;
             return slice.ToArray().AsSerializable<T>();
         }
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
         {
-            Slice slice;
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
+            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out var slice))
                 return null;
             return resultSelector(slice);
         }
