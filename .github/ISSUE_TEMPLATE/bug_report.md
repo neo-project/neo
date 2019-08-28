@@ -28,4 +28,4 @@ If applicable, add screenshots to help explain your problem.
 **(Optional) Additional context**
 Add any other context about the problem here.
 
-However, if your issue does not fit these aforementioned criteria, or it can be understood in another, fell free to open it in a different format. 
+However, if your issue does not fit these aforementioned criteria, or it can be understood in another manner, feel free to open it in a different format. 
