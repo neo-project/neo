@@ -91,9 +91,11 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransaction()
+        private Transaction CreateTransaction(long fee=-1)
         {
-            return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
+            if (fee!=-1)
+                return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
+            return CreateTransactionWithFee(fee);
         }
 
         private void AddTransactions(int count)
@@ -107,6 +109,10 @@ namespace Neo.UnitTests.Ledger
             Console.WriteLine($"created {count} tx");
         }
 
+        private void AddTransaction(Transaction txToAdd)
+        {
+            _unit.TryAdd(txToAdd.Hash, txToAdd);
+        }
 
         [TestMethod]
         public void CapacityTest()
@@ -340,13 +346,35 @@ namespace Neo.UnitTests.Ledger
             var s = Blockchain.Singleton.Height;
             _unit = new MemoryPool(TheNeoSystem, 600);
             _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
-            AddTransactions(2);
-            _unit.InvalidateVerifiedTransactions();
-            AddTransactions(513);
-            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            AddTransaction(CreateTransaction(100000001));
+            AddTransaction(CreateTransaction(100000001));
+            AddTransaction(CreateTransaction(100000001));
+            AddTransaction(CreateTransaction(1));
+            _unit.VerifiedCount.Should().Be(4);
+            _unit.UnVerifiedCount.Should().Be(0);
+
+            _unit.InvalidateVerifiedTransactions();            
+            _unit.VerifiedCount.Should().Be(0);
+            _unit.UnVerifiedCount.Should().Be(4);
+            
+            AddTransactions(511); // Max per block currently is 512
+            _unit.VerifiedCount.Should().Be(511);
+            _unit.UnVerifiedCount.Should().Be(4);
+
+            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, Blockchain.Singleton.GetSnapshot());
+            result.Should().BeTrue();
+            _unit.VerifiedCount.Should().Be(512);
+            _unit.UnVerifiedCount.Should().Be(3);
+
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
+            result.Should().BeTrue();
             _unit.VerifiedCount.Should().Be(514);
             _unit.UnVerifiedCount.Should().Be(1);
-            result.Should().BeTrue();
+
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(3, Blockchain.Singleton.GetSnapshot());
+            result.Should().BeFalse();
+            _unit.VerifiedCount.Should().Be(515);
+            _unit.UnVerifiedCount.Should().Be(0);
         }
 
         [TestMethod]
