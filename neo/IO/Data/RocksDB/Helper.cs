@@ -17,7 +17,7 @@ namespace Neo.IO.Data.RocksDB
             return Find(db, family, options, new byte[0], (k, v) => v.ToArray().AsSerializable<T>());
         }
 
-        public static IEnumerable<T> Find<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options, Slice prefix, Func<byte[], byte[], T> resultSelector)
+        public static IEnumerable<T> Find<T>(this RocksDBCore db, ColumnFamilyHandle family, ReadOptions options, byte[] prefix, Func<byte[], byte[], T> resultSelector)
         {
             using (var it = db.NewIterator(family, options))
             {
