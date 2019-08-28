@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.IO.Json;
@@ -18,7 +18,8 @@ namespace Neo.UnitTests.Wallets.NEP6
         private static KeyPair keyPair;
 
         [ClassInitialize]
-        public static void ClassSetup(TestContext context) {
+        public static void ClassSetup(TestContext context)
+        {
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             keyPair = new KeyPair(privateKey);

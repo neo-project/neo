@@ -1,4 +1,4 @@
-﻿using Neo.Ledger;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.Persistence
@@ -20,6 +20,7 @@ namespace Neo.Persistence
 
         public static Block GetBlock(this IPersistence persistence, uint index)
         {
+            if (index == 0) return Blockchain.GenesisBlock;
             UInt256 hash = Blockchain.Singleton.GetBlockHash(index);
             if (hash == null) return null;
             return persistence.GetBlock(hash);
@@ -35,6 +36,7 @@ namespace Neo.Persistence
 
         public static Header GetHeader(this IPersistence persistence, uint index)
         {
+            if (index == 0) return Blockchain.GenesisBlock.Header;
             UInt256 hash = Blockchain.Singleton.GetBlockHash(index);
             if (hash == null) return null;
             return persistence.GetHeader(hash);

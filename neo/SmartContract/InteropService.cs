@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
@@ -75,6 +75,11 @@ namespace Neo.SmartContract
         public static long GetPrice(uint hash, RandomAccessStack<StackItem> stack)
         {
             return methods[hash].GetPrice(stack);
+        }
+
+        public static Dictionary<uint, string> SupportedMethods()
+        {
+            return methods.ToDictionary(p => p.Key, p => p.Value.Method);
         }
 
         private static long GetStoragePrice(RandomAccessStack<StackItem> stack)

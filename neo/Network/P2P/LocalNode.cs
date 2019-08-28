@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;

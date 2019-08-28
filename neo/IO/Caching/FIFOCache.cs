@@ -1,4 +1,4 @@
-﻿namespace Neo.IO.Caching
+namespace Neo.IO.Caching
 {
     internal abstract class FIFOCache<TKey, TValue> : Cache<TKey, TValue>
     {

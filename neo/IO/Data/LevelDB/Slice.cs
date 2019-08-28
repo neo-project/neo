@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;

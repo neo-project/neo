@@ -1,4 +1,4 @@
-﻿namespace Neo.Consensus
+namespace Neo.Consensus
 {
     public enum ChangeViewReason : byte
     {
@@ -7,5 +7,6 @@
         TxNotFound = 0x2,
         TxRejectedByPolicy = 0x3,
         TxInvalid = 0x4,
+        BlockRejectedByPolicy = 0x5
     }
 }

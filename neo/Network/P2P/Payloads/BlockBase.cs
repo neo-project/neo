@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
@@ -35,11 +35,11 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual int Size =>
             sizeof(uint) +       //Version
-            PrevHash.Size +      //PrevHash
-            MerkleRoot.Size +    //MerkleRoot
+            UInt256.Length +     //PrevHash
+            UInt256.Length +     //MerkleRoot
             sizeof(ulong) +      //Timestamp
             sizeof(uint) +       //Index
-            NextConsensus.Size + //NextConsensus
+            UInt160.Length +     //NextConsensus
             1 +                  //
             Witness.Size;        //Witness   
 

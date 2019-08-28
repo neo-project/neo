@@ -1,4 +1,4 @@
-﻿using Neo.IO.Json;
+using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.RPC.Models;
 using System;

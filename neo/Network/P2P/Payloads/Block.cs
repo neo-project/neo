@@ -1,8 +1,7 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
