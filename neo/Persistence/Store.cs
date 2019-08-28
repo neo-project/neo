@@ -23,9 +23,9 @@ namespace Neo.Persistence
         public abstract MetaDataCache<HashIndexState> GetBlockHashIndex();
         public abstract MetaDataCache<HashIndexState> GetHeaderHashIndex();
 
-        public abstract byte[] Get(byte prefix, byte[] key);
-        public abstract void Put(byte prefix, byte[] key, byte[] value);
-        public abstract void PutSync(byte prefix, byte[] key, byte[] value);
+        public abstract byte[] Get(byte[] key);
+        public abstract void Put(byte[] key, byte[] value);
+        public abstract void PutSync(byte[] key, byte[] value);
 
         public abstract Snapshot GetSnapshot();
         public abstract void Dispose();

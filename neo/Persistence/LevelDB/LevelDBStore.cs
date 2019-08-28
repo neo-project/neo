@@ -35,13 +35,6 @@ namespace Neo.Persistence.LevelDB
             db.Dispose();
         }
 
-        public override byte[] Get(byte prefix, byte[] key)
-        {
-            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(prefix).Add(key), out Slice slice))
-                return null;
-            return slice.ToArray();
-        }
-
         public override DataCache<UInt256, TrimmedBlock> GetBlocks()
         {
             return new DbCache<UInt256, TrimmedBlock>(db, Prefixes.DATA_Block);
@@ -82,14 +75,21 @@ namespace Neo.Persistence.LevelDB
             return new DbMetaDataCache<HashIndexState>(db, Prefixes.IX_CurrentHeader);
         }
 
-        public override void Put(byte prefix, byte[] key, byte[] value)
+        public override byte[] Get(byte[] key)
         {
-            db.Put(WriteOptions.Default, SliceBuilder.Begin(prefix).Add(key), value);
+            if (!db.TryGet(ReadOptions.Default, key, out Slice slice))
+                return null;
+            return slice.ToArray();
         }
 
-        public override void PutSync(byte prefix, byte[] key, byte[] value)
+        public override void Put(byte[] key, byte[] value)
         {
-            db.Put(WriteOptions.DefaultSync, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(WriteOptions.Default, key, value);
+        }
+
+        public override void PutSync(byte[] key, byte[] value)
+        {
+            db.Put(WriteOptions.DefaultSync, key, value);
         }
     }
 }
