@@ -94,8 +94,8 @@ namespace Neo.UnitTests.Ledger
         private Transaction CreateTransaction(long fee=-1)
         {
             if (fee!=-1)
-                return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
-            return CreateTransactionWithFee(fee);
+                return CreateTransactionWithFee(fee);
+            return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
         }
 
         private void AddTransactions(int count)
