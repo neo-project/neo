@@ -160,6 +160,21 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
                     Assert.Fail();
                 }
             }
+
+            var getResult = NativeContract.Vote.Call(snapshot, TestTx, "getResult", resultParameters).GetByteArray();
+            using (MemoryStream memoryStream = new MemoryStream(getResult, false))
+            {
+                try
+                {
+                    BinaryFormatter binaryFormatter = new BinaryFormatter();
+                    int[,] test = (int[,])binaryFormatter.Deserialize(memoryStream);
+                }
+                catch
+                {
+                    Assert.Fail();
+                }
+
+            }              
         }
 
         [TestMethod]
@@ -183,7 +198,7 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
             using (MemoryStream memoryStream = new MemoryStream())
             using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
             {
-                binaryWriter.Write(new UInt160(new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 }));
+                binaryWriter.Write(new UInt160(new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
                 voterLists = memoryStream.ToArray();
             }
 

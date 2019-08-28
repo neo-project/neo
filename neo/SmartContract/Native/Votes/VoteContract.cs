@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Vote = 101;
         private const byte Prefix_AccessControl = 102;
         private const byte Prefix_Result = 103;
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem CreateMultiVote(ApplicationEngine engine, VMArray args)
         {
             UInt160 originator = new UInt160(args[0].GetByteArray());
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem CreateSingleVote(ApplicationEngine engine, VMArray args)
         {
             UInt160 originator = new UInt160(args[0].GetByteArray());
@@ -73,7 +73,7 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem MultiVote(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null || args[1] == null || args[2] == null) return false;
@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
                 }
             }
         }
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem SingleVote(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null || args[1] == null || args[2] == null) return false;
@@ -165,7 +165,7 @@ namespace Neo.SmartContract.Native
                 }
             }
         }
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem GetVoteDetails(ApplicationEngine engine, VMArray args)
         {
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
@@ -180,6 +180,7 @@ namespace Neo.SmartContract.Native
             if (args[0] == null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
             var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
             using (MemoryStream memoryStream = new MemoryStream(create_byte.Value, false))
@@ -190,11 +191,15 @@ namespace Neo.SmartContract.Native
                 if (!createState.IsSequence) return false;
                 if (!InteropService.CheckWitness(engine, createState.Originator)) return false;
             }
+
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
-            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(prefix_key);
+            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(prefix_key).OrderByDescending(p => p.Key);
+
             if (pairs.Count() == 0) return false;
+
             MultiStatistic result = new MultiStatistic();
+            List<UInt160> voteList = new List<UInt160>();
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
                 VoteState vote_state = new VoteState();
@@ -203,7 +208,11 @@ namespace Neo.SmartContract.Native
                 {
                     vote_state.Deserialize(binaryReader);
                 }
-                int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
+                UInt160 voter = vote_state.GetVoter();
+                if (voteList.Contains(voter)) continue;
+
+                voteList.Add(voter);
+                int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, voter);
                 MultiCandidate candidate = new MultiCandidate();
 
                 using (MemoryStream memoryStream = new MemoryStream())
@@ -226,7 +235,7 @@ namespace Neo.SmartContract.Native
             }
             return resultMatrix;
         }
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem GetSingleStatistic(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null) return false;
@@ -246,19 +255,25 @@ namespace Neo.SmartContract.Native
 
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
-            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(prefix_key);
+            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(prefix_key).OrderByDescending(p => p.Key);
 
             if (pairs.Count() == 0) return false;
 
             SingleStatistic result = new SingleStatistic();
+            List<UInt160> voterList = new List<UInt160>();
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
+                
                 VoteState vote_state = new VoteState();
                 using (MemoryStream memoryStream = new MemoryStream(pair.Value.Value, false))
                 using (BinaryReader binaryReader = new BinaryReader(memoryStream))
                 {
                     vote_state.Deserialize(binaryReader);
                 }
+                UInt160 voter = vote_state.GetVoter();
+                if (voterList.Contains(voter)) continue;
+
+                voterList.Add(vote_state.GetVoter());
                 int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
                 SingleCandidate candidate = new SingleCandidate();
 
@@ -283,7 +298,7 @@ namespace Neo.SmartContract.Native
             }
             return resultMatrix;
         }
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem AccessControl(ApplicationEngine engine, VMArray args)
         {
             if (args[0] == null || args[1] == null || args[2] == null || args[1].GetByteArray().Length % 20 != 0) return false;
@@ -355,6 +370,20 @@ namespace Neo.SmartContract.Native
                 }
             }
         }
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
+        private StackItem GetResult(ApplicationEngine engine, VMArray args)
+        {
+            if (args[0] == null) return false;
+            UInt256 TxHash = new UInt256(args[0].GetByteArray());
+            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+
+            StorageKey key = CreateStorageKey(Prefix_Result, id);
+            StorageItem result = engine.Snapshot.Storages.TryGet(key);
+            if (result == null) return false;
+
+            return result.Value;
+        }
+
 
         private bool RegisterVote(Snapshot snapshot, VoteCreateState createState)
         {
@@ -531,6 +560,7 @@ namespace Neo.SmartContract.Native
         {
             try
             {
+
                 result = Model.CalculateVote(this.Matrix);
                 return true;
             }
