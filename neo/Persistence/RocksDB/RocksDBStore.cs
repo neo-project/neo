@@ -1,5 +1,4 @@
 using Neo.IO.Caching;
-using Neo.IO.Data;
 using Neo.IO.Data.RocksDB;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
@@ -89,21 +88,21 @@ namespace Neo.Persistence.RocksDB
             return new DbMetaDataCache<HashIndexState>(db, db.IX_CurrentHeader);
         }
 
-        public override byte[] Get(byte prefix, byte[] key)
+        public override byte[] Get(byte[] key)
         {
-            if (!db.TryGet(db.DefaultFamily, RocksDBCore.ReadDefault, SliceBuilder.Begin(prefix).Add(key), out var value))
+            if (!db.TryGet(db.DefaultFamily, RocksDBCore.ReadDefault, key, out var value))
                 return null;
             return value;
         }
 
-        public override void Put(byte prefix, byte[] key, byte[] value)
+        public override void Put(byte[] key, byte[] value)
         {
-            db.Put(db.DefaultFamily, RocksDBCore.WriteDefault, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(db.DefaultFamily, RocksDBCore.WriteDefault, key, value);
         }
 
-        public override void PutSync(byte prefix, byte[] key, byte[] value)
+        public override void PutSync(byte[] key, byte[] value)
         {
-            db.Put(db.DefaultFamily, RocksDBCore.WriteDefaultSync, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(db.DefaultFamily, RocksDBCore.WriteDefaultSync, key, value);
         }
     }
 }
