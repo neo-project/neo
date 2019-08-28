@@ -54,7 +54,7 @@ namespace Neo.IO.Data.RocksDB
         /// <param name="db">Database</param>
         private RocksDBCore(RocksDb db)
         {
-            _rocksDb = db;
+            _rocksDb = db ?? throw new NullReferenceException(nameof(db));
 
             // Get column families
 
@@ -134,7 +134,7 @@ namespace Neo.IO.Data.RocksDB
         /// </summary>
         public void Dispose()
         {
-            _rocksDb?.Dispose();
+            _rocksDb.Dispose();
         }
 
         public void Delete(ColumnFamilyHandle family, WriteOptions options, byte[] key)
