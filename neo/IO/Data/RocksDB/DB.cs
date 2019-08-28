@@ -100,18 +100,19 @@ namespace Neo.IO.Data.RocksDB
         /// <returns>DB</returns>
         public static DB Open(Options config)
         {
-            var families = new ColumnFamilies();
+            var families = new ColumnFamilies
+            {
+                { Prefixes.DATA_Block.ToString("x2"), new ColumnFamilyOptions() },
+                { Prefixes.DATA_Transaction.ToString("x2"), new ColumnFamilyOptions() },
 
-            families.Add(Prefixes.DATA_Block.ToString("x2"), new ColumnFamilyOptions());
-            families.Add(Prefixes.DATA_Transaction.ToString("x2"), new ColumnFamilyOptions());
+                { Prefixes.IX_CurrentBlock.ToString("x2"), new ColumnFamilyOptions() },
+                { Prefixes.IX_CurrentHeader.ToString("x2"), new ColumnFamilyOptions() },
+                { Prefixes.IX_HeaderHashList.ToString("x2"), new ColumnFamilyOptions() },
 
-            families.Add(Prefixes.IX_CurrentBlock.ToString("x2"), new ColumnFamilyOptions());
-            families.Add(Prefixes.IX_CurrentHeader.ToString("x2"), new ColumnFamilyOptions());
-            families.Add(Prefixes.IX_HeaderHashList.ToString("x2"), new ColumnFamilyOptions());
-
-            families.Add(Prefixes.ST_Contract.ToString("x2"), new ColumnFamilyOptions());
-            families.Add(Prefixes.ST_Storage.ToString("x2"), new ColumnFamilyOptions());
-            families.Add(Prefixes.SYS_Version.ToString("x2"), new ColumnFamilyOptions());
+                { Prefixes.ST_Contract.ToString("x2"), new ColumnFamilyOptions() },
+                { Prefixes.ST_Storage.ToString("x2"), new ColumnFamilyOptions() },
+                { Prefixes.SYS_Version.ToString("x2"), new ColumnFamilyOptions() }
+            };
 
             return new DB(RocksDb.Open(config.Build(), config.FilePath, families));
         }
@@ -124,14 +125,14 @@ namespace Neo.IO.Data.RocksDB
             _rocksDb?.Dispose();
         }
 
-        public void Delete(ColumnFamilyHandle family, WriteOptions options, Slice key)
+        public void Delete(ColumnFamilyHandle family, WriteOptions options, byte[] key)
         {
-            _rocksDb.Remove(key.ToArray(), family, options);
+            _rocksDb.Remove(key, family, options);
         }
 
-        public byte[] Get(ColumnFamilyHandle family, ReadOptions options, Slice key)
+        public byte[] Get(ColumnFamilyHandle family, ReadOptions options, byte[] key)
         {
-            var value = _rocksDb.Get(key.ToArray(), family, options);
+            var value = _rocksDb.Get(key, family, options);
 
             if (value == null)
                 throw new RocksDbSharpException("not found");
@@ -139,15 +140,15 @@ namespace Neo.IO.Data.RocksDB
             return value;
         }
 
-        public bool TryGet(ColumnFamilyHandle family, ReadOptions options, Slice key, out byte[] value)
+        public bool TryGet(ColumnFamilyHandle family, ReadOptions options, byte[] key, out byte[] value)
         {
-            value = _rocksDb.Get(key.ToArray(), family, options);
+            value = _rocksDb.Get(key, family, options);
             return value != null;
         }
 
-        public void Put(ColumnFamilyHandle family, WriteOptions options, Slice key, byte[] value)
+        public void Put(ColumnFamilyHandle family, WriteOptions options, byte[] key, byte[] value)
         {
-            _rocksDb.Put(key.ToArray(), value, family, options);
+            _rocksDb.Put(key, value, family, options);
         }
 
         public RocksDbSharp.Snapshot GetSnapshot()
