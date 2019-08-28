@@ -4,7 +4,7 @@ namespace Neo.IO.Data.LevelDB
 {
     public class Iterator : IDisposable
     {
-        private readonly IntPtr handle;
+        private IntPtr handle;
 
         internal Iterator(IntPtr handle)
         {
