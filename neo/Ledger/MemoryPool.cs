@@ -365,7 +365,9 @@ namespace Neo.Ledger
                         if (item.Tx.FeePerByte >= _feePerByte)
                             tx.Add(item.Tx);
 
-                    _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
+                    if (tx.Count > 0)
+                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
+
                     _unverifiedTransactions.Clear();
                     _unverifiedSortedTransactions.Clear();
                 }

@@ -408,8 +408,7 @@ namespace Neo.Ledger
                 case Transaction[] transactions:
                     {
                         // This message comes from a mempool's revalidation, already relayed
-                        foreach (var tx in transactions)
-                            Sender.Tell(OnNewTransaction(tx, false));
+                        foreach (var tx in transactions) OnNewTransaction(tx, false);
                         break;
                     }
                 case Transaction transaction:
