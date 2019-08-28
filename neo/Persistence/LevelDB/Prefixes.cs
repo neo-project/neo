@@ -1,4 +1,4 @@
-namespace Neo.Persistence
+namespace Neo.Persistence.LevelDB
 {
     internal static class Prefixes
     {

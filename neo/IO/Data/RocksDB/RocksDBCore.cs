@@ -1,4 +1,3 @@
-using Neo.Persistence;
 using RocksDbSharp;
 using System;
 using System.Collections.Generic;
@@ -14,19 +13,31 @@ namespace Neo.IO.Data.RocksDB
 
         #region Families
 
-        public ColumnFamilyHandle DATA_Block;
-        public ColumnFamilyHandle DATA_Transaction;
+        private const string DATA_Block_Name = "Block";
+        private const string DATA_Transaction_Name = "Transaction";
 
-        public ColumnFamilyHandle ST_Contract;
-        public ColumnFamilyHandle ST_Storage;
+        private const string ST_Contract_Name = "Contract";
+        private const string ST_Storage_Name = "Storage";
 
-        public ColumnFamilyHandle IX_HeaderHashList;
-        public ColumnFamilyHandle IX_CurrentBlock;
-        public ColumnFamilyHandle IX_CurrentHeader;
+        private const string IX_HeaderHashList_Name = "HeaderHashList";
+        private const string IX_CurrentBlock_Name = "CurrentBlock";
+        private const string IX_CurrentHeader_Name = "CurrentHeader";
 
-        public ColumnFamilyHandle SYS_Version;
+        private const string SYS_Version_Name = "Version";
 
-        public ColumnFamilyHandle DefaultFamily;
+        internal readonly ColumnFamilyHandle DATA_Block;
+        internal readonly ColumnFamilyHandle DATA_Transaction;
+
+        internal readonly ColumnFamilyHandle ST_Contract;
+        internal readonly ColumnFamilyHandle ST_Storage;
+
+        internal readonly ColumnFamilyHandle IX_HeaderHashList;
+        internal readonly ColumnFamilyHandle IX_CurrentBlock;
+        internal readonly ColumnFamilyHandle IX_CurrentHeader;
+
+        internal readonly ColumnFamilyHandle SYS_Version;
+
+        internal readonly ColumnFamilyHandle DefaultFamily;
 
         #endregion
 
@@ -47,16 +58,16 @@ namespace Neo.IO.Data.RocksDB
 
             // Get column families
 
-            DATA_Block = PrefixToFamily(Prefixes.DATA_Block);
-            DATA_Transaction = PrefixToFamily(Prefixes.DATA_Transaction);
+            DATA_Block = PrefixToFamily(DATA_Block_Name);
+            DATA_Transaction = PrefixToFamily(DATA_Transaction_Name);
 
-            IX_CurrentBlock = PrefixToFamily(Prefixes.IX_CurrentBlock);
-            IX_CurrentHeader = PrefixToFamily(Prefixes.IX_CurrentHeader);
-            IX_HeaderHashList = PrefixToFamily(Prefixes.IX_HeaderHashList);
+            IX_CurrentBlock = PrefixToFamily(IX_CurrentBlock_Name);
+            IX_CurrentHeader = PrefixToFamily(IX_CurrentHeader_Name);
+            IX_HeaderHashList = PrefixToFamily(IX_HeaderHashList_Name);
 
-            ST_Contract = PrefixToFamily(Prefixes.ST_Contract);
-            ST_Storage = PrefixToFamily(Prefixes.ST_Storage);
-            SYS_Version = PrefixToFamily(Prefixes.SYS_Version);
+            ST_Contract = PrefixToFamily(ST_Contract_Name);
+            ST_Storage = PrefixToFamily(ST_Storage_Name);
+            SYS_Version = PrefixToFamily(SYS_Version_Name);
 
             DefaultFamily = _rocksDb.GetDefaultColumnFamily();
         }
@@ -64,20 +75,20 @@ namespace Neo.IO.Data.RocksDB
         /// <summary>
         /// Create or get the family
         /// </summary>
-        /// <param name="prefix">Prefix</param>
+        /// <param name="name">Name</param>
         /// <returns>Return column family</returns>
-        internal ColumnFamilyHandle PrefixToFamily(byte prefix)
+        internal ColumnFamilyHandle PrefixToFamily(string name)
         {
             try
             {
                 // Try open
-                return _rocksDb.GetColumnFamily(prefix.ToString("x2"));
+                return _rocksDb.GetColumnFamily(name);
             }
             catch (Exception e)
             {
                 if (e is RocksDbSharpException || e is KeyNotFoundException)
                 {
-                    return _rocksDb.CreateColumnFamily(new ColumnFamilyOptions(), prefix.ToString("x2"));
+                    return _rocksDb.CreateColumnFamily(new ColumnFamilyOptions(), name);
                 }
 
                 throw e;
@@ -102,16 +113,17 @@ namespace Neo.IO.Data.RocksDB
         {
             var families = new ColumnFamilies
             {
-                { Prefixes.DATA_Block.ToString("x2"), new ColumnFamilyOptions() },
-                { Prefixes.DATA_Transaction.ToString("x2"), new ColumnFamilyOptions() },
+                { DATA_Block_Name, new ColumnFamilyOptions() },
+                { DATA_Transaction_Name, new ColumnFamilyOptions() },
 
-                { Prefixes.IX_CurrentBlock.ToString("x2"), new ColumnFamilyOptions() },
-                { Prefixes.IX_CurrentHeader.ToString("x2"), new ColumnFamilyOptions() },
-                { Prefixes.IX_HeaderHashList.ToString("x2"), new ColumnFamilyOptions() },
+                { IX_CurrentBlock_Name, new ColumnFamilyOptions() },
+                { IX_CurrentHeader_Name, new ColumnFamilyOptions() },
+                { IX_HeaderHashList_Name, new ColumnFamilyOptions() },
 
-                { Prefixes.ST_Contract.ToString("x2"), new ColumnFamilyOptions() },
-                { Prefixes.ST_Storage.ToString("x2"), new ColumnFamilyOptions() },
-                { Prefixes.SYS_Version.ToString("x2"), new ColumnFamilyOptions() }
+                { ST_Contract_Name, new ColumnFamilyOptions() },
+                { ST_Storage_Name, new ColumnFamilyOptions() },
+
+                { SYS_Version_Name, new ColumnFamilyOptions() }
             };
 
             return new RocksDBCore(RocksDb.Open(config.Build(), config.FilePath, families));
@@ -151,7 +163,7 @@ namespace Neo.IO.Data.RocksDB
             _rocksDb.Put(key, value, family, options);
         }
 
-        public RocksDbSharp.Snapshot GetSnapshot()
+        public Snapshot GetSnapshot()
         {
             return _rocksDb.CreateSnapshot();
         }
