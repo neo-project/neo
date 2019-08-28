@@ -19,9 +19,9 @@ namespace Neo.Consensus
     internal class ConsensusContext : IDisposable, ISerializable
     {
         /// <summary>
-        /// Prefix for saving consensus state.
+        /// Key for saving consensus state.
         /// </summary>
-        public const byte CN_Context = 0xf4;
+        private static readonly byte[] ConsensusStateKey = { 0xf4 };
 
         public Block Block;
         public byte ViewNumber;
@@ -143,7 +143,7 @@ namespace Neo.Consensus
 
         public bool Load()
         {
-            byte[] data = store.Get(CN_Context, new byte[0]);
+            byte[] data = store.Get(ConsensusStateKey);
             if (data is null || data.Length == 0) return false;
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms))
@@ -401,7 +401,7 @@ namespace Neo.Consensus
 
         public void Save()
         {
-            store.PutSync(CN_Context, new byte[0], this.ToArray());
+            store.PutSync(ConsensusStateKey, this.ToArray());
         }
 
         public void Serialize(BinaryWriter writer)
