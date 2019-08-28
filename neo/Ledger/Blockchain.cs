@@ -405,6 +405,12 @@ namespace Neo.Ledger
                 case Block block:
                     Sender.Tell(OnNewBlock(block));
                     break;
+                case Transaction[] transactions:
+                    {
+                        foreach (var tx in transactions)
+                            Sender.Tell(OnNewTransaction(tx));
+                        break;
+                    }
                 case Transaction transaction:
                     Sender.Tell(OnNewTransaction(transaction));
                     break;
