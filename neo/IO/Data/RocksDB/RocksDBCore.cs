@@ -58,16 +58,16 @@ namespace Neo.IO.Data.RocksDB
 
             // Get column families
 
-            DATA_Block = PrefixToFamily(DATA_Block_Name);
-            DATA_Transaction = PrefixToFamily(DATA_Transaction_Name);
+            DATA_Block = GetOrCreateColumnFamily(DATA_Block_Name);
+            DATA_Transaction = GetOrCreateColumnFamily(DATA_Transaction_Name);
 
-            IX_CurrentBlock = PrefixToFamily(IX_CurrentBlock_Name);
-            IX_CurrentHeader = PrefixToFamily(IX_CurrentHeader_Name);
-            IX_HeaderHashList = PrefixToFamily(IX_HeaderHashList_Name);
+            IX_CurrentBlock = GetOrCreateColumnFamily(IX_CurrentBlock_Name);
+            IX_CurrentHeader = GetOrCreateColumnFamily(IX_CurrentHeader_Name);
+            IX_HeaderHashList = GetOrCreateColumnFamily(IX_HeaderHashList_Name);
 
-            ST_Contract = PrefixToFamily(ST_Contract_Name);
-            ST_Storage = PrefixToFamily(ST_Storage_Name);
-            SYS_Version = PrefixToFamily(SYS_Version_Name);
+            ST_Contract = GetOrCreateColumnFamily(ST_Contract_Name);
+            ST_Storage = GetOrCreateColumnFamily(ST_Storage_Name);
+            SYS_Version = GetOrCreateColumnFamily(SYS_Version_Name);
 
             DefaultFamily = _rocksDb.GetDefaultColumnFamily();
         }
@@ -77,7 +77,7 @@ namespace Neo.IO.Data.RocksDB
         /// </summary>
         /// <param name="name">Name</param>
         /// <returns>Return column family</returns>
-        internal ColumnFamilyHandle PrefixToFamily(string name)
+        internal ColumnFamilyHandle GetOrCreateColumnFamily(string name)
         {
             try
             {

@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Neo.IO.Data
+namespace Neo.IO.Data.LevelDB
 {
     public struct Slice : IComparable<Slice>, IEquatable<Slice>
     {

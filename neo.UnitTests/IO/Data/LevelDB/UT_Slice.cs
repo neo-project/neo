@@ -1,11 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.IO.Data;
+using Neo.IO.Data.LevelDB;
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Neo.UnitTests.IO.Data
+namespace Neo.UnitTests.IO.Data.LevelDB
 {
     public class Test { }
 
