@@ -237,7 +237,7 @@ namespace Neo.SmartContract
         private static bool Runtime_GetNotifications(ApplicationEngine engine)
         {
             byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if ((data.Length != 0) || (data.Length != UInt160.Length)) return false;
+            if ((data.Length != 0) && (data.Length != UInt160.Length)) return false;
             if (!engine.CheckArraySize(engine.Notifications.Count)) return false;
 
             IEnumerable<NotifyEventArgs> notifications = engine.Notifications;
