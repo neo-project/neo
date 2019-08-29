@@ -58,41 +58,18 @@ namespace Neo.IO.Data.RocksDB
 
             // Get column families
 
-            DATA_Block = GetOrCreateColumnFamily(DATA_Block_Name);
-            DATA_Transaction = GetOrCreateColumnFamily(DATA_Transaction_Name);
+            DATA_Block = new ColumnFamily(db, DATA_Block_Name);
+            DATA_Transaction = new ColumnFamily(db, DATA_Transaction_Name);
 
-            IX_CurrentBlock = GetOrCreateColumnFamily(IX_CurrentBlock_Name);
-            IX_CurrentHeader = GetOrCreateColumnFamily(IX_CurrentHeader_Name);
-            IX_HeaderHashList = GetOrCreateColumnFamily(IX_HeaderHashList_Name);
+            IX_CurrentBlock = new ColumnFamily(db, IX_CurrentBlock_Name);
+            IX_CurrentHeader = new ColumnFamily(db, IX_CurrentHeader_Name);
+            IX_HeaderHashList = new ColumnFamily(db, IX_HeaderHashList_Name);
 
-            ST_Contract = GetOrCreateColumnFamily(ST_Contract_Name);
-            ST_Storage = GetOrCreateColumnFamily(ST_Storage_Name);
-            SYS_Version = GetOrCreateColumnFamily(SYS_Version_Name);
+            ST_Contract = new ColumnFamily(db, ST_Contract_Name);
+            ST_Storage = new ColumnFamily(db, ST_Storage_Name);
+            SYS_Version = new ColumnFamily(db, SYS_Version_Name);
 
             DefaultFamily = new ColumnFamily("", _rocksDb.GetDefaultColumnFamily());
-        }
-
-        /// <summary>
-        /// Get or create the column family
-        /// </summary>
-        /// <param name="name">Name</param>
-        /// <returns>Return column family</returns>
-        internal ColumnFamily GetOrCreateColumnFamily(string name)
-        {
-            try
-            {
-                // Try open
-                return new ColumnFamily(name, _rocksDb.GetColumnFamily(name));
-            }
-            catch (Exception e)
-            {
-                if (e is RocksDbSharpException || e is KeyNotFoundException)
-                {
-                    return new ColumnFamily(name, _rocksDb.CreateColumnFamily(new ColumnFamilyOptions(), name));
-                }
-
-                throw e;
-            }
         }
 
         /// <summary>
@@ -182,8 +159,8 @@ namespace Neo.IO.Data.RocksDB
         {
             // Drop the column family
             _rocksDb.DropColumnFamily(familiy.Name);
-            // The handle is unvalid now, require to obtains a new column family
-            familiy.Handle = GetOrCreateColumnFamily(familiy.Name).Handle;
+            // The handle is invalid now, require to obtains a new column family
+            familiy.Handle = new ColumnFamily(_rocksDb, familiy.Name).Handle;
         }
     }
 }

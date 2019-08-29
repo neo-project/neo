@@ -1,4 +1,6 @@
 using RocksDbSharp;
+using System;
+using System.Collections.Generic;
 
 namespace Neo.IO.Data.RocksDB
 {
@@ -23,6 +25,32 @@ namespace Neo.IO.Data.RocksDB
         {
             Name = name;
             Handle = handle;
+        }
+
+        /// <summary>
+        /// Get or create the column family
+        /// </summary>
+        /// <param name="db">DB</param>
+        /// <param name="name">Name</param>
+        /// <returns>Return column family</returns>
+        internal ColumnFamily(RocksDb db, string name)
+        {
+            Name = name;
+            try
+            {
+                // Try open
+                Handle = db.GetColumnFamily(name);
+            }
+            catch (Exception e)
+            {
+                if (e is RocksDbSharpException || e is KeyNotFoundException)
+                {
+                    Handle = db.CreateColumnFamily(new ColumnFamilyOptions(), name);
+                    return;
+                }
+
+                throw e;
+            }
         }
 
         /// <summary>
