@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Network.RPC
             MockResponse(response.ToString());
 
             var result = rpc.GetBlockCount();
-            Assert.AreEqual((uint)100, result);
+            Assert.AreEqual(100u, result);
         }
 
         [TestMethod]
