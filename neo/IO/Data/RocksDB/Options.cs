@@ -4,6 +4,15 @@ namespace Neo.IO.Data.RocksDB
 {
     public class Options
     {
+        #region Static values
+
+        public static readonly Options Default = new Options();
+        public static readonly ReadOptions ReadDefault = new ReadOptions();
+        public static readonly WriteOptions WriteDefault = new WriteOptions();
+        public static readonly WriteOptions WriteDefaultSync = new WriteOptions();
+
+        #endregion
+
         /// <summary>
         /// File Path
         /// </summary>

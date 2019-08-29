@@ -42,7 +42,7 @@ namespace Neo.Persistence.RocksDB
         public override void Commit()
         {
             base.Commit();
-            db.Write(RocksDBCore.WriteDefault, batch);
+            db.Write(Options.WriteDefault, batch);
         }
 
         public override void Dispose()

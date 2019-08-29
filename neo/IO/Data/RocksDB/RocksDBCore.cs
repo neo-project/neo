@@ -1,16 +1,10 @@
 using RocksDbSharp;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.IO.Data.RocksDB
 {
     public class RocksDBCore : IDisposable
     {
-        public static readonly Options OptionsDefault = new Options();
-        public static readonly ReadOptions ReadDefault = new ReadOptions();
-        public static readonly WriteOptions WriteDefault = new WriteOptions();
-        public static readonly WriteOptions WriteDefaultSync = new WriteOptions();
-
         #region Families
 
         private const string DATA_Block_Name = "Block";
@@ -43,7 +37,7 @@ namespace Neo.IO.Data.RocksDB
 
         static RocksDBCore()
         {
-            WriteDefaultSync.SetSync(true);
+            Options.WriteDefaultSync.SetSync(true);
         }
 
         private readonly RocksDb _rocksDb;
@@ -78,7 +72,7 @@ namespace Neo.IO.Data.RocksDB
         /// <returns>DB</returns>
         public static RocksDBCore Open()
         {
-            return Open(OptionsDefault);
+            return Open(Options.Default);
         }
 
         /// <summary>

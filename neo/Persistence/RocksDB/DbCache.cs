@@ -20,7 +20,7 @@ namespace Neo.Persistence.RocksDB
         {
             this.db = db;
             this.family = family;
-            this.options = options ?? RocksDBCore.ReadDefault;
+            this.options = options ?? Options.ReadDefault;
             this.batch = batch;
         }
 

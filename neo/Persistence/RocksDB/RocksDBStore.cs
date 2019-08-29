@@ -17,7 +17,7 @@ namespace Neo.Persistence.RocksDB
         {
             db = RocksDBCore.Open(new Options { CreateIfMissing = true, FilePath = path });
 
-            if (db.TryGet(db.SYS_Version, RocksDBCore.ReadDefault, new byte[0], out var value) &&
+            if (db.TryGet(db.SYS_Version, Options.ReadDefault, new byte[0], out var value) &&
                 Version.TryParse(Encoding.UTF8.GetString(value), out var version) && version >= Version.Parse("2.9.1"))
                 return;
 
@@ -44,8 +44,8 @@ namespace Neo.Persistence.RocksDB
 
                 // Update version
 
-                db.Put(db.SYS_Version, RocksDBCore.WriteDefault, new byte[0], Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName().Version.ToString()));
-                db.Write(RocksDBCore.WriteDefault, batch);
+                db.Put(db.SYS_Version, Options.WriteDefault, new byte[0], Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName().Version.ToString()));
+                db.Write(Options.WriteDefault, batch);
             }
         }
 
@@ -96,19 +96,19 @@ namespace Neo.Persistence.RocksDB
 
         public override byte[] Get(byte[] key)
         {
-            if (!db.TryGet(db.DefaultFamily, RocksDBCore.ReadDefault, key, out var value))
+            if (!db.TryGet(db.DefaultFamily, Options.ReadDefault, key, out var value))
                 return null;
             return value;
         }
 
         public override void Put(byte[] key, byte[] value)
         {
-            db.Put(db.DefaultFamily, RocksDBCore.WriteDefault, key, value);
+            db.Put(db.DefaultFamily, Options.WriteDefault, key, value);
         }
 
         public override void PutSync(byte[] key, byte[] value)
         {
-            db.Put(db.DefaultFamily, RocksDBCore.WriteDefaultSync, key, value);
+            db.Put(db.DefaultFamily, Options.WriteDefaultSync, key, value);
         }
     }
 }
