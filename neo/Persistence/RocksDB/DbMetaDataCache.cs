@@ -17,7 +17,7 @@ namespace Neo.Persistence.RocksDB
         private readonly RocksDBCore db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
-        private readonly ColumnFamilyHandle family;
+        private readonly ColumnFamily family;
 
         /// <summary>
         /// Constructor
@@ -27,7 +27,7 @@ namespace Neo.Persistence.RocksDB
         /// <param name="options">Options</param>
         /// <param name="batch">Batch</param>
         /// <param name="factory">Factory</param>
-        public DbMetaDataCache(RocksDBCore db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
+        public DbMetaDataCache(RocksDBCore db, ColumnFamily family, ReadOptions options = null, WriteBatch batch = null, Func<T> factory = null)
             : base(factory)
         {
             this.db = db;
@@ -38,7 +38,7 @@ namespace Neo.Persistence.RocksDB
 
         protected override void AddInternal(T item)
         {
-            batch?.Put(EmptyKey, item.ToArray(), family);
+            batch?.Put(EmptyKey, item.ToArray(), family.Handle);
         }
 
         protected override T TryGetInternal()
@@ -50,7 +50,7 @@ namespace Neo.Persistence.RocksDB
 
         protected override void UpdateInternal(T item)
         {
-            batch?.Put(EmptyKey, item.ToArray(), family);
+            batch?.Put(EmptyKey, item.ToArray(), family.Handle);
         }
     }
 }

@@ -28,13 +28,19 @@ namespace Neo.Persistence.RocksDB
 
                 // Clean entries
 
-                using (var it = db.NewIterator(db.SYS_Version, options))
-                {
-                    for (it.SeekToFirst(); it.Valid(); it.Next())
-                    {
-                        batch.Delete(it.Key());
-                    }
-                }
+                db.Clear(db.DATA_Block);
+                db.Clear(db.DATA_Transaction);
+
+                db.Clear(db.IX_CurrentBlock);
+                db.Clear(db.IX_CurrentHeader);
+                db.Clear(db.IX_HeaderHashList);
+
+                db.Clear(db.ST_Contract);
+                db.Clear(db.ST_Storage);
+
+                db.Clear(db.SYS_Version);
+
+                db.Clear(db.DefaultFamily);
 
                 // Update version
 

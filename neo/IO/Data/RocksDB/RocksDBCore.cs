@@ -25,19 +25,19 @@ namespace Neo.IO.Data.RocksDB
 
         private const string SYS_Version_Name = "Version";
 
-        internal readonly ColumnFamilyHandle DATA_Block;
-        internal readonly ColumnFamilyHandle DATA_Transaction;
+        internal readonly ColumnFamily DATA_Block;
+        internal readonly ColumnFamily DATA_Transaction;
 
-        internal readonly ColumnFamilyHandle ST_Contract;
-        internal readonly ColumnFamilyHandle ST_Storage;
+        internal readonly ColumnFamily ST_Contract;
+        internal readonly ColumnFamily ST_Storage;
 
-        internal readonly ColumnFamilyHandle IX_HeaderHashList;
-        internal readonly ColumnFamilyHandle IX_CurrentBlock;
-        internal readonly ColumnFamilyHandle IX_CurrentHeader;
+        internal readonly ColumnFamily IX_HeaderHashList;
+        internal readonly ColumnFamily IX_CurrentBlock;
+        internal readonly ColumnFamily IX_CurrentHeader;
 
-        internal readonly ColumnFamilyHandle SYS_Version;
+        internal readonly ColumnFamily SYS_Version;
 
-        internal readonly ColumnFamilyHandle DefaultFamily;
+        internal readonly ColumnFamily DefaultFamily;
 
         #endregion
 
@@ -69,26 +69,26 @@ namespace Neo.IO.Data.RocksDB
             ST_Storage = GetOrCreateColumnFamily(ST_Storage_Name);
             SYS_Version = GetOrCreateColumnFamily(SYS_Version_Name);
 
-            DefaultFamily = _rocksDb.GetDefaultColumnFamily();
+            DefaultFamily = new ColumnFamily("", _rocksDb.GetDefaultColumnFamily());
         }
 
         /// <summary>
-        /// Create or get the family
+        /// Get or create the column family
         /// </summary>
         /// <param name="name">Name</param>
         /// <returns>Return column family</returns>
-        internal ColumnFamilyHandle GetOrCreateColumnFamily(string name)
+        internal ColumnFamily GetOrCreateColumnFamily(string name)
         {
             try
             {
                 // Try open
-                return _rocksDb.GetColumnFamily(name);
+                return new ColumnFamily(name, _rocksDb.GetColumnFamily(name));
             }
             catch (Exception e)
             {
                 if (e is RocksDbSharpException || e is KeyNotFoundException)
                 {
-                    return _rocksDb.CreateColumnFamily(new ColumnFamilyOptions(), name);
+                    return new ColumnFamily(name, _rocksDb.CreateColumnFamily(new ColumnFamilyOptions(), name));
                 }
 
                 throw e;
@@ -137,14 +137,14 @@ namespace Neo.IO.Data.RocksDB
             _rocksDb.Dispose();
         }
 
-        public void Delete(ColumnFamilyHandle family, WriteOptions options, byte[] key)
+        public void Delete(ColumnFamily family, WriteOptions options, byte[] key)
         {
-            _rocksDb.Remove(key, family, options);
+            _rocksDb.Remove(key, family.Handle, options);
         }
 
-        public byte[] Get(ColumnFamilyHandle family, ReadOptions options, byte[] key)
+        public byte[] Get(ColumnFamily family, ReadOptions options, byte[] key)
         {
-            var value = _rocksDb.Get(key, family, options);
+            var value = _rocksDb.Get(key, family.Handle, options);
 
             if (value == null)
                 throw new RocksDbSharpException("not found");
@@ -152,15 +152,15 @@ namespace Neo.IO.Data.RocksDB
             return value;
         }
 
-        public bool TryGet(ColumnFamilyHandle family, ReadOptions options, byte[] key, out byte[] value)
+        public bool TryGet(ColumnFamily family, ReadOptions options, byte[] key, out byte[] value)
         {
-            value = _rocksDb.Get(key, family, options);
+            value = _rocksDb.Get(key, family.Handle, options);
             return value != null;
         }
 
-        public void Put(ColumnFamilyHandle family, WriteOptions options, byte[] key, byte[] value)
+        public void Put(ColumnFamily family, WriteOptions options, byte[] key, byte[] value)
         {
-            _rocksDb.Put(key, value, family, options);
+            _rocksDb.Put(key, value, family.Handle, options);
         }
 
         public Snapshot GetSnapshot()
@@ -168,14 +168,22 @@ namespace Neo.IO.Data.RocksDB
             return _rocksDb.CreateSnapshot();
         }
 
-        public Iterator NewIterator(ColumnFamilyHandle family, ReadOptions options)
+        public Iterator NewIterator(ColumnFamily family, ReadOptions options)
         {
-            return _rocksDb.NewIterator(family, options);
+            return _rocksDb.NewIterator(family.Handle, options);
         }
 
         public void Write(WriteOptions options, WriteBatch batch)
         {
             _rocksDb.Write(batch, options);
+        }
+
+        public void Clear(ColumnFamily familiy)
+        {
+            // Drop the column family
+            _rocksDb.DropColumnFamily(familiy.Name);
+            // The handle is unvalid now, require to obtains a new column family
+            familiy.Handle = GetOrCreateColumnFamily(familiy.Name).Handle;
         }
     }
 }

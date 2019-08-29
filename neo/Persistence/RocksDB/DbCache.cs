@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.IO.Caching;
-using Neo.IO.Data;
 using Neo.IO.Data.RocksDB;
 using RocksDbSharp;
 using System;
@@ -15,9 +14,9 @@ namespace Neo.Persistence.RocksDB
         private readonly RocksDBCore db;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
-        private readonly ColumnFamilyHandle family;
+        private readonly ColumnFamily family;
 
-        public DbCache(RocksDBCore db, ColumnFamilyHandle family, ReadOptions options = null, WriteBatch batch = null)
+        public DbCache(RocksDBCore db, ColumnFamily family, ReadOptions options = null, WriteBatch batch = null)
         {
             this.db = db;
             this.family = family;
