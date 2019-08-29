@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Neo.Persistence.RocksDB
 {
-    public class RocksDBStore : Store, IDisposable
+    public class RocksDBStore : Store
     {
         private readonly RocksDBCore db;
 
