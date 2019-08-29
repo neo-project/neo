@@ -364,7 +364,7 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private RelayResultReason OnNewTransaction(Transaction transaction)
+        private RelayResultReason OnNewTransaction(Transaction transaction, bool relay)
         {
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
@@ -377,8 +377,8 @@ namespace Neo.Ledger
 
             if (!MemPool.TryAdd(transaction.Hash, transaction))
                 return RelayResultReason.OutOfMemory;
-
-            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
+            if (relay)
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }
 
@@ -405,8 +405,14 @@ namespace Neo.Ledger
                 case Block block:
                     Sender.Tell(OnNewBlock(block));
                     break;
+                case Transaction[] transactions:
+                    {
+                        // This message comes from a mempool's revalidation, already relayed
+                        foreach (var tx in transactions) OnNewTransaction(tx, false);
+                        break;
+                    }
                 case Transaction transaction:
-                    Sender.Tell(OnNewTransaction(transaction));
+                    Sender.Tell(OnNewTransaction(transaction, true));
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
