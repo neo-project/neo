@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -77,7 +77,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestContainsTransaction()
         {
-            Blockchain.Singleton.ContainsTransaction(UInt256.Zero).Should().BeTrue();
+            Blockchain.Singleton.ContainsTransaction(UInt256.Zero).Should().BeFalse();
             Blockchain.Singleton.ContainsTransaction(txSample.Hash).Should().BeTrue();
         }
 
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetTransaction()
         {
-            Blockchain.Singleton.GetTransaction(UInt256.Zero).Should().NotBeNull();
+            Blockchain.Singleton.GetTransaction(UInt256.Zero).Should().BeNull();
             Blockchain.Singleton.GetTransaction(txSample.Hash).Should().NotBeNull();
         }
     }
