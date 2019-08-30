@@ -25,7 +25,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestMakeScript()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", UInt160.Zero);
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
             Assert.AreEqual("14000000000000000000000000000000000000000051c10962616c616e63654f66142582d1b275e86c8f0e93a9b2facd5fdb760976a168627d5b52",
                             testScript.ToHexString());
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestInvoke()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", UInt160.Zero);
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() });
 
             ContractClient contractClient = new ContractClient(rpcClientMock.Object);

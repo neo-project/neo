@@ -3,6 +3,7 @@ using Moq;
 using Neo.Network.RPC;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.Wallets;
 using System.Numerics;
 
@@ -26,7 +27,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestBalanceOf()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", UInt160.Zero);
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(10000) });
 
             var balance = nep5API.BalanceOf(NativeContract.GAS.Hash, UInt160.Zero);
@@ -36,7 +37,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetName()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "name");
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("name");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.String, Value = NativeContract.GAS.Name });
 
             var result = nep5API.Name(NativeContract.GAS.Hash);
@@ -46,7 +47,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetSymbol()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "symbol");
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("symbol");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.String, Value = NativeContract.GAS.Symbol });
 
             var result = nep5API.Symbol(NativeContract.GAS.Hash);
@@ -56,7 +57,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetDecimals()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "decimals");
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("decimals");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(NativeContract.GAS.Decimals) });
 
             var result = nep5API.Decimals(NativeContract.GAS.Hash);
@@ -66,7 +67,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetTotalSupply()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "totalSupply");
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("totalSupply");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_00000000) });
 
             var result = nep5API.TotalSupply(NativeContract.GAS.Hash);
@@ -76,7 +77,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestTransfer()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "transfer", Sender, UInt160.Zero, new BigInteger(1_00000000));
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", Sender, UInt160.Zero, new BigInteger(1_00000000));
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter());
 
             var result = nep5API.Transfer(NativeContract.GAS.Hash, keyPair1, UInt160.Zero, new BigInteger(1_00000000));

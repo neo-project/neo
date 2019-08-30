@@ -1,4 +1,4 @@
-﻿using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -24,25 +24,6 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Generate scripts to call a specific method from a specific contract.
-        /// </summary>
-        /// <param name="scriptHash">contract script hash</param>
-        /// <param name="operation">contract operation</param>
-        /// <param name="args">operation arguments</param>
-        /// <returns></returns>
-        public static byte[] MakeScript(UInt160 scriptHash, string operation, params object[] args)
-        {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                if (args.Length > 0)
-                    sb.EmitAppCall(scriptHash, operation, args);
-                else
-                    sb.EmitAppCall(scriptHash, operation);
-                return sb.ToArray();
-            }
-        }
-
-        /// <summary>
         /// Use RPC method to test invoke operation.
         /// </summary>
         /// <param name="scriptHash">contract script hash</param>
@@ -51,7 +32,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public RpcInvokeResult TestInvoke(UInt160 scriptHash, string operation, params object[] args)
         {
-            byte[] script = MakeScript(scriptHash, operation, args);
+            byte[] script = scriptHash.MakeScript(operation, args);
             return rpcClient.InvokeScript(script);
         }
 

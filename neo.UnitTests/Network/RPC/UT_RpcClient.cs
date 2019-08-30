@@ -119,7 +119,7 @@ namespace Neo.UnitTests.Network.RPC
         {
             // create block
             var block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 0);
+            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out _, out UInt160 _, out ulong _, out uint _, out Witness _, out Transaction[] _, 0);
 
             block.Transactions = new[]
             {
@@ -187,7 +187,7 @@ namespace Neo.UnitTests.Network.RPC
         public void TestGetBlockHeader()
         {
             Header header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 _, out UInt160 _, out ulong _, out uint _, out Witness _);
 
             JObject json = header.ToJson();
             JObject response = CreateResponse(1);
@@ -231,12 +231,16 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetContractState()
         {
-            var sb = new ScriptBuilder();
-            sb.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
+            byte[] script;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
+                script = sb.ToArray();
+            }
 
             ContractState state = new ContractState
             {
-                Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(sb.ToArray()).ToArray(),
+                Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script).ToArray(),
                 Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
 
@@ -316,7 +320,7 @@ namespace Neo.UnitTests.Network.RPC
             MockResponse(response.ToString());
 
             var result = rpc.GetRawMempoolBoth();
-            Assert.AreEqual((uint)65535, result.Height);
+            Assert.AreEqual(65535u, result.Height);
             Assert.AreEqual("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e", result.Verified[0]);
             Assert.AreEqual("0xf86f6f2c08fbf766ebe59dc84bc3b8829f1053f0a01deb26bf7960d99fa86cd6", result.UnVerified[1]);
         }

@@ -3,6 +3,7 @@ using Moq;
 using Neo.Network.RPC;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.Wallets;
 using System.Numerics;
 
@@ -26,7 +27,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetMaxTransactionsPerBlock()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getMaxTransactionsPerBlock");
+            byte[] testScript = NativeContract.Policy.Hash.MakeScript("getMaxTransactionsPerBlock");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(512) });
 
             var result = policyAPI.GetMaxTransactionsPerBlock();
@@ -36,7 +37,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetFeePerByte()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getFeePerByte");
+            byte[] testScript = NativeContract.Policy.Hash.MakeScript("getFeePerByte");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) });
 
             var result = policyAPI.GetFeePerByte();
@@ -46,7 +47,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetBlockedAccounts()
         {
-            byte[] testScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getBlockedAccounts");
+            byte[] testScript = NativeContract.Policy.Hash.MakeScript("getBlockedAccounts");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Array, Value = new[] { new ContractParameter { Type = ContractParameterType.Hash160, Value = UInt160.Zero } } });
 
             var result = policyAPI.GetBlockedAccounts();

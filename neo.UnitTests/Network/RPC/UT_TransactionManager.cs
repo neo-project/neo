@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
 using Neo.IO;
@@ -9,6 +9,7 @@ using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Linq;
@@ -39,13 +40,13 @@ namespace Neo.UnitTests.Network.RPC
             mockRpc.Setup(p => p.RpcSend("getblockcount")).Returns(100).Verifiable();
 
             // MockGasBalance
-            byte[] balanceScript = ContractClient.MakeScript(NativeContract.GAS.Hash, "balanceOf", sender);
+            byte[] balanceScript = NativeContract.GAS.Hash.MakeScript("balanceOf", sender);
             var balanceResult = new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("10000000000000000") };
 
             MockInvokeScript(mockRpc, balanceScript, balanceResult);
 
             // MockFeePerByte
-            byte[] policyScript = ContractClient.MakeScript(NativeContract.Policy.Hash, "getFeePerByte");
+            byte[] policyScript = NativeContract.Policy.Hash.MakeScript("getFeePerByte");
             var policyResult = new ContractParameter() { Type = ContractParameterType.Integer, Value = BigInteger.Parse("1000") };
 
             MockInvokeScript(mockRpc, policyScript, policyResult);

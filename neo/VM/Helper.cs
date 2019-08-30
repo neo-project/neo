@@ -162,6 +162,25 @@ namespace Neo.VM
             return sb.EmitSysCall(method);
         }
 
+        /// <summary>
+        /// Generate scripts to call a specific method from a specific contract.
+        /// </summary>
+        /// <param name="scriptHash">contract script hash</param>
+        /// <param name="operation">contract operation</param>
+        /// <param name="args">operation arguments</param>
+        /// <returns></returns>
+        public static byte[] MakeScript(this UInt160 scriptHash, string operation, params object[] args)
+        {
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                if (args.Length > 0)
+                    sb.EmitAppCall(scriptHash, operation, args);
+                else
+                    sb.EmitAppCall(scriptHash, operation);
+                return sb.ToArray();
+            }
+        }
+
         public static ContractParameter ToParameter(this StackItem item)
         {
             return ToParameter(item, null);

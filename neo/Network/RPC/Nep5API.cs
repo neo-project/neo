@@ -84,7 +84,7 @@ namespace Neo.Network.RPC
             var sender = Contract.CreateSignatureRedeemScript(fromKey.PublicKey).ToScriptHash();
             Cosigner[] cosigners = new[] { new Cosigner { Scopes = WitnessScope.CalledByEntry, Account = sender } };
 
-            byte[] script = MakeScript(scriptHash, "transfer", sender, to, amount);
+            byte[] script = scriptHash.MakeScript("transfer", sender, to, amount);
             Transaction tx = new TransactionManager(rpcClient, sender)
                 .MakeTransaction(script, null, cosigners, networkFee)
                 .AddSignature(fromKey)
