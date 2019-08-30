@@ -53,6 +53,7 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
+        private readonly static byte[] onPersistNativeContractScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -83,6 +84,15 @@ namespace Neo.Ledger
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
+
+            NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                foreach (NativeContract contract in contracts)
+                    sb.EmitAppCall(contract.Hash, "onPersist");
+
+                onPersistNativeContractScript = sb.ToArray();
+            }
         }
 
         public Blockchain(NeoSystem system, Store store)
@@ -354,7 +364,7 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private RelayResultReason OnNewTransaction(Transaction transaction)
+        private RelayResultReason OnNewTransaction(Transaction transaction, bool relay)
         {
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
@@ -367,8 +377,8 @@ namespace Neo.Ledger
 
             if (!MemPool.TryAdd(transaction.Hash, transaction))
                 return RelayResultReason.OutOfMemory;
-
-            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
+            if (relay)
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }
 
@@ -395,8 +405,14 @@ namespace Neo.Ledger
                 case Block block:
                     Sender.Tell(OnNewBlock(block));
                     break;
+                case Transaction[] transactions:
+                    {
+                        // This message comes from a mempool's revalidation, already relayed
+                        foreach (var tx in transactions) OnNewTransaction(tx, false);
+                        break;
+                    }
                 case Transaction transaction:
-                    Sender.Tell(OnNewTransaction(transaction));
+                    Sender.Tell(OnNewTransaction(transaction, true));
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -416,15 +432,9 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
                     {
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                        {
-                            foreach (NativeContract contract in contracts)
-                                sb.EmitAppCall(contract.Hash, "onPersist");
-                            engine.LoadScript(sb.ToArray());
-                        }
+                        engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
@@ -455,13 +465,11 @@ namespace Neo.Ledger
                         all_application_executed.Add(application_executed);
                     }
                 }
-                snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
-                snapshot.BlockHashIndex.GetAndChange().Index = block.Index;
+                snapshot.BlockHashIndex.GetAndChange().Set(block);
                 if (block.Index == header_index.Count)
                 {
                     header_index.Add(block.Hash);
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
+                    snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
