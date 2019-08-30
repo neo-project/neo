@@ -12,7 +12,7 @@ namespace Neo.UnitTests
     {
         private readonly Dictionary<TKey, TValue> dic = new Dictionary<TKey, TValue>();
 
-        public TestDataCache() {}
+        public TestDataCache() { }
 
         public TestDataCache(TKey key, TValue value)
         {
