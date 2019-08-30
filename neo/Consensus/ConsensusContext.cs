@@ -141,7 +141,7 @@ namespace Neo.Consensus
                 FutureChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
             FutureRecoveryPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < FutureRecoveryPayloads.Length; i++)
-                FutureRecoveryPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;                
+                FutureRecoveryPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
         }
 
         public void Dispose()

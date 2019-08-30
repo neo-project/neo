@@ -188,7 +188,7 @@ namespace Neo.Consensus
 
             // Try to speed up consensus if cached future payloads exists
             // however, if payloads from future heights it is not loaded 
-            if(hasFuturePayload)
+            if (hasFuturePayload)
             {
                 // Try to load all Future payloads
                 foreach (var payload in context.FuturePreparationPayloads)
@@ -290,7 +290,7 @@ namespace Neo.Consensus
         }
 
         private void TryToSaveFuturePayloads(ConsensusPayload payload)
-        {       
+        {
             // Limit the maximum future payload to be saved, 
             // avoiding caching payload when node is lagged behind by more than furtherPayloadToSave locks
             uint furtherPayloadToSave = 10;
