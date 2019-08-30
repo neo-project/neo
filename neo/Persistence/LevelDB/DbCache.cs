@@ -36,7 +36,7 @@ namespace Neo.Persistence.LevelDB
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
         {
-            return db.Find(options, SliceBuilder.Begin(prefix).Add(key_prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.AsSerializable<TKey>(1), v.AsSerializable<TValue>()));
+            return db.Find(options, SliceBuilder.Begin(prefix).Add(key_prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(1), v.ToArray().AsSerializable<TValue>()));
         }
 
         protected override TValue GetInternal(TKey key)
