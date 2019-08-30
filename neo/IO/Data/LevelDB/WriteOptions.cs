@@ -5,7 +5,7 @@ namespace Neo.IO.Data.LevelDB
     public class WriteOptions
     {
         public static readonly WriteOptions Default = new WriteOptions();
-        public static readonly WriteOptions DefaultSync = new WriteOptions() { Sync = true };
+        public static readonly WriteOptions SyncWrite = new WriteOptions() { Sync = true };
 
         internal readonly IntPtr handle = Native.leveldb_writeoptions_create();
 

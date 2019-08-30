@@ -89,7 +89,7 @@ namespace Neo.Persistence.LevelDB
 
         public override void PutSync(byte[] key, byte[] value)
         {
-            db.Put(WriteOptions.DefaultSync, key, value);
+            db.Put(WriteOptions.SyncWrite, key, value);
         }
     }
 }
