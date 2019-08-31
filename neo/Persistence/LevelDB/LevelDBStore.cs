@@ -1,5 +1,4 @@
 using Neo.IO.Caching;
-using Neo.IO.Data;
 using Neo.IO.Data.LevelDB;
 using Neo.IO.Wrappers;
 using Neo.Ledger;

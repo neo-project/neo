@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.IO.Caching;
-using Neo.IO.Data;
 using Neo.IO.Data.LevelDB;
 using System;
 using System.Collections.Generic;
