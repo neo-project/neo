@@ -31,8 +31,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00033" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
-    <PackageReference Include="RocksDbNative" Version="5.4.6.10" />
-    <PackageReference Include="RocksDbSharp" Version="5.4.6.11" />
+    <PackageReference Include="RocksDbNative" Version="6.2.2" />
+    <PackageReference Include="RocksDbSharp" Version="6.2.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
