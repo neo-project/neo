@@ -54,6 +54,8 @@ namespace Neo.SmartContract
         public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 0_00010000, TriggerType.Application);
         public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400, TriggerType.Application);
         public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 0_00000400, TriggerType.All);
+        public static readonly uint System_Transaction_GetSender = Register("System.Transaction.GetSender", Transaction_GetSender, /*TODO PRICE*/0_00000400, TriggerType.All);
+        public static readonly uint System_Transaction_GetNonce = Register("System.Transaction.GetNonce", Transaction_GetNonce, /*TODO PRICE*/0_00000400, TriggerType.All);
         public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
@@ -471,6 +473,30 @@ namespace Neo.SmartContract
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Hash.ToArray());
+                return true;
+            }
+            return false;
+        }
+
+        private static bool Transaction_GetSender(ApplicationEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(tx.Sender.ToArray());
+                return true;
+            }
+            return false;
+        }
+
+        private static bool Transaction_GetNonce(ApplicationEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(tx.Nonce);
                 return true;
             }
             return false;
