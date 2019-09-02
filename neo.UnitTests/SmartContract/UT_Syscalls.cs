@@ -1,7 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
+using Neo.VM.Types;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
@@ -9,6 +11,221 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_Syscalls
     {
+        [TestMethod]
+        public void Neo_Transaction_GetScript()
+        {
+            var snapshot = TestBlockchain.GetStore().GetSnapshot();
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.Neo_Transaction_GetScript);
+
+            // With tx
+
+            var tx = new Transaction() { Script = new byte[] { 0x01 } };
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(tx));
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            CollectionAssert.AreEqual(engine.ResultStack.Pop().GetByteArray(), tx.Script);
+
+            // Without push
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // Without tx
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(new object()));
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+        }
+
+        [TestMethod]
+        public void Neo_Transaction_GetHash()
+        {
+            var snapshot = TestBlockchain.GetStore().GetSnapshot();
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.System_Transaction_GetHash);
+
+            // With tx
+
+            var tx = new Transaction()
+            {
+                Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+                Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
+                Script = new byte[0],
+                Witnesses = new Witness[0],
+            };
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(tx));
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            CollectionAssert.AreEqual(engine.ResultStack.Pop().GetByteArray(), tx.Hash.ToArray());
+
+            // Without push
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // Without tx
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(new object()));
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+        }
+
+        [TestMethod]
+        public void Neo_Transaction_GetWitnesses()
+        {
+            var snapshot = TestBlockchain.GetStore().GetSnapshot();
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.Neo_Transaction_GetWitnesses);
+
+            // With tx
+
+            var tx = new Transaction()
+            {
+                Witnesses = new Witness[]
+                {
+                     new Witness()
+                     {
+                         InvocationScript = new byte[] { 0x01 },
+                         VerificationScript = new byte[] { 0x02 }
+                     }
+                }
+            };
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(tx));
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            var item = (Array)engine.ResultStack.Pop();
+            CollectionAssert.AreEqual((item[0] as InteropInterface)
+                .GetInterface<WitnessWrapper>().VerificationScript, tx.Witnesses[0].VerificationScript.ToArray());
+
+            // More than expected
+
+            tx.Witnesses = new Witness[engine.MaxArraySize + 1];
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(tx));
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // Without push
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // Without tx
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(new object()));
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+        }
+
+        [TestMethod]
+        public void Neo_Transaction_GetNonce()
+        {
+            var snapshot = TestBlockchain.GetStore().GetSnapshot();
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.System_Transaction_GetNonce);
+
+            // With tx
+
+            var tx = new Transaction() { Nonce = 0x505152 };
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(tx));
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(engine.ResultStack.Pop().GetBigInteger(), tx.Nonce);
+
+            // Without push
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // Without tx
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(new object()));
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+        }
+
+        [TestMethod]
+        public void Neo_Transaction_GetSender()
+        {
+            var snapshot = TestBlockchain.GetStore().GetSnapshot();
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.System_Transaction_GetSender);
+
+            // With tx
+
+            var tx = new Transaction() { Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF") };
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(tx));
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            CollectionAssert.AreEqual(engine.ResultStack.Pop().GetByteArray(), tx.Sender.ToArray());
+
+            // Without push
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // Without tx
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(new object()));
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+        }
+
         [TestMethod]
         public void System_Runtime_GetInvocationCounter()
         {
