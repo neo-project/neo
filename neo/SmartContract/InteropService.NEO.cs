@@ -195,28 +195,16 @@ namespace Neo.SmartContract
 
         private static bool Transaction_GetScript(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(tx.Script);
-                return true;
-            }
-            return false;
+            return Transaction_Get(engine, (tx) => new ByteArray(tx.Script));
         }
 
         private static bool Transaction_GetWitnesses(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            return Transaction_Get(engine, (tx) =>
             {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                if (tx.Witnesses.Length > engine.MaxArraySize)
-                    return false;
-                engine.CurrentContext.EvaluationStack.Push(WitnessWrapper.Create(tx, engine.Snapshot).Select(p => StackItem.FromInterface(p)).ToArray());
-                return true;
-            }
-            return false;
+                if (tx.Witnesses.Length > engine.MaxArraySize) return null;
+                return WitnessWrapper.Create(tx, engine.Snapshot).Select(p => StackItem.FromInterface(p)).ToArray();
+            });
         }
 
         private static bool Witness_GetVerificationScript(ApplicationEngine engine)

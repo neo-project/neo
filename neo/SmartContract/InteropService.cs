@@ -474,40 +474,33 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private static bool Transaction_GetHash(ApplicationEngine engine)
+        private static bool Transaction_Get(ApplicationEngine engine, Func<Transaction, StackItem> input)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(tx.Hash.ToArray());
+                var item = input(tx);
+                if (item == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(item);
                 return true;
             }
             return false;
+        }
+
+        private static bool Transaction_GetHash(ApplicationEngine engine)
+        {
+            return Transaction_Get(engine, (tx) => new ByteArray(tx.Hash.ToArray()));
         }
 
         private static bool Transaction_GetSender(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(tx.Sender.ToArray());
-                return true;
-            }
-            return false;
+            return Transaction_Get(engine, (tx) => new ByteArray(tx.Sender.ToArray()));
         }
 
         private static bool Transaction_GetNonce(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(tx.Nonce);
-                return true;
-            }
-            return false;
+            return Transaction_Get(engine, (tx) => new Integer(tx.Nonce));
         }
 
         private static bool Storage_GetContext(ApplicationEngine engine)
