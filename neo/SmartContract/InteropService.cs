@@ -113,7 +113,7 @@ namespace Neo.SmartContract
         {
             if (engine.ScriptContainer is Transaction tx)
             {
-                engine.CurrentContext.EvaluationStack.Push(TransactionToStackItem(tx));
+                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
             }
             else
             {
@@ -359,7 +359,7 @@ namespace Neo.SmartContract
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
             if (tx == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(TransactionToStackItem(tx));
+            engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
             return true;
         }
 
@@ -442,25 +442,6 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private static StackItem TransactionToStackItem(Transaction tx)
-        {
-            return new VM.Types.Array
-            (
-                new StackItem[]
-                {
-                    new ByteArray(tx.Hash.ToArray()),
-                    new ByteArray(tx.Sender.ToArray()),
-                    new ByteArray(tx.Script),
-                    new VM.Types.Array(tx.Witnesses.Select(u=>new ByteArray(u.VerificationScript))),
-                    new Integer(tx.Nonce),
-                    new Integer(tx.NetworkFee),
-                    new Integer(tx.SystemFee),
-                    new Integer(tx.ValidUntilBlock),
-                    new Integer(tx.Version)
-                }
-            );
-        }
-
         private static bool Block_GetTransactions(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -469,7 +450,7 @@ namespace Neo.SmartContract
                 if (block == null) return false;
                 if (block.Transactions.Length > engine.MaxArraySize)
                     return false;
-                engine.CurrentContext.EvaluationStack.Push(new VM.Types.Array(block.Transactions.Select(p => TransactionToStackItem(p))));
+                engine.CurrentContext.EvaluationStack.Push(new VM.Types.Array(block.Transactions.Select(tx => tx.ToStackItem())));
                 return true;
             }
             return false;
@@ -484,7 +465,7 @@ namespace Neo.SmartContract
                 if (block == null) return false;
                 if (index < 0 || index >= block.Transactions.Length) return false;
                 Transaction tx = block.Transactions[index];
-                engine.CurrentContext.EvaluationStack.Push(TransactionToStackItem(tx));
+                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
                 return true;
             }
             return false;
