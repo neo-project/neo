@@ -111,9 +111,9 @@ namespace Neo.SmartContract
 
         private static bool ExecutionEngine_GetScriptContainer(ApplicationEngine engine)
         {
-            if (engine.ScriptContainer is Transaction tx)
+            if (engine.ScriptContainer is IInteroperable value)
             {
-                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
+                engine.CurrentContext.EvaluationStack.Push(value.ToStackItem());
             }
             else
             {

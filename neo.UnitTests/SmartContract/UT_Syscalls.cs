@@ -51,8 +51,10 @@ namespace Neo.UnitTests.SmartContract
                 engine.CurrentContext.EvaluationStack.Push(InteropInterface.FromInterface(tx));
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(2, engine.ResultStack.Count);
                 Assert.AreEqual(engine.ResultStack.Pop().GetString(),
                     @"[""\uFFFDD\uFFFDa\uFFFDs,\uFFFD\uFFFDf\u0007]\u0000\uFFFD\u0622\uFFFDT\uFFFD7\u00133\u0018\u0003e\uFFFD\uFFFD\u0027Z\uFFFD\/\uFFFD"",""\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"",""\u0001"",[""\u0007""],4,2,3,5,6]");
+                Assert.AreEqual(1, engine.ResultStack.Count);
             }
         }
 
