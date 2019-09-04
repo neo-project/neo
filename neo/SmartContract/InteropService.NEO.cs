@@ -23,8 +23,6 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400, TriggerType.Application);
         public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400, TriggerType.Application);
         public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400, TriggerType.All);
-        public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 0_00010000, TriggerType.All);
         public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
@@ -191,20 +189,6 @@ namespace Neo.SmartContract
                 return true;
             }
             return false;
-        }
-
-        private static bool Transaction_GetScript(ApplicationEngine engine)
-        {
-            return Transaction_Get(engine, (tx) => new ByteArray(tx.Script));
-        }
-
-        private static bool Transaction_GetWitnesses(ApplicationEngine engine)
-        {
-            return Transaction_Get(engine, (tx) =>
-            {
-                if (tx.Witnesses.Length > engine.MaxArraySize) return null;
-                return WitnessWrapper.Create(tx, engine.Snapshot).Select(p => StackItem.FromInterface(p)).ToArray();
-            });
         }
 
         private static bool Witness_GetVerificationScript(ApplicationEngine engine)

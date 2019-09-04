@@ -53,9 +53,6 @@ namespace Neo.SmartContract
         public static readonly uint System_Block_GetTransactionCount = Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 0_00000400, TriggerType.Application);
         public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 0_00010000, TriggerType.Application);
         public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400, TriggerType.Application);
-        public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 0_00000400, TriggerType.All);
-        public static readonly uint System_Transaction_GetSender = Register("System.Transaction.GetSender", Transaction_GetSender, /*TODO PRICE*/0_00000400, TriggerType.All);
-        public static readonly uint System_Transaction_GetNonce = Register("System.Transaction.GetNonce", Transaction_GetNonce, /*TODO PRICE*/0_00000400, TriggerType.All);
         public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
@@ -114,7 +111,14 @@ namespace Neo.SmartContract
 
         private static bool ExecutionEngine_GetScriptContainer(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(engine.ScriptContainer));
+            if (engine.ScriptContainer is Transaction tx)
+            {
+                engine.CurrentContext.EvaluationStack.Push(TransactionToStackItem(tx));
+            }
+            else
+            {
+                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(engine.ScriptContainer));
+            }
             return true;
         }
 
@@ -445,6 +449,25 @@ namespace Neo.SmartContract
             return false;
         }
 
+        private static StackItem TransactionToStackItem(Transaction tx)
+        {
+            return new VM.Types.Array
+            (
+                new StackItem[]
+                {
+                    new ByteArray(tx.Hash.ToArray()),
+                    new ByteArray(tx.Sender.ToArray()),
+                    new ByteArray(tx.Script),
+                    new VM.Types.Array(tx.Witnesses.Select(u=>new ByteArray(u.VerificationScript))),
+                    new Integer(tx.Nonce),
+                    new Integer(tx.NetworkFee),
+                    new Integer(tx.SystemFee),
+                    new Integer(tx.ValidUntilBlock),
+                    new Integer(tx.Version)
+                }
+            );
+        }
+
         private static bool Block_GetTransactions(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -453,7 +476,7 @@ namespace Neo.SmartContract
                 if (block == null) return false;
                 if (block.Transactions.Length > engine.MaxArraySize)
                     return false;
-                engine.CurrentContext.EvaluationStack.Push(block.Transactions.Select(p => StackItem.FromInterface(p)).ToArray());
+                engine.CurrentContext.EvaluationStack.Push(new VM.Types.Array(block.Transactions.Select(p => TransactionToStackItem(p))));
                 return true;
             }
             return false;
@@ -468,39 +491,10 @@ namespace Neo.SmartContract
                 if (block == null) return false;
                 if (index < 0 || index >= block.Transactions.Length) return false;
                 Transaction tx = block.Transactions[index];
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
+                engine.CurrentContext.EvaluationStack.Push(TransactionToStackItem(tx));
                 return true;
             }
             return false;
-        }
-
-        private static bool Transaction_Get(ApplicationEngine engine, Func<Transaction, StackItem> input)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                var item = input(tx);
-                if (item == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(item);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Transaction_GetHash(ApplicationEngine engine)
-        {
-            return Transaction_Get(engine, (tx) => new ByteArray(tx.Hash.ToArray()));
-        }
-
-        private static bool Transaction_GetSender(ApplicationEngine engine)
-        {
-            return Transaction_Get(engine, (tx) => new ByteArray(tx.Sender.ToArray()));
-        }
-
-        private static bool Transaction_GetNonce(ApplicationEngine engine)
-        {
-            return Transaction_Get(engine, (tx) => new Integer(tx.Nonce));
         }
 
         private static bool Storage_GetContext(ApplicationEngine engine)
