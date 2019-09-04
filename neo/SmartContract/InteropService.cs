@@ -357,16 +357,9 @@ namespace Neo.SmartContract
         private static bool Blockchain_GetTransaction(ApplicationEngine engine)
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if (hash.Length == 0)
-            {
-                if (!(engine.ScriptContainer is Transaction tx)) return false;
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
-            }
-            else
-            {
-                Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
-            }
+            Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
+            if (tx == null) return false;
+            engine.CurrentContext.EvaluationStack.Push(TransactionToStackItem(tx));
             return true;
         }
 
