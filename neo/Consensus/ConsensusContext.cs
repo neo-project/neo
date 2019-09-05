@@ -340,8 +340,7 @@ namespace Neo.Consensus
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,
-                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot).ToArray()),
-                    ConsensusData = new ConsensusData()
+                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot).ToArray())
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
@@ -390,7 +389,10 @@ namespace Neo.Consensus
                         LastChangeViewPayloads[i] = null;
             }
             ViewNumber = viewNumber;
-            Block.ConsensusData.PrimaryIndex = GetPrimaryIndex(viewNumber);
+            Block.ConsensusData = new ConsensusData
+            {
+                PrimaryIndex = GetPrimaryIndex(viewNumber)
+            };
             Block.MerkleRoot = null;
             Block.Timestamp = 0;
             Block.Transactions = null;
