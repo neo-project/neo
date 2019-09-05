@@ -64,15 +64,15 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetStore().GetSnapshot();
             var contracts = (TestDataCache<UInt160, ContractState>)snapshot.Contracts;
 
-            // Call System.Runtime.GetInvocationCounter syscall
+            // Create dummy contracts
 
             using (var script = new ScriptBuilder())
             {
+                script.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
+
                 contractA = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() };
                 contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
                 contractC = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
-
-                script.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
 
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments
