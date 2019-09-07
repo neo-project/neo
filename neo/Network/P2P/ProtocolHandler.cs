@@ -182,8 +182,8 @@ namespace Neo.Network.P2P
             {
                 case InventoryType.TX:
                     {
-                        foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes, hash => Blockchain.Singleton.GetTransaction(hash)
-                        ))
+                        foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes,
+                            hash => Blockchain.Singleton.GetTransaction(hash)))
                         {
                             system.LocalNode.Tell(message);
                         }
@@ -193,7 +193,8 @@ namespace Neo.Network.P2P
                     {
                         if (bloom_filter == null)
                         {
-                            foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes, hash => Blockchain.Singleton.GetBlock(hash)))
+                            foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes,
+                                hash => Blockchain.Singleton.GetBlock(hash)))
                             {
                                 system.LocalNode.Tell(message);
                             }
