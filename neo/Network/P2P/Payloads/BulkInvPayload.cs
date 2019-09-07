@@ -73,18 +73,9 @@ namespace Neo.Network.P2P.Payloads
 
                 switch (type)
                 {
-                    case InventoryType.TX:
-                        {
-                            return Message.Create(MessageCommand.Transaction, data[0]);
-                        }
-                    case InventoryType.Block:
-                        {
-                            return Message.Create(MessageCommand.Block, data[0]);
-                        }
-                    case InventoryType.Consensus:
-                        {
-                            return Message.Create(MessageCommand.Consensus, data[0]);
-                        }
+                    case InventoryType.TX: return Message.Create(MessageCommand.Transaction, data[0]);
+                    case InventoryType.Block: return Message.Create(MessageCommand.Block, data[0]);
+                    case InventoryType.Consensus: return Message.Create(MessageCommand.Consensus, data[0]);
                     default: throw new FormatException($"Unexpected inventory type {type}");
                 }
             }
