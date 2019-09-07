@@ -8,15 +8,15 @@ namespace Neo.Network.P2P.Payloads
 {
     public class BulkInvPayload : ISerializable
     {
-        public const int MaxHashesCount = 500;
+        public const int MaxEntriesCount = 500;
         public const int MaxSize = 1024 * 1024; // 1Mb packet
 
         public InventoryType Type;
         public IInventory[] Values;
 
         public int Size =>
-            sizeof(InventoryType) +
-            Values.GetVarSize();
+            sizeof(InventoryType) + // Type
+            Values.GetVarSize();    // Values
 
         /// <summary>
         /// Create group of payloads
@@ -36,7 +36,7 @@ namespace Neo.Network.P2P.Payloads
                 if (value == null) continue;
 
                 var currentSize = value.Size;
-                if (size + currentSize > MaxSize || pack.Count > MaxHashesCount)
+                if (size + currentSize > MaxSize || pack.Count > MaxEntriesCount)
                 {
                     // Iterate this bulk payload
                     yield return Create(type, pack);
