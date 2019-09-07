@@ -185,7 +185,7 @@ namespace Neo.Network.P2P
                         foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes,
                             hash => Blockchain.Singleton.GetTransaction(hash)))
                         {
-                            system.LocalNode.Tell(message);
+                            Context.Parent.Tell(message);
                         }
                         break;
                     }
@@ -196,7 +196,7 @@ namespace Neo.Network.P2P
                             foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes,
                                 hash => Blockchain.Singleton.GetBlock(hash)))
                             {
-                                system.LocalNode.Tell(message);
+                                Context.Parent.Tell(message);
                             }
                         }
                         else
@@ -222,7 +222,7 @@ namespace Neo.Network.P2P
                             return null;
                         }))
                         {
-                            system.LocalNode.Tell(message);
+                            Context.Parent.Tell(message);
                         }
                         break;
                     }
