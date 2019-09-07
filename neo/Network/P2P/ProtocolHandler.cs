@@ -178,35 +178,53 @@ namespace Neo.Network.P2P
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
-            foreach (UInt256 hash in hashes)
+            switch (payload.Type)
             {
-                switch (payload.Type)
-                {
-                    case InventoryType.TX:
-                        Transaction tx = Blockchain.Singleton.GetTransaction(hash);
-                        if (tx != null)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, tx));
-                        break;
-                    case InventoryType.Block:
-                        Block block = Blockchain.Singleton.GetBlock(hash);
-                        if (block != null)
+                case InventoryType.TX:
+                    {
+                        foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes, hash => Blockchain.Singleton.GetTransaction(hash)
+                        ))
                         {
-                            if (bloom_filter == null)
+                            system.LocalNode.Tell(message);
+                        }
+                        break;
+                    }
+                case InventoryType.Block:
+                    {
+                        if (bloom_filter == null)
+                        {
+                            foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes, hash => Blockchain.Singleton.GetBlock(hash)))
                             {
-                                Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
+                                system.LocalNode.Tell(message);
                             }
-                            else
+                        }
+                        else
+                        {
+                            foreach (var hash in payload.Hashes)
                             {
-                                BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                                Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                                Block block = Blockchain.Singleton.GetBlock(hash);
+                                if (block != null)
+                                {
+                                    BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
+                                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                                }
                             }
                         }
                         break;
-                    case InventoryType.Consensus:
-                        if (Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus))
-                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventoryConsensus));
+                    }
+                case InventoryType.Consensus:
+                    {
+                        foreach (var message in BulkInvPayload.CreateGroup(payload.Type, payload.Hashes, hash =>
+                        {
+                            if (Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus))
+                                return inventoryConsensus;
+                            return null;
+                        }))
+                        {
+                            system.LocalNode.Tell(message);
+                        }
                         break;
-                }
+                    }
             }
         }
 

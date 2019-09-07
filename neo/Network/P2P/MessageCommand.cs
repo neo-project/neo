@@ -17,6 +17,7 @@ namespace Neo.Network.P2P
         Headers = 0x21,
         GetBlocks = 0x24,
         Mempool = 0x25,
+        BulkInv = 0x26,
         Inv = 0x27,
         GetData = 0x28,
         NotFound = 0x2a,
