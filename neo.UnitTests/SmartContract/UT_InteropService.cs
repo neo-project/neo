@@ -842,7 +842,7 @@ namespace Neo.UnitTests.SmartContract
                 Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
                 IsConstant = false
             };
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash,state));
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
             mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
             engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
             engine.LoadScript(new byte[] { 0x01 });
