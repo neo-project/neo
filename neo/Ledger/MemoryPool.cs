@@ -360,9 +360,14 @@ namespace Neo.Ledger
 
                 if (policyChanged)
                 {
+                    var tx = new List<Transaction>();
                     foreach (PoolItem item in _unverifiedSortedTransactions.Reverse())
                         if (item.Tx.FeePerByte >= _feePerByte)
-                            _system.Blockchain.Tell(item.Tx, ActorRefs.NoSender);
+                            tx.Add(item.Tx);
+
+                    if (tx.Count > 0)
+                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
+
                     _unverifiedTransactions.Clear();
                     _unverifiedSortedTransactions.Clear();
                 }
