@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
@@ -20,7 +20,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestTotalSupply()
         {
             var mockSnapshot = new Mock<Snapshot>();
-            var myDataCache = new MyDataCache<StorageKey, StorageItem>();
+            var myDataCache = new TestDataCache<StorageKey, StorageItem>();
             StorageItem item = new StorageItem
             {
                 Value = new byte[] { 0x01 }

@@ -19,12 +19,6 @@ namespace Neo.UnitTests
             dic.Add(key, value);
         }
 
-        public TestDataCache(TKey key, TValue value)
-        {
-            this._defaultValue = value;
-            this._defaultKey = key;
-        }
-
         public override void DeleteInternal(TKey key)
         {
             dic.Remove(key);

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
@@ -229,10 +229,10 @@ namespace Neo.UnitTests.SmartContract
 
             var mockSnapshot = new Mock<Snapshot>();
             var state = TestUtils.GetContract();
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state));
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash,state));
             engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
             engine.LoadScript(new byte[] { 0x01 });
-            engine.CurrentContext.EvaluationStack.Push(hash);
+            engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
             InteropService.Invoke(engine, InteropService.Neo_Account_IsStandard).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
         }
@@ -263,11 +263,11 @@ namespace Neo.UnitTests.SmartContract
 
             var mockSnapshot = new Mock<Snapshot>();
             var state = TestUtils.GetContract();
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state));
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
             engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
             engine.LoadScript(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
-            engine.CurrentContext.EvaluationStack.Push(script);
+            engine.CurrentContext.EvaluationStack.Push(state.Script);
             InteropService.Invoke(engine, InteropService.Neo_Contract_Create).Should().BeFalse();
         }
 
@@ -318,8 +318,8 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = state.ScriptHash,
                 Key = new byte[] { 0x01 }
             };
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new DicDataCache<UInt160, ContractState>(state.ScriptHash, state));
-            mockSnapshot.SetupGet(p => p.Storages).Returns(new DicDataCache<StorageKey, StorageItem>(storageKey, storageItem));
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
+            mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
             engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
             engine.LoadScript(state.Script);
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
@@ -378,8 +378,8 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = state.ScriptHash,
                 Key = new byte[] { 0x01 }
             };
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new DicDataCache<UInt160, ContractState>(state.ScriptHash, state));
-            mockSnapshot.SetupGet(p => p.Storages).Returns(new DicDataCache<StorageKey, StorageItem>(storageKey, storageItem));
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
+            mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
             var engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
             engine.LoadScript(new byte[] { 0x01 });
 

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.IO;
@@ -114,7 +114,7 @@ namespace Neo.UnitTests.SmartContract
             var mockSnapshot = new Mock<Snapshot>();
             UInt256 currentBlockHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000");
             TrimmedBlock block = new TrimmedBlock();
-            var cache = new MyDataCache<UInt256, TrimmedBlock>();
+            var cache = new TestDataCache<UInt256, TrimmedBlock>();
             cache.Add(currentBlockHash, block);
             mockSnapshot.SetupGet(p => p.Blocks).Returns(cache);
             TestMetaDataCache<HashIndexState> testCache = new TestMetaDataCache<HashIndexState>();
