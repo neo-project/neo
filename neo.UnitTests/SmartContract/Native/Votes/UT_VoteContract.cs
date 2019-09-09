@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
                 {
                 new ContractParameter(ContractParameterType.ByteArray){ Value = ret},
                 new ContractParameter(ContractParameterType.Hash160){ Value = UInt160.Zero},
-                new ContractParameter(ContractParameterType.ByteArray){ Value = memoryStream.ToArray()}    
+                new ContractParameter(ContractParameterType.ByteArray){ Value = memoryStream.ToArray()}
                 };
 
                 var vote = NativeContract.Vote.Call(snapshot, TestTx, "singleVote", voteParameters).GetBoolean();
@@ -174,7 +174,7 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
                     Assert.Fail();
                 }
 
-            }              
+            }
         }
 
         [TestMethod]
@@ -206,7 +206,7 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
             {
                 new ContractParameter(ContractParameterType.Hash256){ Value = new UInt256(ret)},
                 new ContractParameter(ContractParameterType.ByteArray) { Value = voterLists},
-                new ContractParameter(ContractParameterType.Boolean) { Value = isAdd}                
+                new ContractParameter(ContractParameterType.Boolean) { Value = isAdd}
             };
             try
             {

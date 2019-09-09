@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestCalculateVote()
         {
             List<CalculatedMultiVote> voteList = new List<CalculatedMultiVote>();
-            voteList.Add(new CalculatedMultiVote(5,new List<int>()  { 0, 2, 1, 4, 3 }));
+            voteList.Add(new CalculatedMultiVote(5, new List<int>() { 0, 2, 1, 4, 3 }));
             voteList.Add(new CalculatedMultiVote(5, new List<int>() { 0, 3, 4, 2, 1 }));
             voteList.Add(new CalculatedMultiVote(8, new List<int>() { 1, 4, 3, 0, 2 }));
             voteList.Add(new CalculatedMultiVote(3, new List<int>() { 2, 0, 1, 4, 3 }));
@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 { 25  , 28  , 28  , -1  ,24 },
                 { 25  , 28  , 28  , 31  , -1}
             };
-            Assert.AreEqual(String.Join(",",expectedArray), String.Join(",", pArray));
+            Assert.AreEqual(String.Join(",", expectedArray), String.Join(",", pArray));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
@@ -15,14 +15,14 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestCalculateVote()
         {
             List<CalculatedSingleVote> votes = new List<CalculatedSingleVote>();
-            votes.Add(new CalculatedSingleVote(2,1));
+            votes.Add(new CalculatedSingleVote(2, 1));
             votes.Add(new CalculatedSingleVote(2, 2));
             votes.Add(new CalculatedSingleVote(1, 2));
             votes.Add(new CalculatedSingleVote(2, 1));
             votes.Add(new CalculatedSingleVote(5, 3));
             SingleModel singleModel = new SingleModel();
-            int[] result=singleModel.CalculateVote(votes);
-            Assert.AreEqual("3,1,2", String.Join(",",result));
+            int[] result = singleModel.CalculateVote(votes);
+            Assert.AreEqual("3,1,2", String.Join(",", result));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Neo.SmartContract.Native.Votes.Interface;
 
@@ -8,7 +8,8 @@ namespace Neo.SmartContract.Native.Votes.Model
     {
         public int[,] CalculateVote(List<CalculatedMultiVote> voteList)
         {
-            if (voteList == null || voteList.Count == 0) {
+            if (voteList == null || voteList.Count == 0)
+            {
                 throw new FormatException();
             }
             int[,] dArray = new int[voteList[0].vote.Count, voteList[0].vote.Count];
@@ -28,7 +29,8 @@ namespace Neo.SmartContract.Native.Votes.Model
             }
             Dictionary<String, int> vGraphic = ConvertDArrayToVGraphic(dArray);
             List<String> nodesList = new List<String>();
-            for (int i = 0; i < voteList[0].vote.Count; i++) {
+            for (int i = 0; i < voteList[0].vote.Count; i++)
+            {
                 nodesList.Add(i.ToString());
             }
             FindAllPathMethod fMethod = new FindAllPathMethod(nodesList, vGraphic);
@@ -106,7 +108,7 @@ namespace Neo.SmartContract.Native.Votes.Model
                 {
                     if (pathWeights[pathName] < pathWeight)
                     {
-                        pathWeights[pathName]=pathWeight;
+                        pathWeights[pathName] = pathWeight;
                     }
                 }
                 else

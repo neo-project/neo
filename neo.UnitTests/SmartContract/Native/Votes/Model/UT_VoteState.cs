@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -31,23 +31,20 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
         [TestMethod]
         public void Check_VoteState()
         {
-            byte[] temp;                     
+            byte[] temp;
             using (MemoryStream memoryStream = new MemoryStream())
             using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
             {
                 voteState.Serialize(binaryWriter);
                 temp = memoryStream.ToArray();
             }
-
             using (MemoryStream memoryStream = new MemoryStream(temp, false))
             using (BinaryReader binaryReader = new BinaryReader(memoryStream))
             {
                 VoteState newState = new VoteState();
                 newState.Deserialize(binaryReader);
-                newState.GetCandidate().Should().BeOfType<SingleCandidate>();                               
+                newState.GetCandidate().Should().BeOfType<SingleCandidate>();
             }
-
-
             voteState = new VoteState(UInt160.Zero, multiCandidate);
             using (MemoryStream memoryStream = new MemoryStream())
             using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))

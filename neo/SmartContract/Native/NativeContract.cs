@@ -22,7 +22,6 @@ namespace Neo.SmartContract.Native
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
-
         public static VoteContract Vote { get; } = new VoteContract();
 
         public abstract string ServiceName { get; }

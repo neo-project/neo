@@ -1,4 +1,4 @@
-﻿#pragma warning disable IDE0051
+#pragma warning disable IDE0051
 #pragma warning disable IDE0060
 
 using Neo.Cryptography;
@@ -263,7 +263,6 @@ namespace Neo.SmartContract.Native
             List<UInt160> voterList = new List<UInt160>();
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
-                
                 VoteState vote_state = new VoteState();
                 using (MemoryStream memoryStream = new MemoryStream(pair.Value.Value, false))
                 using (BinaryReader binaryReader = new BinaryReader(memoryStream))

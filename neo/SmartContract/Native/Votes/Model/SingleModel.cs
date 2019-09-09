@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Neo.SmartContract.Native.Votes.Interface;
@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Native.Votes.Model
                     tempSet.Add(unit.vote, unit.balance);
                 }
             }
-           int[] result = tempSet.OrderByDescending(p => p.Value).Select(p => p.Key).ToList().ToArray();
+            int[] result = tempSet.OrderByDescending(p => p.Value).Select(p => p.Key).ToList().ToArray();
             return result;
         }
     }

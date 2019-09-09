@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Neo.Cryptography;
@@ -10,11 +10,11 @@ namespace Neo.SmartContract.Native.Votes.Model
     {
         private UInt256 TransactionHash;
         private UInt160 CallingScriptHash;
-        public  UInt160 Originator;
-        public  string Title;
-        public  string Description;
-        public  UInt32 CandidateNumber;
-        public  bool IsSequence;
+        public UInt160 Originator;
+        public string Title;
+        public string Description;
+        public UInt32 CandidateNumber;
+        public bool IsSequence;
         public int Size => GetSize();
 
         internal int GetSize()
