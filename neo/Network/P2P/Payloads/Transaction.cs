@@ -175,8 +175,8 @@ namespace Neo.Network.P2P.Payloads
             json["version"] = Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
-            json["sys_fee"] = new BigDecimal(SystemFee, NativeContract.GAS.Decimals).ToString();
-            json["net_fee"] = new BigDecimal(NetworkFee, NativeContract.GAS.Decimals).ToString();
+            json["sys_fee"] = SystemFee.ToString();
+            json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
