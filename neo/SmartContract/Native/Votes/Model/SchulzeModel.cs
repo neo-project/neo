@@ -124,29 +124,6 @@ namespace Neo.SmartContract.Native.Votes.Model
             }
             return pArray;
         }
-
-        /// <summary>
-        /// Print PArray
-        /// </summary>
-        /// <param name="pArray">PArray</param>
-        public void PrintPArray(int[,] pArray)
-        {
-            Console.WriteLine("pArray:行代表from,列代表to");
-            Console.Write("From/to ");
-            for (int i = 0; i < pArray.GetLength(0); i++) {
-                Console.Write(i + "   ");
-            }
-            Console.Write("\n");
-            for (int i = 0; i < pArray.GetLength(0); i++)
-            {
-                Console.Write(i + "      ");
-                for (int j = 0; j < pArray.GetLength(1); j++)
-                {
-                    Console.Write(pArray[i,j] > 0 ? pArray[i,j] + "   " : pArray[i,j] + "  ");
-                }
-                Console.Write("\n");
-            }
-        }
     }
 
     public class SchulzeVoteUnit
