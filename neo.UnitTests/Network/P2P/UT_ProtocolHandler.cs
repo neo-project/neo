@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P
 {
-    [TestClass]
+    [TestClass, NotReRunnable]
     public class UT_ProtocolHandler : TestKit
     {
         private Store testStore;
