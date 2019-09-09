@@ -1,4 +1,5 @@
 using Neo.IO.Json;
+using System;
 using System.Linq;
 
 namespace Neo.SmartContract.Manifest
@@ -52,6 +53,22 @@ namespace Neo.SmartContract.Manifest
             json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
             json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
             return json;
+        }
+
+        /// <summary>
+        /// Find a method
+        /// </summary>
+        /// <param name="name">Name</param>
+        /// <returns>ContractMethodDescriptor</returns>
+        public ContractMethodDescriptor FindMethod(string name)
+        {
+            foreach (var method in Methods)
+            {
+                if (method.Name == name) return method;
+            }
+
+            if (EntryPoint.Name == name) return EntryPoint;
+            return null;
         }
     }
 }

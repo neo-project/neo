@@ -53,12 +53,6 @@ namespace Neo.SmartContract.Manifest
         public WildCardContainer<UInt160> Trusts { get; set; }
 
         /// <summary>
-        /// The read only methods field is an array containing a set of method names. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that all methods of the contract are safe.
-        /// If a method is marked as read only, the user interface will not give any warnings when it is called by any other contract.
-        /// </summary>
-        public WildCardContainer<string> ReadOnlyMethods { get; set; }
-
-        /// <summary>
         /// Create Default Contract manifest
         /// </summary>
         /// <param name="hash">Hash</param>
@@ -77,7 +71,6 @@ namespace Neo.SmartContract.Manifest
                 },
                 Features = ContractFeatures.NoProperty,
                 Groups = new ContractGroup[0],
-                ReadOnlyMethods = WildCardContainer<string>.Create(),
                 Trusts = WildCardContainer<UInt160>.Create()
             };
         }
@@ -127,7 +120,6 @@ namespace Neo.SmartContract.Manifest
             json["abi"] = Abi.ToJson();
             json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
             json["trusts"] = Trusts.ToJson();
-            json["readOnlyMethods"] = ReadOnlyMethods.ToJson();
 
             return json;
         }
@@ -161,7 +153,6 @@ namespace Neo.SmartContract.Manifest
             Features = ContractFeatures.NoProperty;
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
-            ReadOnlyMethods = WildCardContainer<string>.FromJson(json["readOnlyMethods"], u => u.AsString());
 
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;

@@ -10,7 +10,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Default()
         {
-            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""readOnlyMethods"":[]}";
+            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any"",""readOnly"":false},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[]}";
             var manifest = ContractManifest.Parse(json);
 
             Assert.AreEqual(manifest.ToString(), json);
@@ -21,7 +21,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Features()
         {
-            var json = @"{""groups"":[],""features"":{""storage"":true,""payable"":true},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""readOnlyMethods"":[]}";
+            var json = @"{""groups"":[],""features"":{""storage"":true,""payable"":true},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any"",""readOnly"":false},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Permissions()
         {
-            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""0x0000000000000000000000000000000000000000"",""methods"":[""method1"",""method2""]}],""trusts"":[],""readOnlyMethods"":[]}";
+            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any"",""readOnly"":false},""methods"":[],""events"":[]},""permissions"":[{""contract"":""0x0000000000000000000000000000000000000000"",""methods"":[""method1"",""method2""]}],""trusts"":[]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToString(), json);
 
@@ -52,19 +52,19 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_ReadOnlyMethods()
         {
-            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""readOnlyMethods"":[""balanceOf""]}";
+            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any"",""readOnly"":true},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToString(), json);
 
             var check = ContractManifest.CreateDefault(UInt160.Zero);
-            check.ReadOnlyMethods = WildCardContainer<string>.Create("balanceOf");
+            check.Abi.EntryPoint.ReadOnly = true;
             Assert.AreEqual(manifest.ToString(), check.ToString());
         }
 
         [TestMethod]
         public void ParseFromJson_Trust()
         {
-            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[""0x0000000000000000000000000000000000000001""],""readOnlyMethods"":[]}";
+            var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any"",""readOnly"":false},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[""0x0000000000000000000000000000000000000001""]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToString(), json);
 
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Groups()
         {
-            var json = @"{""groups"":[{""pubKey"":""03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"",""signature"":""41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""readOnlyMethods"":[]}";
+            var json = @"{""groups"":[{""pubKey"":""03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"",""signature"":""41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any"",""readOnly"":false},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToString(), json);
 

@@ -25,7 +25,8 @@ namespace Neo.SmartContract.Manifest
                         Type = ContractParameterType.Array
                 }
             },
-            ReturnType = ContractParameterType.Any
+            ReturnType = ContractParameterType.Any,
+            ReadOnly = false
         };
 
         /// <summary>
@@ -33,6 +34,11 @@ namespace Neo.SmartContract.Manifest
         ///     Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, InteropInterface, Void.
         /// </summary>
         public ContractParameterType ReturnType { get; set; }
+
+        /// <summary>
+        /// If a method is marked as read only, the user interface will not give any warnings when it is called by any other contract.
+        /// </summary>
+        public bool ReadOnly { get; set; }
 
         /// <summary>
         /// Parse ContractMethodDescription from json
@@ -46,6 +52,7 @@ namespace Neo.SmartContract.Manifest
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
                 ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returnType"].AsString()),
+                ReadOnly = json["readOnly"].AsBoolean(),
             };
         }
 
@@ -53,6 +60,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = base.ToJson();
             json["returnType"] = ReturnType.ToString();
+            json["readOnly"] = ReadOnly;
             return json;
         }
     }
