@@ -14,9 +14,27 @@ namespace Neo.UnitTests.Network.P2P
     public class UT_ProtocolHandler : TestKit
     {
         private NeoSystem testBlockchain;
+        private TestProbe senderProbe;
+        private TestProbe parent;
+        private TestActorRef<ProtocolHandler> protocolActor;
 
-        private void SendVersion(TestProbe sender, TestProbe parent, TestActorRef<ProtocolHandler> protocolActor)
+        [TestCleanup]
+        public void Cleanup()
         {
+            Shutdown();
+        }
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
+
+            senderProbe = CreateTestProbe();
+            parent = CreateTestProbe();
+            protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain), parent);
+
+            // Init protocol sending VersionPayload
+
             var payload = new VersionPayload()
             {
                 UserAgent = "".PadLeft(1024, '0'),
@@ -30,45 +48,16 @@ namespace Neo.UnitTests.Network.P2P
                 }
             };
 
-            sender.Send(protocolActor, Message.Create(MessageCommand.Version, payload));
+            senderProbe.Send(protocolActor, Message.Create(MessageCommand.Version, payload));
             parent.ExpectMsg<VersionPayload>();
 
-            sender.Send(protocolActor, Message.Create(MessageCommand.Verack));
+            senderProbe.Send(protocolActor, Message.Create(MessageCommand.Verack));
             Assert.AreEqual(parent.ExpectMsg<MessageCommand>(), MessageCommand.Verack);
-        }
-
-        [TestCleanup]
-        public void Cleanup()
-        {
-            Shutdown();
-        }
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
-        }
-
-        [TestMethod]
-        public void Test_SendVersion_TellParent()
-        {
-            var senderProbe = CreateTestProbe();
-            var parent = CreateTestProbe();
-            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain), parent);
-
-            SendVersion(senderProbe, parent, protocolActor);
         }
 
         [TestMethod]
         public void Test_OnGetDataMessageReceived()
         {
-            var senderProbe = CreateTestProbe();
-            var parent = CreateTestProbe();
-            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain), parent);
-
-            // Init protocol
-            SendVersion(senderProbe, parent, protocolActor);
-
             var consensus = new ConsensusPayload[2]
             {
                 TestUtils.CreateConsensusPayload(),
