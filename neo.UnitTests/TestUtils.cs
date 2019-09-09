@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Neo.Consensus;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -8,6 +9,7 @@ using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.UnitTests
 {
@@ -51,6 +53,70 @@ namespace Neo.UnitTests
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 } }
+            };
+        }
+
+        private static uint _nonce = 0;
+
+        internal static Block CreateBlock(int txs)
+        {
+            _nonce++;
+
+            var block = new Block()
+            {
+                ConsensusData = new ConsensusData() { Nonce = _nonce, PrimaryIndex = 0 },
+                Index = _nonce,
+                NextConsensus = UInt160.Zero,
+                PrevHash = UInt256.Zero,
+                Timestamp = 0,
+                Transactions = new Transaction[txs],
+                Version = 0,
+                Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
+            };
+
+            for (int x = 0; x < txs; x++) block.Transactions[x] = CreateTransaction();
+
+            block.MerkleRoot = Block.CalculateMerkleRoot(block.ConsensusData.Hash, block.Transactions.Select(u => u.Hash).ToArray());
+            return block;
+        }
+
+        internal static Transaction CreateTransaction(int scriptLength = 1)
+        {
+            _nonce++;
+
+            return new Transaction()
+            {
+                Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
+                NetworkFee = 0,
+                Nonce = _nonce,
+                Script = new byte[scriptLength],
+                Sender = UInt160.Zero,
+                SystemFee = 0,
+                ValidUntilBlock = 0,
+                Version = 0,
+                Witnesses = new Witness[0]
+            };
+        }
+
+        internal static ConsensusPayload CreateConsensusPayload()
+        {
+            _nonce++;
+
+            return new ConsensusPayload()
+            {
+                Data = new byte[0],
+                Version = 0,
+                BlockIndex = _nonce,
+                PrevHash = UInt256.Zero,
+                ValidatorIndex = 0,
+                ConsensusMessage = new ChangeView()
+                {
+                    Reason = ChangeViewReason.BlockRejectedByPolicy,
+                    Timestamp = 0,
+                    ViewNumber = 0,
+                },
+                Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
             };
         }
 
