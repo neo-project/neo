@@ -69,8 +69,11 @@ namespace Neo.UnitTests.Network.P2P
             // Init protocol
             SendVersion(senderProbe, parent, protocolActor);
 
-            var consensus = new ConsensusPayload[2] { TestUtils.CreateConsensusPayload(), TestUtils.CreateConsensusPayload() };
-
+            var consensus = new ConsensusPayload[2]
+            {
+                TestUtils.CreateConsensusPayload(),
+                TestUtils.CreateConsensusPayload()
+            };
             Blockchain.Singleton.ConsensusRelayCache.AddRange(consensus);
 
             senderProbe.Send(protocolActor, Message.Create(MessageCommand.GetData, new InvPayload()
@@ -82,6 +85,9 @@ namespace Neo.UnitTests.Network.P2P
             var msg = parent.ExpectMsg<Message>();
             Assert.AreEqual(MessageCommand.BulkInv, msg.Command);
             Assert.IsInstanceOfType(msg.Payload, typeof(BulkInvPayload));
+
+            // Clean singleton after the use
+            Blockchain.Singleton.ConsensusRelayCache.Clear();
         }
     }
 }
