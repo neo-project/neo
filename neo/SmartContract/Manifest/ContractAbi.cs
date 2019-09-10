@@ -67,8 +67,7 @@ namespace Neo.SmartContract.Manifest
                 if (method.Name == name) return method;
             }
 
-            if (EntryPoint.Name == name) return EntryPoint;
-            return null;
+            return EntryPoint;
         }
     }
 }

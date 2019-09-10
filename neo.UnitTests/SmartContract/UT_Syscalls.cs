@@ -11,6 +11,62 @@ namespace Neo.UnitTests.SmartContract
     public class UT_Syscalls
     {
         [TestMethod]
+        public void System_Storage_GetContext()
+        {
+            var snapshot = TestBlockchain.GetStore().GetSnapshot();
+            var contracts = (TestDataCache<UInt160, ContractState>)snapshot.Contracts;
+
+            // Call System_Storage_GetContext syscall
+
+            var script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.System_Storage_GetContext);
+
+            var contract = new ContractState() { Script = script.ToArray() };
+            contract.Manifest = ContractManifest.CreateDefault(contract.ScriptHash);
+
+            contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contract.ScriptHash.ToArray()));
+            contracts.Add(contract.ScriptHash, contract);
+
+            // Call Contract
+
+            script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.System_Contract_Call, contract.ScriptHash.ToArray(), "", 0);
+
+            // Execute
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+
+            // Check the results
+
+            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.InteropInterface));
+
+            var context = ((VM.Types.InteropInterface)engine.ResultStack.Pop()).GetInterface<StorageContext>();
+            Assert.AreEqual(context.ScriptHash, contract.ScriptHash);
+
+            // Change to ReadOnly Abi
+
+            contract.Manifest.Abi.EntryPoint.ReadOnly = true;
+            contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contract.ScriptHash.ToArray()));
+            contracts.Add(contract.ScriptHash, contract);
+
+            // Execute
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+
+            // Check the results
+
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // Clean
+            contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contract.ScriptHash.ToArray()));
+        }
+
+        [TestMethod]
         public void System_Runtime_GetInvocationCounter()
         {
             var snapshot = TestBlockchain.GetStore().GetSnapshot();
@@ -66,6 +122,11 @@ namespace Neo.UnitTests.SmartContract
                     1  /* C */
                 }
                 );
+
+            // Clean
+            contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractA.ScriptHash.ToArray()));
+            contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractB.ScriptHash.ToArray()));
+            contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractC.ScriptHash.ToArray()));
         }
     }
 }
