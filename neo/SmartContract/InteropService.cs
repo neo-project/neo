@@ -562,10 +562,16 @@ namespace Neo.SmartContract
             }
 
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
-            context_new.GetState<ExecutionContextState>().ReadOnly = contract.Manifest.Abi.FindMethod(methodStr).ReadOnly;
-
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
+
+            // Check readOnly flag
+            var abiMethod = contract.Manifest.Abi.FindMethod(methodStr);
+            if (abiMethod != null && abiMethod.ReadOnly)
+            {
+                context_new.GetState<ExecutionContextState>().ReadOnly = true;
+            }
+
             return true;
         }
 
