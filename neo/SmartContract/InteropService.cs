@@ -46,13 +46,6 @@ namespace Neo.SmartContract
         public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 0_01000000, TriggerType.Application);
-        public static readonly uint System_Header_GetIndex = Register("System.Header.GetIndex", Header_GetIndex, 0_00000400, TriggerType.Application);
-        public static readonly uint System_Header_GetHash = Register("System.Header.GetHash", Header_GetHash, 0_00000400, TriggerType.Application);
-        public static readonly uint System_Header_GetPrevHash = Register("System.Header.GetPrevHash", Header_GetPrevHash, 0_00000400, TriggerType.Application);
-        public static readonly uint System_Header_GetTimestamp = Register("System.Header.GetTimestamp", Header_GetTimestamp, 0_00000400, TriggerType.Application);
-        public static readonly uint System_Block_GetTransactionCount = Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 0_00000400, TriggerType.Application);
-        public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 0_00010000, TriggerType.Application);
-        public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400, TriggerType.Application);
         public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
@@ -344,7 +337,8 @@ namespace Neo.SmartContract
             else
             {
                 Block block = engine.Snapshot.GetBlock(hash);
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(block));
+                if (block == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(block.ToStackItem());
             }
             return true;
         }
@@ -375,95 +369,6 @@ namespace Neo.SmartContract
             else
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
-        }
-
-        private static bool Header_GetIndex(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Index);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetHash(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Hash.ToArray());
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetPrevHash(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.PrevHash.ToArray());
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetTimestamp(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Timestamp);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Block_GetTransactionCount(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Block block = _interface.GetInterface<Block>();
-                if (block == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(block.Transactions.Length);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Block_GetTransactions(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Block block = _interface.GetInterface<Block>();
-                if (block == null) return false;
-                if (block.Transactions.Length > engine.MaxArraySize)
-                    return false;
-                engine.CurrentContext.EvaluationStack.Push(new VM.Types.Array(block.Transactions.Select(tx => tx.ToStackItem())));
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Block_GetTransaction(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Block block = _interface.GetInterface<Block>();
-                int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-                if (block == null) return false;
-                if (index < 0 || index >= block.Transactions.Length) return false;
-                Transaction tx = block.Transactions[index];
-                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
-                return true;
-            }
-            return false;
         }
 
         private static bool Storage_GetContext(ApplicationEngine engine)
