@@ -83,6 +83,27 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(resultArray));
         }
 
+        [TestMethod]
+        public void TestToParameter()
+        {
+            StackItem byteItem = "00e057eb481b".HexToBytes();
+            Assert.AreEqual(30000000000000L, (long)new BigInteger(byteItem.ToParameter().Value as byte[]));
+
+            StackItem boolItem = false;
+            Assert.AreEqual(false, (bool)boolItem.ToParameter().Value);
+
+            StackItem intItem = new BigInteger(1000);
+            Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
+
+            StackItem interopItem = new VM.Types.InteropInterface<string>("test");
+            Assert.AreEqual(null, interopItem.ToParameter().Value);
+
+            StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
+            Assert.AreEqual(1000, (BigInteger)(arrayItem.ToParameter().Value as List<ContractParameter>)[2].Value);
+
+            StackItem mapItem = new VM.Types.Map(new Dictionary<StackItem, StackItem>(new[] { new KeyValuePair<StackItem, StackItem>(byteItem, intItem) }));
+            Assert.AreEqual(1000, (BigInteger)(mapItem.ToParameter().Value as List<KeyValuePair<ContractParameter, ContractParameter>>)[0].Value.Value);
+        }
 
         [TestMethod]
         public void TestToStackItem()
@@ -108,7 +129,10 @@ namespace Neo.UnitTests.IO
             ContractParameter strParameter = new ContractParameter { Type = ContractParameterType.String, Value = "test😂👍" };
             Assert.AreEqual("test😂👍", Encoding.UTF8.GetString(strParameter.ToStackItem().GetByteArray()));
 
-            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter }.ToList() };
+            ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface };
+            Assert.AreEqual(null, interopParameter.ToStackItem());
+
+            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter, interopParameter }.ToList() };
             Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetBigInteger());
 
             ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
