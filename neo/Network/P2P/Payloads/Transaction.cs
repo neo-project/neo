@@ -224,15 +224,18 @@ namespace Neo.Network.P2P.Payloads
             (
                 new StackItem[]
                 {
-                    new ByteArray(Hash.ToArray()),
+                    new Integer(Version),
+                    new Integer(Nonce),
                     new ByteArray(Sender.ToArray()),
+                    new Integer(SystemFee),
+                    new Integer(NetworkFee),
+                    new Integer(ValidUntilBlock),
+                    // Attributes
+                    // Cosigners
                     new ByteArray(Script),
                     new VM.Types.Array(Witnesses.Select(u=>new ByteArray(u.VerificationScript))),
-                    new Integer(Nonce),
-                    new Integer(NetworkFee),
-                    new Integer(SystemFee),
-                    new Integer(ValidUntilBlock),
-                    new Integer(Version)
+                    // Computed properties
+                    new ByteArray(Hash.ToArray()),
                 }
             );
         }

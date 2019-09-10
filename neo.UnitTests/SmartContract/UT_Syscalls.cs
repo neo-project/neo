@@ -52,7 +52,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.AreEqual(engine.ResultStack.Pop().GetString(),
-                    @"[""\uFFFDD\uFFFDa\uFFFDs,\uFFFD\uFFFDf\u0007]\u0000\uFFFD\u0622\uFFFDT\uFFFD7\u00133\u0018\u0003e\uFFFD\uFFFD\u0027Z\uFFFD\/\uFFFD"",""\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"",""\u0001"",[""\u0007""],4,2,3,5,6]");
+                    @"[6,4,""\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"",3,2,5,""\u0001"",[""\u0007""],""\uFFFDD\uFFFDa\uFFFDs,\uFFFD\uFFFDf\u0007]\u0000\uFFFD\u0622\uFFFDT\uFFFD7\u00133\u0018\u0003e\uFFFD\uFFFD\u0027Z\uFFFD\/\uFFFD""]");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }
