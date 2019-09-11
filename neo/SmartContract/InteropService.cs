@@ -345,7 +345,7 @@ namespace Neo.SmartContract
             if (contract == null)
                 engine.CurrentContext.EvaluationStack.Push(new byte[0]);
             else
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
+                engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem());
             return true;
         }
 
@@ -428,13 +428,9 @@ namespace Neo.SmartContract
 
         private static bool Contract_Call(ApplicationEngine engine)
         {
-            StackItem contractOrHash = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem contractHash = engine.CurrentContext.EvaluationStack.Pop();
 
-            ContractState contract;
-            if (contractOrHash is InteropInterface<ContractState> _interface)
-                contract = _interface;
-            else
-                contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractOrHash.GetByteArray()));
+            ContractState contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractHash.GetByteArray()));
             if (contract is null) return false;
 
             StackItem method = engine.CurrentContext.EvaluationStack.Pop();

@@ -23,8 +23,6 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
         public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application);
-        public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 0_00000400, TriggerType.Application);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application);
         public static readonly uint Neo_Enumerator_Create = Register("Neo.Enumerator.Create", Enumerator_Create, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Enumerator_Next = Register("Neo.Enumerator.Next", Enumerator_Next, 0_01000000, TriggerType.All);
@@ -231,30 +229,6 @@ namespace Neo.SmartContract
             }
 
             return true;
-        }
-
-        private static bool Contract_GetScript(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                ContractState contract = _interface.GetInterface<ContractState>();
-                if (contract == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(contract.Script);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Contract_IsPayable(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                ContractState contract = _interface.GetInterface<ContractState>();
-                if (contract == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(contract.Payable);
-                return true;
-            }
-            return false;
         }
 
         private static bool Storage_Find(ApplicationEngine engine)
