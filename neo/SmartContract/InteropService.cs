@@ -41,7 +41,6 @@ namespace Neo.SmartContract
         public static readonly uint System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", Runtime_GetNotifications, 0_00010000, TriggerType.All);
         public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 0_01000000, TriggerType.All);
         public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application);
-        public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 0_00007000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000, TriggerType.Application);
@@ -295,28 +294,6 @@ namespace Neo.SmartContract
         private static bool Blockchain_GetHeight(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.Snapshot.Height);
-            return true;
-        }
-
-        private static bool Blockchain_GetHeader(ApplicationEngine engine)
-        {
-            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            UInt256 hash;
-            if (data.Length <= 5)
-                hash = Blockchain.Singleton.GetBlockHash((uint)new BigInteger(data));
-            else if (data.Length == 32)
-                hash = new UInt256(data);
-            else
-                return false;
-            if (hash == null)
-            {
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
-            }
-            else
-            {
-                Header header = engine.Snapshot.GetHeader(hash);
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(header));
-            }
             return true;
         }
 
