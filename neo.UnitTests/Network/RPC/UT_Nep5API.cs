@@ -13,14 +13,16 @@ namespace Neo.UnitTests.Network.RPC
     public class UT_Nep5API
     {
         Mock<RpcClient> rpcClientMock;
-        readonly KeyPair keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
-        UInt160 Sender => Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
+        KeyPair keyPair1;
+        UInt160 sender;
         Nep5API nep5API;
 
         [TestInitialize]
         public void TestSetup()
         {
-            rpcClientMock = UT_TransactionManager.MockRpcClient(Sender, new byte[0]);
+            keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
+            sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
             nep5API = new Nep5API(rpcClientMock.Object);
         }
 
@@ -77,7 +79,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestTransfer()
         {
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", Sender, UInt160.Zero, new BigInteger(1_00000000));
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", sender, UInt160.Zero, new BigInteger(1_00000000));
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter());
 
             var result = nep5API.Transfer(NativeContract.GAS.Hash, keyPair1, UInt160.Zero, new BigInteger(1_00000000));

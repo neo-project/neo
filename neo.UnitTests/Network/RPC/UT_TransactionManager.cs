@@ -22,14 +22,17 @@ namespace Neo.UnitTests.Network.RPC
     {
         TransactionManager txManager;
         Mock<RpcClient> rpcClientMock;
-        readonly KeyPair keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
-        readonly KeyPair keyPair2 = new KeyPair(Wallet.GetPrivateKeyFromWIF("L2LGkrwiNmUAnWYb1XGd5mv7v2eDf6P4F3gHyXSrNJJR4ArmBp7Q"));
-        UInt160 Sender => Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
+        KeyPair keyPair1;
+        KeyPair keyPair2;
+        UInt160 sender;
 
         [TestInitialize]
         public void TestSetup()
         {
-            rpcClientMock = MockRpcClient(Sender, new byte[1]);
+            keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
+            keyPair2 = new KeyPair(Wallet.GetPrivateKeyFromWIF("L2LGkrwiNmUAnWYb1XGd5mv7v2eDf6P4F3gHyXSrNJJR4ArmBp7Q"));
+            sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
+            rpcClientMock = MockRpcClient(sender, new byte[1]);
         }
 
         public static Mock<RpcClient> MockRpcClient(UInt160 sender, byte[] script)
@@ -77,7 +80,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestMakeTransaction()
         {
-            txManager = new TransactionManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, sender);
 
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
@@ -100,7 +103,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestSign()
         {
-            txManager = new TransactionManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, sender);
 
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
@@ -133,7 +136,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestSignMulti()
         {
-            txManager = new TransactionManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, sender);
 
             var multiContract = Contract.CreateMultiSigContract(2, keyPair1.PublicKey, keyPair2.PublicKey);
 
@@ -164,7 +167,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestAddWitness()
         {
-            txManager = new TransactionManager(rpcClientMock.Object, Sender);
+            txManager = new TransactionManager(rpcClientMock.Object, sender);
 
             // Cosigner as contract scripthash
             Cosigner[] cosigners = new Cosigner[1]

@@ -1,4 +1,4 @@
-﻿using Neo.SmartContract.Native;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System.Linq;
 
@@ -24,6 +24,15 @@ namespace Neo.Network.RPC
         public uint GetMaxTransactionsPerBlock()
         {
             return (uint)TestInvoke(scriptHash, "getMaxTransactionsPerBlock").Stack.Single().ToStackItem().GetBigInteger();
+        }
+
+        /// <summary>
+        /// Get Max Block Size
+        /// </summary>
+        /// <returns></returns>
+        public uint GetMaxBlockSize()
+        {
+            return (uint)TestInvoke(scriptHash, "getMaxBlockSize").Stack.Single().ToStackItem().GetBigInteger();
         }
 
         /// <summary>

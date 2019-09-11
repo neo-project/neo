@@ -13,13 +13,15 @@ namespace Neo.UnitTests.Network.RPC
     public class UT_ContractClient
     {
         Mock<RpcClient> rpcClientMock;
-        readonly KeyPair keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
-        UInt160 Sender => Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
+        KeyPair keyPair1;
+        UInt160 sender;
 
         [TestInitialize]
         public void TestSetup()
         {
-            rpcClientMock = UT_TransactionManager.MockRpcClient(Sender, new byte[0]);
+            keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
+            sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
         }
 
         [TestMethod]
