@@ -141,7 +141,7 @@ namespace Neo.Network.P2P.Payloads
             (
                 new StackItem[]
                 {
-                    // Base
+                    // BlockBase properties
                     new Integer(Version),
                     new ByteArray(PrevHash.ToArray()),
                     new ByteArray(MerkleRoot.ToArray()),
@@ -150,9 +150,9 @@ namespace Neo.Network.P2P.Payloads
                     new ByteArray(NextConsensus.ToArray()),
                     // Witness
 
+                    // Block properties
                     // Count
                     // ConsensusData
-                    // Transactions
                     new VM.Types.Array(Transactions.Select(u => new ByteArray(u.Hash.ToArray()))),
                     // Computed properties
                     new ByteArray(Hash.ToArray()),
