@@ -233,7 +233,7 @@ namespace Neo.Network.P2P.Payloads
                     // Attributes
                     // Cosigners
                     new ByteArray(Script),
-                    new VM.Types.Array(Witnesses.Select(u=>new ByteArray(u.VerificationScript))),
+                    // Witnesses
                     // Computed properties
                     new ByteArray(Hash.ToArray()),
                 }

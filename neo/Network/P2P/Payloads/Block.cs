@@ -148,13 +148,12 @@ namespace Neo.Network.P2P.Payloads
                     new Integer(Timestamp),
                     new Integer(Index),
                     new ByteArray(NextConsensus.ToArray()),
-                    new Integer(Version),
                     // Witness
 
                     // Count
                     // ConsensusData
                     // Transactions
-                    new VM.Types.Array(Transactions.Select(u=>u.ToStackItem())),
+                    new VM.Types.Array(Transactions.Select(u => new ByteArray(u.Hash.ToArray()))),
                     // Computed properties
                     new ByteArray(Hash.ToArray()),
                 }
