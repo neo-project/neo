@@ -333,8 +333,8 @@ namespace Neo.SmartContract
         private static bool Blockchain_GetTransactionHeight(ApplicationEngine engine)
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            int? height = (int?)engine.Snapshot.Transactions.TryGet(new UInt256(hash))?.BlockIndex;
-            engine.CurrentContext.EvaluationStack.Push(height ?? -1);
+            var tx = engine.Snapshot.Transactions.TryGet(new UInt256(hash));
+            engine.CurrentContext.EvaluationStack.Push(tx != null ? tx.BlockIndex : BigInteger.MinusOne);
             return true;
         }
 
