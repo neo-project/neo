@@ -33,7 +33,17 @@ namespace Neo.UnitTests.Network.RPC
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(512) });
 
             var result = policyAPI.GetMaxTransactionsPerBlock();
-            Assert.AreEqual(512, (int)result);
+            Assert.AreEqual(512u, result);
+        }
+
+        [TestMethod]
+        public void TestGetMaxBlockSize()
+        {
+            byte[] testScript = NativeContract.Policy.Hash.MakeScript("getMaxBlockSize");
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1024u * 256u) });
+
+            var result = policyAPI.GetMaxBlockSize();
+            Assert.AreEqual(1024u * 256u, result);
         }
 
         [TestMethod]
@@ -43,7 +53,7 @@ namespace Neo.UnitTests.Network.RPC
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) });
 
             var result = policyAPI.GetFeePerByte();
-            Assert.AreEqual(1000, (int)result);
+            Assert.AreEqual(1000L, result);
         }
 
         [TestMethod]
