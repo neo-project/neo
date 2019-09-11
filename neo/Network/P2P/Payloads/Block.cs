@@ -156,7 +156,7 @@ namespace Neo.Network.P2P.Payloads
                     // Block properties
                     // Count
                     // ConsensusData
-                    new VM.Types.Array(Transactions.Select(u => new ByteArray(u.Hash.ToArray()))),
+                    new Integer(Transactions.Length)
                 }
             );
         }

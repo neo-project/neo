@@ -45,6 +45,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400, TriggerType.Application);
         public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
@@ -345,6 +346,28 @@ namespace Neo.SmartContract
                 engine.CurrentContext.EvaluationStack.Push(new byte[0]);
             else
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
+            return true;
+        }
+
+        private static bool Block_GetTransaction(ApplicationEngine engine)
+        {
+            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            UInt256 hash;
+            if (data.Length <= 5)
+                hash = Blockchain.Singleton.GetBlockHash((uint)new BigInteger(data));
+            else if (data.Length == 32)
+                hash = new UInt256(data);
+            else
+                return false;
+
+            if (hash == null) return false;
+
+            Block block = engine.Snapshot.GetBlock(hash);
+            if (block == null) return false;
+            int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+            if (index < 0 || index >= block.Transactions.Length) return false;
+            Transaction tx = block.Transactions[index];
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
             return true;
         }
 
