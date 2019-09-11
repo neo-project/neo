@@ -20,9 +20,6 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application);
         public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000, TriggerType.All);
         public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice, TriggerType.All);
-        public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400, TriggerType.Application);
         public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
@@ -153,42 +150,6 @@ namespace Neo.SmartContract
             }
             engine.CurrentContext.EvaluationStack.Push(fSuccess);
             return true;
-        }
-
-        private static bool Header_GetVersion(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Version);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetMerkleRoot(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.MerkleRoot.ToArray());
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetNextConsensus(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.NextConsensus.ToArray());
-                return true;
-            }
-            return false;
         }
 
         private static bool Witness_GetVerificationScript(ApplicationEngine engine)
