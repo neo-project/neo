@@ -224,6 +224,10 @@ namespace Neo.Network.P2P.Payloads
             (
                 new StackItem[]
                 {
+                    // Computed properties
+                    new ByteArray(Hash.ToArray()),
+
+                    // Transaction properties
                     new Integer(Version),
                     new Integer(Nonce),
                     new ByteArray(Sender.ToArray()),
@@ -234,8 +238,6 @@ namespace Neo.Network.P2P.Payloads
                     // Cosigners
                     new ByteArray(Script),
                     // Witnesses
-                    // Computed properties
-                    new ByteArray(Hash.ToArray()),
                 }
             );
         }
