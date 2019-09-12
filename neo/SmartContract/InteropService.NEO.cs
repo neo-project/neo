@@ -20,6 +20,7 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application);
         public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000, TriggerType.All);
         public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice, TriggerType.All);
+        public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
         public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application);
@@ -145,6 +146,15 @@ namespace Neo.SmartContract
                 fSuccess = false;
             }
             engine.CurrentContext.EvaluationStack.Push(fSuccess);
+            return true;
+        }
+
+        private static bool Account_IsStandard(ApplicationEngine engine)
+        {
+            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
+            bool isStandard = contract is null || contract.Script.IsStandardContract();
+            engine.CurrentContext.EvaluationStack.Push(isStandard);
             return true;
         }
 
