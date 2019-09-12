@@ -103,10 +103,7 @@ namespace Neo.Consensus
             Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
-            if (TransactionHashes.Length == 0)
-                TransactionHashes = null;
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
-            Transactions = transactions.Length == 0 ? null : transactions.ToDictionary(p => p.Hash);
             PreparationPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < PreparationPayloads.Length; i++)
                 PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
@@ -119,6 +116,9 @@ namespace Neo.Consensus
             LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < LastChangeViewPayloads.Length; i++)
                 LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
+                TransactionHashes = null;
+            Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
         }
 
         public void Dispose()
@@ -340,8 +340,7 @@ namespace Neo.Consensus
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,
-                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot).ToArray()),
-                    ConsensusData = new ConsensusData()
+                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot).ToArray())
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
@@ -390,7 +389,10 @@ namespace Neo.Consensus
                         LastChangeViewPayloads[i] = null;
             }
             ViewNumber = viewNumber;
-            Block.ConsensusData.PrimaryIndex = GetPrimaryIndex(viewNumber);
+            Block.ConsensusData = new ConsensusData
+            {
+                PrimaryIndex = GetPrimaryIndex(viewNumber)
+            };
             Block.MerkleRoot = null;
             Block.Timestamp = 0;
             Block.Transactions = null;
