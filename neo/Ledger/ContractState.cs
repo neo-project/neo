@@ -84,6 +84,7 @@ namespace Neo.Ledger
                     new ByteArray(Script),
                     new Boolean(HasStorage),
                     new Boolean(Payable),
+                    new Boolean(Script.IsStandardContract()),
                }
            );
         }
