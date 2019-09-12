@@ -308,16 +308,12 @@ namespace Neo.SmartContract
                 hash = new UInt256(data);
             else
                 return false;
-            if (hash == null)
-            {
+
+            Block block = hash != null ? engine.Snapshot.GetBlock(hash) : null;
+            if (block == null)
                 engine.CurrentContext.EvaluationStack.Push(new byte[0]);
-            }
             else
-            {
-                Block block = engine.Snapshot.GetBlock(hash);
-                if (block == null) return false;
                 engine.CurrentContext.EvaluationStack.Push(block.ToStackItem());
-            }
             return true;
         }
 
@@ -325,8 +321,10 @@ namespace Neo.SmartContract
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
-            if (tx == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
+            if (tx == null)
+                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+            else
+                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
             return true;
         }
 
@@ -334,7 +332,7 @@ namespace Neo.SmartContract
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             var tx = engine.Snapshot.Transactions.TryGet(new UInt256(hash));
-            engine.CurrentContext.EvaluationStack.Push(tx != null ? tx.BlockIndex : BigInteger.MinusOne);
+            engine.CurrentContext.EvaluationStack.Push(tx != null ? new BigInteger(tx.BlockIndex) : BigInteger.MinusOne);
             return true;
         }
 
@@ -360,14 +358,21 @@ namespace Neo.SmartContract
             else
                 return false;
 
-            if (hash == null) return false;
-
-            Block block = engine.Snapshot.GetBlock(hash);
-            if (block == null) return false;
-            int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-            if (index < 0 || index >= block.Transactions.Length) return false;
-            Transaction tx = block.Transactions[index];
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
+            Block block = hash != null ? engine.Snapshot.GetBlock(hash) : null;
+            if (block == null)
+            {
+                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+            }
+            else
+            {
+                int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+                if (index < 0 || index >= block.Transactions.Length) return false;
+                Transaction tx = block.Transactions[index];
+                if (tx == null)
+                    engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+                else
+                    engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
+            }
             return true;
         }
 
