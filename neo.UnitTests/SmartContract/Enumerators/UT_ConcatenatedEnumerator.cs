@@ -49,6 +49,7 @@ namespace Neo.UnitTests.SmartContract.Enumerators
             Assert.AreEqual(new Integer(0), uut.Value());
             Assert.AreEqual(true, uut.Next());
             Assert.AreEqual(new Integer(0), uut.Value());
+            Assert.AreEqual(false, uut.Next());
         }
     }
 }

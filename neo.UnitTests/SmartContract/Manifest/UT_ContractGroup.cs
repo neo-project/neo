@@ -1,8 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System;
+using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -17,13 +19,25 @@ namespace Neo.UnitTests.SmartContract.Manifest
             for (int i = 0; i < privateKey.Length; i++)
                 privateKey[i] = (byte)random.Next(256);
             KeyPair keyPair = new KeyPair(privateKey);
-            ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
             ContractGroup contractGroup = new ContractGroup
             {
-                PubKey = publicKey,
+                PubKey = keyPair.PublicKey,
                 Signature = new byte[20]
             };
             Assert.AreEqual(false, contractGroup.IsValid(UInt160.Zero));
+
+
+            byte[] message = new byte[] {  0x01,0x01,0x01,0x01,0x01,
+                                           0x01,0x01,0x01,0x01,0x01,
+                                           0x01,0x01,0x01,0x01,0x01,
+                                           0x01,0x01,0x01,0x01,0x01 };
+            byte[] signature = Crypto.Default.Sign(message, keyPair.PrivateKey, keyPair.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            contractGroup = new ContractGroup
+            {
+                PubKey = keyPair.PublicKey,
+                Signature = signature
+            };
+            Assert.AreEqual(true, contractGroup.IsValid(new UInt160(message)));
         }
     }
 }
