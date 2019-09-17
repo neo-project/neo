@@ -16,8 +16,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         {
             Random random = new Random();
             byte[] privateKey = new byte[32];
-            for (int i = 0; i < privateKey.Length; i++)
-                privateKey[i] = (byte)random.Next(256);
+            random.NextBytes(privateKey);
             KeyPair keyPair = new KeyPair(privateKey);
             ContractGroup contractGroup = new ContractGroup
             {
