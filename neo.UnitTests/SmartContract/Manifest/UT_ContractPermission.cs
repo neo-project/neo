@@ -33,8 +33,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 {
                     Random random = new Random();
                     byte[] privateKey = new byte[32];
-                    for (int j = 0; j < privateKey.Length; j++)
-                        privateKey[j] = (byte)random.Next(256);
+                    random.NextBytes(privateKey);
                     ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
                     ContractManifest contractManifest = ContractManifest.CreateDefault(UInt160.Zero);
                     contractManifest.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey } };
@@ -47,12 +46,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 {
                     Random random = new Random();
                     byte[] privateKey = new byte[32];
-                    for (int j = 0; j < privateKey.Length; j++)
-                        privateKey[j] = (byte)random.Next(256);
+                    random.NextBytes(privateKey);
                     ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
                     byte[] privateKey2 = new byte[32];
-                    for (int j = 0; j < privateKey2.Length; j++)
-                        privateKey2[j] = (byte)random.Next(256);
+                    random.NextBytes(privateKey2);
                     ECPoint publicKey2 = ECCurve.Secp256r1.G * privateKey2;
                     ContractManifest contractManifest = ContractManifest.CreateDefault(UInt160.Zero);
                     contractManifest.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey2 } };
