@@ -70,14 +70,23 @@ namespace Neo.SmartContract
         private static bool CheckItemForNotification(StackItem state)
         {
             int size = 0;
-            Queue<StackItem> items = new Queue<StackItem>();
+            List<StackItem> items_checked = new List<StackItem>();
+            Queue<StackItem> items_unchecked = new Queue<StackItem>();
             while (true)
             {
                 switch (state)
                 {
-                    case Array array:
+                    case Struct array:
                         foreach (StackItem item in array)
-                            items.Enqueue(item);
+                            items_unchecked.Enqueue(item);
+                        break;
+                    case Array array:
+                        if (items_checked.All(p => !ReferenceEquals(p, array)))
+                        {
+                            items_checked.Add(array);
+                            foreach (StackItem item in array)
+                                items_unchecked.Enqueue(item);
+                        }
                         break;
                     case Boolean _:
                     case ByteArray _:
@@ -87,16 +96,20 @@ namespace Neo.SmartContract
                     case InteropInterface _:
                         return false;
                     case Map map:
-                        foreach (var pair in map)
+                        if (items_checked.All(p => !ReferenceEquals(p, map)))
                         {
-                            size += pair.Key.GetByteLength();
-                            items.Enqueue(pair.Value);
+                            items_checked.Add(map);
+                            foreach (var pair in map)
+                            {
+                                size += pair.Key.GetByteLength();
+                                items_unchecked.Enqueue(pair.Value);
+                            }
                         }
                         break;
                 }
                 if (size > MaxNotificationSize) return false;
-                if (items.Count == 0) return true;
-                state = items.Dequeue();
+                if (items_unchecked.Count == 0) return true;
+                state = items_unchecked.Dequeue();
             }
         }
 
