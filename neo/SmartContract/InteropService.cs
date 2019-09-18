@@ -14,6 +14,8 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
@@ -22,6 +24,7 @@ namespace Neo.SmartContract
         public const long GasPerByte = 100000;
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
+        public const int MaxNotificationSize = 1024;
 
         private static readonly Dictionary<uint, InteropDescriptor> methods = new Dictionary<uint, InteropDescriptor>();
 
@@ -63,6 +66,39 @@ namespace Neo.SmartContract
         public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application);
         public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application);
         public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 0_00000400, TriggerType.Application);
+
+        private static bool CheckItemForNotification(StackItem state)
+        {
+            int size = 0;
+            Queue<StackItem> items = new Queue<StackItem>();
+            while (true)
+            {
+                switch (state)
+                {
+                    case Array array:
+                        foreach (StackItem item in array)
+                            items.Enqueue(item);
+                        break;
+                    case Boolean _:
+                    case ByteArray _:
+                    case Integer _:
+                        size += state.GetByteLength();
+                        break;
+                    case InteropInterface _:
+                        return false;
+                    case Map map:
+                        foreach (var pair in map)
+                        {
+                            size += pair.Key.GetByteLength();
+                            items.Enqueue(pair.Value);
+                        }
+                        break;
+                }
+                if (size > MaxNotificationSize) return false;
+                if (items.Count == 0) return true;
+                state = items.Dequeue();
+            }
+        }
 
         private static bool CheckStorageContext(ApplicationEngine engine, StorageContext context)
         {
@@ -200,13 +236,17 @@ namespace Neo.SmartContract
 
         private static bool Runtime_Notify(ApplicationEngine engine)
         {
-            engine.SendNotification(engine.CurrentScriptHash, engine.CurrentContext.EvaluationStack.Pop());
+            StackItem state = engine.CurrentContext.EvaluationStack.Pop();
+            if (!CheckItemForNotification(state)) return false;
+            engine.SendNotification(engine.CurrentScriptHash, state);
             return true;
         }
 
         private static bool Runtime_Log(ApplicationEngine engine)
         {
-            string message = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            byte[] state = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            if (state.Length > MaxNotificationSize) return false;
+            string message = Encoding.UTF8.GetString(state);
             engine.SendLog(engine.CurrentScriptHash, message);
             return true;
         }
