@@ -74,7 +74,6 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
-                var p = engine.ResultStack.Peek().GetString();
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
                 Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().ToHexString(),
