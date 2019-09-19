@@ -51,29 +51,34 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitPush(block.Hash.ToArray());
                 script.EmitSysCall(InteropService.System_Blockchain_GetBlock);
-                script.EmitSysCall(InteropService.Neo_Json_Serialize);
 
                 // Without block
 
                 var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                Assert.AreEqual(0, engine.ResultStack.Count);
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
+                Assert.AreEqual(0, engine.ResultStack.Pop().GetByteArray().Length);
+
+                // With block
 
                 var blocks = (TestDataCache<UInt256, TrimmedBlock>)snapshot.Blocks;
                 var txs = (TestDataCache<UInt256, TransactionState>)snapshot.Transactions;
                 blocks.Add(block.Hash, block.Trim());
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
 
+                script.EmitSysCall(InteropService.Neo_Json_Serialize);
                 engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 var p = engine.ResultStack.Peek().GetString();
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.AreEqual(engine.ResultStack.Pop().GetString(),
-                    @"[""Q\uFFFDy\uFFFD\uFFFD\u0003\uFFFD\uFFFD\uFFFDuF\u000Fq\u012A\b[Y\u0443\uFFFD\uFFFD}]v{8\uFFFDx\u0027\uFFFD\uFFFD"",3,""\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"",""\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"",2,1,""\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"",[""\uFFFDD\uFFFDa\uFFFDs,\uFFFD\uFFFDf\u0007]\u0000\uFFFD\u0622\uFFFDT\uFFFD7\u00133\u0018\u0003e\uFFFD\uFFFD\u0027Z\uFFFD\/\uFFFD""]]");
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
+                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().ToHexString(),
+                    "5b22515c7546464644795c75464646445c75464646445c75303030335c75464646445c75464646445c754646464475465c7530303046715c75303132415c625b595c75303434335c75464646445c75464646447d5d767b385c7546464644785c75303032375c75464646445c7546464644222c332c225c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c7530303030222c225c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c7530303030222c322c312c225c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c75303030305c7530303030222c315d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // Clean
@@ -97,6 +102,7 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(InteropInterface));
                 Assert.IsNull(((InteropInterface<IVerifiable>)engine.ResultStack.Pop()).GetInterface<IVerifiable>());
 
                 // With tx
@@ -122,8 +128,9 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.AreEqual(engine.ResultStack.Pop().GetString(),
-                    @"[""\uFFFDD\uFFFDa\uFFFDs,\uFFFD\uFFFDf\u0007]\u0000\uFFFD\u0622\uFFFDT\uFFFD7\u00133\u0018\u0003e\uFFFD\uFFFD\u0027Z\uFFFD\/\uFFFD"",6,4,""\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"",3,2,5,""\u0001""]");
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
+                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().ToHexString(),
+                    @"5b225c7546464644445c7546464644615c7546464644732c5c75464646445c7546464644665c75303030375d5c75303030305c75464646445c75303632325c7546464644545c7546464644375c7530303133335c75303031385c7530303033655c75464646445c75464646445c75303032375a5c75464646445c2f5c7546464644222c362c342c225c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c75464646445c7546464644222c332c322c352c225c7530303031225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }
