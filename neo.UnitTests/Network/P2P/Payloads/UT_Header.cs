@@ -22,9 +22,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
-            // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
+            // blockbase 1 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
-            uut.Size.Should().Be(105);
+            uut.Size.Should().Be(102);
         }
 
         [TestMethod]
@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000000f29b0d748a9ccf8c5af3cde10db3e36ec9a5f720643a2bcb4add76b3daf41d8e913ff854c0000000000000000000000000000000000000000000000000000000100015100";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000f29b0d748a9ccf8c5af3cde10db3e36ec9a5f720643a2bcb4add76b3daf41d8e913ff854c0000000000000000000000000000000000000000000000000000000100015100";
 
             using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
             {
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000000f29b0d748a9ccf8c5af3cde10db3e36ec9a5f720643a2bcb4add76b3daf41d8e913ff854c0000000000000000000000000000000000000000000000000000000100015100";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000f29b0d748a9ccf8c5af3cde10db3e36ec9a5f720643a2bcb4add76b3daf41d8e913ff854c0000000000000000000000000000000000000000000000000000000100015100";
             uut.ToArray().ToHexString().Should().Be(hex);
         }
     }
