@@ -262,7 +262,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // will verify tx size, step by step
 
                 // Part I
-                Assert.AreEqual(Transaction.HeaderSize, 45);
+                Assert.AreEqual(Transaction.HeaderSize, 44);
                 // Part II
                 Assert.AreEqual(tx.Attributes.GetVarSize(), 1);
                 Assert.AreEqual(tx.Attributes.Length, 0);
