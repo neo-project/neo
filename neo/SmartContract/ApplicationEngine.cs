@@ -9,8 +9,8 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        public static event EventHandler<NotifyEventArgs> Notify;
-        public static event EventHandler<LogEventArgs> Log;
+        public event EventHandler<NotifyEventArgs> Notify;
+        public event EventHandler<LogEventArgs> Log;
 
         public const long GasFree = 0;
         private readonly long gas_amount;

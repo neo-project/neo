@@ -174,7 +174,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestSetValue()
         {
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < 9; i++)
             {
                 if (i == 0)
                 {

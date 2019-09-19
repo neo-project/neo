@@ -30,24 +30,24 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestLog()
         {
-            ApplicationEngine.Log += Test_Log1;
             var snapshot = Store.GetSnapshot().Clone();
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.Log += Test_Log1;
             string logMessage = "TestMessage";
 
             engine.SendLog(UInt160.Zero, logMessage);
             message.Should().Be(logMessage);
 
-            ApplicationEngine.Log += Test_Log2;
+            engine.Log += Test_Log2;
             engine.SendLog(UInt160.Zero, logMessage);
             message.Should().Be(null);
 
             message = logMessage;
-            ApplicationEngine.Log -= Test_Log1;
+            engine.Log -= Test_Log1;
             engine.SendLog(UInt160.Zero, logMessage);
             message.Should().Be(null);
 
-            ApplicationEngine.Log -= Test_Log2;
+            engine.Log -= Test_Log2;
             engine.SendLog(UInt160.Zero, logMessage);
             message.Should().Be(null);
         }
@@ -55,24 +55,24 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestNotify()
         {
-            ApplicationEngine.Notify += Test_Notify1;
             var snapshot = Store.GetSnapshot().Clone();
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.Notify += Test_Notify1;
             StackItem notifyItem = "TestItem";
 
             engine.SendNotification(UInt160.Zero, notifyItem);
             item.Should().Be(notifyItem);
 
-            ApplicationEngine.Notify += Test_Notify2;
+            engine.Notify += Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyItem);
             item.Should().Be(null);
 
             item = notifyItem;
-            ApplicationEngine.Notify -= Test_Notify1;
+            engine.Notify -= Test_Notify1;
             engine.SendNotification(UInt160.Zero, notifyItem);
             item.Should().Be(null);
 
-            ApplicationEngine.Notify -= Test_Notify2;
+            engine.Notify -= Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyItem);
             item.Should().Be(null);
         }

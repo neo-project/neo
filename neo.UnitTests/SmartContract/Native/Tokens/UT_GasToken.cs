@@ -7,6 +7,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -145,6 +146,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestGetSysFeeAmount1()
         {
             using (ApplicationEngine engine = NativeContract.GAS.TestCall("getSysFeeAmount", 2u))
+            {
+                engine.ResultStack.Peek().GetBigInteger().Should().Be(new BigInteger(0));
+                engine.ResultStack.Peek().GetType().Should().Be(typeof(Integer));
+            }
+
+            using (ApplicationEngine engine = NativeContract.GAS.TestCall("getSysFeeAmount", 0u))
             {
                 engine.ResultStack.Peek().GetBigInteger().Should().Be(new BigInteger(0));
             }

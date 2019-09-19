@@ -290,10 +290,10 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(true);
             string message = "hello";
             engine.CurrentContext.EvaluationStack.Push(Encoding.UTF8.GetBytes(message));
-            ApplicationEngine.Log += LogEvent;
+            engine.Log += LogEvent;
             InteropService.Invoke(engine, InteropService.System_Runtime_Log).Should().BeTrue();
             ((Transaction)engine.ScriptContainer).Script.ToHexString().Should().Be(new byte[] { 0x01, 0x02, 0x03 }.ToHexString());
-            ApplicationEngine.Log -= LogEvent;
+            engine.Log -= LogEvent;
         }
 
         [TestMethod]
@@ -946,6 +946,7 @@ namespace Neo.UnitTests.SmartContract
             var mockSnapshot = new Mock<Snapshot>();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
+            var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
             {
                 Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
@@ -954,11 +955,19 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = state.ScriptHash,
+                ScriptHash = scriptHash,
                 Key = new byte[] { 0x01 }
             };
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(scriptHash, state));
             mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
+            engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            engine.LoadScript(new byte[0]);
+            InteropService.Invoke(engine, InteropService.System_Contract_Destroy).Should().BeTrue();
+
+            //storages are removed
+            mockSnapshot = new Mock<Snapshot>();
+            state = TestUtils.GetContract();
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(scriptHash, state));
             engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
             engine.LoadScript(new byte[0]);
             InteropService.Invoke(engine, InteropService.System_Contract_Destroy).Should().BeTrue();
