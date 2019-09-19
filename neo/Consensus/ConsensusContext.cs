@@ -94,7 +94,7 @@ namespace Neo.Consensus
         public void Deserialize(BinaryReader reader)
         {
             Reset(0);
-            if (reader.ReadUInt32() != Block.Version) throw new FormatException();
+            if ((int)reader.ReadVarInt() != Block.Version) throw new FormatException();
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
             Block.Timestamp = reader.ReadUInt64();
             Block.NextConsensus = reader.ReadSerializable<UInt160>();
@@ -224,7 +224,7 @@ namespace Neo.Consensus
         {
             var blockSize =
                 // BlockBase
-                sizeof(uint) +       //Version
+                sizeof(byte) +       //Version - 0x00.GetVarSize()
                 UInt256.Length +     //PrevHash
                 UInt256.Length +     //MerkleRoot
                 sizeof(ulong) +      //Timestamp
@@ -408,7 +408,7 @@ namespace Neo.Consensus
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(Block.Version);
+            writer.WriteVarInt(Block.Version);
             writer.Write(Block.Index);
             writer.Write(Block.Timestamp);
             writer.Write(Block.NextConsensus ?? UInt160.Zero);

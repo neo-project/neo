@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Consensus
             // Creating proposed block
             Header header = new Header();
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
-            header.Size.Should().Be(105);
+            header.Size.Should().Be(102);
 
             Console.WriteLine($"header {header} hash {header.Hash} timestamp {timestampVal}");
 
