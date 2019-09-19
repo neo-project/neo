@@ -26,7 +26,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         private const int MaxCosigners = 16;
 
-        public byte Version;
+        public int Version;
         public uint Nonce;
         public UInt160 Sender;
         /// <summary>
@@ -65,14 +65,15 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
         public const int HeaderSize =
-            sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
             20 +            //Sender
             sizeof(long) +  //Gas
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
-        public int Size => HeaderSize +
+        public int Size =>
+            Version.GetVarSize() +      //Version
+            HeaderSize +                //Header
             Attributes.GetVarSize() +   //Attributes
             Cosigners.GetVarSize() +    //Cosigners
             Script.GetVarSize() +       //Script
@@ -86,7 +87,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
-            Version = reader.ReadByte();
+            Version = (int)reader.ReadVarInt();
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
             Sender = reader.ReadSerializable<UInt160>();
@@ -156,7 +157,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Version);
+            writer.WriteVarInt(Version);
             writer.Write(Nonce);
             writer.Write(Sender);
             writer.Write(SystemFee);

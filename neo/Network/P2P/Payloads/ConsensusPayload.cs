@@ -12,7 +12,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class ConsensusPayload : IInventory
     {
-        public uint Version;
+        public int Version;
         public UInt256 PrevHash;
         public uint BlockIndex;
         public ushort ValidatorIndex;
@@ -53,13 +53,17 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.Consensus;
 
+        public const int HeaderSize =
+            UInt256.Length +        //PrevHash
+            sizeof(uint) +          //BlockIndex
+            sizeof(ushort) +        //ValidatorIndex
+            1;
+
         public int Size =>
-            sizeof(uint) +      //Version
-            PrevHash.Size +     //PrevHash
-            sizeof(uint) +      //BlockIndex
-            sizeof(ushort) +    //ValidatorIndex
-            Data.GetVarSize() + //Data
-            1 + Witness.Size;   //Witness
+            Version.GetVarSize() +  //Version
+            HeaderSize +            //Header
+            Data.GetVarSize() +     //Data
+            Witness.Size;           //Witness
 
         Witness[] IVerifiable.Witnesses
         {
@@ -88,7 +92,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
-            Version = reader.ReadUInt32();
+            Version = (int)reader.ReadVarInt();
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadUInt16();
@@ -111,7 +115,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Version);
+            writer.WriteVarInt(Version);
             writer.Write(PrevHash);
             writer.Write(BlockIndex);
             writer.Write(ValidatorIndex);

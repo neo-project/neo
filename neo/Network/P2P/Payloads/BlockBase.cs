@@ -12,7 +12,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public abstract class BlockBase : IVerifiable
     {
-        public uint Version;
+        public int Version;
         public UInt256 PrevHash;
         public UInt256 MerkleRoot;
         public ulong Timestamp;
@@ -33,15 +33,18 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public virtual int Size =>
-            sizeof(uint) +       //Version
+        public const int HeaderSize =
             UInt256.Length +     //PrevHash
             UInt256.Length +     //MerkleRoot
             sizeof(ulong) +      //Timestamp
             sizeof(uint) +       //Index
             UInt160.Length +     //NextConsensus
-            1 +                  //
-            Witness.Size;        //Witness   
+            1;
+
+        public virtual int Size =>
+            Version.GetVarSize() + //Version
+            HeaderSize +           //Header
+            Witness.Size;          //Witness   
 
         Witness[] IVerifiable.Witnesses
         {
@@ -65,7 +68,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
-            Version = reader.ReadUInt32();
+            Version = (int)reader.ReadVarInt();
             PrevHash = reader.ReadSerializable<UInt256>();
             MerkleRoot = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt64();
@@ -89,7 +92,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Version);
+            writer.WriteVarInt(Version);
             writer.Write(PrevHash);
             writer.Write(MerkleRoot);
             writer.Write(Timestamp);
@@ -114,7 +117,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void FromJson(JObject json)
         {
-            Version = (uint)json["version"].AsNumber();
+            Version = (int)json["version"].AsNumber();
             PrevHash = UInt256.Parse(json["previousblockhash"].AsString());
             MerkleRoot = UInt256.Parse(json["merkleroot"].AsString());
             Timestamp = (ulong)json["time"].AsNumber();
