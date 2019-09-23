@@ -17,10 +17,11 @@ namespace Neo.UnitTests.Wallets.NEP6
     public class UT_NEP6Wallet
     {
         private NEP6Wallet uut;
-        private static string wPath;
+        private string wPath;
         private static KeyPair keyPair;
         private static string nep2key;
         private static UInt160 testScriptHash;
+        private string rootPath;
 
         public static string GetRandomPath()
         {
@@ -48,9 +49,9 @@ namespace Neo.UnitTests.Wallets.NEP6
 
         private string CreateWalletFile()
         {
-            string path = GetRandomPath();
-            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-            path = Path.Combine(path, "wallet.json");
+            rootPath = GetRandomPath();
+            if (!Directory.Exists(rootPath)) Directory.CreateDirectory(rootPath);
+            string path = Path.Combine(rootPath, "wallet.json");
             File.WriteAllText(path, "{\"name\":\"name\",\"version\":\"0.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":{}}");
             return path;
         }
@@ -66,6 +67,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestCleanUp()
         {
             if (File.Exists(wPath)) File.Delete(wPath);
+            if (Directory.Exists(rootPath)) Directory.Delete(rootPath);
         }
 
         [TestMethod]
@@ -328,6 +330,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123");
             bool result = nw.Contains(testScriptHash);
             Assert.AreEqual(true, result);
+            if (File.Exists(path)) File.Delete(path);
         }
 
         [TestMethod]
