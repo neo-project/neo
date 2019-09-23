@@ -1,24 +1,19 @@
 using Neo.IO.Json;
-using Newtonsoft.Json;
+using Neo.SmartContract;
 using System.Linq;
 
 namespace Neo.Network.RPC.Models
 {
     public class RpcInvokeResult
     {
-        [JsonProperty(PropertyName = "script")]
         public string Script { get; set; }
 
-        [JsonProperty(PropertyName = "state")]
         public string State { get; set; }
 
-        [JsonProperty(PropertyName = "gas_consumed")]
         public string GasConsumed { get; set; }
 
-        [JsonProperty(PropertyName = "stack")]
-        public RpcStack[] Stack { get; set; }
+        public ContractParameter[] Stack { get; set; }
 
-        [JsonProperty(PropertyName = "tx")]
         public string Tx { get; set; }
 
         public JObject ToJson()
@@ -39,7 +34,7 @@ namespace Neo.Network.RPC.Models
             invokeScriptResult.State = json["state"].AsString();
             invokeScriptResult.GasConsumed = json["gas_consumed"].AsString();
             invokeScriptResult.Tx = json["tx"].AsString();
-            invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => RpcStack.FromJson(p)).ToArray();
+            invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => ContractParameter.FromJson(p)).ToArray();
             return invokeScriptResult;
         }
     }
