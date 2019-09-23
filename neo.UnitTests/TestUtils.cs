@@ -1,6 +1,11 @@
-﻿using Neo.IO;
+using FluentAssertions;
+using Neo.IO;
+using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
+using Neo.Wallets.NEP6;
 using System;
 using System.IO;
 
@@ -21,6 +26,18 @@ namespace Neo.UnitTests
             return array;
         }
 
+        public static NEP6Wallet GenerateTestWallet()
+        {
+            JObject wallet = new JObject();
+            wallet["name"] = "noname";
+            wallet["version"] = new System.Version().ToString();
+            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
+            wallet["accounts"] = new JArray();
+            wallet["extra"] = null;
+            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"0.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":null}");
+            return new NEP6Wallet(wallet);
+        }
+
         public static Transaction GetTransaction()
         {
             return new Transaction
@@ -28,6 +45,7 @@ namespace Neo.UnitTests
                 Script = new byte[1],
                 Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
                 Witnesses = new Witness[]{ new Witness
                 {
                     InvocationScript = new byte[0],
@@ -36,12 +54,21 @@ namespace Neo.UnitTests
             };
         }
 
-        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
+        internal static ContractState GetContract()
+        {
+            return new ContractState
+            {
+                Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
+                Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
+            };
+        }
+
+        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal)
         {
             setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
         }
 
-        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
+        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
             setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
 
@@ -58,13 +85,12 @@ namespace Neo.UnitTests
             block.Transactions = transactionsVal;
         }
 
-        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
+        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
             merkRootVal = UInt256.Parse("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
-
             bb.MerkleRoot = merkRootVal;
-            timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
+            timestampVal = new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc).ToTimestampMS(); // GMT: Sunday, June 1, 1980 12:00:01.001 AM
             bb.Timestamp = timestampVal;
             indexVal = 0;
             bb.Index = indexVal;
@@ -87,6 +113,7 @@ namespace Neo.UnitTests
                 Script = randomBytes,
                 Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
                 Witnesses = new[]
                 {
                     new Witness
@@ -107,6 +134,14 @@ namespace Neo.UnitTests
             }
 
             return newObj;
+        }
+
+        public static void DeleteFile(string file)
+        {
+            if (File.Exists(file))
+            {
+                File.Delete(file);
+            }
         }
     }
 }

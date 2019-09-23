@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -39,6 +39,11 @@ namespace Neo.IO.Caching
             }
             dictionary.Add(item, null);
             return true;
+        }
+
+        public bool Contains(T item)
+        {
+            return dictionary.Contains(item);
         }
 
         public void ExceptWith(IEnumerable<UInt256> hashes)

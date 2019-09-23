@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -200,9 +200,9 @@ namespace Neo.Wallets
             return account;
         }
 
-        public virtual WalletAccount Import(string nep2, string passphrase)
+        public virtual WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase);
+            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, N, r, p);
             WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             return account;
@@ -223,7 +223,7 @@ namespace Neo.Wallets
             }
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                HashSet<UInt160> cosigners = new HashSet<UInt160>();
+                HashSet<UInt160> cosignerList = new HashSet<UInt160>();
                 byte[] script;
                 List<(UInt160 Account, BigInteger Value)> balances_gas = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -250,7 +250,7 @@ namespace Neo.Wallets
                         {
                             balances = balances.OrderBy(p => p.Value).ToList();
                             var balances_used = FindPayingAccounts(balances, output.Value.Value);
-                            cosigners.UnionWith(balances_used.Select(p => p.Account));
+                            cosignerList.UnionWith(balances_used.Select(p => p.Account));
                             foreach (var (account, value) in balances_used)
                             {
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
@@ -264,12 +264,20 @@ namespace Neo.Wallets
                 }
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                TransactionAttribute[] attributes = cosigners.Select(p => new TransactionAttribute { Usage = TransactionAttributeUsage.Cosigner, Data = p.ToArray() }).ToArray();
-                return MakeTransaction(snapshot, attributes, script, balances_gas);
+
+                var cosigners = cosignerList.Select(p =>
+                         new Cosigner()
+                         {
+                             // default access for transfers should be valid only for first invocation
+                             Scopes = WitnessScope.CalledByEntry,
+                             Account = new UInt160(p.ToArray())
+                         }).ToArray();
+
+                return MakeTransaction(snapshot, script, new TransactionAttribute[0], cosigners, balances_gas);
             }
         }
 
-        public Transaction MakeTransaction(TransactionAttribute[] attributes, byte[] script, UInt160 sender = null)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -285,11 +293,11 @@ namespace Neo.Wallets
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, attributes, script, balances_gas);
+                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas);
             }
         }
 
-        private Transaction MakeTransaction(Snapshot snapshot, TransactionAttribute[] attributes, byte[] script, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(Snapshot snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
@@ -301,9 +309,11 @@ namespace Neo.Wallets
                     Script = script,
                     Sender = account,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = attributes
+                    Attributes = attributes,
+                    Cosigners = cosigners
                 };
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
+                // will try to execute 'transfer' script to check if it works
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
@@ -318,38 +328,51 @@ namespace Neo.Wallets
                             tx.SystemFee -= remainder;
                     }
                 }
+
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
-                int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+
+                // base size for transaction: includes const_header + attributes + cosigners with scopes + script + hashes
+                int size = Transaction.HeaderSize + attributes.GetVarSize() + cosigners.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+
                 foreach (UInt160 hash in hashes)
                 {
-                    script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
-                    if (script is null) continue;
-                    if (script.IsSignatureContract())
-                    {
-                        size += 66 + script.GetVarSize();
-                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
-                    }
-                    else if (script.IsMultiSigContract(out int m, out int n))
-                    {
-                        int size_inv = 65 * m;
-                        size += IO.Helper.GetVarSize(size_inv) + size_inv + script.GetVarSize();
-                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                            tx.NetworkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] * n;
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                            tx.NetworkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                        tx.NetworkFee += InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null) * n;
-                    }
-                    else
-                    {
-                        //We can support more contract types in the future.
-                    }
+                    byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
+                    if (witness_script is null) continue;
+                    tx.NetworkFee += CalculateNetWorkFee(witness_script, ref size);
                 }
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
+        }
+
+        public static long CalculateNetWorkFee(byte[] witness_script, ref int size)
+        {
+            long networkFee = 0;
+
+            if (witness_script.IsSignatureContract())
+            {
+                size += 66 + witness_script.GetVarSize();
+                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
+            }
+            else if (witness_script.IsMultiSigContract(out int m, out int n))
+            {
+                int size_inv = 65 * m;
+                size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
+                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                    networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] * n;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                    networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
+                networkFee += InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null) * n;
+            }
+            else
+            {
+                //We can support more contract types in the future.
+            }
+
+            return networkFee;
         }
 
         public bool Sign(ContractParametersContext context)

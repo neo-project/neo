@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
 using Neo.Persistence;

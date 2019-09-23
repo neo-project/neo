@@ -15,7 +15,6 @@ namespace Neo.SmartContract
         public const long GasFree = 0;
         private readonly long gas_amount;
         private readonly bool testMode;
-        private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
@@ -23,9 +22,9 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public Snapshot Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
-        public UInt160 CurrentScriptHash => hashes.Count > 0 ? hashes.Peek() : null;
-        public UInt160 CallingScriptHash => hashes.Count > 1 ? hashes.Peek(1) : null;
-        public UInt160 EntryScriptHash => hashes.Count > 0 ? hashes.Peek(hashes.Count - 1) : null;
+        public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 CallingScriptHash => InvocationStack.Count > 1 ? InvocationStack.Peek(1).GetState<ExecutionContextState>().ScriptHash : null;
+        public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
 
@@ -36,8 +35,6 @@ namespace Neo.SmartContract
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
-            ContextLoaded += ApplicationEngine_ContextLoaded;
-            ContextUnloaded += ApplicationEngine_ContextUnloaded;
         }
 
         internal T AddDisposable<T>(T disposable) where T : IDisposable
@@ -52,14 +49,16 @@ namespace Neo.SmartContract
             return testMode || GasConsumed <= gas_amount;
         }
 
-        private void ApplicationEngine_ContextLoaded(object sender, ExecutionContext e)
+        protected override void LoadContext(ExecutionContext context)
         {
-            hashes.Push(((byte[])e.Script).ToScriptHash());
-        }
+            // Set default execution context state
 
-        private void ApplicationEngine_ContextUnloaded(object sender, ExecutionContext e)
-        {
-            hashes.Pop();
+            context.SetState(new ExecutionContextState()
+            {
+                ScriptHash = ((byte[])context.Script).ToScriptHash()
+            });
+
+            base.LoadContext(context);
         }
 
         public override void Dispose()
@@ -84,17 +83,17 @@ namespace Neo.SmartContract
             return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
-        public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
-            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+        private static Block CreateDummyBlock(Snapshot snapshot)
         {
-            snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? new Block
+            var currentBlock = snapshot.Blocks[snapshot.CurrentBlockHash];
+            return new Block
             {
                 Version = 0,
                 PrevHash = snapshot.CurrentBlockHash,
                 MerkleRoot = new UInt256(),
-                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].Timestamp + Blockchain.SecondsPerBlock,
+                Timestamp = currentBlock.Timestamp + Blockchain.MillisecondsPerBlock,
                 Index = snapshot.Height + 1,
-                NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].NextConsensus,
+                NextConsensus = currentBlock.NextConsensus,
                 Witness = new Witness
                 {
                     InvocationScript = new byte[0],
@@ -103,6 +102,12 @@ namespace Neo.SmartContract
                 ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]
             };
+        }
+
+        public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
+            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+        {
+            snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
             engine.LoadScript(script);
             engine.Execute();

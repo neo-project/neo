@@ -1,4 +1,4 @@
-﻿using Neo.VM;
+using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
 
@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public void FromByteArray(byte[] data)
         {
-            FromStruct((Struct)data.DeserializeStackItem(16, 32));
+            FromStruct((Struct)data.DeserializeStackItem(16, 34));
         }
 
         protected virtual void FromStruct(Struct @struct)

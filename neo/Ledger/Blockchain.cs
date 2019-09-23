@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Configuration;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -27,17 +27,17 @@ namespace Neo.Ledger
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
 
-        public static readonly uint SecondsPerBlock = ProtocolSettings.Default.SecondsPerBlock;
+        public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
         public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-        public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
+        public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
         public static readonly Block GenesisBlock = new Block
         {
             PrevHash = UInt256.Zero,
-            Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestamp(),
+            Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
             Index = 0,
             NextConsensus = GetConsensusAddress(StandbyValidators),
             Witness = new Witness
@@ -53,7 +53,7 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private const int MemoryPoolMaxTransactions = 50_000;
+        private readonly static byte[] onPersistNativeContractScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -61,15 +61,15 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        internal readonly RelayCache RelayCache = new RelayCache(100);
+        internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
         public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
-        public uint HeaderHeight => (uint)header_index.Count - 1;
+        public uint HeaderHeight => currentSnapshot.HeaderHeight;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
-        public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
+        public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -84,12 +84,21 @@ namespace Neo.Ledger
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
+
+            NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                foreach (NativeContract contract in contracts)
+                    sb.EmitAppCall(contract.Hash, "onPersist");
+
+                onPersistNativeContractScript = sb.ToArray();
+            }
         }
 
         public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
-            this.MemPool = new MemoryPool(system, MemoryPoolMaxTransactions);
+            this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
             lock (lockObj)
             {
@@ -154,6 +163,7 @@ namespace Neo.Ledger
                 Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
                 SystemFee = 0,
                 Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
                 Witnesses = new[]
                 {
                     new Witness
@@ -229,7 +239,7 @@ namespace Neo.Ledger
             {
                 if (Store.ContainsTransaction(tx.Hash))
                     continue;
-                if (!Plugin.CheckPolicy(tx))
+                if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
@@ -283,7 +293,10 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
+                    // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
+                    uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
+
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
@@ -325,7 +338,7 @@ namespace Neo.Ledger
         {
             if (!payload.Verify(currentSnapshot)) return RelayResultReason.Invalid;
             system.Consensus?.Tell(payload);
-            RelayCache.Add(payload);
+            ConsensusRelayCache.Add(payload);
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
             return RelayResultReason.Succeed;
         }
@@ -351,7 +364,7 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private RelayResultReason OnNewTransaction(Transaction transaction)
+        private RelayResultReason OnNewTransaction(Transaction transaction, bool relay)
         {
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
@@ -359,13 +372,13 @@ namespace Neo.Ledger
                 return RelayResultReason.OutOfMemory;
             if (!transaction.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
                 return RelayResultReason.Invalid;
-            if (!Plugin.CheckPolicy(transaction))
+            if (!NativeContract.Policy.CheckPolicy(transaction, currentSnapshot))
                 return RelayResultReason.PolicyFail;
 
             if (!MemPool.TryAdd(transaction.Hash, transaction))
                 return RelayResultReason.OutOfMemory;
-
-            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
+            if (relay)
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }
 
@@ -392,8 +405,14 @@ namespace Neo.Ledger
                 case Block block:
                     Sender.Tell(OnNewBlock(block));
                     break;
+                case Transaction[] transactions:
+                    {
+                        // This message comes from a mempool's revalidation, already relayed
+                        foreach (var tx in transactions) OnNewTransaction(tx, false);
+                        break;
+                    }
                 case Transaction transaction:
-                    Sender.Tell(OnNewTransaction(transaction));
+                    Sender.Tell(OnNewTransaction(transaction, true));
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -413,15 +432,9 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
                     {
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                        {
-                            foreach (NativeContract contract in contracts)
-                                sb.EmitAppCall(contract.Hash, "onPersist");
-                            engine.LoadScript(sb.ToArray());
-                        }
+                        engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
@@ -452,13 +465,11 @@ namespace Neo.Ledger
                         all_application_executed.Add(application_executed);
                     }
                 }
-                snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
-                snapshot.BlockHashIndex.GetAndChange().Index = block.Index;
+                snapshot.BlockHashIndex.GetAndChange().Set(block);
                 if (block.Index == header_index.Count)
                 {
                     header_index.Add(block.Hash);
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
+                    snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);

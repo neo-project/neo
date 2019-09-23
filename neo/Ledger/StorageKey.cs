@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO;
 using System;
 using System.IO;
@@ -12,6 +12,25 @@ namespace Neo.Ledger
         public byte[] Key;
 
         int ISerializable.Size => ScriptHash.Size + (Key.Length / 16 + 1) * 17;
+
+        internal static byte[] CreateSearchPrefix(UInt160 hash, byte[] prefix)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                int index = 0;
+                int remain = prefix.Length;
+                while (remain >= 16)
+                {
+                    ms.Write(prefix, index, 16);
+                    ms.WriteByte(16);
+                    index += 16;
+                    remain -= 16;
+                }
+                if (remain > 0)
+                    ms.Write(prefix, index, remain);
+                return hash.ToArray().Concat(ms.ToArray()).ToArray();
+            }
+        }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {

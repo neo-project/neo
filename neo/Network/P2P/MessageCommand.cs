@@ -1,4 +1,4 @@
-﻿namespace Neo.Network.P2P
+namespace Neo.Network.P2P
 {
     public enum MessageCommand : byte
     {

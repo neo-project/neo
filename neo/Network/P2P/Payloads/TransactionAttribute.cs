@@ -1,4 +1,4 @@
-﻿using Neo.IO;
+using Neo.IO;
 using Neo.IO.Json;
 using System;
 using System.IO;
@@ -32,6 +32,14 @@ namespace Neo.Network.P2P.Payloads
             json["usage"] = Usage;
             json["data"] = Data.ToHexString();
             return json;
+        }
+
+        public static TransactionAttribute FromJson(JObject json)
+        {
+            TransactionAttribute transactionAttribute = new TransactionAttribute();
+            transactionAttribute.Usage = (TransactionAttributeUsage)(byte.Parse(json["usage"].AsString()));
+            transactionAttribute.Data = json["data"].AsString().HexToBytes();
+            return transactionAttribute;
         }
     }
 }

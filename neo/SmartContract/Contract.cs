@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography.ECC;
+using Neo.Cryptography.ECC;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -42,6 +42,20 @@ namespace Neo.SmartContract
             return new Contract
             {
                 Script = redeemScript,
+                ParameterList = parameterList
+            };
+        }
+
+        /// <summary>
+        /// Construct special Contract with empty Script, will get the Script with scriptHash from blockchain when doing the Verify
+        /// verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
+        /// </summary>
+        public static Contract Create(UInt160 scriptHash, params ContractParameterType[] parameterList)
+        {
+            return new Contract
+            {
+                Script = new byte[0],
+                _scriptHash = scriptHash,
                 ParameterList = parameterList
             };
         }

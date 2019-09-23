@@ -1,4 +1,4 @@
-﻿using Neo.IO;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -63,6 +63,14 @@ namespace Neo.Ledger
             json["script"] = Script.ToHexString();
             json["manifest"] = Manifest.ToJson();
             return json;
+        }
+
+        public static ContractState FromJson(JObject json)
+        {
+            ContractState contractState = new ContractState();
+            contractState.Script = json["script"].AsString().HexToBytes();
+            contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
+            return contractState;
         }
     }
 }

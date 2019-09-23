@@ -1,8 +1,9 @@
-﻿#pragma warning disable IDE0051
+#pragma warning disable IDE0051
 #pragma warning disable IDE0060
 
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -20,10 +21,19 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
+        private const byte Prefix_MaxBlockSize = 16;
 
         public PolicyContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
+        }
+
+        internal bool CheckPolicy(Transaction tx, Snapshot snapshot)
+        {
+            UInt160[] blockedAccounts = GetBlockedAccounts(snapshot);
+            if (blockedAccounts.Intersect(tx.GetScriptHashesForVerifying(snapshot)).Any())
+                return false;
+            return true;
         }
 
         private bool CheckValidators(ApplicationEngine engine)
@@ -36,6 +46,10 @@ namespace Neo.SmartContract.Native
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
+            {
+                Value = BitConverter.GetBytes(1024u * 256u)
+            });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
             {
                 Value = BitConverter.GetBytes(512u)
@@ -63,6 +77,17 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        private StackItem GetMaxBlockSize(ApplicationEngine engine, VMArray args)
+        {
+            return GetMaxBlockSize(engine.Snapshot);
+        }
+
+        public uint GetMaxBlockSize(Snapshot snapshot)
+        {
+            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)].Value, 0);
+        }
+
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetFeePerByte(ApplicationEngine engine, VMArray args)
         {
             return GetFeePerByte(engine.Snapshot);
@@ -82,6 +107,17 @@ namespace Neo.SmartContract.Native
         public UInt160[] GetBlockedAccounts(Snapshot snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
+        }
+
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
+        private StackItem SetMaxBlockSize(ApplicationEngine engine, VMArray args)
+        {
+            if (!CheckValidators(engine)) return false;
+            uint value = (uint)args[0].GetBigInteger();
+            if (Network.P2P.Message.PayloadMaxSize <= value) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize));
+            storage.Value = BitConverter.GetBytes(value);
+            return true;
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]

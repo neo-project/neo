@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.IO;
 using System;
 using System.Net;

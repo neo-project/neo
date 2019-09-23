@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
@@ -54,7 +54,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 0_00010000, TriggerType.Application);
         public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400, TriggerType.Application);
         public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 0_00000400, TriggerType.All);
-        public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
         public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400, TriggerType.Application);
@@ -75,6 +75,11 @@ namespace Neo.SmartContract
         public static long GetPrice(uint hash, RandomAccessStack<StackItem> stack)
         {
             return methods[hash].GetPrice(stack);
+        }
+
+        public static Dictionary<uint, string> SupportedMethods()
+        {
+            return methods.ToDictionary(p => p.Key, p => p.Value.Method);
         }
 
         private static long GetStoragePrice(RandomAccessStack<StackItem> stack)
@@ -143,8 +148,35 @@ namespace Neo.SmartContract
 
         internal static bool CheckWitness(ApplicationEngine engine, UInt160 hash)
         {
-            var _hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
-            return _hashes_for_verifying.Contains(hash);
+            if (engine.ScriptContainer is Transaction tx)
+            {
+                Cosigner usage = tx.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
+                if (usage is null) return false;
+                if (usage.Scopes == WitnessScope.Global) return true;
+                if (usage.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                {
+                    if (engine.CallingScriptHash == engine.EntryScriptHash)
+                        return true;
+                }
+                if (usage.Scopes.HasFlag(WitnessScope.CustomContracts))
+                {
+                    if (usage.AllowedContracts.Contains(engine.CurrentScriptHash))
+                        return true;
+                }
+                if (usage.Scopes.HasFlag(WitnessScope.CustomGroups))
+                {
+                    var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
+                    // check if current group is the required one
+                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(usage.AllowedGroups).Any())
+                        return true;
+                }
+                return false;
+            }
+
+            // only for non-Transaction types (Block, etc)
+
+            var hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
+            return hashes_for_verifying.Contains(hash);
         }
 
         private static bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)
@@ -204,15 +236,17 @@ namespace Neo.SmartContract
 
         private static bool Runtime_GetNotifications(ApplicationEngine engine)
         {
-            var data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if (data.Length != UInt160.Length) return false;
-            if (!engine.CheckArraySize(engine.Notifications.Count)) return false;
+            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            if ((data.Length != 0) && (data.Length != UInt160.Length)) return false;
 
-            var hash = new UInt160(data);
             IEnumerable<NotifyEventArgs> notifications = engine.Notifications;
-            if (!hash.Equals(UInt160.Zero))
+            if (data.Length == UInt160.Length) // must filter by scriptHash
+            {
+                var hash = new UInt160(data);
                 notifications = notifications.Where(p => p.ScriptHash == hash);
+            }
 
+            if (!engine.CheckArraySize(notifications.Count())) return false;
             engine.CurrentContext.EvaluationStack.Push(notifications.Select(u => new VM.Types.Array(new StackItem[] { u.ScriptHash.ToArray(), u.State })).ToArray());
             return true;
         }

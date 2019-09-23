@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
@@ -6,6 +6,7 @@ using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -14,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Version;
         public UInt256 PrevHash;
         public UInt256 MerkleRoot;
-        public uint Timestamp;
+        public ulong Timestamp;
         public uint Index;
         public UInt160 NextConsensus;
         public Witness Witness;
@@ -32,7 +33,15 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public virtual int Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + NextConsensus.Size + 1 + Witness.Size;
+        public virtual int Size =>
+            sizeof(uint) +       //Version
+            UInt256.Length +     //PrevHash
+            UInt256.Length +     //MerkleRoot
+            sizeof(ulong) +      //Timestamp
+            sizeof(uint) +       //Index
+            UInt160.Length +     //NextConsensus
+            1 +                  //
+            Witness.Size;        //Witness   
 
         Witness[] IVerifiable.Witnesses
         {
@@ -59,7 +68,7 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
             MerkleRoot = reader.ReadSerializable<UInt256>();
-            Timestamp = reader.ReadUInt32();
+            Timestamp = reader.ReadUInt64();
             Index = reader.ReadUInt32();
             NextConsensus = reader.ReadSerializable<UInt160>();
         }
@@ -101,6 +110,17 @@ namespace Neo.Network.P2P.Payloads
             json["nextconsensus"] = NextConsensus.ToAddress();
             json["witnesses"] = new JArray(Witness.ToJson());
             return json;
+        }
+
+        public void FromJson(JObject json)
+        {
+            Version = (uint)json["version"].AsNumber();
+            PrevHash = UInt256.Parse(json["previousblockhash"].AsString());
+            MerkleRoot = UInt256.Parse(json["merkleroot"].AsString());
+            Timestamp = (ulong)json["time"].AsNumber();
+            Index = (uint)json["index"].AsNumber();
+            NextConsensus = json["nextconsensus"].AsString().ToScriptHash();
+            Witness = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).FirstOrDefault();
         }
 
         public virtual bool Verify(Snapshot snapshot)

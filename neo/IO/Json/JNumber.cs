@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -99,13 +99,6 @@ namespace Neo.IO.Json
         public override string ToString()
         {
             return AsString();
-        }
-
-        public DateTime ToTimestamp()
-        {
-            if (Value < 0 || Value > ulong.MaxValue)
-                throw new InvalidCastException();
-            return ((ulong)Value).ToDateTime();
         }
 
         public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)

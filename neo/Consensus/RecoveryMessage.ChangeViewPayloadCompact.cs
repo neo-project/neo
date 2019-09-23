@@ -1,4 +1,4 @@
-﻿using Neo.IO;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System.IO;
 
@@ -10,20 +10,20 @@ namespace Neo.Consensus
         {
             public ushort ValidatorIndex;
             public byte OriginalViewNumber;
-            public uint Timestamp;
+            public ulong Timestamp;
             public byte[] InvocationScript;
 
             int ISerializable.Size =>
                 sizeof(ushort) +                //ValidatorIndex
                 sizeof(byte) +                  //OriginalViewNumber
-                sizeof(uint) +                  //Timestamp
+                sizeof(ulong) +                 //Timestamp
                 InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
                 ValidatorIndex = reader.ReadUInt16();
                 OriginalViewNumber = reader.ReadByte();
-                Timestamp = reader.ReadUInt32();
+                Timestamp = reader.ReadUInt64();
                 InvocationScript = reader.ReadVarBytes(1024);
             }
 

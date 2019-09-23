@@ -1,4 +1,4 @@
-﻿using Neo.VM;
+using Neo.VM;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract
@@ -162,8 +162,6 @@ namespace Neo.SmartContract
             [OpCode.MIN] = 200,
             [OpCode.MAX] = 200,
             [OpCode.WITHIN] = 200,
-            [OpCode.SHA1] = 300000,
-            [OpCode.SHA256] = 1000000,
             [OpCode.ARRAYSIZE] = 150,
             [OpCode.PACK] = 7000,
             [OpCode.UNPACK] = 7000,
