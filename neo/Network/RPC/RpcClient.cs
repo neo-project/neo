@@ -1,5 +1,7 @@
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using System;
 using System.Linq;
@@ -276,6 +278,14 @@ namespace Neo.Network.RPC
         public bool SendRawTransaction(byte[] rawTransaction)
         {
             return RpcSend("sendrawtransaction", rawTransaction.ToHexString()).AsBoolean();
+        }
+
+        /// <summary>
+        /// Broadcasts a transaction over the NEO network.
+        /// </summary>
+        public bool SendRawTransaction(Transaction transaction)
+        {
+            return SendRawTransaction(transaction.ToArray());
         }
 
         /// <summary>

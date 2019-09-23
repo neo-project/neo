@@ -68,8 +68,7 @@ namespace Neo.UnitTests.Network.RPC
                 Stack = parameters,
                 GasConsumed = "100",
                 Script = script.ToHexString(),
-                State = "",
-                Tx = ""
+                State = ""
             };
 
             mockClient.Setup(p => p.RpcSend("invokescript", It.Is<JObject>(j => j.AsString() == script.ToHexString())))

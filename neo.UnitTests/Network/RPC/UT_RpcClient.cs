@@ -449,8 +449,7 @@ namespace Neo.UnitTests.Network.RPC
                         ""type"": ""ByteArray"",
                         ""value"": ""262bec084432""
                     }
-                ],
-                ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
+                ]
             }");
             JObject response = CreateResponse(1);
             response["result"] = json;
@@ -473,8 +472,7 @@ namespace Neo.UnitTests.Network.RPC
                         ""type"": ""ByteArray"",
                         ""value"": ""262bec084432""
                     }
-                ],
-                ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
+                ]
             }");
             JObject response = CreateResponse(1);
             response["result"] = json;
