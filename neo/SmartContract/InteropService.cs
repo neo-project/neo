@@ -236,15 +236,17 @@ namespace Neo.SmartContract
 
         private static bool Runtime_GetNotifications(ApplicationEngine engine)
         {
-            var data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if (data.Length != UInt160.Length) return false;
-            if (!engine.CheckArraySize(engine.Notifications.Count)) return false;
+            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            if ((data.Length != 0) && (data.Length != UInt160.Length)) return false;
 
-            var hash = new UInt160(data);
             IEnumerable<NotifyEventArgs> notifications = engine.Notifications;
-            if (!hash.Equals(UInt160.Zero))
+            if (data.Length == UInt160.Length) // must filter by scriptHash
+            {
+                var hash = new UInt160(data);
                 notifications = notifications.Where(p => p.ScriptHash == hash);
+            }
 
+            if (!engine.CheckArraySize(notifications.Count())) return false;
             engine.CurrentContext.EvaluationStack.Push(notifications.Select(u => new VM.Types.Array(new StackItem[] { u.ScriptHash.ToArray(), u.State })).ToArray());
             return true;
         }

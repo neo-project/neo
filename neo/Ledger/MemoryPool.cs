@@ -360,9 +360,14 @@ namespace Neo.Ledger
 
                 if (policyChanged)
                 {
+                    var tx = new List<Transaction>();
                     foreach (PoolItem item in _unverifiedSortedTransactions.Reverse())
                         if (item.Tx.FeePerByte >= _feePerByte)
-                            _system.Blockchain.Tell(item.Tx, ActorRefs.NoSender);
+                            tx.Add(item.Tx);
+
+                    if (tx.Count > 0)
+                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
+
                     _unverifiedTransactions.Clear();
                     _unverifiedSortedTransactions.Clear();
                 }
@@ -464,8 +469,7 @@ namespace Neo.Ledger
         ///
         /// Note: this must only be called from a single thread (the Blockchain actor)
         /// </summary>
-        /// <param name="maxToVerify">Max transactions to reverify, the value passed should be >=2. If 1 is passed it
-        ///                           will still potentially use 2.</param>
+        /// <param name="maxToVerify">Max transactions to reverify, the value passed cam be >=1</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
