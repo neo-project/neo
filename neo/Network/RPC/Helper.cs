@@ -1,3 +1,4 @@
+using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -11,11 +12,12 @@ namespace Neo.Network.RPC
         public const int HashLength = 40;
         public const int WifLength = 52;
         public const int PrivateKeyLength = 64;
+        public const int PublicKeyLength = 66;
 
         /// <summary>
-        /// Parse address or scripthash string to UInt160
+        /// Parse address, scripthash or public key string to UInt160
         /// </summary>
-        /// <param name="addressOrHash">account address or scripthash string</param>
+        /// <param name="addressOrHash">account address, scripthash or public key string</param>
         /// <returns></returns>
         public static UInt160 ToUInt160(this string addressOrHash)
         {
@@ -29,6 +31,11 @@ namespace Neo.Network.RPC
             else if (addressOrHash.Length == HashLength)
             {
                 return UInt160.Parse(addressOrHash);
+            }
+            else if (addressOrHash.Length == PublicKeyLength)
+            {
+                var pubKey = ECPoint.Parse(addressOrHash, ECCurve.Secp256r1);
+                return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
             }
 
             throw new FormatException();
@@ -74,28 +81,13 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public static BigInteger ToBigInteger(this decimal amount, uint decimals)
         {
-            BigInteger multiplier = BigInteger.Pow(10, (int)decimals);
+            BigInteger factor = BigInteger.Pow(10, (int)decimals);
             var (numerator, denominator) = Fraction(amount);
-            var res = multiplier * numerator / denominator;
+            var res = factor * numerator / denominator;
             return res;
-            //var amountBuilder = new StringBuilder(amount.ToString());
-            //for (int i = 0; i < decimals; i++)
-            //{
-            //    amountBuilder.Append("0");
-            //}
-            //string amountStr = amountBuilder.ToString();
-
-            //int pointPos = amountStr.IndexOf('.');
-            //if (pointPos > -1)
-            //{
-            //    amountStr = amountStr.Remove(pointPos, 1);
-            //    amountStr = amountStr.Remove(pointPos + (int)decimals);
-            //}
-
-            //return BigInteger.Parse(amountStr);
         }
 
-        static (BigInteger numerator, BigInteger denominator) Fraction(decimal d)
+        private static (BigInteger numerator, BigInteger denominator) Fraction(decimal d)
         {
             int[] bits = decimal.GetBits(d);
             BigInteger numerator = (1 - ((bits[3] >> 30) & 2)) *

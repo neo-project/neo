@@ -33,6 +33,10 @@ namespace Neo.UnitTests.Network.RPC
             string hash = scriptHash.ToString();
             result = hash.ToUInt160();
             Assert.AreEqual(scriptHash, result);
+
+            string publicKey = keyPair.PublicKey.ToString();
+            result = publicKey.ToUInt160();
+            Assert.AreEqual(scriptHash, result);
         }
 
         [TestMethod]

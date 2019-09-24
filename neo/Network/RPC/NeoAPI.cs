@@ -2,8 +2,10 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
+using System;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Neo.Network.RPC
 {
@@ -32,7 +34,7 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Get unclaimed gas
         /// </summary>
-        /// <param name="addressOrHash">account address or scripthash string</param>
+        /// <param name="addressOrHash">account address, scripthash or public key string</param>
         /// <returns></returns>
         public BigInteger GetUnclaimedGas(string addressOrHash)
         {
@@ -52,13 +54,13 @@ namespace Neo.Network.RPC
         {
             UInt160 toHash = key.ToScriptHash();
             BigInteger balance = Nep5API.BalanceOf(NativeContract.NEO.Hash, toHash);
-            Transaction transaction = Nep5API.Transfer(NativeContract.NEO.Hash, key, toHash, balance);
+            Transaction transaction = Nep5API.GetTransfer(NativeContract.NEO.Hash, key, toHash, balance);
             rpcClient.SendRawTransaction(transaction);
             return transaction;
         }
 
         /// <summary>
-        /// Transfer NEP5 token balance
+        /// Transfer NEP5 token balance, with common data types
         /// </summary>
         /// <param name="tokenHash">nep5 token script hash</param>
         /// <param name="fromKey">wif or private key</param>
@@ -66,17 +68,42 @@ namespace Neo.Network.RPC
         /// <param name="amount">token amount</param>
         /// <param name="networkFee">netwotk fee, set to be 0 will auto calculate the least fee</param>
         /// <returns></returns>
-        public Transaction Transfer(string tokenHash, string fromKey, string toAddress, decimal amount, long networkFee = 0)
+        public Transaction Transfer(string tokenHash, string fromKey, string toAddress, decimal amount, decimal networkFee = 0)
         {
             UInt160 scriptHash = tokenHash.ToUInt160();
-            var tokenInfo = Nep5API.GetTokenInfo(scriptHash);
+            var decimals = Nep5API.Decimals(scriptHash);
 
             KeyPair from = fromKey.ToKeyPair();
             UInt160 to = toAddress.ToUInt160();
-            BigInteger amountInteger = 0;
-            Transaction transaction = Nep5API.Transfer(scriptHash, from, to, amountInteger, networkFee);
+            BigInteger amountInteger = amount.ToBigInteger(decimals);
+            BigInteger networkFeeInteger = networkFee.ToBigInteger(NativeContract.GAS.Decimals);
+            Transaction transaction = Nep5API.GetTransfer(scriptHash, from, to, amountInteger, (long)networkFeeInteger);
             rpcClient.SendRawTransaction(transaction);
             return transaction;
+        }
+
+        /// <summary>
+        /// Wait until New Block comes
+        /// Won't block sync code if don't call Task.Wait()
+        /// </summary>
+        /// <returns>new block index</returns>
+        public async Task<uint> WaitNewBlock()
+        {
+            uint start = rpcClient.GetBlockCount() - 1;
+            DateTime deadline = DateTime.UtcNow.AddSeconds(31);
+            uint current = start;
+            while (start == current)
+            {
+                if (deadline < DateTime.UtcNow)
+                {
+                    throw new TimeoutException();
+                }
+
+                await Task.Delay(1000);
+                current = rpcClient.GetBlockCount() - 1;
+            }
+
+            return current;
         }
     }
 }
