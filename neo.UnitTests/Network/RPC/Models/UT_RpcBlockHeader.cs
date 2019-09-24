@@ -18,7 +18,6 @@ namespace Neo.UnitTests.Network.RPC.Models
             rpcBlockHeader.Header = header;
             var json = rpcBlockHeader.ToJson();
             json["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
-            Console.WriteLine(json.AsString());
             json.Should().NotBeNull();
 
             rpcBlockHeader.Confirmations = 1;
