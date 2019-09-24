@@ -1,8 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
-using System;
 
 namespace Neo.UnitTests.Network.RPC.Models
 {
@@ -12,7 +10,8 @@ namespace Neo.UnitTests.Network.RPC.Models
         [TestMethod]
         public void TestToJson()
         {
-            var version = new RpcVersion() {
+            var version = new RpcVersion()
+            {
                 TcpPort = 800,
                 WsPort = 900,
                 Nonce = 1,

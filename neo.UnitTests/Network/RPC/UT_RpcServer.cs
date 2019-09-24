@@ -1,8 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
-using Neo.Network.RPC.Models;
 using System;
 using System.Net;
 
@@ -46,6 +44,5 @@ namespace Neo.UnitTests.Network.RPC
             Action action = () => server.Start(IPAddress.Parse("127.0.0.1"), 8080);
             action.ShouldNotThrow<Exception>();
         }
-
     }
 }
