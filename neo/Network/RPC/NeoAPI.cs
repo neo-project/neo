@@ -48,13 +48,14 @@ namespace Neo.Network.RPC
         /// The GAS is claimed when doing NEO transfer
         /// This function will transfer NEO balance from account to itself
         /// </summary>
-        /// <param name="key">account KeyPair</param>
+        /// <param name="key">wif or private key</param>
         /// <returns>The transaction sended</returns>
-        public Transaction ClaimGas(KeyPair key)
+        public Transaction ClaimGas(string key)
         {
-            UInt160 toHash = key.ToScriptHash();
+            KeyPair keyPair = key.ToKeyPair();
+            UInt160 toHash = keyPair.ToScriptHash();
             BigInteger balance = Nep5API.BalanceOf(NativeContract.NEO.Hash, toHash);
-            Transaction transaction = Nep5API.GetTransfer(NativeContract.NEO.Hash, key, toHash, balance);
+            Transaction transaction = Nep5API.GetTransfer(NativeContract.NEO.Hash, keyPair, toHash, balance);
             rpcClient.SendRawTransaction(transaction);
             return transaction;
         }
