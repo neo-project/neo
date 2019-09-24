@@ -119,7 +119,7 @@ namespace Neo.UnitTests.Network.RPC
         {
             // create block
             var block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 0);
+            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out _, out UInt160 _, out ulong _, out uint _, out Witness _, out Transaction[] _, 0);
 
             block.Transactions = new[]
             {
@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Network.RPC
             MockResponse(response.ToString());
 
             var result = rpc.GetBlockCount();
-            Assert.AreEqual(100, result);
+            Assert.AreEqual(100u, result);
         }
 
         [TestMethod]
@@ -187,7 +187,7 @@ namespace Neo.UnitTests.Network.RPC
         public void TestGetBlockHeader()
         {
             Header header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 _, out UInt160 _, out ulong _, out uint _, out Witness _);
 
             JObject json = header.ToJson();
             JObject response = CreateResponse(1);
@@ -231,12 +231,16 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetContractState()
         {
-            var sb = new ScriptBuilder();
-            sb.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
+            byte[] script;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
+                script = sb.ToArray();
+            }
 
             ContractState state = new ContractState
             {
-                Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(sb.ToArray()).ToArray(),
+                Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script).ToArray(),
                 Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
 
@@ -316,7 +320,7 @@ namespace Neo.UnitTests.Network.RPC
             MockResponse(response.ToString());
 
             var result = rpc.GetRawMempoolBoth();
-            Assert.AreEqual((uint)65535, result.Height);
+            Assert.AreEqual(65535u, result.Height);
             Assert.AreEqual("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e", result.Verified[0]);
             Assert.AreEqual("0xf86f6f2c08fbf766ebe59dc84bc3b8829f1053f0a01deb26bf7960d99fa86cd6", result.UnVerified[1]);
         }
@@ -476,7 +480,7 @@ namespace Neo.UnitTests.Network.RPC
             response["result"] = json;
             MockResponse(response.ToString());
 
-            var result = rpc.InvokeScript("00046e616d656724058e5e1b6008847cd662728549088a9ee82191");
+            var result = rpc.InvokeScript("00046e616d656724058e5e1b6008847cd662728549088a9ee82191".HexToBytes());
             Assert.AreEqual(json.ToString(), result.ToJson().ToString());
         }
 
@@ -507,7 +511,7 @@ namespace Neo.UnitTests.Network.RPC
             response["result"] = json;
             MockResponse(response.ToString());
 
-            var result = rpc.SendRawTransaction("80000001195876cb34364dc38b730077156c6bc3a7fc570044a66fbfeeea56f71327e8ab0000029b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc500c65eaf440000000f9a23e06f74cf86b8827a9108ec2e0f89ad956c9b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc50092e14b5e00000030aab52ad93f6ce17ca07fa88fc191828c58cb71014140915467ecd359684b2dc358024ca750609591aa731a0b309c7fb3cab5cd0836ad3992aa0a24da431f43b68883ea5651d548feb6bd3c8e16376e6e426f91f84c58232103322f35c7819267e721335948d385fae5be66e7ba8c748ac15467dcca0693692dac");
+            var result = rpc.SendRawTransaction("80000001195876cb34364dc38b730077156c6bc3a7fc570044a66fbfeeea56f71327e8ab0000029b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc500c65eaf440000000f9a23e06f74cf86b8827a9108ec2e0f89ad956c9b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc50092e14b5e00000030aab52ad93f6ce17ca07fa88fc191828c58cb71014140915467ecd359684b2dc358024ca750609591aa731a0b309c7fb3cab5cd0836ad3992aa0a24da431f43b68883ea5651d548feb6bd3c8e16376e6e426f91f84c58232103322f35c7819267e721335948d385fae5be66e7ba8c748ac15467dcca0693692dac".HexToBytes());
             Assert.AreEqual(json.ToString(), ((JObject)result).ToString());
         }
 
@@ -519,7 +523,7 @@ namespace Neo.UnitTests.Network.RPC
             response["result"] = json;
             MockResponse(response.ToString());
 
-            var result = rpc.SubmitBlock("03febccf81ac85e3d795bc5cbd4e84e907812aa3");
+            var result = rpc.SubmitBlock("03febccf81ac85e3d795bc5cbd4e84e907812aa3".HexToBytes());
             Assert.AreEqual(json.ToString(), ((JObject)result).ToString());
         }
 

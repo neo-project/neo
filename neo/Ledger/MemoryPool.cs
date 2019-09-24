@@ -469,8 +469,7 @@ namespace Neo.Ledger
         ///
         /// Note: this must only be called from a single thread (the Blockchain actor)
         /// </summary>
-        /// <param name="maxToVerify">Max transactions to reverify, the value passed should be >=2. If 1 is passed it
-        ///                           will still potentially use 2.</param>
+        /// <param name="maxToVerify">Max transactions to reverify, the value passed cam be >=1</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
