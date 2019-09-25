@@ -10,43 +10,43 @@ namespace Neo.UnitTests
         where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
-        private readonly TValue _defaultValue;
+        private readonly Dictionary<TKey, TValue> dic = new Dictionary<TKey, TValue>();
 
-        public TestDataCache()
-        {
-            _defaultValue = null;
-        }
+        public TestDataCache() { }
 
-        public TestDataCache(TValue defaultValue)
+        public TestDataCache(TKey key, TValue value)
         {
-            this._defaultValue = defaultValue;
+            dic.Add(key, value);
         }
         public override void DeleteInternal(TKey key)
         {
+            dic.Remove(key);
         }
 
         protected override void AddInternal(TKey key, TValue value)
         {
+            dic.Add(key, value);
         }
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
         {
-            return Enumerable.Empty<KeyValuePair<TKey, TValue>>();
+            return dic.ToList();
         }
 
         protected override TValue GetInternal(TKey key)
         {
-            if (_defaultValue == null) throw new NotImplementedException();
-            return _defaultValue;
+            if (dic[key] == null) throw new NotImplementedException();
+            return dic[key];
         }
 
         protected override TValue TryGetInternal(TKey key)
         {
-            return _defaultValue;
+            return dic.TryGetValue(key, out TValue value) ? value : null;
         }
 
         protected override void UpdateInternal(TKey key, TValue value)
         {
+            dic[key] = value;
         }
     }
 }
