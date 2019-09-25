@@ -71,14 +71,6 @@ namespace Neo.UnitTests.Network.RPC
             decimals = 4;
             result = amount.ToBigInteger(decimals);
             Assert.AreEqual(BigInteger.Parse("12345"), result);
-
-            for (int i = 1; i < 1000000; i++)
-            {
-                amount = 1.23456789m;
-                decimals = 38;
-                result = amount.ToBigInteger(decimals);
-                Assert.AreEqual(BigInteger.Parse("123456789000000000000000000000000000000"), result);
-            }
         }
     }
 }

@@ -7,8 +7,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
-using System;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.UnitTests.Network.RPC
