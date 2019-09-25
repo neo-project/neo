@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using System;
@@ -11,54 +11,42 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestIsAllowed()
         {
-            for (int i = 0; i < 4; i++)
-            {
-                if (i == 0)
-                {
-                    ContractManifest contractManifest = ContractManifest.CreateDefault(UInt160.Zero);
-                    ContractPermission contractPermission = ContractPermission.DefaultPermission;
-                    contractPermission.Contract = ContractPermissionDescriptor.Create(UInt160.Zero);
-                    Assert.AreEqual(true, contractPermission.IsAllowed(contractManifest, "AAA"));
-                    contractPermission.Contract = ContractPermissionDescriptor.CreateWildcard();
-                }
-                else if (i == 1)
-                {
-                    ContractManifest contractManifest = ContractManifest.CreateDefault(UInt160.Zero);
-                    ContractPermission contractPermission = ContractPermission.DefaultPermission;
-                    contractPermission.Contract = ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001"));
-                    Assert.AreEqual(false, contractPermission.IsAllowed(contractManifest, "AAA"));
-                    contractPermission.Contract = ContractPermissionDescriptor.CreateWildcard();
-                }
-                else if (i == 2)
-                {
-                    Random random = new Random();
-                    byte[] privateKey = new byte[32];
-                    random.NextBytes(privateKey);
-                    ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
-                    ContractManifest contractManifest = ContractManifest.CreateDefault(UInt160.Zero);
-                    contractManifest.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey } };
-                    ContractPermission contractPermission = ContractPermission.DefaultPermission;
-                    contractPermission.Contract = ContractPermissionDescriptor.Create(publicKey);
-                    Assert.AreEqual(true, contractPermission.IsAllowed(contractManifest, "AAA"));
-                    contractPermission.Contract = ContractPermissionDescriptor.CreateWildcard();
-                }
-                else
-                {
-                    Random random = new Random();
-                    byte[] privateKey = new byte[32];
-                    random.NextBytes(privateKey);
-                    ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
-                    byte[] privateKey2 = new byte[32];
-                    random.NextBytes(privateKey2);
-                    ECPoint publicKey2 = ECCurve.Secp256r1.G * privateKey2;
-                    ContractManifest contractManifest = ContractManifest.CreateDefault(UInt160.Zero);
-                    contractManifest.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey2 } };
-                    ContractPermission contractPermission = ContractPermission.DefaultPermission;
-                    contractPermission.Contract = ContractPermissionDescriptor.Create(publicKey);
-                    Assert.AreEqual(false, contractPermission.IsAllowed(contractManifest, "AAA"));
-                    contractPermission.Contract = ContractPermissionDescriptor.CreateWildcard();
-                }
-            }
+            ContractManifest contractManifest1 = ContractManifest.CreateDefault(UInt160.Zero);
+            ContractPermission contractPermission1 = ContractPermission.DefaultPermission;
+            contractPermission1.Contract = ContractPermissionDescriptor.Create(UInt160.Zero);
+            Assert.AreEqual(true, contractPermission1.IsAllowed(contractManifest1, "AAA"));
+            contractPermission1.Contract = ContractPermissionDescriptor.CreateWildcard();
+
+            ContractManifest contractManifest2 = ContractManifest.CreateDefault(UInt160.Zero);
+            ContractPermission contractPermission2 = ContractPermission.DefaultPermission;
+            contractPermission2.Contract = ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001"));
+            Assert.AreEqual(false, contractPermission2.IsAllowed(contractManifest2, "AAA"));
+            contractPermission2.Contract = ContractPermissionDescriptor.CreateWildcard();
+
+            Random random3 = new Random();
+            byte[] privateKey3 = new byte[32];
+            random3.NextBytes(privateKey3);
+            ECPoint publicKey3 = ECCurve.Secp256r1.G * privateKey3;
+            ContractManifest contractManifest3 = ContractManifest.CreateDefault(UInt160.Zero);
+            contractManifest3.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey3 } };
+            ContractPermission contractPermission3 = ContractPermission.DefaultPermission;
+            contractPermission3.Contract = ContractPermissionDescriptor.Create(publicKey3);
+            Assert.AreEqual(true, contractPermission3.IsAllowed(contractManifest3, "AAA"));
+            contractPermission3.Contract = ContractPermissionDescriptor.CreateWildcard();
+
+            Random random4 = new Random();
+            byte[] privateKey41 = new byte[32];
+            random4.NextBytes(privateKey41);
+            ECPoint publicKey41 = ECCurve.Secp256r1.G * privateKey41;
+            byte[] privateKey42 = new byte[32];
+            random4.NextBytes(privateKey42);
+            ECPoint publicKey42 = ECCurve.Secp256r1.G * privateKey42;
+            ContractManifest contractManifest4 = ContractManifest.CreateDefault(UInt160.Zero);
+            contractManifest4.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey42 } };
+            ContractPermission contractPermission4 = ContractPermission.DefaultPermission;
+            contractPermission4.Contract = ContractPermissionDescriptor.Create(publicKey41);
+            Assert.AreEqual(false, contractPermission4.IsAllowed(contractManifest4, "AAA"));
+            contractPermission4.Contract = ContractPermissionDescriptor.CreateWildcard();
         }
     }
 }
