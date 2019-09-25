@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -259,9 +260,12 @@ namespace Neo.Network.RPC
         /// Returns the result after passing a script through the VM.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        public RpcInvokeResult InvokeScript(byte[] script)
+        public RpcInvokeResult InvokeScript(byte[] script, params JObject[] hashes)
         {
-            return RpcInvokeResult.FromJson(RpcSend("invokescript", script.ToHexString()));
+            List<JObject> parameters = new List<JObject>();
+            parameters.Add(script.ToHexString());
+            parameters.AddRange(hashes);
+            return RpcInvokeResult.FromJson(RpcSend("invokescript", parameters.ToArray()));
         }
 
         /// <summary>

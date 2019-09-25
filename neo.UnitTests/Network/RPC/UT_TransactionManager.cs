@@ -71,7 +71,7 @@ namespace Neo.UnitTests.Network.RPC
                 State = ""
             };
 
-            mockClient.Setup(p => p.RpcSend("invokescript", It.Is<JObject>(j => j.AsString() == script.ToHexString())))
+            mockClient.Setup(p => p.RpcSend("invokescript", It.Is<JObject[]>(j => j[0].AsString() == script.ToHexString())))
                 .Returns(result.ToJson())
                 .Verifiable();
         }
