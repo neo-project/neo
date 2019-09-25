@@ -214,7 +214,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestExecutionEngine_GetExecutingScriptHash()
         {
             var engine = GetEngine();
-            InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetExecutingScriptHash).Should().BeTrue(); ;
+            InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetExecutingScriptHash).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
                 .Should().Be(engine.CurrentScriptHash.ToArray().ToHexString());
         }
@@ -238,7 +238,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestExecutionEngine_GetEntryScriptHash()
         {
             var engine = GetEngine();
-            InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetEntryScriptHash).Should().BeTrue(); ;
+            InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetEntryScriptHash).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
                 .Should().Be(engine.EntryScriptHash.ToArray().ToHexString());
         }

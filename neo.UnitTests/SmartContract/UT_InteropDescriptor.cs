@@ -14,12 +14,12 @@ namespace Neo.UnitTests.SmartContract
             string method = @"System.ExecutionEngine.GetScriptContainer";
             long price = 0_00000250;
             TriggerType allowedTriggers = TriggerType.All;
-            InteropDescriptor descriptor = new InteropDescriptor(method, TestEngine, price, allowedTriggers);
+            InteropDescriptor descriptor = new InteropDescriptor(method, TestHandler, price, allowedTriggers);
             descriptor.Method.Should().Be(method);
             descriptor.Price.Should().Be(price);
         }
 
-        private bool TestEngine(ApplicationEngine engine)
+        private bool TestHandler(ApplicationEngine engine)
         {
             return true;
         }
