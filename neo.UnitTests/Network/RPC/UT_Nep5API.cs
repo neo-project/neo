@@ -5,7 +5,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
-using System;
 using System.Linq;
 using System.Numerics;
 
@@ -108,25 +107,6 @@ namespace Neo.UnitTests.Network.RPC
 
             var result = nep5API.GetTransfer(NativeContract.GAS.Hash, keyPair1, UInt160.Zero, new BigInteger(1_00000000));
             Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
-        public void TestTransferIT()
-        {
-            RpcClient client = new RpcClient("http://127.0.0.1:20332");
-            NeoAPI neoAPI = new NeoAPI(client);
-
-            KeyPair key1 = "L1rFMTamZj85ENnqNLwmhXKAprHuqr1MxMHmCWCGiXGsAdQ2dnhb".ToKeyPair();
-            KeyPair key2 = "L3TbPZ3Gtqh3TTk2CWn44m9iiuUhBGZWoDJQuvVw5Zbx5NAjPbdb".ToKeyPair();
-            string address1 = Neo.Wallets.Helper.ToAddress(key1.ToScriptHash());
-            string address2 = Neo.Wallets.Helper.ToAddress(key2.ToScriptHash());
-
-            Console.WriteLine($"Before Transfer {address1}(NEO):{neoAPI.Nep5API.BalanceOf(NativeContract.NEO.Hash, key1.ToScriptHash())}");
-
-            var trans = neoAPI.Transfer(NativeContract.NEO.Hash.ToString(), "L1rFMTamZj85ENnqNLwmhXKAprHuqr1MxMHmCWCGiXGsAdQ2dnhb", address2, 1);
-            neoAPI.WaitNewBlock().Wait();
-
-            Console.WriteLine($"After Transfer {address1}(NEO):{neoAPI.Nep5API.BalanceOf(NativeContract.NEO.Hash, key1.ToScriptHash())}");
         }
     }
 }

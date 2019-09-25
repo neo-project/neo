@@ -67,7 +67,7 @@ namespace Neo.Network.RPC
 
             // Add hashes parameter to pass CheckWitness
             var hashes = Tx.GetScriptHashesForVerifying(null).Select(p => (JObject)p.ToString()).ToArray();
-            RpcInvokeResult result = rpcClient.InvokeScript(script, hashes);
+            RpcInvokeResult result = rpcClient.InvokeScript(script, new JObject[0]);
             Tx.SystemFee = Math.Max(long.Parse(result.GasConsumed) - ApplicationEngine.GasFree, 0);
             if (Tx.SystemFee > 0)
             {

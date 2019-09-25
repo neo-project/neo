@@ -36,12 +36,48 @@ namespace Neo.Network.RPC
         /// </summary>
         /// <param name="addressOrHash">account address, scripthash or public key string</param>
         /// <returns></returns>
-        public BigInteger GetUnclaimedGas(string addressOrHash)
+        public decimal GetUnclaimedGas(string addressOrHash)
         {
             UInt160 scriptHash = NativeContract.NEO.Hash;
             UInt160 account = addressOrHash.ToUInt160();
-            return ContractClient.TestInvoke(scriptHash, "unclaimedGas", account, rpcClient.GetBlockCount() - 1)
+            BigInteger balance = ContractClient.TestInvoke(scriptHash, "unclaimedGas", account, rpcClient.GetBlockCount() - 1)
                 .Stack.Single().ToStackItem().GetBigInteger();
+            return ((decimal)balance) / (long)NativeContract.GAS.Factor;
+        }
+
+        /// <summary>
+        /// Get Neo Balance
+        /// </summary>
+        /// <param name="addressOrHash">address or hash</param>
+        /// <returns></returns>
+        public uint GetNeoBalance(string addressOrHash)
+        {
+            BigInteger balance = GetTokenBalance(NativeContract.NEO.Hash.ToString(), addressOrHash);
+            return (uint)balance;
+        }
+
+        /// <summary>
+        /// Get Gas Balance
+        /// </summary>
+        /// <param name="addressOrHash">address or hash</param>
+        /// <returns></returns>
+        public decimal GetGasBalance(string addressOrHash)
+        {
+            BigInteger balance = GetTokenBalance(NativeContract.GAS.Hash.ToString(), addressOrHash);
+            return ((decimal)balance) / (long)NativeContract.GAS.Factor;
+        }
+
+        /// <summary>
+        /// Get token balance
+        /// </summary>
+        /// <param name="tokenHash">token script hash</param>
+        /// <param name="addressOrHash">address or hash</param>
+        /// <returns></returns>
+        public BigInteger GetTokenBalance(string tokenHash, string addressOrHash)
+        {
+            UInt160 scriptHash = tokenHash.ToUInt160();
+            UInt160 account = addressOrHash.ToUInt160();
+            return Nep5API.BalanceOf(scriptHash, account);
         }
 
         /// <summary>
@@ -84,26 +120,32 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Wait until New Block comes
-        /// Won't block sync code if don't call Task.Wait()
+        /// Wait until the transaction is observable block chain
         /// </summary>
-        /// <returns>new block index</returns>
-        public async Task<uint> WaitNewBlock()
+        /// <param name="transaction">the transaction to observe</param>
+        /// <param name="timeout">TimeoutException throws after "timeout" seconds</param>
+        /// <returns>the Transaction Height</returns>
+        public async Task<uint> WaitTransaction(Transaction transaction, int timeout = 60)
         {
-            uint start = rpcClient.GetBlockCount() - 1;
-            DateTime deadline = DateTime.UtcNow.AddSeconds(31);
-            uint current = start;
-            while (start == current)
+            DateTime deadline = DateTime.UtcNow.AddSeconds(timeout);
+            uint current = 0;
+            while (current == 0)
             {
                 if (deadline < DateTime.UtcNow)
                 {
                     throw new TimeoutException();
                 }
 
-                await Task.Delay(1000);
-                current = rpcClient.GetBlockCount() - 1;
+                try
+                {
+                    current = rpcClient.GetTransactionHeight(transaction.Hash.ToString());
+                    if (current == 0)
+                    {
+                        await Task.Delay(1000);
+                    }
+                }
+                catch (Exception) { }
             }
-
             return current;
         }
     }
