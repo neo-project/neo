@@ -290,10 +290,10 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(true);
             string message = "hello";
             engine.CurrentContext.EvaluationStack.Push(Encoding.UTF8.GetBytes(message));
-            engine.Log += LogEvent;
+            ApplicationEngine.Log += LogEvent;
             InteropService.Invoke(engine, InteropService.System_Runtime_Log).Should().BeTrue();
             ((Transaction)engine.ScriptContainer).Script.ToHexString().Should().Be(new byte[] { 0x01, 0x02, 0x03 }.ToHexString());
-            engine.Log -= LogEvent;
+            ApplicationEngine.Log -= LogEvent;
         }
 
         [TestMethod]
