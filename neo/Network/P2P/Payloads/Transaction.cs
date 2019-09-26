@@ -140,6 +140,7 @@ namespace Neo.Network.P2P.Payloads
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.SystemFee + p.NetworkFee)).Sum();
             if (balance < fee) return false;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (hashes.Length != Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
