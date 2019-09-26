@@ -567,8 +567,7 @@ namespace Neo.Network.RPC
                 TransactionState txState = Blockchain.Singleton.Store.GetTransactions().TryGet(hash);
                 if(txState != null)
                 {
-                    uint height = txState.BlockIndex;
-                    Header header = Blockchain.Singleton.Store.GetHeader(height);
+                    Header header = Blockchain.Singleton.Store.GetHeader(txState.BlockIndex);
                     json["blockhash"] = header.Hash.ToString();
                     json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
                     json["blocktime"] = header.Timestamp;
