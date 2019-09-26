@@ -775,6 +775,34 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void Transaction_Reverify_Hashes_Length_Unequal_To_Witnesses_Length()
+        {
+            var snapshot = store.GetSnapshot();
+            Transaction txSimple = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 0x01020304,
+                Attributes = new TransactionAttribute[0] { },
+                Cosigners = new Cosigner[] {
+                    new Cosigner
+                    {
+                        Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
+                        Scopes = WitnessScope.Global
+                    }
+                },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+            UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
+            Assert.AreEqual(2, hashes.Length);
+            Assert.IsFalse(txSimple.Reverify(snapshot, new Transaction[0]));
+        }
+
+        [TestMethod]
         public void Transaction_Serialize_Deserialize_Simple()
         {
             // good and simple transaction
