@@ -571,7 +571,7 @@ namespace Neo.Network.RPC
                     json["blockhash"] = header.Hash.ToString();
                     json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
                     json["blocktime"] = header.Timestamp;
-                    json["vmState"] = Enum.GetName(typeof(VMState), txState.VMState);
+                    json["vmState"] = txState.VMState.ToString();
                 }
                 return json;
             }
