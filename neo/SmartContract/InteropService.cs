@@ -358,7 +358,7 @@ namespace Neo.SmartContract
             else
                 return false;
 
-            Block block = hash != null ? engine.Snapshot.GetBlock(hash) : null;
+            var block = hash != null ? engine.Snapshot.Blocks.TryGet(hash) : null;
             if (block == null)
             {
                 engine.CurrentContext.EvaluationStack.Push(new byte[0]);
@@ -366,8 +366,9 @@ namespace Neo.SmartContract
             else
             {
                 int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-                if (index < 0 || index >= block.Transactions.Length) return false;
-                Transaction tx = block.Transactions[index];
+                if (index < 0 || index >= block.Hashes.Length) return false;
+
+                Transaction tx = engine.Snapshot.GetTransaction(block.Hashes[index]);
                 if (tx == null)
                     engine.CurrentContext.EvaluationStack.Push(new byte[0]);
                 else
