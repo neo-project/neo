@@ -564,13 +564,15 @@ namespace Neo.Network.RPC
             if (verbose)
             {
                 JObject json = tx.ToJson();
-                uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
-                if (height != null)
+                TransactionState txState = Blockchain.Singleton.Store.GetTransactions().TryGet(hash);
+                if(txState != null)
                 {
-                    Header header = Blockchain.Singleton.Store.GetHeader((uint)height);
+                    uint height = txState.BlockIndex;
+                    Header header = Blockchain.Singleton.Store.GetHeader(height);
                     json["blockhash"] = header.Hash.ToString();
                     json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
                     json["blocktime"] = header.Timestamp;
+                    json["vmState"] = Enum.GetName(typeof(VMState), txState.VMState);
                 }
                 return json;
             }

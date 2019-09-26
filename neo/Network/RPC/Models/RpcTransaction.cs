@@ -13,6 +13,8 @@ namespace Neo.Network.RPC.Models
 
         public uint? BlockTime { get; set; }
 
+        public string VMState { get; set; }
+
         public JObject ToJson()
         {
             JObject json = Transaction.ToJson();
@@ -21,6 +23,7 @@ namespace Neo.Network.RPC.Models
                 json["blockhash"] = BlockHash.ToString();
                 json["confirmations"] = Confirmations;
                 json["blocktime"] = BlockTime;
+                json["vmState"] = VMState;
             }
             return json;
         }
@@ -34,6 +37,7 @@ namespace Neo.Network.RPC.Models
                 transaction.BlockHash = UInt256.Parse(json["blockhash"].AsString());
                 transaction.Confirmations = (int)json["confirmations"].AsNumber();
                 transaction.BlockTime = (uint)json["blocktime"].AsNumber();
+                transaction.VMState = json["vmState"].AsString();
             }
             return transaction;
         }
