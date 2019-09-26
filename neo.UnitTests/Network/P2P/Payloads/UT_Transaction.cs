@@ -778,7 +778,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Transaction_Reverify_Hashes_Length_Unequal_To_Witnesses_Length()
         {
             var snapshot = store.GetSnapshot();
-
             Transaction txSimple = new Transaction
             {
                 Version = 0x00,

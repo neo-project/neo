@@ -141,7 +141,6 @@ namespace Neo.Network.P2P.Payloads
             if (balance < fee) return false;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (hashes.Length != Witnesses.Length) return false;
-
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
