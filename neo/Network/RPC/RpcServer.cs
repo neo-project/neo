@@ -565,7 +565,7 @@ namespace Neo.Network.RPC
             {
                 JObject json = tx.ToJson();
                 TransactionState txState = Blockchain.Singleton.Store.GetTransactions().TryGet(hash);
-                if(txState != null)
+                if (txState != null)
                 {
                     Header header = Blockchain.Singleton.Store.GetHeader(txState.BlockIndex);
                     json["blockhash"] = header.Hash.ToString();
