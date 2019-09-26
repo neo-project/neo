@@ -260,11 +260,13 @@ namespace Neo.Network.RPC
         /// Returns the result after passing a script through the VM.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        public RpcInvokeResult InvokeScript(byte[] script, params JObject[] hashes)
+        public RpcInvokeResult InvokeScript(byte[] script, params JObject[] extraParams)
         {
-            List<JObject> parameters = new List<JObject>();
-            parameters.Add(script.ToHexString());
-            parameters.AddRange(hashes);
+            List<JObject> parameters = new List<JObject>
+            {
+                script.ToHexString()
+            };
+            parameters.AddRange(extraParams);
             return RpcInvokeResult.FromJson(RpcSend("invokescript", parameters.ToArray()));
         }
 

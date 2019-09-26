@@ -109,41 +109,5 @@ namespace Neo.UnitTests.Network.RPC
             var height = neoAPI.WaitTransaction(transaction).Result;
             Assert.AreEqual(1000u, height);
         }
-
-        //[TestMethod]
-        //public void IntegratinTestTransfer()
-        //{
-        //    RpcClient client = new RpcClient("http://127.0.0.1:20332");
-        //    NeoAPI neoAPI = new NeoAPI(client);
-
-        //    KeyPair key1 = "L1rFMTamZj85ENnqNLwmhXKAprHuqr1MxMHmCWCGiXGsAdQ2dnhb".ToKeyPair();
-        //    KeyPair key2 = "L3TbPZ3Gtqh3TTk2CWn44m9iiuUhBGZWoDJQuvVw5Zbx5NAjPbdb".ToKeyPair();
-        //    string address1 = Neo.Wallets.Helper.ToAddress(key1.ToScriptHash());
-        //    string address2 = Neo.Wallets.Helper.ToAddress(key2.ToScriptHash());
-
-        //    Console.WriteLine($"Before Transfer {address1}(NEO):{neoAPI.GetNeoBalance(address1)} (GAS):{neoAPI.GetGasBalance(address1)}");
-
-        //    var trans = neoAPI.Transfer(NativeContract.NEO.Hash.ToString(), "L1rFMTamZj85ENnqNLwmhXKAprHuqr1MxMHmCWCGiXGsAdQ2dnhb", address2, 1);
-        //    uint height = neoAPI.WaitTransaction(trans).Result;
-
-        //    Console.WriteLine($"Transaction on block height {height}, {address1}(NEO):{neoAPI.GetNeoBalance(address1)} (GAS):{neoAPI.GetGasBalance(address1)}");
-        //}
-
-        //[TestMethod]
-        //public void IntegratinTestClaimGas()
-        //{
-        //    RpcClient client = new RpcClient("http://127.0.0.1:20332");
-        //    NeoAPI neoAPI = new NeoAPI(client);
-
-        //    KeyPair key1 = "L1rFMTamZj85ENnqNLwmhXKAprHuqr1MxMHmCWCGiXGsAdQ2dnhb".ToKeyPair();
-        //    string address1 = Neo.Wallets.Helper.ToAddress(key1.ToScriptHash());
-
-        //    Console.WriteLine($"GAS Balance:{neoAPI.GetGasBalance(address1)}, GAS Claimable: {neoAPI.GetUnclaimedGas(address1)}");
-
-        //    var trans = neoAPI.ClaimGas(key1.Export());
-        //    uint height = neoAPI.WaitTransaction(trans).Result;
-
-        //    Console.WriteLine($"Transaction on block height {height}, GAS Balance:{neoAPI.GetGasBalance(address1)}, GAS Claimable: {neoAPI.GetUnclaimedGas(address1)}");
-        //}
     }
 }
