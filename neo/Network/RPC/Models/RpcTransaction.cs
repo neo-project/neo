@@ -14,7 +14,7 @@ namespace Neo.Network.RPC.Models
 
         public uint? BlockTime { get; set; }
 
-        public VMState VMState { get; set; }
+        public VMState? VMState { get; set; }
 
         public JObject ToJson()
         {
