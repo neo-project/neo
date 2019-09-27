@@ -87,7 +87,7 @@ namespace Neo.Network.P2P
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
                 return;
-            if (ConnectedPeers.Values.SelectMany(p => p).ToList().Contains(endPoint)) return;         
+            if (ConnectedPeers.Values.SelectMany(p => p).ToList().Contains(endPoint)) return;
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
             {
                 if ((p.Count >= ConnectingMax && !isTrusted) || p.Contains(endPoint)) return p;
