@@ -25,15 +25,6 @@ namespace Neo.UnitTests.Network.RPC
         }
 
         [TestMethod]
-        public void TestMakeScript()
-        {
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
-
-            Assert.AreEqual("14000000000000000000000000000000000000000051c10962616c616e63654f66142582d1b275e86c8f0e93a9b2facd5fdb760976a168627d5b52",
-                            testScript.ToHexString());
-        }
-
-        [TestMethod]
         public void TestInvoke()
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);

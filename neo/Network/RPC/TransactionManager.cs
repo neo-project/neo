@@ -18,7 +18,7 @@ namespace Neo.Network.RPC
     public class TransactionManager
     {
         private static readonly Random rand = new Random();
-        private readonly RpcClient rpcClient;
+        private readonly NeoAPI neoAPI;
         private readonly UInt160 sender;
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Neo.Network.RPC
         /// <param name="sender">the account script hash of sender</param>
         public TransactionManager(RpcClient rpc, UInt160 sender)
         {
-            rpcClient = rpc;
+            neoAPI = new NeoAPI(rpc);
             this.sender = sender;
         }
 
@@ -52,7 +52,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public TransactionManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
-            uint height = rpcClient.GetBlockCount() - 1;
+            uint height = neoAPI.RpcClient.GetBlockCount() - 1;
             Tx = new Transaction
             {
                 Version = 0,
@@ -67,7 +67,7 @@ namespace Neo.Network.RPC
 
             // Add witness hashes parameter to pass CheckWitness
             JObject[] hashes = Tx.GetScriptHashesForVerifying(null).Select(p => (JObject)p.ToString()).ToArray();
-            RpcInvokeResult result = rpcClient.InvokeScript(script, hashes);
+            RpcInvokeResult result = neoAPI.RpcClient.InvokeScript(script, hashes);
             Tx.SystemFee = Math.Max(long.Parse(result.GasConsumed) - ApplicationEngine.GasFree, 0);
             if (Tx.SystemFee > 0)
             {
@@ -84,7 +84,7 @@ namespace Neo.Network.RPC
             // set networkfee to estimate value when networkFee is 0
             Tx.NetworkFee = networkFee == 0 ? EstimateNetworkFee() : networkFee;
 
-            var gasBalance = new Nep5API(rpcClient).BalanceOf(NativeContract.GAS.Hash, sender);
+            var gasBalance = neoAPI.Nep5API.BalanceOf(NativeContract.GAS.Hash, sender);
             if (gasBalance >= Tx.SystemFee + Tx.NetworkFee) return this;
             throw new InvalidOperationException($"Insufficient GAS in address: {sender.ToAddress()}");
         }
@@ -105,7 +105,7 @@ namespace Neo.Network.RPC
                 networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
             }
 
-            networkFee += size * new PolicyAPI(rpcClient).GetFeePerByte();
+            networkFee += size * neoAPI.PolicyAPI.GetFeePerByte();
             return networkFee;
         }
 
@@ -124,7 +124,7 @@ namespace Neo.Network.RPC
                 {
                     try
                     {
-                        witness_script = rpcClient.GetContractState(hash.ToString())?.Script;
+                        witness_script = neoAPI.RpcClient.GetContractState(hash.ToString())?.Script;
                     }
                     catch { }
                 }
@@ -133,7 +133,7 @@ namespace Neo.Network.RPC
 
                 networkFee += Wallet.CalculateNetWorkFee(witness_script, ref size);
             }
-            networkFee += size * new PolicyAPI(rpcClient).GetFeePerByte();
+            networkFee += size * neoAPI.PolicyAPI.GetFeePerByte();
             return networkFee;
         }
 
