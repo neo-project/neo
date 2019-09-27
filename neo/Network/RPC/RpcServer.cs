@@ -30,7 +30,49 @@ namespace Neo.Network.RPC
 {
     public sealed class RpcServer : IDisposable
     {
-        public Wallet Wallet { get; set; }
+		private class CheckWitnessHashes : IVerifiable
+		{
+			private readonly UInt160[] _scriptHashesForVerifying;
+			public Witness[] Witnesses { get; set; }
+			public int Size { get; }
+
+			public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
+			{
+				_scriptHashesForVerifying = scriptHashesForVerifying;
+			}
+
+			public void Serialize(BinaryWriter writer)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void Deserialize(BinaryReader reader)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void DeserializeUnsigned(BinaryReader reader)
+			{
+				throw new NotImplementedException();
+			}
+
+			public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+			{
+				return _scriptHashesForVerifying;
+			}
+
+			public void SerializeUnsigned(BinaryWriter writer)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte[] GetMessage()
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		public Wallet Wallet { get; set; }
         public Fixed8 MaxGasInvoke { get; }
 
         private IWebHost host;
@@ -71,9 +113,9 @@ namespace Neo.Network.RPC
             }
         }
 
-        private JObject GetInvokeResult(byte[] script)
+        private JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke);
+            ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: MaxGasInvoke);
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
@@ -219,8 +261,14 @@ namespace Neo.Network.RPC
                 case "invokescript":
                     {
                         byte[] script = _params[0].AsString().HexToBytes();
-                        return InvokeScript(script);
-                    }
+						CheckWitnessHashes checkWitnessHashes = null;
+						if (_params.Count > 1)
+						{
+							UInt160[] scriptHashesForVerifying = _params.Skip(1).Select(u => UInt160.Parse(u.AsString())).ToArray();
+							checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+						}
+						return GetInvokeResult(script, checkWitnessHashes);
+					}
                 case "listplugins":
                     {
                         return ListPlugins();
