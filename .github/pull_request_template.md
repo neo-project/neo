@@ -2,7 +2,15 @@
 
 **Change summary**
 
-**Does it affect core parts of the software, like consensus, P2P or ledge modules?**
+**Where in the software does this update applies to?**
+- Consensus
+- Ledger
+- Plugins
+- P2P (TCP)
+- RPC (HTTP)
+- Smart Contract / Interop Service
+- Wallet
+- Other:
 
 **How did you test it?**
 
