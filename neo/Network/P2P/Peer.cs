@@ -67,7 +67,6 @@ namespace Neo.Network.P2P
             if (UnconnectedPeers.Count < UnconnectedMax)
             {
                 peers = peers.Where(p => p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address));
-                // filter connected
                 ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
         }
@@ -89,7 +88,6 @@ namespace Neo.Network.P2P
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
                 return;
             if (ConnectedPeers.Values.SelectMany(p => p).ToList().Contains(endPoint)) return;         
-
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
             {
                 if ((p.Count >= ConnectingMax && !isTrusted) || p.Contains(endPoint)) return p;
