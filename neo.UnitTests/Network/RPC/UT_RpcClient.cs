@@ -567,7 +567,8 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestConstructorByUrlAndDispose()
         {
-            var client = new RpcClient("http://www.google.com");
+            //dummy url for test
+            var client = new RpcClient("http://www.xxx.yyy");
             Action action = () => client.Dispose();
             action.ShouldNotThrow<Exception>();
         }
