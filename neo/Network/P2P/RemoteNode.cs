@@ -199,7 +199,13 @@ namespace Neo.Network.P2P
                         break;
                     case ServerCapability serverCapability:
                         if (serverCapability.Type == NodeCapabilityType.TcpServer)
+                        {
                             ListenerTcpPort = serverCapability.Port;
+                            if (ListenerTcpPort != Remote.Port)
+                            {
+                                LocalNode.Singleton.AddRemoteNodeListenerIPEndPoint(Self, Listener);
+                            }
+                        }
                         break;
                 }
             }
