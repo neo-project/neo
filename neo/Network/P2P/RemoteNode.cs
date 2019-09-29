@@ -201,7 +201,7 @@ namespace Neo.Network.P2P
                         if (serverCapability.Type == NodeCapabilityType.TcpServer)
                         {
                             ListenerTcpPort = serverCapability.Port;
-                            if (ListenerTcpPort != Remote.Port)
+                            if (Remote != null && ListenerTcpPort != Remote.Port)
                             {
                                 LocalNode.Singleton.AddRemoteNodeListenerIPEndPoint(Self, Listener);
                             }
