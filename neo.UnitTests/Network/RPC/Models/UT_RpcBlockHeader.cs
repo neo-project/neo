@@ -14,7 +14,7 @@ namespace Neo.UnitTests.Network.RPC.Models
         {
             var rpcBlockHeader = new RpcBlockHeader();
             var header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 _, out UInt160 _, out ulong _, out uint _, out Witness _);
             rpcBlockHeader.Header = header;
             var json = rpcBlockHeader.ToJson();
             json["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
