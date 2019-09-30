@@ -73,15 +73,13 @@ namespace Neo.Network.P2P
             if (seedsToTake > 0)
             {
                 Random rand = new Random();
-                foreach (var seed in ProtocolSettings.Default.PrivateSeedList
+                return ProtocolSettings.Default.PrivateSeedList
                     .Concat(ProtocolSettings.Default.PublicSeedList)
-                    .OrderBy(p => rand.Next()))
-                {
-                    if (seedsToTake == 0) break;
-                    seedsToTake--;
-                    yield return seed;
-                }
+                    .OrderBy(p => rand.Next())
+                    .Take(seedsToTake);
             }
+
+            return new IPEndPoint[] { };
         }
 
         public IEnumerable<RemoteNode> GetRemoteNodes(bool hidePrivate = true)
