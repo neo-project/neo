@@ -1,19 +1,36 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.Cryptography;
+using Neo.IO;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
+using Neo.SmartContract.Native;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.UnitTests.Ledger
 {
+    internal class TestIMemoryPoolTxObserverPlugin : Plugin, IMemoryPoolTxObserverPlugin
+    {
+        public override void Configure() { }
+        public void TransactionAdded(Transaction tx) { }
+        public void TransactionsRemoved(MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions) { }
+    }
+
     [TestClass]
     public class UT_MemoryPool
     {
+        private const byte Prefix_MaxTransactionsPerBlock = 23;
+        private const byte Prefix_FeePerByte = 10;
         private MemoryPool _unit;
+        private MemoryPool _unit2;
+        private TestIMemoryPoolTxObserverPlugin plugin;
 
         [TestInitialize]
         public void TestSetup()
@@ -33,6 +50,14 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.ShouldBeEquivalentTo(0);
             _unit.UnVerifiedCount.ShouldBeEquivalentTo(0);
             _unit.Count.ShouldBeEquivalentTo(0);
+            _unit2 = new MemoryPool(TheNeoSystem, 0);
+            plugin = new TestIMemoryPoolTxObserverPlugin();
+        }
+
+        [TestCleanup]
+        public void CleanUp()
+        {
+            Plugin.TxObserverPlugins.Remove(plugin);
         }
 
         long LongRandom(long min, long max, Random rand)
@@ -66,8 +91,10 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransaction()
+        private Transaction CreateTransaction(long fee = -1)
         {
+            if (fee != -1)
+                return CreateTransactionWithFee(fee);
             return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
         }
 
@@ -82,6 +109,10 @@ namespace Neo.UnitTests.Ledger
             Console.WriteLine($"created {count} tx");
         }
 
+        private void AddTransaction(Transaction txToAdd)
+        {
+            _unit.TryAdd(txToAdd.Hash, txToAdd);
+        }
 
         [TestMethod]
         public void CapacityTest()
@@ -139,7 +170,7 @@ namespace Neo.UnitTests.Ledger
             _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(0);
         }
 
-        private void verifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
+        private void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
         {
             Transaction lastTransaction = null;
             foreach (var tx in transactions)
@@ -170,7 +201,7 @@ namespace Neo.UnitTests.Ledger
             var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions().ToList();
             // verify all 100 transactions are returned in sorted order
             sortedVerifiedTxs.Count.ShouldBeEquivalentTo(100);
-            verifyTransactionsSortedDescending(sortedVerifiedTxs);
+            VerifyTransactionsSortedDescending(sortedVerifiedTxs);
 
             // move all to unverified
             var block = new Block { Transactions = new Transaction[0] };
@@ -185,7 +216,7 @@ namespace Neo.UnitTests.Ledger
                 _unit.GetVerifiedAndUnverifiedTransactions(out var sortedVerifiedTransactions, out var sortedUnverifiedTransactions);
                 sortedVerifiedTransactions.Count().ShouldBeEquivalentTo(0);
                 var sortedUnverifiedArray = sortedUnverifiedTransactions.ToArray();
-                verifyTransactionsSortedDescending(sortedUnverifiedArray);
+                VerifyTransactionsSortedDescending(sortedUnverifiedArray);
                 var maxTransaction = sortedUnverifiedArray.First();
                 var minTransaction = sortedUnverifiedArray.Last();
 
@@ -252,6 +283,219 @@ namespace Neo.UnitTests.Ledger
             _unit.InvalidateAllTransactions();
             _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(30);
             _unit.SortedTxCount.ShouldBeEquivalentTo(0);
+        }
+
+        [TestMethod]
+        public void TestContainsKey()
+        {
+            AddTransactions(10);
+
+            var txToAdd = CreateTransaction();
+            _unit.TryAdd(txToAdd.Hash, txToAdd);
+            _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
+            _unit.InvalidateVerifiedTransactions();
+            _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestGetEnumerator()
+        {
+            AddTransactions(10);
+            _unit.InvalidateVerifiedTransactions();
+            IEnumerator<Transaction> enumerator = _unit.GetEnumerator();
+            foreach (Transaction tx in _unit)
+            {
+                enumerator.MoveNext();
+                enumerator.Current.Should().BeSameAs(tx);
+            }
+        }
+
+        [TestMethod]
+        public void TestIEnumerableGetEnumerator()
+        {
+            AddTransactions(10);
+            _unit.InvalidateVerifiedTransactions();
+            IEnumerable enumerable = _unit;
+            var enumerator = enumerable.GetEnumerator();
+            foreach (Transaction tx in _unit)
+            {
+                enumerator.MoveNext();
+                enumerator.Current.Should().BeSameAs(tx);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetVerifiedTransactions()
+        {
+            var tx1 = CreateTransaction();
+            var tx2 = CreateTransaction();
+            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.InvalidateVerifiedTransactions();
+            _unit.TryAdd(tx2.Hash, tx2);
+            IEnumerable<Transaction> enumerable = _unit.GetVerifiedTransactions();
+            enumerable.Count().Should().Be(1);
+            var enumerator = enumerable.GetEnumerator();
+            enumerator.MoveNext();
+            enumerator.Current.Should().BeSameAs(tx2);
+        }
+
+        [TestMethod]
+        public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
+        {
+            NeoSystem TheNeoSystem = TestBlockchain.InitializeMockNeoSystem();
+            var s = Blockchain.Singleton.Height;
+            _unit = new MemoryPool(TheNeoSystem, 600);
+            _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
+            AddTransaction(CreateTransaction(100000001));
+            AddTransaction(CreateTransaction(100000001));
+            AddTransaction(CreateTransaction(100000001));
+            AddTransaction(CreateTransaction(1));
+            _unit.VerifiedCount.Should().Be(4);
+            _unit.UnVerifiedCount.Should().Be(0);
+
+            _unit.InvalidateVerifiedTransactions();
+            _unit.VerifiedCount.Should().Be(0);
+            _unit.UnVerifiedCount.Should().Be(4);
+
+            AddTransactions(511); // Max per block currently is 512
+            _unit.VerifiedCount.Should().Be(511);
+            _unit.UnVerifiedCount.Should().Be(4);
+
+            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, Blockchain.Singleton.GetSnapshot());
+            result.Should().BeTrue();
+            _unit.VerifiedCount.Should().Be(512);
+            _unit.UnVerifiedCount.Should().Be(3);
+
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
+            result.Should().BeTrue();
+            _unit.VerifiedCount.Should().Be(514);
+            _unit.UnVerifiedCount.Should().Be(1);
+
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(3, Blockchain.Singleton.GetSnapshot());
+            result.Should().BeFalse();
+            _unit.VerifiedCount.Should().Be(515);
+            _unit.UnVerifiedCount.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestTryAdd()
+        {
+            var tx1 = CreateTransaction();
+            _unit.TryAdd(tx1.Hash, tx1).Should().BeTrue();
+            _unit.TryAdd(tx1.Hash, tx1).Should().BeFalse();
+            _unit2.TryAdd(tx1.Hash, tx1).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestTryGetValue()
+        {
+            var tx1 = CreateTransaction();
+            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
+            tx.ShouldBeEquivalentTo(tx1);
+
+            _unit.InvalidateVerifiedTransactions();
+            _unit.TryGetValue(tx1.Hash, out tx).Should().BeTrue();
+            tx.ShouldBeEquivalentTo(tx1);
+
+            var tx2 = CreateTransaction();
+            _unit.TryGetValue(tx2.Hash, out tx).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestUpdatePoolForBlockPersisted()
+        {
+            var mockSnapshot = new Mock<Snapshot>();
+            byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 }; // 24
+            byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }; // 1048576
+            StorageItem item1 = new StorageItem
+            {
+                Value = transactionsPerBlock
+            };
+            StorageItem item2 = new StorageItem
+            {
+                Value = feePerByte
+            };
+            var myDataCache = new MyDataCache<StorageKey, StorageItem>();
+            var key1 = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
+            var key2 = CreateStorageKey(Prefix_FeePerByte);
+            key1.ScriptHash = NativeContract.Policy.Hash;
+            key2.ScriptHash = NativeContract.Policy.Hash;
+            myDataCache.Add(key1, item1);
+            myDataCache.Add(key2, item2);
+            mockSnapshot.SetupGet(p => p.Storages).Returns(myDataCache);
+
+            var tx1 = CreateTransaction();
+            var tx2 = CreateTransaction();
+            Transaction[] transactions = { tx1, tx2 };
+            _unit.TryAdd(tx1.Hash, tx1);
+
+            var block = new Block { Transactions = transactions };
+
+            _unit.UnVerifiedCount.Should().Be(0);
+            _unit.VerifiedCount.Should().Be(1);
+
+            _unit.UpdatePoolForBlockPersisted(block, mockSnapshot.Object);
+
+            _unit.UnVerifiedCount.Should().Be(0);
+            _unit.VerifiedCount.Should().Be(0);
+        }
+
+        public StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                ScriptHash = null,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            if (key != null)
+                Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
+            return storageKey;
+        }
+    }
+
+    public class MyDataCache<TKey, TValue> : DataCache<TKey, TValue>
+        where TKey : IEquatable<TKey>, ISerializable
+        where TValue : class, ICloneable<TValue>, ISerializable, new()
+    {
+        private readonly TValue _defaultValue;
+
+        public MyDataCache()
+        {
+            _defaultValue = null;
+        }
+
+        public MyDataCache(TValue defaultValue)
+        {
+            this._defaultValue = defaultValue;
+        }
+        public override void DeleteInternal(TKey key)
+        {
+        }
+
+        protected override void AddInternal(TKey key, TValue value)
+        {
+            Add(key, value);
+        }
+
+        protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
+        {
+            return Enumerable.Empty<KeyValuePair<TKey, TValue>>();
+        }
+
+        protected override TValue GetInternal(TKey key)
+        {
+            return TryGet(key);
+        }
+
+        protected override TValue TryGetInternal(TKey key)
+        {
+            return _defaultValue;
+        }
+
+        protected override void UpdateInternal(TKey key, TValue value)
+        {
         }
     }
 }
