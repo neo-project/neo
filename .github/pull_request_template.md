@@ -10,7 +10,7 @@
 - RPC (HTTP)
 - Smart Contract / Interop Service
 - Wallet
-- Other:
+- Other (specify)
 
 **How did you test it?**
 
