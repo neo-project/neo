@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 namespace Neo
@@ -10,7 +12,8 @@ namespace Neo
         public uint Magic { get; }
         public byte AddressVersion { get; }
         public string[] StandbyValidators { get; }
-        public string[] SeedList { get; }
+        public IPEndPoint[] PublicSeedList { get; }
+        public IPEndPoint[] PrivateSeedList { get; }
         public uint MillisecondsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
 
@@ -59,20 +62,72 @@ namespace Neo
                     "02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e",
                     "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70"
                 };
-            IConfigurationSection section_sl = section.GetSection("SeedList");
-            if (section_sl.Exists())
-                this.SeedList = section_sl.GetChildren().Select(p => p.Get<string>()).ToArray();
-            else
-                this.SeedList = new[]
-                {
-                    "seed1.neo.org:10333",
-                    "seed2.neo.org:10333",
-                    "seed3.neo.org:10333",
-                    "seed4.neo.org:10333",
-                    "seed5.neo.org:10333"
-                };
+
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
+
+            // Get Public seeds
+
+            var section_seed = section.GetSection("PublicSeedList");
+            if (section_seed.Exists())
+                this.PublicSeedList = section_seed.GetChildren()
+                    .Select(p => GetIPEndpointFromHostPort(p.Get<string>()))
+                    .Where(u => u != null)
+                    .ToArray();
+            else
+                this.PublicSeedList = new[]
+                {
+                    GetIPEndpointFromHostPort("seed1.neo.org:10333"),
+                    GetIPEndpointFromHostPort("seed2.neo.org:10333"),
+                    GetIPEndpointFromHostPort("seed3.neo.org:10333"),
+                    GetIPEndpointFromHostPort("seed4.neo.org:10333"),
+                    GetIPEndpointFromHostPort("seed5.neo.org:10333")
+                };
+
+            // Get private seeds
+
+            section_seed = section.GetSection("PrivateSeedList");
+            if (section_seed.Exists())
+                this.PrivateSeedList = section_seed.GetChildren()
+                    .Select(p => GetIPEndpointFromHostPort(p.Get<string>()))
+                    .Where(u => u != null)
+                    .ToArray();
+            else
+                this.PrivateSeedList = new IPEndPoint[] { };
+        }
+
+        private static IPEndPoint GetIPEndpointFromHostPort(string hostAndPort)
+        {
+            string[] p = hostAndPort.Split(':');
+            IPEndPoint seed;
+            try
+            {
+                seed = GetIPEndpoint(p[0], int.Parse(p[1]));
+            }
+            catch (AggregateException)
+            {
+                seed = null;
+            }
+
+            return seed;
+        }
+
+        private static IPEndPoint GetIPEndpoint(string hostNameOrAddress, int port)
+        {
+            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
+                return new IPEndPoint(ipAddress, port);
+            IPHostEntry entry;
+            try
+            {
+                entry = Dns.GetHostEntry(hostNameOrAddress);
+            }
+            catch (SocketException)
+            {
+                return null;
+            }
+            ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
+            if (ipAddress == null) return null;
+            return new IPEndPoint(ipAddress, port);
         }
     }
 }

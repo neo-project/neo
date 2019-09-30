@@ -145,7 +145,7 @@ namespace Neo.Network.P2P
         private void OnGetAddrMessageReceived()
         {
             Random rand = new Random();
-            IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
+            IEnumerable<RemoteNode> peers = LocalNode.Singleton.GetRemoteNodes()
                 .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())

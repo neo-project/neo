@@ -68,51 +68,29 @@ namespace Neo.Network.P2P
             Connections.Tell(message);
         }
 
-        private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
-        {
-            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
-                return new IPEndPoint(ipAddress, port);
-            IPHostEntry entry;
-            try
-            {
-                entry = Dns.GetHostEntry(hostNameOrAddress);
-            }
-            catch (SocketException)
-            {
-                return null;
-            }
-            ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
-            if (ipAddress == null) return null;
-            return new IPEndPoint(ipAddress, port);
-        }
-
         private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
         {
             if (seedsToTake > 0)
             {
                 Random rand = new Random();
-                foreach (string hostAndPort in ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()))
+                foreach (var seed in ProtocolSettings.Default.PrivateSeedList
+                    .Concat(ProtocolSettings.Default.PublicSeedList)
+                    .OrderBy(p => rand.Next()))
                 {
                     if (seedsToTake == 0) break;
-                    string[] p = hostAndPort.Split(':');
-                    IPEndPoint seed;
-                    try
-                    {
-                        seed = GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
-                    }
-                    catch (AggregateException)
-                    {
-                        continue;
-                    }
-                    if (seed == null) continue;
                     seedsToTake--;
                     yield return seed;
                 }
             }
         }
 
-        public IEnumerable<RemoteNode> GetRemoteNodes()
+        public IEnumerable<RemoteNode> GetRemoteNodes(bool hidePrivate = true)
         {
+            if (hidePrivate)
+            {
+                return RemoteNodes.Values.Where(u => Array.IndexOf(ProtocolSettings.Default.PrivateSeedList, u.Remote) == -1);
+            }
+
             return RemoteNodes.Values;
         }
 
