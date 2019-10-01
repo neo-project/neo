@@ -326,7 +326,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             string path = GetRandomPath();
             UserWallet uw = UserWallet.Create(path, "123");
             uw.CreateAccount(keyPair.PrivateKey);
-            string npath = CreateWalletFile();  // Speedup with 0 Scrypt values
+            string npath = CreateWalletFile();  // Scrypt test values
             NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123");
             bool result = nw.Contains(testScriptHash);
             Assert.AreEqual(true, result);
