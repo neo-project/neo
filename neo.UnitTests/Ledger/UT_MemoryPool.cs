@@ -345,7 +345,7 @@ namespace Neo.UnitTests.Ledger
             NeoSystem TheNeoSystem = TestBlockchain.InitializeMockNeoSystem();
             var s = Blockchain.Singleton.Height;
             _unit = new MemoryPool(TheNeoSystem, 600);
-            _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
+            _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
