@@ -27,7 +27,7 @@ before_script:
 script: |
   dotnet restore
   if [[ "$TEST_SUITE" == "cultures" ]]; then
-      dotnet test -v m --no-restore
+      dotnet test -v m --no-restore --filter FullyQualifiedName=Neo.UnitTests.UT_Culture.All_Tests_Cultures
   else
       if [[ "$TEST_SUITE" == "without-cultures" && "$TRAVIS_OS_NAME" == "linux" ]]; then
         # Test & Calculate coverage
