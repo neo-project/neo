@@ -8,7 +8,7 @@ dist: bionic
 osx_image: xcode9.1
 
 mono: none
-dotnet: 2.2.301
+dotnet: 2.2.402
 
 env:
   - TEST_SUITE="without-cultures"
