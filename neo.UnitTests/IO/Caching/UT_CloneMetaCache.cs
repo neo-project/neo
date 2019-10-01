@@ -7,25 +7,19 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_CloneMetaCache
     {
-        MyMetaCache<MyValue> myMetaCache;
-        CloneMetaCache<MyValue> cloneMetaCache;
-
-        [TestInitialize]
-        public void Init()
-        {
-            myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
-            cloneMetaCache = new CloneMetaCache<MyValue>(myMetaCache);
-        }
-
         [TestMethod]
         public void TestConstructor()
         {
+            var myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
+            var cloneMetaCache = new CloneMetaCache<MyValue>(myMetaCache);
             cloneMetaCache.Should().NotBeNull();
         }
 
         [TestMethod]
         public void TestTryGetInternal()
         {
+            var myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
+            var cloneMetaCache = new CloneMetaCache<MyValue>(myMetaCache);
             MyValue value = myMetaCache.GetAndChange();
             value.Value = "value1";
 
@@ -35,6 +29,9 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestUpdateInternal()
         {
+            var myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
+            var cloneMetaCache = new CloneMetaCache<MyValue>(myMetaCache);
+
             MyValue value = myMetaCache.GetAndChange();
             value.Value = "value1";
 

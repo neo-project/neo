@@ -10,23 +10,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Block
     {
-        Block uut;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            uut = new Block();
-        }
-
         [TestMethod]
         public void Transactions_Get()
         {
+            var uut = new Block();
             uut.Transactions.Should().BeNull();
         }
 
         [TestMethod]
         public void Header_Get()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var merkRootVal, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 0);
 
@@ -41,6 +35,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
             // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
@@ -51,6 +46,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get_1_Transaction()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
 
@@ -65,6 +61,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get_3_Transaction()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
 
@@ -81,6 +78,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 1);
 
@@ -91,6 +89,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Deserialize()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(new Block(), val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 
@@ -103,10 +102,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 merkRoot = uut.MerkleRoot;
             }
 
-            assertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal, transactionsVal);
+            assertStandardBlockTestVals(uut, val256, merkRoot, val160, timestampVal, indexVal, scriptVal, transactionsVal);
         }
 
-        private void assertStandardBlockTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, uint indexVal, Witness scriptVal, Transaction[] transactionsVal, bool testTransactions = true)
+        private void assertStandardBlockTestVals(Block uut, UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, uint indexVal, Witness scriptVal, Transaction[] transactionsVal, bool testTransactions = true)
         {
             uut.PrevHash.Should().Be(val256);
             uut.MerkleRoot.Should().Be(merkRoot);
@@ -126,12 +125,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameObj()
         {
+            var uut = new Block();
             uut.Equals(uut).Should().BeTrue();
         }
 
         [TestMethod]
         public void Equals_DiffObj()
         {
+            var uut = new Block();
             Block newBlock = new Block();
             UInt256 val256 = UInt256.Zero;
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
@@ -150,13 +151,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_Null()
         {
+            var uut = new Block();
             uut.Equals(null).Should().BeFalse();
         }
 
         [TestMethod]
         public void Equals_SameHash()
         {
-
+            var uut = new Block();
             Block newBlock = new Block();
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
             UInt256 merkRoot;
@@ -174,6 +176,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void RebuildMerkleRoot_Updates()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             UInt256 merkRoot;
             UInt160 val160;
@@ -194,6 +197,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void ToJson()
         {
+            var uut = new Block();
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 

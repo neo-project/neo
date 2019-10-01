@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM;
@@ -12,8 +13,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void System_Runtime_GetInvocationCounter()
         {
-            var snapshot = TestBlockchain.GetStore().GetSnapshot();
-            var contracts = (TestDataCache<UInt160, ContractState>)snapshot.Contracts;
+            var snapshot = TestBlockchain.GetStore().GetSnapshot().Clone();
+            var contracts = (CloneCache<UInt160, ContractState>)snapshot.Contracts;
 
             // Call System.Runtime.GetInvocationCounter syscall
 

@@ -147,17 +147,10 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_DataCache
     {
-        MyDataCache<MyKey, MyValue> myDataCache;
-
-        [TestInitialize]
-        public void Initialize()
-        {
-            myDataCache = new MyDataCache<MyKey, MyValue>();
-        }
-
         [TestMethod]
         public void TestAccessByKey()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
 
@@ -171,6 +164,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAccessByNotFoundKey()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             Action action = () =>
             {
                 var item = myDataCache[new MyKey("key1")];
@@ -181,6 +175,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAccessByDeletedKey()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.InnerDict.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Delete(new MyKey("key1"));
 
@@ -194,6 +189,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAdd()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
 
@@ -211,6 +207,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCommit()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));   // trackable.State = TrackState.Added    
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
@@ -230,12 +227,14 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCreateSnapshot()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.CreateSnapshot().Should().NotBeNull();
         }
 
         [TestMethod]
         public void TestDelete()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Delete(new MyKey("key1"));
             myDataCache.InnerDict.ContainsKey(new MyKey("key1")).Should().BeFalse();
@@ -249,6 +248,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestDeleteWhere()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
 
@@ -266,6 +266,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestFind()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
 
@@ -284,6 +285,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetChangeSet()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));  // trackable.State = TrackState.Added 
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));  // trackable.State = TrackState.Added 
 
@@ -306,6 +308,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetAndChange()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
@@ -320,6 +323,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetOrAdd()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
@@ -334,6 +338,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestTryGet()
         {
+            var myDataCache = new MyDataCache<MyKey, MyValue>();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));

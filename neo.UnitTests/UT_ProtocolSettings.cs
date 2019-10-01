@@ -1,14 +1,13 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 
 namespace Neo.UnitTests
 {
     [TestClass]
+    [DoNotParallelize]
     public class UT_ProtocolSettings
     {
         // since ProtocolSettings.Default is designed to be writable only once, use reflection to 
@@ -21,18 +20,21 @@ namespace Neo.UnitTests
         }
 
         [TestInitialize]
+        [DoNotParallelize]
         public void Initialize()
         {
             ResetProtocolSettings();
         }
 
         [TestCleanup]
+        [DoNotParallelize]
         public void Cleanup()
         {
             ResetProtocolSettings();
         }
 
         [TestMethod]
+        [DoNotParallelize]
         public void Default_Magic_should_be_mainnet_Magic_value()
         {
             var mainNetMagic = 0x4F454Eu;
@@ -40,6 +42,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        [DoNotParallelize]
         public void Can_initialize_ProtocolSettings()
         {
             var expectedMagic = 12345u;
@@ -55,6 +58,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        [DoNotParallelize]
         public void Cant_initialize_ProtocolSettings_after_default_settings_used()
         {
             var mainNetMagic = 0x4F454Eu;
@@ -72,6 +76,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        [DoNotParallelize]
         public void Cant_initialize_ProtocolSettings_twice()
         {
             var expectedMagic = 12345u;
