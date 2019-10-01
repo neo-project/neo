@@ -57,12 +57,18 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_Cache
     {
+        MyCache cache;
         readonly int max_capacity = 4;
+
+        [TestInitialize]
+        public void init()
+        {
+            cache = new MyCache(max_capacity);
+        }
 
         [TestMethod]
         public void TestCount()
         {
-            var cache = new MyCache(max_capacity);
             cache.Count.Should().Be(0);
 
             cache.Add("hello");
@@ -76,14 +82,12 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestIsReadOnly()
         {
-            var cache = new MyCache(max_capacity);
             cache.IsReadOnly.Should().BeFalse();
         }
 
         [TestMethod]
         public void TestAddAndAddInternal()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Contains("hello").Should().BeTrue();
             cache.Contains("world").Should().BeFalse();
@@ -95,7 +99,6 @@ namespace Neo.UnitTests.IO.Caching
         public void TestAddRange()
         {
             string[] range = { "hello", "world" };
-            var cache = new MyCache(max_capacity);
             cache.AddRange(range);
             cache.Count.Should().Be(2);
             cache.Contains("hello").Should().BeTrue();
@@ -106,7 +109,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestClear()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Add("world");
             cache.Count.Should().Be(2);
@@ -117,7 +119,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestContainsKey()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Contains("hello").Should().BeTrue();
             cache.Contains("world").Should().BeFalse();
@@ -126,7 +127,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestContainsValue()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Contains("hello".GetHashCode()).Should().BeTrue();
             cache.Contains("world".GetHashCode()).Should().BeFalse();
@@ -135,7 +135,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCopyTo()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Add("world");
             string[] temp = new string[2];
@@ -157,7 +156,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestRemoveKey()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Remove("hello".GetHashCode()).Should().BeTrue();
             cache.Remove("world".GetHashCode()).Should().BeFalse();
@@ -180,7 +178,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestRemoveValue()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Remove("hello").Should().BeTrue();
             cache.Remove("world").Should().BeFalse();
@@ -190,7 +187,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestTryGet()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.TryGet("hello".GetHashCode(), out string output).Should().BeTrue();
             output.Should().Be("hello");
@@ -202,7 +198,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestArrayIndexAccess()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Add("world");
             cache["hello".GetHashCode()].Should().Be("hello");
@@ -218,7 +213,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetEnumerator()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Add("world");
             int i = 0;
@@ -236,7 +230,6 @@ namespace Neo.UnitTests.IO.Caching
         public void TestOverMaxCapacity()
         {
             int i = 1;
-            var cache = new MyCache(max_capacity);
             for (; i <= max_capacity; i++)
             {
                 cache.Add(i.ToString());
@@ -249,7 +242,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestDispose()
         {
-            var cache = new MyCache(max_capacity);
             cache.Add("hello");
             cache.Add("world");
             cache.Dispose();

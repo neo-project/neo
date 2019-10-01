@@ -132,7 +132,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot().Clone(), 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);

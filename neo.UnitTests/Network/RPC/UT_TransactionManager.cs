@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Network.RPC
                 .Sign();
 
             var store = TestBlockchain.GetStore();
-            var snapshot = store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot();
 
             var tx = txManager.Tx;
             Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));

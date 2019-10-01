@@ -11,19 +11,25 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_CloneCache
     {
+        CloneCache<MyKey, MyValue> cloneCache;
+        MyDataCache<MyKey, MyValue> myDataCache;
+
+        [TestInitialize]
+        public void Init()
+        {
+            myDataCache = new MyDataCache<MyKey, MyValue>();
+            cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
+        }
+
         [TestMethod]
         public void TestCloneCache()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
-            var cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
             cloneCache.Should().NotBeNull();
         }
 
         [TestMethod]
         public void TestAddInternal()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
-            var cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
             cloneCache.Add(new MyKey("key1"), new MyValue("value1"));
             cloneCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
 
@@ -34,8 +40,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestDeleteInternal()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
-            var cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             cloneCache.Delete(new MyKey("key1"));   //  trackable.State = TrackState.Deleted 
             cloneCache.Commit();
@@ -47,8 +51,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestFindInternal()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
-            var cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
             cloneCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
@@ -75,8 +77,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetInternal()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
-            var cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
             cloneCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
@@ -95,8 +95,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestTryGetInternal()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
-            var cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
             cloneCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
@@ -110,8 +108,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestUpdateInternal()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
-            var cloneCache = new CloneCache<MyKey, MyValue>(myDataCache);
             cloneCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));

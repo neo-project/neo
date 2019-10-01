@@ -19,18 +19,19 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Transaction
     {
+        Transaction uut;
         Store store;
 
         [TestInitialize]
         public void TestSetup()
         {
+            uut = new Transaction();
             store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
         public void Script_Get()
         {
-            var uut = new Transaction();
             uut.Script.Should().BeNull();
         }
 
@@ -38,7 +39,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Script_Set()
         {
             byte[] val = TestUtils.GetByteArray(32, 0x42);
-            var uut = new Transaction();
             uut.Script = val;
             uut.Script.Length.Should().Be(32);
             for (int i = 0; i < val.Length; i++)
@@ -50,7 +50,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Gas_Get()
         {
-            var uut = new Transaction();
             uut.SystemFee.Should().Be(0);
         }
 
@@ -58,7 +57,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Gas_Set()
         {
             long val = 4200000000;
-            var uut = new Transaction();
             uut.SystemFee = val;
             uut.SystemFee.Should().Be(val);
         }
@@ -66,7 +64,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var uut = new Transaction();
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.Attributes = new TransactionAttribute[0];
@@ -1074,7 +1071,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void ToJson()
         {
-            var uut = new Transaction();
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.SystemFee = 4200000000;

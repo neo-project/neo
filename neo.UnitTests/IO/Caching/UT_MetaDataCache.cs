@@ -32,18 +32,23 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_MetaDataCache
     {
+        MyMetaCache<MyValue> myMetaCache;
+
+        [TestInitialize]
+        public void SetUp()
+        {
+            myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
+        }
+
         [TestMethod]
         public void TestContructor()
         {
-            var myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
             myMetaCache.Should().NotBeNull();
         }
 
         [TestMethod]
         public void TestCommitAndAddInternal()
         {
-            var myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
-
             MyValue value = myMetaCache.Get();
             value.Should().NotBeNull();
             value.Value.Should().BeNull();
@@ -54,7 +59,6 @@ namespace Neo.UnitTests.IO.Caching
 
         public void TestCommitAndUpdateInternal()
         {
-            var myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
             MyValue value = myMetaCache.GetAndChange();
             value.Value = "value1";
 
@@ -66,7 +70,6 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCreateSnapshot()
         {
-            var myMetaCache = new MyMetaCache<MyValue>(() => new MyValue());
             myMetaCache.CreateSnapshot().Should().NotBeNull();
         }
     }

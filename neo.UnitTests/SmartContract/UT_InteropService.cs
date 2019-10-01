@@ -18,7 +18,7 @@ namespace Neo.UnitTests.SmartContract
         public void Runtime_GetNotifications_Test()
         {
             UInt160 scriptHash2;
-            var snapshot = TestBlockchain.GetStore().GetSnapshot().Clone();
+            var snapshot = TestBlockchain.GetStore().GetSnapshot();
 
             using (var script = new ScriptBuilder())
             {
