@@ -27,10 +27,10 @@ before_script:
 script: |
   dotnet restore
   if [[ "$TEST_SUITE" == cultures ]]; then 
-      dotnet test
+      dotnet test -v m
   else
       find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-      dotnet test -v n --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+      dotnet test -v m --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   fi
 after_success: |
   if [[ "$TEST_SUITE" == "without-cultures" ]]; then 
