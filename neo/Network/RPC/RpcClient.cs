@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Neo.Network.RPC
 {
+    /// <summary>
+    /// The RPC client to call NEO RPC methods
+    /// </summary>
     public class RpcClient : IDisposable
     {
         private readonly HttpClient httpClient;
@@ -31,17 +34,19 @@ namespace Neo.Network.RPC
         public async Task<RpcResponse> SendAsync(RpcRequest request)
         {
             var requestJson = request.ToJson().ToString();
-            var result = await httpClient.PostAsync(httpClient.BaseAddress, new StringContent(requestJson, Encoding.UTF8));
-            var content = await result.Content.ReadAsStringAsync();
-            var response = RpcResponse.FromJson(JObject.Parse(content));
-            response.RawResponse = content;
-
-            if (response.Error != null)
+            using (var result = await httpClient.PostAsync(httpClient.BaseAddress, new StringContent(requestJson, Encoding.UTF8)))
             {
-                throw new RpcException(response.Error.Code, response.Error.Message);
-            }
+                var content = await result.Content.ReadAsStringAsync();
+                var response = RpcResponse.FromJson(JObject.Parse(content));
+                response.RawResponse = content;
 
-            return response;
+                if (response.Error != null)
+                {
+                    throw new RpcException(response.Error.Code, response.Error.Message);
+                }
+
+                return response;
+            }
         }
 
         public RpcResponse Send(RpcRequest request)
@@ -56,7 +61,7 @@ namespace Neo.Network.RPC
             }
         }
 
-        private JObject RpcSend(string method, params JObject[] paraArgs)
+        public virtual JObject RpcSend(string method, params JObject[] paraArgs)
         {
             var request = new RpcRequest
             {
@@ -104,9 +109,9 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Gets the number of blocks in the main chain.
         /// </summary>
-        public int GetBlockCount()
+        public uint GetBlockCount()
         {
-            return (int)RpcSend("getblockcount").AsNumber();
+            return (uint)RpcSend("getblockcount").AsNumber();
         }
 
         /// <summary>
@@ -187,7 +192,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public RpcRawMemPool GetRawMempoolBoth()
         {
-            return RpcRawMemPool.FromJson(RpcSend("getrawmempool"));
+            return RpcRawMemPool.FromJson(RpcSend("getrawmempool", true));
         }
 
         /// <summary>
@@ -252,9 +257,9 @@ namespace Neo.Network.RPC
         /// Returns the result after passing a script through the VM.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        public RpcInvokeResult InvokeScript(string script)
+        public RpcInvokeResult InvokeScript(byte[] script)
         {
-            return RpcInvokeResult.FromJson(RpcSend("invokescript", script));
+            return RpcInvokeResult.FromJson(RpcSend("invokescript", script.ToHexString()));
         }
 
         /// <summary>
@@ -268,17 +273,17 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Broadcasts a transaction over the NEO network.
         /// </summary>
-        public bool SendRawTransaction(string rawTransaction)
+        public bool SendRawTransaction(byte[] rawTransaction)
         {
-            return RpcSend("sendrawtransaction", rawTransaction).AsBoolean();
+            return RpcSend("sendrawtransaction", rawTransaction.ToHexString()).AsBoolean();
         }
 
         /// <summary>
         /// Broadcasts a raw block over the NEO network.
         /// </summary>
-        public bool SubmitBlock(string block)
+        public bool SubmitBlock(byte[] block)
         {
-            return RpcSend("submitblock", block).AsBoolean();
+            return RpcSend("submitblock", block.ToHexString()).AsBoolean();
         }
 
         /// <summary>
