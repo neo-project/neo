@@ -67,6 +67,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                     Payload = decompressed.AsSerializable<GetBlocksPayload>();
                     break;
+                case MessageCommand.GetFullBlocks:
+                    Payload = decompressed.AsSerializable<GetFullBlocksPayload>();
+                    break;
                 case MessageCommand.Headers:
                     Payload = decompressed.AsSerializable<HeadersPayload>();
                     break;
