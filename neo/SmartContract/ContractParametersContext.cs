@@ -86,10 +86,19 @@ namespace Neo.SmartContract
             get
             {
                 if (_ScriptHashes == null)
+                {
+                    // snapshot is not necessary for Transaction
+                    if (Verifiable is Transaction)
+                    {
+                        _ScriptHashes = Verifiable.GetScriptHashesForVerifying(null);
+                        return _ScriptHashes;
+                    }
+
                     using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     {
                         _ScriptHashes = Verifiable.GetScriptHashesForVerifying(snapshot);
                     }
+                }
                 return _ScriptHashes;
             }
         }
@@ -105,6 +114,17 @@ namespace Neo.SmartContract
             ContextItem item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
+            return true;
+        }
+
+        public bool Add(Contract contract, params object[] parameters)
+        {
+            ContextItem item = CreateItem(contract);
+            if (item == null) return false;
+            for (int index = 0; index < parameters.Length; index++)
+            {
+                item.Parameters[index].Value = parameters[index];
+            }
             return true;
         }
 
@@ -218,6 +238,13 @@ namespace Neo.SmartContract
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
                 return null;
             return item.Parameters;
+        }
+
+        public byte[] GetScript(UInt160 scriptHash)
+        {
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+                return null;
+            return item.Script;
         }
 
         public Witness[] GetWitnesses()
