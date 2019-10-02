@@ -86,5 +86,10 @@ namespace Neo.IO.Json
                 return defaultValue;
             }
         }
+
+        public override object ToPrimitive()
+        {
+            return AsString();
+        }
     }
 }

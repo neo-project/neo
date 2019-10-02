@@ -1,8 +1,9 @@
-using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Akka.Util.Internal;
+using Neo.IO.Caching;
 
 namespace Neo.IO.Json
 {
@@ -192,6 +193,73 @@ namespace Neo.IO.Json
         public static implicit operator JObject(string value)
         {
             return value == null ? null : new JString(value);
+        }
+
+        public virtual object ToPrimitive()
+        {
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+
+            Properties.ForEach(pair => dict.Add(pair.Key, pair.Value.ToPrimitive()));
+
+            return dict;
+        }
+
+        public static JObject FromPrimitive(object primitive)
+        {
+            if (primitive is JObject it)
+            {
+                return it;
+            }
+
+            if (primitive is Dictionary<string, object> dict)
+            {
+                var jobj = new JObject();
+                dict.ForEach(pair =>
+                {
+                    jobj.Properties.Add(pair.Key, FromPrimitive(pair.Value));
+                });
+
+                return jobj;
+            }
+
+            if (primitive is object[] arr)
+            {
+                var jobj = new List<JObject>();
+                arr.ForEach(item => jobj.Add(FromPrimitive(item)));
+                return new JArray(jobj.ToArray());
+            }
+
+            if (primitive is bool boolean)
+            {
+                return new JBoolean(boolean);
+            }
+
+            if (primitive is string str)
+            {
+                return new JString(str);
+            }
+
+            if (IsNumber(primitive))
+            {
+                return new JNumber(Convert.ToDouble(primitive));
+            }
+
+            return null;
+        }
+
+        private static bool IsNumber(object value)
+        {
+            return value is sbyte
+                   || value is byte
+                   || value is short
+                   || value is ushort
+                   || value is int
+                   || value is uint
+                   || value is long
+                   || value is ulong
+                   || value is float
+                   || value is double
+                   || value is decimal;
         }
     }
 }

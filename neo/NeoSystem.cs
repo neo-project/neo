@@ -2,7 +2,7 @@ using Akka.Actor;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
-using Neo.Network.RPC;
+using Neo.Network.RPC.Server;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
@@ -25,6 +25,7 @@ namespace Neo
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
+        public long MaxGasInvoke { get; private set; }
 
         private readonly Store store;
         private ChannelsConfig start_message = null;
@@ -87,8 +88,25 @@ namespace Neo
         public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
             string[] trustedAuthorities = null, long maxGasInvoke = default)
         {
-            RpcServer = new RpcServer(this, wallet, maxGasInvoke);
-            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
+            MaxGasInvoke = maxGasInvoke;
+            // wallet is not being used
+            RpcServer = new RpcServer(new RpcConfig
+            {
+                ListenEndPoint = new IPEndPoint(bindAddress, port),
+                Ssl = new RpcConfig.SslCert
+                {
+                    Path = sslCert,
+                    Password = password
+                },
+                TrustedAuthorities = trustedAuthorities
+            });
+
+            RpcServer.BindController<NeoDefaultRpcController>();
+
+            // every param of NeoSystem type will get `this`
+            RpcServer.InjectSpecialParameter(context => this);
+
+            RpcServer.Start();
         }
 
         internal void SuspendNodeStartup()
