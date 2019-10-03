@@ -17,7 +17,7 @@ namespace Neo.UnitTests.Wallets
             "AZk5bAanTtD6AvpeesmYgL8CLRYUt5JQsX".ToScriptHash().Should().Be(scriptHash);
 
             Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash();
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
 
             var address = scriptHash.ToAddress();
             byte[] data = new byte[21];
@@ -26,7 +26,7 @@ namespace Neo.UnitTests.Wallets
             Buffer.BlockCopy(scriptHash.ToArray(), 0, data, 1, 20);
             address = data.Base58CheckEncode();
             action = () => address.ToScriptHash();
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
         }
     }
 }

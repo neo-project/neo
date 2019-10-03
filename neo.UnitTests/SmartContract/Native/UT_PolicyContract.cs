@@ -200,7 +200,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(1);
-            ((VM.Types.Array)ret)[0].GetByteArray().ShouldBeEquivalentTo(UInt160.Zero.ToArray());
+            ((VM.Types.Array)ret)[0].GetByteArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
 
             // Unblock without signature
 
@@ -212,7 +212,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(1);
-            ((VM.Types.Array)ret)[0].GetByteArray().ShouldBeEquivalentTo(UInt160.Zero.ToArray());
+            ((VM.Types.Array)ret)[0].GetByteArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
 
             // Unblock with signature
 
