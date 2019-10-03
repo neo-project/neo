@@ -215,17 +215,17 @@ namespace Neo.UnitTests.Consensus
             copiedContext.Block.PrevHash.Should().Be(consensusContext.Block.PrevHash);
             copiedContext.Block.Index.Should().Be(consensusContext.Block.Index);
             copiedContext.ViewNumber.Should().Be(consensusContext.ViewNumber);
-            copiedContext.Validators.ShouldAllBeEquivalentTo(consensusContext.Validators);
+            copiedContext.Validators.Should().BeEquivalentTo(consensusContext.Validators);
             copiedContext.MyIndex.Should().Be(consensusContext.MyIndex);
             copiedContext.Block.ConsensusData.PrimaryIndex.Should().Be(consensusContext.Block.ConsensusData.PrimaryIndex);
             copiedContext.Block.Timestamp.Should().Be(consensusContext.Block.Timestamp);
             copiedContext.Block.NextConsensus.Should().Be(consensusContext.Block.NextConsensus);
-            copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);
-            copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
-            copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
-            copiedContext.PreparationPayloads.ShouldAllBeEquivalentTo(consensusContext.PreparationPayloads);
-            copiedContext.CommitPayloads.ShouldAllBeEquivalentTo(consensusContext.CommitPayloads);
-            copiedContext.ChangeViewPayloads.ShouldAllBeEquivalentTo(consensusContext.ChangeViewPayloads);
+            copiedContext.TransactionHashes.Should().BeEquivalentTo(consensusContext.TransactionHashes);
+            copiedContext.Transactions.Should().BeEquivalentTo(consensusContext.Transactions);
+            copiedContext.Transactions.Values.Should().BeEquivalentTo(consensusContext.Transactions.Values);
+            copiedContext.PreparationPayloads.Should().BeEquivalentTo(consensusContext.PreparationPayloads);
+            copiedContext.CommitPayloads.Should().BeEquivalentTo(consensusContext.CommitPayloads);
+            copiedContext.ChangeViewPayloads.Should().BeEquivalentTo(consensusContext.ChangeViewPayloads);
         }
 
         [TestMethod]
@@ -315,9 +315,9 @@ namespace Neo.UnitTests.Consensus
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
 
-            copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
+            copiedMsg.ChangeViewMessages.Should().BeEquivalentTo(msg.ChangeViewMessages);
             copiedMsg.PreparationHash.Should().Be(msg.PreparationHash);
-            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
@@ -409,10 +409,10 @@ namespace Neo.UnitTests.Consensus
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
 
-            copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
-            copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
+            copiedMsg.ChangeViewMessages.Should().BeEquivalentTo(msg.ChangeViewMessages);
+            copiedMsg.PrepareRequestMessage.Should().BeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
@@ -470,9 +470,9 @@ namespace Neo.UnitTests.Consensus
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
 
             copiedMsg.ChangeViewMessages.Count.Should().Be(0);
-            copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
+            copiedMsg.PrepareRequestMessage.Should().BeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
@@ -550,10 +550,10 @@ namespace Neo.UnitTests.Consensus
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
 
             copiedMsg.ChangeViewMessages.Count.Should().Be(0);
-            copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
+            copiedMsg.PrepareRequestMessage.Should().BeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
-            copiedMsg.CommitMessages.ShouldAllBeEquivalentTo(msg.CommitMessages);
+            copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.CommitMessages.Should().BeEquivalentTo(msg.CommitMessages);
         }
 
         private static ConsensusPayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, ushort validatorIndex, byte[] witnessInvocationScript)

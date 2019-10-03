@@ -1,9 +1,9 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Neo.UnitTests
 {
@@ -83,7 +83,12 @@ namespace Neo.UnitTests
 
     public class UnitTestContext : TestContext
     {
-        public override IDictionary<string, object> Properties => throw new NotImplementedException();
+        public override IDictionary Properties => throw new NotImplementedException();
+
+        public override void AddResultFile(string fileName)
+        {
+            Console.WriteLine(fileName);
+        }
 
         public override void WriteLine(string message)
         {
