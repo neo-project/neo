@@ -59,8 +59,7 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
-                Assert.AreEqual(0, engine.ResultStack.Pop().GetByteArray().Length);
+                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
 
                 // With block
 
@@ -101,8 +100,7 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(InteropInterface));
-                Assert.IsNull(((InteropInterface<IVerifiable>)engine.ResultStack.Pop()).GetInterface<IVerifiable>());
+                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
 
                 // With tx
 

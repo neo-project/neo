@@ -118,7 +118,7 @@ namespace Neo.SmartContract
 
         private static bool ExecutionEngine_GetCallingScriptHash(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.CallingScriptHash?.ToArray() ?? new byte[0]);
+            engine.CurrentContext.EvaluationStack.Push(engine.CallingScriptHash?.ToArray() ?? StackItem.Null);
             return true;
         }
 
@@ -230,13 +230,12 @@ namespace Neo.SmartContract
 
         private static bool Runtime_GetNotifications(ApplicationEngine engine)
         {
-            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if ((data.Length != 0) && (data.Length != UInt160.Length)) return false;
+            StackItem item = engine.CurrentContext.EvaluationStack.Pop();
 
             IEnumerable<NotifyEventArgs> notifications = engine.Notifications;
-            if (data.Length == UInt160.Length) // must filter by scriptHash
+            if (!item.IsNull) // must filter by scriptHash
             {
-                var hash = new UInt160(data);
+                var hash = new UInt160(item.GetByteArray());
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             }
 
@@ -311,7 +310,7 @@ namespace Neo.SmartContract
 
             Block block = hash != null ? engine.Snapshot.GetBlock(hash) : null;
             if (block == null)
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             else
                 engine.CurrentContext.EvaluationStack.Push(block.ToStackItem());
             return true;
@@ -322,7 +321,7 @@ namespace Neo.SmartContract
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
             if (tx == null)
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             else
                 engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
             return true;
@@ -341,7 +340,7 @@ namespace Neo.SmartContract
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null)
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             else
                 engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem());
             return true;
@@ -361,7 +360,7 @@ namespace Neo.SmartContract
             TrimmedBlock block = hash != null ? engine.Snapshot.Blocks.TryGet(hash) : null;
             if (block == null)
             {
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             }
             else
             {
@@ -370,7 +369,7 @@ namespace Neo.SmartContract
 
                 Transaction tx = engine.Snapshot.GetTransaction(block.Hashes[index]);
                 if (tx == null)
-                    engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+                    engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
                 else
                     engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
             }
@@ -409,7 +408,7 @@ namespace Neo.SmartContract
                     ScriptHash = context.ScriptHash,
                     Key = key
                 });
-                engine.CurrentContext.EvaluationStack.Push(item?.Value ?? new byte[0]);
+                engine.CurrentContext.EvaluationStack.Push(item?.Value ?? StackItem.Null);
                 return true;
             }
             return false;
