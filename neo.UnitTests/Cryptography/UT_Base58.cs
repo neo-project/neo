@@ -25,7 +25,7 @@ namespace Neo.UnitTests.Cryptography
             Base58.Decode(encoded1).Should().BeEquivalentTo(decoded1);
             Base58.Decode(encoded2).Should().BeEquivalentTo(decoded2);
             Action action = () => Base58.Decode(encoded1 + "l").Should().BeEquivalentTo(decoded1);
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
         }
     }
 }
