@@ -299,13 +299,19 @@ namespace Neo.Wallets
 
         private Transaction MakeTransaction(Snapshot snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
-            Random rand = new Random();
+            byte[] buffer = new byte[sizeof(uint)];
+
             foreach (var (account, value) in balances_gas)
             {
+                using (var random = RandomNumberGenerator.Create())
+                {
+                    random.GetBytes(buffer);
+                }
+
                 Transaction tx = new Transaction
                 {
                     Version = 0,
-                    Nonce = (uint)rand.Next(),
+                    Nonce = BitConverter.ToUInt32(buffer, 0),
                     Script = script,
                     Sender = account,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
