@@ -195,28 +195,28 @@ namespace Neo.Consensus
                     if (!(payload is null))
                         if (payload.BlockIndex == context.Block.Index)
                         {
-                            OnConsensusPayload(payload);
+                            OnConsensusPayload(payload, false);
                             // set payload in FuturePreparationPayloads to null
                         }
                 foreach (var payload in context.FutureChangeViewPayloads)
                     if (!(payload is null))
                         if (payload.BlockIndex == context.Block.Index)
                         {
-                            OnConsensusPayload(payload);
+                            OnConsensusPayload(payload, false);
                             // set payload in FuturePreparationPayloads to null
                         }
                 foreach (var payload in context.FutureCommitPayloads)
                     if (!(payload is null))
                         if (payload.BlockIndex == context.Block.Index)
                         {
-                            OnConsensusPayload(payload);
+                            OnConsensusPayload(payload, false);
                             // set payload in FuturePreparationPayloads to null
                         }
                 foreach (var payload in context.FutureRecoveryPayloads)
                     if (!(payload is null))
                         if (payload.BlockIndex == context.Block.Index)
                         {
-                            OnConsensusPayload(payload);
+                            OnConsensusPayload(payload, false);
                             // set payload in FuturePreparationPayloads to null
                         }
                 // Reset all future payloads after trying to process them
@@ -337,9 +337,10 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnConsensusPayload(ConsensusPayload payload)
+        private void OnConsensusPayload(ConsensusPayload payload, bool tryToSave = true)
         {
-            TryToSaveFuturePayloads(payload);
+            if (tryToSave)
+                TryToSaveFuturePayloads(payload);
 
             if (context.BlockSent) return;
             if (payload.Version != context.Block.Version) return;
