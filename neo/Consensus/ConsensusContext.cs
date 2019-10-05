@@ -126,7 +126,7 @@ namespace Neo.Consensus
             LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < LastChangeViewPayloads.Length; i++)
                 LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            
+
             // Payloads for speeding up next round
             FuturePreparationPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < FuturePreparationPayloads.Length; i++)
