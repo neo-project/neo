@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Consensus
             {
                 Validators = _validatorKeys.Select(u => u.PublicKey).ToArray()
             };
-            _context.Reset(0, true);
+            _context.Reset(0);
         }
 
         [TestCleanup]

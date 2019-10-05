@@ -104,7 +104,7 @@ namespace Neo.Consensus
 
         public void Deserialize(BinaryReader reader)
         {
-            Reset(0, true);
+            Reset(0);
             if (reader.ReadUInt32() != Block.Version) throw new FormatException();
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
             Block.Timestamp = reader.ReadUInt64();
@@ -358,7 +358,7 @@ namespace Neo.Consensus
             });
         }
 
-        public void Reset(byte viewNumber, bool resetFutures)
+        public void Reset(byte viewNumber, bool resetFutures = true)
         {
             if (viewNumber == 0)
             {
