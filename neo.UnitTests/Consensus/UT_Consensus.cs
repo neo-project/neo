@@ -117,7 +117,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("Waiting for subscriber message!");
             // Timer should expire in one second (block_received_time at :01, initialized at :02)
 
-            var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>(new TimeSpan(0, 0, 5));
+            var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>(new TimeSpan(0, 0, 20));
             Console.WriteLine($"MESSAGE 1: {answer}");
             //var answer2 = subscriber.ExpectMsg<LocalNode.SendDirectly>(); // expects to fail!
 
