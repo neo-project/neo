@@ -210,6 +210,11 @@ namespace Neo.UnitTests.Consensus
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 
+            consensusContext.FutureCommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.FuturePreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.FutureChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.FutureRecoveryPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null, null));
 
             copiedContext.Block.PrevHash.Should().Be(consensusContext.Block.PrevHash);
