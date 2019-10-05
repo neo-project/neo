@@ -107,13 +107,14 @@ namespace Neo.Consensus
             PreparationPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < PreparationPayloads.Length; i++)
                 PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            CommitPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
+            ulong emptyOrValidators = reader.ReadVarInt(Blockchain.MaxValidators);
+            CommitPayloads = new ConsensusPayload[emptyOrValidators];
             for (int i = 0; i < CommitPayloads.Length; i++)
                 CommitPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            ChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
+            ChangeViewPayloads = new ConsensusPayload[emptyOrValidators];
             for (int i = 0; i < ChangeViewPayloads.Length; i++)
                 ChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
+            LastChangeViewPayloads = new ConsensusPayload[emptyOrValidators];
             for (int i = 0; i < LastChangeViewPayloads.Length; i++)
                 LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
@@ -417,31 +418,15 @@ namespace Neo.Consensus
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
             writer.WriteVarInt(PreparationPayloads.Length);
-            foreach (var payload in PreparationPayloads)
-            {
-                bool hasPayload = !(payload is null);
-                writer.Write(hasPayload);
-                if (!hasPayload) continue;
-                writer.Write(payload);
-            }
-            writer.WriteVarInt(CommitPayloads.Length);
-            foreach (var payload in CommitPayloads)
-            {
-                bool hasPayload = !(payload is null);
-                writer.Write(hasPayload);
-                if (!hasPayload) continue;
-                writer.Write(payload);
-            }
-            writer.WriteVarInt(ChangeViewPayloads.Length);
-            foreach (var payload in ChangeViewPayloads)
-            {
-                bool hasPayload = !(payload is null);
-                writer.Write(hasPayload);
-                if (!hasPayload) continue;
-                writer.Write(payload);
-            }
-            writer.WriteVarInt(LastChangeViewPayloads.Length);
-            foreach (var payload in LastChangeViewPayloads)
+            SerializeConsensusPayloadArray(writer, PreparationPayloads);
+            writer.WriteVarInt(Validators.Length);
+            SerializeConsensusPayloadArray(writer, CommitPayloads);
+            SerializeConsensusPayloadArray(writer, ChangeViewPayloads);
+            SerializeConsensusPayloadArray(writer, LastChangeViewPayloads);
+        }
+        private void SerializeConsensusPayloadArray(BinaryWriter writer, ConsensusPayload[] payloadArray)
+        {
+            foreach (var payload in payloadArray)
             {
                 bool hasPayload = !(payload is null);
                 writer.Write(hasPayload);
