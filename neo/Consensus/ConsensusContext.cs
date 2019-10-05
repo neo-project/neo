@@ -114,6 +114,9 @@ namespace Neo.Consensus
             Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
             ViewNumber = reader.ReadByte();
 
+            TransactionHashes = reader.ReadSerializableArray<UInt256>();
+            Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
+
             PreparationPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < PreparationPayloads.Length; i++)
                 PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
@@ -141,8 +144,6 @@ namespace Neo.Consensus
             for (int i = 0; i < FutureRecoveryPayloads.Length; i++)
                 FutureRecoveryPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
 
-            TransactionHashes = reader.ReadSerializableArray<UInt256>();
-            Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
