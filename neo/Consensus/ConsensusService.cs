@@ -187,10 +187,8 @@ namespace Neo.Consensus
             }
 
             // Try to speed up consensus if cached future payloads exists
-            // however, if payloads from future heights it is not loaded 
             if (hasFuturePayload)
             {
-                // Try to load all Future payloads
                 TryToLoadFuturePayload(context.FuturePreparationPayloads);
                 TryToLoadFuturePayload(context.FutureCommitPayloads);
                 TryToLoadFuturePayload(context.FutureChangeViewPayloads);
