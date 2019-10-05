@@ -104,19 +104,13 @@ namespace Neo.Consensus
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
-            PreparationPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
-            for (int i = 0; i < PreparationPayloads.Length; i++)
-                PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+
+            ReadConsensusPayloadArray(reader, out PreparationPayloads, reader.ReadVarInt(Blockchain.MaxValidators));
             ulong emptyOrValidators = reader.ReadVarInt(Blockchain.MaxValidators);
-            CommitPayloads = new ConsensusPayload[emptyOrValidators];
-            for (int i = 0; i < CommitPayloads.Length; i++)
-                CommitPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            ChangeViewPayloads = new ConsensusPayload[emptyOrValidators];
-            for (int i = 0; i < ChangeViewPayloads.Length; i++)
-                ChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            LastChangeViewPayloads = new ConsensusPayload[emptyOrValidators];
-            for (int i = 0; i < LastChangeViewPayloads.Length; i++)
-                LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            ReadConsensusPayloadArray(reader, out CommitPayloads, emptyOrValidators);
+            ReadConsensusPayloadArray(reader, out ChangeViewPayloads, emptyOrValidators);
+            ReadConsensusPayloadArray(reader, out LastChangeViewPayloads, emptyOrValidators);
+
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
@@ -433,6 +427,12 @@ namespace Neo.Consensus
                 if (!hasPayload) continue;
                 writer.Write(payload);
             }
+        }
+        private void ReadConsensusPayloadArray(BinaryReader reader, out ConsensusPayload[] payloadArray, ulong payloadLenght)
+        {
+            payloadArray = new ConsensusPayload[payloadLenght];
+            for (int i = 0; i < payloadArray.Length; i++)
+                payloadArray[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
         }
     }
 }
