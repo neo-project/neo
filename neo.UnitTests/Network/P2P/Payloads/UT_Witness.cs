@@ -3,12 +3,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -16,47 +14,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Witness
     {
-        class DummyVerificable : IVerifiable
-        {
-            private UInt160 _hash;
-
-            public Witness[] Witnesses { get; set; }
-
-            public int Size => 1;
-
-            public DummyVerificable(UInt160 hash)
-            {
-                _hash = hash;
-            }
-
-            public void Deserialize(BinaryReader reader)
-            {
-                DeserializeUnsigned(reader);
-                Witnesses = reader.ReadSerializableArray<Witness>(16);
-            }
-
-            public void DeserializeUnsigned(BinaryReader reader)
-            {
-                reader.ReadByte();
-            }
-
-            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
-            {
-                return new UInt160[] { _hash };
-            }
-
-            public void Serialize(BinaryWriter writer)
-            {
-                SerializeUnsigned(writer);
-                writer.Write(Witnesses);
-            }
-
-            public void SerializeUnsigned(BinaryWriter writer)
-            {
-                writer.Write((byte)1);
-            }
-        }
-
         Witness uut;
 
         [TestInitialize]
@@ -73,12 +30,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
         private Witness PrepareDummyWitness(int maxAccounts)
         {
-            var store = TestBlockchain.GetStore();
-            var wallet = TestUtils.GenerateTestWallet();
-            var snapshot = store.GetSnapshot();
-
-            // Prepare
-
             var address = new WalletAccount[maxAccounts];
             var wallets = new NEP6Wallet[maxAccounts];
             var walletsUnlocks = new IDisposable[maxAccounts];
@@ -101,7 +52,19 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(new DummyVerificable(multiSignContract.ScriptHash));
+            var data = new ContractParametersContext(new Transaction()
+            {
+                Cosigners = new Cosigner[0],
+                Sender = multiSignContract.ScriptHash,
+                Attributes = new TransactionAttribute[0],
+                NetworkFee = 0,
+                Nonce = 0,
+                Script = new byte[0],
+                SystemFee = 0,
+                ValidUntilBlock = 0,
+                Version = 0,
+                Witnesses = new Witness[0]
+            });
 
             for (int x = 0; x < maxAccounts; x++)
             {
@@ -151,7 +114,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(uut.InvocationScript.ToHexString(), "002020142020");
         }
 
-        private void setupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
+        private void SetupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
         {
             invocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20);
             verificationScript = TestUtils.GetByteArray(lengthVerification, 0x20);
@@ -162,9 +125,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void SizeWitness_Small_Arrary()
         {
-            byte[] invocationScript;
-            byte[] verificationScript;
-            setupWitnessWithValues(uut, 252, 253, out invocationScript, out verificationScript);
+            SetupWitnessWithValues(uut, 252, 253, out _, out _);
 
             uut.Size.Should().Be(509); // (1 + 252*1) + (1 + 2 + 253*1)
         }
@@ -172,9 +133,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void SizeWitness_Large_Arrary()
         {
-            byte[] invocationScript;
-            byte[] verificationScript;
-            setupWitnessWithValues(uut, 65535, 65536, out invocationScript, out verificationScript);
+            SetupWitnessWithValues(uut, 65535, 65536, out _, out _);
 
             uut.Size.Should().Be(131079); // (1 + 2 + 65535*1) + (1 + 4 + 65536*1)
         }
@@ -182,9 +141,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void ToJson()
         {
-            byte[] invocationScript;
-            byte[] verificationScript;
-            setupWitnessWithValues(uut, 2, 3, out invocationScript, out verificationScript);
+            SetupWitnessWithValues(uut, 2, 3, out _, out _);
 
             JObject json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));

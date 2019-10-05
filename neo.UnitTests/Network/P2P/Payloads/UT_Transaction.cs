@@ -11,7 +11,6 @@ using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
-using Neo.Wallets.NEP6;
 using System;
 using System.Numerics;
 
@@ -225,7 +224,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // 'from' is always required as witness
                 // if not included on cosigner with a scope, its scope should be considered 'CalledByEntry'
                 data.ScriptHashes.Count.Should().Be(1);
-                data.ScriptHashes[0].ShouldBeEquivalentTo(acc.ScriptHash);
+                data.ScriptHashes[0].Should().BeEquivalentTo(acc.ScriptHash);
                 // will sign tx
                 bool signed = wallet.Sign(data);
                 Assert.IsTrue(signed);
@@ -772,6 +771,34 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, acc.ScriptHash, attributes, cosigners));
                 Assert.IsNull(tx);
             }
+        }
+
+        [TestMethod]
+        public void Transaction_Reverify_Hashes_Length_Unequal_To_Witnesses_Length()
+        {
+            var snapshot = store.GetSnapshot();
+            Transaction txSimple = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 0x01020304,
+                Attributes = new TransactionAttribute[0] { },
+                Cosigners = new Cosigner[] {
+                    new Cosigner
+                    {
+                        Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
+                        Scopes = WitnessScope.Global
+                    }
+                },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+            UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
+            Assert.AreEqual(2, hashes.Length);
+            Assert.IsFalse(txSimple.Reverify(snapshot, new Transaction[0]));
         }
 
         [TestMethod]

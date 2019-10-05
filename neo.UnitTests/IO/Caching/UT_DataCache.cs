@@ -175,7 +175,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 var item = myDataCache[new MyKey("key1")];
             };
-            action.ShouldThrow<KeyNotFoundException>();
+            action.Should().Throw<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -188,7 +188,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 var item = myDataCache[new MyKey("key1")];
             };
-            action.ShouldThrow<KeyNotFoundException>();
+            action.Should().Throw<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -198,14 +198,14 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
 
             Action action = () => myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.Delete(new MyKey("key2"));                      // trackable.State = TrackState.Deleted    
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));  // trackable.State = TrackState.Changed
 
             action = () => myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]

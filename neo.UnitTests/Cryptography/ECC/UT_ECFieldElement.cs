@@ -16,11 +16,11 @@ namespace Neo.UnitTests.Cryptography.ECC
         {
             BigInteger input = new BigInteger(100);
             Action action = () => new ECFieldElement(input, ECCurve.Secp256k1);
-            action.ShouldNotThrow();
+            action.Should().NotThrow();
 
             input = ECCurve.Secp256k1.Q;
             action = () => new ECFieldElement(input, ECCurve.Secp256k1);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
