@@ -231,6 +231,10 @@ namespace Neo.UnitTests.Consensus
             copiedContext.PreparationPayloads.Should().BeEquivalentTo(consensusContext.PreparationPayloads);
             copiedContext.CommitPayloads.Should().BeEquivalentTo(consensusContext.CommitPayloads);
             copiedContext.ChangeViewPayloads.Should().BeEquivalentTo(consensusContext.ChangeViewPayloads);
+            copiedContext.FutureCommitPayloads.Should().BeEquivalentTo(consensusContext.FutureCommitPayloads);
+            copiedContext.FuturePreparationPayloads.Should().BeEquivalentTo(consensusContext.FuturePreparationPayloads);
+            copiedContext.FutureChangeViewPayloads.Should().BeEquivalentTo(consensusContext.FutureChangeViewPayloads);
+            copiedContext.FutureRecoveryPayloads.Should().BeEquivalentTo(consensusContext.FutureRecoveryPayloads);
         }
 
         [TestMethod]
