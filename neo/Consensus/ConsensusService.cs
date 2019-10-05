@@ -191,39 +191,26 @@ namespace Neo.Consensus
             if (hasFuturePayload)
             {
                 // Try to load all Future payloads
-                foreach (var payload in context.FuturePreparationPayloads)
-                    if (!(payload is null))
-                        if (payload.BlockIndex == context.Block.Index)
-                        {
-                            OnConsensusPayload(payload, false);
-                            // set payload in FuturePreparationPayloads to null
-                        }
-                foreach (var payload in context.FutureChangeViewPayloads)
-                    if (!(payload is null))
-                        if (payload.BlockIndex == context.Block.Index)
-                        {
-                            OnConsensusPayload(payload, false);
-                            // set payload in FuturePreparationPayloads to null
-                        }
-                foreach (var payload in context.FutureCommitPayloads)
-                    if (!(payload is null))
-                        if (payload.BlockIndex == context.Block.Index)
-                        {
-                            OnConsensusPayload(payload, false);
-                            // set payload in FuturePreparationPayloads to null
-                        }
-                foreach (var payload in context.FutureRecoveryPayloads)
-                    if (!(payload is null))
-                        if (payload.BlockIndex == context.Block.Index)
-                        {
-                            OnConsensusPayload(payload, false);
-                            // set payload in FuturePreparationPayloads to null
-                        }
-                // Reset all future payloads after trying to process them
-                // context.ResetFuturePayloads();
+                TryToLoadFuturePayload(context.FuturePreparationPayloads);
+                TryToLoadFuturePayload(context.FutureCommitPayloads);
+                TryToLoadFuturePayload(context.FutureChangeViewPayloads);
+                TryToLoadFuturePayload(context.FutureRecoveryPayloads);
             }
         }
 
+        private void TryToLoadFuturePayload(ConsensusPayload[] payloadsArray)
+        {
+            for (int p = 0; p < payloadsArray.Count(); p++)
+            {
+                var payload = payloadsArray[p];
+                if (!(payload is null))
+                    if (payload.BlockIndex == context.Block.Index)
+                    {
+                        OnConsensusPayload(payload, false);
+                        payloadsArray[p] = null;
+                    }
+            }
+        }
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
             Plugin.Log(nameof(ConsensusService), level, message);
