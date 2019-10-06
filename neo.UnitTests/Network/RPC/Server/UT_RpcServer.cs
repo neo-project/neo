@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Network.RPC.Server
         [TestMethod]
         public void bindAndCall()
         {
-            RpcServer rpcServer = new RpcServer(GetRpcConfig());
+            RpcServer rpcServer = new RpcServer(GetRpcConfig(10322));
 
             // binding
 
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Network.RPC.Server
         [ExpectedException(typeof(ArgumentException))]
         public void unbind()
         {
-            RpcServer rpcServer = new RpcServer(GetRpcConfig());
+            RpcServer rpcServer = new RpcServer(GetRpcConfig(10323));
 
             // binding
 
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.Network.RPC.Server
         [ExpectedException(typeof(ArgumentException))]
         public void unbindAll()
         {
-            RpcServer rpcServer = new RpcServer(GetRpcConfig());
+            RpcServer rpcServer = new RpcServer(GetRpcConfig(10324));
 
             // binding
 
@@ -116,11 +116,11 @@ namespace Neo.UnitTests.Network.RPC.Server
             rpcServer.CallOperation(null, null, "checkDifferent", 2, "2");
         }
 
-        private static RpcConfig GetRpcConfig()
+        private static RpcConfig GetRpcConfig(int port)
         {
             return new RpcConfig
             {
-                ListenEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 10322),
+                ListenEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port),
                 Ssl = new RpcConfig.SslCert
                 {
                     Path = "./rpc-ssl.cert",
