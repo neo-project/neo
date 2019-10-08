@@ -43,7 +43,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestCreateFromObjectNotEnum()
         {
             Action action = () => ReflectionCache<byte>.CreateFromEnum<int>();
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]

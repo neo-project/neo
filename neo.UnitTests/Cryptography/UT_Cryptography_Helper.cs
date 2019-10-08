@@ -46,27 +46,27 @@ namespace Neo.UnitTests.Cryptography
 
             byte[] nullData = null;
             Action action = () => nullData.AesEncrypt(key, iv);
-            action.ShouldThrow<ArgumentNullException>();
+            action.Should().Throw<ArgumentNullException>();
 
             byte[] nullKey = null;
             action = () => data.AesEncrypt(nullKey, iv);
-            action.ShouldThrow<ArgumentNullException>();
+            action.Should().Throw<ArgumentNullException>();
 
             byte[] nullIv = null;
             action = () => data.AesEncrypt(key, nullIv);
-            action.ShouldThrow<ArgumentNullException>();
+            action.Should().Throw<ArgumentNullException>();
 
             byte[] wrongData = Encoding.ASCII.GetBytes("000000000000000000000000000000001"); ;
             action = () => wrongData.AesEncrypt(key, iv);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
 
             byte[] wrongKey = Encoding.ASCII.GetBytes("123456781234567812345678123456780"); ;
             action = () => data.AesEncrypt(wrongKey, iv);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
 
             byte[] wrongIv = Encoding.ASCII.GetBytes("12345678123456780"); ;
             action = () => data.AesEncrypt(key, wrongIv);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
@@ -83,27 +83,27 @@ namespace Neo.UnitTests.Cryptography
 
             byte[] nullData = null;
             Action action = () => nullData.AesDecrypt(key, iv);
-            action.ShouldThrow<ArgumentNullException>();
+            action.Should().Throw<ArgumentNullException>();
 
             byte[] nullKey = null;
             action = () => data.AesDecrypt(nullKey, iv);
-            action.ShouldThrow<ArgumentNullException>();
+            action.Should().Throw<ArgumentNullException>();
 
             byte[] nullIv = null;
             action = () => data.AesDecrypt(key, nullIv);
-            action.ShouldThrow<ArgumentNullException>();
+            action.Should().Throw<ArgumentNullException>();
 
             byte[] wrongData = Encoding.ASCII.GetBytes("00000000000000001"); ;
             action = () => wrongData.AesDecrypt(key, iv);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
 
             byte[] wrongKey = Encoding.ASCII.GetBytes("123456781234567812345678123456780"); ;
             action = () => data.AesDecrypt(wrongKey, iv);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
 
             byte[] wrongIv = Encoding.ASCII.GetBytes("12345678123456780"); ;
             action = () => data.AesDecrypt(key, wrongIv);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
@@ -116,11 +116,11 @@ namespace Neo.UnitTests.Cryptography
 
             input = "3v";
             Action action = () => input.Base58CheckDecode();
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
 
             input = "3vQB7B6MrGQZaxCuFg4og";
             action = () => input.Base58CheckDecode();
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]
@@ -215,7 +215,7 @@ namespace Neo.UnitTests.Cryptography
 
             SecureString nullString = null;
             Action action = () => nullString.ToArray();
-            action.ShouldThrow<NullReferenceException>();
+            action.Should().Throw<NullReferenceException>();
 
             var zeroString = new SecureString();
             var result = zeroString.ToArray();
