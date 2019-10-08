@@ -28,7 +28,7 @@ namespace Neo.UnitTests.SmartContract.Enumerators
             ConcatenatedEnumerator uut = new ConcatenatedEnumerator(it1, it2);
             Assert.IsNotNull(uut);
             Action action = () => uut.Dispose();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
         }
 
         [TestMethod]

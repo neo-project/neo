@@ -61,7 +61,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestFromJson()
         {
             Action action = () => ContractParametersContext.Parse("{\"type\":\"wrongType\",\"hex\":\"0000000000f277f1144035a43897f9fa115258eac015adcabe0000000000000000000000000000000000000000000100\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1668747476aa\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]
@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract
 
             contract1.ParameterList = new[] { ContractParameterType.Signature, ContractParameterType.Signature };
             Action action1 = () => context.AddSignature(contract1, key.PublicKey, new byte[] { 0x01 });
-            action1.ShouldThrow<NotSupportedException>();
+            action1.Should().Throw<NotSupportedException>();
 
             //multiSign
 

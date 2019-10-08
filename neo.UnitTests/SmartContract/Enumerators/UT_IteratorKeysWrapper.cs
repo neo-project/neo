@@ -17,7 +17,7 @@ namespace Neo.UnitTests.SmartContract.Enumerators
             IteratorKeysWrapper iteratorKeysWrapper = new IteratorKeysWrapper(new ArrayWrapper(new List<StackItem>()));
             Assert.IsNotNull(iteratorKeysWrapper);
             Action action = () => iteratorKeysWrapper.Dispose();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
         }
 
         [TestMethod]
@@ -29,7 +29,7 @@ namespace Neo.UnitTests.SmartContract.Enumerators
             ArrayWrapper wrapper = new ArrayWrapper(list);
             IteratorKeysWrapper iteratorKeysWrapper = new IteratorKeysWrapper(wrapper);
             Action action = () => iteratorKeysWrapper.Next();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
             Assert.AreEqual(new VM.Types.Integer(0), iteratorKeysWrapper.Value());
         }
     }

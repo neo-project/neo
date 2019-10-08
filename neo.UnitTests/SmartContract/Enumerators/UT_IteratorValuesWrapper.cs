@@ -18,7 +18,7 @@ namespace Neo.UnitTests.SmartContract.Enumerators
             IteratorValuesWrapper iteratorValuesWrapper = new IteratorValuesWrapper(new ArrayWrapper(new List<StackItem>()));
             Assert.IsNotNull(iteratorValuesWrapper);
             Action action = () => iteratorValuesWrapper.Dispose();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
         }
 
         [TestMethod]
@@ -30,7 +30,7 @@ namespace Neo.UnitTests.SmartContract.Enumerators
             ArrayWrapper wrapper = new ArrayWrapper(list);
             IteratorValuesWrapper iteratorValuesWrapper = new IteratorValuesWrapper(wrapper);
             Action action = () => iteratorValuesWrapper.Next();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
             Assert.AreEqual(stackItem, iteratorValuesWrapper.Value());
         }
     }

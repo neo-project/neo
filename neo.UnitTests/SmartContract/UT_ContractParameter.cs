@@ -66,7 +66,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(0, ((List<KeyValuePair<ContractParameter, ContractParameter>>)contractParameter10.Value).Count);
 
             Action action = () => new ContractParameter(ContractParameterType.Void);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.SmartContract
             JObject jobject11 = contractParameter11.ToJson();
             jobject11["type"] = "Void";
             Action action = () => ContractParameter.FromJson(jobject11);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
@@ -127,7 +127,7 @@ namespace Neo.UnitTests.SmartContract
             contractParameter1.SetValue(new byte[64].ToHexString());
             Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString((byte[])contractParameter1.Value));
             Action action1 = () => contractParameter1.SetValue(new byte[50].ToHexString());
-            action1.ShouldThrow<FormatException>();
+            action1.Should().Throw<FormatException>();
 
             ContractParameter contractParameter2 = new ContractParameter(ContractParameterType.Boolean);
             contractParameter2.SetValue("true");
@@ -167,7 +167,7 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter9 = new ContractParameter(ContractParameterType.Array);
             Action action9 = () => contractParameter9.SetValue("AAA");
-            action9.ShouldThrow<ArgumentException>();
+            action9.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]

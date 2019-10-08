@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract
                 ms.Seek(0, SeekOrigin.Begin);
                 ISerializable newFile = new NefFile();
                 Action action = () => newFile.Deserialize(reader);
-                action.ShouldThrow<FormatException>();
+                action.Should().Throw<FormatException>();
             }
 
             file.CheckSum = 0;
@@ -50,7 +50,7 @@ namespace Neo.UnitTests.SmartContract
                 ms.Seek(0, SeekOrigin.Begin);
                 ISerializable newFile = new NefFile();
                 Action action = () => newFile.Deserialize(reader);
-                action.ShouldThrow<FormatException>();
+                action.Should().Throw<FormatException>();
             }
 
             file.CheckSum = NefFile.ComputeChecksum(file);
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.SmartContract
                 ms.Seek(0, SeekOrigin.Begin);
                 ISerializable newFile = new NefFile();
                 Action action = () => newFile.Deserialize(reader);
-                action.ShouldThrow<FormatException>();
+                action.Should().Throw<FormatException>();
             }
 
             file.ScriptHash = file.Script.ToScriptHash();

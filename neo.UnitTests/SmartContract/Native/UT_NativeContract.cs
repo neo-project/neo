@@ -31,7 +31,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ae = new ApplicationEngine(TriggerType.System, null, null, 0);
             Action action = () => pc.Initialize(ae);
-            action.ShouldThrow<InvalidOperationException>();
+            action.Should().Throw<InvalidOperationException>();
         }
 
         [TestMethod]

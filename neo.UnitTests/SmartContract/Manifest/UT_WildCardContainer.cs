@@ -20,7 +20,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             jstring = new JString("hello world");
             Action action = () => WildCardContainer<string>.FromJson(jstring, u => u.AsString());
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
 
             JObject alice = new JObject();
             alice["name"] = "alice";
@@ -31,7 +31,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             JBoolean jbool = new JBoolean();
             action = () => WildCardContainer<string>.FromJson(jbool, u => u.AsString());
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]

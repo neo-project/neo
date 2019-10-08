@@ -85,7 +85,7 @@ namespace Neo.UnitTests.SmartContract
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.AddDisposable(replica).Should().Be(replica);
             Action action = () => engine.Dispose();
-            action.ShouldNotThrow();
+            action.Should().NotThrow();
         }
 
         private void Test_Log1(object sender, LogEventArgs e)

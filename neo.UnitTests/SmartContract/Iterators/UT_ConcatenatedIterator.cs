@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
             ArrayWrapper it2 = new ArrayWrapper(array2);
             ConcatenatedIterator uut = new ConcatenatedIterator(it1, it2);
             Action action = () => uut.Dispose();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
         }
     }
 }

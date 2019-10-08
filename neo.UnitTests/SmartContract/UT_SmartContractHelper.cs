@@ -134,7 +134,7 @@ namespace Neo.UnitTests.SmartContract
 
             StackItem stackItem4 = new InteropInterface<object>(new object());
             Action action4 = () => Neo.SmartContract.Helper.Serialize(stackItem4);
-            action4.ShouldThrow<NotSupportedException>();
+            action4.Should().Throw<NotSupportedException>();
 
             StackItem stackItem5 = new VM.Types.Integer(1);
             byte[] result5 = Neo.SmartContract.Helper.Serialize(stackItem5);
@@ -184,12 +184,12 @@ namespace Neo.UnitTests.SmartContract
             Map stackItem91 = new VM.Types.Map();
             stackItem91.Add(stackItem9, stackItem91);
             Action action9 = () => Neo.SmartContract.Helper.Serialize(stackItem91);
-            action9.ShouldThrow<NotSupportedException>();
+            action9.Should().Throw<NotSupportedException>();
 
             VM.Types.Array stackItem10 = new VM.Types.Array();
             stackItem10.Add(stackItem10);
             Action action10 = () => Neo.SmartContract.Helper.Serialize(stackItem10);
-            action10.ShouldThrow<NotSupportedException>();
+            action10.Should().Throw<NotSupportedException>();
         }
 
         [TestMethod]
@@ -214,7 +214,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] byteArray4 = Neo.SmartContract.Helper.Serialize(stackItem4);
             byteArray4[0] = 0x40;
             Action action4 = () => Neo.SmartContract.Helper.DeserializeStackItem(byteArray4, 1, (uint)byteArray4.Length);
-            action4.ShouldThrow<FormatException>();
+            action4.Should().Throw<FormatException>();
 
             StackItem stackItem51 = new VM.Types.Integer(1);
             List<StackItem> list5 = new List<StackItem>();

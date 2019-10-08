@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SmartContract
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] expectedArray = new byte[75];
             expectedArray[0] = 0x52;

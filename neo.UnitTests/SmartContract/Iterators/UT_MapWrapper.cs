@@ -17,7 +17,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
             MapWrapper mapWrapper = new MapWrapper(new List<KeyValuePair<StackItem, StackItem>>());
             Assert.IsNotNull(mapWrapper);
             Action action = () => mapWrapper.Dispose();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
         }
 
         [TestMethod]

@@ -17,7 +17,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
             ArrayWrapper arrayWrapper = new ArrayWrapper(new List<StackItem>());
             Assert.IsNotNull(arrayWrapper);
             Action action = () => arrayWrapper.Dispose();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
         }
 
         [TestMethod]
@@ -28,9 +28,9 @@ namespace Neo.UnitTests.SmartContract.Iterators
             list.Add(stackItem);
             ArrayWrapper arrayWrapper = new ArrayWrapper(list);
             Action action1 = () => arrayWrapper.Key();
-            action1.ShouldThrow<InvalidOperationException>();
+            action1.Should().Throw<InvalidOperationException>();
             Action action2 = () => arrayWrapper.Value();
-            action2.ShouldThrow<InvalidOperationException>();
+            action2.Should().Throw<InvalidOperationException>();
             arrayWrapper.Next();
             Assert.AreEqual(stackItem, arrayWrapper.Key());
             Assert.AreEqual(stackItem, arrayWrapper.Value());

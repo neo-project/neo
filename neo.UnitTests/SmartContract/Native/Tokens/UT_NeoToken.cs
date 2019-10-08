@@ -262,7 +262,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 }.ToByteArray()
             });
             Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
-            action.ShouldThrow<ArgumentOutOfRangeException>();
+            action.Should().Throw<ArgumentOutOfRangeException>();
             snapshot.Storages.Delete(key);
             snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
@@ -419,7 +419,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Snapshot snapshot = Store.GetSnapshot().Clone();
             var engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true);
             Action action = () => NativeContract.NEO.Initialize(engine);
-            action.ShouldThrow<InvalidOperationException>();
+            action.Should().Throw<InvalidOperationException>();
 
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             NativeContract.NEO.Initialize(engine).Should().BeFalse();
@@ -509,7 +509,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             ValidatorsCountState input = new ValidatorsCountState { Votes = new BigInteger[] { new BigInteger(1000) } };
             ValidatorsCountState output = ValidatorsCountState.FromByteArray(input.ToByteArray());
-            output.ShouldBeEquivalentTo(input);
+            output.Should().BeEquivalentTo(input);
         }
 
         [TestMethod]
@@ -517,7 +517,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             ValidatorState input = new ValidatorState { Votes = new BigInteger(1000) };
             ValidatorState output = ValidatorState.FromByteArray(input.ToByteArray());
-            output.ShouldBeEquivalentTo(input);
+            output.Should().BeEquivalentTo(input);
         }
 
         [TestMethod]

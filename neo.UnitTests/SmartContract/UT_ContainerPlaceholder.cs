@@ -21,7 +21,7 @@ namespace Neo.UnitTests.SmartContract
         {
             ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
             Action action = () => containerPlaceholder.Equals(new Integer(0));
-            action.ShouldThrow<NotSupportedException>();
+            action.Should().Throw<NotSupportedException>();
         }
 
         [TestMethod]
@@ -29,7 +29,7 @@ namespace Neo.UnitTests.SmartContract
         {
             ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
             Action action = () => containerPlaceholder.GetBoolean();
-            action.ShouldThrow<NotImplementedException>();
+            action.Should().Throw<NotImplementedException>();
         }
 
         [TestMethod]
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract
         {
             ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
             Action action = () => containerPlaceholder.GetByteArray();
-            action.ShouldThrow<NotSupportedException>();
+            action.Should().Throw<NotSupportedException>();
         }
     }
 }
