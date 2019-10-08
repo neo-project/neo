@@ -570,7 +570,7 @@ namespace Neo.UnitTests.Network.RPC
             //dummy url for test
             var client = new RpcClient("http://www.xxx.yyy");
             Action action = () => client.Dispose();
-            action.ShouldNotThrow<Exception>();
+            action.Should().NotThrow<Exception>();
         }
     }
 }

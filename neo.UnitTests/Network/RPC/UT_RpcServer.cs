@@ -41,8 +41,8 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestStart()
         {
-            Action action = () => server.Start(IPAddress.Parse("127.0.0.1"), 8080);
-            action.ShouldNotThrow<Exception>();
+            Action action = () => server.Start(IPAddress.Parse("127.0.0.1"), 8999);
+            action.Should().NotThrow<Exception>();
         }
     }
 }
