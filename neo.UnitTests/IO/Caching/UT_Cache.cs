@@ -140,13 +140,13 @@ namespace Neo.UnitTests.IO.Caching
             string[] temp = new string[2];
 
             Action action = () => cache.CopyTo(null, 1);
-            action.ShouldThrow<ArgumentNullException>();
+            action.Should().Throw<ArgumentNullException>();
 
             action = () => cache.CopyTo(temp, -1);
-            action.ShouldThrow<ArgumentOutOfRangeException>();
+            action.Should().Throw<ArgumentOutOfRangeException>();
 
             action = () => cache.CopyTo(temp, 1);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
 
             cache.CopyTo(temp, 0);
             temp[0].Should().Be("hello");
@@ -207,7 +207,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 string temp = cache["non exist string".GetHashCode()];
             };
-            action.ShouldThrow<KeyNotFoundException>();
+            action.Should().Throw<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -250,7 +250,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 int count = cache.Count;
             };
-            action.ShouldThrow<ObjectDisposedException>();
+            action.Should().Throw<ObjectDisposedException>();
         }
     }
 }
