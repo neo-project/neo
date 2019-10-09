@@ -40,7 +40,7 @@ namespace Neo.UnitTests.IO
                 else
                 {
                     Action action = () => Neo.IO.Helper.AsSerializable(new byte[0], typeof(Double));
-                    action.ShouldThrow<InvalidCastException>();
+                    action.Should().Throw<InvalidCastException>();
                 }
             }
         }
@@ -245,7 +245,7 @@ namespace Neo.UnitTests.IO
                     stream.Seek(0, SeekOrigin.Begin);
                     BinaryReader reader = new BinaryReader(stream);
                     Action action = () => Neo.IO.Helper.ReadBytesWithGrouping(reader);
-                    action.ShouldThrow<FormatException>();
+                    action.Should().Throw<FormatException>();
                 }
             }
         }
@@ -332,7 +332,7 @@ namespace Neo.UnitTests.IO
                     stream.Seek(0, SeekOrigin.Begin);
                     BinaryReader reader = new BinaryReader(stream);
                     Action action = () => Neo.IO.Helper.ReadVarInt(reader, 0xFFFFFFFF);
-                    action.ShouldThrow<FormatException>();
+                    action.Should().Throw<FormatException>();
                 }
             }
         }
@@ -432,21 +432,21 @@ namespace Neo.UnitTests.IO
                     MemoryStream stream = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(stream);
                     Action action = () => Neo.IO.Helper.WriteFixedString(writer, null, 0);
-                    action.ShouldThrow<ArgumentNullException>();
+                    action.Should().Throw<ArgumentNullException>();
                 }
                 else if (i == 1)
                 {
                     MemoryStream stream = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(stream);
                     Action action = () => Neo.IO.Helper.WriteFixedString(writer, "AA", Encoding.UTF8.GetBytes("AA").Length - 1);
-                    action.ShouldThrow<ArgumentException>();
+                    action.Should().Throw<ArgumentException>();
                 }
                 else if (i == 2)
                 {
                     MemoryStream stream = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(stream);
                     Action action = () => Neo.IO.Helper.WriteFixedString(writer, "拉拉", Encoding.UTF8.GetBytes("拉拉").Length - 1);
-                    action.ShouldThrow<ArgumentException>();
+                    action.Should().Throw<ArgumentException>();
                 }
                 else if (i == 3)
                 {
@@ -485,7 +485,7 @@ namespace Neo.UnitTests.IO
                     MemoryStream stream = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(stream);
                     Action action = () => Neo.IO.Helper.WriteVarInt(writer, -1);
-                    action.ShouldThrow<ArgumentOutOfRangeException>();
+                    action.Should().Throw<ArgumentOutOfRangeException>();
                 }
                 else if (i == 1)
                 {
