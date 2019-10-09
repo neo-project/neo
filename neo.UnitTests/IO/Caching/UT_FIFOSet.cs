@@ -58,13 +58,13 @@ namespace Neo.UnitTests.IO.Caching
         public void TestConstructor()
         {
             Action action1 = () => new FIFOSet<UInt256>(-1);
-            action1.ShouldThrow<ArgumentOutOfRangeException>();
+            action1.Should().Throw<ArgumentOutOfRangeException>();
 
             Action action2 = () => new FIFOSet<UInt256>(1, -1);
-            action2.ShouldThrow<ArgumentOutOfRangeException>();
+            action2.Should().Throw<ArgumentOutOfRangeException>();
 
             Action action3 = () => new FIFOSet<UInt256>(1, 2);
-            action3.ShouldThrow<ArgumentOutOfRangeException>();
+            action3.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]
