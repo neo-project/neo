@@ -93,7 +93,7 @@ namespace Neo.Network.P2P
                     Payload = decompressed.AsSerializable<MerkleBlockPayload>();
                     break;
                 case MessageCommand.Disconnect:
-                    Payload = decompressed.AsSerializable<DisconnectionPayload>();
+                    Payload = decompressed.AsSerializable<DisconnectPayload>();
                     break;
             }
         }

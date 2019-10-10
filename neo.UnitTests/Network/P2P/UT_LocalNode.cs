@@ -130,11 +130,11 @@ namespace Neo.UnitTests.Network.P2P
             message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
 
-            DisconnectionPayload disconnectionPayload = (DisconnectionPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectionReason.MaxPerAddressConnectionReached);
+            var disconnectionPayload = (DisconnectPayload)message.Payload;
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.MaxPerAddressConnectionReached);
 
             // return addr
-            var count = DisconnectionPayload.MaxDataSize;
+            var count = DisconnectPayload.MaxDataSize;
             NetworkAddressWithTime[] addrs = disconnectionPayload.Data.AsSerializableArray<NetworkAddressWithTime>(count);
             addrs.Length.Should().Be(1);
             addrs[0].EndPoint.Address.Should().BeEquivalentTo(IPAddress.Parse("192.168.1.1"));
@@ -195,11 +195,11 @@ namespace Neo.UnitTests.Network.P2P
             Message message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
 
-            DisconnectionPayload disconnectionPayload = (DisconnectionPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectionReason.MaxConnectionReached);
+            var disconnectionPayload = (DisconnectPayload)message.Payload;
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.MaxConnectionReached);
 
             // return addr
-            var count = DisconnectionPayload.MaxDataSize;
+            var count = DisconnectPayload.MaxDataSize;
             NetworkAddressWithTime[] addrs = disconnectionPayload.Data.AsSerializableArray<NetworkAddressWithTime>(count);
             addrs.Length.Should().Be(1);
             addrs[0].EndPoint.Port.Should().Be(8080);

@@ -70,9 +70,9 @@ namespace Neo.UnitTests.Network.P2P
             parent.ExpectMsg<MessageCommand>();
 
             // send disconnection
-            var disconnectionPayload = DisconnectionPayload.Create(DisconnectionReason.ConnectionTimeout, "test message");
+            var disconnectionPayload = DisconnectPayload.Create(DisconnectReason.ConnectionTimeout, "test message");
             senderProbe.Send(protocolActor, Message.Create(MessageCommand.Disconnect, disconnectionPayload));
-            parent.ExpectMsg<DisconnectionPayload>();
+            parent.ExpectMsg<DisconnectPayload>();
         }
     }
 }

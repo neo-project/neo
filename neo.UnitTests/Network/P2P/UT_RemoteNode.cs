@@ -57,8 +57,8 @@ namespace Neo.UnitTests.Network.P2P
             Message message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
 
-            DisconnectionPayload disconnectionPayload = (DisconnectionPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectionReason.MagicNumberIncompatible);
+            var disconnectionPayload = (DisconnectPayload)message.Payload;
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.MagicNumberIncompatible);
 
             connectionTestProbe.ExpectMsg<Tcp.Close>();
         }
@@ -115,7 +115,7 @@ namespace Neo.UnitTests.Network.P2P
                     }
                 }
             };
-            var payload = DisconnectionPayload.Create(DisconnectionReason.MaxConnectionReached, "The maximum number of connections reached!", addressWithTimes.ToByteArray());
+            var payload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, "The maximum number of connections reached!", addressWithTimes.ToByteArray());
             var testProbe = CreateTestProbe();
             testProbe.Send(remoteNodeActor, payload);
 
@@ -163,8 +163,8 @@ namespace Neo.UnitTests.Network.P2P
             var message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
 
-            var disconnectionPayload = (DisconnectionPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectionReason.DuplicateConnection);
+            var disconnectionPayload = (DisconnectPayload)message.Payload;
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.DuplicateConnection);
 
             connectionTestProbeB.ExpectMsg<Tcp.Close>();
         }
@@ -186,8 +186,8 @@ namespace Neo.UnitTests.Network.P2P
             var message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
 
-            var disconnectionPayload = (DisconnectionPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectionReason.FormatExcpetion);
+            var disconnectionPayload = (DisconnectPayload)message.Payload;
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.FormatExcpetion);
 
             connectionTestProbe.ExpectMsg<Tcp.Close>();
         }
@@ -206,8 +206,8 @@ namespace Neo.UnitTests.Network.P2P
             var message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
 
-            var disconnectionPayload = (DisconnectionPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectionReason.ConnectionTimeout);
+            var disconnectionPayload = (DisconnectPayload)message.Payload;
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.ConnectionTimeout);
 
             connectionTestProbe.ExpectMsg<Tcp.Close>();
         }

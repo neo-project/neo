@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public enum DisconnectionReason : byte
+    public enum DisconnectReason : byte
     {
         MaxConnectionReached = 0x01,
         MaxPerAddressConnectionReached = 0x02,
@@ -16,21 +16,21 @@ namespace Neo.Network.P2P.Payloads
         InternalError = 0x11,
     }
 
-    public class DisconnectionPayload : ISerializable
+    public class DisconnectPayload : ISerializable
     {
 
         public const int MaxDataSize = 5120;
 
-        public DisconnectionReason Reason;
+        public DisconnectReason Reason;
         public string Message;
         public byte[] Data;
 
-        public int Size => sizeof(DisconnectionReason) + Message.GetVarSize() + Data.GetVarSize();
+        public int Size => sizeof(DisconnectReason) + Message.GetVarSize() + Data.GetVarSize();
 
 
-        public static DisconnectionPayload Create(DisconnectionReason reason, string message = "", byte[] data = null)
+        public static DisconnectPayload Create(DisconnectReason reason, string message = "", byte[] data = null)
         {
-            return new DisconnectionPayload
+            return new DisconnectPayload
             {
                 Reason = reason,
                 Message = message,
@@ -40,7 +40,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void Deserialize(BinaryReader reader)
         {
-            Reason = (DisconnectionReason) reader.ReadByte();
+            Reason = (DisconnectReason) reader.ReadByte();
             Message = reader.ReadString();
             Data = reader.ReadVarBytes(MaxDataSize);
         }

@@ -136,7 +136,7 @@ namespace Neo.Network.P2P
                 case MessageCommand.Verack:
                     OnVerack();
                     break;
-                case DisconnectionPayload payload:
+                case DisconnectPayload payload:
                     OnDisconnectPayload(payload);
                     break;
                 case ProtocolHandler.SetFilter setFilter:
@@ -207,22 +207,22 @@ namespace Neo.Network.P2P
             }
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
-                Disconnect(DisconnectionReason.MagicNumberIncompatible, "Incomppatible magic number!");
+                Disconnect(DisconnectReason.MagicNumberIncompatible, "Incomppatible magic number!");
                 return;
             }
             if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote != null && Remote != null && p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == version.Nonce))
             {
-                Disconnect(DisconnectionReason.DuplicateConnection, "Duplicate connection!");
+                Disconnect(DisconnectReason.DuplicateConnection, "Duplicate connection!");
                 return;
             }
             SendMessage(Message.Create(MessageCommand.Verack));
         }
 
-        private void OnDisconnectPayload(DisconnectionPayload payload)
+        private void OnDisconnectPayload(DisconnectPayload payload)
         {
             switch (payload.Reason)
             {
-                case DisconnectionReason.MaxConnectionReached:
+                case DisconnectReason.MaxConnectionReached:
                     try
                     {
                         NetworkAddressWithTime[] addressList = payload.Data.AsSerializableArray<NetworkAddressWithTime>(AddrPayload.MaxCountToSend);
@@ -233,7 +233,7 @@ namespace Neo.Network.P2P
                     }
                     catch (FormatException) { }
                     break;
-                case DisconnectionReason.DuplicateConnection:
+                case DisconnectReason.DuplicateConnection:
                     LocalNode.Singleton.AddRemoteNodeListenerIPEndPoint(Self, Listener);
                     break;
                 default: break;
@@ -261,7 +261,7 @@ namespace Neo.Network.P2P
         {
             return new OneForOneStrategy(ex =>
             {
-                Disconnect(DisconnectionReason.InternalError);
+                Disconnect(DisconnectReason.InternalError);
                 return Directive.Stop;
             }, loggingEnabled: false);
         }

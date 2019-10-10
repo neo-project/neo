@@ -106,7 +106,7 @@ namespace Neo.Network.P2P
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
                 case MessageCommand.Disconnect:
-                    OnDisconnectRecived((DisconnectionPayload)msg.Payload);
+                    OnDisconnectRecived((DisconnectPayload)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
@@ -288,7 +288,7 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(payload);
         }
 
-        private void OnDisconnectRecived(DisconnectionPayload payload)
+        private void OnDisconnectRecived(DisconnectPayload payload)
         {
             Context.Parent.Tell(payload);
         }

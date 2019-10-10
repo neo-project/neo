@@ -190,18 +190,18 @@ namespace Neo.Network.P2P
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections)
             {
-                DisconnectWithAddresses(DisconnectionReason.MaxConnectionReached, "The maximum number of connections reached!");
+                DisconnectWithAddresses(DisconnectReason.MaxConnectionReached, "The maximum number of connections reached!");
                 return;
             }
             if (TrustedIpAddresses.Count > 0 && !TrustedIpAddresses.Contains(remote.Address))
             {
-                Disconnect(DisconnectionReason.UntrustedIpAddresses, $"Untrusted ip address: {remote.Address}");
+                Disconnect(DisconnectReason.UntrustedIpAddresses, $"Untrusted ip address: {remote.Address}");
                 return;
             }
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
-                DisconnectWithAddresses(DisconnectionReason.MaxPerAddressConnectionReached, "The maximum number of per address connections reached!");
+                DisconnectWithAddresses(DisconnectReason.MaxPerAddressConnectionReached, "The maximum number of per address connections reached!");
                 return;
             }
             else
@@ -214,15 +214,15 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void DisconnectWithAddresses(DisconnectionReason reason, string message)
+        private void DisconnectWithAddresses(DisconnectReason reason, string message)
         {
             NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
             Disconnect(reason, message, networkAddresses.ToByteArray());
         }
 
-        private void Disconnect(DisconnectionReason reason, string message = "", byte[] data = null)
+        private void Disconnect(DisconnectReason reason, string message = "", byte[] data = null)
         {
-            var payload = DisconnectionPayload.Create(reason, message, data);
+            var payload = DisconnectPayload.Create(reason, message, data);
             var disconnect = Message.Create(MessageCommand.Disconnect, payload);
             var command = Tcp.Write.Create(ByteString.FromBytes(disconnect.ToArray()));
             Sender.Tell(command);
