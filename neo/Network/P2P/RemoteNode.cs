@@ -7,6 +7,7 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -43,7 +44,6 @@ namespace Neo.Network.P2P
             {
                 new FullNodeCapability(Blockchain.Singleton.Height)
             };
-
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
             if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
 
@@ -112,7 +112,6 @@ namespace Neo.Network.P2P
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
-
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
                 protocol.Tell(message);
         }
@@ -136,6 +135,9 @@ namespace Neo.Network.P2P
                     break;
                 case MessageCommand.Verack:
                     OnVerack();
+                    break;
+                case DisconnectionPayload payload:
+                    OnDisconnectPayload(payload);
                     break;
                 case ProtocolHandler.SetFilter setFilter:
                     OnSetFilter(setFilter.Filter);
@@ -205,15 +207,37 @@ namespace Neo.Network.P2P
             }
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
-                Disconnect(true);
+                Disconnect(DisconnectionReason.MagicNumberIncompatible, "Incomppatible magic number!");
                 return;
             }
-            if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == version.Nonce))
+            if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote != null && Remote != null && p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == version.Nonce))
             {
-                Disconnect(true);
+                Disconnect(DisconnectionReason.DuplicateConnection, "Duplicate connection!");
                 return;
             }
             SendMessage(Message.Create(MessageCommand.Verack));
+        }
+
+        private void OnDisconnectPayload(DisconnectionPayload payload)
+        {
+            switch (payload.Reason)
+            {
+                case DisconnectionReason.MaxConnectionReached:
+                    try
+                    {
+                        NetworkAddressWithTime[] addressList = payload.Data.AsSerializableArray<NetworkAddressWithTime>(AddrPayload.MaxCountToSend);
+                        system.LocalNode.Tell(new Peer.Peers
+                        {
+                            EndPoints = addressList.Select(p => p.EndPoint).Where(p => p.Port > 0)
+                        });
+                    }
+                    catch (FormatException) { }
+                    break;
+                case DisconnectionReason.DuplicateConnection:
+                    LocalNode.Singleton.AddRemoteNodeListenerIPEndPoint(Self, Listener);
+                    break;
+                default: break;
+            }
         }
 
         protected override void PostStop()
@@ -237,7 +261,7 @@ namespace Neo.Network.P2P
         {
             return new OneForOneStrategy(ex =>
             {
-                Disconnect(true);
+                Disconnect(DisconnectionReason.InternalError);
                 return Directive.Stop;
             }, loggingEnabled: false);
         }
@@ -245,7 +269,11 @@ namespace Neo.Network.P2P
         private Message TryParseMessage()
         {
             var length = Message.TryDeserialize(msg_buffer, out var msg);
-            if (length <= 0) return null;
+            if (length <= 0)
+            {
+                msg_buffer = ByteString.Empty;
+                return null;
+            }
 
             msg_buffer = msg_buffer.Slice(length).Compact();
             return msg;

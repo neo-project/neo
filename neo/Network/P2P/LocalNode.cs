@@ -134,6 +134,17 @@ namespace Neo.Network.P2P
             }
         }
 
+        public override NetworkAddressWithTime[] GetRandomConnectedPeers(int count)
+        {
+            Random rand = new Random();
+            IEnumerable<RemoteNode> peers = RemoteNodes.Values
+                .Where(p => p.ListenerTcpPort > 0)
+                .GroupBy(p => p.Remote.Address, (k, g) => g.First())
+                .OrderBy(p => rand.Next())
+                .Take(AddrPayload.MaxCountToSend);
+            return peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
+        }
+
         protected override void OnReceive(object message)
         {
             base.OnReceive(message);

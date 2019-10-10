@@ -105,6 +105,9 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
+                case MessageCommand.Disconnect:
+                    OnDisconnectRecived((DisconnectionPayload)msg.Payload);
+                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
@@ -144,13 +147,7 @@ namespace Neo.Network.P2P
 
         private void OnGetAddrMessageReceived()
         {
-            Random rand = new Random();
-            IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
-                .Where(p => p.ListenerTcpPort > 0)
-                .GroupBy(p => p.Remote.Address, (k, g) => g.First())
-                .OrderBy(p => rand.Next())
-                .Take(AddrPayload.MaxCountToSend);
-            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
+            NetworkAddressWithTime[] networkAddresses = LocalNode.Singleton.GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
             if (networkAddresses.Length == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
@@ -288,6 +285,11 @@ namespace Neo.Network.P2P
         private void OnVersionMessageReceived(VersionPayload payload)
         {
             version = payload;
+            Context.Parent.Tell(payload);
+        }
+
+        private void OnDisconnectRecived(DisconnectionPayload payload)
+        {
             Context.Parent.Tell(payload);
         }
 

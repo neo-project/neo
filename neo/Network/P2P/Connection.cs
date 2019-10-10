@@ -1,5 +1,7 @@
 using Akka.Actor;
 using Akka.IO;
+using Neo.IO;
+using Neo.Network.P2P.Payloads;
 using System;
 using System.Net;
 using System.Net.WebSockets;
@@ -66,12 +68,15 @@ namespace Neo.Network.P2P
                 failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
-        public void Disconnect(bool abort = false)
+        protected void Disconnect(DisconnectionReason reason, string message = "", byte[] data = null)
         {
             disconnected = true;
             if (tcp != null)
             {
-                tcp.Tell(abort ? (Tcp.CloseCommand)Tcp.Abort.Instance : Tcp.Close.Instance);
+                var payload = DisconnectionPayload.Create(reason, message, data);
+                var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
+                tcp.Tell(Tcp.Write.Create((ByteString.FromBytes(disconnectMessage.ToArray()))));
+                tcp.Tell(Tcp.Close.Instance);
             }
             else
             {
@@ -91,7 +96,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Timer _:
-                    Disconnect(true);
+                    Disconnect(DisconnectionReason.ConnectionTimeout, $"Connection timeout after {connectionTimeoutLimit} seconds!");
                     break;
                 case Ack _:
                     OnAck();
@@ -112,10 +117,13 @@ namespace Neo.Network.P2P
             try
             {
                 OnData(data);
+            }catch(FormatException)
+            {
+                Disconnect(DisconnectionReason.FormatExcpetion, "Parse data failed!");
             }
             catch
             {
-                Disconnect(true);
+                Disconnect(DisconnectionReason.InternalError);
             }
         }
 

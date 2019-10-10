@@ -9,16 +9,10 @@ namespace Neo.UnitTests.Network.P2P
     [TestClass]
     public class UT_ProtocolHandler : TestKit
     {
-        private NeoSystem testBlockchain;
+        private static NeoSystem testBlockchain;
 
-        [TestCleanup]
-        public void Cleanup()
-        {
-            Shutdown();
-        }
-
-        [TestInitialize]
-        public void TestSetup()
+        [ClassInitialize]
+        public static void TestSetup(TestContext ctx)
         {
             testBlockchain = TestBlockchain.InitializeMockNeoSystem();
         }
@@ -45,6 +39,40 @@ namespace Neo.UnitTests.Network.P2P
 
             senderProbe.Send(protocolActor, Message.Create(MessageCommand.Version, payload));
             parent.ExpectMsg<VersionPayload>();
+        }
+
+        [TestMethod]
+        public void ProtocolHandler_Test_SendDisconnection_TellParent()
+        {
+            var senderProbe = CreateTestProbe();
+            var parent = CreateTestProbe();
+            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain), parent);
+
+            // send version
+            var versionPayload = new VersionPayload()
+            {
+                UserAgent = "".PadLeft(1024, '0'),
+                Nonce = 1,
+                Magic = 2,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities = new NodeCapability[]
+               {
+                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
+               }
+            };
+
+            senderProbe.Send(protocolActor, Message.Create(MessageCommand.Version, versionPayload));
+            parent.ExpectMsg<VersionPayload>();
+
+            // send verack
+            senderProbe.Send(protocolActor, Message.Create(MessageCommand.Verack));
+            parent.ExpectMsg<MessageCommand>();
+
+            // send disconnection
+            var disconnectionPayload = DisconnectionPayload.Create(DisconnectionReason.ConnectionTimeout, "test message");
+            senderProbe.Send(protocolActor, Message.Create(MessageCommand.Disconnect, disconnectionPayload));
+            parent.ExpectMsg<DisconnectionPayload>();
         }
     }
 }
