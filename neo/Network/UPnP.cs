@@ -50,10 +50,10 @@ namespace Neo.Network
                     {
                         length = s.Receive(buffer);
 
-                        string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLower();
+                        string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLowerInvariant();
                         if (resp.Contains("upnp:rootdevice"))
                         {
-                            resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
+                            resp = resp.Substring(resp.IndexOf("location:") + 9);
                             resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
                             if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
                             {
