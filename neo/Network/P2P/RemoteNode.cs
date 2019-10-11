@@ -113,9 +113,7 @@ namespace Neo.Network.P2P
         {
             msg_buffer = msg_buffer.Concat(data);
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
-            {
                 protocol.Tell(message);
-            }
         }
 
         protected override void OnReceive(object message)

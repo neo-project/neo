@@ -16,7 +16,7 @@ namespace Neo.IO.Data.LevelDB
             this.handle = handle;
         }
 
-        public virtual void Dispose()
+        public void Dispose()
         {
             if (handle != IntPtr.Zero)
             {
@@ -25,14 +25,14 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
-        public virtual void Delete(WriteOptions options, Slice key)
+        public void Delete(WriteOptions options, Slice key)
         {
             IntPtr error;
             Native.leveldb_delete(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
-        public virtual Slice Get(ReadOptions options, Slice key)
+        public Slice Get(ReadOptions options, Slice key)
         {
             UIntPtr length;
             IntPtr error;
@@ -50,12 +50,12 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
-        public virtual Snapshot GetSnapshot()
+        public Snapshot GetSnapshot()
         {
             return new Snapshot(handle);
         }
 
-        public virtual Iterator NewIterator(ReadOptions options)
+        public Iterator NewIterator(ReadOptions options)
         {
             return new Iterator(Native.leveldb_create_iterator(handle, options.handle));
         }
