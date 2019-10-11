@@ -10,7 +10,7 @@ namespace Neo.Network.P2P.Payloads
         DuplicateConnection = 0x03,
         MagicNumberIncompatible = 0x04,
         ConnectionTimeout = 0x05,
-        UntrustedIpAddresses = 0x06, 
+        UntrustedIpAddresses = 0x06,
 
         FormatExcpetion = 0x10,
         InternalError = 0x11,
@@ -18,7 +18,6 @@ namespace Neo.Network.P2P.Payloads
 
     public class DisconnectPayload : ISerializable
     {
-
         public const int MaxDataSize = 5120;
 
         public DisconnectReason Reason;
@@ -26,7 +25,6 @@ namespace Neo.Network.P2P.Payloads
         public byte[] Data;
 
         public int Size => sizeof(DisconnectReason) + Message.GetVarSize() + Data.GetVarSize();
-
 
         public static DisconnectPayload Create(DisconnectReason reason, string message = "", byte[] data = null)
         {
@@ -40,7 +38,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void Deserialize(BinaryReader reader)
         {
-            Reason = (DisconnectReason) reader.ReadByte();
+            Reason = (DisconnectReason)reader.ReadByte();
             Message = reader.ReadString();
             Data = reader.ReadVarBytes(MaxDataSize);
         }
