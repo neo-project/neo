@@ -116,11 +116,11 @@ namespace Neo.Network.P2P
             var version = remoteNode.Version;
             var remote = remoteNode.Remote;
 
-            foreach(var pair in RemoteNodes)
+            foreach (var pair in RemoteNodes)
             {
                 var remoteActorRef = pair.Key;
                 var otherNode = pair.Value;
-                if(otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
+                if (otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
                 {
                     // add the duplicate address in ConnectedPeers
                     if (ConnectedPeers.TryGetValue(remoteActorRef, out List<IPEndPoint> endPoints))
