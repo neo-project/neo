@@ -40,6 +40,12 @@ namespace Neo.Network.P2P
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnP2PMessage(msg))
                     return;
+
+            if (msg.Command == MessageCommand.Disconnect)
+            {
+                OnDisconnectMessageRecived((DisconnectPayload)msg.Payload);
+                return;
+            }
             if (version == null)
             {
                 if (msg.Command != MessageCommand.Version)
@@ -104,9 +110,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Transaction:
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
-                    break;
-                case MessageCommand.Disconnect:
-                    OnDisconnectRecived((DisconnectPayload)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
@@ -288,9 +291,9 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(payload);
         }
 
-        private void OnDisconnectRecived(DisconnectPayload payload)
+        private void OnDisconnectMessageRecived(DisconnectPayload payload)
         {
-            Context.Parent.Tell(payload);
+            system.LocalNode.Tell(payload, Context.Parent); // As the priority of message is lower than Tcp.Close
         }
 
         public static Props Props(NeoSystem system)

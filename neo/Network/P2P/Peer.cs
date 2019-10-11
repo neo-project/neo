@@ -72,14 +72,6 @@ namespace Neo.Network.P2P
             }
         }
 
-        public void AddRemoteNodeListenerIPEndPoint(IActorRef remoteActorRef, IPEndPoint listener)
-        {
-            if (ConnectedPeers.TryGetValue(remoteActorRef, out List<IPEndPoint> endPoints))
-            {
-                endPoints.Add(listener);
-            }
-        }
-
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
             endPoint = endPoint.Unmap();
@@ -222,6 +214,7 @@ namespace Neo.Network.P2P
 
         private void Disconnect(DisconnectReason reason, string message = "", byte[] data = null)
         {
+            Console.WriteLine("disconnect sender by reaseon: " + reason);
             var payload = DisconnectPayload.Create(reason, message, data);
             var disconnect = Message.Create(MessageCommand.Disconnect, payload);
             var command = Tcp.Write.Create(ByteString.FromBytes(disconnect.ToArray()));

@@ -6,7 +6,6 @@ using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using System.Linq;
 using System.Net;
 
 namespace Neo.UnitTests.Network.P2P
@@ -92,39 +91,6 @@ namespace Neo.UnitTests.Network.P2P
             //Verack
             verackMessage.Data.Count.Should().Be(3);
         }
-
-        [TestMethod]
-        public void RemoteNode_Test_Received_MaxConnectionReached_Disconnection()
-        {
-            var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
-
-            connectionTestProbe.ExpectMsg<Tcp.Write>();     // remote node will send version message
-            LocalNode.Singleton.GetUnconnectedPeers().Count().Should().Be(0);
-
-            //send MaxConnectionReached disconnection
-            NetworkAddressWithTime[] addressWithTimes = new NetworkAddressWithTime[]
-            {
-                new NetworkAddressWithTime()
-                {
-                    Timestamp = 0,
-                    Address = IPAddress.Parse("192.168.255.255"),
-                    Capabilities = new NodeCapability[]
-                    {
-                        new ServerCapability(NodeCapabilityType.TcpServer, 8080)
-                    }
-                }
-            };
-            var payload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, "The maximum number of connections reached!", addressWithTimes.ToByteArray());
-            var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActor, payload);
-
-            connectionTestProbe.ExpectNoMsg();
-            LocalNode.Singleton.GetUnconnectedPeers().Count().Should().Be(1);
-            var iPEndPoint = LocalNode.Singleton.GetUnconnectedPeers().First();
-            iPEndPoint.Should().Be(new IPEndPoint(addressWithTimes[0].Address, 8080));
-        }
-
 
         [TestMethod]
         public void RemoteNode_Test_Received_Duplicate_Connection()

@@ -111,6 +111,28 @@ namespace Neo.Network.P2P
             }
         }
 
+        public bool IsDuplicateConnection(RemoteNode remoteNode)
+        {
+            var version = remoteNode.Version;
+            var remote = remoteNode.Remote;
+
+            foreach(var pair in RemoteNodes)
+            {
+                var remoteActorRef = pair.Key;
+                var otherNode = pair.Value;
+                if(otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
+                {
+                    // add the duplicate address in ConnectedPeers
+                    if (ConnectedPeers.TryGetValue(remoteActorRef, out List<IPEndPoint> endPoints))
+                    {
+                        endPoints.Add(remote);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public IEnumerable<RemoteNode> GetRemoteNodes()
         {
             return RemoteNodes.Values;
@@ -164,6 +186,9 @@ namespace Neo.Network.P2P
                     break;
                 case RelayResultReason _:
                     break;
+                case DisconnectPayload payload:
+                    OnDisconnectPayload(payload);
+                    break;
             }
         }
 
@@ -182,6 +207,23 @@ namespace Neo.Network.P2P
         private void OnSendDirectly(IInventory inventory)
         {
             Connections.Tell(inventory);
+        }
+
+        private void OnDisconnectPayload(DisconnectPayload payload)
+        {
+            switch (payload.Reason)
+            {
+                case DisconnectReason.MaxConnectionReached:
+                case DisconnectReason.MaxPerAddressConnectionReached:
+                    try
+                    {
+                        NetworkAddressWithTime[] addressList = payload.Data.AsSerializableArray<NetworkAddressWithTime>(AddrPayload.MaxCountToSend);
+                        AddPeers(addressList.Select(p => p.EndPoint).Where(p => p.Port > 0));
+                    }
+                    catch { }
+                    break;
+                default: break;
+            }
         }
 
         public static Props Props(NeoSystem system)

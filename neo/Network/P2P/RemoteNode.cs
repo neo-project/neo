@@ -113,7 +113,9 @@ namespace Neo.Network.P2P
         {
             msg_buffer = msg_buffer.Concat(data);
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            {
                 protocol.Tell(message);
+            }
         }
 
         protected override void OnReceive(object message)
@@ -135,9 +137,6 @@ namespace Neo.Network.P2P
                     break;
                 case MessageCommand.Verack:
                     OnVerack();
-                    break;
-                case DisconnectPayload payload:
-                    OnDisconnectPayload(payload);
                     break;
                 case ProtocolHandler.SetFilter setFilter:
                     OnSetFilter(setFilter.Filter);
@@ -205,39 +204,24 @@ namespace Neo.Network.P2P
                         break;
                 }
             }
-            if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
+
+            if (version.Nonce == LocalNode.Nonce)
             {
-                Disconnect(DisconnectReason.MagicNumberIncompatible, "Incomppatible magic number!");
+                Disconnect(DisconnectReason.DuplicateConnection, "Local node");
                 return;
             }
-            if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote != null && Remote != null && p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == version.Nonce))
+            if (version.Magic != ProtocolSettings.Default.Magic)
+            {
+                Disconnect(DisconnectReason.MagicNumberIncompatible, "Incomppatible magic number!", BitConverter.GetBytes(ProtocolSettings.Default.Magic));
+                return;
+            }
+            if (Remote != null && LocalNode.Singleton.IsDuplicateConnection(this))
             {
                 Disconnect(DisconnectReason.DuplicateConnection, "Duplicate connection!");
                 return;
             }
-            SendMessage(Message.Create(MessageCommand.Verack));
-        }
 
-        private void OnDisconnectPayload(DisconnectPayload payload)
-        {
-            switch (payload.Reason)
-            {
-                case DisconnectReason.MaxConnectionReached:
-                    try
-                    {
-                        NetworkAddressWithTime[] addressList = payload.Data.AsSerializableArray<NetworkAddressWithTime>(AddrPayload.MaxCountToSend);
-                        system.LocalNode.Tell(new Peer.Peers
-                        {
-                            EndPoints = addressList.Select(p => p.EndPoint).Where(p => p.Port > 0)
-                        });
-                    }
-                    catch (FormatException) { }
-                    break;
-                case DisconnectReason.DuplicateConnection:
-                    LocalNode.Singleton.AddRemoteNodeListenerIPEndPoint(Self, Listener);
-                    break;
-                default: break;
-            }
+            SendMessage(Message.Create(MessageCommand.Verack));
         }
 
         protected override void PostStop()
@@ -269,11 +253,7 @@ namespace Neo.Network.P2P
         private Message TryParseMessage()
         {
             var length = Message.TryDeserialize(msg_buffer, out var msg);
-            if (length <= 0)
-            {
-                msg_buffer = ByteString.Empty;
-                return null;
-            }
+            if (length <= 0) return null;
 
             msg_buffer = msg_buffer.Slice(length).Compact();
             return msg;

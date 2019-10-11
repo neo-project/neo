@@ -80,6 +80,7 @@ namespace Neo.Network.P2P
             }
             else
             {
+                // send data...
                 ws.Abort();
             }
             Context.Stop(Self);
