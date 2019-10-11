@@ -15,6 +15,7 @@ using System.Collections.Generic;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
+    [NotReRunnable]
     public class UT_LocalNode : TestKit
     {
         private static NeoSystem testBlockchain;
