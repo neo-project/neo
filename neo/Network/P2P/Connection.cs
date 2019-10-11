@@ -71,17 +71,21 @@ namespace Neo.Network.P2P
         protected void Disconnect(DisconnectReason reason, string message = "", byte[] data = null)
         {
             disconnected = true;
+
+            var payload = DisconnectPayload.Create(reason, message, data);
+            var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
+
             if (tcp != null)
             {
-                var payload = DisconnectPayload.Create(reason, message, data);
-                var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
                 tcp.Tell(Tcp.Write.Create((ByteString.FromBytes(disconnectMessage.ToArray()))));
                 tcp.Tell(Tcp.Close.Instance);
             }
             else
             {
-                // send data...
-                ws.Abort();
+                ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
+                ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    failure: ex => new Tcp.ErrorClosed(ex.Message));
+                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
             }
             Context.Stop(Self);
         }

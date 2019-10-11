@@ -105,9 +105,9 @@ namespace Neo.UnitTests.Network.P2P
                 Timestamp = 5,
                 Version = 6,
                 Capabilities = new NodeCapability[]
-              {
+                {
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
-              }
+                }
             };
 
             // send to remote node A

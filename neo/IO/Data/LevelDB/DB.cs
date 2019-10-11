@@ -73,14 +73,14 @@ namespace Neo.IO.Data.LevelDB
             return new DB(handle);
         }
 
-        public virtual void Put(WriteOptions options, Slice key, Slice value)
+        public void Put(WriteOptions options, Slice key, Slice value)
         {
             IntPtr error;
             Native.leveldb_put(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, value.buffer, (UIntPtr)value.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
-        public virtual bool TryGet(ReadOptions options, Slice key, out Slice value)
+        public bool TryGet(ReadOptions options, Slice key, out Slice value)
         {
             UIntPtr length;
             IntPtr error;
@@ -101,7 +101,7 @@ namespace Neo.IO.Data.LevelDB
             return true;
         }
 
-        public virtual void Write(WriteOptions options, WriteBatch write_batch)
+        public void Write(WriteOptions options, WriteBatch write_batch)
         {
             // There's a bug in .Net Core.
             // When calling DB.Write(), it will throw LevelDBException sometimes.

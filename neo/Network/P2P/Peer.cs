@@ -14,6 +14,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -214,7 +215,6 @@ namespace Neo.Network.P2P
 
         private void Disconnect(DisconnectReason reason, string message = "", byte[] data = null)
         {
-            Console.WriteLine("disconnect sender by reaseon: " + reason);
             var payload = DisconnectPayload.Create(reason, message, data);
             var disconnect = Message.Create(MessageCommand.Disconnect, payload);
             var command = Tcp.Write.Create(ByteString.FromBytes(disconnect.ToArray()));
@@ -264,7 +264,13 @@ namespace Neo.Network.P2P
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
-                ws.Abort();
+                NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
+                var payload = DisconnectPayload.Create(DisconnectReason.MaxPerAddressConnectionReached, "The maximum number of per address connections reached!", networkAddresses.ToByteArray());
+                var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
+                ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
+                ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    failure: ex => new Tcp.ErrorClosed(ex.Message));
+                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
             }
             else
             {
