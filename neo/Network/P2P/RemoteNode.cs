@@ -44,6 +44,7 @@ namespace Neo.Network.P2P
             {
                 new FullNodeCapability(Blockchain.Singleton.Height)
             };
+
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
             if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
 
@@ -112,6 +113,7 @@ namespace Neo.Network.P2P
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
+
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
                 protocol.Tell(message);
         }
