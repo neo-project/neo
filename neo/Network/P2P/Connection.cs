@@ -122,7 +122,8 @@ namespace Neo.Network.P2P
             try
             {
                 OnData(data);
-            }catch (FormatException)
+            }
+            catch (FormatException)
             {
                 Disconnect(DisconnectReason.FormatExcpetion, "Parse data failed!");
             }
