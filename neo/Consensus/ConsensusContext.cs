@@ -105,11 +105,11 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
 
-            ReadConsensusPayloadArray(reader, out PreparationPayloads, reader.ReadVarInt(Blockchain.MaxValidators));
+            PreparationPayloads = ReadConsensusPayloadArray(reader, reader.ReadVarInt(Blockchain.MaxValidators));
             ulong emptyOrValidators = reader.ReadVarInt(Blockchain.MaxValidators);
-            ReadConsensusPayloadArray(reader, out CommitPayloads, emptyOrValidators);
-            ReadConsensusPayloadArray(reader, out ChangeViewPayloads, emptyOrValidators);
-            ReadConsensusPayloadArray(reader, out LastChangeViewPayloads, emptyOrValidators);
+            CommitPayloads = ReadConsensusPayloadArray(reader, emptyOrValidators);
+            ChangeViewPayloads = ReadConsensusPayloadArray(reader, emptyOrValidators);
+            LastChangeViewPayloads = ReadConsensusPayloadArray(reader, emptyOrValidators);
 
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
@@ -428,11 +428,12 @@ namespace Neo.Consensus
                 writer.Write(payload);
             }
         }
-        private void ReadConsensusPayloadArray(BinaryReader reader, out ConsensusPayload[] payloadArray, ulong payloadLenght)
+        private ConsensusPayload[] ReadConsensusPayloadArray(BinaryReader reader, ulong payloadLenght)
         {
-            payloadArray = new ConsensusPayload[payloadLenght];
+            ConsensusPayload[] payloadArray = new ConsensusPayload[payloadLenght];
             for (int i = 0; i < payloadArray.Length; i++)
                 payloadArray[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            return payloadArray;
         }
     }
 }
