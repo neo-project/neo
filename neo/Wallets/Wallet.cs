@@ -299,55 +299,49 @@ namespace Neo.Wallets
 
         private Transaction MakeTransaction(Snapshot snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
-            byte[] buffer = new byte[sizeof(uint)];
-
-            using (var random = RandomNumberGenerator.Create())
+            var random = new Random();
+            foreach (var (account, value) in balances_gas)
             {
-                foreach (var (account, value) in balances_gas)
+                Transaction tx = new Transaction
                 {
-                    random.GetBytes(buffer);
-
-                    Transaction tx = new Transaction
+                    Version = 0,
+                    Nonce = (uint)random.Next(),
+                    Script = script,
+                    Sender = account,
+                    ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
+                    Attributes = attributes,
+                    Cosigners = cosigners
+                };
+                // will try to execute 'transfer' script to check if it works
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
+                {
+                    if (engine.State.HasFlag(VMState.FAULT))
+                        throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
+                    tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
+                    if (tx.SystemFee > 0)
                     {
-                        Version = 0,
-                        Nonce = BitConverter.ToUInt32(buffer, 0),
-                        Script = script,
-                        Sender = account,
-                        ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                        Attributes = attributes,
-                        Cosigners = cosigners
-                    };
-                    // will try to execute 'transfer' script to check if it works
-                    using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
-                    {
-                        if (engine.State.HasFlag(VMState.FAULT))
-                            throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
-                        tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
-                        if (tx.SystemFee > 0)
-                        {
-                            long d = (long)NativeContract.GAS.Factor;
-                            long remainder = tx.SystemFee % d;
-                            if (remainder > 0)
-                                tx.SystemFee += d - remainder;
-                            else if (remainder < 0)
-                                tx.SystemFee -= remainder;
-                        }
+                        long d = (long)NativeContract.GAS.Factor;
+                        long remainder = tx.SystemFee % d;
+                        if (remainder > 0)
+                            tx.SystemFee += d - remainder;
+                        else if (remainder < 0)
+                            tx.SystemFee -= remainder;
                     }
-
-                    UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
-
-                    // base size for transaction: includes const_header + attributes + cosigners with scopes + script + hashes
-                    int size = Transaction.HeaderSize + attributes.GetVarSize() + cosigners.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
-
-                    foreach (UInt160 hash in hashes)
-                    {
-                        byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
-                        if (witness_script is null) continue;
-                        tx.NetworkFee += CalculateNetWorkFee(witness_script, ref size);
-                    }
-                    tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-                    if (value >= tx.SystemFee + tx.NetworkFee) return tx;
                 }
+
+                UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+
+                // base size for transaction: includes const_header + attributes + cosigners with scopes + script + hashes
+                int size = Transaction.HeaderSize + attributes.GetVarSize() + cosigners.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+
+                foreach (UInt160 hash in hashes)
+                {
+                    byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
+                    if (witness_script is null) continue;
+                    tx.NetworkFee += CalculateNetWorkFee(witness_script, ref size);
+                }
+                tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
+                if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
         }

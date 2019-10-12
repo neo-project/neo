@@ -273,11 +273,9 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakePrepareRequest()
         {
+            var random = new Random();
             byte[] buffer = new byte[sizeof(ulong)];
-            using (var random = System.Security.Cryptography.RandomNumberGenerator.Create())
-            {
-                random.GetBytes(buffer);
-            }
+            random.NextBytes(buffer);
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
             EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);

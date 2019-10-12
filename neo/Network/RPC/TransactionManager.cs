@@ -49,17 +49,12 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public TransactionManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
-            byte[] buffer = new byte[sizeof(uint)];
-            using (var random = System.Security.Cryptography.RandomNumberGenerator.Create())
-            {
-                random.GetBytes(buffer);
-            }
-
+            var random = new Random();
             uint height = rpcClient.GetBlockCount() - 1;
             Tx = new Transaction
             {
                 Version = 0,
-                Nonce = BitConverter.ToUInt32(buffer, 0),
+                Nonce = (uint)random.Next(),
                 Script = script,
                 Sender = sender,
                 ValidUntilBlock = height + Transaction.MaxValidUntilBlockIncrement,
