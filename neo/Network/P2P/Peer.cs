@@ -194,7 +194,7 @@ namespace Neo.Network.P2P
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
-                DisconnectWithAddresses(DisconnectReason.MaxPerAddressConnectionReached, "The maximum number of per address connections reached!");
+                DisconnectWithAddresses(DisconnectReason.MaxConnectionPerAddressReached, "The maximum number of per address connections reached!");
                 return;
             }
             else
@@ -265,7 +265,7 @@ namespace Neo.Network.P2P
             if (count >= MaxConnectionsPerAddress)
             {
                 NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
-                var payload = DisconnectPayload.Create(DisconnectReason.MaxPerAddressConnectionReached, "The maximum number of per address connections reached!", networkAddresses.ToByteArray());
+                var payload = DisconnectPayload.Create(DisconnectReason.MaxConnectionPerAddressReached, "The maximum number of per address connections reached!", networkAddresses.ToByteArray());
                 var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
                 ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
                 ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,

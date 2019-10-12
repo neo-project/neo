@@ -6,7 +6,7 @@ namespace Neo.Network.P2P.Payloads
     public enum DisconnectReason : byte
     {
         MaxConnectionReached = 0x01,
-        MaxPerAddressConnectionReached = 0x02,
+        MaxConnectionPerAddressReached = 0x02,
         DuplicateConnection = 0x03,
         MagicNumberIncompatible = 0x04,
         ConnectionTimeout = 0x05,

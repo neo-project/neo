@@ -122,7 +122,7 @@ namespace Neo.UnitTests.Network.P2P
             testProbe.Send(remoteNodeActor, versionReceived);
             testProbe.ExpectMsg<Tcp.Write>(); // remote node will send verack and change its listenerPort
 
-            // create one more remote connection and localnode will disconnect with `MaxPerAddressConnectionReached`
+            // create one more remote connection and localnode will disconnect with `MaxConnectionPerAddressReached`
             remote = new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8079);
             connected = new Tcp.Connected(remote, local);
             testProbe.Send(localNode, connected);
@@ -132,7 +132,7 @@ namespace Neo.UnitTests.Network.P2P
             message.Command.Should().Be(MessageCommand.Disconnect);
 
             var disconnectionPayload = (DisconnectPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectReason.MaxPerAddressConnectionReached);
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.MaxConnectionPerAddressReached);
 
             // return addr
             var count = DisconnectPayload.MaxDataSize;

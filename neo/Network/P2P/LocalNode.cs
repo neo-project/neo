@@ -214,7 +214,7 @@ namespace Neo.Network.P2P
             switch (payload.Reason)
             {
                 case DisconnectReason.MaxConnectionReached:
-                case DisconnectReason.MaxPerAddressConnectionReached:
+                case DisconnectReason.MaxConnectionPerAddressReached:
                     try
                     {
                         NetworkAddressWithTime[] addressList = payload.Data.AsSerializableArray<NetworkAddressWithTime>(AddrPayload.MaxCountToSend);
