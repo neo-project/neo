@@ -186,7 +186,7 @@ namespace Neo.Network.P2P
                 DisconnectWithAddresses(DisconnectReason.MaxConnectionReached, "The maximum number of connections reached!");
                 return;
             }
-            
+
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
