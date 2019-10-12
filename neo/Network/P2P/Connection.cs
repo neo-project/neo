@@ -85,7 +85,7 @@ namespace Neo.Network.P2P
                     if (msg is Ack || msg is ReceiveTimeout)
                     {
                         tcp.Tell(Tcp.Abort.Instance);
-                Context.Stop(Self);
+                        Context.Stop(Self);
                     }
                 });
             }
