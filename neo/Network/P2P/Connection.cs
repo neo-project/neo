@@ -6,6 +6,7 @@ using System;
 using System.Net;
 using System.Net.WebSockets;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -68,7 +69,7 @@ namespace Neo.Network.P2P
                 failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
-        protected void Disconnect(DisconnectReason reason, string message = "", byte[] data = null)
+        protected async void Disconnect(DisconnectReason reason, string message = "", byte[] data = null)
         {
             disconnected = true;
 
@@ -77,17 +78,27 @@ namespace Neo.Network.P2P
 
             if (tcp != null)
             {
-                tcp.Tell(Tcp.Write.Create((ByteString.FromBytes(disconnectMessage.ToArray()))));
-                tcp.Tell(Tcp.Close.Instance);
+                tcp.Tell(Tcp.Write.Create(ByteString.FromBytes(disconnectMessage.ToArray()), Ack.Instance));
+                Context.SetReceiveTimeout(TimeSpan.FromSeconds(2.5));
+                Become(msg =>
+                {
+                    if (msg is Ack || msg is ReceiveTimeout)
+                    {
+                        tcp.Tell(Tcp.Abort.Instance);
+                Context.Stop(Self);
+                    }
+                });
             }
             else
             {
                 ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
-                ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                var task = ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    success: () => Ack.Instance,
                     failure: ex => new Tcp.ErrorClosed(ex.Message));
-                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+                await Task.WhenAny(task, Task.Delay(2500));
+                ws.Abort();
+                Context.Stop(Self);
             }
-            Context.Stop(Self);
         }
 
         protected virtual void OnAck()
