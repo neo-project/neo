@@ -181,16 +181,12 @@ namespace Neo.Network.P2P
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
-            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections)
+            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
                 DisconnectWithAddresses(DisconnectReason.MaxConnectionReached, "The maximum number of connections reached!");
                 return;
             }
-            if (TrustedIpAddresses.Count > 0 && !TrustedIpAddresses.Contains(remote.Address))
-            {
-                Disconnect(DisconnectReason.UntrustedIpAddresses, $"Untrusted ip address: {remote.Address}");
-                return;
-            }
+            
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
