@@ -43,7 +43,7 @@ namespace Neo.Network.P2P
 
             if (msg.Command == MessageCommand.Disconnect)
             {
-                OnDisconnectMessageRecived((DisconnectPayload)msg.Payload);
+                OnDisconnectMessageReceived((DisconnectPayload)msg.Payload);
                 return;
             }
             if (version == null)
@@ -291,7 +291,7 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(payload);
         }
 
-        private void OnDisconnectMessageRecived(DisconnectPayload payload)
+        private void OnDisconnectMessageReceived(DisconnectPayload payload)
         {
             system.LocalNode.Tell(payload, Context.Parent); // As the priority of message is lower than Tcp.Close
         }
