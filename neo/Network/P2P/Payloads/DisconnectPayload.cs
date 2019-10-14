@@ -10,7 +10,6 @@ namespace Neo.Network.P2P.Payloads
         DuplicateConnection = 0x03,
         MagicNumberIncompatible = 0x04,
         ConnectionTimeout = 0x05,
-        UntrustedIpAddresses = 0x06,
 
         FormatExcpetion = 0x10,
         InternalError = 0x11,
