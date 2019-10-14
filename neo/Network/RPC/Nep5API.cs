@@ -1,6 +1,5 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
-using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
 using System.Linq;
@@ -104,9 +103,9 @@ namespace Neo.Network.RPC
         /// <param name="amount">transfer amount</param>
         /// <param name="networkFee">netwotk fee, set to be 0 will auto calculate the least fee</param>
         /// <returns></returns>
-        public Transaction GetTransfer(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
+        public Transaction CreateTransferTx(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
         {
-            var sender = Contract.CreateSignatureRedeemScript(fromKey.PublicKey).ToScriptHash();
+            var sender = fromKey.ToScriptHash();
             Cosigner[] cosigners = new[] { new Cosigner { Scopes = WitnessScope.CalledByEntry, Account = sender } };
 
             byte[] script = scriptHash.MakeScript("transfer", sender, to, amount);

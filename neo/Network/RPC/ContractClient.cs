@@ -53,7 +53,7 @@ namespace Neo.Network.RPC
                 script = sb.ToArray();
             }
 
-            Transaction tx = new TransactionManager(rpcClient, Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash())
+            Transaction tx = new TransactionManager(rpcClient, key.ToScriptHash())
                 .MakeTransaction(script, null, null, networkFee)
                 .AddSignature(key)
                 .Sign()

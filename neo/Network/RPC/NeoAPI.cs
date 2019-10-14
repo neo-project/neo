@@ -91,7 +91,7 @@ namespace Neo.Network.RPC
             KeyPair keyPair = key.ToKeyPair();
             UInt160 toHash = keyPair.ToScriptHash();
             BigInteger balance = Nep5API.BalanceOf(NativeContract.NEO.Hash, toHash);
-            Transaction transaction = Nep5API.GetTransfer(NativeContract.NEO.Hash, keyPair, toHash, balance);
+            Transaction transaction = Nep5API.CreateTransferTx(NativeContract.NEO.Hash, keyPair, toHash, balance);
             RpcClient.SendRawTransaction(transaction);
             return transaction;
         }
@@ -114,7 +114,7 @@ namespace Neo.Network.RPC
             UInt160 to = toAddress.ToUInt160();
             BigInteger amountInteger = amount.ToBigInteger(decimals);
             BigInteger networkFeeInteger = networkFee.ToBigInteger(NativeContract.GAS.Decimals);
-            Transaction transaction = Nep5API.GetTransfer(scriptHash, from, to, amountInteger, (long)networkFeeInteger);
+            Transaction transaction = Nep5API.CreateTransferTx(scriptHash, from, to, amountInteger, (long)networkFeeInteger);
             RpcClient.SendRawTransaction(transaction);
             return transaction;
         }
