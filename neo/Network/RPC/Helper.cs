@@ -83,7 +83,12 @@ namespace Neo.Network.RPC
         {
             BigInteger factor = BigInteger.Pow(10, (int)decimals);
             var (numerator, denominator) = Fraction(amount);
-            var res = factor * numerator / denominator;
+            if (factor < denominator)
+            {
+                throw new OverflowException("The decimal places is too long.");
+            }
+
+            BigInteger res = factor * numerator / denominator;
             return res;
         }
 
