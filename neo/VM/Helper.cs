@@ -149,6 +149,9 @@ namespace Neo.VM
                 case Enum data:
                     sb.EmitPush(BigInteger.Parse(data.ToString("d")));
                     break;
+                case null:
+                    sb.Emit(OpCode.PUSHNULL);
+                    break;
                 default:
                     throw new ArgumentException();
             }
