@@ -44,8 +44,8 @@ namespace Neo.SmartContract
         public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", Blockchain_GetTransactionFromBlock, 0_01000000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 0_01000000, TriggerType.Application);
-        public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_01000000, TriggerType.Application);
         public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
@@ -335,18 +335,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool Blockchain_GetContract(ApplicationEngine engine)
-        {
-            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-            if (contract == null)
-                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            else
-                engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem());
-            return true;
-        }
-
-        private static bool Block_GetTransaction(ApplicationEngine engine)
+        private static bool Blockchain_GetTransactionFromBlock(ApplicationEngine engine)
         {
             byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             UInt256 hash;
@@ -373,6 +362,17 @@ namespace Neo.SmartContract
                 else
                     engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
             }
+            return true;
+        }
+
+        private static bool Blockchain_GetContract(ApplicationEngine engine)
+        {
+            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
+            if (contract == null)
+                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            else
+                engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem());
             return true;
         }
 
