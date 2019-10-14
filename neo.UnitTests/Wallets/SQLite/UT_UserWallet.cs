@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Wallets.SQLite
         public void TestGetVersion()
         {
             Action action = () => wallet.Version.ToString();
-            action.ShouldNotThrow();
+            action.Should().NotThrow();
         }
 
         [TestMethod]
@@ -66,7 +66,7 @@ namespace Neo.UnitTests.Wallets.SQLite
 
             ss.AppendChar('d');
             Action action = () => UserWallet.Open(myPath, ss);
-            action.ShouldThrow<CryptographicException>();
+            action.Should().Throw<CryptographicException>();
 
             TestUtils.DeleteFile(myPath);
         }
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.Wallets.SQLite
             w1.Should().NotBeNull();
 
             Action action = () => UserWallet.Open(path, "123");
-            action.ShouldThrow<CryptographicException>();
+            action.Should().Throw<CryptographicException>();
         }
 
         [TestMethod]
