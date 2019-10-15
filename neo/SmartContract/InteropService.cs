@@ -93,6 +93,8 @@ namespace Neo.SmartContract
                     case Integer _:
                         size += state.GetByteLength();
                         break;
+                    case Null _:
+                        break;
                     case InteropInterface _:
                         return false;
                     case Map map:
