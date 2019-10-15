@@ -2,7 +2,6 @@ using Neo.Cryptography;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
