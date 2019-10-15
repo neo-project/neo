@@ -13,6 +13,7 @@ namespace Neo.SmartContract
 
         Array = 0x10,
         Map = 0x12,
+        Null = 0x14,
 
         InteropInterface = 0xf0,
 

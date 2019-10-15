@@ -63,6 +63,9 @@ namespace Neo.VM
         {
             switch (parameter.Type)
             {
+                case ContractParameterType.Null:
+                    sb.Emit(OpCode.PUSHNULL);
+                    break;
                 case ContractParameterType.Signature:
                 case ContractParameterType.ByteArray:
                     sb.EmitPush((byte[])parameter.Value);
@@ -245,6 +248,12 @@ namespace Neo.VM
                         Type = ContractParameterType.InteropInterface
                     };
                     break;
+                case Null _:
+                    parameter = new ContractParameter
+                    {
+                        Type = ContractParameterType.Null
+                    };
+                    break;
                 default:
                     throw new ArgumentException();
             }
@@ -306,6 +315,9 @@ namespace Neo.VM
                     stackItem = (string)parameter.Value;
                     break;
                 case ContractParameterType.InteropInterface:
+                    break;
+                case ContractParameterType.Null:
+                    stackItem = StackItem.Null;
                     break;
                 default:
                     throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");
