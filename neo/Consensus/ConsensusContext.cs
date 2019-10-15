@@ -42,7 +42,6 @@ namespace Neo.Consensus
         private int _witnessSize;
         private readonly Wallet wallet;
         private readonly Store store;
-        private readonly Random random = new Random();
 
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
@@ -266,6 +265,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakePrepareRequest()
         {
+            var random = new Random();
             byte[] buffer = new byte[sizeof(ulong)];
             random.NextBytes(buffer);
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
