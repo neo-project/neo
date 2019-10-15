@@ -24,7 +24,6 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             IndexStart = reader.ReadUInt32();
-            if (IndexStart == 0) throw new FormatException();
             Count = reader.ReadInt16();
             if (Count <= 0 || Count > MaxBlocksCount) throw new FormatException();
         }
