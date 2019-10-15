@@ -125,7 +125,7 @@ namespace Neo.Consensus
             FutureCommitPayloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
             FutureChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
             FutureRecoveryPayloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
-            
+
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
@@ -460,7 +460,7 @@ namespace Neo.Consensus
             writer.WriteNullableArray(CommitPayloads);
             writer.WriteNullableArray(ChangeViewPayloads);
             writer.WriteNullableArray(LastChangeViewPayloads);
-            
+
             writer.WriteNullableArray(FuturePreparationPayloads);
             writer.WriteNullableArray(FutureCommitPayloads);
             writer.WriteNullableArray(FutureChangeViewPayloads);
