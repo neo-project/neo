@@ -17,7 +17,7 @@ namespace Neo.Wallets
     public abstract class Wallet : IDisposable
     {
         public abstract event EventHandler<WalletTransactionEventArgs> WalletTransaction;
-
+        
         public abstract string Name { get; }
         public abstract Version Version { get; }
         public abstract uint WalletHeight { get; }
