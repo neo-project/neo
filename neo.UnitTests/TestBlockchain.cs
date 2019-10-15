@@ -17,6 +17,12 @@ namespace Neo.UnitTests
             return _Store.Object;
         }
 
+        static TestBlockchain()
+        {
+            InitializeMockNeoSystem();
+            GetStore();
+        }
+
         public static NeoSystem InitializeMockNeoSystem()
         {
             if (TheNeoSystem == null)

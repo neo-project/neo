@@ -9,13 +9,10 @@ namespace Neo.UnitTests.Wallets
     [TestClass]
     public class UT_AssetDescriptor
     {
-        private Store Store;
-
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
@@ -25,7 +22,7 @@ namespace Neo.UnitTests.Wallets
             {
                 var descriptor = new Neo.Wallets.AssetDescriptor(UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
             };
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]

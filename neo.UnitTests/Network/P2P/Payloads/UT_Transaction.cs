@@ -11,7 +11,6 @@ using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
-using Neo.Wallets.NEP6;
 using System;
 using System.Numerics;
 
@@ -225,7 +224,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // 'from' is always required as witness
                 // if not included on cosigner with a scope, its scope should be considered 'CalledByEntry'
                 data.ScriptHashes.Count.Should().Be(1);
-                data.ScriptHashes[0].ShouldBeEquivalentTo(acc.ScriptHash);
+                data.ScriptHashes[0].Should().BeEquivalentTo(acc.ScriptHash);
                 // will sign tx
                 bool signed = wallet.Sign(data);
                 Assert.IsTrue(signed);
