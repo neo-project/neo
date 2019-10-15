@@ -24,6 +24,46 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
+        public void TestNullableArray()
+        {
+            var caseArray = new UInt160[]
+            {
+                null, UInt160.Zero, new UInt160(
+                new byte[] {
+                    0xAA,0x00,0x00,0x00,0x00,
+                    0xBB,0x00,0x00,0x00,0x00,
+                    0xCC,0x00,0x00,0x00,0x00,
+                    0xDD,0x00,0x00,0x00,0x00
+                })
+            };
+
+            byte[] data;
+            using (var stream = new MemoryStream())
+            using (var writter = new BinaryWriter(stream))
+            {
+                Neo.IO.Helper.WriteNullableArray(writter, caseArray);
+                data = stream.ToArray();
+            }
+
+            // Read Error
+
+            using (var stream = new MemoryStream(data))
+            using (var reader = new BinaryReader(stream))
+            {
+                Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.ReadNullableArray<UInt160>(reader, 2));
+            }
+
+            // Read 100%
+
+            using (var stream = new MemoryStream(data))
+            using (var reader = new BinaryReader(stream))
+            {
+                var read = Neo.IO.Helper.ReadNullableArray<UInt160>(reader);
+                CollectionAssert.AreEqual(caseArray, read);
+            }
+        }
+
+        [TestMethod]
         public void TestAsSerializable()
         {
             for (int i = 0; i < 2; i++)
@@ -48,7 +88,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializableArray()
         {
-            byte[] byteArray = Neo.IO.Helper.ToByteArray<UInt160>(new UInt160[] { UInt160.Zero });
+            byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
             UInt160[] result = Neo.IO.Helper.AsSerializableArray<UInt160>(byteArray);
             Assert.AreEqual(1, result.Length);
             Assert.AreEqual(UInt160.Zero, result[0]);
