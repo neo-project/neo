@@ -1,12 +1,7 @@
-﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using Neo.Cryptography;
 using Neo.IO;
-using Neo.SmartContract.Native.Votes.Model;
 using Neo.SmartContract.Native.Votes.Interface;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Native.Votes.Model
 {
@@ -15,56 +10,32 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
     {
         MultiCandidate multiCandidate;
         SingleCandidate singleCandidate;
+
         [TestInitialize]
         public void TestSetUp()
         {
-            List<int> list = new List<int>();
-            list.Add(1);
-            list.Add(2);
-            list.Add(3);
-            multiCandidate = new MultiCandidate(list);
+            List<int> list = new List<int> { 1, 2, 3 };
 
+            multiCandidate = new MultiCandidate(list);
             singleCandidate = new SingleCandidate(1);
         }
 
         [TestMethod]
         public void Check_SingleCandidate()
         {
-            byte[] temp;
-            using (MemoryStream memoryStream = new MemoryStream())
-            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
-            {
-                singleCandidate.Serialize(binaryWriter);
-                temp = memoryStream.ToArray();
-            }
+            byte[] temp = singleCandidate.ToArray();
+            var newCandidate = temp.AsSerializable<SingleCandidate>();
 
-            using (MemoryStream memoryStream = new MemoryStream(temp, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-            {
-                SingleCandidate newCandidate = new SingleCandidate();
-                newCandidate.Deserialize(binaryReader);
-                Assert.AreEqual(newCandidate.GetCandidate(), singleCandidate.GetCandidate());
-            }
+            Assert.AreEqual(newCandidate.GetCandidate(), singleCandidate.GetCandidate());
         }
 
         [TestMethod]
         public void Check_MultiCandidate()
         {
-            byte[] temp;
-            using (MemoryStream memoryStream = new MemoryStream())
-            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
-            {
-                multiCandidate.Serialize(binaryWriter);
-                temp = memoryStream.ToArray();
-            }
+            byte[] temp = multiCandidate.ToArray();
+            var newCandidate = temp.AsSerializable<MultiCandidate>();
 
-            using (MemoryStream memoryStream = new MemoryStream(temp, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-            {
-                MultiCandidate newCandidate = new MultiCandidate();
-                newCandidate.Deserialize(binaryReader);
-                Assert.AreEqual(newCandidate.GetCandidate().Count, multiCandidate.GetCandidate().Count);
-            }
+            CollectionAssert.AreEqual(newCandidate.GetCandidate(), multiCandidate.GetCandidate());
         }
     }
 }
