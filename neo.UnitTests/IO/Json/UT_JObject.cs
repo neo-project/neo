@@ -54,14 +54,14 @@ namespace Neo.UnitTests.IO.Json
         public void TestParse()
         {
             Action action = () => JObject.Parse(new StringReader(""), -1);
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]
         public void TestParseNull()
         {
             Action action = () => JObject.Parse(new StringReader("naaa"));
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
 
             JObject.Parse(new StringReader("null")).Should().BeNull();
         }
@@ -70,16 +70,16 @@ namespace Neo.UnitTests.IO.Json
         public void TestParseObject()
         {
             Action action1 = () => JObject.Parse(new StringReader("{\"k1\":\"v1\",\"k1\":\"v2\"}"), 100);
-            action1.ShouldThrow<FormatException>();
+            action1.Should().Throw<FormatException>();
 
             Action action2 = () => JObject.Parse(new StringReader("{\"k1\",\"k1\"}"), 100);
-            action2.ShouldThrow<FormatException>();
+            action2.Should().Throw<FormatException>();
 
             Action action3 = () => JObject.Parse(new StringReader("{\"k1\":\"v1\""), 100);
-            action3.ShouldThrow<FormatException>();
+            action3.Should().Throw<FormatException>();
 
             Action action4 = () => JObject.Parse(new StringReader("aaa"), 100);
-            action4.ShouldThrow<FormatException>();
+            action4.Should().Throw<FormatException>();
 
             JObject.Parse(new StringReader("{\"k1\":\"v1\"}"), 100).ToString().Should().Be("{\"k1\":\"v1\"}");
         }

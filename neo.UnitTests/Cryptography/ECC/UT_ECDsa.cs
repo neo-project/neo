@@ -22,9 +22,9 @@ namespace Neo.UnitTests.Cryptography
         public void TestECDsaConstructor()
         {
             Action action = () => new ECDsa(key.PublicKey);
-            action.ShouldNotThrow();
+            action.Should().NotThrow();
             action = () => new ECDsa(key.PrivateKey, key.PublicKey.Curve);
-            action.ShouldNotThrow();
+            action.Should().NotThrow();
         }
 
         [TestMethod]
@@ -32,14 +32,14 @@ namespace Neo.UnitTests.Cryptography
         {
             ECDsa sa = new ECDsa(key.PrivateKey, key.PublicKey.Curve);
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 10; i++)
             {
                 BigInteger[] result = sa.GenerateSignature(message);
                 result.Length.Should().Be(2);
             }
             sa = new ECDsa(key.PublicKey);
             Action action = () => sa.GenerateSignature(message);
-            action.ShouldThrow<InvalidOperationException>();
+            action.Should().Throw<InvalidOperationException>();
         }
 
         [TestMethod]
