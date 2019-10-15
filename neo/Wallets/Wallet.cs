@@ -18,8 +18,6 @@ namespace Neo.Wallets
     {
         public abstract event EventHandler<WalletTransactionEventArgs> WalletTransaction;
 
-        private static readonly Random rand = new Random();
-
         public abstract string Name { get; }
         public abstract Version Version { get; }
         public abstract uint WalletHeight { get; }
@@ -299,6 +297,7 @@ namespace Neo.Wallets
             }
             else
             {
+                Random rand = new Random();
                 UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
                 HashSet<UInt160> sAttributes = new HashSet<UInt160>();
                 using (ScriptBuilder sb = new ScriptBuilder())
