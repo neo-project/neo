@@ -198,7 +198,7 @@ namespace Neo.Consensus
 
         private void TryToLoadFuturePayload(ConsensusPayload[] payloadsArray)
         {
-            for (int p = 0; p < payloadsArray.Count(); p++)
+            for (int p = 0; p < payloadsArray.Length; p++)
             {
                 var payload = payloadsArray[p];
                 if (!(payload is null))
