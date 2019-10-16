@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography.ECC;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
@@ -15,7 +15,6 @@ namespace Neo.Network.RPC
     /// </summary>
     public class TransactionManager
     {
-        private static readonly Random rand = new Random();
         private readonly RpcClient rpcClient;
         private readonly UInt160 sender;
 
@@ -50,11 +49,12 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public TransactionManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
+            var random = new Random();
             uint height = rpcClient.GetBlockCount() - 1;
             Tx = new Transaction
             {
                 Version = 0,
-                Nonce = (uint)rand.Next(),
+                Nonce = (uint)random.Next(),
                 Script = script,
                 Sender = sender,
                 ValidUntilBlock = height + Transaction.MaxValidUntilBlockIncrement,
