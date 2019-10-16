@@ -201,12 +201,11 @@ namespace Neo.Consensus
             for (int p = 0; p < payloadsArray.Length; p++)
             {
                 var payload = payloadsArray[p];
-                if (payload != null)
-                    if (payload.PrevHash == context.Block.PrevHash && payload.BlockIndex == context.Block.Index)
-                    {
-                        OnConsensusPayload(payload, false);
-                        payloadsArray[p] = null;
-                    }
+                if (payload != null && payload.PrevHash == context.Block.PrevHash && payload.BlockIndex == context.Block.Index)
+                {
+                    OnConsensusPayload(payload, false);
+                    payloadsArray[p] = null;
+                }
             }
         }
         private void Log(string message, LogLevel level = LogLevel.Info)
