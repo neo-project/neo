@@ -324,11 +324,13 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload, bool tryToSave = true)
         {
+            if (payload.Version != context.Block.Version) return;
+            if (payload.ValidatorIndex >= context.Validators.Length) return;
+
             if (tryToSave)
                 TryToSaveFuturePayloads(payload);
 
             if (context.BlockSent) return;
-            if (payload.Version != context.Block.Version) return;
             if (payload.PrevHash != context.Block.PrevHash || payload.BlockIndex != context.Block.Index)
             {
                 if (context.Block.Index < payload.BlockIndex)
@@ -337,7 +339,6 @@ namespace Neo.Consensus
                 }
                 return;
             }
-            if (payload.ValidatorIndex >= context.Validators.Length) return;
             ConsensusMessage message;
             try
             {
