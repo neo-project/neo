@@ -95,7 +95,7 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Transfer NEP5 token balance
+        /// Create NEP5 token transfer transaction
         /// </summary>
         /// <param name="scriptHash">contract script hash</param>
         /// <param name="fromKey">from KeyPair</param>

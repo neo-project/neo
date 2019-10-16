@@ -17,7 +17,8 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Parse address, scripthash or public key string to UInt160
         /// </summary>
-        /// <param name="addressOrHash">account address, scripthash or public key string</param>
+        /// <param name="addressOrHash">account address, scripthash or public key string
+        /// Example: address ("AV556nYUwyJKNv8Xy7hVMLQnkmKPukw6x5"), scripthash ("0x6a38cd693b615aea24dd00de12a9f5836844da91"), public key ("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575")</param>
         /// <returns></returns>
         public static UInt160 ToUInt160(this string addressOrHash)
         {
@@ -54,7 +55,8 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Parse WIF or private key hex string to KeyPair
         /// </summary>
-        /// <param name="key">WIF or private key hex string</param>
+        /// <param name="key">WIF or private key hex string
+        /// Example: WIF ("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"), PrivateKey ("450d6c2a04b5b470339a745427bae6828400cf048400837d73c415063835e005")</param>
         /// <returns></returns>
         public static KeyPair ToKeyPair(this string key)
         {
