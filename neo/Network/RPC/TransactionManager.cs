@@ -17,7 +17,7 @@ namespace Neo.Network.RPC
     /// </summary>
     public class TransactionManager
     {
-        private readonly RpcClient rpcClient;
+        private readonly NeoAPI neoAPI;
         private readonly UInt160 sender;
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Neo.Network.RPC
         public TransactionManager MakeTransaction(byte[] script, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, long networkFee = 0)
         {
             var random = new Random();
-            uint height = rpcClient.GetBlockCount() - 1;
+            uint height = neoAPI.RpcClient.GetBlockCount() - 1;
             Tx = new Transaction
             {
                 Version = 0,
