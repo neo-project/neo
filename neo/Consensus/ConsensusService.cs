@@ -202,7 +202,7 @@ namespace Neo.Consensus
             {
                 var payload = payloadsArray[p];
                 if (!(payload is null))
-                    if (payload.BlockIndex == context.Block.Index)
+                    if (payload.PrevHash == context.Block.PrevHash && payload.BlockIndex == context.Block.Index)
                     {
                         OnConsensusPayload(payload, false);
                         payloadsArray[p] = null;
