@@ -189,14 +189,14 @@ namespace Neo.Consensus
             // Try to speed up consensus if cached future payloads exists
             if (hasFuturePayload)
             {
-                TryToLoadFuturePayload(context.FuturePreparationPayloads);
-                TryToLoadFuturePayload(context.FutureCommitPayloads);
-                TryToLoadFuturePayload(context.FutureChangeViewPayloads);
-                TryToLoadFuturePayload(context.FutureRecoveryPayloads);
+                TryToConsumeFuturePayload(context.FuturePreparationPayloads);
+                TryToConsumeFuturePayload(context.FutureCommitPayloads);
+                TryToConsumeFuturePayload(context.FutureChangeViewPayloads);
+                TryToConsumeFuturePayload(context.FutureRecoveryPayloads);
             }
         }
 
-        private void TryToLoadFuturePayload(ConsensusPayload[] payloadsArray)
+        private void TryToConsumeFuturePayload(ConsensusPayload[] payloadsArray)
         {
             for (int p = 0; p < payloadsArray.Length; p++)
             {
