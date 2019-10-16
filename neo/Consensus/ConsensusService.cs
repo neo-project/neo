@@ -209,7 +209,7 @@ namespace Neo.Consensus
                     }
                     else if (payload.PrevHash == context.Block.PrevHash && payload.BlockIndex == context.Block.Index)
                     {
-                        OnConsensusPayload(payload, false);
+                        OnConsensusPayload(payload, true);
                         payloadsArray[p] = null;
                     }
                 }
@@ -328,12 +328,13 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnConsensusPayload(ConsensusPayload payload, bool tryToSave = true)
+        private void OnConsensusPayload(ConsensusPayload payload, bool avoidSaving = false)
         {
             if (payload.Version != context.Block.Version) return;
             if (payload.ValidatorIndex >= context.Validators.Length) return;
 
-            if (tryToSave)
+            // Avoiding saving payload when it is being consumed or processed due to a recover payload
+            if (!avoidSaving)
                 TryToSaveFuturePayloads(payload);
 
             if (context.BlockSent) return;
@@ -708,7 +709,7 @@ namespace Neo.Consensus
         private bool ReverifyAndProcessPayload(ConsensusPayload payload)
         {
             if (!payload.Verify(context.Snapshot)) return false;
-            OnConsensusPayload(payload);
+            OnConsensusPayload(payload, true);
             return true;
         }
 
