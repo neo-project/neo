@@ -183,14 +183,14 @@ namespace Neo.Network.P2P
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
-                DisconnectWithAddresses(DisconnectReason.MaxConnectionReached);
+                Disconnect(DisconnectReason.MaxConnectionReached);
                 return;
             }
 
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
-                DisconnectWithAddresses(DisconnectReason.MaxConnectionPerAddressReached);
+                Disconnect(DisconnectReason.MaxConnectionPerAddressReached);
                 return;
             }
             else
@@ -202,15 +202,9 @@ namespace Neo.Network.P2P
                 ConnectedPeers.TryAdd(connection, new List<IPEndPoint> { remote });
             }
         }
-
-        private void DisconnectWithAddresses(DisconnectReason reason)
-        {
-            NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
-            Disconnect(reason, networkAddresses.ToByteArray());
-        }
-
         private void Disconnect(DisconnectReason reason, byte[] data = null)
         {
+            NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
             var payload = DisconnectPayload.Create(reason, data);
             var disconnect = Message.Create(MessageCommand.Disconnect, payload);
             var command = Tcp.Write.Create(ByteString.FromBytes(disconnect.ToArray()));
