@@ -207,17 +207,17 @@ namespace Neo.Network.P2P
 
             if (version.Nonce == LocalNode.Nonce)
             {
-                Disconnect(DisconnectReason.DuplicateConnection, "Local node");
+                Disconnect(DisconnectReason.DuplicateConnection);
                 return;
             }
             if (version.Magic != ProtocolSettings.Default.Magic)
             {
-                Disconnect(DisconnectReason.MagicNumberIncompatible, "Incomppatible magic number!", BitConverter.GetBytes(ProtocolSettings.Default.Magic));
+                Disconnect(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
                 return;
             }
             if (Remote != null && LocalNode.Singleton.IsDuplicateConnection(this))
             {
-                Disconnect(DisconnectReason.DuplicateConnection, "Duplicate connection!");
+                Disconnect(DisconnectReason.DuplicateConnection);
                 return;
             }
 

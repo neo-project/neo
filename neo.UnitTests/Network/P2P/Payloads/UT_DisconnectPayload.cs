@@ -12,15 +12,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateConnection, "test message", new byte[] { 0x01, 0x02 });
-            payload.Size.Should().Be(17);
+            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateConnection, new byte[] { 0x01, 0x02 });
+            payload.Size.Should().Be(4);
         }
 
         [TestMethod]
         public void Deserialize()
         {
             var payload = new DisconnectPayload();
-            var hex = "030c74657374206d657373616765020102";
+            var hex = "03020102";
             using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
             {
                 using (BinaryReader reader = new BinaryReader(ms))
@@ -29,7 +29,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
             }
             Assert.AreEqual(DisconnectReason.DuplicateConnection, payload.Reason);
-            Assert.AreEqual("test message", payload.Message);
             Assert.AreEqual(2, payload.Data.Length);
             Assert.AreEqual(0x01, payload.Data[0]);
             Assert.AreEqual(0x02, payload.Data[1]);
@@ -38,8 +37,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize()
         {
-            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateConnection, "test message", new byte[] { 0x01, 0x02 });
-            payload.ToArray().ToHexString().Should().Be("030c74657374206d657373616765020102");
+            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateConnection, new byte[] { 0x01, 0x02 });
+            payload.ToArray().ToHexString().Should().Be("03020102");
         }
     }
 }

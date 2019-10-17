@@ -225,7 +225,7 @@ namespace Neo.UnitTests.Network.P2P
                 }
             };
 
-            var payload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, "The maximum number of connections reached!", addressWithTimes.ToByteArray());
+            var payload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, addressWithTimes.ToByteArray());
             var testProbe = CreateTestProbe();
             testProbe.Send(testBlockchain.LocalNode, payload);
 

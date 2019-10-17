@@ -69,11 +69,11 @@ namespace Neo.Network.P2P
                 failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
-        protected async void Disconnect(DisconnectReason reason, string message = "", byte[] data = null)
+        protected async void Disconnect(DisconnectReason reason, byte[] data = null)
         {
             disconnected = true;
 
-            var payload = DisconnectPayload.Create(reason, message, data);
+            var payload = DisconnectPayload.Create(reason, data);
             var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
 
             if (tcp != null)
@@ -112,7 +112,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Timer _:
-                    Disconnect(DisconnectReason.ConnectionTimeout, $"Connection timeout after {connectionTimeoutLimit} seconds!");
+                    Disconnect(DisconnectReason.ConnectionTimeout);
                     break;
                 case Ack _:
                     OnAck();
@@ -136,7 +136,7 @@ namespace Neo.Network.P2P
             }
             catch (FormatException)
             {
-                Disconnect(DisconnectReason.FormatExcpetion, "Parse data failed!");
+                Disconnect(DisconnectReason.FormatExcpetion);
             }
             catch
             {

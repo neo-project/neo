@@ -62,7 +62,7 @@ namespace Neo.UnitTests.Network.P2P
                 }
             };
             var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain));
-            var disconnectionPayload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, "The maximum number of connections reached!", addressWithTimes.ToByteArray());
+            var disconnectionPayload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, addressWithTimes.ToByteArray());
             var senderProbe = CreateTestProbe();
             senderProbe.Send(protocolActor, Message.Create(MessageCommand.Disconnect, disconnectionPayload));
 
