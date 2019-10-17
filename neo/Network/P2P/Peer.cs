@@ -202,10 +202,10 @@ namespace Neo.Network.P2P
                 ConnectedPeers.TryAdd(connection, new List<IPEndPoint> { remote });
             }
         }
-        private void Disconnect(DisconnectReason reason, byte[] data = null)
+        private void Disconnect(DisconnectReason reason)
         {
             NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
-            var payload = DisconnectPayload.Create(reason, data);
+            var payload = DisconnectPayload.Create(reason, networkAddresses.ToByteArray());
             var disconnect = Message.Create(MessageCommand.Disconnect, payload);
             var command = Tcp.Write.Create(ByteString.FromBytes(disconnect.ToArray()));
 
