@@ -69,7 +69,7 @@ namespace Neo.Network.P2P
                 failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
-        protected async void Disconnect(DisconnectReason reason, byte[] data = null)
+        protected void Disconnect(DisconnectReason reason, byte[] data = null)
         {
             disconnected = true;
 
