@@ -11,7 +11,7 @@ namespace Neo.Network.P2P.Payloads
         MagicNumberIncompatible = 0x04,
         ConnectionTimeout = 0x05,
 
-        FormatExcpetion = 0x10,
+        FormatException = 0x10,
         InternalError = 0x11,
     }
 

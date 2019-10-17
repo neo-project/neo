@@ -138,7 +138,7 @@ namespace Neo.Network.P2P
             }
             catch (FormatException)
             {
-                Disconnect(DisconnectReason.FormatExcpetion);
+                Disconnect(DisconnectReason.FormatException);
             }
             catch
             {
