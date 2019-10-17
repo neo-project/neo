@@ -425,18 +425,22 @@ namespace Neo.Consensus
 
         public bool HasFuturePayloads()
         {
-            foreach (var payload in FuturePreparationPayloads)
-                if (payload != null)
-                    return true;
-            foreach (var payload in FutureChangeViewPayloads)
-                if (payload != null)
-                    return true;
-            foreach (var payload in FutureCommitPayloads)
-                if (payload != null)
-                    return true;
-            foreach (var payload in FutureRecoveryPayloads)
-                if (payload != null)
-                    return true;
+            if (FuturePreparationPayloads != null)
+                foreach (var payload in FuturePreparationPayloads)
+                    if (payload != null)
+                        return true;
+            if (FutureChangeViewPayloads != null)
+                foreach (var payload in FutureChangeViewPayloads)
+                    if (payload != null)
+                        return true;
+            if (FutureCommitPayloads != null)
+                foreach (var payload in FutureCommitPayloads)
+                    if (payload != null)
+                        return true;
+            if (FutureRecoveryPayloads != null)
+                foreach (var payload in FutureRecoveryPayloads)
+                    if (payload != null)
+                        return true;
             return false;
         }
 
