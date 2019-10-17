@@ -301,43 +301,40 @@ namespace Neo.Consensus
                     return;
                 }
 
-                byte lastViewNumber = 0;
-                uint lastHeight = 0;
                 switch (futureMessage)
                 {
                     case ChangeView view:
-                        lastViewNumber = context.FutureChangeViewPayloads[payload.ValidatorIndex] != null ? (byte)context.FutureChangeViewPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
-                        lastHeight = context.FutureChangeViewPayloads[payload.ValidatorIndex] != null ? context.FutureChangeViewPayloads[payload.ValidatorIndex].BlockIndex : 0;
-                        if (payload.BlockIndex < lastHeight)
-                        {
-                            Log($"Trying to save validator {payload.ValidatorIndex} payload from height {payload.BlockIndex} but payload of {lastHeight} is already known", LogLevel.Warning);
-                        }
-                        else if (payload.BlockIndex == lastHeight)
-                        {
-                            context.FutureChangeViewPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FutureChangeViewPayloads[payload.ValidatorIndex];
-                        }
-                        else
-                        {
-                            context.FutureChangeViewPayloads[payload.ValidatorIndex] = payload;
-                        }
-                        break;
-                    case PrepareRequest request:
-                        lastViewNumber = context.FuturePreparationPayloads[payload.ValidatorIndex] != null ? (byte)context.FuturePreparationPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
-                        context.FuturePreparationPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FuturePreparationPayloads[payload.ValidatorIndex];
-                        break;
-                    case PrepareResponse response:
-                        lastViewNumber = context.FuturePreparationPayloads[payload.ValidatorIndex] != null ? (byte)context.FuturePreparationPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
-                        context.FuturePreparationPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FuturePreparationPayloads[payload.ValidatorIndex];
+                        tryToSavePayloadIntoArray(context.FutureChangeViewPayloads, payload);
                         break;
                     case Commit commit:
-                        lastViewNumber = context.FutureCommitPayloads[payload.ValidatorIndex] != null ? (byte)context.FutureCommitPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
-                        context.FutureCommitPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FutureCommitPayloads[payload.ValidatorIndex];
+                        tryToSavePayloadIntoArray(context.FutureCommitPayloads, payload);
                         break;
                     case RecoveryMessage recovery:
-                        lastViewNumber = context.FutureRecoveryPayloads[payload.ValidatorIndex] != null ? (byte)context.FutureRecoveryPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
-                        context.FutureRecoveryPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FutureRecoveryPayloads[payload.ValidatorIndex];
+                        tryToSavePayloadIntoArray(context.FutureRecoveryPayloads, payload);
+                        break;
+                    case PrepareRequest request:
+                    case PrepareResponse response:
+                        tryToSavePayloadIntoArray(context.FuturePreparationPayloads, payload);
                         break;
                 }
+            }
+        }
+
+        private void tryToSavePayloadIntoArray(ConsensusPayload[] payloadsArray, ConsensusPayload payload)
+        {
+            byte lastViewNumber = payloadsArray[payload.ValidatorIndex] != null ? (byte)payloadsArray[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
+            uint lastHeight = payloadsArray[payload.ValidatorIndex] != null ? payloadsArray[payload.ValidatorIndex].BlockIndex : 0;
+            if (payload.BlockIndex < lastHeight)
+            {
+                Log($"Trying to save validator {payload.ValidatorIndex} payload from height {payload.BlockIndex} but payload of {lastHeight} is already known", LogLevel.Warning);
+            }
+            else if (payload.BlockIndex == lastHeight)
+            {
+                payloadsArray[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : payloadsArray[payload.ValidatorIndex];
+            }
+            else
+            {
+                payloadsArray[payload.ValidatorIndex] = payload;
             }
         }
 
