@@ -214,8 +214,9 @@ namespace Neo.Network.P2P
             var payload = DisconnectPayload.Create(reason, data);
             var disconnect = Message.Create(MessageCommand.Disconnect, payload);
             var command = Tcp.Write.Create(ByteString.FromBytes(disconnect.ToArray()));
-            Sender.Tell(command);
-            Sender.Tell(Tcp.Close.Instance);
+
+            Sender.Tell(new Tcp.Register(Context.ActorOf(EmptyActor.Props())));
+            Sender.Ask(command).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
         }
 
         private void OnTcpCommandFailed(Tcp.Command cmd)

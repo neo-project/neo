@@ -95,9 +95,11 @@ namespace Neo.Network.P2P
                 var task = ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
                     success: () => Ack.Instance,
                     failure: ex => new Tcp.ErrorClosed(ex.Message));
-                await Task.WhenAny(task, Task.Delay(2500));
-                ws.Abort();
-                Context.Stop(Self);
+                task.ContinueWith(t =>
+                {
+                    ws.Abort();
+                    Context.Stop(Self);
+                });
             }
         }
 

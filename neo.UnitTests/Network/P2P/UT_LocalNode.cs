@@ -127,6 +127,8 @@ namespace Neo.UnitTests.Network.P2P
             connected = new Tcp.Connected(remote, local);
             testProbe.Send(localNode, connected);
 
+            testProbe.ExpectMsg<Tcp.Register>();
+
             var tcpWrite = testProbe.ExpectMsg<Tcp.Write>();
             message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
@@ -139,8 +141,6 @@ namespace Neo.UnitTests.Network.P2P
             NetworkAddressWithTime[] addrs = disconnectionPayload.Data.AsSerializableArray<NetworkAddressWithTime>(count);
             addrs.Length.Should().Be(1);
             addrs[0].EndPoint.Address.Should().BeEquivalentTo(IPAddress.Parse("192.168.1.1"));
-
-            testProbe.ExpectMsg<Tcp.Close>();
         }
 
         [TestMethod]
@@ -192,6 +192,8 @@ namespace Neo.UnitTests.Network.P2P
             connected = new Tcp.Connected(remote, local);
             testProbe.Send(localNode, connected);
 
+            testProbe.ExpectMsg<Tcp.Register>();
+
             var tcpWrite = testProbe.ExpectMsg<Tcp.Write>();
             Message message = tcpWrite.Data.ToArray().AsSerializable<Message>();
             message.Command.Should().Be(MessageCommand.Disconnect);
@@ -204,8 +206,6 @@ namespace Neo.UnitTests.Network.P2P
             NetworkAddressWithTime[] addrs = disconnectionPayload.Data.AsSerializableArray<NetworkAddressWithTime>(count);
             addrs.Length.Should().Be(1);
             addrs[0].EndPoint.Port.Should().Be(8080);
-
-            testProbe.ExpectMsg<Tcp.Close>();
         }
 
         [TestMethod]
