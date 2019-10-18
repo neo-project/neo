@@ -33,7 +33,7 @@
     <!-- Check https://github.com/neo-project/neo/pull/535 before upgrade this package -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
-    <PackageReference Include="Neo.VM" Version="3.0.0-preview1" />
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00042" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
   </ItemGroup>
 
