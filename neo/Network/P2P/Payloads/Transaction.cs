@@ -130,7 +130,7 @@ namespace Neo.Network.P2P.Payloads
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool Reverify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        public virtual bool Reverify(Snapshot snapshot, IEnumerable<Transaction> transactionsPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return false;
@@ -139,7 +139,7 @@ namespace Neo.Network.P2P.Payloads
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee;
             if (balance < fee) return false;
-            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.SystemFee + p.NetworkFee)).Sum();
+            fee += transactionsPool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.SystemFee + p.NetworkFee)).Sum();
             if (balance < fee) return false;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (hashes.Length != Witnesses.Length) return false;
@@ -209,9 +209,14 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, Enumerable.Empty<Transaction>());
         }
 
-        public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        /// <summary>
+        /// Verifies the transactions against a snapshot and a set of transactions
+        /// </summary>
+        /// <param name="snapshot">A snapshot of the current </param>
+        /// <param name="transactionsPool">Usually local node memorypool or consensus node list of transactions proposed by a speaker</param>
+        public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> transactionsPool)
         {
-            if (!Reverify(snapshot, mempool)) return false;
+            if (!Reverify(snapshot, transactionsPool)) return false;
             int size = Size;
             if (size > MaxTransactionSize) return false;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
