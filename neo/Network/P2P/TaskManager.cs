@@ -95,8 +95,8 @@ namespace Neo.Network.P2P
                 case HeaderTaskCompleted _:
                     OnHeaderTaskCompleted();
                     break;
-                case ConsensusTxsTask restart:
-                    OnConsensusTxsTask(restart.Payload);
+                case ConsensusTxsTask consensusTask:
+                    OnConsensusTxsTask(consensusTask.Payload);
                     break;
                 case Timer _:
                     OnTimer();
