@@ -365,18 +365,11 @@ namespace Neo.Ledger
                         if (item.Tx.FeePerByte >= _feePerByte)
                             tx.Add(item.Tx);
 
+                    _unverifiedTransactions.Clear();
+                    _unverifiedSortedTransactions.Clear();
+
                     if (tx.Count > 0)
-                    {
-                        Transaction[] txsToReverify = tx.ToArray();
-                        _unverifiedTransactions.Clear();
-                        _unverifiedSortedTransactions.Clear();
-                        _system.Blockchain.Tell(txsToReverify, ActorRefs.NoSender);
-                    }
-                    else
-                    {
-                        _unverifiedTransactions.Clear();
-                        _unverifiedSortedTransactions.Clear();
-                    }
+                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
                 }
             }
             finally
