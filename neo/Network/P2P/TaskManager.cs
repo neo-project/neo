@@ -17,7 +17,7 @@ namespace Neo.Network.P2P
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
-        public class RestartTasks { public InvPayload Payload; }
+        public class ConsensusTxsTask { public InvPayload Payload; }
         private class Timer { }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
@@ -95,8 +95,8 @@ namespace Neo.Network.P2P
                 case HeaderTaskCompleted _:
                     OnHeaderTaskCompleted();
                     break;
-                case RestartTasks restart:
-                    OnRestartTasks(restart.Payload);
+                case ConsensusTxsTask restart:
+                    OnConsensusTxsTasks(restart.Payload);
                     break;
                 case Timer _:
                     OnTimer();
@@ -115,7 +115,7 @@ namespace Neo.Network.P2P
             RequestTasks(session);
         }
 
-        private void OnRestartTasks(InvPayload payload)
+        private void OnConsensusTxsTasks(InvPayload payload)
         {
             knownHashes.ExceptWith(payload.Hashes);
             foreach (UInt256 hash in payload.Hashes)
@@ -256,7 +256,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case TaskManager.Register _:
-                case TaskManager.RestartTasks _:
+                case TaskManager.ConsensusTxsTask _:
                     return true;
                 case TaskManager.NewTasks tasks:
                     if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Consensus)
