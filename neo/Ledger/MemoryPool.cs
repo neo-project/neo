@@ -366,10 +366,17 @@ namespace Neo.Ledger
                             tx.Add(item.Tx);
 
                     if (tx.Count > 0)
-                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
-
-                    _unverifiedTransactions.Clear();
-                    _unverifiedSortedTransactions.Clear();
+                    {
+                        Transaction[] txsToReverify = tx.ToArray();
+                        _unverifiedTransactions.Clear();
+                        _unverifiedSortedTransactions.Clear();
+                        _system.Blockchain.Tell(txsToReverify, ActorRefs.NoSender);
+                    }
+                    else
+                    {
+                        _unverifiedTransactions.Clear();
+                        _unverifiedSortedTransactions.Clear();
+                    }
                 }
             }
             finally
