@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Network.P2P
         {
             // high priority
             uut.IsHighPriority(new TaskManager.Register()).Should().Be(true);
-            uut.IsHighPriority(new TaskManager.RestartTasks()).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.ConsensusTxsTask()).Should().Be(true);
 
             // low priority
             // -> NewTasks: generic InvPayload
