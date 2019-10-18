@@ -53,6 +53,10 @@ namespace Neo.SmartContract
 
                         return ret;
                     }
+                case Null _:
+                    {
+                        return JObject.Null;
+                    }
                 default: throw new FormatException();
             }
         }
@@ -66,6 +70,10 @@ namespace Neo.SmartContract
         {
             switch (json)
             {
+                case null:
+                    {
+                        return StackItem.Null;
+                    }
                 case JArray array:
                     {
                         return array.Select(p => Deserialize(p)).ToList();

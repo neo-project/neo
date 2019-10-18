@@ -2,11 +2,13 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
+using Neo.VM.Types;
 using System.IO;
 
 namespace Neo.Ledger
 {
-    public class ContractState : ICloneable<ContractState>, ISerializable
+    public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
         public byte[] Script;
         public ContractManifest Manifest;
@@ -71,6 +73,19 @@ namespace Neo.Ledger
             contractState.Script = json["script"].AsString().HexToBytes();
             contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
             return contractState;
+        }
+
+        public StackItem ToStackItem()
+        {
+            return new VM.Types.Array
+           (
+               new StackItem[]
+               {
+                    new ByteArray(Script),
+                    new Boolean(HasStorage),
+                    new Boolean(Payable),
+               }
+           );
         }
     }
 }
