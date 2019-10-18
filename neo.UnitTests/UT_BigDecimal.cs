@@ -21,7 +21,7 @@ namespace Neo.UnitTests
             BigDecimal result3 = originalValue.ChangeDecimals(5);
             result3.Value.Should().Be(originalValue.Value);
             Action action = () => originalValue.ChangeDecimals(2);
-            action.ShouldThrow<ArgumentOutOfRangeException>();
+            action.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]
@@ -69,7 +69,7 @@ namespace Neo.UnitTests
 
             s = "abcdEfg";
             Action action = () => BigDecimal.Parse(s, decimals);
-            action.ShouldThrow<FormatException>();
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]
