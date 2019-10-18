@@ -115,6 +115,10 @@ namespace Neo.Network.P2P
             RequestTasks(session);
         }
 
+        /// <summary>
+        /// Receives the InvPayload of ConsensusService actors and cleans txs hashes in order to ensure new requests
+        /// </summary>
+        /// <param name="payload">An InvPayload payload that contains transactions that are missing in order to check a Block proposed by current Speaker </param>
         private void OnConsensusTxsTask(InvPayload payload)
         {
             knownHashes.ExceptWith(payload.Hashes);
