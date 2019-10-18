@@ -96,7 +96,7 @@ namespace Neo.Network.P2P
                     OnHeaderTaskCompleted();
                     break;
                 case ConsensusTxsTask restart:
-                    OnConsensusTxsTasks(restart.Payload);
+                    OnConsensusTxsTask(restart.Payload);
                     break;
                 case Timer _:
                     OnTimer();
@@ -115,7 +115,7 @@ namespace Neo.Network.P2P
             RequestTasks(session);
         }
 
-        private void OnConsensusTxsTasks(InvPayload payload)
+        private void OnConsensusTxsTask(InvPayload payload)
         {
             knownHashes.ExceptWith(payload.Hashes);
             foreach (UInt256 hash in payload.Hashes)
