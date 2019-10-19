@@ -462,7 +462,7 @@ namespace Neo.Consensus
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
                 UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
-                taskManager.Tell(new TaskManager.RestartTasks
+                taskManager.Tell(new TaskManager.ConsensusTxsTask
                 {
                     Payload = InvPayload.Create(InventoryType.TX, hashes)
                 });
