@@ -224,11 +224,6 @@ namespace Neo.UnitTests.Consensus
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 
-            consensusContext.FutureCommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-            consensusContext.FuturePreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-            consensusContext.FutureChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-            consensusContext.FutureRecoveryPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null, null));
 
             copiedContext.Block.PrevHash.Should().Be(consensusContext.Block.PrevHash);
@@ -245,10 +240,6 @@ namespace Neo.UnitTests.Consensus
             copiedContext.PreparationPayloads.Should().BeEquivalentTo(consensusContext.PreparationPayloads);
             copiedContext.CommitPayloads.Should().BeEquivalentTo(consensusContext.CommitPayloads);
             copiedContext.ChangeViewPayloads.Should().BeEquivalentTo(consensusContext.ChangeViewPayloads);
-            copiedContext.FutureCommitPayloads.Should().BeEquivalentTo(consensusContext.FutureCommitPayloads);
-            copiedContext.FuturePreparationPayloads.Should().BeEquivalentTo(consensusContext.FuturePreparationPayloads);
-            copiedContext.FutureChangeViewPayloads.Should().BeEquivalentTo(consensusContext.FutureChangeViewPayloads);
-            copiedContext.FutureRecoveryPayloads.Should().BeEquivalentTo(consensusContext.FutureRecoveryPayloads);
         }
 
         [TestMethod]
