@@ -44,24 +44,25 @@ namespace Neo.UnitTests.Consensus
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
             ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
 
-            int timeIndex = 0;
             var timeValues = new[] {
-              //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
+              new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1980, 06, 01, 0, 0, (int) Blockchain.MillisecondsPerBlock / 1000, 100, DateTimeKind.Utc), // For Initialize
+              new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc), // For Initialize
               new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
               new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc)  // unused
             };
-            //TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
-
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
 
+            int timeIndex = 0;
             var timeMock = new Mock<TimeProvider>();
-            timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
-                                              .Callback(() => timeIndex++);
+            timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex]);
+            //.Callback(() => timeIndex = timeIndex + 1); //Comment while index is not fixed
+
             //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
             TimeProvider.Current = timeMock.Object;
-
+            TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
+            TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
+            
             //public void Log(string message, LogLevel level)
             // TODO: create ILogPlugin for Tests
             /*
@@ -81,7 +82,7 @@ namespace Neo.UnitTests.Consensus
 
             timestampVal.Should().Be(328665601001);    // GMT: Sunday, June 1, 1980 12:00:01.001 AM
                                                        // check basic ConsensusContext
-                                                       //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
+                                                       // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
             // ============================================================================
             //                      creating ConsensusService actor
@@ -113,17 +114,30 @@ namespace Neo.UnitTests.Consensus
                 IgnoreRecoveryLogs = true
             });
 
-            Console.WriteLine("OnTimer should expire!");
-            Console.WriteLine("Waiting for subscriber message!");
+            Console.WriteLine("Waiting for subscriber recovery message!");
             // Timer should expire in one second (block_received_time at :01, initialized at :02)
 
-            var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            Console.WriteLine($"MESSAGE 1: {answer}");
-            //var answer2 = subscriber.ExpectMsg<LocalNode.SendDirectly>(); // expects to fail!
+            var askingForRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            Console.WriteLine($"Recovery Message: {askingForRecovery}");
+
+            Console.WriteLine("OnTimer Of Backup should expire!");
+            Console.WriteLine("Waiting for subscriber message!");
+            var backupRecoveryII = subscriber.ExpectMsg<LocalNode.SendDirectly>(new TimeSpan(0, 0, 1)); // expects to fail!
+            var backupOnTimer = subscriber.ExpectMsg<ConsensusService.Timer>(new TimeSpan(0, 0, 1)); // expects to fail!
 
             // ============================================================================
             //                      finalize ConsensusService actor
             // ============================================================================
+
+
+            int txCountToInlcude = 256;
+
+            actorConsensus.Tell(new PrepareRequest
+            {
+                TransactionHashes = new UInt256[txCountToInlcude],
+                Timestamp = 23
+            });
+
 
             //Thread.Sleep(4000);
             Sys.Stop(actorConsensus);
@@ -210,6 +224,11 @@ namespace Neo.UnitTests.Consensus
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 
+            consensusContext.FutureCommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.FuturePreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.FutureChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.FutureRecoveryPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null, null));
 
             copiedContext.Block.PrevHash.Should().Be(consensusContext.Block.PrevHash);
@@ -226,6 +245,10 @@ namespace Neo.UnitTests.Consensus
             copiedContext.PreparationPayloads.Should().BeEquivalentTo(consensusContext.PreparationPayloads);
             copiedContext.CommitPayloads.Should().BeEquivalentTo(consensusContext.CommitPayloads);
             copiedContext.ChangeViewPayloads.Should().BeEquivalentTo(consensusContext.ChangeViewPayloads);
+            copiedContext.FutureCommitPayloads.Should().BeEquivalentTo(consensusContext.FutureCommitPayloads);
+            copiedContext.FuturePreparationPayloads.Should().BeEquivalentTo(consensusContext.FuturePreparationPayloads);
+            copiedContext.FutureChangeViewPayloads.Should().BeEquivalentTo(consensusContext.FutureChangeViewPayloads);
+            copiedContext.FutureRecoveryPayloads.Should().BeEquivalentTo(consensusContext.FutureRecoveryPayloads);
         }
 
         [TestMethod]
