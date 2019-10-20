@@ -93,30 +93,24 @@ namespace Neo.SmartContract.Native
             }
             StorageKey InfoKey = CreateStorageKey(Prefix_CreateVote, id);
             StorageItem info_state = engine.Snapshot.Storages.TryGet(InfoKey);
-            UInt32 voteLength = 0;
-            if (info_state is null) return false;
-            using (MemoryStream memoryStream = new MemoryStream(info_state.Value, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
+            //UInt32 voteLength = 0;
+            //if (info_state is null) return false;
+            //using (MemoryStream memoryStream = new MemoryStream(info_state.Value, false))
+            //using (BinaryReader binaryReader = new BinaryReader(memoryStream))
+            //{
+            //    VoteCreateState createState = new VoteCreateState();
+            //    createState.Deserialize(binaryReader);
+            //    voteLength = createState.CandidateNumber;
+            //}
+            MultiCandidate candidate = Neo.IO.Helper.AsSerializable<MultiCandidate>(args[2].GetByteArray());
+            VoteState voteState = new VoteState(voter, candidate);
+            if (AddVote(engine.Snapshot, voteState, id))
             {
-                VoteCreateState createState = new VoteCreateState();
-                createState.Deserialize(binaryReader);
-                voteLength = createState.CandidateNumber;
+                return true;
             }
-            MultiCandidate candidate = new MultiCandidate();
-            using (MemoryStream memoryStream = new MemoryStream(args[2].GetByteArray(), false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
+            else
             {
-                candidate.Deserialize(binaryReader);
-                if (candidate.GetCandidate() == null || candidate.GetCandidate().Count > voteLength) return false;
-                VoteState voteState = new VoteState(voter, candidate);
-                if (AddVote(engine.Snapshot, voteState, id))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return false;
             }
         }
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
@@ -141,28 +135,19 @@ namespace Neo.SmartContract.Native
             StorageItem info_state = engine.Snapshot.Storages.TryGet(InfoKey);
             UInt32 voteLength = 0;
             if (info_state is null) return false;
-            using (MemoryStream memoryStream = new MemoryStream(info_state.Value, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
+            VoteCreateState createState = Neo.IO.Helper.AsSerializable<VoteCreateState>(info_state.Value);
+            voteLength = createState.CandidateNumber;
+
+            SingleCandidate candidate = Neo.IO.Helper.AsSerializable<SingleCandidate>(args[2].GetByteArray());
+            if (candidate.GetCandidate() == 0 || candidate.GetCandidate() > voteLength) return false;
+            VoteState voteState = new VoteState(voter, candidate);
+            if (AddVote(engine.Snapshot, voteState, id))
             {
-                VoteCreateState createState = new VoteCreateState();
-                createState.Deserialize(binaryReader);
-                voteLength = createState.CandidateNumber;
+                return true;
             }
-            SingleCandidate candidate = new SingleCandidate();
-            using (MemoryStream memoryStream = new MemoryStream(args[2].GetByteArray(), false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
+            else
             {
-                candidate.Deserialize(binaryReader);
-                if (candidate.GetCandidate() == 0 || candidate.GetCandidate() > voteLength) return false;
-                VoteState voteState = new VoteState(voter, candidate);
-                if (AddVote(engine.Snapshot, voteState, id))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return false;
             }
         }
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
@@ -183,14 +168,10 @@ namespace Neo.SmartContract.Native
 
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
-            using (MemoryStream memoryStream = new MemoryStream(create_byte.Value, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-            {
-                VoteCreateState createState = new VoteCreateState();
-                createState.Deserialize(binaryReader);
-                if (!createState.IsSequence) return false;
-                if (!InteropService.CheckWitness(engine, createState.Originator)) return false;
-            }
+
+            VoteCreateState createState = Neo.IO.Helper.AsSerializable<VoteCreateState>(create_byte.Value);
+            if (!createState.IsSequence) return false;
+            if (!InteropService.CheckWitness(engine, createState.Originator)) return false;
 
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
@@ -202,29 +183,13 @@ namespace Neo.SmartContract.Native
             List<UInt160> voteList = new List<UInt160>();
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
-                VoteState vote_state = new VoteState();
-                using (MemoryStream memoryStream = new MemoryStream(pair.Value.Value, false))
-                using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-                {
-                    vote_state.Deserialize(binaryReader);
-                }
+                VoteState vote_state = Neo.IO.Helper.AsSerializable<VoteState>(pair.Value.Value);
                 UInt160 voter = vote_state.GetVoter();
                 if (voteList.Contains(voter)) continue;
 
                 voteList.Add(voter);
                 int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, voter);
-                MultiCandidate candidate = new MultiCandidate();
-
-                using (MemoryStream memoryStream = new MemoryStream())
-                using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
-                {
-                    vote_state.GetCandidate().Serialize(binaryWriter);
-                    memoryStream.ToArray();
-                    using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-                    {
-                        candidate.Deserialize(binaryReader);
-                    }
-                }
+                MultiCandidate candidate = Neo.IO.Helper.AsSerializable<MultiCandidate>(vote_state.ToArray());
                 result.AddVote(new CalculatedMultiVote(account_balance, candidate.GetCandidate()));
             }
             result.CalculateResult(new SchulzeModel());
@@ -244,14 +209,9 @@ namespace Neo.SmartContract.Native
 
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
-            using (MemoryStream memoryStream = new MemoryStream(create_byte.Value, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-            {
-                VoteCreateState createState = new VoteCreateState();
-                createState.Deserialize(binaryReader);
-                if (createState.IsSequence) return false;
-                if (!InteropService.CheckWitness(engine, createState.Originator)) return false;
-            }
+            VoteCreateState createState = Neo.IO.Helper.AsSerializable<VoteCreateState>(create_byte.Value);
+            if (createState.IsSequence) return false;
+            if (!InteropService.CheckWitness(engine, createState.Originator)) return false;
 
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
@@ -263,30 +223,13 @@ namespace Neo.SmartContract.Native
             List<UInt160> voterList = new List<UInt160>();
             foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
             {
-                VoteState vote_state = new VoteState();
-                using (MemoryStream memoryStream = new MemoryStream(pair.Value.Value, false))
-                using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-                {
-                    vote_state.Deserialize(binaryReader);
-                }
+                VoteState vote_state = Neo.IO.Helper.AsSerializable<VoteState>(pair.Value.Value);
                 UInt160 voter = vote_state.GetVoter();
                 if (voterList.Contains(voter)) continue;
 
                 voterList.Add(vote_state.GetVoter());
                 int account_balance = (int)new NeoToken().BalanceOf(engine.Snapshot, vote_state.GetVoter());
-                SingleCandidate candidate = new SingleCandidate();
-
-                using (MemoryStream memoryStream = new MemoryStream())
-                using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
-                {
-                    vote_state.GetCandidate().Serialize(binaryWriter);
-                    binaryWriter.Flush();
-                    memoryStream.Position = 0;
-                    using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-                    {
-                        candidate.Deserialize(binaryReader);
-                    }
-                }
+                SingleCandidate candidate = Neo.IO.Helper.AsSerializable<SingleCandidate>(vote_state.GetCandidate().ToArray());
                 result.AddVote(new CalculatedSingleVote(account_balance, candidate.GetCandidate()));
             }
             result.CalculateResult(new SingleModel());
@@ -389,23 +332,18 @@ namespace Neo.SmartContract.Native
             StorageKey key = CreateStorageKey(Prefix_CreateVote, createState.GetId());
 
             if (snapshot.Storages.TryGet(key) != null) return false;
-            using (MemoryStream memoryStream = new MemoryStream())
-            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
+
+            try
             {
-                createState.Serialize(binaryWriter);
-                binaryWriter.Flush();
-                try
+                snapshot.Storages.Add(key, new StorageItem
                 {
-                    snapshot.Storages.Add(key, new StorageItem
-                    {
-                        Value = memoryStream.ToArray()
-                    });
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
+                    Value = createState.ToArray()
+                }) ;
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
         private bool AddAccess(Snapshot snapshot, StorageKey key, HashSet<UInt160> whiteList)
@@ -435,16 +373,11 @@ namespace Neo.SmartContract.Native
         private bool AddVote(Snapshot snapshot, VoteState voteState, byte[] id)
         {
             StorageKey key = CreateStorageKey(Prefix_Vote, GetVoteKey(snapshot, id));
-            using (MemoryStream memoryStream = new MemoryStream())
-            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
+            snapshot.Storages.Add(key, new StorageItem
             {
-                voteState.Serialize(binaryWriter);
-                snapshot.Storages.Add(key, new StorageItem
-                {
-                    Value = memoryStream.ToArray()
-                });
-                return true;
-            }
+                Value = voteState.ToArray()
+            });
+            return true;
         }
         private bool AddResult(Snapshot snapshot, byte[] Result, byte[] id)
         {

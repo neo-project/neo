@@ -1,20 +1,24 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
+using Neo.IO;
 
 namespace Neo.SmartContract.Native.Votes.Interface
 {
-    interface ICandidate
-    {
-        void Serialize(BinaryWriter writer);
-        void Deserialize(BinaryReader reader);
-    }
+    //interface ICandidate : ISerializable
+    //{
+    //    int Size { get; }
+    //    void Serialize(BinaryWriter writer);
+    //    void Deserialize(BinaryReader reader);
+    //}
 
-    internal class MultiCandidate : ICandidate
-    {
+    internal class MultiCandidate : ISerializable
+        { 
         public MultiCandidate() => this.candidateList = new List<int>();
         public MultiCandidate(List<int> lists) => this.candidateList = lists;
 
         private List<int> candidateList = null;
+
+        public int Size => candidateList.ToArray().Length;
 
         public void Serialize(BinaryWriter write)
         {
@@ -44,12 +48,14 @@ namespace Neo.SmartContract.Native.Votes.Interface
             return candidateList;
         }
     }
-    internal class SingleCandidate : ICandidate
+    internal class SingleCandidate : ISerializable
     {
         public SingleCandidate() { }
         public SingleCandidate(int candidate) => this.candidate = candidate;
 
         private int candidate = 0;
+
+        public int Size => 4;
 
         public void Serialize(BinaryWriter write)
         {
