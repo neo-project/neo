@@ -1,12 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using Neo.Cryptography;
 using Neo.IO;
-using Neo.SmartContract.Native.Votes.Model;
 using Neo.SmartContract.Native.Votes.Interface;
+using Neo.SmartContract.Native.Votes.Model;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Native.Votes.Model
 {
@@ -16,14 +13,12 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
         VoteState voteState;
         SingleCandidate candidate;
         MultiCandidate multiCandidate;
+
         [TestInitialize]
         public void TestSetup()
         {
             candidate = new SingleCandidate(1);
-            List<int> lists = new List<int>();
-            lists.Add(1);
-            lists.Add(2);
-            lists.Add(3);
+            List<int> lists = new List<int> { 1, 2, 3 };
             multiCandidate = new MultiCandidate(lists);
             voteState = new VoteState(UInt160.Zero, candidate);
         }
@@ -31,35 +26,16 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
         [TestMethod]
         public void Check_VoteState()
         {
-            byte[] temp;
-            using (MemoryStream memoryStream = new MemoryStream())
-            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
-            {
-                voteState.Serialize(binaryWriter);
-                temp = memoryStream.ToArray();
-            }
-            using (MemoryStream memoryStream = new MemoryStream(temp, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-            {
-                VoteState newState = new VoteState();
-                newState.Deserialize(binaryReader);
-                newState.GetCandidate().Should().BeOfType<SingleCandidate>();
-            }
-            voteState = new VoteState(UInt160.Zero, multiCandidate);
-            using (MemoryStream memoryStream = new MemoryStream())
-            using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
-            {
-                voteState.Serialize(binaryWriter);
-                temp = memoryStream.ToArray();
-            }
+            byte[] temp = voteState.ToArray();
 
-            using (MemoryStream memoryStream = new MemoryStream(temp, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-            {
-                VoteState newState = new VoteState();
-                newState.Deserialize(binaryReader);
-                newState.GetCandidate().Should().BeOfType<MultiCandidate>();
-            }
+            var newState = temp.AsSerializable<VoteState>();
+            newState.GetCandidate().Should().BeOfType<SingleCandidate>();
+
+            voteState = new VoteState(UInt160.Zero, multiCandidate);
+            temp = voteState.ToArray();
+            newState = new VoteState(UInt160.Zero, multiCandidate);
+
+            newState.GetCandidate().Should().BeOfType<MultiCandidate>();
         }
     }
 }

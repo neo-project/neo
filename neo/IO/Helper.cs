@@ -43,7 +43,7 @@ namespace Neo.IO
             }
         }
 
-        public static int GetVarSize(int value)
+        public static int GetVarSize(this int value)
         {
             if (value < 0xFD)
                 return sizeof(byte);
@@ -110,6 +110,14 @@ namespace Neo.IO
         {
             byte[] data = reader.ReadBytes(length);
             return Encoding.UTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
+        }
+
+        public static T[] ReadNullableArray<T>(this BinaryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
+        {
+            T[] array = new T[reader.ReadVarInt((ulong)max)];
+            for (int i = 0; i < array.Length; i++)
+                array[i] = reader.ReadBoolean() ? reader.ReadSerializable<T>() : null;
+            return array;
         }
 
         public static T ReadSerializable<T>(this BinaryReader reader) where T : ISerializable, new()
@@ -223,6 +231,18 @@ namespace Neo.IO
             writer.Write(bytes);
             if (bytes.Length < length)
                 writer.Write(new byte[length - bytes.Length]);
+        }
+
+        public static void WriteNullableArray<T>(this BinaryWriter writer, T[] value) where T : class, ISerializable
+        {
+            writer.WriteVarInt(value.Length);
+            foreach (var item in value)
+            {
+                bool isNull = item is null;
+                writer.Write(!isNull);
+                if (isNull) continue;
+                item.Serialize(writer);
+            }
         }
 
         public static void WriteVarBytes(this BinaryWriter writer, byte[] value)

@@ -1,15 +1,14 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Votes.Model;
-using Neo.VM;
+using Neo.UnitTests.Extensions;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using Neo.IO;
-using Neo.UnitTests.Extensions;
 
 namespace Neo.UnitTests.SmartContract.Native.Votes
 {
@@ -110,8 +109,6 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
             };
             var ret = NativeContract.Vote.Call(snapshot, TestTx, "createMultiVote", createParameters).GetByteArray();
 
-
-
             using (MemoryStream memoryStream = new MemoryStream())
             using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
             {
@@ -173,7 +170,6 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
                 {
                     Assert.Fail();
                 }
-
             }
         }
 

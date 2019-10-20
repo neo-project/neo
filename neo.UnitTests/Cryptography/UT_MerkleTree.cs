@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Cryptography
         {
             IReadOnlyList<UInt256> hashNull = new UInt256[] { };
             Action action = () => new MerkleTree(hashNull);
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
 
             byte[] array1 = { 0x01 };
             var hash1 = GetByteArrayHash(array1);

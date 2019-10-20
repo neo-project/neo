@@ -58,7 +58,7 @@ namespace Neo.UnitTests.Cryptography
 
             wrongKey = new byte[36];
             Action action = () => Crypto.Default.VerifySignature(message, signature, wrongKey).Should().BeFalse();
-            action.ShouldThrow<ArgumentException>();
+            action.Should().Throw<ArgumentException>();
         }
     }
 }

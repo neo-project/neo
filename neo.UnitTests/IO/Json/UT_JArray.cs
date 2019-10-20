@@ -80,7 +80,7 @@ namespace Neo.UnitTests.IO.Json
             Assert.AreEqual(jArray[0], bob);
 
             Action action = () => jArray[1] = alice;
-            action.ShouldThrow<ArgumentOutOfRangeException>();
+            action.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.IO.Json
 
             jArray.Clear();
             Action action = () => jArray[0].ToString();
-            action.ShouldThrow<ArgumentOutOfRangeException>();
+            action.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]
