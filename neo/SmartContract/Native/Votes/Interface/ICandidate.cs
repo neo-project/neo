@@ -4,13 +4,6 @@ using Neo.IO;
 
 namespace Neo.SmartContract.Native.Votes.Interface
 {
-    //interface ICandidate : ISerializable
-    //{
-    //    int Size { get; }
-    //    void Serialize(BinaryWriter writer);
-    //    void Deserialize(BinaryReader reader);
-    //}
-
     internal class MultiCandidate : ISerializable
         { 
         public MultiCandidate() => this.candidateList = new List<int>();

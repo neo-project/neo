@@ -13,7 +13,7 @@ namespace Neo.SmartContract.Native.Votes.Model
         private UInt160 Voter;
         private ISerializable Records;
 
-        public int Size => throw new NotImplementedException();
+        public int Size => Records.Size + 20;//Records size + Uint160 size
 
         public VoteState() { }
         public VoteState(UInt160 voter, ISerializable candidate)
