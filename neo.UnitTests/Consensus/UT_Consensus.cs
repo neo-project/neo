@@ -62,7 +62,7 @@ namespace Neo.UnitTests.Consensus
             TimeProvider.Current = timeMock.Object;
             TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
             TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
-            
+
             //public void Log(string message, LogLevel level)
             // TODO: create ILogPlugin for Tests
             /*
