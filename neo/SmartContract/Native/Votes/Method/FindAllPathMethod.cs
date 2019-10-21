@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract.Native
@@ -8,7 +8,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Node Set
         /// </summary>
-        private List<String> nodesList = new List<String>();
+        private List<int> nodesList = new List<int>();
         /// <summary>
         /// Vector Graphic,describe the connection between nodes and nodes
         /// </summary>
@@ -16,30 +16,30 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Edge Array,describe the connection between nodes and nodes
         /// </summary>
-        private int[,] edgeArray;
+        private int[,] nodesEdgesMatrix;
         /// <summary>
         /// Path Set,store paths in vector graphic.
         /// </summary>
-        private List<List<String>> path = new List<List<String>>();
+        private List<List<int>> path = new List<List<int>>();
 
-        public FindAllPathMethod(List<String> nodesList, Dictionary<String, int> vectorGraphic)
+        public FindAllPathMethod(List<int> nodesList, Dictionary<String, int> vectorGraphic)
         {
             this.nodesList = nodesList;
             this.vectorGraphic = vectorGraphic;
-            CreateEdgeArray();
+            CreateGraphMatrix();
         }
 
         /// <summary>
         /// create edge array
         /// </summary>
-        private void CreateEdgeArray()
+        private void CreateGraphMatrix()
         {
             int nodeCount = nodesList.Count;
-            edgeArray = new int[nodeCount, nodeCount];
+            nodesEdgesMatrix = new int[nodeCount, nodeCount];
             for (int i = 0; i < nodeCount; i++)
                 for (int j = 0; j < nodeCount; j++)
                 {
-                    edgeArray[i, j] = -1;
+                    nodesEdgesMatrix[i, j] = -1;
                 }
             foreach (KeyValuePair<String, int> entry in vectorGraphic)
             {
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native
                 String endNode = temp[1];
                 int endNodeIndex = System.Convert.ToInt32(temp[1]);
                 int weight = entry.Value;
-                edgeArray[startNodeIndex, endNodeIndex] = weight;
+                nodesEdgesMatrix[startNodeIndex, endNodeIndex] = weight;
             }
         }
 
@@ -59,11 +59,11 @@ namespace Neo.SmartContract.Native
         /// <param name="startNode">startNode</param>
         /// <param name="endNode">endNode</param>
         /// <returns>path set</returns>
-        public List<List<String>> FindPath(String startNode, String endNode)
+        public List<List<int>> FindPath(int startNode, int endNode)
         {
             path.Clear();
-            List<String> tempUnUsedNodes = new List<String>();
-            List<String> tempPath = new List<String>();
+            List<int> tempUnUsedNodes = new List<int>();
+            List<int> tempPath = new List<int>();
             tempUnUsedNodes.AddRange(nodesList);
             tempUnUsedNodes.Remove(startNode);
             CreatePath(tempUnUsedNodes, startNode, endNode, tempPath);
@@ -77,12 +77,12 @@ namespace Neo.SmartContract.Native
         /// <param name="currentNode">current node</param>
         /// <param name="endNode">end node</param>
         /// <param name="hasCreatedPath">the path has been created</param>
-        private void CreatePath(List<String> unUsedNodes, String currentNode, String endNode,
-                                      List<String> hasCreatedPath)
+        private void CreatePath(List<int> unUsedNodes, int currentNode, int endNode,
+                                      List<int> hasCreatedPath)
         {
             if (currentNode.Equals(endNode))
             {
-                List<String> tempPath = new List<String>();
+                List<int> tempPath = new List<int>();
                 tempPath.AddRange(hasCreatedPath);
                 tempPath.Add(currentNode);
                 path.Add(tempPath);
@@ -90,11 +90,11 @@ namespace Neo.SmartContract.Native
             }
             //calcualte the next node can be arrived
             int startNodeIndex = System.Convert.ToInt32(currentNode);
-            List<String> achievedNodes = new List<String>();
-            foreach (String unUsedNode in unUsedNodes)
+            List<int> achievedNodes = new List<int>();
+            foreach (int unUsedNode in unUsedNodes)
             {
                 int achievedNodeIndex = System.Convert.ToInt32(unUsedNode);
-                if (edgeArray[startNodeIndex, achievedNodeIndex] > 0)
+                if (nodesEdgesMatrix[startNodeIndex, achievedNodeIndex] > 0)
                 {
                     achievedNodes.Add(unUsedNode);
                 }
@@ -107,12 +107,12 @@ namespace Neo.SmartContract.Native
             else
             {
                 //Continue to traverse the node
-                foreach (String achievedNode in achievedNodes)
+                foreach (int achievedNode in achievedNodes)
                 {
-                    List<String> tempUnUsedNodes = new List<String>();
+                    List<int> tempUnUsedNodes = new List<int>();
                     tempUnUsedNodes.AddRange(unUsedNodes);
                     tempUnUsedNodes.Remove(achievedNode);
-                    List<String> tempPath = new List<String>();
+                    List<int> tempPath = new List<int>();
                     tempPath.AddRange(hasCreatedPath);
                     tempPath.Add(currentNode);
                     CreatePath(tempUnUsedNodes, achievedNode, endNode, tempPath);
@@ -124,17 +124,17 @@ namespace Neo.SmartContract.Native
         /// Find all paths in  vector graphic
         /// </summary>
         /// <returns>path set</returns>
-        public List<List<String>> FindAllPath()
+        public List<List<int>> FindAllPath()
         {
             path.Clear();
-            foreach (String i in nodesList)
+            foreach (int i in nodesList)
             {
-                foreach (String j in nodesList)
+                foreach (int j in nodesList)
                 {
                     if (!i.Equals(j))
                     {
-                        List<String> tempUnUsedNodes = new List<String>();
-                        List<String> tempPath = new List<String>();
+                        List<int> tempUnUsedNodes = new List<int>();
+                        List<int> tempPath = new List<int>();
                         tempUnUsedNodes.AddRange(nodesList);
                         tempUnUsedNodes.Remove(i);
                         CreatePath(tempUnUsedNodes, i, j, tempPath);
@@ -153,12 +153,12 @@ namespace Neo.SmartContract.Native
             Console.WriteLine("From/to ");
             nodesList.ForEach(p => Console.Write(p + "   "));
             Console.Write("\n");
-            for (int i = 0; i < edgeArray.GetLength(0); i++)
+            for (int i = 0; i < nodesEdgesMatrix.GetLength(0); i++)
             {
                 Console.Write(nodesList[i] + "      ");
-                for (int j = 0; j < edgeArray.GetLength(1); j++)
+                for (int j = 0; j < nodesEdgesMatrix.GetLength(1); j++)
                 {
-                    Console.Write(edgeArray[i, j] > 0 ? edgeArray[i, j] + "   " : edgeArray[i, j] + "  ");
+                    Console.Write(nodesEdgesMatrix[i, j] > 0 ? nodesEdgesMatrix[i, j] + "   " : nodesEdgesMatrix[i, j] + "  ");
                 }
                 Console.WriteLine("\n");
             }
@@ -169,7 +169,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="startNode">startNode</param>
         /// <param name="endNode">endNode</param>
-        public void PrintPath(String startNode, String endNode)
+        public void PrintPath(int startNode, int endNode)
         {
             Console.WriteLine(String.Format("create path：{0}--->{1}", startNode, endNode));
             FindPath(startNode, endNode);
@@ -178,10 +178,10 @@ namespace Neo.SmartContract.Native
                 Console.WriteLine("No way");
                 return;
             }
-            foreach (List<String> entry in path)
+            foreach (List<int> entry in path)
             {
                 Console.Write("Path:");
-                foreach (String node in entry)
+                foreach (int node in entry)
                 {
                     Console.Write(node + ",");
                 }
@@ -195,10 +195,10 @@ namespace Neo.SmartContract.Native
         public void PrintAllPath()
         {
             FindAllPath();
-            foreach (List<String> entry in path)
+            foreach (List<int> entry in path)
             {
                 Console.Write("Path:");
-                foreach (String node in entry)
+                foreach (int node in entry)
                 {
                     Console.Write(node + ",");
                 }

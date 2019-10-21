@@ -28,13 +28,13 @@ namespace Neo.SmartContract.Native.Votes.Model
                 }
             }
             Dictionary<String, int> vGraphic = ConvertDArrayToVGraphic(dArray);
-            List<String> nodesList = new List<String>();
+            List<int> nodesList = new List<int>();
             for (int i = 0; i < voteList[0].vote.Count; i++)
             {
-                nodesList.Add(i.ToString());
+                nodesList.Add(i);
             }
             FindAllPathMethod fMethod = new FindAllPathMethod(nodesList, vGraphic);
-            List<List<String>> paths = fMethod.FindAllPath();
+            List<List<int>> paths = fMethod.FindAllPath();
             int[,] pArray = CreatPArray(nodesList, paths, vGraphic);
             return pArray;
         }
@@ -80,7 +80,7 @@ namespace Neo.SmartContract.Native.Votes.Model
         /// <param name="paths">paths</param>
         /// <param name="vectorGraphic">vector graphic</param>
         /// <returns>PArray</returns>
-        private int[,] CreatPArray(List<String> nodelist, List<List<String>> paths, Dictionary<String, int> vectorGraphic)
+        private int[,] CreatPArray(List<int> nodelist, List<List<int>> paths, Dictionary<String, int> vectorGraphic)
         {
 
             int[,] pArray = new int[nodelist.Count, nodelist.Count];
@@ -92,7 +92,7 @@ namespace Neo.SmartContract.Native.Votes.Model
                 }
             }
             Dictionary<String, int> pathWeights = new Dictionary<String, int>();
-            foreach (List<String> path in paths)
+            foreach (List<int> path in paths)
             {
                 int pathWeight = -1;
                 String pathName = path[0] + "," + path[path.Count - 1];
