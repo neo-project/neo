@@ -130,20 +130,14 @@ namespace Neo.UnitTests.SmartContract.Native.Votes
                 new ContractParameter(ContractParameterType.ByteArray){ Value = ret}
             };
             var query = NativeContract.Vote.Call(snapshot, TestTx, "getVoteDetails", resultParameters).GetByteArray();
-            using (MemoryStream memoryStream = new MemoryStream(query, false))
-            using (BinaryReader binaryReader = new BinaryReader(memoryStream))
+            try
             {
-                try
-                {
-                    VoteCreateState state = new VoteCreateState();
-                    state.Deserialize(binaryReader);
-                }
-                catch
-                {
-                    Assert.Fail();
-                }
+                VoteCreateState state = Neo.IO.Helper.AsSerializable<VoteCreateState>(query);
             }
-
+            catch
+            {
+                Assert.Fail();
+            }
             var result = NativeContract.Vote.Call(snapshot, TestTx, "getMultiStatistic", resultParameters).GetByteArray();
             using (MemoryStream memoryStream = new MemoryStream(result))
             {
