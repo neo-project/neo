@@ -116,6 +116,11 @@ namespace Neo.Network.P2P
             var version = remoteNode.Version;
             var remote = remoteNode.Remote;
 
+            if (version.Nonce == Nonce)
+            {
+                LocalAddresses.Add(remote.Address);
+                return true;
+            }
             foreach (var pair in RemoteNodes)
             {
                 var remoteActorRef = pair.Key;
