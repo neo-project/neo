@@ -207,6 +207,7 @@ namespace Neo.Network.P2P
 
             if (version.Nonce == LocalNode.Nonce)
             {
+                LocalNode.Singleton.AddLocalRemoteAddress(Remote.Address);
                 Disconnect(DisconnectReason.DuplicateConnection);
                 return;
             }

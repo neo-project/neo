@@ -64,6 +64,11 @@ namespace Neo.Network.P2P
             localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.Unmap()));
         }
 
+        public void AddLocalRemoteAddress(IPAddress remoteAddress)
+        {
+            localAddresses.Add(remoteAddress);
+        }
+
         protected void AddPeers(IEnumerable<IPEndPoint> peers)
         {
             if (UnconnectedPeers.Count < UnconnectedMax)
