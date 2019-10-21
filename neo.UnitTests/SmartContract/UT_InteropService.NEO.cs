@@ -123,99 +123,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestHeader_GetVersion()
-        {
-            var engine = GetEngine();
-            Block block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out var merkRootVal, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 0);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<BlockBase>(block));
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetVersion).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(block.Version);
-
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetVersion).Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<BlockBase>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetVersion).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestHeader_GetMerkleRoot()
-        {
-            var engine = GetEngine();
-            Block block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out var merkRootVal, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 0);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<BlockBase>(block));
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetMerkleRoot).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
-                .Should().Be(block.MerkleRoot.ToArray().ToHexString());
-
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetMerkleRoot).Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<BlockBase>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetMerkleRoot).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestHeader_GetNextConsensus()
-        {
-            var engine = GetEngine();
-            Block block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out var merkRootVal, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 0);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<BlockBase>(block));
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetNextConsensus).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
-                .Should().Be(block.NextConsensus.ToArray().ToHexString());
-
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetNextConsensus).Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<BlockBase>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Header_GetNextConsensus).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestTransaction_GetScript()
-        {
-            var engine = GetEngine();
-            var tx = TestUtils.GetTransaction();
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<Transaction>(tx));
-            InteropService.Invoke(engine, InteropService.Neo_Transaction_GetScript).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
-                .Should().Be(tx.Script.ToHexString());
-
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Transaction_GetScript).Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<Transaction>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Transaction_GetScript).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestTransaction_GetWitnesses()
-        {
-            var engine = GetEngine();
-            var tx = TestUtils.GetTransaction();
-            tx.Witnesses[0].VerificationScript = new byte[] { 0x01, 0x01, 0x01, 0x01 };
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<Transaction>(tx));
-            InteropService.Invoke(engine, InteropService.Neo_Transaction_GetWitnesses).Should().BeTrue();
-            var ret = (InteropInterface<WitnessWrapper>)((VMArray)engine.CurrentContext.EvaluationStack.Pop())[0];
-            ret.GetInterface<WitnessWrapper>().VerificationScript.ToHexString()
-                .Should().Be(tx.Witnesses[0].VerificationScript.ToHexString());
-
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Transaction_GetWitnesses).Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<Transaction>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Transaction_GetWitnesses).Should().BeFalse();
-
-            tx.Witnesses = new Witness[engine.MaxArraySize + 1];
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<Transaction>(tx));
-            InteropService.Invoke(engine, InteropService.Neo_Transaction_GetWitnesses).Should().BeFalse();
-        }
-
-        [TestMethod]
         public void TestAccount_IsStandard()
         {
             var engine = GetEngine(false, true);
@@ -325,40 +232,6 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Neo_Contract_Update).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestContract_GetScript()
-        {
-            var engine = GetEngine();
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Contract_GetScript).Should().BeFalse();
-
-            var state = TestUtils.GetContract();
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<ContractState>(state));
-            InteropService.Invoke(engine, InteropService.Neo_Contract_GetScript).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
-                .Should().Be(state.Script.ToHexString());
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<ContractState>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Contract_GetScript).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestContract_IsPayable()
-        {
-            var engine = GetEngine();
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Contract_IsPayable).Should().BeFalse();
-
-            var state = TestUtils.GetContract();
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<ContractState>(state));
-            InteropService.Invoke(engine, InteropService.Neo_Contract_IsPayable).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean()
-                .Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<ContractState>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Contract_IsPayable).Should().BeFalse();
         }
 
         [TestMethod]
@@ -601,26 +474,6 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Json_Serialize).Should().BeTrue();
             var ret = engine.CurrentContext.EvaluationStack.Pop();
             ret.GetString().Should().Be("1");
-        }
-
-        [TestMethod]
-        public void TestWitness_GetVerificationScript()
-        {
-            var engine = GetEngine();
-            var witnessWrapper = new WitnessWrapper
-            {
-                VerificationScript = new byte[] { 0x01 }
-            };
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<WitnessWrapper>(witnessWrapper));
-            InteropService.Invoke(engine, InteropService.Neo_Witness_GetVerificationScript).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
-                .Should().Be(witnessWrapper.VerificationScript.ToHexString());
-
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<WitnessWrapper>(null));
-            InteropService.Invoke(engine, InteropService.Neo_Witness_GetVerificationScript).Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Witness_GetVerificationScript).Should().BeFalse();
         }
     }
 }
