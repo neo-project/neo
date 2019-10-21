@@ -2,6 +2,9 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.SmartContract;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +12,7 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Block : BlockBase, IInventory, IEquatable<Block>
+    public class Block : BlockBase, IInventory, IEquatable<Block>, IInteroperable
     {
         public const int MaxContentsPerBlock = ushort.MaxValue;
         public const int MaxTransactionsPerBlock = MaxContentsPerBlock - 1;
@@ -130,6 +133,32 @@ namespace Neo.Network.P2P.Payloads
                 Hashes = new[] { ConsensusData.Hash }.Concat(Transactions.Select(p => p.Hash)).ToArray(),
                 ConsensusData = ConsensusData
             };
+        }
+
+        public StackItem ToStackItem()
+        {
+            return new VM.Types.Array
+            (
+                new StackItem[]
+                {
+                    // Computed properties
+                    new ByteArray(Hash.ToArray()),
+
+                    // BlockBase properties
+                    new Integer(Version),
+                    new ByteArray(PrevHash.ToArray()),
+                    new ByteArray(MerkleRoot.ToArray()),
+                    new Integer(Timestamp),
+                    new Integer(Index),
+                    new ByteArray(NextConsensus.ToArray()),
+                    // Witness
+
+                    // Block properties
+                    // Count
+                    // ConsensusData
+                    new Integer(Transactions.Length)
+                }
+            );
         }
     }
 }
