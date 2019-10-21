@@ -456,7 +456,6 @@ namespace Neo.UnitTests.SmartContract
             stackItems[0].GetByteArray().ToHexString().Should().Be(state.Script.ToHexString());
             stackItems[1].GetBoolean().Should().BeFalse();
             stackItems[2].GetBoolean().Should().BeFalse();
-            
         }
 
         [TestMethod]
