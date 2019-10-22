@@ -47,13 +47,17 @@ namespace Neo.IO.Caching
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable) && trackable.State != TrackState.Deleted)
+                if ((dictionary.TryGetValue(key, out Trackable trackable) && trackable.State != TrackState.Deleted) ||
+                    TryGetInternal(key) != null)
+                {
                     throw new ArgumentException();
+                }
+                    
                 dictionary[key] = new Trackable
                 {
                     Key = key,
                     Item = value,
-                    State = trackable == null ? TrackState.Added : TrackState.Changed
+                    State = TrackState.Added
                 };
             }
         }
