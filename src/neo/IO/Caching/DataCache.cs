@@ -52,7 +52,7 @@ namespace Neo.IO.Caching
                 {
                     throw new ArgumentException();
                 }
-                    
+
                 dictionary[key] = new Trackable
                 {
                     Key = key,
