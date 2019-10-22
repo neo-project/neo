@@ -54,6 +54,18 @@ namespace Neo
             throw new Exception();
         }
 
+        internal static void Remove<T>(this HashSet<T> set, IEnumerable<T> remove)
+        {
+            if (set.Count > 1000)
+            {
+                set.ExceptWith(remove);
+            }
+            else
+            {
+                set.RemoveWhere(u => remove.Contains(u));
+            }
+        }
+
         internal static string GetVersion(this Assembly assembly)
         {
             CustomAttributeData attribute = assembly.CustomAttributes.FirstOrDefault(p => p.AttributeType == typeof(AssemblyInformationalVersionAttribute));
