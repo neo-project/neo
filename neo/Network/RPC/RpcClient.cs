@@ -279,7 +279,7 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Broadcasts a transaction over the NEO network.
+        /// Broadcasts a serialized transaction over the NEO network.
         /// </summary>
         public bool SendRawTransaction(byte[] rawTransaction)
         {
@@ -295,7 +295,7 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Broadcasts a raw block over the NEO network.
+        /// Broadcasts a serialized block over the NEO network.
         /// </summary>
         public bool SubmitBlock(byte[] block)
         {
