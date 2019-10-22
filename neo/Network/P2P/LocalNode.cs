@@ -229,6 +229,7 @@ namespace Neo.Network.P2P
                     break;
                 default: break;
             }
+            Context.Stop(Sender);
         }
 
         public static Props Props(NeoSystem system)
