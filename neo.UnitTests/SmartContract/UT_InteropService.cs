@@ -272,6 +272,7 @@ namespace Neo.UnitTests.SmartContract
 
             var engine = GetEngine(true);
             ((Transaction)engine.ScriptContainer).Sender = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(true));
             InteropService.Invoke(engine, InteropService.System_Runtime_CheckWitness).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Peek().GetType().Should().Be(typeof(Neo.VM.Types.Boolean));
