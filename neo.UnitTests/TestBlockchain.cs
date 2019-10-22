@@ -17,6 +17,12 @@ namespace Neo.UnitTests
             return _Store.Object;
         }
 
+        static TestBlockchain()
+        {
+            InitializeMockNeoSystem();
+            GetStore();
+        }
+
         public static NeoSystem InitializeMockNeoSystem()
         {
             if (TheNeoSystem == null)
@@ -33,14 +39,13 @@ namespace Neo.UnitTests
                 _Store = new Mock<Store>();
 
                 var defaultTx = TestUtils.CreateRandomHashTransaction();
+                var txState = new TransactionState
+                {
+                    BlockIndex = 1,
+                    Transaction = defaultTx
+                };
                 _Store.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, TrimmedBlock>());
-                _Store.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(
-                    new TransactionState
-                    {
-                        BlockIndex = 1,
-                        Transaction = defaultTx
-                    }));
-
+                _Store.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(defaultTx.Hash, txState));
                 _Store.Setup(p => p.GetContracts()).Returns(new TestDataCache<UInt160, ContractState>());
                 _Store.Setup(p => p.GetStorages()).Returns(new TestDataCache<StorageKey, StorageItem>());
                 _Store.Setup(p => p.GetHeaderHashList()).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());

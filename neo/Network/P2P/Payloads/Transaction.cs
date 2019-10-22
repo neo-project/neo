@@ -4,6 +4,8 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
+using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -13,7 +15,7 @@ using System.Numerics;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Transaction : IEquatable<Transaction>, IInventory
+    public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
@@ -68,7 +70,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
             20 +            //Sender
-            sizeof(long) +  //Gas
+            sizeof(long) +  //SystemFee
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
@@ -140,6 +142,7 @@ namespace Neo.Network.P2P.Payloads
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.SystemFee + p.NetworkFee)).Sum();
             if (balance < fee) return false;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (hashes.Length != Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
@@ -214,6 +217,30 @@ namespace Neo.Network.P2P.Payloads
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return false;
             return this.VerifyWitnesses(snapshot, net_fee);
+        }
+
+        public StackItem ToStackItem()
+        {
+            return new VM.Types.Array
+            (
+                new StackItem[]
+                {
+                    // Computed properties
+                    new ByteArray(Hash.ToArray()),
+
+                    // Transaction properties
+                    new Integer(Version),
+                    new Integer(Nonce),
+                    new ByteArray(Sender.ToArray()),
+                    new Integer(SystemFee),
+                    new Integer(NetworkFee),
+                    new Integer(ValidUntilBlock),
+                    // Attributes
+                    // Cosigners
+                    new ByteArray(Script),
+                    // Witnesses
+                }
+            );
         }
     }
 }

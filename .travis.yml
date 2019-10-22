@@ -8,7 +8,7 @@ dist: bionic
 osx_image: xcode9.1
 
 mono: none
-dotnet: 2.2.300
+dotnet: 2.2.402
 
 env:
   - TEST_SUITE="without-cultures"
@@ -25,15 +25,21 @@ before_script:
   - dotnet format --check --dry-run -w . -v diagnostic # check C# formatting for neo.sln
   - cd neo.UnitTests
 script: |
-  dotnet restore
-  if [[ "$TEST_SUITE" == cultures ]]; then 
-      dotnet test
+  if [[ "$TEST_SUITE" == "cultures" ]]; then
+      dotnet test -v m --filter FullyQualifiedName=Neo.UnitTests.UT_Culture.All_Tests_Cultures
   else
-      find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-      dotnet test -v n --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+      if [[ "$TEST_SUITE" == "without-cultures" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+        # Test & Calculate coverage
+        find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
+        dotnet test -v m --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+      else
+        # Only test
+        dotnet test -v m --filter FullyQualifiedName!=Neo.UnitTests.UT_Culture.All_Tests_Cultures
+      fi
   fi
 after_success: |
-  if [[ "$TEST_SUITE" == "without-cultures" ]]; then 
+  if [[ "$TEST_SUITE" == "without-cultures" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+    # Send coverage
     echo "Test Success - Branch($TRAVIS_BRANCH) Pull Request($TRAVIS_PULL_REQUEST) Tag($TRAVIS_TAG)"
     bash <(curl -s https://codecov.io/bash) -v
   fi

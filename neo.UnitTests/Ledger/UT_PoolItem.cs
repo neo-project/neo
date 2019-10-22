@@ -11,7 +11,6 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_PoolItem
     {
-        //private PoolItem uut;
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
         [TestInitialize]

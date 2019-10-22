@@ -85,7 +85,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Receive all notifications
 
-                script.EmitPush(new byte[0]);
+                script.Emit(OpCode.PUSHNULL);
                 script.EmitSysCall(InteropService.System_Runtime_GetNotifications);
 
                 // Execute
