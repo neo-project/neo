@@ -125,7 +125,10 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            if (Cosigners.Length == 0) return new UInt160[] { Sender };
+            if (Cosigners.Length == 0 || (Cosigners.Length == 1 && Cosigners[0].Account == Sender))
+            {
+                return new UInt160[] { Sender };
+            }
 
             var hashes = new HashSet<UInt160>(Cosigners.Select(p => p.Account));
             hashes.UnionWith(new HashSet<UInt160> { Sender });
