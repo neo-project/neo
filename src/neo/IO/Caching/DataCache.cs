@@ -57,7 +57,7 @@ namespace Neo.IO.Caching
                 {
                     Key = key,
                     Item = value,
-                    State = TrackState.Added
+                    State = trackable == null ? TrackState.Added : TrackState.Changed
                 };
             }
         }
