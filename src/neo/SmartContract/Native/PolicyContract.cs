@@ -47,19 +47,19 @@ namespace Neo.SmartContract.Native
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem
             {
                 Value = BitConverter.GetBytes(1024u * 256u)
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem
             {
                 Value = BitConverter.GetBytes(512u)
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem
             {
                 Value = BitConverter.GetBytes(1000L)
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_BlockedAccounts), new StorageItem
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_BlockedAccounts), () => new StorageItem
             {
                 Value = new UInt160[0].ToByteArray()
             });
