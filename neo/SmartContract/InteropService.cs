@@ -409,7 +409,7 @@ namespace Neo.SmartContract
             else
             {
                 int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-                if (index < 0 || index >= block.Hashes.Length) return false;
+                if (index < 0 || index >= block.Hashes.Length - 1) return false;
 
                 Transaction tx = engine.Snapshot.GetTransaction(block.Hashes[index + 1]);
                 if (tx == null)
