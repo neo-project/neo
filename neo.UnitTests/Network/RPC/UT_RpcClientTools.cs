@@ -12,13 +12,13 @@ using System.Numerics;
 namespace Neo.UnitTests.Network.RPC
 {
     [TestClass]
-    public class UT_NeoAPI
+    public class UT_RpcClientTools
     {
         Mock<RpcClient> rpcClientMock;
         KeyPair keyPair1;
         string address1;
         UInt160 sender;
-        NeoAPI neoAPI;
+        RpcClientTools neoAPI;
 
         [TestInitialize]
         public void TestSetup()
@@ -27,7 +27,7 @@ namespace Neo.UnitTests.Network.RPC
             address1 = Neo.Wallets.Helper.ToAddress(keyPair1.ToScriptHash());
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
             rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
-            neoAPI = new NeoAPI(rpcClientMock.Object);
+            neoAPI = new RpcClientTools(rpcClientMock.Object);
         }
 
         [TestMethod]

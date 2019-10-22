@@ -12,7 +12,7 @@ namespace Neo.Network.RPC
     /// <summary>
     /// NEO APIs throught RPC
     /// </summary>
-    public class NeoAPI
+    public class RpcClientTools
     {
         public RpcClient RpcClient { get; }
         public ContractClient ContractClient { get; }
@@ -20,10 +20,10 @@ namespace Neo.Network.RPC
         public PolicyAPI PolicyAPI { get; }
 
         /// <summary>
-        /// NeoAPI Constructor
+        /// RpcClientTools Constructor
         /// </summary>
         /// <param name="rpc">the RPC client to call NEO RPC methods</param>
-        public NeoAPI(RpcClient rpc)
+        public RpcClientTools(RpcClient rpc)
         {
             RpcClient = rpc;
             ContractClient = new ContractClient(rpc);
