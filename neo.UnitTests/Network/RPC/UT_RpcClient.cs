@@ -129,13 +129,14 @@ namespace Neo.UnitTests.Network.RPC
             };
 
             JObject json = block.ToJson();
+            json["confirmations"] = 20;
             JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.GetBlock("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
-            Assert.IsNull(result.Confirmations);
+            Assert.IsNull(result.NextBlockHash);
             Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
             Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Block.Transactions[0].Hash.ToString());
 
@@ -190,13 +191,14 @@ namespace Neo.UnitTests.Network.RPC
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 _, out UInt160 _, out ulong _, out uint _, out Witness _);
 
             JObject json = header.ToJson();
+            json["confirmations"] = 20;
             JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.GetBlockHeader("100");
             Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
-            Assert.IsNull(result.Confirmations);
+            Assert.IsNull(result.NextBlockHash);
 
             json["confirmations"] = 20;
             json["nextblockhash"] = "4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
