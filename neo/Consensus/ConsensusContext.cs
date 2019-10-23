@@ -119,7 +119,7 @@ namespace Neo.Consensus
 
         public void AddSenderFee(Transaction tx)
         {
-            if (SenderFee.TryGetValue(sender, out var value))
+            if (SenderFee.TryGetValue(tx.Sender, out var value))
                 SenderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
                 SenderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
