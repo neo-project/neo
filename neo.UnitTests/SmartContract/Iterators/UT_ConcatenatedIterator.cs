@@ -2,11 +2,11 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
+using System;
 using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract.Iterators
 {
-
     [TestClass]
     public class UT_ConcatenatedIterator
     {
@@ -64,6 +64,18 @@ namespace Neo.UnitTests.SmartContract.Iterators
         private Integer MakeIntegerStackItem(int val)
         {
             return new Integer(new BigInteger(val));
+        }
+
+        [TestMethod]
+        public void TestDispose()
+        {
+            Integer[] array1 = { MakeIntegerStackItem(1), MakeIntegerStackItem(7), MakeIntegerStackItem(23) };
+            Integer[] array2 = { MakeIntegerStackItem(8), MakeIntegerStackItem(47) };
+            ArrayWrapper it1 = new ArrayWrapper(array1);
+            ArrayWrapper it2 = new ArrayWrapper(array2);
+            ConcatenatedIterator uut = new ConcatenatedIterator(it1, it2);
+            Action action = () => uut.Dispose();
+            action.Should().NotThrow<Exception>();
         }
     }
 }
