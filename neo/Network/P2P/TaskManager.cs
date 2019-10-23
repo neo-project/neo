@@ -62,7 +62,7 @@ namespace Neo.Network.P2P
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
-            hashes.Remove(globalTasks.Keys);
+            hashes.Remove(globalTasks);
             if (hashes.Count == 0)
             {
                 RequestTasks(session);

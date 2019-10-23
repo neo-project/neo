@@ -66,6 +66,18 @@ namespace Neo
             }
         }
 
+        internal static void Remove<T, V>(this HashSet<T> set, IDictionary<T, V> remove)
+        {
+            if (set.Count > 600_000)
+            {
+                set.ExceptWith(remove.Keys);
+            }
+            else
+            {
+                set.RemoveWhere(u => remove.ContainsKey(u));
+            }
+        }
+
         internal static string GetVersion(this Assembly assembly)
         {
             CustomAttributeData attribute = assembly.CustomAttributes.FirstOrDefault(p => p.AttributeType == typeof(AssemblyInformationalVersionAttribute));
