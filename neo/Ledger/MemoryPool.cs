@@ -189,10 +189,10 @@ namespace Neo.Ledger
 
         private void AddSenderFee(Transaction tx)
         {
-            if (!_senderFee.ContainsKey(tx.Sender))
-                _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+            if (_senderFee.TryGetValue(sender, out var value))
+                _senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
-                _senderFee[tx.Sender] += tx.SystemFee + tx.NetworkFee;
+                _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
         }
 
         private void RemoveSenderFee(Transaction tx)
