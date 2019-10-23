@@ -56,7 +56,7 @@ namespace Neo
 
         internal static void Remove<T>(this HashSet<T> set, IEnumerable<T> remove)
         {
-            if (set.Count > 600000)
+            if (set.Count > 600_000)
             {
                 set.ExceptWith(remove);
             }
