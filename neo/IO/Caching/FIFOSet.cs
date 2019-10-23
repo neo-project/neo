@@ -22,7 +22,7 @@ namespace Neo.IO.Caching
 
         private int _count = 0;
         private Entry _firstEntry = null;
-        private Entry _last = null;
+        private Entry _lastEntry = null;
 
         public int Count => _count;
 
@@ -42,7 +42,7 @@ namespace Neo.IO.Caching
             {
                 if (removeCount == maxCapacity)
                 {
-                    _last = _firstEntry = null;
+                    _lastEntry = _firstEntry = null;
                 }
                 else
                 {
@@ -53,13 +53,13 @@ namespace Neo.IO.Caching
                 }
             }
 
-            if (_last == null)
+            if (_lastEntry == null)
             {
-                _firstEntry = _last = new Entry(item);
+                _firstEntry = _lastEntry = new Entry(item);
             }
             else
             {
-                _last = _last.Next = new Entry(item);
+                _lastEntry = _lastEntry.Next = new Entry(item);
             }
 
             _count++;
