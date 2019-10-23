@@ -1,4 +1,3 @@
-using Akka.Actor;
 using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
@@ -18,10 +17,10 @@ namespace Neo.UnitTests.Network.P2P
     [NotReRunnable]
     public class UT_LocalNode : TestKit
     {
-        private static NeoSystem testBlockchain;
+        private NeoSystem testBlockchain;
 
-        [ClassInitialize]
-        public static void TestSetup(TestContext ctx)
+        [TestInitialize]
+        public void TestSetup()
         {
             testBlockchain = TestBlockchain.InitializeMockNeoSystem();
         }
