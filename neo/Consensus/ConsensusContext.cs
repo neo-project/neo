@@ -119,15 +119,18 @@ namespace Neo.Consensus
 
         public void AddSenderFee(Transaction tx)
         {
-            if (!SenderFee.ContainsKey(tx.Sender))
-                SenderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+            if (SenderFee.TryGetValue(sender, out var value))
+                SenderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
-                SenderFee[tx.Sender] += tx.SystemFee + tx.NetworkFee;
+                SenderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
         }
 
         public BigInteger GetSenderFee(UInt160 sender)
         {
-            return SenderFee.ContainsKey(sender) ? SenderFee[sender] : BigInteger.Zero;
+            if (SenderFee.TryGetValue(sender, out var value))
+                return value;
+            else
+                return BigInteger.Zero;
         }
 
         public void Dispose()
