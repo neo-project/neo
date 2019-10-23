@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -224,6 +226,29 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestCheckPolicy()
+        {
+            Transaction tx = Blockchain.GenesisBlock.Transactions[0];
+            Snapshot snapshot = Store.GetSnapshot().Clone();
+
+            StorageKey storageKey = new StorageKey
+            {
+                ScriptHash = NativeContract.Policy.Hash,
+                Key = new byte[sizeof(byte)]
+            };
+            storageKey.Key[0] = 15;
+            snapshot.Storages.Add(storageKey, new StorageItem
+            {
+                Value = new UInt160[] { tx.Sender }.ToByteArray(),
+            });
+
+            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeFalse();
+
+            snapshot = Store.GetSnapshot().Clone();
+            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeTrue();
         }
     }
 }
