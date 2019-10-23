@@ -174,22 +174,17 @@ namespace Neo.Ledger
         public BigInteger GetSenderFee(UInt160 sender)
         {
             _txRwLock.EnterReadLock();
-            try
-            {
-                if (_senderFee.TryGetValue(sender, out var value))
-                    return value;
-                else
-                    return BigInteger.Zero;
-            }
-            finally
-            {
-                _txRwLock.ExitReadLock();
-            }
+            bool recorded = _senderFee.TryGetValue(sender, out var value);
+            _txRwLock.ExitReadLock();
+            if (recorded)
+                return value;
+            else
+                return BigInteger.Zero;
         }
 
         private void AddSenderFee(Transaction tx)
         {
-            if (_senderFee.TryGetValue(sender, out var value))
+            if (_senderFee.TryGetValue(tx.Sender, out var value))
                 _senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
                 _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
