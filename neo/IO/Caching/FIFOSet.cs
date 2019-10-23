@@ -1,16 +1,30 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 
 namespace Neo.IO.Caching
 {
     internal class FIFOSet<T> : IEnumerable<T> where T : IEquatable<T>
     {
+        class Entry
+        {
+            public readonly T Value;
+            public Entry Next;
+
+            public Entry(T current)
+            {
+                Value = current;
+            }
+        }
+
         private readonly int maxCapacity;
         private readonly int removeCount;
-        private readonly OrderedDictionary dictionary;
+
+        private int _count = 0;
+        private Entry _firstEntry = null;
+        private Entry _lastEntry = null;
+
+        public int Count => _count;
 
         public FIFOSet(int maxCapacity, decimal batchSize = 0.1m)
         {
@@ -19,45 +33,106 @@ namespace Neo.IO.Caching
 
             this.maxCapacity = maxCapacity;
             this.removeCount = Math.Max((int)(maxCapacity * batchSize), 1);
-            this.dictionary = new OrderedDictionary(maxCapacity);
         }
 
         public bool Add(T item)
         {
-            if (dictionary.Contains(item)) return false;
-            if (dictionary.Count >= maxCapacity)
+            if (Contains(item)) return false;
+            if (Count >= maxCapacity)
             {
                 if (removeCount == maxCapacity)
                 {
-                    dictionary.Clear();
+                    _lastEntry = _firstEntry = null;
                 }
                 else
                 {
                     for (int i = 0; i < removeCount; i++)
-                        dictionary.RemoveAt(0);
+                    {
+                        RemoveFirst();
+                    }
                 }
             }
-            dictionary.Add(item, null);
+
+            if (_lastEntry == null)
+            {
+                _firstEntry = _lastEntry = new Entry(item);
+            }
+            else
+            {
+                _lastEntry = _lastEntry.Next = new Entry(item);
+            }
+
+            _count++;
             return true;
+        }
+
+        private void RemoveFirst()
+        {
+            if (_firstEntry != null)
+            {
+                _firstEntry = _firstEntry.Next;
+                _count--;
+            }
         }
 
         public bool Contains(T item)
         {
-            return dictionary.Contains(item);
+            var current = _firstEntry;
+
+            while (current != null)
+            {
+                if (current.Value.Equals(item)) return true;
+                current = current.Next;
+            }
+
+            return false;
         }
 
-        public void ExceptWith(IEnumerable<UInt256> hashes)
+        private void Remove(T item)
         {
-            foreach (var hash in hashes)
+            var prev = _firstEntry;
+            var current = _firstEntry;
+
+            while (current != null)
             {
-                dictionary.Remove(hash);
+                if (current.Value.Equals(item))
+                {
+                    // First
+
+                    if (prev == null)
+                    {
+                        _firstEntry = current.Next;
+                        return;
+                    }
+                    else
+                    {
+                        prev.Next = current.Next;
+                        return;
+                    }
+                }
+
+                prev = current;
+                current = current.Next;
+            }
+        }
+
+        public void ExceptWith(IEnumerable<T> entries)
+        {
+            foreach (var entry in entries)
+            {
+                Remove(entry);
             }
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            var entries = dictionary.Keys.Cast<T>().ToArray();
-            foreach (var entry in entries) yield return entry;
+            var current = _firstEntry;
+
+            while (current != null)
+            {
+                yield return current.Value;
+                current = current.Next;
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

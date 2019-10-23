@@ -2,6 +2,7 @@ using Neo.IO;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo
 {
@@ -61,7 +62,12 @@ namespace Neo
                 return true;
             if (data_bytes.Length != other.data_bytes.Length)
                 return false;
-            return data_bytes.SequenceEqual(other.data_bytes);
+
+            for (int x = data_bytes.Length - 1; x >= 0; x--)
+            {
+                if (data_bytes[x] != other.data_bytes[x]) return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -110,6 +116,7 @@ namespace Neo
         /// <summary>
         /// Method ToArray() returns the byte array data_bytes, which stores the little-endian unsigned int
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[] ToArray()
         {
             return data_bytes;
