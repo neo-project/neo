@@ -97,13 +97,10 @@ namespace Neo.IO.Caching
             {
                 if (current.Value.Equals(item))
                 {
-                    // First
-
                     if (prev == null)
                     {
+                        // First entry
                         _firstEntry = current.Next;
-                        _count--;
-                        return;
                     }
                     else
                     {
@@ -115,9 +112,9 @@ namespace Neo.IO.Caching
                         {
                             prev.Next = current.Next;
                         }
-                        _count--;
-                        return;
                     }
+                    _count--;
+                    return;
                 }
 
                 prev = current;
