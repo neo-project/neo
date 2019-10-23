@@ -147,17 +147,20 @@ namespace Neo.UnitTests.IO.Caching
 
             set = new FIFOSet<UInt256>(10)
             {
+                a,
                 b,
                 c
             };
-            set.ExceptWith(new UInt256[] { b, c });
+            set.ExceptWith(new UInt256[] { a });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, c });
 
             set = new FIFOSet<UInt256>(10)
             {
+                a,
+                b,
                 c
             };
-            set.ExceptWith(new UInt256[] { b, c });
+            set.ExceptWith(new UInt256[] { c });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, b });
         }
     }
