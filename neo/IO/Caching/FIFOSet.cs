@@ -43,6 +43,7 @@ namespace Neo.IO.Caching
                 if (removeCount == maxCapacity)
                 {
                     _lastEntry = _firstEntry = null;
+                    _count = 0;
                 }
                 else
                 {
