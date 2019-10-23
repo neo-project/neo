@@ -176,8 +176,8 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                if (_senderFee.ContainsKey(sender))
-                    return _senderFee[sender];
+                if (_senderFee.TryGetValue(sender, out var value))
+                    return value;
                 else
                     return BigInteger.Zero;
             }
