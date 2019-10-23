@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Neo.IO.Caching;
 using Neo.Plugins;
 using System;
 using System.Collections.Generic;
@@ -54,7 +55,20 @@ namespace Neo
             throw new Exception();
         }
 
-        internal static void Remove<T>(this HashSet<T> set, IEnumerable<T> remove)
+        internal static void Remove<T>(this HashSet<T> set, HashSet<T> remove)
+        {
+            if (set.Count > 600_000)
+            {
+                set.ExceptWith(remove);
+            }
+            else
+            {
+                set.RemoveWhere(u => remove.Contains(u));
+            }
+        }
+
+        internal static void Remove<T>(this HashSet<T> set, FIFOSet<T> remove)
+            where T : IEquatable<T>
         {
             if (set.Count > 600_000)
             {
