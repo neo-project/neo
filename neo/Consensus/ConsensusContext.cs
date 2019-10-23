@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Consensus
@@ -29,6 +30,7 @@ namespace Neo.Consensus
         public int MyIndex;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
+        public Dictionary<UInt160, BigInteger> SenderFee;
         public ConsensusPayload[] PreparationPayloads;
         public ConsensusPayload[] CommitPayloads;
         public ConsensusPayload[] ChangeViewPayloads;
@@ -110,6 +112,22 @@ namespace Neo.Consensus
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
+            SenderFee = new Dictionary<UInt160, BigInteger>();
+            foreach (Transaction tx in Transactions.Values)
+                AddSenderFee(tx);
+        }
+
+        public void AddSenderFee(Transaction tx)
+        {
+            if (!SenderFee.ContainsKey(tx.Sender))
+                SenderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+            else
+                SenderFee[tx.Sender] += tx.SystemFee + tx.NetworkFee;
+        }
+
+        public BigInteger GetSenderFee(UInt160 sender)
+        {
+            return SenderFee.ContainsKey(sender) ? SenderFee[sender] : BigInteger.Zero;
         }
 
         public void Dispose()
@@ -245,6 +263,7 @@ namespace Neo.Consensus
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
+            SenderFee = new Dictionary<UInt160, BigInteger>();
 
             // Expected block size
             var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
@@ -258,6 +277,7 @@ namespace Neo.Consensus
 
                 hashes.Add(tx.Hash);
                 Transactions.Add(tx.Hash, tx);
+                AddSenderFee(tx);
             }
 
             TransactionHashes = hashes.ToArray();

@@ -798,7 +798,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(2, hashes.Length);
-            Assert.IsFalse(txSimple.Reverify(snapshot, new Transaction[0]));
+            Assert.IsFalse(txSimple.Reverify(snapshot, BigInteger.Zero));
         }
 
         [TestMethod]

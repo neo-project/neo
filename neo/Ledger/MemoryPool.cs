@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -37,6 +38,11 @@ namespace Neo.Ledger
         ///       lock for write operations.
         /// </summary>
         private readonly ReaderWriterLockSlim _txRwLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+
+        /// <summary>
+        /// Store all verified unsorted transactions' senders' fee currently in the pool.
+        /// </summary>
+        private readonly Dictionary<UInt160, BigInteger> _senderFee = new Dictionary<UInt160, BigInteger>();
 
         /// <summary>
         /// Store all verified unsorted transactions currently in the pool.
@@ -165,6 +171,36 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        public BigInteger GetSenderFee(UInt160 sender)
+        {
+            _txRwLock.EnterReadLock();
+            try
+            {
+                if (_senderFee.ContainsKey(sender))
+                    return _senderFee[sender];
+                else
+                    return BigInteger.Zero;
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+        }
+
+        private void AddSenderFee(Transaction tx)
+        {
+            if (!_senderFee.ContainsKey(tx.Sender))
+                _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+            else
+                _senderFee[tx.Sender] += tx.SystemFee + tx.NetworkFee;
+        }
+
+        private void RemoveSenderFee(Transaction tx)
+        {
+            _senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee;
+            if (_senderFee[tx.Sender] == 0) _senderFee.Remove(tx.Sender);
+        }
+
         public IEnumerable<Transaction> GetVerifiedTransactions()
         {
             _txRwLock.EnterReadLock();
@@ -268,6 +304,7 @@ namespace Neo.Ledger
             try
             {
                 _unsortedTransactions.Add(hash, poolItem);
+                AddSenderFee(tx);
                 _sortedTransactions.Add(poolItem);
 
                 if (Count > Capacity)
@@ -310,6 +347,7 @@ namespace Neo.Ledger
                 return false;
 
             _unsortedTransactions.Remove(hash);
+            RemoveSenderFee(item.Tx);
             _sortedTransactions.Remove(item);
 
             return true;
@@ -337,6 +375,7 @@ namespace Neo.Ledger
 
             // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
+            _senderFee.Clear();
             _sortedTransactions.Clear();
         }
 
@@ -409,7 +448,7 @@ namespace Neo.Ledger
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                if (item.Tx.Reverify(snapshot, _unsortedTransactions.Select(p => p.Value.Tx)))
+                if (item.Tx.Reverify(snapshot, GetSenderFee(item.Tx.Sender)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
@@ -432,6 +471,7 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
+                        AddSenderFee(item.Tx);
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
