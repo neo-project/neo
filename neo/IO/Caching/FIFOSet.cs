@@ -102,11 +102,20 @@ namespace Neo.IO.Caching
                     if (prev == null)
                     {
                         _firstEntry = current.Next;
+                        _count--;
                         return;
                     }
                     else
                     {
-                        prev.Next = current.Next;
+                        if (current == _firstEntry)
+                        {
+                            _firstEntry = prev.Next;
+                        }
+                        else
+                        {
+                            prev.Next = current.Next;
+                        }
+                        _count--;
                         return;
                     }
                 }
