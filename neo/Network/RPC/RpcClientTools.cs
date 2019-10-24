@@ -10,14 +10,12 @@ using System.Threading.Tasks;
 namespace Neo.Network.RPC
 {
     /// <summary>
-    /// NEO APIs throught RPC
+    /// Common APIs
     /// </summary>
     public class RpcClientTools
     {
-        public RpcClient RpcClient { get; }
-        public ContractClient ContractClient { get; }
-        public Nep5API Nep5API { get; }
-        public PolicyAPI PolicyAPI { get; }
+        private readonly RpcClient rpcClient;
+        private readonly Nep5API nep5API;
 
         /// <summary>
         /// RpcClientTools Constructor
@@ -25,10 +23,8 @@ namespace Neo.Network.RPC
         /// <param name="rpc">the RPC client to call NEO RPC methods</param>
         public RpcClientTools(RpcClient rpc)
         {
-            RpcClient = rpc;
-            ContractClient = new ContractClient(rpc);
-            Nep5API = new Nep5API(rpc);
-            PolicyAPI = new PolicyAPI(rpc);
+            rpcClient = rpc;
+            nep5API = new Nep5API(rpc);
         }
 
         /// <summary>
@@ -51,7 +47,7 @@ namespace Neo.Network.RPC
         public decimal GetUnclaimedGas(UInt160 account)
         {
             UInt160 scriptHash = NativeContract.NEO.Hash;
-            BigInteger balance = ContractClient.TestInvoke(scriptHash, "unclaimedGas", account, RpcClient.GetBlockCount() - 1)
+            BigInteger balance = nep5API.TestInvoke(scriptHash, "unclaimedGas", account, rpcClient.GetBlockCount() - 1)
                 .Stack.Single().ToStackItem().GetBigInteger();
             return ((decimal)balance) / (long)NativeContract.GAS.Factor;
         }
@@ -102,7 +98,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public BigInteger GetTokenBalance(UInt160 scriptHash, UInt160 account)
         {
-            return Nep5API.BalanceOf(scriptHash, account);
+            return nep5API.BalanceOf(scriptHash, account);
         }
 
         /// <summary>
@@ -127,9 +123,9 @@ namespace Neo.Network.RPC
         public Transaction ClaimGas(KeyPair keyPair)
         {
             UInt160 toHash = keyPair.ToScriptHash();
-            BigInteger balance = Nep5API.BalanceOf(NativeContract.NEO.Hash, toHash);
-            Transaction transaction = Nep5API.CreateTransferTx(NativeContract.NEO.Hash, keyPair, toHash, balance);
-            RpcClient.SendRawTransaction(transaction);
+            BigInteger balance = nep5API.BalanceOf(NativeContract.NEO.Hash, toHash);
+            Transaction transaction = nep5API.CreateTransferTx(NativeContract.NEO.Hash, keyPair, toHash, balance);
+            rpcClient.SendRawTransaction(transaction);
             return transaction;
         }
 
@@ -147,7 +143,7 @@ namespace Neo.Network.RPC
         public Transaction Transfer(string tokenHash, string fromKey, string toAddress, decimal amount, decimal networkFee = 0)
         {
             UInt160 scriptHash = tokenHash.ToUInt160();
-            var decimals = Nep5API.Decimals(scriptHash);
+            var decimals = nep5API.Decimals(scriptHash);
 
             KeyPair from = fromKey.ToKeyPair();
             UInt160 to = toAddress.ToUInt160();
@@ -167,8 +163,8 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public Transaction Transfer(UInt160 scriptHash, KeyPair from, UInt160 to, BigInteger amountInteger, BigInteger networkFeeInteger = default)
         {
-            Transaction transaction = Nep5API.CreateTransferTx(scriptHash, from, to, amountInteger, (long)networkFeeInteger);
-            RpcClient.SendRawTransaction(transaction);
+            Transaction transaction = nep5API.CreateTransferTx(scriptHash, from, to, amountInteger, (long)networkFeeInteger);
+            rpcClient.SendRawTransaction(transaction);
             return transaction;
         }
 
@@ -191,7 +187,7 @@ namespace Neo.Network.RPC
 
                 try
                 {
-                    current = RpcClient.GetTransactionHeight(transaction.Hash.ToString());
+                    current = rpcClient.GetTransactionHeight(transaction.Hash.ToString());
                     if (current == 0)
                     {
                         await Task.Delay(1000);
