@@ -354,9 +354,18 @@ namespace Neo.UnitTests.Network.RPC
             Assert.AreEqual(transaction.Hash, result.Transaction.Hash);
             Assert.AreEqual(json.ToString(), result.ToJson().ToString());
 
+            // make the code compatible with the old version
             json["blockhash"] = UInt256.Zero.ToString();
             json["confirmations"] = 100;
             json["blocktime"] = 10;
+            MockResponse(response.ToString());
+
+            result = rpc.GetRawTransaction("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e");
+            Assert.AreEqual(transaction.Hash, result.Transaction.Hash);
+            Assert.AreEqual(100, result.Confirmations);
+            Assert.AreEqual(null, result.VMState);
+            Assert.AreEqual(json.ToString(), result.ToJson().ToString());
+
             json["vmState"] = VMState.HALT;
             MockResponse(response.ToString());
 
