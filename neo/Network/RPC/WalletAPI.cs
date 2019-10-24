@@ -10,18 +10,18 @@ using System.Threading.Tasks;
 namespace Neo.Network.RPC
 {
     /// <summary>
-    /// Common APIs
+    /// Wallet Common APIs
     /// </summary>
-    public class RpcClientTools
+    public class WalletAPI
     {
         private readonly RpcClient rpcClient;
         private readonly Nep5API nep5API;
 
         /// <summary>
-        /// RpcClientTools Constructor
+        /// WalletAPI Constructor
         /// </summary>
         /// <param name="rpc">the RPC client to call NEO RPC methods</param>
-        public RpcClientTools(RpcClient rpc)
+        public WalletAPI(RpcClient rpc)
         {
             rpcClient = rpc;
             nep5API = new Nep5API(rpc);
@@ -87,17 +87,6 @@ namespace Neo.Network.RPC
         {
             UInt160 scriptHash = tokenHash.ToUInt160();
             UInt160 account = addressOrHash.ToUInt160();
-            return GetTokenBalance(scriptHash, account);
-        }
-
-        /// <summary>
-        /// Get token balance
-        /// </summary>
-        /// <param name="scriptHash">token scripthash</param>
-        /// <param name="account">account scripthash</param>
-        /// <returns></returns>
-        public BigInteger GetTokenBalance(UInt160 scriptHash, UInt160 account)
-        {
             return nep5API.BalanceOf(scriptHash, account);
         }
 
