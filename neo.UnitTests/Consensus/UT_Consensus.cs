@@ -117,8 +117,8 @@ namespace Neo.UnitTests.Consensus
             var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
             ConsensusPayload cp = (ConsensusPayload)askingForInitialRecovery.Inventory;
-            RecoveryRequest rq = (RecoveryRequest)cp.ConsensusMessage;
-            rq.Timestamp.Should().Be(328665601001);
+            RecoveryRequest rrm = (RecoveryRequest)cp.ConsensusMessage;
+            rrm.Timestamp.Should().Be(328665601001);
 
 
             Console.WriteLine("Waiting for backupChange View... ");
@@ -127,10 +127,10 @@ namespace Neo.UnitTests.Consensus
 
             var backupOnAskingChangeView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             cp = (ConsensusPayload)backupOnAskingChangeView.Inventory;
-            ChangeView cv = (ChangeView)cp.ConsensusMessage;
-            cv.Timestamp.Should().Be(328665601001);
-            cv.ViewNumber.Should().Be(0);
-            cv.Reason.Should().Be(ChangeViewReason.Timeout);
+            ChangeView cvm = (ChangeView)cp.ConsensusMessage;
+            cvm.Timestamp.Should().Be(328665601001);
+            cvm.ViewNumber.Should().Be(0);
+            cvm.Reason.Should().Be(ChangeViewReason.Timeout);
 
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
@@ -140,8 +140,8 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             cp = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
-            rq = (RecoveryRequest)cp.ConsensusMessage;
-            rq.Timestamp.Should().Be(328665601001);
+            rrm = (RecoveryRequest)cp.ConsensusMessage;
+            rrm.Timestamp.Should().Be(328665601001);
 
             //Console.WriteLine("OnTimer Of Backup should expire...");
             //var backupOnTimer = subscriber.ExpectMsg<ConsensusService.Timer>();
@@ -160,8 +160,11 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.PrevHeader.Timestamp = 328665601000;
             var prepReq = mockContext.Object.MakePrepareRequest();
             actorConsensus.Tell(prepReq);
-            Console.WriteLine("Waiting for something related to the PrepRequest...Nothing happens.");
-            var onChageView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            Console.WriteLine("Waiting for something related to the PrepRequest...\nNothing happens...Recovery will come due to failed nodes");
+            var backupOnRecoveryDueToFailedNodesII = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            cp = (ConsensusPayload)backupOnRecoveryDueToFailedNodesII.Inventory;
+            rrm = (RecoveryRequest)cp.ConsensusMessage;
+
 
             Console.WriteLine("\nFailed because it is not primary and it created the prereq...Time to adjust");
             prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
@@ -170,8 +173,8 @@ namespace Neo.UnitTests.Consensus
             actorConsensus.Tell(prepReq);
             var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             cp = (ConsensusPayload)OnPrepResponse.Inventory;
-            PrepareResponse pr = (PrepareResponse)cp.ConsensusMessage;
-            pr.PreparationHash.Should().Be(prepReq.Hash);
+            PrepareResponse prm = (PrepareResponse)cp.ConsensusMessage;
+            prm.PreparationHash.Should().Be(prepReq.Hash);
 
             // Console.WriteLine("Forcing failed nodes to 0 and reseting... ");
             //mockContext.Object.Block.ConsensusData.PrimaryIndex = (uint) mockContext.Object.MyIndex;
