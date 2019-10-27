@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetComplete()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x2de60d34239b202f32fe28012578056e7a980e93");
             var context = new ContractParametersContext(tx);
             context.Completed.Should().BeFalse();
         }
@@ -42,25 +42,25 @@ namespace Neo.UnitTests.SmartContract
         public void TestToString()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x2de60d34239b202f32fe28012578056e7a980e93");
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             string str = context.ToString();
-            str.Should().Be("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"0000000000f277f1144035a43897f9fa115258eac015adcabe000000000000000000000000000000000000000000000100\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1668747476aa\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
+            str.Should().Be("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"0000000000930e987a6e0578250128fe322f209b23340de62d000000000000000000000000000000000000000000000100\",\"items\":{\"0x2de60d34239b202f32fe28012578056e7a980e93\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca165068a43cb85d\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
         }
 
         [TestMethod]
         public void TestParse()
         {
-            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"0000000000f277f1144035a43897f9fa115258eac015adcabe000000000000000000000000000000000000000000000100\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1668747476aa\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
-            ret.ScriptHashes[0].ToString().Should().Be("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"0000000000930e987a6e0578250128fe322f209b23340de62d000000000000000000000000000000000000000000000100\",\"items\":{\"0x2de60d34239b202f32fe28012578056e7a980e93\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca165068a43cb85d\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
+            ret.ScriptHashes[0].ToString().Should().Be("0x2de60d34239b202f32fe28012578056e7a980e93");
             ((Transaction)ret.Verifiable).Script.ToHexString().Should().Be(new byte[1].ToHexString());
         }
 
         [TestMethod]
         public void TestFromJson()
         {
-            Action action = () => ContractParametersContext.Parse("{\"type\":\"wrongType\",\"hex\":\"0000000000f277f1144035a43897f9fa115258eac015adcabe0000000000000000000000000000000000000000000100\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1668747476aa\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
+            Action action = () => ContractParametersContext.Parse("{\"type\":\"wrongType\",\"hex\":\"0000000000930e987a6e0578250128fe322f209b23340de62d0000000000000000000000000000000000000000000100\",\"items\":{\"0x2de60d34239b202f32fe28012578056e7a980e93\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca165068a43cb85d\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
             action.Should().Throw<FormatException>();
         }
 
@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract
             var context1 = new ContractParametersContext(tx);
             context1.Add(contract, 0, new byte[] { 0x01 }).Should().BeFalse();
 
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x2de60d34239b202f32fe28012578056e7a980e93");
             var context2 = new ContractParametersContext(tx);
             context2.Add(contract, 0, new byte[] { 0x01 }).Should().BeTrue();
             //test repeatlly createItem
@@ -82,7 +82,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetParameter()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x2de60d34239b202f32fe28012578056e7a980e93");
             var context = new ContractParametersContext(tx);
             context.GetParameter(tx.Sender, 0).Should().BeNull();
 
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetWitnesses()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x2de60d34239b202f32fe28012578056e7a980e93");
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             Witness[] witnesses = context.GetWitnesses();
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestAddSignature()
         {
             Transaction tx = TestUtils.GetTransaction();
-            var singleSender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            var singleSender = UInt160.Parse("0x2de60d34239b202f32fe28012578056e7a980e93");
             tx.Sender = singleSender;
 
             //singleSign
@@ -138,7 +138,7 @@ namespace Neo.UnitTests.SmartContract
                         key.PublicKey,
                         key2.PublicKey
                     });
-            var multiSender = UInt160.Parse("0xa4712ed1a8d813561b28ec828930d85e6e08ec7a");
+            var multiSender = UInt160.Parse("0x6b0c478a1d226b3c173f05089d25233e082464b1");
             tx.Sender = multiSender;
             context = new ContractParametersContext(tx);
             context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
