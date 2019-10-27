@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Consensus
             var mockWallet = new Mock<Wallet>();
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
             var mockContext = new Mock<ConsensusContext>(mockWallet.Object, TestBlockchain.GetStore());
-            mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0 ,0 };
+            mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0 };
 
             var timeValues = new[] {
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
@@ -116,33 +116,33 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("Waiting for subscriber recovery message...");
             var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
-            ConsensusPayload cp = (ConsensusPayload) askingForInitialRecovery.Inventory;
-            RecoveryRequest rq = (RecoveryRequest) cp.ConsensusMessage;
+            ConsensusPayload cp = (ConsensusPayload)askingForInitialRecovery.Inventory;
+            RecoveryRequest rq = (RecoveryRequest)cp.ConsensusMessage;
             rq.Timestamp.Should().Be(328665601001);
-            
+
 
             Console.WriteLine("Waiting for backupChange View... ");
             // LocalNode.SendDirectly nextMsgCV = new LocalNode.SendDirectly { Inventory = mockContext.Object.MakeChangeView(ChangeViewReason.Timeout) };
             // USE Predicate<T> TODO
-            
+
             var backupOnAskingChangeView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            cp = (ConsensusPayload) backupOnAskingChangeView.Inventory;
-            ChangeView cv = (ChangeView) cp.ConsensusMessage;
+            cp = (ConsensusPayload)backupOnAskingChangeView.Inventory;
+            ChangeView cv = (ChangeView)cp.ConsensusMessage;
             cv.Timestamp.Should().Be(328665601001);
             cv.ViewNumber.Should().Be(0);
             cv.Reason.Should().Be(ChangeViewReason.Timeout);
 
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
-            mockContext.Object.LastSeenMessage = new int[] { -1, -1, -1, -1, -1, -1 ,-1 };
+            mockContext.Object.LastSeenMessage = new int[] { -1, -1, -1, -1, -1, -1, -1 };
             mockContext.Object.CountFailed.Should().Be(7);
 
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            cp = (ConsensusPayload) backupOnRecoveryDueToFailedNodes.Inventory;
-            rq = (RecoveryRequest) cp.ConsensusMessage;
+            cp = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rq = (RecoveryRequest)cp.ConsensusMessage;
             rq.Timestamp.Should().Be(328665601001);
-            
+
             //Console.WriteLine("OnTimer Of Backup should expire...");
             //var backupOnTimer = subscriber.ExpectMsg<ConsensusService.Timer>();
 
@@ -162,15 +162,15 @@ namespace Neo.UnitTests.Consensus
             actorConsensus.Tell(prepReq);
             Console.WriteLine("Waiting for something related to the PrepRequest...Nothing happens.");
             var onChageView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            
+
             Console.WriteLine("\nFailed because it is not primary and it created the prereq...Time to adjust");
             prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
             // cleaning old try with Self ValidatorIndex
             mockContext.Object.PreparationPayloads[mockContext.Object.MyIndex] = null;
             actorConsensus.Tell(prepReq);
             var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            cp = (ConsensusPayload) OnPrepResponse.Inventory;
-            PrepareResponse pr = (PrepareResponse) cp.ConsensusMessage;
+            cp = (ConsensusPayload)OnPrepResponse.Inventory;
+            PrepareResponse pr = (PrepareResponse)cp.ConsensusMessage;
             pr.PreparationHash.Should().Be(prepReq.Hash);
 
             // Console.WriteLine("Forcing failed nodes to 0 and reseting... ");
