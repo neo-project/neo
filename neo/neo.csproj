@@ -1,11 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>2015-2019 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
     <Version>3.0.0-preview1</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net47</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
@@ -30,8 +30,12 @@
     <!-- Check https://github.com/neo-project/neo/pull/535 before upgrade this package -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0" />
-    <PackageReference Include="Neo.VM" Version="3.0.0-CI00043" />
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00042" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.6.0" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
+    <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
+  </ItemGroup>
+  
 </Project>
