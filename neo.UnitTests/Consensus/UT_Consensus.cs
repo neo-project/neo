@@ -42,14 +42,14 @@ namespace Neo.UnitTests.Consensus
             TestProbe subscriber = CreateTestProbe();
             var mockWallet = new Mock<Wallet>();
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
-            ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
+            var mockContext = new Mock<ConsensusContext>(mockWallet.Object, TestBlockchain.GetStore());
+            mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0 ,0 };
 
             var timeValues = new[] {
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
-              new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For receiving block
+              new DateTime(1980, 06, 01, 0, 0, 3, 001, DateTimeKind.Utc),  // For receiving block
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc), // For Initialize
               new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
-              new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc)  // unused
             };
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
 
@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Consensus
             //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
             TimeProvider.Current = timeMock.Object;
             TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
-            TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
+
 
             //public void Log(string message, LogLevel level)
             // TODO: create ILogPlugin for Tests
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
 
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
-                                     Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, context }, null))
+                                     Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, mockContext.Object }, null))
                                      );
 
             Console.WriteLine("will trigger OnPersistCompleted!");
@@ -105,7 +105,6 @@ namespace Neo.UnitTests.Consensus
                     NextConsensus = header.NextConsensus
                 }
             });
-
             // OnPersist will not launch timer, we need OnStart
 
             Console.WriteLine("will start consensus!");
@@ -114,30 +113,73 @@ namespace Neo.UnitTests.Consensus
                 IgnoreRecoveryLogs = true
             });
 
-            Console.WriteLine("Waiting for subscriber recovery message!");
-            // Timer should expire in one second (block_received_time at :01, initialized at :02)
+            Console.WriteLine("Waiting for subscriber recovery message...");
+            var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
+            ConsensusPayload cp = (ConsensusPayload) askingForInitialRecovery.Inventory;
+            RecoveryRequest rq = (RecoveryRequest) cp.ConsensusMessage;
+            rq.Timestamp.Should().Be(328665601001);
+            
 
-            var askingForRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            Console.WriteLine($"Recovery Message: {askingForRecovery}");
+            Console.WriteLine("Waiting for backupChange View... ");
+            // LocalNode.SendDirectly nextMsgCV = new LocalNode.SendDirectly { Inventory = mockContext.Object.MakeChangeView(ChangeViewReason.Timeout) };
+            // USE Predicate<T> TODO
+            
+            var backupOnAskingChangeView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            cp = (ConsensusPayload) backupOnAskingChangeView.Inventory;
+            ChangeView cv = (ChangeView) cp.ConsensusMessage;
+            cv.Timestamp.Should().Be(328665601001);
+            cv.ViewNumber.Should().Be(0);
+            cv.Reason.Should().Be(ChangeViewReason.Timeout);
 
-            Console.WriteLine("OnTimer Of Backup should expire!");
-            Console.WriteLine("Waiting for subscriber message!");
-            var backupRecoveryII = subscriber.ExpectMsg<LocalNode.SendDirectly>(new TimeSpan(0, 0, 1)); // expects to fail!
-            var backupOnTimer = subscriber.ExpectMsg<ConsensusService.Timer>(new TimeSpan(0, 0, 1)); // expects to fail!
+            Console.WriteLine("Forcing Failed nodes for recovery request... ");
+            mockContext.Object.CountFailed.Should().Be(0);
+            mockContext.Object.LastSeenMessage = new int[] { -1, -1, -1, -1, -1, -1 ,-1 };
+            mockContext.Object.CountFailed.Should().Be(7);
+
+            Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
+            var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            cp = (ConsensusPayload) backupOnRecoveryDueToFailedNodes.Inventory;
+            rq = (RecoveryRequest) cp.ConsensusMessage;
+            rq.Timestamp.Should().Be(328665601001);
+            
+            //Console.WriteLine("OnTimer Of Backup should expire...");
+            //var backupOnTimer = subscriber.ExpectMsg<ConsensusService.Timer>();
 
             // ============================================================================
             //                      finalize ConsensusService actor
             // ============================================================================
 
+            Console.WriteLine("Telling PrepRequest... ");
+            // TimeStamps can be manipuated
+            // timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[1]);
+            // But we will manipulate changeview for now
+            // mockContext.Object.ViewNumber = 0;
 
-            int txCountToInlcude = 256;
+            Console.WriteLine("will tell PrepRequest!");
+            mockContext.Object.PrevHeader.Timestamp = 328665601000;
+            var prepReq = mockContext.Object.MakePrepareRequest();
+            actorConsensus.Tell(prepReq);
+            Console.WriteLine("Waiting for something related to the PrepRequest...Nothing happens.");
+            var onChageView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            
+            Console.WriteLine("\nFailed because it is not primary and it created the prereq...Time to adjust");
+            prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
+            // cleaning old try with Self ValidatorIndex
+            mockContext.Object.PreparationPayloads[mockContext.Object.MyIndex] = null;
+            actorConsensus.Tell(prepReq);
+            var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            cp = (ConsensusPayload) OnPrepResponse.Inventory;
+            PrepareResponse pr = (PrepareResponse) cp.ConsensusMessage;
+            pr.PreparationHash.Should().Be(prepReq.Hash);
 
-            actorConsensus.Tell(new PrepareRequest
-            {
-                TransactionHashes = new UInt256[txCountToInlcude],
-                Timestamp = 23
-            });
+            // Console.WriteLine("Forcing failed nodes to 0 and reseting... ");
+            //mockContext.Object.Block.ConsensusData.PrimaryIndex = (uint) mockContext.Object.MyIndex;
+            //mockContext.Object.Reset(0);
+            //mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0};
+            //mockContext.Object.CountFailed.Should().Be(0);
 
+            // Time to get Commit - Simulate PrepResponses of other nodes and see
 
             //Thread.Sleep(4000);
             Sys.Stop(actorConsensus);
