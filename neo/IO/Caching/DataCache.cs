@@ -190,74 +190,18 @@ namespace Neo.IO.Caching
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
-                {
-                    if (trackable.State == TrackState.Deleted)
-                    {
-                        if (factory == null) throw new KeyNotFoundException();
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Changed;
-                    }
-                    else if (trackable.State == TrackState.None)
-                    {
-                        trackable.State = TrackState.Changed;
-                    }
-                }
-                else
-                {
-                    trackable = new Trackable
-                    {
-                        Key = key,
-                        Item = TryGetInternal(key)
-                    };
-                    if (trackable.Item == null)
-                    {
-                        if (factory == null) throw new KeyNotFoundException();
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Added;
-                    }
-                    else
-                    {
-                        trackable.State = TrackState.Changed;
-                    }
-                    dictionary.Add(key, trackable);
-                }
-                return trackable.Item;
+                TValue value = TryGet(key);
+                if (value != null) return value;
+                if (factory == null) throw new KeyNotFoundException();
+                value = factory();
+                Add(key, value);
+                return value;
             }
         }
 
         public TValue GetOrAdd(TKey key, Func<TValue> factory)
         {
-            lock (dictionary)
-            {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
-                {
-                    if (trackable.State == TrackState.Deleted)
-                    {
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Changed;
-                    }
-                }
-                else
-                {
-                    trackable = new Trackable
-                    {
-                        Key = key,
-                        Item = TryGetInternal(key)
-                    };
-                    if (trackable.Item == null)
-                    {
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Added;
-                    }
-                    else
-                    {
-                        trackable.State = TrackState.None;
-                    }
-                    dictionary.Add(key, trackable);
-                }
-                return trackable.Item;
-            }
+            return GetAndChange(key, factory);
         }
 
         public TValue TryGet(TKey key)
@@ -275,7 +219,7 @@ namespace Neo.IO.Caching
                 {
                     Key = key,
                     Item = value,
-                    State = TrackState.None
+                    State = TrackState.Changed
                 });
                 return value;
             }

@@ -119,9 +119,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret = Check_RegisterValidator(snapshot, point); // Exists
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1);
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount); // No changes
-
+            keyCount = snapshot.Storages.GetChangeSet().Count();
             point[20]++; // fake point
             ret = Check_RegisterValidator(snapshot, point); // New
 
