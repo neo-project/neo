@@ -49,8 +49,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             byte[] to = new byte[20];
 
-            
-
             NativeContract.NEO.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
             var keyCount = snapshot.Storages.GetChangeSet().Count();
             var supply = NativeContract.GAS.TotalSupply(snapshot);
