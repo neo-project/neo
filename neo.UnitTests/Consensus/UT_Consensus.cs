@@ -131,6 +131,8 @@ namespace Neo.UnitTests.Consensus
             cvm.Timestamp.Should().Be(328665601001);
             cvm.ViewNumber.Should().Be(0);
             cvm.Reason.Should().Be(ChangeViewReason.Timeout);
+            // Disabling flag ViewChanging
+            mockContext.Object.ChangeViewPayloads[mockContext.Object.MyIndex] = null;
 
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
@@ -178,6 +180,19 @@ namespace Neo.UnitTests.Consensus
             PrepareResponse prm = (PrepareResponse)cp.ConsensusMessage;
             prm.PreparationHash.Should().Be(prepReq.Hash);
 
+            // Simulating CN 2
+            cp.ValidatorIndex = 2;
+            actorConsensus.Tell(cp);
+
+            cp.ValidatorIndex = 3;
+            actorConsensus.Tell(cp);
+
+            cp.ValidatorIndex = 4;
+            actorConsensus.Tell(cp);
+
+            var OnCommit = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            cp = (ConsensusPayload)OnCommit.Inventory;
+            Commit cm = (Commit)cp.ConsensusMessage;
             // Console.WriteLine("Forcing failed nodes to 0 and reseting... ");
             //mockContext.Object.Block.ConsensusData.PrimaryIndex = (uint) mockContext.Object.MyIndex;
             //mockContext.Object.Reset(0);
