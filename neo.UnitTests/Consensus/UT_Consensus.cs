@@ -223,6 +223,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\n Block is: {mockContext.Object.Block.NextConsensus}");
             //Console.WriteLine($"\n Witness is null: {mockContext.Object.Block.ToJson()}");
 
+            var originalValidators = mockContext.Object.Validators;
             mockContext.Object.Validators = new ECPoint[7]
                 {
                     mockContext.Object.Validators[0],
@@ -257,7 +258,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nCN4 simulation time");
             actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(cp, 3, kp_array[3], blockToSign));
 
-
             // It will be invalid signature because we did not change ECPoint
             Console.WriteLine("\nCN6 simulation time. Wrong signature, KeyPair is not known");
             cp.ValidatorIndex = 5;
@@ -282,10 +282,11 @@ namespace Neo.UnitTests.Consensus
             //                      finalize ConsensusService actor
             // ============================================================================
             //Thread.Sleep(4000);
+            mockContext.Object.Reset(0);
             Sys.Stop(actorConsensus);
             TimeProvider.ResetToDefault();
-
-            //Assert.AreEqual(1, 1);
+            // Ensure thread is clear
+            Assert.AreEqual(1, 1);
         }
 
         public ConsensusPayload getCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, Block blockToSign)
