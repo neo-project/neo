@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Consensus
         }
 
         [TestMethod]
-        public void ConsensusService_Primary_Sends_PrepareRequest_After_OnStart()
+        public void ConsensusService_SingleNodeActors_OnStart_PrepReq_PrepResponses_Commits()
         {
             TestProbe subscriber = CreateTestProbe();
             var mockWallet = new Mock<Wallet>();
@@ -193,6 +193,24 @@ namespace Neo.UnitTests.Consensus
             var OnCommit = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             cp = (ConsensusPayload)OnCommit.Inventory;
             Commit cm = (Commit)cp.ConsensusMessage;
+            // "invocation":"40661c47bec665f3e5b3659dfddd7a33102494509c46e15b210c4655234f7cb4e2916d37b147b15381486968a2491074a8cc94c20811abfa391b072527044de2eb", "verification":"2103b20fabb1421b2c16c1318529d1549058dcf66bc46dd148ad1b84e484204195cc68747476aa"
+            //cp.Witness.InvocationScript.ToHexString().Should().Be("40661c47bec665f3e5b3659dfddd7a33102494509c46e15b210c4655234f7cb4e2916d37b147b15381486968a2491074a8cc94c20811abfa391b072527044de2eb");
+            //cp.Witness.VerificationScript.ToString().Should().Be("2103b20fabb1421b2c16c1318529d1549058dcf66bc46dd148ad1b84e484204195cc68747476aa");
+
+            // Trying to simulate commits
+            cp.ValidatorIndex = 1;
+            // cp.Witness = ; Set a valid witness siged by CN1
+            actorConsensus.Tell(cp);
+
+            cp.ValidatorIndex = 2;
+            actorConsensus.Tell(cp);
+
+            cp.ValidatorIndex = 3;
+            actorConsensus.Tell(cp);
+
+            cp.ValidatorIndex = 4;
+            actorConsensus.Tell(cp);
+
             // Console.WriteLine("Forcing failed nodes to 0 and reseting... ");
             //mockContext.Object.Block.ConsensusData.PrimaryIndex = (uint) mockContext.Object.MyIndex;
             //mockContext.Object.Reset(0);
