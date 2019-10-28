@@ -243,29 +243,10 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\n Contract updated is: {contract.ScriptHash}");
 
             // Forcing next consensus
-            mockContext.Object.Block.NextConsensus = contract.ScriptHash;
+            //mockContext.Object.Block.NextConsensus = contract.ScriptHash;
             mockContext.Object.PrevHeader.NextConsensus = contract.ScriptHash;
-
-
-
-            /*mockContext.Object.Validators = new ECPoint[7]
-                {
-                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
-                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
-                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
-                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
-                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
-                    mockContext.Object.Validators[5],
-                    mockContext.Object.Validators[6]
-                };*/
-            //Console.WriteLine($"Ut is: {mockContext.Object.Validators[0]}");
-
             var blockToSign = mockContext.Object.EnsureHeader();
             Console.WriteLine($"\n Block toSign is: {blockToSign.Hash}");
-
-
-            // Validators were modified
-            //mockContext.Object.Block = blockToSign;
 
             Console.WriteLine("\nCN2 simulation time");
             actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(cp, 1, kp_array[1], blockToSign));
@@ -278,16 +259,15 @@ namespace Neo.UnitTests.Consensus
 
 
             // It will be invalid signature because we did not change ECPoint
-            //cp.ValidatorIndex = 5;
-            //actorConsensus.Tell(cp.ToArray().AsSerializable<ConsensusPayload>());
+            Console.WriteLine("\nCN6 simulation time. Wrong signature, KeyPair is not known");
+            cp.ValidatorIndex = 5;
+            actorConsensus.Tell(cp.ToArray().AsSerializable<ConsensusPayload>());
 
             Console.WriteLine("\nCN5 simulation time");
             actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(cp, 4, kp_array[4], blockToSign));
 
-
-            //var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
+            var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
             //var ourUTBlock = (Block)onBlockRelay.Inventory;
-
 
             // Console.WriteLine("Forcing failed nodes to 0 and reseting... ");
             //mockContext.Object.Block.ConsensusData.PrimaryIndex = (uint) mockContext.Object.MyIndex;
