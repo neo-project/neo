@@ -167,7 +167,7 @@ namespace Neo.Network.RPC
         {
             DateTime deadline = DateTime.UtcNow.AddSeconds(timeout);
             RpcTransaction rpcTx = null;
-            while (rpcTx == null)
+            while (rpcTx == null || rpcTx.Confirmations == null)
             {
                 if (deadline < DateTime.UtcNow)
                 {
@@ -177,7 +177,7 @@ namespace Neo.Network.RPC
                 try
                 {
                     rpcTx = rpcClient.GetRawTransaction(transaction.Hash.ToString());
-                    if (rpcTx == null)
+                    if (rpcTx == null || rpcTx.Confirmations == null)
                     {
                         await Task.Delay(1000);
                     }
