@@ -18,8 +18,8 @@ namespace Neo.SmartContract
     static partial class InteropService
     {
         public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application);
-        public static readonly uint Neo_Crypto_ECDsa_Verify = Register("Neo.Crypto.ECDsa.Verify", ECDsa_Verify, 0_01000000, TriggerType.All);
-        public static readonly uint Neo_Crypto_ECDsa_CheckMultiSig = Register("Neo.Crypto.ECDsa.CheckMultiSig", ECDsa_CheckMultiSig, GetCheckMultiSigPrice, TriggerType.All);
+        public static readonly uint Neo_Crypto_ECDsaVerify = Register("Neo.Crypto.ECDsaVerify", Crypto_ECDsaVerify, 0_01000000, TriggerType.All);
+        public static readonly uint Neo_Crypto_ECDsaCheckMultiSig = Register("Neo.Crypto.ECDsaCheckMultiSig", Crypto_ECDsaCheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
         public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application);
@@ -42,7 +42,7 @@ namespace Neo.SmartContract
                 Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application);
         }
 
-        private static long GetCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
+        private static long GetECDsaCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
         {
             if (stack.Count < 2) return 0;
             var item = stack.Peek(1);
@@ -50,7 +50,7 @@ namespace Neo.SmartContract
             if (item is VMArray array) n = array.Count;
             else n = (int)item.GetBigInteger();
             if (n < 1) return 0;
-            return GetPrice(Neo_Crypto_ECDsa_Verify, stack) * n;
+            return GetPrice(Neo_Crypto_ECDsaVerify, stack) * n;
         }
 
         private static long GetDeploymentPrice(RandomAccessStack<StackItem> stack)
@@ -74,7 +74,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool ECDsa_Verify(ApplicationEngine engine)
+        private static bool Crypto_ECDsaVerify(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
             byte[] message = item0 switch
@@ -96,7 +96,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool ECDsa_CheckMultiSig(ApplicationEngine engine)
+        private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
             byte[] message = item0 switch

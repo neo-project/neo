@@ -157,7 +157,7 @@ namespace Neo.SmartContract
             if (script[i++] != (byte)OpCode.PUSHNULL) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
             if (script.Length != i + 4) return false;
-            if (BitConverter.ToUInt32(script, i) != InteropService.Neo_Crypto_ECDsa_CheckMultiSig)
+            if (BitConverter.ToUInt32(script, i) != InteropService.Neo_Crypto_ECDsaCheckMultiSig)
                 return false;
             return true;
         }
@@ -168,7 +168,7 @@ namespace Neo.SmartContract
             if (script[0] != (byte)OpCode.PUSHBYTES33
                 || script[34] != (byte)OpCode.PUSHNULL
                 || script[35] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 36) != InteropService.Neo_Crypto_ECDsa_Verify)
+                || BitConverter.ToUInt32(script, 36) != InteropService.Neo_Crypto_ECDsaVerify)
                 return false;
             return true;
         }
