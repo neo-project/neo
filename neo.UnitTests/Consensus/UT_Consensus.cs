@@ -197,6 +197,21 @@ namespace Neo.UnitTests.Consensus
             //cp.Witness.InvocationScript.ToHexString().Should().Be("40661c47bec665f3e5b3659dfddd7a33102494509c46e15b210c4655234f7cb4e2916d37b147b15381486968a2491074a8cc94c20811abfa391b072527044de2eb");
             //cp.Witness.VerificationScript.ToString().Should().Be("2103b20fabb1421b2c16c1318529d1549058dcf66bc46dd148ad1b84e484204195cc68747476aa");
 
+            Console.WriteLine($"Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
+            // Changes on every execution
+            //mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey.Should().Be(ECPoint.Parse("03464bf27fe4c4eedada30738e43591f199fea29fb170045f5638ff3e9ba5c842c", Neo.Cryptography.ECC.ECCurve.Secp256r1));
+            mockContext.Object.Validators = new ECPoint[7]
+                {
+                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
+                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
+                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
+                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
+                    mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey,
+                    mockContext.Object.Validators[5],
+                    mockContext.Object.Validators[6]
+                };
+            //Console.WriteLine($"Ut is: {mockContext.Object.Validators[0]}");
+
             // Trying to simulate commits
             cp.ValidatorIndex = 1;
             // cp.Witness = ; Set a valid witness siged by CN1
@@ -206,6 +221,10 @@ namespace Neo.UnitTests.Consensus
             actorConsensus.Tell(cp);
 
             cp.ValidatorIndex = 3;
+            actorConsensus.Tell(cp);
+
+            // It will be invalid signature because we did not change ECPoint
+            cp.ValidatorIndex = 5;
             actorConsensus.Tell(cp);
 
             cp.ValidatorIndex = 4;
