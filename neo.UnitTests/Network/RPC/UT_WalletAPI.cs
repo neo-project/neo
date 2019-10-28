@@ -3,6 +3,7 @@ using Moq;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
+using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -104,10 +105,12 @@ namespace Neo.UnitTests.Network.RPC
         public void TestWaitTransaction()
         {
             Transaction transaction = TestUtils.GetTransaction();
-            rpcClientMock.Setup(p => p.RpcSend("gettransactionheight", It.Is<JObject>(j => j.AsString() == transaction.Hash.ToString()))).Returns(1000);
+            rpcClientMock.Setup(p => p.RpcSend("getrawtransaction", It.Is<JObject[]>(j => j[0].AsString() == transaction.Hash.ToString())))
+                .Returns(new RpcTransaction { Transaction = transaction, VMState = VMState.HALT, BlockHash = UInt256.Zero, BlockTime = 100, Confirmations = 1 }.ToJson());
 
-            var height = walletAPI.WaitTransaction(transaction).Result;
-            Assert.AreEqual(1000u, height);
+            var tx = walletAPI.WaitTransaction(transaction).Result;
+            Assert.AreEqual(VMState.HALT, tx.VMState);
+            Assert.AreEqual(UInt256.Zero, tx.BlockHash);
         }
     }
 }
