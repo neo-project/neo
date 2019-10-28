@@ -5,7 +5,7 @@
     <AssemblyTitle>Neo</AssemblyTitle>
     <Version>3.0.0-preview1</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>netstandard2.1;net47</TargetFrameworks>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
@@ -17,7 +17,6 @@
     <RootNamespace>Neo</RootNamespace>
     <Company>The Neo Project</Company>
     <Description>Neo</Description>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,8 +33,4 @@
     <PackageReference Include="System.Text.Encodings.Web" Version="4.6.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
-    <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
-  </ItemGroup>
-  
 </Project>
