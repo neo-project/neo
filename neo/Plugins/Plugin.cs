@@ -62,6 +62,10 @@ namespace Neo.Plugins
         {
         }
 
+        protected virtual void OnShutdown()
+        {
+        }
+
         private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             foreach (var plugin in Plugins)
@@ -110,6 +114,12 @@ namespace Neo.Plugins
         {
             foreach (var plugin in Plugins)
                 plugin.OnPluginsLoaded();
+        }
+
+        internal static void NotifyPluginsToShutdown()
+        {
+            foreach (var plugin in Plugins)
+                plugin.OnShutdown();
         }
 
         protected void Log(string message, LogLevel level = LogLevel.Info)
