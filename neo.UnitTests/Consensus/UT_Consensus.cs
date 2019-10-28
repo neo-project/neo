@@ -146,11 +146,7 @@ namespace Neo.UnitTests.Consensus
             //Console.WriteLine("OnTimer Of Backup should expire...");
             //var backupOnTimer = subscriber.ExpectMsg<ConsensusService.Timer>();
 
-            // ============================================================================
-            //                      finalize ConsensusService actor
-            // ============================================================================
-
-            Console.WriteLine("Telling PrepRequest... ");
+            //Console.WriteLine("Telling PrepRequest... ");
             // TimeStamps can be manipuated
             // timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[1]);
             // But we will manipulate changeview for now
@@ -159,6 +155,12 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("will tell PrepRequest!");
             mockContext.Object.PrevHeader.Timestamp = 328665601000;
             var prepReq = mockContext.Object.MakePrepareRequest();
+            var ppToSend = (PrepareRequest)prepReq.ConsensusMessage;
+
+            // Forcing hashes to 0 because mempool is currently shared
+            ppToSend.TransactionHashes = new UInt256[0];
+            ppToSend.TransactionHashes.Length.Should().Be(0);
+
             actorConsensus.Tell(prepReq);
             Console.WriteLine("Waiting for something related to the PrepRequest...\nNothing happens...Recovery will come due to failed nodes");
             var backupOnRecoveryDueToFailedNodesII = subscriber.ExpectMsg<LocalNode.SendDirectly>();
@@ -184,11 +186,15 @@ namespace Neo.UnitTests.Consensus
 
             // Time to get Commit - Simulate PrepResponses of other nodes and see
 
+
+            // ============================================================================
+            //                      finalize ConsensusService actor
+            // ============================================================================
             //Thread.Sleep(4000);
             Sys.Stop(actorConsensus);
             TimeProvider.ResetToDefault();
 
-            Assert.AreEqual(1, 1);
+            //Assert.AreEqual(1, 1);
         }
 
         [TestMethod]
