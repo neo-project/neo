@@ -44,7 +44,10 @@ namespace Neo
         {
             RpcServer?.Dispose();
             EnsureStoped(LocalNode);
-            Plugin.NotifyPluginsToShutdown();
+            foreach (var p in Plugin.Plugins)
+            {
+                p.Dispose();
+            }
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
