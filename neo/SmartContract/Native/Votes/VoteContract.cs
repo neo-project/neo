@@ -338,7 +338,7 @@ namespace Neo.SmartContract.Native
                 snapshot.Storages.Add(key, new StorageItem
                 {
                     Value = createState.ToArray()
-                }) ;
+                });
                 return true;
             }
             catch

@@ -5,10 +5,9 @@ using Neo.IO;
 namespace Neo.SmartContract.Native.Votes.Interface
 {
     internal class MultiCandidate : ISerializable
-        { 
+        {
         public MultiCandidate() => this.candidateList = new List<int>();
         public MultiCandidate(List<int> lists) => this.candidateList = lists;
-
         private List<int> candidateList = null;
 
         public int Size => candidateList.ToArray().Length;
