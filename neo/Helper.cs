@@ -56,7 +56,7 @@ namespace Neo
 
         internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
         {
-            if (set.Count > 600_000)
+            if (set.Count > other.Count)
             {
                 set.ExceptWith(other);
             }
@@ -69,7 +69,7 @@ namespace Neo
         internal static void Remove<T>(this HashSet<T> set, FIFOSet<T> other)
             where T : IEquatable<T>
         {
-            if (set.Count > 600_000)
+            if (set.Count > other.Count)
             {
                 set.ExceptWith(other);
             }
@@ -81,7 +81,7 @@ namespace Neo
 
         internal static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
         {
-            if (set.Count > 600_000)
+            if (set.Count > other.Count)
             {
                 set.ExceptWith(other.Keys);
             }
