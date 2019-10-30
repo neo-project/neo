@@ -268,7 +268,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[true,\"test\",123]");
+            Assert.AreEqual(json, "[true,\"74657374\",123]");
         }
 
         [TestMethod]
@@ -297,7 +297,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[[true,\"test1\",123],[true,\"test2\",321]]");
+            Assert.AreEqual(json, "[[true,\"7465737431\",123],[true,\"7465737432\",321]]");
         }
 
         [TestMethod]
