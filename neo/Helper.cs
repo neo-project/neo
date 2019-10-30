@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Neo.IO.Caching;
-using Neo.Plugins;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -55,40 +54,40 @@ namespace Neo
             throw new Exception();
         }
 
-        internal static void Remove<T>(this HashSet<T> set, HashSet<T> remove)
+        internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
         {
             if (set.Count > 600_000)
             {
-                set.ExceptWith(remove);
+                set.ExceptWith(other);
             }
             else
             {
-                set.RemoveWhere(u => remove.Contains(u));
+                set.RemoveWhere(u => other.Contains(u));
             }
         }
 
-        internal static void Remove<T>(this HashSet<T> set, FIFOSet<T> remove)
+        internal static void Remove<T>(this HashSet<T> set, FIFOSet<T> other)
             where T : IEquatable<T>
         {
             if (set.Count > 600_000)
             {
-                set.ExceptWith(remove);
+                set.ExceptWith(other);
             }
             else
             {
-                set.RemoveWhere(u => remove.Contains(u));
+                set.RemoveWhere(u => other.Contains(u));
             }
         }
 
-        internal static void Remove<T, V>(this HashSet<T> set, IDictionary<T, V> remove)
+        internal static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
         {
             if (set.Count > 600_000)
             {
-                set.ExceptWith(remove.Keys);
+                set.ExceptWith(other.Keys);
             }
             else
             {
-                set.RemoveWhere(u => remove.ContainsKey(u));
+                set.RemoveWhere(u => other.ContainsKey(u));
             }
         }
 
