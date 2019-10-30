@@ -33,8 +33,8 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
             byte[] temp = createState.ToArray();
             var createState1 = temp.AsSerializable<VoteCreateState>();
 
-            createState1.GetId().ShouldBeEquivalentTo(createState.GetId());
-            createState.Size.ShouldBeEquivalentTo(createState1.Size);
+            createState1.GetId().Should().BeEquivalentTo(createState.GetId());
+            createState.Size.Should().Be(createState1.Size);
         }
     }
 }

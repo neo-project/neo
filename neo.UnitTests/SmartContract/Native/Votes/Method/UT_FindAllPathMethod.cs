@@ -12,12 +12,12 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestFindPath()
         {
-            List<String> tempNodesList = new List<String>();
-            tempNodesList.Add("0");
-            tempNodesList.Add("1");
-            tempNodesList.Add("2");
-            tempNodesList.Add("3");
-            tempNodesList.Add("4");
+            List<int> tempNodesList = new List<int>();
+            tempNodesList.Add(0);
+            tempNodesList.Add(1);
+            tempNodesList.Add(2);
+            tempNodesList.Add(3);
+            tempNodesList.Add(4);
             Dictionary<String, int> tempVectorGraphic = new Dictionary<String, int>();
             tempVectorGraphic.Add("0,1", 1);
             tempVectorGraphic.Add("0,2", 1);
@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract.Native
             tempVectorGraphic.Add("2,3", 1);
             tempVectorGraphic.Add("3,4", 1);
             FindAllPathMethod method = new FindAllPathMethod(tempNodesList, tempVectorGraphic);
-            List<List<String>> result = method.FindPath("0", "4");
+            List<List<int>> result = method.FindPath(0, 4);
             Assert.AreEqual(2, result.Count);
             Assert.AreEqual("0,1,3,4", string.Join(",", result[0]));
             Assert.AreEqual("0,2,3,4", string.Join(",", result[1]));
@@ -34,14 +34,14 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestFindAllPath()
         {
-            List<String> tempNodesList = new List<String>();
-            tempNodesList.Add("0");
-            tempNodesList.Add("1");
-            tempNodesList.Add("2");
+            List<int> tempNodesList = new List<int>();
+            tempNodesList.Add(0);
+            tempNodesList.Add(1);
+            tempNodesList.Add(2);
             Dictionary<String, int> tempVectorGraphic = new Dictionary<String, int>();
             tempVectorGraphic.Add("0,1", 1);
             FindAllPathMethod method = new FindAllPathMethod(tempNodesList, tempVectorGraphic);
-            List<List<String>> result = method.FindAllPath();
+            List<List<int>> result = method.FindAllPath();
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual("0,1", string.Join(",", result[0]));
         }
@@ -49,12 +49,12 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestPrintPath()
         {
-            List<String> tempNodesList = new List<String>();
-            tempNodesList.Add("0");
-            tempNodesList.Add("1");
-            tempNodesList.Add("2");
-            tempNodesList.Add("3");
-            tempNodesList.Add("4");
+            List<int> tempNodesList = new List<int>();
+            tempNodesList.Add(0);
+            tempNodesList.Add(1);
+            tempNodesList.Add(2);
+            tempNodesList.Add(3);
+            tempNodesList.Add(4);
             Dictionary<String, int> tempVectorGraphic = new Dictionary<String, int>();
             tempVectorGraphic.Add("0,1", 1);
             tempVectorGraphic.Add("0,2", 1);
@@ -63,11 +63,11 @@ namespace Neo.UnitTests.SmartContract.Native
             tempVectorGraphic.Add("3,4", 1);
             FindAllPathMethod method = new FindAllPathMethod(tempNodesList, tempVectorGraphic);
             Action action1 = () => method.PrintEdgeArray();
-            action1.ShouldNotThrow<Exception>();
-            Action action2 = () => method.PrintPath("0", "4");
-            action2.ShouldNotThrow<Exception>();
+            action1.Should().NotThrow<Exception>();
+            Action action2 = () => method.PrintPath(0, 4);
+            action2.Should().NotThrow<Exception>();
             Action action3 = () => method.PrintAllPath();
-            action3.ShouldNotThrow<Exception>();
+            action3.Should().NotThrow<Exception>();
         }
     }
 }
