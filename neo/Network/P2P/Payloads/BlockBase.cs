@@ -40,7 +40,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(ulong) +      //Timestamp
             sizeof(uint) +       //Index
             UInt160.Length +     //NextConsensus
-            1 +                  //
+            1 +                  //Witness array count
             Witness.Size;        //Witness   
 
         Witness[] IVerifiable.Witnesses
@@ -59,8 +59,9 @@ namespace Neo.Network.P2P.Payloads
         public virtual void Deserialize(BinaryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(reader);
-            if (reader.ReadByte() != 1) throw new FormatException();
-            Witness = reader.ReadSerializable<Witness>();
+            Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
+            if (witnesses.Length != 1) throw new FormatException();
+            Witness = witnesses[0];
         }
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
@@ -84,7 +85,7 @@ namespace Neo.Network.P2P.Payloads
         public virtual void Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write((byte)1); writer.Write(Witness);
+            writer.Write(new Witness[] { Witness });
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
