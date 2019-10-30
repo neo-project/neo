@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
@@ -108,9 +109,13 @@ namespace Neo.UnitTests.Network.RPC
         {
             JObject response = CreateResponse(1);
             response["result"] = "000000002deadfa82cbc4682f5800";
-            MockResponse(response.ToString());
 
+            MockResponse(response.ToString());
             var result = rpc.GetBlockHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
+            Assert.AreEqual("000000002deadfa82cbc4682f5800", result);
+
+            MockResponse(response.ToString());
+            result = rpc.GetBlockHex("100");
             Assert.AreEqual("000000002deadfa82cbc4682f5800", result);
         }
 
@@ -131,9 +136,16 @@ namespace Neo.UnitTests.Network.RPC
             JObject json = block.ToJson();
             JObject response = CreateResponse(1);
             response["result"] = json;
-            MockResponse(response.ToString());
 
+            MockResponse(response.ToString());
             var result = rpc.GetBlock("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
+            Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
+            Assert.IsNull(result.Confirmations);
+            Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
+            Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Block.Transactions[0].Hash.ToString());
+
+            MockResponse(response.ToString());
+            result = rpc.GetBlock("100");
             Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
             Assert.IsNull(result.Confirmations);
             Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
@@ -177,9 +189,13 @@ namespace Neo.UnitTests.Network.RPC
         {
             JObject response = CreateResponse(1);
             response["result"] = "0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
-            MockResponse(response.ToString());
 
+            MockResponse(response.ToString());
             var result = rpc.GetBlockHeaderHex("100");
+            Assert.AreEqual("0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2", result);
+
+            MockResponse(response.ToString());
+            result = rpc.GetBlockHeaderHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             Assert.AreEqual("0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2", result);
         }
 
@@ -195,6 +211,11 @@ namespace Neo.UnitTests.Network.RPC
             MockResponse(response.ToString());
 
             var result = rpc.GetBlockHeader("100");
+            Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
+            Assert.IsNull(result.Confirmations);
+
+            MockResponse(response.ToString());
+            result = rpc.GetBlockHeader("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
             Assert.IsNull(result.Confirmations);
 
@@ -541,6 +562,15 @@ namespace Neo.UnitTests.Network.RPC
 
             var result = rpc.ValidateAddress("AQVh2pG732YvtNaxEGkQUei3YA4cvo7d2i");
             Assert.AreEqual(json.ToString(), result.ToJson().ToString());
+        }
+
+        [TestMethod]
+        public void TestConstructorByUrlAndDispose()
+        {
+            //dummy url for test
+            var client = new RpcClient("http://www.xxx.yyy");
+            Action action = () => client.Dispose();
+            action.Should().NotThrow<Exception>();
         }
     }
 }
