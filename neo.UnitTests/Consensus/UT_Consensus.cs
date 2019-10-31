@@ -40,7 +40,6 @@ namespace Neo.UnitTests.Consensus
         [TestMethod]
         public void ConsensusService_SingleNodeActors_OnStart_PrepReq_PrepResponses_Commits()
         {
-            TestProbe subscriber = CreateTestProbe();
             var mockWallet = new Mock<Wallet>();
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
             var mockContext = new Mock<ConsensusContext>(mockWallet.Object, TestBlockchain.GetStore());
@@ -49,7 +48,7 @@ namespace Neo.UnitTests.Consensus
             var timeValues = new[] {
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
               new DateTime(1980, 06, 01, 0, 0, 3, 001, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc), // For Initialize
+              new DateTime(1980, 06, 01, 0, 0, 5, 001, DateTimeKind.Utc), // For Initialize
               new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
             };
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
@@ -62,7 +61,6 @@ namespace Neo.UnitTests.Consensus
             //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
             TimeProvider.Current = timeMock.Object;
             TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
-
 
             //public void Log(string message, LogLevel level)
             // TODO: create ILogPlugin for Tests
@@ -88,7 +86,7 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
             //                      creating ConsensusService actor
             // ============================================================================
-
+            TestProbe subscriber = CreateTestProbe();
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
                                      Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, mockContext.Object }, null))
                                      );
@@ -170,7 +168,6 @@ namespace Neo.UnitTests.Consensus
             cp = (ConsensusPayload)backupOnRecoveryDueToFailedNodesII.Inventory;
             rrm = (RecoveryRequest)cp.ConsensusMessage;
 
-
             Console.WriteLine("\nFailed because it is not primary and it created the prereq...Time to adjust");
             prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
             // cleaning old try with Self ValidatorIndex
@@ -187,7 +184,6 @@ namespace Neo.UnitTests.Consensus
             actorConsensus.Tell(getPreparationPayloadModifiedAndSignedCopy(cp, 4));
 
             actorConsensus.Tell(getPreparationPayloadModifiedAndSignedCopy(cp, 3));
-
 
             var onCommitPayload = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             cp = (ConsensusPayload)onCommitPayload.Inventory;
@@ -212,16 +208,14 @@ namespace Neo.UnitTests.Consensus
                 };
 
             // Original Contract
-            Contract contract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
+            Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             // Console.WriteLine($"\n Contract is: {contract.ScriptHash}");
-            contract.ScriptHash.Should().Be(UInt160.Parse("0x0656f4bee614d132409c587097522bf789ab15e4"));
+            originalContract.ScriptHash.Should().Be(UInt160.Parse("0x0656f4bee614d132409c587097522bf789ab15e4"));
             mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0x0656f4bee614d132409c587097522bf789ab15e4"));
 
             Console.WriteLine($"\nBlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"\nBlock NextConsensus: {mockContext.Object.Block.NextConsensus}");
-            //Console.WriteLine($"\n Witness is null: {mockContext.Object.Block.ToJson()}");
 
-            var originalValidators = mockContext.Object.Validators;
             mockContext.Object.Validators = new ECPoint[7]
                 {
                     mockContext.Object.Validators[0],
@@ -237,13 +231,14 @@ namespace Neo.UnitTests.Consensus
                 Console.WriteLine($"{mockContext.Object.Validators[i]}");
 
             // Original Contract
-            contract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
+            var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             // Can not assert, because KeyPairs are randoms
-            Console.WriteLine($"\nContract updated: {contract.ScriptHash}");
+            Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // Forcing next consensus
-            mockContext.Object.Block.NextConsensus = contract.ScriptHash;
-            mockContext.Object.PrevHeader.NextConsensus = contract.ScriptHash;
+            mockContext.Object.Block.NextConsensus = updatedContract.ScriptHash;
+            mockContext.Object.PrevHeader.NextConsensus = updatedContract.ScriptHash;
+
             var blockToSign = mockContext.Object.EnsureHeader();
             Console.WriteLine($"\nBlockHash: {blockToSign.Hash}");
 
@@ -265,29 +260,23 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nCN5 simulation time");
             actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(cp, 4, kp_array[4], blockToSign));
 
-            Console.WriteLine("\nAsserting response Relay Block and type...");
+            Console.WriteLine("\nAsserting response Local.NodeRelay Block and Block type casting...");
             var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
-            var ourUTBlock = (Block)onBlockRelay.Inventory;
+            var utBlock = (Block)onBlockRelay.Inventory;
 
-            Console.WriteLine($"\nAsserting block NextConsensus..{ourUTBlock.NextConsensus}");
-            ourUTBlock.NextConsensus.Should().Be(contract.ScriptHash);
+            //var lastPayloadOfChangeView = subscriber.ExpectMsg<Neo.Consensus.ConsensusService.Timer>();
 
-            // Console.WriteLine("Forcing failed nodes to 0 and reseting... ");
-            //mockContext.Object.Block.ConsensusData.PrimaryIndex = (uint) mockContext.Object.MyIndex;
-            //mockContext.Object.Reset(0);
-            //mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0};
-            //mockContext.Object.CountFailed.Should().Be(0);
-
-            // Time to get Commit - Simulate PrepResponses of other nodes and see
-
+            Console.WriteLine($"\nAsserting block NextConsensus..{utBlock.NextConsensus}");
+            utBlock.NextConsensus.Should().Be(updatedContract.ScriptHash);
 
             // ============================================================================
             //                      finalize ConsensusService actor
             // ============================================================================
             //Thread.Sleep(4000);
             Console.WriteLine("Finalizing consensus service actor and returning states.");
-            mockContext.Object.Validators = originalValidators;
             mockContext.Object.Reset(0);
+            mockContext.Object.Block.NextConsensus = originalContract.ScriptHash;
+            mockContext.Object.PrevHeader.NextConsensus = originalContract.ScriptHash;
             Sys.Stop(actorConsensus);
             TimeProvider.ResetToDefault();
             // Ensure thread is clear
