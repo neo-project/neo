@@ -238,6 +238,7 @@ namespace Neo.UnitTests.Consensus
             // Forcing next consensus
             mockContext.Object.Block.NextConsensus = updatedContract.ScriptHash;
             mockContext.Object.PrevHeader.NextConsensus = updatedContract.ScriptHash;
+            var originalBlockMerkleRoot = mockContext.Object.Block.MerkleRoot;
 
             var blockToSign = mockContext.Object.EnsureHeader();
             Console.WriteLine($"\nBlockHash: {blockToSign.Hash}");
@@ -274,9 +275,13 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
             //Thread.Sleep(4000);
             Console.WriteLine("Finalizing consensus service actor and returning states.");
-            mockContext.Object.Reset(0);
+            
+            // Returning values to context beucase tests are not isolated
             mockContext.Object.Block.NextConsensus = originalContract.ScriptHash;
             mockContext.Object.PrevHeader.NextConsensus = originalContract.ScriptHash;
+            mockContext.Object.Block.MerkleRoot = originalBlockMerkleRoot;
+
+            mockContext.Object.Reset(0);
             Sys.Stop(actorConsensus);
             TimeProvider.ResetToDefault();
             // Ensure thread is clear
