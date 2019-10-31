@@ -51,19 +51,19 @@ namespace Neo.UnitTests.Consensus
               new DateTime(1980, 05, 01, 0, 0, 5, 001, DateTimeKind.Utc), // For Initialize
               new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
             };
-            Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
+            for (int i = 0; i < timeValues.Length; i++)
+                Console.WriteLine($"time {i}: {timeValues[i].ToString()} ");
 
             int timeIndex = 0;
             var timeMock = new Mock<TimeProvider>();
             timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex]);
             //.Callback(() => timeIndex = timeIndex + 1); //Comment while index is not fixed
 
-            //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
             TimeProvider.Current = timeMock.Object;
             TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
 
             //public void Log(string message, LogLevel level)
-            // TODO: create ILogPlugin for Tests
+            //create ILogPlugin for Tests
             /*
             mockConsensusContext.Setup(mr => mr.Log(It.IsAny<string>(), It.IsAny<LogLevel>()))
                          .Callback((string message, LogLevel level) => {
@@ -72,26 +72,23 @@ namespace Neo.UnitTests.Consensus
                                   );
              */
 
-            // Creating proposed block
+            // Creating a test block
             Header header = new Header();
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
             header.Size.Should().Be(105);
-
             Console.WriteLine($"header {header} hash {header.Hash} timestamp {timestampVal}");
-
             timestampVal.Should().Be(328665601001);    // GMT: Sunday, June 1, 1980 12:00:01.001 AM
                                                        // check basic ConsensusContext
                                                        // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
-
-            // ============================================================================
-            //                      creating ConsensusService actor
-            // ============================================================================
+                                                       // ============================================================================
+                                                       //                      creating ConsensusService actor
+                                                       // ============================================================================
             TestProbe subscriber = CreateTestProbe();
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
                                      Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, mockContext.Object }, null))
                                      );
 
-            Console.WriteLine("will trigger OnPersistCompleted!");
+            Console.WriteLine("Telling a new block to actor consensus...");
             actorConsensus.Tell(new Blockchain.PersistCompleted
             {
                 Block = new Block
@@ -104,6 +101,7 @@ namespace Neo.UnitTests.Consensus
                     NextConsensus = header.NextConsensus
                 }
             });
+            Console.WriteLine("will trigger OnPersistCompleted!");
             // OnPersist will not launch timer, we need OnStart
 
             Console.WriteLine("will start consensus!");
@@ -120,37 +118,24 @@ namespace Neo.UnitTests.Consensus
             rrm.Timestamp.Should().Be(328665601001);
 
             Console.WriteLine("Waiting for backupChange View... ");
-            // LocalNode.SendDirectly nextMsgCV = new LocalNode.SendDirectly { Inventory = mockContext.Object.MakeChangeView(ChangeViewReason.Timeout) };
-            // USE Predicate<T> TODO
-
             var backupOnAskingChangeView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var changeViewPayload = (ConsensusPayload)backupOnAskingChangeView.Inventory;
             ChangeView cvm = (ChangeView)changeViewPayload.ConsensusMessage;
             cvm.Timestamp.Should().Be(328665601001);
             cvm.ViewNumber.Should().Be(0);
             cvm.Reason.Should().Be(ChangeViewReason.Timeout);
-            // Disabling flag ViewChanging
+            // Disabling flag ViewChanging by reverting cache of changeview that was sent
             mockContext.Object.ChangeViewPayloads[mockContext.Object.MyIndex] = null;
 
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
             mockContext.Object.LastSeenMessage = new int[] { -1, -1, -1, -1, -1, -1, -1 };
             mockContext.Object.CountFailed.Should().Be(7);
-
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
             rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
             rrm.Timestamp.Should().Be(328665601001);
-
-            //Console.WriteLine("OnTimer Of Backup should expire...");
-            //var backupOnTimer = subscriber.ExpectMsg<ConsensusService.Timer>();
-
-            //Console.WriteLine("Telling PrepRequest... ");
-            // TimeStamps can be manipuated
-            // timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[1]);
-            // But we will manipulate changeview for now
-            // mockContext.Object.ViewNumber = 0;
 
             Console.WriteLine("will tell PrepRequest!");
             mockContext.Object.PrevHeader.Timestamp = 328665601000;
@@ -178,34 +163,20 @@ namespace Neo.UnitTests.Consensus
             PrepareResponse prm = (PrepareResponse)prepResponsePayload.ConsensusMessage;
             prm.PreparationHash.Should().Be(prepReq.Hash);
 
-            // Simulating CN 2
+            // Simulating CN 3
             actorConsensus.Tell(getPayloadAndModifyValidator(prepResponsePayload, 2));
 
+            // Simulating CN 5
             actorConsensus.Tell(getPayloadAndModifyValidator(prepResponsePayload, 4));
 
+            // Simulating CN 4
             actorConsensus.Tell(getPayloadAndModifyValidator(prepResponsePayload, 3));
 
             var onCommitPayload = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
             Commit cm = (Commit)commitPayload.ConsensusMessage;
-            // "invocation":"40661c47bec665f3e5b3659dfddd7a33102494509c46e15b210c4655234f7cb4e2916d37b147b15381486968a2491074a8cc94c20811abfa391b072527044de2eb", "verification":"2103b20fabb1421b2c16c1318529d1549058dcf66bc46dd148ad1b84e484204195cc68747476aa"
-            //cp.Witness.InvocationScript.ToHexString().Should().Be("40661c47bec665f3e5b3659dfddd7a33102494509c46e15b210c4655234f7cb4e2916d37b147b15381486968a2491074a8cc94c20811abfa391b072527044de2eb");
-            //cp.Witness.VerificationScript.ToString().Should().Be("2103b20fabb1421b2c16c1318529d1549058dcf66bc46dd148ad1b84e484204195cc68747476aa");
 
             Console.WriteLine($"(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
-            // Changes on every execution
-            //mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey.Should().Be(ECPoint.Parse("03464bf27fe4c4eedada30738e43591f199fea29fb170045f5638ff3e9ba5c842c", Neo.Cryptography.ECC.ECCurve.Secp256r1));
-
-            var kp1 = UT_Crypto.generateKey(32);
-
-            KeyPair[] kp_array = new KeyPair[5]
-                {
-                    UT_Crypto.generateKey(32), // not used, kept for index consistency, didactically
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32)
-                };
 
             // Original Contract
             Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
@@ -216,6 +187,14 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nBlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"\nBlock NextConsensus: {mockContext.Object.Block.NextConsensus}");
 
+            KeyPair[] kp_array = new KeyPair[5]
+                {
+                    UT_Crypto.generateKey(32), // not used, kept for index consistency, didactically
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32)
+                };
             mockContext.Object.Validators = new ECPoint[7]
                 {
                     mockContext.Object.Validators[0],
@@ -230,9 +209,8 @@ namespace Neo.UnitTests.Consensus
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}");
 
-            // Original Contract
+            // update Contract with some random validators
             var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
-            // Can not assert, because KeyPairs are randoms
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // Forcing next consensus
