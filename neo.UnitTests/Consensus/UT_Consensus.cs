@@ -48,7 +48,7 @@ namespace Neo.UnitTests.Consensus
             var timeValues = new[] {
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
               new DateTime(1980, 06, 01, 0, 0, 3, 001, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1980, 06, 01, 0, 0, 5, 001, DateTimeKind.Utc), // For Initialize
+              new DateTime(1980, 05, 01, 0, 0, 5, 001, DateTimeKind.Utc), // For Initialize
               new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
             };
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
@@ -262,6 +262,8 @@ namespace Neo.UnitTests.Consensus
             actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(cp, 4, kp_array[4], blockToSign));
 
             Console.WriteLine("\nAsserting response Local.NodeRelay Block and Block type casting...");
+            // An old timestamp in order to avoid ontimer
+            timeIndex = 2;
             var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
             var utBlock = (Block)onBlockRelay.Inventory;
 
