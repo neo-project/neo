@@ -207,9 +207,9 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, BigInteger.Zero);
         }
 
-        public virtual bool Verify(Snapshot snapshot, BigInteger currentFee)
+        public virtual bool Verify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
         {
-            if (!Reverify(snapshot, currentFee)) return false;
+            if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
             int size = Size;
             if (size > MaxTransactionSize) return false;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
