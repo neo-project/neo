@@ -275,7 +275,7 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
             //Thread.Sleep(4000);
             Console.WriteLine("Finalizing consensus service actor and returning states.");
-            
+
             // Returning values to context beucase tests are not isolated
             mockContext.Object.Block.NextConsensus = originalContract.ScriptHash;
             mockContext.Object.PrevHeader.NextConsensus = originalContract.ScriptHash;
