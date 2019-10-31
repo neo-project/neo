@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace Neo.Plugins
 {
-    public abstract class Plugin
+    public abstract class Plugin : IDisposable
     {
         public static readonly List<Plugin> Plugins = new List<Plugin>();
         private static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
@@ -168,6 +168,10 @@ namespace Neo.Plugins
                 Log(nameof(Plugin), LogLevel.Error, $"Failed to resolve assembly or its dependency: {ex.Message}");
                 return null;
             }
+        }
+
+        public virtual void Dispose()
+        {
         }
     }
 }
