@@ -253,17 +253,22 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nCN4 simulation time");
             actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(cp, 3, kp_array[3], blockToSign));
 
+            // =============================================
+            // Testing commit with wrong signature not valid
             // It will be invalid signature because we did not change ECPoint
             Console.WriteLine("\nCN6 simulation time. Wrong signature, KeyPair is not known");
             cp.ValidatorIndex = 5;
             actorConsensus.Tell(cp.ToArray().AsSerializable<ConsensusPayload>());
 
+            Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
+            var backupOnRecoveryMessageAfterCommit = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            var rmPayload = (ConsensusPayload)backupOnRecoveryMessageAfterCommit.Inventory;
+            RecoveryMessage rmm = (RecoveryMessage)rmPayload.ConsensusMessage;
+            // =============================================
+
             Console.WriteLine("\nCN5 simulation time");
             actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(cp, 4, kp_array[4], blockToSign));
 
-            Console.WriteLine("\nAsserting response Local.NodeRelay Block and Block type casting...");
-            // An old timestamp in order to avoid ontimer
-            timeIndex = 2;
             var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
             var utBlock = (Block)onBlockRelay.Inventory;
 
