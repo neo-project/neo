@@ -113,8 +113,11 @@ namespace Neo.Consensus
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
             SenderFee = new Dictionary<UInt160, BigInteger>();
-            foreach (Transaction tx in Transactions.Values)
-                AddSenderFee(tx);
+            if (Transactions != null)
+            {
+                foreach (Transaction tx in Transactions.Values)
+                    AddSenderFee(tx);
+            }
         }
 
         public void AddSenderFee(Transaction tx)
