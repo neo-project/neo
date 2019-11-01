@@ -235,40 +235,17 @@ namespace Neo.UnitTests
             }
             sum.Should().Be(BigInteger.Zero);
 
-            Action action1 = () => list2.WeightedFilter(-1, 0.4, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action1.Should().Throw<ArgumentOutOfRangeException>();
+            CheckArgumentOutOfRangeException(-1, 0.4, p => p.Value, list2);
 
-            Action action2 = () => list2.WeightedFilter(0.2, 1.4, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action2.Should().Throw<ArgumentOutOfRangeException>();
+            CheckArgumentOutOfRangeException(0.2, 1.4, p => p.Value,list2);
 
-            Action action3 = () => list2.WeightedFilter(0.8, 0.3, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action3.Should().Throw<ArgumentOutOfRangeException>();
+            CheckArgumentOutOfRangeException(0.8, 0.3, p => p.Value, list2);
 
-            Action action4 = () => list2.WeightedFilter(0.3, 0.8, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action4.Should().Throw<ArgumentOutOfRangeException>();
+            CheckArgumentOutOfRangeException(0.3, 0.8, p => p.Value, list2);
 
-            Action action5 = () => list2.WeightedFilter(0.3, 0.6, null, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action5.Should().Throw<ArgumentNullException>();
+            CheckArgumentNullException(0.3, 0.6, null, list2);
+
+            CheckArgumentNullException(0.3, 0.4, p => p.Value, null);
 
             list2.WeightedFilter(0.3, 0.3, p => p.Value, (p, w) => new Result
             {
@@ -284,13 +261,26 @@ namespace Neo.UnitTests
                 Weight = w
             }).WeightedAverage(p => p.Weight, p => p.Weight).Should().Be(0);
 
-            list2 = null;
-            Action action6 = () => list2.WeightedFilter(0.3, 0.4, p => p.Value, (p, w) => new Result
+        }
+
+        private static void CheckArgumentOutOfRangeException(double start, double end, Func<Woo, BigInteger> func, List<Woo> list)
+        {
+            Action action = () => list.WeightedFilter(start, end, func, (p, w) => new Result
             {
                 Info = p,
                 Weight = w
             }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action6.Should().Throw<ArgumentNullException>();
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
+
+        private static void CheckArgumentNullException(double start, double end, Func<Woo, BigInteger> func, List<Woo> list)
+        {
+            Action action = () => list.WeightedFilter(start, end, func, (p, w) => new Result
+            {
+                Info = p,
+                Weight = w
+            }).WeightedAverage(p => p.Weight, p => p.Weight);
+            action.Should().Throw<ArgumentNullException>();
         }
     }
 
