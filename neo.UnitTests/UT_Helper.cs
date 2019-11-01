@@ -237,7 +237,7 @@ namespace Neo.UnitTests
 
             CheckArgumentOutOfRangeException(-1, 0.4, p => p.Value, list2);
 
-            CheckArgumentOutOfRangeException(0.2, 1.4, p => p.Value,list2);
+            CheckArgumentOutOfRangeException(0.2, 1.4, p => p.Value, list2);
 
             CheckArgumentOutOfRangeException(0.8, 0.3, p => p.Value, list2);
 
