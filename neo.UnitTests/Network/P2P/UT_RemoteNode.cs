@@ -134,48 +134,5 @@ namespace Neo.UnitTests.Network.P2P
 
             connectionTestProbeB.ExpectMsg<Tcp.Abort>();
         }
-
-        [TestMethod]
-        public void RemoteNode_Test_Received_Invalid_Data()
-        {
-            var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
-            connectionTestProbe.ExpectMsg<Tcp.Write>(); // remote node will send version message
-
-            // The `length` field of this message is 0x300000000000, which is more than PayloadMaxSize = 0x02000000
-            // Message.cs#TryDeserialize will throw a FormatException
-            Tcp.Received received = new Tcp.Received(ByteString.FromBytes(new byte[] { 0x02, 0x02, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03 }));
-            var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActor, received); // remote node will parse failed
-
-            var tcpWrite = connectionTestProbe.ExpectMsg<Tcp.Write>();
-            var message = tcpWrite.Data.ToArray().AsSerializable<Message>();
-            message.Command.Should().Be(MessageCommand.Disconnect);
-
-            var disconnectionPayload = (DisconnectPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectReason.FormatException);
-
-            connectionTestProbe.ExpectMsg<Tcp.Abort>();
-        }
-
-        [TestMethod]
-        public void Connection_Test_Timeout()
-        {
-            var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
-            connectionTestProbe.ExpectMsg<Tcp.Write>(); // remote node will send version message
-
-            var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActor, Connection.Timer.Instance); // remote node will disconnect with `ConnectionTimeout`
-
-            var tcpWrite = connectionTestProbe.ExpectMsg<Tcp.Write>();
-            var message = tcpWrite.Data.ToArray().AsSerializable<Message>();
-            message.Command.Should().Be(MessageCommand.Disconnect);
-
-            var disconnectionPayload = (DisconnectPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectReason.ConnectionTimeout);
-
-            connectionTestProbe.ExpectMsg<Tcp.Abort>();
-        }
     }
 }

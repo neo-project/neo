@@ -207,17 +207,17 @@ namespace Neo.Network.P2P
 
             if (version.Nonce == LocalNode.Nonce)
             {
-                Disconnect(DisconnectReason.DuplicateConnection);
+                DisconnectWithReason(DisconnectReason.DuplicateConnection);
                 return;
             }
             if (version.Magic != ProtocolSettings.Default.Magic)
             {
-                Disconnect(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
+                DisconnectWithReason(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
                 return;
             }
             if (Remote != null && LocalNode.Singleton.IsDuplicateConnection(this))
             {
-                Disconnect(DisconnectReason.DuplicateConnection);
+                DisconnectWithReason(DisconnectReason.DuplicateConnection);
                 return;
             }
 
@@ -245,7 +245,7 @@ namespace Neo.Network.P2P
         {
             return new OneForOneStrategy(ex =>
             {
-                Disconnect(DisconnectReason.InternalError);
+                DisconnectWithReason(DisconnectReason.InternalError);
                 return Directive.Stop;
             }, loggingEnabled: false);
         }
@@ -257,6 +257,13 @@ namespace Neo.Network.P2P
 
             msg_buffer = msg_buffer.Slice(length).Compact();
             return msg;
+        }
+
+        private void DisconnectWithReason(DisconnectReason reason, byte[] data = null)
+        {
+            var payload = DisconnectPayload.Create(reason, data);
+            var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
+            Disconnect(disconnectMessage.ToArray());
         }
     }
 

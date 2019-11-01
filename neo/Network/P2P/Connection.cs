@@ -1,7 +1,5 @@
 using Akka.Actor;
 using Akka.IO;
-using Neo.IO;
-using Neo.Network.P2P.Payloads;
 using System;
 using System.Net;
 using System.Net.WebSockets;
@@ -68,16 +66,27 @@ namespace Neo.Network.P2P
                 failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
-        protected void Disconnect(DisconnectReason reason, byte[] data = null)
+        protected void Disconnect(byte[] lastMessage = null)
         {
             disconnected = true;
 
-            var payload = DisconnectPayload.Create(reason, data);
-            var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
+            if (lastMessage == null)
+            {
+                if (tcp != null)
+                {
+                    tcp.Tell(Tcp.Abort.Instance);
+                }
+                else
+                {
+                    ws.Abort();
+                }
+                Context.Stop(Self);
+                return;
+            }
 
             if (tcp != null)
             {
-                tcp.Tell(Tcp.Write.Create(ByteString.FromBytes(disconnectMessage.ToArray()), Ack.Instance));
+                tcp.Tell(Tcp.Write.Create(ByteString.FromBytes(lastMessage), Ack.Instance));
                 Context.SetReceiveTimeout(TimeSpan.FromSeconds(2.5));
                 Become(msg =>
                 {
@@ -90,7 +99,7 @@ namespace Neo.Network.P2P
             }
             else
             {
-                ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
+                ArraySegment<byte> segment = new ArraySegment<byte>(lastMessage);
                 var task = ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
                     success: () => Ack.Instance,
                     failure: ex => new Tcp.ErrorClosed(ex.Message));
@@ -113,7 +122,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Timer _:
-                    Disconnect(DisconnectReason.ConnectionTimeout);
+                    Disconnect();
                     break;
                 case Ack _:
                     OnAck();
@@ -135,13 +144,9 @@ namespace Neo.Network.P2P
             {
                 OnData(data);
             }
-            catch (FormatException)
-            {
-                Disconnect(DisconnectReason.FormatException);
-            }
             catch
             {
-                Disconnect(DisconnectReason.InternalError);
+                Disconnect();
             }
         }
 
