@@ -1,10 +1,237 @@
 <p align="center">
-<img
-    src="https://neo-cdn.azureedge.net/images/neo_logo.svg"
-    width="250px">
+  <a href="https://neo.org/">
+      <img
+      src="https://neo3.azureedge.net/images/logo%20files-dark.svg"
+      width="250px" alt="neo-logo">
+  </a>
 </p>
 
+<h3 align="center">Neo Blockchain</h3>
+
 <p align="center">
+   A modern distributed network for the Smart Economy.
+  <br>
+  <a href="https://docs.neo.org/docs/en-us/index.html"><strong>Documentation »</strong></a>
+  <br>
+  <br>
+  <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
+  ·
+  <a href="https://github.com/neo-project/neo-vm">Neo VM</a>
+  ·
+  <a href="https://github.com/neo-project/neo-plugins">Neo Plugins</a>
+  ·
+  <a href="https://github.com/neo-project/neo-devpack-dotnet">Neo DevPack</a>
+  ·
+  <a href="https://github.com/neo-project/neo-cli">Neo CLI</a>
+</p>
+<p align="center">
+  <a href="https://twitter.com/neo_blockchain">
+      <img
+      src=".github/images/twitter-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://medium.com/neo-smart-economy">
+      <img
+      src=".github/images/medium-logo.png"
+      width="23px">
+  </a>
+  &nbsp;
+  <a href="https://neonewstoday.com">
+      <img
+      src=".github/images/nnt-logo.jpg"
+      width="23px">
+  </a>
+  &nbsp;  
+  <a href="https://t.me/NEO_EN">
+      <img
+      src=".github/images/telegram-logo.png"
+      width="24px" >
+  </a>
+  &nbsp;
+  <a href="https://www.reddit.com/r/NEO/">
+      <img
+      src=".github/images/reddit-logo.png"
+      width="24px">
+  </a>
+  &nbsp;
+  <a href="https://discord.io/neo">
+      <img
+      src=".github/images/discord-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://www.youtube.com/channel/UCl1AwEDN0w5lTmfJEMsY5Vw/videos">
+      <img
+      src=".github/images/youtube-logo.png"
+      width="32px">
+  </a>
+  &nbsp;
+  <!--How to get a link? -->
+  <a href="https://neo.org/">
+      <img
+      src=".github/images/we-chat-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://weibo.com/neosmarteconomy">
+      <img
+      src=".github/images/weibo-logo.png"
+      width="28px">
+  </a>
+</p>
+
+
+## Table of Contents
+1. [Overview](#overview)
+1. [Features](#features)
+2. [Quickstart](#quick-start)
+    1. [Using for smart-contract development](#building-a-smart-contract)
+    1. [Using neo library](#using-neo-library)
+    3. [Using neo-cli releases](#using-neo-cli-releases)
+4. [Status](#status)
+5. [Reference implementations](#reference-implementations)
+6. [Opening an issue](#opening-a-new-issue)  
+7. [Bounty program](#bounty-program)
+8. [How to contribute](#how-to-contribute)
+
+## Overview
+Neo is a blockchain technology built using C# that levereages smart contracts to autonomumously manage digital assets. Using dBFT 2.0 as consensus mechanism, Neo can achieves single block finality in 15 seconds without forking.   
+Neo is compatible with .NET Core 3.0 and .NET Standard 2.1.
+
+To learn more about NEO, please read the White Paper:  
+- [English](https://docs.neo.org/en-us/whitepaper.html)  
+- [白皮书](https://docs.neo.org/zh-cn/whitepaper.html)
+
+*Note: This is Neo 3 branch, currently under development. For the current stable version, please [click here]()*
+
+## Features
+These are a few features Neo has:
+
+- **[dBFT2.0](https://medium.com/neo-smart-economy/neos-dbft-2-0-single-block-finality-with-improved-availability-6a4aca7bd1c4)**
+  - Single block finality consensus algorithm.
+- **[Smart Contracts using C#](https://github.com/neo-ngd/NEO3-Development-Guide/tree/master/en/SmartContract)**
+  - Classes and JSON support;
+  - Python, Typescript and Go Smart Contracts provided by community projects.
+- **[Unity support](https://github.com/neo-ngd/NEO3-Development-Guide/tree/master/en/SmartContract)**
+  - Neo can be used to create your game in the blockchain.
+- **[Neo Blockchain Toolkit for .NET]()**
+  - Developer tools, supporting easy smart-contract development with debugging support using Visual Studio Code.
+- **[Plugin system]()**
+  - Used to extend Neo functinalities, the plugin system allow developers to easily add new features to their nodes.
+- **[Native contracts](https://medium.com/neo-smart-economy/native-contracts-in-neo-3-0-e786100abf6e)**
+  - Contracts running C# code.
+- **[Smart Contract internet access](https://medium.com/neo-smart-economy/on-the-importance-of-oracles-neo-3-0-and-dbft-17c37ee35f32)**
+  - Internet acess during a transaction.
+- **[Voting Mechanism](https://medium.com/neo-smart-economy/how-to-become-a-consensus-node-27e5317722e6)**
+  - Decentralizing control over the network by allowing NEO holders to vote for consensus nodes.
+- **[Distributed file-system]()**
+  - NeoFS is a scalable, decentralized object storage network integrated with NEO contracts to provide trustless data storage facilities.
+- **[Digital identity]()**
+  - Using trust, privacy and game theory models. (WIP)
+
+
+
+## Quick Start
+
+#### Building a smart-contract
+Neo reference implementation offers C# smart-contract support. The code is first compiled to MSIL and subsequentially compiled to a *neo executable file (nef)* 
+
+*Suggestion: Please visit [Neo Blockchain Toolbox](https://github.com/neo-project/neo-blockchain-toolkit) for a complete setup.*
+
+### Using source code
+1. Clone https://github.com/neo-project/neo-devpack-dotnet  
+2.  Create a new .NET class library solution for your smart-contract.  
+3.  Open the project and add   `Neo.SmartContract.Framework.csproj` and `Neo.Compiler.MSIL.csproj` to your solution (inside repo from step 1).   
+4.  Add a reference to `Neo.SmartContract.Framework` to your smart-contract project.  
+5. Import common used APIs to your project file:
+    ```csharp
+    using Neo.SmartContract.Framework;
+    using Neo.SmartContract.Framework.Services.Neo;
+    using Neo.SmartContract.Framework.Services.System;
+    ```
+6. Extend the SmartContract class and add the entrypoint method:
+    ```csharp
+    public class Contract : SmartContract
+    {
+        public static object Main(string operation, object[] args)
+        {
+            return "Hello World";
+        }
+    }
+    ```
+
+7. Build `Neo.SmartContract.Framework.csproj` project. Check where neon.dll is saved, example:  
+    ```
+    C:\Users\neo\Workspace\readme-test\neo-devpack-dotnet\src\Neo.Compiler.MSIL\bin\Debug\netcoreapp3.0\neon.dll
+    ```
+8. Add a post build event to your smart-contract project:
+
+    ```
+    dotnet  C:\Users\neo\Workspace\readme-test\neo-devpack-dotnet\src\Neo.Compiler.MSIL\bin\Debug\netcoreapp3.0\neon.dll $(TargetPath)
+    ```
+
+9. Verify if the contract was sucessfully compiled:
+    ```
+    2>gen abi succ
+    2>write:contract.nef
+    2>write:contract.abi.json
+    2>write:contract.manifest.json
+    2>SUCC
+    ```
+
+#### Using Neo library 
+Use this to run a node or send commands to the network.  
+This is how you should use Neo. If you can't use C#, consider using RPC endpoints with [neo-cli](https://github.com/neo-project/neo-cli).  
+
+
+1. Create a new .NET Core Console project;  
+2. Add Neo nuget repository reference:
+    ```
+    https://www.myget.org/F/neo/api/v3/index.json
+    ```  
+3. Check the `Include Prerelease` checkbox to be able to see Neo 3 packages.  
+4. Select and install `Neo` library:
+
+    ![logo](.github/images/neo-nuget.png)  
+
+5.  Windows - Add `libleveldb.dll` to your project using a pre-compiled version:
+    1. Download latest [neo-cli](https://github.com/neo-project/neo-cli/releases/download/v3.0.0-preview1/neo-cli-win-x64.zip) (preview version)  release for Windows.
+    2. Extract the files and copy `libleveldb.dll` to your project folder;
+    3. Go to Visual Studio and add `libleveldb.dll` to your project;
+    4. Open the file properties configure it to be copied to the output folder.  
+
+You can also compile LevelDB from [source](https://github.com/google/leveldb) and add it to your project.  
+
+5. Linux - Install dependencies:
+    ```bash
+    apt-get update && apt-get install -y \
+        libleveldb-dev \
+        sqlite3 \
+        libsqlite3-dev \
+        libunwind8-dev 
+    ```
+
+*Visit [neo-cli](https://github.com/neo-project/neo-cli) use case.* 
+
+#### Using neo-cli releases
+Neo-cli is a full node with wallet capabilities. It also supports RPC endpoints allowing it to be managed remotely.  
+
+1. Download neo-cli from the release page
+2. Run neo-cli executable file
+    1. (Optional) Start it with `--rpc` to enable RPC (HTTP endpoints)
+4. Start it with `-t` to use testnet configuration  
+    ```bash
+    dotnet neo-cli.dll -t --rpc
+    ```
+5. (Optional) If you can't run it using the command line, replace the `protocol.json` file with the `protocol.testnet.json` content to access the testnet.
+
+
+5. Use `help` to see the command list.
+
+
+## Status
+<p>
   <a href="https://travis-ci.org/neo-project/neo">
     <img src="https://travis-ci.org/neo-project/neo.svg?branch=master" alt="Current TravisCI build status.">
   </a>
@@ -19,110 +246,27 @@
   </a>
 </p>
 
-NEO 3.0 (under development): A distributed network for the Smart Economy
-================
 
-NEO uses digital identity and blockchain technology to digitize assets and leverages smart contracts for autonomously managed digital assets to create a "smart economy" within a decentralized network.
+#### Reference implementations
+Code references are provided for all platform building blocks. Tha includes the base library, the VM, a command line application and the compiler. Plugins are also included to easily extend Neo functinalities.
 
-To learn more about NEO, please read the [White Paper](https://docs.neo.org/en-us/whitepaper.html)|[白皮书](https://docs.neo.org/zh-cn/whitepaper.html).
+* [**neo:**](https://github.com/neo-project/neo/tree/) Neo core library, contains base classes, including ledger, p2p and IO modules.
+* [neo-vm:](https://github.com/neo-project/neo-vm/) Neo Virtual Machine is a decoupled VM that Neo uses to execute its scripts. It also uses the `InteropService` layer to extend its functionalities.
+* [neo-cli:](https://github.com/neo-project/neo-cli/) Neo Command Line Interface is an executable that allows you to run a Neo node using the command line. 
+* [neo-plugins:](https://github.com/neo-project/neo-plugins/) Neo plugin system is the default way to extend neo features. If a feature is not mandatory for Neo functionality, it will probably be implemented as a Plugin.
+* [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert a C# smart-contract into a *neo executable file*.
 
-NEO 2.x: Reference template  
-================
+#### Opening a new issue
+Please feel free to create new issues in our repository. We encourage you to use one of our issue templates when creating a new issue.  
 
-NEO adopts a model of continuous improvement and evolution.
-We believe that the research and development of blockchain technology will be kept in continuous transformation for the next years.
-From 2017 until the middle of 2020 (estimated), NEO 2.x will still be supported and the compatibility of new packages will be maintained.
+- [Feature request](https://github.com/neo-project/neo/issues/new?assignees=&labels=&template=bug_report.md&title=)
+- [Bug report](https://github.com/neo-project/neo/issues/new?assignees=&labels=&template=bug_report.md&title=)
+- [Questions](https://github.com/neo-project/neo/issues/new?assignees=&labels=question&template=questions.md&title=)
 
-A link to the essential C# reference implementation can be seen below:
+If you found a security issue, please refer to our [security policy](https://github.com/neo-project/neo/security/policy).
 
-* [neo](https://github.com/neo-project/neo/tree/master-2.x): core implementation (branch `master-2.x`)
-* [neo-vm](https://github.com/neo-project/neo-vm/tree/master-2.x): virtual machine (branch `master-2.x`)
-* [neo-cli](https://github.com/neo-project/neo-cli/tree/master-2.x): command-line interface (branch `master-2.x`)
-* [neo-plugins](https://github.com/neo-project/neo-plugins/tree/master-2.x): plugins (branch `master-2.x`)
-* [neo-devpack-dotnet](https://github.com/neo-project/neo-devpack-dotnet/tree/master-2.x): NeoContract compiler and development pack for .NET (branch `master-2.x`)
+#### Bounty program
+You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
 
-NEO 1.x was known as Antshares and the roots of the code can be found historically in this current repository.
-
-Supported Platforms
---------
-
-We already support the following platforms:
-
-* CentOS 7
-* Docker
-* macOS 10 +
-* Red Hat Enterprise Linux 7.0 +
-* Ubuntu 14.04, Ubuntu 14.10, Ubuntu 15.04, Ubuntu 15.10, Ubuntu 16.04, Ubuntu 16.10
-* Windows 7 SP1 +, Windows Server 2008 R2 +
-
-We will support the following platforms in the future:
-
-* Debian
-* Fedora
-* FreeBSD
-* Linux Mint
-* OpenSUSE
-* Oracle Linux
-
-Development
---------
-
-To start building peer applications for NEO on Windows, you need to download [Visual Studio 2017](https://www.visualstudio.com/products/visual-studio-community-vs), install the [.NET Framework 4.7 Developer Pack](https://www.microsoft.com/en-us/download/details.aspx?id=55168) and the [.NET Core SDK](https://www.microsoft.com/net/core).
-
-If you need to develop on Linux or macOS, just install the [.NET Core SDK](https://www.microsoft.com/net/core).
-
-To install Neo SDK to your project, run the following command in the [Package Manager Console](https://docs.nuget.org/ndocs/tools/package-manager-console):
-
-```
-PM> Install-Package Neo
-```
-
-For more information about how to build DAPPs for NEO, please read the [documentation](http://docs.neo.org/en-us/sc/introduction.html)|[文档](http://docs.neo.org/zh-cn/sc/introduction.html).
-
-Daily builds
---------
-
-If you want to use the [latest daily build](https://www.myget.org/feed/neo/package/nuget/Neo) then you need to add a NuGet.Config to your app with the following content:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-    <packageSources>
-        <clear />
-        <add key="MyGet-neo" value="https://www.myget.org/F/neo/api/v3/index.json" />
-        <add key="NuGet.org" value="https://api.nuget.org/v3/index.json" />
-    </packageSources>
-</configuration>
-```
-
-*NOTE: This NuGet.Config should be with your application unless you want nightly packages to potentially start being restored for other apps on the machine.*
-
-How to Contribute
---------
-
-You can contribute to NEO with [issues](https://github.com/neo-project/neo/issues) and [PRs](https://github.com/neo-project/neo/pulls). Simply filing issues for problems you encounter is a great way to contribute. Contributing implementations is greatly appreciated.
-
-We use and recommend the following workflow:
-
-1. Create an issue for your work.
-    * You can skip this step for trivial changes.
-	* Reuse an existing issue on the topic, if there is one.
-	* Clearly state that you are going to take on implementing it, if that's the case. You can request that the issue be assigned to you. Note: The issue filer and the implementer don't have to be the same person.
-1. Create a personal fork of the repository on GitHub (if you don't already have one).
-1. Create a branch off of master(`git checkout -b mybranch`).
-    * Name the branch so that it clearly communicates your intentions, such as issue-123 or githubhandle-issue.
-	* Branches are useful since they isolate your changes from incoming changes from upstream. They also enable you to create multiple PRs from the same fork.
-1. Make and commit your changes.
-1. Add new tests corresponding to your change, if applicable.
-1. Build the repository with your changes.
-    * Make sure that the builds are clean.
-	* Make sure that the tests are all passing, including your new tests.
-1. Create a pull request (PR) against the upstream repository's master branch.
-    * Push your changes to your fork on GitHub.
-
-Note: It is OK for your PR to include a large number of commits. Once your change is accepted, you will be asked to squash your commits into one or some appropriately small number of commits before your PR is merged.
-
-License
-------
-
+#### License
 The NEO project is licensed under the [MIT license](LICENSE).
