@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Consensus
@@ -30,7 +29,6 @@ namespace Neo.Consensus
         public int MyIndex;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
-        public Dictionary<UInt160, BigInteger> SenderFee;
         public ConsensusPayload[] PreparationPayloads;
         public ConsensusPayload[] CommitPayloads;
         public ConsensusPayload[] ChangeViewPayloads;
@@ -112,28 +110,12 @@ namespace Neo.Consensus
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
-            SenderFee = new Dictionary<UInt160, BigInteger>();
+            SendersFeeMonitor.ClearConsensusSenderFee();
             if (Transactions != null)
             {
                 foreach (Transaction tx in Transactions.Values)
-                    AddSenderFee(tx);
+                    SendersFeeMonitor.AddConsensusSenderFee(tx);
             }
-        }
-
-        public void AddSenderFee(Transaction tx)
-        {
-            if (SenderFee.TryGetValue(tx.Sender, out var value))
-                SenderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
-            else
-                SenderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
-        }
-
-        public BigInteger GetSenderFee(UInt160 sender)
-        {
-            if (SenderFee.TryGetValue(sender, out var value))
-                return value;
-            else
-                return BigInteger.Zero;
         }
 
         public void Dispose()
@@ -269,7 +251,7 @@ namespace Neo.Consensus
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
-            SenderFee = new Dictionary<UInt160, BigInteger>();
+            SendersFeeMonitor.ClearConsensusSenderFee();
 
             // Expected block size
             var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
@@ -283,7 +265,7 @@ namespace Neo.Consensus
 
                 hashes.Add(tx.Hash);
                 Transactions.Add(tx.Hash, tx);
-                AddSenderFee(tx);
+                SendersFeeMonitor.AddConsensusSenderFee(tx);
             }
 
             TransactionHashes = hashes.ToArray();
