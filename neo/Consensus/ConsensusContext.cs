@@ -37,6 +37,11 @@ namespace Neo.Consensus
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
         public int[] LastSeenMessage;
 
+        /// <summary>
+        /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
+        /// </summary>
+        public readonly SendersFeeMonitor senderFeeMonitor = new SendersFeeMonitor();
+
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private int _witnessSize;
@@ -110,11 +115,11 @@ namespace Neo.Consensus
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
-            SendersFeeMonitor.ClearConsensusSenderFee();
+            senderFeeMonitor.ClearSenderFee();
             if (Transactions != null)
             {
                 foreach (Transaction tx in Transactions.Values)
-                    SendersFeeMonitor.AddConsensusSenderFee(tx);
+                    senderFeeMonitor.AddSenderFee(tx);
             }
         }
 
@@ -251,7 +256,7 @@ namespace Neo.Consensus
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
-            SendersFeeMonitor.ClearConsensusSenderFee();
+            senderFeeMonitor.ClearSenderFee();
 
             // Expected block size
             var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
@@ -265,7 +270,7 @@ namespace Neo.Consensus
 
                 hashes.Add(tx.Hash);
                 Transactions.Add(tx.Hash, tx);
-                SendersFeeMonitor.AddConsensusSenderFee(tx);
+                senderFeeMonitor.AddSenderFee(tx);
             }
 
             TransactionHashes = hashes.ToArray();

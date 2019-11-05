@@ -70,6 +70,11 @@ namespace Neo.Ledger
         public int Capacity { get; }
 
         /// <summary>
+        /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
+        /// </summary>
+        public readonly SendersFeeMonitor senderFeeMonitor = new SendersFeeMonitor();
+
+        /// <summary>
         /// Total count of transactions in the pool.
         /// </summary>
         public int Count
@@ -268,7 +273,7 @@ namespace Neo.Ledger
             try
             {
                 _unsortedTransactions.Add(hash, poolItem);
-                SendersFeeMonitor.AddMemPoolSenderFee(tx);
+                senderFeeMonitor.AddSenderFee(tx);
                 _sortedTransactions.Add(poolItem);
 
                 if (Count > Capacity)
@@ -311,7 +316,7 @@ namespace Neo.Ledger
                 return false;
 
             _unsortedTransactions.Remove(hash);
-            SendersFeeMonitor.RemoveMemPoolSenderFee(item.Tx);
+            senderFeeMonitor.RemoveSenderFee(item.Tx);
             _sortedTransactions.Remove(item);
 
             return true;
@@ -339,7 +344,7 @@ namespace Neo.Ledger
 
             // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
-            SendersFeeMonitor.ClearMemPoolSenderFee();
+            senderFeeMonitor.ClearSenderFee();
             _sortedTransactions.Clear();
         }
 
@@ -412,7 +417,7 @@ namespace Neo.Ledger
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                if (item.Tx.Reverify(snapshot, SendersFeeMonitor.GetMemPoolSenderFee(item.Tx.Sender)))
+                if (item.Tx.Reverify(snapshot, senderFeeMonitor.GetSenderFee(item.Tx.Sender)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
@@ -435,7 +440,7 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
-                        SendersFeeMonitor.AddMemPoolSenderFee(item.Tx);
+                        senderFeeMonitor.AddSenderFee(item.Tx);
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)

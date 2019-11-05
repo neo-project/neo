@@ -41,34 +41,18 @@ namespace Neo.UnitTests.Ledger
         public void TestMemPoolSenderFee()
         {
             Transaction transaction = CreateTransactionWithFee(1, 2);
-            BigInteger originalValue = SendersFeeMonitor.GetMemPoolSenderFee(transaction.Sender);
-            SendersFeeMonitor.AddMemPoolSenderFee(transaction);
-            SendersFeeMonitor.GetMemPoolSenderFee(transaction.Sender).Should().Be(3 + originalValue);
-            SendersFeeMonitor.AddMemPoolSenderFee(transaction);
-            SendersFeeMonitor.GetMemPoolSenderFee(transaction.Sender).Should().Be(6 + originalValue);
-            SendersFeeMonitor.RemoveMemPoolSenderFee(transaction);
-            SendersFeeMonitor.GetMemPoolSenderFee(transaction.Sender).Should().Be(3 + originalValue);
-            SendersFeeMonitor.RemoveMemPoolSenderFee(transaction);
-            SendersFeeMonitor.GetMemPoolSenderFee(transaction.Sender).Should().Be(originalValue);
-            SendersFeeMonitor.ClearMemPoolSenderFee();
-            SendersFeeMonitor.GetMemPoolSenderFee(transaction.Sender).Should().Be(0);
-        }
-
-        [TestMethod]
-        public void TestConsensusSenderFee()
-        {
-            Transaction transaction = CreateTransactionWithFee(1, 2);
-            BigInteger originalValue = SendersFeeMonitor.GetConsensusSenderFee(transaction.Sender);
-            SendersFeeMonitor.AddConsensusSenderFee(transaction);
-            SendersFeeMonitor.GetConsensusSenderFee(transaction.Sender).Should().Be(3 + originalValue);
-            SendersFeeMonitor.AddConsensusSenderFee(transaction);
-            SendersFeeMonitor.GetConsensusSenderFee(transaction.Sender).Should().Be(6 + originalValue);
-            SendersFeeMonitor.RemoveConsensusSenderFee(transaction);
-            SendersFeeMonitor.GetConsensusSenderFee(transaction.Sender).Should().Be(3 + originalValue);
-            SendersFeeMonitor.RemoveConsensusSenderFee(transaction);
-            SendersFeeMonitor.GetConsensusSenderFee(transaction.Sender).Should().Be(originalValue);
-            SendersFeeMonitor.ClearConsensusSenderFee();
-            SendersFeeMonitor.GetConsensusSenderFee(transaction.Sender).Should().Be(0);
+            SendersFeeMonitor sendersFeeMonitor = new SendersFeeMonitor();
+            sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(0);
+            sendersFeeMonitor.AddSenderFee(transaction);
+            sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(3);
+            sendersFeeMonitor.AddSenderFee(transaction);
+            sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(6);
+            sendersFeeMonitor.RemoveSenderFee(transaction);
+            sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(3);
+            sendersFeeMonitor.RemoveSenderFee(transaction);
+            sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(0);
+            sendersFeeMonitor.ClearSenderFee();
+            sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(0);
         }
     }
 }
