@@ -31,13 +31,13 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Get unclaimed gas with address, scripthash or public key string
         /// </summary>
-        /// <param name="addressOrHash">address, scripthash or public key string
+        /// <param name="account">address, scripthash or public key string
         /// Example: address ("AV556nYUwyJKNv8Xy7hVMLQnkmKPukw6x5"), scripthash ("0x6a38cd693b615aea24dd00de12a9f5836844da91"), public key ("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575")</param>
         /// <returns></returns>
-        public decimal GetUnclaimedGas(string addressOrHash)
+        public decimal GetUnclaimedGas(string account)
         {
-            UInt160 account = addressOrHash.ToUInt160();
-            return GetUnclaimedGas(account);
+            UInt160 accountHash = account.ToUInt160();
+            return GetUnclaimedGas(accountHash);
         }
 
         /// <summary>
@@ -56,24 +56,24 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Get Neo Balance
         /// </summary>
-        /// <param name="addressOrHash">address, scripthash or public key string
+        /// <param name="account">address, scripthash or public key string
         /// Example: address ("AV556nYUwyJKNv8Xy7hVMLQnkmKPukw6x5"), scripthash ("0x6a38cd693b615aea24dd00de12a9f5836844da91"), public key ("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575")</param>
         /// <returns></returns>
-        public uint GetNeoBalance(string addressOrHash)
+        public uint GetNeoBalance(string account)
         {
-            BigInteger balance = GetTokenBalance(NativeContract.NEO.Hash.ToString(), addressOrHash);
+            BigInteger balance = GetTokenBalance(NativeContract.NEO.Hash.ToString(), account);
             return (uint)balance;
         }
 
         /// <summary>
         /// Get Gas Balance
         /// </summary>
-        /// <param name="addressOrHash">address, scripthash or public key string
+        /// <param name="account">address, scripthash or public key string
         /// Example: address ("AV556nYUwyJKNv8Xy7hVMLQnkmKPukw6x5"), scripthash ("0x6a38cd693b615aea24dd00de12a9f5836844da91"), public key ("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575")</param>
         /// <returns></returns>
-        public decimal GetGasBalance(string addressOrHash)
+        public decimal GetGasBalance(string account)
         {
-            BigInteger balance = GetTokenBalance(NativeContract.GAS.Hash.ToString(), addressOrHash);
+            BigInteger balance = GetTokenBalance(NativeContract.GAS.Hash.ToString(), account);
             return ((decimal)balance) / (long)NativeContract.GAS.Factor;
         }
 
@@ -81,14 +81,14 @@ namespace Neo.Network.RPC
         /// Get token balance with string parameters
         /// </summary>
         /// <param name="tokenHash">token script hash, Example: "0x43cf98eddbe047e198a3e5d57006311442a0ca15"(NEO)</param>
-        /// <param name="addressOrHash">address, scripthash or public key string
+        /// <param name="account">address, scripthash or public key string
         /// Example: address ("AV556nYUwyJKNv8Xy7hVMLQnkmKPukw6x5"), scripthash ("0x6a38cd693b615aea24dd00de12a9f5836844da91"), public key ("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575")</param>
         /// <returns></returns>
-        public BigInteger GetTokenBalance(string tokenHash, string addressOrHash)
+        public BigInteger GetTokenBalance(string tokenHash, string account)
         {
             UInt160 scriptHash = tokenHash.ToUInt160();
-            UInt160 account = addressOrHash.ToUInt160();
-            return nep5API.BalanceOf(scriptHash, account);
+            UInt160 accountHash = account.ToUInt160();
+            return nep5API.BalanceOf(scriptHash, accountHash);
         }
 
         /// <summary>

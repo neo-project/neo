@@ -17,25 +17,25 @@ namespace Neo.Network.RPC
         /// <summary>
         /// Parse address, scripthash or public key string to UInt160
         /// </summary>
-        /// <param name="addressOrHash">account address, scripthash or public key string
+        /// <param name="account">account address, scripthash or public key string
         /// Example: address ("AV556nYUwyJKNv8Xy7hVMLQnkmKPukw6x5"), scripthash ("0x6a38cd693b615aea24dd00de12a9f5836844da91"), public key ("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575")</param>
         /// <returns></returns>
-        public static UInt160 ToUInt160(this string addressOrHash)
+        public static UInt160 ToUInt160(this string account)
         {
-            if (string.IsNullOrEmpty(addressOrHash)) { throw new ArgumentNullException(); }
-            if (addressOrHash.StartsWith("0x")) { addressOrHash = addressOrHash.Substring(2); }
+            if (string.IsNullOrEmpty(account)) { throw new ArgumentNullException(); }
+            if (account.StartsWith("0x")) { account = account.Substring(2); }
 
-            if (addressOrHash.Length == AddressLength)
+            if (account.Length == AddressLength)
             {
-                return Wallets.Helper.ToScriptHash(addressOrHash);
+                return Wallets.Helper.ToScriptHash(account);
             }
-            else if (addressOrHash.Length == HashLength)
+            else if (account.Length == HashLength)
             {
-                return UInt160.Parse(addressOrHash);
+                return UInt160.Parse(account);
             }
-            else if (addressOrHash.Length == PublicKeyLength)
+            else if (account.Length == PublicKeyLength)
             {
-                var pubKey = ECPoint.Parse(addressOrHash, ECCurve.Secp256r1);
+                var pubKey = ECPoint.Parse(account, ECCurve.Secp256r1);
                 return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
             }
 
