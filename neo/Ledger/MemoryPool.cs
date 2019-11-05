@@ -344,7 +344,7 @@ namespace Neo.Ledger
 
             // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
-            SendersFeeMonitor.ClearSenderFee();
+            SendersFeeMonitor.ResetSenderFee();
             _sortedTransactions.Clear();
         }
 

@@ -115,7 +115,7 @@ namespace Neo.Consensus
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
-            SendersFeeMonitor.ClearSenderFee();
+            SendersFeeMonitor.ResetSenderFee();
             if (Transactions != null)
             {
                 foreach (Transaction tx in Transactions.Values)
@@ -256,7 +256,7 @@ namespace Neo.Consensus
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
-            SendersFeeMonitor.ClearSenderFee();
+            SendersFeeMonitor.ResetSenderFee();
 
             // Expected block size
             var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());

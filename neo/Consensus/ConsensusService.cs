@@ -424,7 +424,7 @@ namespace Neo.Consensus
             context.Block.ConsensusData.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-            context.SendersFeeMonitor.ClearSenderFee();
+            context.SendersFeeMonitor.ResetSenderFee();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
                     if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
