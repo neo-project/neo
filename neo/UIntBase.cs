@@ -2,6 +2,7 @@ using Neo.IO;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo
 {
@@ -110,6 +111,7 @@ namespace Neo
         /// <summary>
         /// Method ToArray() returns the byte array data_bytes, which stores the little-endian unsigned int
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[] ToArray()
         {
             return data_bytes;
