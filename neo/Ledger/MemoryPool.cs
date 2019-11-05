@@ -72,7 +72,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
         /// </summary>
-        public readonly SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
+        public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
 
         /// <summary>
         /// Total count of transactions in the pool.
@@ -344,7 +344,7 @@ namespace Neo.Ledger
 
             // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
-            SendersFeeMonitor.ResetSenderFee();
+            SendersFeeMonitor = new SendersFeeMonitor();
             _sortedTransactions.Clear();
         }
 

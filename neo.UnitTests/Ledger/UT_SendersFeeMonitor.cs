@@ -51,8 +51,6 @@ namespace Neo.UnitTests.Ledger
             sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(3);
             sendersFeeMonitor.RemoveSenderFee(transaction);
             sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(0);
-            sendersFeeMonitor.ResetSenderFee();
-            sendersFeeMonitor.GetSenderFee(transaction.Sender).Should().Be(0);
         }
     }
 }

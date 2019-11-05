@@ -12,7 +12,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
         /// </summary>
-        private Dictionary<UInt160, BigInteger> _senderFee = new Dictionary<UInt160, BigInteger>();
+        private readonly Dictionary<UInt160, BigInteger> _senderFee = new Dictionary<UInt160, BigInteger>();
 
         public BigInteger GetSenderFee(UInt160 sender)
         {
@@ -40,13 +40,6 @@ namespace Neo.Ledger
             _senderFeeRwLock.EnterWriteLock();
             _senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee;
             if (_senderFee[tx.Sender] == 0) _senderFee.Remove(tx.Sender);
-            _senderFeeRwLock.ExitWriteLock();
-        }
-
-        public void ResetSenderFee()
-        {
-            _senderFeeRwLock.EnterWriteLock();
-            _senderFee = new Dictionary<UInt160, BigInteger>();
             _senderFeeRwLock.ExitWriteLock();
         }
     }
