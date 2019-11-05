@@ -180,7 +180,7 @@ namespace Neo.Network.P2P
 
         private void OnGetFullBlocksMessageReceived(GetFullBlocksPayload payload)
         {
-            for (uint i = payload.IndexStart; i < payload.IndexStart + payload.Count; i++)
+            for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
             {
                 Block block = Blockchain.Singleton.Store.GetBlock(i);
                 if (block == null)
