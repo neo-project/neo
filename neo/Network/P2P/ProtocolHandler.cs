@@ -80,8 +80,8 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                     OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
-                case MessageCommand.GetFullBlocks:
-                    OnGetFullBlocksMessageReceived((GetFullBlocksPayload)msg.Payload);
+                case MessageCommand.GetBlockData:
+                    OnGetBlockDataMessageReceived((GetFullBlocksPayload)msg.Payload);
                     break;
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
@@ -178,9 +178,9 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
-        private void OnGetFullBlocksMessageReceived(GetFullBlocksPayload payload)
+        private void OnGetBlockDataMessageReceived(GetFullBlocksPayload payload)
         {
-            for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
+            for (uint i = payload.IndexStart, max = payload.IndexStart + (uint)payload.Count; i < max; i++)
             {
                 Block block = Blockchain.Singleton.Store.GetBlock(i);
                 if (block == null)
