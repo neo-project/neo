@@ -6,11 +6,13 @@ using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    internal class FIFOSet<T> : IEnumerable<T> where T : IEquatable<T>
+    internal class FIFOSet<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
         private readonly int maxCapacity;
         private readonly int removeCount;
         private readonly OrderedDictionary dictionary;
+
+        public int Count => dictionary.Count;
 
         public FIFOSet(int maxCapacity, decimal batchSize = 0.1m)
         {
@@ -46,11 +48,11 @@ namespace Neo.IO.Caching
             return dictionary.Contains(item);
         }
 
-        public void ExceptWith(IEnumerable<UInt256> hashes)
+        public void ExceptWith(IEnumerable<T> entries)
         {
-            foreach (var hash in hashes)
+            foreach (var entry in entries)
             {
-                dictionary.Remove(hash);
+                dictionary.Remove(entry);
             }
         }
 
