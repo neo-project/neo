@@ -60,7 +60,7 @@ namespace Neo.Network.P2P
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             hashes.Remove(knownHashes);
             if (payload.Type == InventoryType.Block)
-                session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
+                session.InvBlockPendingTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
             hashes.Remove(globalTasks);
             if (hashes.Count == 0)
@@ -133,7 +133,7 @@ namespace Neo.Network.P2P
             knownHashes.Add(hash);
             globalTasks.Remove(hash);
             foreach (TaskSession ms in sessions.Values)
-                ms.AvailableTasks.Remove(hash);
+                ms.InvBlockPendingTasks.Remove(hash);
             if (sessions.TryGetValue(Sender, out TaskSession session))
             {
                 session.Tasks.Remove(hash);
@@ -205,11 +205,11 @@ namespace Neo.Network.P2P
         private void RequestTasks(TaskSession session)
         {
             if (session.HasTask) return;
-            if (session.AvailableTasks.Count > 0)
+            if (session.InvBlockPendingTasks.Count > 0)
             {
-                session.AvailableTasks.Remove(knownHashes);
-                session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
-                HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
+                session.InvBlockPendingTasks.Remove(knownHashes);
+                session.InvBlockPendingTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
+                HashSet<UInt256> hashes = new HashSet<UInt256>(session.InvBlockPendingTasks);
                 if (hashes.Count > 0)
                 {
                     foreach (UInt256 hash in hashes.ToArray())
@@ -217,7 +217,7 @@ namespace Neo.Network.P2P
                         if (!IncrementGlobalTask(hash))
                             hashes.Remove(hash);
                     }
-                    session.AvailableTasks.Remove(hashes);
+                    session.InvBlockPendingTasks.Remove(hashes);
                     foreach (UInt256 hash in hashes)
                         session.Tasks[hash] = DateTime.UtcNow;
                     foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))

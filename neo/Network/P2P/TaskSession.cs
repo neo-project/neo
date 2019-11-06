@@ -12,7 +12,7 @@ namespace Neo.Network.P2P
         public readonly IActorRef RemoteNode;
         public readonly VersionPayload Version;
         public readonly Dictionary<UInt256, DateTime> Tasks = new Dictionary<UInt256, DateTime>();
-        public readonly HashSet<UInt256> AvailableTasks = new HashSet<UInt256>();
+        public readonly HashSet<UInt256> InvBlockPendingTasks = new HashSet<UInt256>();
 
         public bool HasTask => Tasks.Count > 0;
         public uint StartHeight { get; }
