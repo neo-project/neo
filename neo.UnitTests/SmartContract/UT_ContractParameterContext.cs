@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
@@ -46,13 +46,13 @@ namespace Neo.UnitTests.SmartContract
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             string str = context.ToString();
-            str.Should().Be("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"0000000000f277f1144035a43897f9fa115258eac015adcabe000000000000000000000000000000000000000000000100\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1668747476aa\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
+            str.Should().Be("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAADyd\\/EUQDWkOJf5\\u002BhFSWOrAFa3KvgAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA==\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
         }
 
         [TestMethod]
         public void TestParse()
         {
-            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"0000000000f277f1144035a43897f9fa115258eac015adcabe000000000000000000000000000000000000000000000100\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1668747476aa\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
+            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAADyd\\/EUQDWkOJf5\\u002BhFSWOrAFa3KvgAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA==\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
             ret.ScriptHashes[0].ToString().Should().Be("0xbecaad15c0ea585211faf99738a4354014f177f2");
             ((Transaction)ret.Verifiable).Script.ToHexString().Should().Be(new byte[1].ToHexString());
         }

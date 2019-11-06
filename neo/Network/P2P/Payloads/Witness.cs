@@ -44,16 +44,16 @@ namespace Neo.Network.P2P.Payloads
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["invocation"] = InvocationScript.ToHexString();
-            json["verification"] = VerificationScript.ToHexString();
+            json["invocation"] = InvocationScript.ToBase64String();
+            json["verification"] = VerificationScript.ToBase64String();
             return json;
         }
 
         public static Witness FromJson(JObject json)
         {
             Witness witness = new Witness();
-            witness.InvocationScript = json["invocation"].AsString().HexToBytes();
-            witness.VerificationScript = json["verification"].AsString().HexToBytes();
+            witness.InvocationScript = json["invocation"].AsString().Base64ToBytes();
+            witness.VerificationScript = json["verification"].AsString().Base64ToBytes();
             return witness;
         }
     }

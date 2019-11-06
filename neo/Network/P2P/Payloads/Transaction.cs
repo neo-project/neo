@@ -183,7 +183,7 @@ namespace Neo.Network.P2P.Payloads
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
-            json["script"] = Convert.ToBase64String(Script, Base64FormattingOptions.None);
+            json["script"] = Script.ToBase64String();
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -199,7 +199,7 @@ namespace Neo.Network.P2P.Payloads
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
             tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
             tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
-            tx.Script = Convert.FromBase64String(json["script"].AsString());
+            tx.Script = json["script"].AsString().Base64ToBytes();
             tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
             return tx;
         }

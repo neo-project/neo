@@ -98,6 +98,16 @@ namespace Neo
             return (string)attribute.ConstructorArguments[0].Value;
         }
 
+        public static string ToBase64String(this byte[] value)
+        {
+            return Convert.ToBase64String(value, Base64FormattingOptions.None);
+        }
+
+        public static byte[] Base64ToBytes(this string value)
+        {
+            return Convert.FromBase64String(value);
+        }
+
         public static byte[] HexToBytes(this string value)
         {
             if (value == null || value.Length == 0)

@@ -33,12 +33,12 @@ namespace Neo.SmartContract
             {
                 return new ContextItem
                 {
-                    Script = json["script"]?.AsString().HexToBytes(),
+                    Script = json["script"]?.AsString().Base64ToBytes(),
                     Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson(p)).ToArray(),
                     Signatures = json["signatures"]?.Properties.Select(p => new
                     {
                         PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
-                        Signature = p.Value.AsString().HexToBytes()
+                        Signature = p.Value.AsString().Base64ToBytes()
                     }).ToDictionary(p => p.PublicKey, p => p.Signature)
                 };
             }
@@ -47,13 +47,13 @@ namespace Neo.SmartContract
             {
                 JObject json = new JObject();
                 if (Script != null)
-                    json["script"] = Script.ToHexString();
+                    json["script"] = Script.ToBase64String();
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
                 if (Signatures != null)
                 {
                     json["signatures"] = new JObject();
                     foreach (var signature in Signatures)
-                        json["signatures"][signature.Key.ToString()] = signature.Value.ToHexString();
+                        json["signatures"][signature.Key.ToString()] = signature.Value.ToBase64String();
                 }
                 return json;
             }
@@ -215,7 +215,7 @@ namespace Neo.SmartContract
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
+            using (MemoryStream ms = new MemoryStream(json["hex"].AsString().Base64ToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
                 verifiable.DeserializeUnsigned(reader);
@@ -284,7 +284,7 @@ namespace Neo.SmartContract
             {
                 Verifiable.SerializeUnsigned(writer);
                 writer.Flush();
-                json["hex"] = ms.ToArray().ToHexString();
+                json["hex"] = ms.ToArray().ToBase64String();
             }
             json["items"] = new JObject();
             foreach (var item in ContextItems)

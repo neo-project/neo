@@ -62,7 +62,7 @@ namespace Neo.Ledger
         {
             JObject json = new JObject();
             json["hash"] = ScriptHash.ToString();
-            json["script"] = Script.ToHexString();
+            json["script"] = Script.ToBase64String();
             json["manifest"] = Manifest.ToJson();
             return json;
         }
@@ -70,7 +70,7 @@ namespace Neo.Ledger
         public static ContractState FromJson(JObject json)
         {
             ContractState contractState = new ContractState();
-            contractState.Script = json["script"].AsString().HexToBytes();
+            contractState.Script = json["script"].AsString().Base64ToBytes();
             contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
             return contractState;
         }

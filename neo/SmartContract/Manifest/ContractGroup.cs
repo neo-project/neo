@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Manifest
             return new ContractGroup
             {
                 PubKey = ECPoint.Parse(json["pubKey"].AsString(), ECCurve.Secp256r1),
-                Signature = json["signature"].AsString().HexToBytes(),
+                Signature = json["signature"].AsString().Base64ToBytes(),
             };
         }
 
@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject();
             json["pubKey"] = PubKey.ToString();
-            json["signature"] = Signature.ToHexString();
+            json["signature"] = Signature.ToBase64String();
             return json;
         }
     }

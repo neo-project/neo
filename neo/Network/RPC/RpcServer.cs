@@ -289,7 +289,7 @@ namespace Neo.Network.RPC
                 {
                     try
                     {
-                        _params = Encoding.UTF8.GetString(Convert.FromBase64String(_params));
+                        _params = Encoding.UTF8.GetString(_params.Base64ToBytes());
                     }
                     catch (FormatException) { }
                     request = new JObject();

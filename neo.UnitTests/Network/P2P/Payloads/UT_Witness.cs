@@ -146,8 +146,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             JObject json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));
             Assert.IsTrue(json.ContainsProperty("verification"));
-            Assert.AreEqual(json["invocation"].AsString(), "2020");
-            Assert.AreEqual(json["verification"].AsString(), "202020");
+            Assert.AreEqual(json["invocation"].AsString(), "ICA=");
+            Assert.AreEqual(json["verification"].AsString(), "ICAg");
         }
     }
 }

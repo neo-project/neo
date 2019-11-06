@@ -66,7 +66,7 @@ namespace Neo.SmartContract
                 {
                     case ContractParameterType.Signature:
                     case ContractParameterType.ByteArray:
-                        parameter.Value = json["value"].AsString().HexToBytes();
+                        parameter.Value = json["value"].AsString().Base64ToBytes();
                         break;
                     case ContractParameterType.Boolean:
                         parameter.Value = json["value"].AsBoolean();
@@ -103,7 +103,7 @@ namespace Neo.SmartContract
             switch (Type)
             {
                 case ContractParameterType.Signature:
-                    byte[] signature = text.HexToBytes();
+                    byte[] signature = text.Base64ToBytes();
                     if (signature.Length != 64) throw new FormatException();
                     Value = signature;
                     break;
@@ -120,7 +120,7 @@ namespace Neo.SmartContract
                     Value = UInt256.Parse(text);
                     break;
                 case ContractParameterType.ByteArray:
-                    Value = text.HexToBytes();
+                    Value = text.Base64ToBytes();
                     break;
                 case ContractParameterType.PublicKey:
                     Value = ECPoint.Parse(text, ECCurve.Secp256r1);
@@ -147,7 +147,7 @@ namespace Neo.SmartContract
                 {
                     case ContractParameterType.Signature:
                     case ContractParameterType.ByteArray:
-                        json["value"] = ((byte[])parameter.Value).ToHexString();
+                        json["value"] = ((byte[])parameter.Value).ToBase64String();
                         break;
                     case ContractParameterType.Boolean:
                         json["value"] = (bool)parameter.Value;
@@ -197,7 +197,7 @@ namespace Neo.SmartContract
                 case null:
                     return "(null)";
                 case byte[] data:
-                    return data.ToHexString();
+                    return data.ToBase64String();
                 case IList<ContractParameter> data:
                     if (context is null) context = new HashSet<ContractParameter>();
                     if (context.Contains(parameter))

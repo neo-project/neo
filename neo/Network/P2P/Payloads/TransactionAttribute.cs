@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         {
             JObject json = new JObject();
             json["usage"] = Usage;
-            json["data"] = Data.ToHexString();
+            json["data"] = Data.ToBase64String();
             return json;
         }
 
@@ -38,7 +38,7 @@ namespace Neo.Network.P2P.Payloads
         {
             TransactionAttribute transactionAttribute = new TransactionAttribute();
             transactionAttribute.Usage = (TransactionAttributeUsage)(byte.Parse(json["usage"].AsString()));
-            transactionAttribute.Data = json["data"].AsString().HexToBytes();
+            transactionAttribute.Data = json["data"].AsString().Base64ToBytes();
             return transactionAttribute;
         }
     }

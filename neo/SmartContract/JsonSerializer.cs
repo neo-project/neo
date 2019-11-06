@@ -26,7 +26,7 @@ namespace Neo.SmartContract
                     }
                 case ByteArray buffer:
                     {
-                        return Convert.ToBase64String(buffer.GetByteArray(), Base64FormattingOptions.None);
+                        return buffer.GetByteArray().ToBase64String();
                     }
                 case Integer num:
                     {
