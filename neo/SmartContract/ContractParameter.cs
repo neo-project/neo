@@ -103,7 +103,7 @@ namespace Neo.SmartContract
             switch (Type)
             {
                 case ContractParameterType.Signature:
-                    byte[] signature = text.Base64ToBytes();
+                    byte[] signature = text.HexToBytes();
                     if (signature.Length != 64) throw new FormatException();
                     Value = signature;
                     break;
@@ -120,7 +120,7 @@ namespace Neo.SmartContract
                     Value = UInt256.Parse(text);
                     break;
                 case ContractParameterType.ByteArray:
-                    Value = text.Base64ToBytes();
+                    Value = text.HexToBytes();
                     break;
                 case ContractParameterType.PublicKey:
                     Value = ECPoint.Parse(text, ECCurve.Secp256r1);
@@ -197,7 +197,7 @@ namespace Neo.SmartContract
                 case null:
                     return "(null)";
                 case byte[] data:
-                    return data.ToBase64String();
+                    return data.HexToBytes();
                 case IList<ContractParameter> data:
                     if (context is null) context = new HashSet<ContractParameter>();
                     if (context.Contains(parameter))
