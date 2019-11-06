@@ -22,7 +22,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public static UInt160 ToUInt160(this string account)
         {
-            if (string.IsNullOrEmpty(account)) { throw new ArgumentNullException(); }
+            if (string.IsNullOrEmpty(account)) { throw new ArgumentNullException(nameof(account)); }
             if (account.StartsWith("0x")) { account = account.Substring(2); }
 
             if (account.Length == AddressLength)
@@ -60,7 +60,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public static KeyPair ToKeyPair(this string key)
         {
-            if (string.IsNullOrEmpty(key)) { throw new ArgumentNullException(); }
+            if (string.IsNullOrEmpty(key)) { throw new ArgumentNullException(nameof(key)); }
             if (key.StartsWith("0x")) { key = key.Substring(2); }
 
             if (key.Length == WifLength)
