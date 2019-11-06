@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.Wallets.NEP6;
+using System;
 
 namespace Neo.UnitTests.Wallets.NEP6
 {
@@ -45,7 +46,7 @@ namespace Neo.UnitTests.Wallets.NEP6
 
             JObject @object = nep6Contract.ToJson();
             JString jString = (JString)@object["script"];
-            jString.Value.Should().Be(nep6Contract.Script.ToBase64String());
+            jString.Value.Should().Be(Convert.ToBase64String(nep6Contract.Script, Base64FormattingOptions.None));
 
             JBoolean jBoolean = (JBoolean)@object["deployed"];
             jBoolean.Value.Should().BeFalse();

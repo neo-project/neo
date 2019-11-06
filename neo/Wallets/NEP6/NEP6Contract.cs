@@ -1,5 +1,6 @@
 using Neo.IO.Json;
 using Neo.SmartContract;
+using System;
 using System.Linq;
 
 namespace Neo.Wallets.NEP6
@@ -14,7 +15,7 @@ namespace Neo.Wallets.NEP6
             if (json == null) return null;
             return new NEP6Contract
             {
-                Script = json["script"].AsString().Base64ToBytes(),
+                Script = Convert.FromBase64String(json["script"].AsString()),
                 ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].TryGetEnum<ContractParameterType>()).ToArray(),
                 ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
                 Deployed = json["deployed"].AsBoolean()
@@ -24,7 +25,7 @@ namespace Neo.Wallets.NEP6
         public JObject ToJson()
         {
             JObject contract = new JObject();
-            contract["script"] = Script.ToBase64String();
+            contract["script"] = Convert.ToBase64String(Script, Base64FormattingOptions.None);
             contract["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
             {
                 JObject parameter = new JObject();
