@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract;
@@ -137,6 +138,378 @@ namespace Neo.UnitTests.IO
 
             ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
             Assert.AreEqual(30000000000000L, (long)((VM.Types.Map)mapParameter.ToStackItem()).Keys.First().GetBigInteger());
+        }
+
+        [TestMethod]
+        public void TestEmitPush1()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(UInt160.Zero);
+            byte[] tempArray = new byte[21];
+            tempArray[0] = 0x14;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        [TestMethod]
+        public void TestEmitPush2()
+        {
+            TestEmitPush2Signature();
+            TestEmitPush2ByteArray();
+            TestEmitPush2Boolean();
+            TestEmitPush2Integer();
+            TestEmitPush2BigInteger();
+            TestEmitPush2Hash160();
+            TestEmitPush2Hash256();
+            TestEmitPush2PublicKey();
+            TestEmitPush2String();
+            TestEmitPush2Array();
+
+            ScriptBuilder sb = new ScriptBuilder();
+            Action action = () => sb.EmitPush(new ContractParameter(ContractParameterType.Map));
+            action.Should().Throw<ArgumentException>();
+        }
+
+        private void TestEmitPush2Array()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            ContractParameter parameter = new ContractParameter(ContractParameterType.Array);
+            IList<ContractParameter> values = new List<ContractParameter>();
+            values.Add(new ContractParameter(ContractParameterType.Integer));
+            values.Add(new ContractParameter(ContractParameterType.Integer));
+            parameter.Value = values;
+            sb.EmitPush(parameter);
+            byte[] tempArray = new byte[4];
+            tempArray[0] = 0x00;
+            tempArray[1] = 0x00;
+            tempArray[2] = 0x52;
+            tempArray[3] = 0xC1;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2String()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new ContractParameter(ContractParameterType.String));
+            byte[] tempArray = new byte[1];
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2PublicKey()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new ContractParameter(ContractParameterType.PublicKey));
+            byte[] tempArray = new byte[34];
+            tempArray[0] = 0x21;
+            Array.Copy(ECCurve.Secp256r1.G.EncodePoint(true), 0, tempArray, 1, 33);
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2Hash256()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new ContractParameter(ContractParameterType.Hash256));
+            byte[] tempArray = new byte[33];
+            tempArray[0] = 0x20;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2Hash160()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new ContractParameter(ContractParameterType.Hash160));
+            byte[] tempArray = new byte[21];
+            tempArray[0] = 0x14;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2BigInteger()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            ContractParameter parameter = new ContractParameter(ContractParameterType.Integer)
+            {
+                Value = BigInteger.Zero
+            };
+            sb.EmitPush(parameter);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2Integer()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            ContractParameter parameter = new ContractParameter(ContractParameterType.Integer);
+            sb.EmitPush(parameter);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2Boolean()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new ContractParameter(ContractParameterType.Boolean));
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2ByteArray()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new ContractParameter(ContractParameterType.ByteArray));
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush2Signature()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new ContractParameter(ContractParameterType.Signature));
+            byte[] tempArray = new byte[65];
+            tempArray[0] = 0x40;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        enum TestEnum : byte
+        {
+            case1 = 0
+        }
+
+        [TestMethod]
+        public void TestEmitPush3()
+        {
+            TestEmitPush3Bool();
+            TestEmitPush3ByteArray();
+            TestEmitPush3String();
+            TestEmitPush3BigInteger();
+            TestEmitPush3ISerializable();
+            TestEmitPush3Sbyte();
+            TestEmitPush3Byte();
+            TestEmitPush3Short();
+            TestEmitPush3Ushort();
+            TestEmitPush3Int();
+            TestEmitPush3Uint();
+            TestEmitPush3Long();
+            TestEmitPush3Ulong();
+            TestEmitPush3Enum();
+
+            ScriptBuilder sb = new ScriptBuilder();
+            Action action = () => sb.EmitPush(new object());
+            action.Should().Throw<ArgumentException>();
+        }
+
+
+        private void TestEmitPush3Enum()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(TestEnum.case1);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Ulong()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            ulong temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Long()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            long temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Uint()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            uint temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Int()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            int temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Ushort()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            ushort temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Short()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            short temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Byte()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            byte temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Sbyte()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sbyte temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3ISerializable()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(UInt160.Zero);
+            byte[] tempArray = new byte[21];
+            tempArray[0] = 0x14;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3BigInteger()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(BigInteger.Zero);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3String()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush("");
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3ByteArray()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(new byte[] { 0x01 });
+            byte[] tempArray = new byte[2];
+            tempArray[0] = 0x01;
+            tempArray[1] = 0x01;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        private void TestEmitPush3Bool()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitPush(true);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = 0x51;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        [TestMethod]
+        public void TestEmitSysCall()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitSysCall(0, true);
+            byte[] tempArray = new byte[6];
+            tempArray[0] = 0x51;
+            tempArray[1] = 0x68;
+            tempArray[2] = 0x00;
+            tempArray[3] = 0x00;
+            tempArray[4] = 0x00;
+            tempArray[5] = 0x00;
+            Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(sb.ToArray()));
+        }
+
+        [TestMethod]
+        public void TestToParameter2()
+        {
+            TestToParaMeter2VMArray();
+            TestToParameter2Map();
+            TestToParameter2VMBoolean();
+            TestToParameter2ByteArray();
+            TestToParameter2Integer();
+            TestToParameter2InteropInterface();
+
+            Action action = () => VM.Helper.ToParameter(null);
+            action.Should().Throw<ArgumentException>();
+        }
+
+        private void TestToParameter2InteropInterface()
+        {
+            StackItem item = new VM.Types.InteropInterface<VM.Types.Boolean>(new VM.Types.Boolean(true));
+            ContractParameter parameter = VM.Helper.ToParameter(item);
+            Assert.AreEqual(ContractParameterType.InteropInterface, parameter.Type);
+        }
+
+        private void TestToParameter2Integer()
+        {
+            StackItem item = new VM.Types.Integer(0);
+            ContractParameter parameter = VM.Helper.ToParameter(item);
+            Assert.AreEqual(ContractParameterType.Integer, parameter.Type);
+            Assert.AreEqual(BigInteger.Zero, parameter.Value);
+        }
+
+        private void TestToParameter2ByteArray()
+        {
+            StackItem item = new VM.Types.ByteArray(new byte[] { 0x00 });
+            ContractParameter parameter = VM.Helper.ToParameter(item);
+            Assert.AreEqual(ContractParameterType.ByteArray, parameter.Type);
+            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00 }), Encoding.Default.GetString((byte[])parameter.Value));
+        }
+
+        private void TestToParameter2VMBoolean()
+        {
+            StackItem item = new VM.Types.Boolean(true);
+            ContractParameter parameter = VM.Helper.ToParameter(item);
+            Assert.AreEqual(ContractParameterType.Boolean, parameter.Type);
+            Assert.AreEqual(true, parameter.Value);
+        }
+
+        private void TestToParameter2Map()
+        {
+            StackItem item = new VM.Types.Map();
+            ContractParameter parameter = VM.Helper.ToParameter(item);
+            Assert.AreEqual(ContractParameterType.Map, parameter.Type);
+            Assert.AreEqual(0, ((List<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Count);
+        }
+
+        private void TestToParaMeter2VMArray()
+        {
+            VM.Types.Array item = new VM.Types.Array();
+            ContractParameter parameter = VM.Helper.ToParameter(item);
+            Assert.AreEqual(ContractParameterType.Array, parameter.Type);
+            Assert.AreEqual(0, ((List<ContractParameter>)parameter.Value).Count);
         }
     }
 }
