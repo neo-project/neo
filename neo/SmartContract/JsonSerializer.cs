@@ -26,7 +26,7 @@ namespace Neo.SmartContract
                     }
                 case ByteArray buffer:
                     {
-                        return buffer.GetByteArray().ToHexString();
+                        return buffer.GetByteArray().Span.ToHexString();
                     }
                 case Integer num:
                     {

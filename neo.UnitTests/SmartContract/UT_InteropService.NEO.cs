@@ -266,7 +266,7 @@ namespace Neo.UnitTests.SmartContract
             var iterator = ((InteropInterface<StorageIterator>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<StorageIterator>();
             iterator.Next();
             var ele = iterator.Value();
-            ele.GetByteArray().ToHexString().Should().Be(storageItem.Value.ToHexString());
+            ele.GetByteArray().Span.ToHexString().Should().Be(storageItem.Value.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Neo_Storage_Find).Should().BeFalse();
@@ -284,7 +284,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Create).Should().BeTrue();
             var ret = (InteropInterface<IEnumerator>)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<IEnumerator>().Next();
-            ret.GetInterface<IEnumerator>().Value().GetByteArray().ToHexString()
+            ret.GetInterface<IEnumerator>().Value().GetByteArray().Span.ToHexString()
                 .Should().Be(new byte[] { 0x01 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
@@ -319,7 +319,7 @@ namespace Neo.UnitTests.SmartContract
             wrapper.Next();
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<ArrayWrapper>(wrapper));
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Value).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Value).Should().BeFalse();
@@ -344,7 +344,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Concat).Should().BeTrue();
             var ret = ((InteropInterface<IEnumerator>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<IEnumerator>();
             ret.Next().Should().BeTrue();
-            ret.Value().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            ret.Value().GetByteArray().Span.ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
         }
 
         [TestMethod]
@@ -359,7 +359,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Create).Should().BeTrue();
             var ret = (InteropInterface<IIterator>)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<IIterator>().Next();
-            ret.GetInterface<IIterator>().Value().GetByteArray().ToHexString()
+            ret.GetInterface<IIterator>().Value().GetByteArray().Span.ToHexString()
                 .Should().Be(new byte[] { 0x01 }.ToHexString());
 
             var map = new Map
@@ -428,7 +428,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Values).Should().BeTrue();
             var ret = ((InteropInterface<IteratorValuesWrapper>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<IteratorValuesWrapper>();
             ret.Next();
-            ret.Value().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            ret.Value().GetByteArray().Span.ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Values).Should().BeFalse();
@@ -453,7 +453,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Concat).Should().BeTrue();
             var ret = ((InteropInterface<IIterator>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<IIterator>();
             ret.Next().Should().BeTrue();
-            ret.Value().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            ret.Value().GetByteArray().Span.ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
         }
 
         [TestMethod]

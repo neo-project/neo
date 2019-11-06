@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
         protected StackItem BalanceOf(ApplicationEngine engine, VMArray args)
         {
-            return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
+            return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray().ToArray()));
         }
 
         public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
@@ -161,8 +161,8 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
         protected StackItem Transfer(ApplicationEngine engine, VMArray args)
         {
-            UInt160 from = new UInt160(args[0].GetByteArray());
-            UInt160 to = new UInt160(args[1].GetByteArray());
+            UInt160 from = new UInt160(args[0].GetByteArray().ToArray());
+            UInt160 to = new UInt160(args[1].GetByteArray().ToArray());
             BigInteger amount = args[2].GetBigInteger();
             return Transfer(engine, from, to, amount);
         }

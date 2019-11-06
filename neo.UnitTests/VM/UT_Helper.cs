@@ -124,10 +124,10 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(0, h256Parameter.ToStackItem().GetBigInteger());
 
             ContractParameter pkParameter = new ContractParameter { Type = ContractParameterType.PublicKey, Value = ECPoint.Parse("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", ECCurve.Secp256r1) };
-            Assert.AreEqual("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", pkParameter.ToStackItem().GetByteArray().ToHexString());
+            Assert.AreEqual("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", pkParameter.ToStackItem().GetByteArray().Span.ToHexString());
 
             ContractParameter strParameter = new ContractParameter { Type = ContractParameterType.String, Value = "test😂👍" };
-            Assert.AreEqual("test😂👍", Encoding.UTF8.GetString(strParameter.ToStackItem().GetByteArray()));
+            Assert.AreEqual("test😂👍", Encoding.UTF8.GetString(strParameter.ToStackItem().GetByteArray().Span));
 
             ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface };
             Assert.AreEqual(null, interopParameter.ToStackItem());

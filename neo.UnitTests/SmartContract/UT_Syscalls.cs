@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
-                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().ToHexString(),
+                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().Span.ToHexString(),
                     "5b2235316138373966636161303339626461663437353436306637316334616130383562353964313833616239313764356437363762333865613738323766356266222c332c2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c322c312c2230303030303030303030303030303030303030303030303030303030303030303030303030303030222c315d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
 
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
-                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().ToHexString(),
+                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().Span.ToHexString(),
                     @"5b2266613434383036313834373332636138613136363037356430306133643861326531353462333337313333333138303336356561643732373561663132666264222c362c342c2266666666666666666666666666666666666666666666666666666666666666666666666666666666222c332c322c352c223031225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }

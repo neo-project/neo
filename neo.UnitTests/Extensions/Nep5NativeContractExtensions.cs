@@ -86,7 +86,7 @@ namespace Neo.UnitTests.Extensions
             result.Should().BeOfType(typeof(VM.Types.Array));
 
             return (result as VM.Types.Array).ToArray()
-                .Select(u => Encoding.ASCII.GetString(u.GetByteArray()))
+                .Select(u => Encoding.ASCII.GetString(u.GetByteArray().Span))
                 .ToArray();
         }
 
@@ -168,7 +168,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
 
-            return Encoding.UTF8.GetString((result as VM.Types.ByteArray).GetByteArray());
+            return Encoding.UTF8.GetString(result.GetByteArray().Span);
         }
 
         public static string Name(this NativeContract contract)
@@ -188,7 +188,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
 
-            return Encoding.UTF8.GetString((result as VM.Types.ByteArray).GetByteArray());
+            return Encoding.UTF8.GetString(result.GetByteArray().Span);
         }
     }
 }

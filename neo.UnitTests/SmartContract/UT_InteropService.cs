@@ -188,7 +188,7 @@ namespace Neo.UnitTests.SmartContract
 
             var array = (VM.Types.Array)stackItem;
             Assert.AreEqual(2, array.Count);
-            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetByteArray());
+            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetByteArray().ToArray());
             Assert.AreEqual(notification, array[1].GetString());
         }
 
@@ -198,7 +198,7 @@ namespace Neo.UnitTests.SmartContract
 
             var array = (VM.Types.Array)stackItem;
             Assert.AreEqual(2, array.Count);
-            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetByteArray());
+            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetByteArray().ToArray());
             Assert.AreEqual(notification, array[1].GetBigInteger());
         }
 
@@ -209,7 +209,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetScriptContainer).Should().BeTrue();
             var stackItem = ((VM.Types.Array)engine.CurrentContext.EvaluationStack.Pop()).ToArray();
             stackItem.Length.Should().Be(8);
-            stackItem[0].GetByteArray().ToHexString().Should().Be(TestUtils.GetTransaction().Hash.ToArray().ToHexString());
+            stackItem[0].GetByteArray().Span.ToHexString().Should().Be(TestUtils.GetTransaction().Hash.ToArray().ToHexString());
         }
 
         [TestMethod]
@@ -217,7 +217,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine();
             InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetExecutingScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString()
                 .Should().Be(engine.CurrentScriptHash.ToArray().ToHexString());
         }
 
@@ -231,7 +231,7 @@ namespace Neo.UnitTests.SmartContract
             engine = GetEngine(true);
             engine.LoadScript(new byte[] { 0x01 });
             InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetCallingScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString()
                 .Should().Be(engine.CallingScriptHash.ToArray().ToHexString());
         }
 
@@ -240,7 +240,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine();
             InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetEntryScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString()
                 .Should().Be(engine.EntryScriptHash.ToArray().ToHexString());
         }
 
@@ -249,7 +249,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine();
             InteropService.Invoke(engine, InteropService.System_Runtime_Platform).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString()
                 .Should().Be(Encoding.ASCII.GetBytes("NEO").ToHexString());
         }
 
@@ -317,7 +317,7 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine();
             engine.CurrentContext.EvaluationStack.Push(100);
             InteropService.Invoke(engine, InteropService.System_Runtime_Serialize).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString()
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString()
                 .Should().Be(new byte[] { 0x02, 0x01, 0x64 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(new byte[1024 * 1024 * 2]); //Larger than MaxItemSize
@@ -455,7 +455,7 @@ namespace Neo.UnitTests.SmartContract
             var stackItems = ((VM.Types.Array)engine.CurrentContext.EvaluationStack.Pop()).ToArray();
             stackItems.Length.Should().Be(3);
             stackItems[0].GetType().Should().Be(typeof(ByteArray));
-            stackItems[0].GetByteArray().ToHexString().Should().Be(state.Script.ToHexString());
+            stackItems[0].GetByteArray().Span.ToHexString().Should().Be(state.Script.ToHexString());
             stackItems[1].GetBoolean().Should().BeFalse();
             stackItems[2].GetBoolean().Should().BeFalse();
         }
@@ -510,7 +510,7 @@ namespace Neo.UnitTests.SmartContract
                 IsReadOnly = false
             }));
             InteropService.Invoke(engine, InteropService.System_Storage_Get).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString().Should().Be(storageItem.Value.ToHexString());
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString().Should().Be(storageItem.Value.ToHexString());
 
             mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>());
             engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
@@ -746,8 +746,8 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(method);
             engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
             InteropService.Invoke(engine, InteropService.System_Contract_Call).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString().Should().Be(method.ToHexString());
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString().Should().Be(args.ToHexString());
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString().Should().Be(method.ToHexString());
+            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Span.ToHexString().Should().Be(args.ToHexString());
 
             state.Manifest.Permissions[0].Methods = WildCardContainer<string>.Create("a");
             engine.CurrentContext.EvaluationStack.Push(args);

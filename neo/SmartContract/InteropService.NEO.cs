@@ -75,8 +75,8 @@ namespace Neo.SmartContract
 
         private static bool Crypto_CheckSig(ApplicationEngine engine)
         {
-            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
+            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
 
             try
             {
@@ -97,7 +97,7 @@ namespace Neo.SmartContract
 
             if (item is VMArray array1)
             {
-                pubkeys = array1.Select(p => p.GetByteArray()).ToArray();
+                pubkeys = array1.Select(p => p.GetByteArray().ToArray()).ToArray();
                 n = pubkeys.Length;
                 if (n == 0) return false;
             }
@@ -107,7 +107,7 @@ namespace Neo.SmartContract
                 if (n < 1 || n > engine.CurrentContext.EvaluationStack.Count) return false;
                 pubkeys = new byte[n][];
                 for (int i = 0; i < n; i++)
-                    pubkeys[i] = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+                    pubkeys[i] = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
             }
 
             int m;
@@ -115,7 +115,7 @@ namespace Neo.SmartContract
             item = engine.CurrentContext.EvaluationStack.Pop();
             if (item is VMArray array2)
             {
-                signatures = array2.Select(p => p.GetByteArray()).ToArray();
+                signatures = array2.Select(p => p.GetByteArray().ToArray()).ToArray();
                 m = signatures.Length;
                 if (m == 0 || m > n) return false;
             }
@@ -125,7 +125,7 @@ namespace Neo.SmartContract
                 if (m < 1 || m > n || m > engine.CurrentContext.EvaluationStack.Count) return false;
                 signatures = new byte[m][];
                 for (int i = 0; i < m; i++)
-                    signatures[i] = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+                    signatures[i] = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
             }
             byte[] message = engine.ScriptContainer.GetHashData();
             bool fSuccess = true;
@@ -150,7 +150,7 @@ namespace Neo.SmartContract
 
         private static bool Account_IsStandard(ApplicationEngine engine)
         {
-            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray());
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             bool isStandard = contract is null || contract.Script.IsStandardContract();
             engine.CurrentContext.EvaluationStack.Push(isStandard);
@@ -159,7 +159,7 @@ namespace Neo.SmartContract
 
         private static bool Contract_Create(ApplicationEngine engine)
         {
-            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
             if (script.Length > 1024 * 1024) return false;
 
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
@@ -183,7 +183,7 @@ namespace Neo.SmartContract
 
         private static bool Contract_Update(ApplicationEngine engine)
         {
-            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
             if (script.Length > 1024 * 1024) return false;
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
@@ -236,7 +236,7 @@ namespace Neo.SmartContract
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(engine, context)) return false;
-                byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+                byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
                 byte[] prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
                 StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.Take(prefix.Length).SequenceEqual(prefix)).GetEnumerator()));
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));

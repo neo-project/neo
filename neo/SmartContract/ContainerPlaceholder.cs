@@ -12,6 +12,6 @@ namespace Neo.SmartContract
 
         public override bool GetBoolean() => throw new NotImplementedException();
 
-        public override byte[] GetByteArray() => throw new NotSupportedException();
+        public override ReadOnlyMemory<byte> GetByteArray() => throw new NotSupportedException();
     }
 }

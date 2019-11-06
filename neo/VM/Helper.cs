@@ -229,7 +229,7 @@ namespace Neo.VM
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
-                        Value = item.GetByteArray()
+                        Value = item.GetByteArray().ToArray()
                     };
                     break;
                 case Integer _:

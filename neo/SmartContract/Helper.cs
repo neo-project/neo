@@ -199,7 +199,7 @@ namespace Neo.SmartContract
                 {
                     case ByteArray _:
                         writer.Write((byte)StackItemType.ByteArray);
-                        writer.WriteVarBytes(item.GetByteArray());
+                        writer.WriteVarBytes(item.GetByteArray().Span);
                         break;
                     case VMBoolean _:
                         writer.Write((byte)StackItemType.Boolean);
@@ -207,7 +207,7 @@ namespace Neo.SmartContract
                         break;
                     case Integer _:
                         writer.Write((byte)StackItemType.Integer);
-                        writer.WriteVarBytes(item.GetByteArray());
+                        writer.WriteVarBytes(item.GetByteArray().Span);
                         break;
                     case InteropInterface _:
                         throw new NotSupportedException();
