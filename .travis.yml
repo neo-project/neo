@@ -15,11 +15,10 @@ install:
   - dotnet tool install -g dotnet-format
   - export PATH="$PATH:$HOME/.dotnet/tools"
   - dotnet-format --version
-before_script:
-  - echo "Checking format..." 
-  - dotnet format --check --dry-run -w . -v diagnostic # check C# formatting for neo.sln
-  - cd neo.UnitTests
 script: |
+  echo "Checking format..." 
+  dotnet format --check --dry-run -w . -v diagnostic # check C# formatting for neo.sln
+  cd neo.UnitTests
   if [[ "$TEST_SUITE" == "cultures" ]]; then
       dotnet test -v m --filter FullyQualifiedName=Neo.UnitTests.UT_Culture.All_Tests_Cultures
   else
