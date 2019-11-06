@@ -124,9 +124,9 @@ namespace Neo.UnitTests.SmartContract
         {
             ContractParameter contractParameter1 = new ContractParameter(ContractParameterType.Signature);
             byte[] expectedArray1 = new byte[64];
-            contractParameter1.SetValue(new byte[64].ToBase64String());
+            contractParameter1.SetValue(new byte[64].ToHexString());
             Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString((byte[])contractParameter1.Value));
-            Action action1 = () => contractParameter1.SetValue(new byte[50].ToBase64String());
+            Action action1 = () => contractParameter1.SetValue(new byte[50].ToHexString());
             action1.Should().Throw<FormatException>();
 
             ContractParameter contractParameter2 = new ContractParameter(ContractParameterType.Boolean);
@@ -146,7 +146,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000"), contractParameter5.Value);
 
             ContractParameter contractParameter6 = new ContractParameter(ContractParameterType.ByteArray);
-            contractParameter6.SetValue("IiI=");
+            contractParameter6.SetValue("2222");
             byte[] expectedArray6 = new byte[2];
             expectedArray6[0] = 0x22;
             expectedArray6[1] = 0x22;
@@ -178,7 +178,7 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter2 = new ContractParameter(ContractParameterType.ByteArray);
             contractParameter2.Value = new byte[1];
-            Assert.AreEqual("AA==", contractParameter2.ToString());
+            Assert.AreEqual("00", contractParameter2.ToString());
 
             ContractParameter contractParameter3 = new ContractParameter(ContractParameterType.Array);
             Assert.AreEqual("[]", contractParameter3.ToString());

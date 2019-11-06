@@ -197,7 +197,7 @@ namespace Neo.SmartContract
                 case null:
                     return "(null)";
                 case byte[] data:
-                    return data.HexToBytes();
+                    return data.ToHexString();
                 case IList<ContractParameter> data:
                     if (context is null) context = new HashSet<ContractParameter>();
                     if (context.Contains(parameter))
