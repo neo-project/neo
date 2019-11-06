@@ -17,12 +17,10 @@ namespace Neo.Ledger
         public BigInteger GetSenderFee(UInt160 sender)
         {
             _senderFeeRwLock.EnterReadLock();
-            bool recorded = _senderFee.TryGetValue(sender, out var value);
+            if (!_senderFee.TryGetValue(sender, out var value))
+                value = BigInteger.Zero;
             _senderFeeRwLock.ExitReadLock();
-            if (recorded)
-                return value;
-            else
-                return BigInteger.Zero;
+            return value;
         }
 
         public void AddSenderFee(Transaction tx)
