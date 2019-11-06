@@ -8,11 +8,11 @@ namespace Neo.Network.P2P.Payloads
     {
         private const ushort MaxBlocksCount = 500;
         public uint IndexStart;
-        public short Count;
+        public ushort Count;
 
-        public int Size => sizeof(uint) + sizeof(short);
+        public int Size => sizeof(uint) + sizeof(ushort);
 
-        public static GetFullBlocksPayload Create(uint index_start, short count = -1)
+        public static GetFullBlocksPayload Create(uint index_start, ushort count = 500)
         {
             return new GetFullBlocksPayload
             {
@@ -24,10 +24,8 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             IndexStart = reader.ReadUInt32();
-            Count = reader.ReadInt16();
-            if (Count < -1 || Count > MaxBlocksCount) throw new FormatException();
-            if (Count == 0)
-                Count = (short)MaxBlocksCount;
+            Count = reader.ReadUInt16();
+            if (Count == 0 || Count > MaxBlocksCount) throw new FormatException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
