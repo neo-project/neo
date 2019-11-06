@@ -90,5 +90,23 @@ namespace Neo.UnitTests
             ProtocolSettings.Initialize(config).Should().BeFalse();
             ProtocolSettings.Default.Magic.Should().Be(expectedMagic);
         }
+
+        [TestMethod]
+        public void TestGetMemoryPoolMaxTransactions()
+        {
+            ProtocolSettings.Default.MemoryPoolMaxTransactions.Should().Be(50000);
+        }
+
+        [TestMethod]
+        public void TestGetMillisecondsPerBlock()
+        {
+            ProtocolSettings.Default.MillisecondsPerBlock.Should().Be(2000);
+        }
+
+        [TestMethod]
+        public void TestGetSeedList()
+        {
+            ProtocolSettings.Default.SeedList.Should().BeEquivalentTo(new string[] { "seed1.neo.org:10333", "seed2.neo.org:10333", "seed3.neo.org:10333", "seed4.neo.org:10333", "seed5.neo.org:10333", });
+        }
     }
 }
