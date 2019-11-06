@@ -615,7 +615,7 @@ namespace Neo.Consensus
             ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MillisecondsPerBlock << (expectedView + 1)));
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
-                Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
+                Log($"skip requesting change view: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
                 RequestRecovery();
                 return;
             }
