@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neo.IO.Caching;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -50,6 +51,43 @@ namespace Neo
                 if ((b[w] & 1 << x) > 0)
                     return x + w * 8;
             throw new Exception();
+        }
+
+        internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
+        {
+            if (set.Count > other.Count)
+            {
+                set.ExceptWith(other);
+            }
+            else
+            {
+                set.RemoveWhere(u => other.Contains(u));
+            }
+        }
+
+        internal static void Remove<T>(this HashSet<T> set, FIFOSet<T> other)
+            where T : IEquatable<T>
+        {
+            if (set.Count > other.Count)
+            {
+                set.ExceptWith(other);
+            }
+            else
+            {
+                set.RemoveWhere(u => other.Contains(u));
+            }
+        }
+
+        internal static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
+        {
+            if (set.Count > other.Count)
+            {
+                set.ExceptWith(other.Keys);
+            }
+            else
+            {
+                set.RemoveWhere(u => other.ContainsKey(u));
+            }
         }
 
         internal static string GetVersion(this Assembly assembly)
