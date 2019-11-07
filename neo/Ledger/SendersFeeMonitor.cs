@@ -36,8 +36,7 @@ namespace Neo.Ledger
         public void RemoveSenderFee(Transaction tx)
         {
             _senderFeeRwLock.EnterWriteLock();
-            _senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee;
-            if (_senderFee[tx.Sender] == 0) _senderFee.Remove(tx.Sender);
+            if ((_senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) _senderFee.Remove(tx.Sender);
             _senderFeeRwLock.ExitWriteLock();
         }
     }
