@@ -34,9 +34,9 @@ namespace Neo
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
-        public static byte[] ReverseBuffer(this byte[] origin)
+        public static T[] Reverse<T>(this T[] origin)
         {
-            byte[] ret = new byte[origin.Length];
+            T[] ret = new T[origin.Length];
             for (int x = 0, m = ret.Length - 1; x <= m; x++)
             {
                 ret[x] = origin[m - x];

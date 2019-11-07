@@ -142,7 +142,7 @@ namespace Neo.Cryptography.ECC
         {
             byte[] data = Value.ToByteArray();
             if (data.Length == 32)
-                return data.Reverse().ToArray();
+                return data.Reverse();
             if (data.Length > 32)
                 return data.Take(32).Reverse().ToArray();
             return Enumerable.Repeat<byte>(0, 32 - data.Length).Concat(data.Reverse()).ToArray();

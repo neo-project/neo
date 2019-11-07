@@ -19,8 +19,7 @@ namespace Neo.Cryptography
                     throw new FormatException();
                 bi += index * BigInteger.Pow(58, input.Length - 1 - i);
             }
-            byte[] bytes = bi.ToByteArray();
-            Array.Reverse(bytes);
+            byte[] bytes = bi.ToByteArray().Reverse();
             bool stripSignByte = bytes.Length > 1 && bytes[0] == 0 && bytes[1] >= 0x80;
             int leadingZeros = 0;
             for (int i = 0; i < input.Length && input[i] == Alphabet[0]; i++)
@@ -35,7 +34,7 @@ namespace Neo.Cryptography
 
         public static string Encode(byte[] input)
         {
-            BigInteger value = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
+            BigInteger value = new BigInteger(new byte[1].Concat(input).ToArray().Reverse());
             StringBuilder sb = new StringBuilder();
             while (value >= 58)
             {

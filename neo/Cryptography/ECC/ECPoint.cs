@@ -141,10 +141,10 @@ namespace Neo.Cryptography.ECC
             else
             {
                 data = new byte[65];
-                byte[] yBytes = Y.Value.ToByteArray().ReverseBuffer();
+                byte[] yBytes = Y.Value.ToByteArray().Reverse();
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
             }
-            byte[] xBytes = X.Value.ToByteArray().ReverseBuffer();
+            byte[] xBytes = X.Value.ToByteArray().Reverse();
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
             return data;
@@ -377,7 +377,7 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentException();
             if (p.IsInfinity)
                 return p;
-            BigInteger k = new BigInteger(n.ReverseBuffer().Concat(new byte[1]).ToArray());
+            BigInteger k = new BigInteger(n.Reverse().Concat(new byte[1]).ToArray());
             if (k.Sign == 0)
                 return p.Curve.Infinity;
             return Multiply(p, k);

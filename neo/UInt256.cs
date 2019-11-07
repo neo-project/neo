@@ -83,7 +83,7 @@ namespace Neo
                 s = s.Substring(2);
             if (s.Length != Length * 2)
                 throw new FormatException();
-            return new UInt256(s.HexToBytes().Reverse().ToArray());
+            return new UInt256(s.HexToBytes().Reverse());
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace Neo
                     result = null;
                     return false;
                 }
-            result = new UInt256(data.Reverse().ToArray());
+            result = new UInt256(data.Reverse());
             return true;
         }
 
