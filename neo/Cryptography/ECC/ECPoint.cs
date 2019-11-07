@@ -51,7 +51,7 @@ namespace Neo.Cryptography.ECC
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
                         int yTilde = encoded[0] & 1;
-                        BigInteger X1 = new BigInteger(encoded.Skip(1).Reverse().Concat(new byte[1]).ToArray());
+                        BigInteger X1 = ToUnsignedBigInteger(encoded.Skip(1).ToArray());
                         p = DecompressPoint(yTilde, X1, curve);
                         break;
                     }
@@ -59,8 +59,8 @@ namespace Neo.Cryptography.ECC
                     {
                         if (encoded.Length != (2 * curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
-                        BigInteger X1 = new BigInteger(encoded.Skip(1).Take(curve.ExpectedECPointLength).Reverse().Concat(new byte[1]).ToArray());
-                        BigInteger Y1 = new BigInteger(encoded.Skip(1 + curve.ExpectedECPointLength).Reverse().Concat(new byte[1]).ToArray());
+                        BigInteger X1 = ToUnsignedBigInteger(encoded.Skip(1).Take(curve.ExpectedECPointLength).ToArray());
+                        BigInteger Y1 = ToUnsignedBigInteger(encoded.Skip(1 + curve.ExpectedECPointLength).ToArray());
                         p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve);
                         break;
                     }
@@ -128,6 +128,16 @@ namespace Neo.Cryptography.ECC
                 default:
                     throw new FormatException("Invalid point encoding " + buffer[0]);
             }
+        }
+
+        private static BigInteger ToUnsignedBigInteger(byte[] data)
+        {
+            byte[] ret = new byte[data.Length + 1]; // .Concat(new byte[1])
+            for (int x = 0, m = ret.Length - 2; x <= m; x++)
+            {
+                ret[x] = data[m - x];
+            }
+            return new BigInteger(ret);
         }
 
         public byte[] EncodePoint(bool commpressed)
@@ -377,7 +387,7 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentException();
             if (p.IsInfinity)
                 return p;
-            BigInteger k = new BigInteger(n.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger k = ToUnsignedBigInteger(n);
             if (k.Sign == 0)
                 return p.Curve.Infinity;
             return Multiply(p, k);
