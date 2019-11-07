@@ -337,7 +337,7 @@ namespace Neo.Network.P2P
             {
                 case "getaddr":
                 case "getblocks":
-                case "getdata":
+                //case "getdata":
                 case "getheaders":
                 case "mempool":
                     return queue.OfType<Message>().Any(p => p.Command == msg.Command);
