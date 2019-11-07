@@ -5,6 +5,7 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -227,7 +228,11 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.Version.StartHeight)
+            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks)
+                && (Blockchain.Singleton.HeaderHeight < session.Version.StartHeight
+                    || (Blockchain.Singleton.Height == Blockchain.Singleton.HeaderHeight
+                        && Blockchain.Singleton.HeaderHeight >= sessions.Select(x => x.Value.Version.StartHeight).Max()
+                        && TimeProvider.Current.UtcNow.ToTimestamp() - 60 >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)))
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
@@ -271,6 +276,14 @@ namespace Neo.Network.P2P
                 default:
                     return false;
             }
+        }
+
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        {
+            if (!(message is TaskManager.NewTasks tasks)) return false;
+            // Remove duplicate tasks
+            if (queue.OfType<TaskManager.NewTasks>().Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes))) return true;
+            return false;
         }
     }
 }
