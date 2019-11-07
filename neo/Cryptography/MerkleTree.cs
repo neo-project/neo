@@ -51,8 +51,8 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static UInt256 Concat(byte[] buffer, UInt256 hash1, UInt256 hash2)
         {
-            Array.Copy(hash1.ToArray(), 0, buffer, 0, 32);
-            Array.Copy(hash2.ToArray(), 0, buffer, 32, 32);
+            Buffer.BlockCopy(hash1.ToArray(), 0, buffer, 0, 32);
+            Buffer.BlockCopy(hash2.ToArray(), 0, buffer, 32, 32);
 
             return new UInt256(Crypto.Default.Hash256(buffer));
         }
