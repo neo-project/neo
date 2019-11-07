@@ -180,7 +180,7 @@ namespace Neo.Network.RPC
                     rpcTx = rpcClient.GetRawTransaction(transaction.Hash.ToString());
                     if (rpcTx == null || rpcTx.Confirmations == null)
                     {
-                        await Task.Delay((int)Blockchain.MillisecondsPerBlock/2);
+                        await Task.Delay((int)Blockchain.MillisecondsPerBlock / 2);
                     }
                 }
                 catch (Exception) { }
