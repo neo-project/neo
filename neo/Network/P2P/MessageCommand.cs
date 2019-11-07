@@ -19,6 +19,7 @@ namespace Neo.Network.P2P
         Mempool = 0x25,
         Inv = 0x27,
         GetData = 0x28,
+        GetBlockData = 0x29,
         NotFound = 0x2a,
         Transaction = 0x2b,
         Block = 0x2c,

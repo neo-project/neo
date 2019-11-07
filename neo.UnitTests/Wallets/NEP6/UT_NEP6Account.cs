@@ -104,7 +104,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestToJson()
         {
             JObject nep6contract = new JObject();
-            nep6contract["script"] = "2103603f3880eb7aea0ad4500893925e4a42fea48a44ee6f898a10b3c7ce05d2a267ac";
+            nep6contract["script"] = "IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=";
             JObject parameters = new JObject();
             parameters["type"] = 0x00;
             parameters["name"] = "Sig";
@@ -121,7 +121,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["isDefault"].ToString().Should().Be("false");
             json["lock"].ToString().Should().Be("false");
             json["key"].Should().BeNull();
-            json["contract"]["script"].ToString().Should().Be("\"2103603f3880eb7aea0ad4500893925e4a42fea48a44ee6f898a10b3c7ce05d2a267ac\"");
+            json["contract"]["script"].ToString().Should().Be("\"IQNgPziA63rqCtRQCJOSXkpC\\/qSKRO5viYoQs8fOBdKiZ6w=\"");
             json["extra"].Should().BeNull();
 
             _account.Contract = null;
