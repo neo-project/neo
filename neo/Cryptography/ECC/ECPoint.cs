@@ -377,7 +377,7 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentException();
             if (p.IsInfinity)
                 return p;
-            BigInteger k = new BigInteger(n.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger k = new BigInteger(n.ReverseBuffer().Concat(new byte[1]).ToArray());
             if (k.Sign == 0)
                 return p.Curve.Infinity;
             return Multiply(p, k);
