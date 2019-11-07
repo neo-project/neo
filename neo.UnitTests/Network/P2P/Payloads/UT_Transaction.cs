@@ -1093,7 +1093,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             ((JArray)jObj["cosigners"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
-            jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
+            jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
             jObj["sys_fee"].AsString().Should().Be("4200000000");
         }
     }

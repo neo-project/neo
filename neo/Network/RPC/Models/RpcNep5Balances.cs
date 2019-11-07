@@ -39,7 +39,7 @@ namespace Neo.Network.RPC.Models
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["asset_hash"] = AssetHash.ToArray().ToHexString();
+            json["asset_hash"] = AssetHash.ToString();
             json["amount"] = Amount.ToString();
             json["last_updated_block"] = LastUpdatedBlock.ToString();
             return json;
