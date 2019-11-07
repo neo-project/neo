@@ -1,7 +1,6 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
-using Neo.VM;
 using System;
 using System.IO;
 
@@ -45,8 +44,8 @@ namespace Neo.Network.P2P.Payloads
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["invocation"] = Convert.ToBase64String(InvocationScript, Base64FormattingOptions.None);
-            json["verification"] = Convert.ToBase64String(VerificationScript, Base64FormattingOptions.None);
+            json["invocation"] = Convert.ToBase64String(InvocationScript);
+            json["verification"] = Convert.ToBase64String(VerificationScript);
             return json;
         }
 

@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         {
             JObject json = new JObject();
             json["usage"] = Usage;
-            json["data"] = Convert.ToBase64String(Data, Base64FormattingOptions.None);
+            json["data"] = Convert.ToBase64String(Data);
             return json;
         }
 

@@ -63,7 +63,7 @@ namespace Neo.Ledger
         {
             JObject json = new JObject();
             json["hash"] = ScriptHash.ToString();
-            json["script"] = Convert.ToBase64String(Script, Base64FormattingOptions.None);
+            json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
             return json;
         }

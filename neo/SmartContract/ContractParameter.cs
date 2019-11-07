@@ -147,7 +147,7 @@ namespace Neo.SmartContract
                 {
                     case ContractParameterType.Signature:
                     case ContractParameterType.ByteArray:
-                        json["value"] = Convert.ToBase64String(((byte[])parameter.Value), Base64FormattingOptions.None);
+                        json["value"] = Convert.ToBase64String((byte[])parameter.Value);
                         break;
                     case ContractParameterType.Boolean:
                         json["value"] = (bool)parameter.Value;

@@ -47,13 +47,13 @@ namespace Neo.SmartContract
             {
                 JObject json = new JObject();
                 if (Script != null)
-                    json["script"] = Convert.ToBase64String(Script, Base64FormattingOptions.None);
+                    json["script"] = Convert.ToBase64String(Script);
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
                 if (Signatures != null)
                 {
                     json["signatures"] = new JObject();
                     foreach (var signature in Signatures)
-                        json["signatures"][signature.Key.ToString()] = Convert.ToBase64String(signature.Value, Base64FormattingOptions.None);
+                        json["signatures"][signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
                 }
                 return json;
             }
@@ -284,7 +284,7 @@ namespace Neo.SmartContract
             {
                 Verifiable.SerializeUnsigned(writer);
                 writer.Flush();
-                json["hex"] = Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None);
+                json["hex"] = Convert.ToBase64String(ms.ToArray());
             }
             json["items"] = new JObject();
             foreach (var item in ContextItems)

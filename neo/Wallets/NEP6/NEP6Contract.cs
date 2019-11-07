@@ -25,7 +25,7 @@ namespace Neo.Wallets.NEP6
         public JObject ToJson()
         {
             JObject contract = new JObject();
-            contract["script"] = Convert.ToBase64String(Script, Base64FormattingOptions.None);
+            contract["script"] = Convert.ToBase64String(Script);
             contract["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
             {
                 JObject parameter = new JObject();

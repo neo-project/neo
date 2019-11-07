@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject();
             json["pubKey"] = PubKey.ToString();
-            json["signature"] = Convert.ToBase64String(Signature, Base64FormattingOptions.None);
+            json["signature"] = Convert.ToBase64String(Signature);
             return json;
         }
     }
