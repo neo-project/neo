@@ -23,6 +23,7 @@ namespace Neo.IO
 
         public static unsafe T AsSerializable<T>(this ReadOnlySpan<byte> value) where T : ISerializable, new()
         {
+            if (value.IsEmpty) throw new FormatException();
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
@@ -55,6 +56,7 @@ namespace Neo.IO
 
         public static unsafe T[] AsSerializableArray<T>(this ReadOnlySpan<byte> value, int max = 0x1000000) where T : ISerializable, new()
         {
+            if (value.IsEmpty) throw new FormatException();
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
