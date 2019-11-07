@@ -8,7 +8,7 @@ namespace Neo.Cryptography
 {
     public class MerkleTree
     {
-        private MerkleTreeNode root;
+        private readonly MerkleTreeNode root;
 
         public int Depth { get; private set; }
 
