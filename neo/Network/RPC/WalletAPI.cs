@@ -1,3 +1,4 @@
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract.Native;
@@ -179,7 +180,7 @@ namespace Neo.Network.RPC
                     rpcTx = rpcClient.GetRawTransaction(transaction.Hash.ToString());
                     if (rpcTx == null || rpcTx.Confirmations == null)
                     {
-                        await Task.Delay(1000);
+                        await Task.Delay((int)Blockchain.MillisecondsPerBlock/2);
                     }
                 }
                 catch (Exception) { }
