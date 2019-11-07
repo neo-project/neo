@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class GetFullBlocksPayload : ISerializable
+    public class GetBlockDataPayload : ISerializable
     {
         private const ushort MaxBlocksCount = 500;
         public uint IndexStart;
@@ -12,9 +12,9 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => sizeof(uint) + sizeof(ushort);
 
-        public static GetFullBlocksPayload Create(uint index_start, ushort count = 500)
+        public static GetBlockDataPayload Create(uint index_start, ushort count)
         {
-            return new GetFullBlocksPayload
+            return new GetBlockDataPayload
             {
                 IndexStart = index_start,
                 Count = count

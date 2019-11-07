@@ -81,7 +81,7 @@ namespace Neo.Network.P2P
                     OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
                 case MessageCommand.GetBlockData:
-                    OnGetBlockDataMessageReceived((GetFullBlocksPayload)msg.Payload);
+                    OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
                     break;
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
@@ -178,7 +178,7 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
-        private void OnGetBlockDataMessageReceived(GetFullBlocksPayload payload)
+        private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
         {
             for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
             {
