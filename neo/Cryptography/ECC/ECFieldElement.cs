@@ -28,9 +28,7 @@ namespace Neo.Cryptography.ECC
             if (obj == this)
                 return true;
 
-            ECFieldElement other = obj as ECFieldElement;
-
-            if (other == null)
+            if (!(obj is ECFieldElement other))
                 return false;
 
             return Equals(other);
@@ -38,7 +36,7 @@ namespace Neo.Cryptography.ECC
 
         public bool Equals(ECFieldElement other)
         {
-            return Value.Equals(other.Value);
+            return Value.Equals(other.Value) && curve.Equals(other.curve);
         }
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)

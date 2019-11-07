@@ -12,14 +12,29 @@ namespace Neo.Cryptography.ECC
         public readonly ECPoint Infinity;
         public readonly ECPoint G;
 
+        public readonly int ExpectedECPointLength;
+
         private ECCurve(BigInteger Q, BigInteger A, BigInteger B, BigInteger N, byte[] G)
         {
             this.Q = Q;
+            this.ExpectedECPointLength = (Q.GetBitLength() + 7) / 8;
             this.A = new ECFieldElement(A, this);
             this.B = new ECFieldElement(B, this);
             this.N = N;
             this.Infinity = new ECPoint(null, null, this);
             this.G = ECPoint.DecodePoint(G, this);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is ECCurve curve)) return false;
+
+            return Q.Equals(curve.Q)
+                && A.Value.Equals(curve.A.Value)
+                && B.Value.Equals(curve.B.Value)
+                && N.Equals(curve.N)
+                && G.X.Equals(curve.G.X)
+                && G.Y.Equals(curve.G.Y);
         }
 
         public static readonly ECCurve Secp256k1 = new ECCurve
