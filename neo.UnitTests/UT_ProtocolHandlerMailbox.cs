@@ -136,10 +136,6 @@ namespace Neo.UnitTests
             msg = Message.Create("inv", s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
             uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
-            // GetData (drop)
-            msg = Message.Create("getdata", s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(true);
             // NotFound (no drop)
             msg = Message.Create("notfound", s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
