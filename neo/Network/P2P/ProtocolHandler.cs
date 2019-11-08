@@ -26,9 +26,7 @@ namespace Neo.Network.P2P
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
-
-        private static readonly Random random = new Random();
-        
+ 
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;
@@ -203,8 +201,7 @@ namespace Neo.Network.P2P
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
-            var randomHashes = hashes.OrderBy(x => random.Next()).ToArray();
-            foreach (UInt256 hash in randomHashes)
+            foreach (UInt256 hash in hashes)
             {
                 switch (payload.Type)
                 {
