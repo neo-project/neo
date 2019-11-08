@@ -20,6 +20,7 @@ namespace Neo.Network.P2P
         internal class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
+        private const int MaxCountFromSeedList = 5;
 
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -123,7 +124,7 @@ namespace Neo.Network.P2P
 
         protected override void NeedMorePeers(int count)
         {
-            count = Math.Max(count, 5);
+            count = Math.Max(count, MaxCountFromSeedList);
             if (ConnectedPeers.Count > 0)
             {
                 BroadcastMessage(MessageCommand.GetAddr);
