@@ -80,6 +80,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                     OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
+                case MessageCommand.GetBlockData:
+                    OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
+                    break;
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
                     break;
@@ -173,6 +176,26 @@ namespace Neo.Network.P2P
             }
             if (hashes.Count == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
+        }
+
+        private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
+        {
+            for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
+            {
+                Block block = Blockchain.Singleton.Store.GetBlock(i);
+                if (block == null)
+                    break;
+
+                if (bloom_filter == null)
+                {
+                    Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
+                }
+                else
+                {
+                    BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
+                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                }
+            }
         }
 
         private void OnGetDataMessageReceived(InvPayload payload)
