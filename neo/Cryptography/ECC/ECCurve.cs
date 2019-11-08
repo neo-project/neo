@@ -33,8 +33,8 @@ namespace Neo.Cryptography.ECC
                 && A.Value.Equals(curve.A.Value)
                 && B.Value.Equals(curve.B.Value)
                 && N.Equals(curve.N)
-                && G.X.Equals(curve.G.X)
-                && G.Y.Equals(curve.G.Y);
+                && G.X.Value.Equals(curve.G.X.Value)
+                && G.Y.Value.Equals(curve.G.Y.Value);
         }
 
         public static readonly ECCurve Secp256k1 = new ECCurve
