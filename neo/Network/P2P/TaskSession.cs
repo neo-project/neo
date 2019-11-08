@@ -12,6 +12,9 @@ namespace Neo.Network.P2P
         public readonly IActorRef RemoteNode;
         public readonly VersionPayload Version;
         public readonly Dictionary<UInt256, DateTime> Tasks = new Dictionary<UInt256, DateTime>();
+        /// <summary>
+        /// Pending high priority tasks of type `InventoryType.Block`
+        /// </summary>
         public readonly HashSet<UInt256> InvBlockPendingTasks = new HashSet<UInt256>();
 
         public bool HasTask => Tasks.Count > 0;
