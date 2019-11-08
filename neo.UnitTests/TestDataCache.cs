@@ -18,6 +18,7 @@ namespace Neo.UnitTests
         {
             dic.Add(key, value);
         }
+
         public override void DeleteInternal(TKey key)
         {
             dic.Remove(key);

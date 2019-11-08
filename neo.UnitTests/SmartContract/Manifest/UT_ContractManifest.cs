@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
+using System.IO;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -76,13 +77,67 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Groups()
         {
-            var json = @"{""groups"":[{""pubKey"":""03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"",""signature"":""41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""safeMethods"":[]}";
+            var json = @"{""groups"":[{""pubKey"":""03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"",""signature"":""QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ==""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""safeMethods"":[]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToString(), json);
 
             var check = ContractManifest.CreateDefault(UInt160.Zero);
             check.Groups = new ContractGroup[] { new ContractGroup() { PubKey = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), Signature = "41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141".HexToBytes() } };
             Assert.AreEqual(manifest.ToString(), check.ToString());
+        }
+
+        [TestMethod]
+        public void TestDeserializeAndSerialize()
+        {
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+            BinaryReader reader = new BinaryReader(stream);
+            var expected = ContractManifest.CreateDefault(UInt160.Zero);
+            expected.SafeMethods = WildCardContainer<string>.Create(new string[] { "AAA" });
+            expected.Serialize(writer);
+            stream.Seek(0, SeekOrigin.Begin);
+            var actual = ContractManifest.CreateDefault(UInt160.Zero);
+            actual.Deserialize(reader);
+            Assert.AreEqual(expected.SafeMethods.ToString(), actual.SafeMethods.ToString());
+            Assert.AreEqual(expected.SafeMethods.Count, 1);
+        }
+
+        [TestMethod]
+        public void TestGetHash()
+        {
+            var temp = ContractManifest.CreateDefault(UInt160.Zero);
+            Assert.AreEqual(temp.Abi.Hash, temp.Hash);
+        }
+
+        [TestMethod]
+        public void TestGetSize()
+        {
+            var temp = ContractManifest.CreateDefault(UInt160.Zero);
+            Assert.AreEqual(353, temp.Size);
+        }
+
+        [TestMethod]
+        public void TestGenerator()
+        {
+            ContractManifest contractManifest = new ContractManifest();
+            Assert.IsNotNull(contractManifest);
+        }
+
+        [TestMethod]
+        public void TestCanCall()
+        {
+            var temp = ContractManifest.CreateDefault(UInt160.Zero);
+            temp.SafeMethods = WildCardContainer<string>.Create(new string[] { "AAA" });
+            Assert.AreEqual(true, temp.CanCall(ContractManifest.CreateDefault(UInt160.Zero), "AAA"));
+        }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var expected = ContractManifest.CreateDefault(UInt160.Zero);
+            expected.SafeMethods = WildCardContainer<string>.Create(new string[] { "AAA" });
+            var actual = expected.Clone();
+            Assert.AreEqual(actual.SafeMethods.ToString(), expected.SafeMethods.ToString());
         }
     }
 }
