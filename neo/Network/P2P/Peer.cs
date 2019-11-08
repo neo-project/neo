@@ -27,6 +27,8 @@ namespace Neo.Network.P2P
         public const int DefaultMinDesiredConnections = 10;
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
+        private const int TimerMillisecondsInterval = 5000;
+
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
         private IActorRef tcp_listener;
         private IWebHost ws_host;
@@ -153,7 +155,8 @@ namespace Neo.Network.P2P
             MaxConnections = config.MaxConnections;
             MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;
 
-            timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
+            // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
+            timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, TimerMillisecondsInterval, Context.Self, new Timer(), ActorRefs.NoSender);
             if ((ListenerTcpPort > 0 || ListenerWsPort > 0)
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
@@ -235,7 +238,10 @@ namespace Neo.Network.P2P
 
         private void OnTimer()
         {
+            // Check if the number of desired connections is already enough
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
+
+            // If there are not available UnconnectedPeers triggers abstract implementation of NeedMorePeers 
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
             IPEndPoint[] endpoints = UnconnectedPeers.Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
