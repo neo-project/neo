@@ -28,7 +28,7 @@ namespace Neo.Network.P2P
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private const int TimerMillisecondsInterval = 5000;
-        
+
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
         private IActorRef tcp_listener;
         private IWebHost ws_host;
@@ -227,13 +227,13 @@ namespace Neo.Network.P2P
         {
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
             var neededConnections = MinDesiredConnections - ConnectedPeers.Count;
-            
+
             if (UnconnectedPeers.Count == 0)
             {
                 NeedMorePeers(neededConnections);
                 return;
             }
-            
+
             IPEndPoint[] endpoints = UnconnectedPeers.Take(neededConnections).ToArray();
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (IPEndPoint endpoint in endpoints)
