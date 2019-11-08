@@ -27,6 +27,8 @@ namespace Neo.Network.P2P
         public const int DefaultMinDesiredConnections = 10;
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
+        private const int TimerMillisecondsInterval = 5000;
+        
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
         private IActorRef tcp_listener;
         private IWebHost ws_host;
@@ -141,7 +143,7 @@ namespace Neo.Network.P2P
             MaxConnections = config.MaxConnections;
             MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;
 
-            timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
+            timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, TimerMillisecondsInterval, Context.Self, new Timer(), ActorRefs.NoSender);
             if ((ListenerTcpPort > 0 || ListenerWsPort > 0)
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
@@ -224,9 +226,15 @@ namespace Neo.Network.P2P
         private void OnTimer()
         {
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
+            var neededConnections = MinDesiredConnections - ConnectedPeers.Count;
+            
             if (UnconnectedPeers.Count == 0)
-                NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
-            IPEndPoint[] endpoints = UnconnectedPeers.Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
+            {
+                NeedMorePeers(neededConnections);
+                return;
+            }
+            
+            IPEndPoint[] endpoints = UnconnectedPeers.Take(neededConnections).ToArray();
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (IPEndPoint endpoint in endpoints)
             {
