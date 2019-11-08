@@ -248,6 +248,9 @@ namespace Neo
             return address;
         }
 
+        /// <summary>
+        /// Checks IPv4 and IPv6 formats and unmap, if necessary
+        /// </summary>
         internal static IPEndPoint Unmap(this IPEndPoint endPoint)
         {
             if (!endPoint.Address.IsIPv4MappedToIPv6)

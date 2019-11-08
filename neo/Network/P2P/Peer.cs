@@ -62,10 +62,16 @@ namespace Neo.Network.P2P
             localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.Unmap()));
         }
 
+        /// <summary>
+        /// Tries to add a set ff peers to an immutable hashset of UnconnectedPeers
+        /// </summary>
+        /// <param name="peers">Peers that the method will try to add (union) to (with) UnconnectedPeers</param>
         protected void AddPeers(IEnumerable<IPEndPoint> peers)
         {
             if (UnconnectedPeers.Count < UnconnectedMax)
             {
+                // Do not select peers to be added that are already on the ConnectedPeers
+                // If the address is the same, the ListenerTcpPort should be different
                 peers = peers.Where(p => (p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
                 ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
@@ -74,6 +80,7 @@ namespace Neo.Network.P2P
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
             endPoint = endPoint.Unmap();
+            // If the address is the same, the ListenerTcpPort should be different, otherwise, return
             if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
@@ -96,6 +103,11 @@ namespace Neo.Network.P2P
             return (value & 0xff000000) == 0x0a000000 || (value & 0xff000000) == 0x7f000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000 || (value & 0xffff0000) == 0xa9fe0000;
         }
 
+        /// <summary>
+        /// Abstract class for asking for more peers
+        /// Currently triggered when UnconnectedPeers is empty
+        /// </summary>
+        /// <param name="count">Number of peers that are being requested</param>
         protected abstract void NeedMorePeers(int count);
 
         protected override void OnReceive(object message)

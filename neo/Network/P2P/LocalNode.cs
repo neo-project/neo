@@ -122,6 +122,11 @@ namespace Neo.Network.P2P
             return UnconnectedPeers;
         }
 
+        /// <summary>
+        /// Override of abstract class that is triggered UnconnectedPeers is empty
+        /// Performs a BroadcastMessage with the command `MessageCommand.GetAddr`, which, eventually, tells all known connections
+        /// If there are no connected peers it will try with the default, respecting MaxCountFromSeedList limit
+        /// </summary>
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, MaxCountFromSeedList);
@@ -131,6 +136,8 @@ namespace Neo.Network.P2P
             }
             else
             {
+                // Will call AddPeers with default SeedList set on Protocol.json
+                // trying to adding those to the list of currently uncconected ones
                 AddPeers(GetIPEndPointsFromSeedList(count));
             }
         }
