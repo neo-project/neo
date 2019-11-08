@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             string str = context.ToString();
-            str.Should().Be("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAADyd\\/EUQDWkOJf5\\u002BhFSWOrAFa3KvgAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA==\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
+            str.Should().Be("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAADyd/EUQDWkOJf5\\u002BhFSWOrAFa3KvgAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA==\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
         }
 
         [TestMethod]
