@@ -615,11 +615,11 @@ namespace Neo.Consensus
             ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MillisecondsPerBlock << (expectedView + 1)));
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
-                Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted} nf={context.CountFailed}");
+                Log($"skip requesting change view: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
                 RequestRecovery();
                 return;
             }
-            Log($"request change view: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed}");
+            Log($"request change view: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(reason) });
             CheckExpectedView(expectedView);
         }
