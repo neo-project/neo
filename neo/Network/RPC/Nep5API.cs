@@ -1,5 +1,6 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
+using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
 using System.Linq;
@@ -105,7 +106,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public Transaction CreateTransferTx(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
         {
-            var sender = fromKey.ToScriptHash();
+            var sender = Contract.CreateSignatureRedeemScript(fromKey.PublicKey).ToScriptHash();
             Cosigner[] cosigners = new[] { new Cosigner { Scopes = WitnessScope.CalledByEntry, Account = sender } };
 
             byte[] script = scriptHash.MakeScript("transfer", sender, to, amount);

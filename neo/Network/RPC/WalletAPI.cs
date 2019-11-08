@@ -1,6 +1,7 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
@@ -113,7 +114,7 @@ namespace Neo.Network.RPC
         /// <returns>The transaction sended</returns>
         public Transaction ClaimGas(KeyPair keyPair)
         {
-            UInt160 toHash = keyPair.ToScriptHash();
+            UInt160 toHash = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash();
             BigInteger balance = nep5API.BalanceOf(NativeContract.NEO.Hash, toHash);
             Transaction transaction = nep5API.CreateTransferTx(NativeContract.NEO.Hash, keyPair, toHash, balance);
             rpcClient.SendRawTransaction(transaction);

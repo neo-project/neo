@@ -25,8 +25,8 @@ namespace Neo.UnitTests.Network.RPC
         public void TestSetup()
         {
             keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
-            address1 = Neo.Wallets.Helper.ToAddress(keyPair1.ToScriptHash());
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
+            address1 = Neo.Wallets.Helper.ToAddress(sender);
             rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
             walletAPI = new WalletAPI(rpcClientMock.Object);
         }
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetUnclaimedGas()
         {
-            byte[] testScript = NativeContract.NEO.Hash.MakeScript("unclaimedGas", keyPair1.ToScriptHash(), 99);
+            byte[] testScript = NativeContract.NEO.Hash.MakeScript("unclaimedGas", sender, 99);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
             var balance = walletAPI.GetUnclaimedGas(address1);
@@ -44,7 +44,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetNeoBalance()
         {
-            byte[] testScript = NativeContract.NEO.Hash.MakeScript("balanceOf", keyPair1.ToScriptHash());
+            byte[] testScript = NativeContract.NEO.Hash.MakeScript("balanceOf", sender);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_00000000) });
 
             var balance = walletAPI.GetNeoBalance(address1);
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetGasBalance()
         {
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", keyPair1.ToScriptHash());
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", sender);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
             var balance = walletAPI.GetGasBalance(address1);
@@ -64,7 +64,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestGetTokenBalance()
         {
-            byte[] testScript = UInt160.Zero.MakeScript("balanceOf", keyPair1.ToScriptHash());
+            byte[] testScript = UInt160.Zero.MakeScript("balanceOf", sender);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
             var balance = walletAPI.GetTokenBalance(UInt160.Zero.ToString(), address1);
@@ -74,10 +74,10 @@ namespace Neo.UnitTests.Network.RPC
         [TestMethod]
         public void TestClaimGas()
         {
-            byte[] balanceScript = NativeContract.NEO.Hash.MakeScript("balanceOf", keyPair1.ToScriptHash());
+            byte[] balanceScript = NativeContract.NEO.Hash.MakeScript("balanceOf", sender);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, balanceScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_00000000) });
 
-            byte[] testScript = NativeContract.NEO.Hash.MakeScript("transfer", keyPair1.ToScriptHash(), keyPair1.ToScriptHash(), new BigInteger(1_00000000));
+            byte[] testScript = NativeContract.NEO.Hash.MakeScript("transfer", sender, sender, new BigInteger(1_00000000));
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
             rpcClientMock.Setup(p => p.RpcSend("sendrawtransaction", It.IsAny<JObject>())).Returns(true);
@@ -92,7 +92,7 @@ namespace Neo.UnitTests.Network.RPC
             byte[] decimalsScript = NativeContract.GAS.Hash.MakeScript("decimals");
             UT_TransactionManager.MockInvokeScript(rpcClientMock, decimalsScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(8) });
 
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", keyPair1.ToScriptHash(), UInt160.Zero, NativeContract.GAS.Factor * 100);
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", sender, UInt160.Zero, NativeContract.GAS.Factor * 100);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
             rpcClientMock.Setup(p => p.RpcSend("sendrawtransaction", It.IsAny<JObject>())).Returns(true);

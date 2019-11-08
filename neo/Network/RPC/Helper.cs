@@ -43,16 +43,6 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Get the verification script hash of KeyPair
-        /// </summary>
-        /// <param name="key">account KeyPair</param>
-        /// <returns></returns>
-        public static UInt160 ToScriptHash(this KeyPair key)
-        {
-            return Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash();
-        }
-
-        /// <summary>
         /// Parse WIF or private key hex string to KeyPair
         /// </summary>
         /// <param name="key">WIF or private key hex string
@@ -81,7 +71,7 @@ namespace Neo.Network.RPC
         /// <param name="amount">float value</param>
         /// <param name="decimals">token decimals</param>
         /// <returns></returns>
-        public static BigInteger ToBigInteger(this decimal amount, uint decimals)
+        internal static BigInteger ToBigInteger(this decimal amount, uint decimals)
         {
             BigInteger factor = BigInteger.Pow(10, (int)decimals);
             var (numerator, denominator) = Fraction(amount);
