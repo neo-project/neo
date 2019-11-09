@@ -80,6 +80,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                     OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
+                case MessageCommand.GetBlockData:
+                    OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
+                    break;
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
                     break;
@@ -158,7 +161,7 @@ namespace Neo.Network.P2P
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
             UInt256 hash = payload.HashStart;
-            int count = payload.Count < 0 ? InvPayload.MaxHashesCount : payload.Count;
+            int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
             TrimmedBlock state = Blockchain.Singleton.Store.GetBlocks().TryGet(hash);
             if (state == null) return;
             List<UInt256> hashes = new List<UInt256>();
@@ -173,6 +176,26 @@ namespace Neo.Network.P2P
             }
             if (hashes.Count == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
+        }
+
+        private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
+        {
+            for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
+            {
+                Block block = Blockchain.Singleton.Store.GetBlock(i);
+                if (block == null)
+                    break;
+
+                if (bloom_filter == null)
+                {
+                    Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
+                }
+                else
+                {
+                    BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
+                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                }
+            }
         }
 
         private void OnGetDataMessageReceived(InvPayload payload)
@@ -213,7 +236,7 @@ namespace Neo.Network.P2P
         private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
         {
             UInt256 hash = payload.HashStart;
-            int count = payload.Count < 0 ? HeadersPayload.MaxHeadersCount : payload.Count;
+            int count = payload.Count < 0 || payload.Count > HeadersPayload.MaxHeadersCount ? HeadersPayload.MaxHeadersCount : payload.Count;
             DataCache<UInt256, TrimmedBlock> cache = Blockchain.Singleton.Store.GetBlocks();
             TrimmedBlock state = cache.TryGet(hash);
             if (state == null) return;
@@ -329,7 +352,6 @@ namespace Neo.Network.P2P
             {
                 case MessageCommand.GetAddr:
                 case MessageCommand.GetBlocks:
-                case MessageCommand.GetData:
                 case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
                     return queue.OfType<Message>().Any(p => p.Command == msg.Command);

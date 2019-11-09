@@ -66,7 +66,7 @@ namespace Neo.Network.P2P
         {
             if (UnconnectedPeers.Count < UnconnectedMax)
             {
-                peers = peers.Where(p => p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address));
+                peers = peers.Where(p => (p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
                 ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
         }
