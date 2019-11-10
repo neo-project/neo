@@ -798,7 +798,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(2, hashes.Length);
-            Assert.IsFalse(txSimple.Reverify(snapshot, new Transaction[0]));
+            Assert.IsFalse(txSimple.Reverify(snapshot, BigInteger.Zero));
         }
 
         [TestMethod]
@@ -1093,7 +1093,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             ((JArray)jObj["cosigners"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
-            jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
+            jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
             jObj["sys_fee"].AsString().Should().Be("4200000000");
         }
     }

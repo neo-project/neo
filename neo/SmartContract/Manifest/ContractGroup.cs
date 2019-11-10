@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO.Json;
+using System;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -30,7 +31,7 @@ namespace Neo.SmartContract.Manifest
             return new ContractGroup
             {
                 PubKey = ECPoint.Parse(json["pubKey"].AsString(), ECCurve.Secp256r1),
-                Signature = json["signature"].AsString().HexToBytes(),
+                Signature = Convert.FromBase64String(json["signature"].AsString()),
             };
         }
 
@@ -48,7 +49,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject();
             json["pubKey"] = PubKey.ToString();
-            json["signature"] = Signature.ToHexString();
+            json["signature"] = Convert.ToBase64String(Signature);
             return json;
         }
     }
