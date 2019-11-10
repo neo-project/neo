@@ -52,16 +52,20 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
+            // Do not accept payload of type InventoryType.TX if not synced on best known top HeaderHeight
             if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
             {
                 RequestTasks(session);
                 return;
             }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
+            // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(knownHashes);
+            // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under processement by other sessions)
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
+            // Remove those that are already in processement by other sessions
             hashes.Remove(globalTasks);
             if (hashes.Count == 0)
             {
@@ -69,6 +73,7 @@ namespace Neo.Network.P2P
                 return;
             }
 
+            // Update globalTasks with the ones that will be requested within this current session
             foreach (UInt256 hash in hashes)
             {
                 IncrementGlobalTask(hash);
