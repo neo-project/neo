@@ -53,7 +53,7 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private readonly static byte[] onPersistNativeContractScript;
+        private readonly static Script onPersistNativeContractScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
@@ -90,7 +90,7 @@ namespace Neo.Ledger
                 foreach (NativeContract contract in contracts)
                     sb.EmitAppCall(contract.Hash, "onPersist");
 
-                onPersistNativeContractScript = sb.ToArray();
+                onPersistNativeContractScript = new Script(sb.ToArray());
             }
         }
 
