@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 using System.Text;
 
@@ -34,7 +33,7 @@ namespace Neo.Cryptography
 
         public static string Encode(byte[] input)
         {
-            BigInteger value = new BigInteger(new byte[1].Concat(input).ToArray().Reverse());
+            BigInteger value = new BigInteger(new byte[1].Concat(input).Reverse());
             StringBuilder sb = new StringBuilder();
             while (value >= 58)
             {
