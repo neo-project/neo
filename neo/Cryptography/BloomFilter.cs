@@ -1,22 +1,19 @@
 using System.Collections;
-using System.Linq;
 
 namespace Neo.Cryptography
 {
     public class BloomFilter
     {
-        private readonly uint[] seeds;
+        private readonly uint seed;
         private readonly BitArray bits;
-
-        public int K => seeds.Length;
 
         public int M => bits.Length;
 
         public uint Tweak { get; private set; }
 
-        public BloomFilter(int m, int k, uint nTweak, byte[] elements = null)
+        public BloomFilter(int m, uint nTweak, byte[] elements = null)
         {
-            this.seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            this.seed = 0xFBA4C795 + nTweak;
             this.bits = elements == null ? new BitArray(m) : new BitArray(elements);
             this.bits.Length = m;
             this.Tweak = nTweak;
@@ -24,15 +21,13 @@ namespace Neo.Cryptography
 
         public void Add(byte[] element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
-                bits.Set((int)(i % (uint)bits.Length), true);
+            bits.Set((int)(element.Murmur32(seed) % (uint)bits.Length), true);
         }
 
         public bool Check(byte[] element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
-                if (!bits.Get((int)(i % (uint)bits.Length)))
-                    return false;
+            if (!bits.Get((int)(element.Murmur32(seed) % (uint)bits.Length)))
+                return false;
             return true;
         }
 

@@ -141,7 +141,7 @@ namespace Neo.Network.P2P
 
         private void OnFilterLoadMessageReceived(FilterLoadPayload payload)
         {
-            bloom_filter = new BloomFilter(payload.Filter.Length * 8, payload.K, payload.Tweak, payload.Filter);
+            bloom_filter = new BloomFilter(payload.Filter.Length * 8, payload.Tweak, payload.Filter);
             Context.Parent.Tell(new SetFilter { Filter = bloom_filter });
         }
 

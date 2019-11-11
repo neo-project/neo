@@ -135,9 +135,9 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestTest()
         {
-            int m = 7, n = 10;
+            int m = 7;
             uint nTweak = 123456;
-            BloomFilter filter = new BloomFilter(m, n, nTweak);
+            BloomFilter filter = new BloomFilter(m, nTweak);
 
             Transaction tx = new Transaction
             {
