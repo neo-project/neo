@@ -24,7 +24,7 @@ namespace Neo.Cryptography
             // Encode BigInteger to byte[]
             // Leading zero bytes get encoded as leading `1` characters
             int leadingZeroCount = input.TakeWhile(c => c == '1').Count();
-            var leadingZeros = Enumerable.Repeat((byte)0, leadingZeroCount);
+            var leadingZeros = new byte[leadingZeroCount];
             var bytesWithoutLeadingZeros =
                 bi.ToByteArray()
                 .Reverse()// to big endian
