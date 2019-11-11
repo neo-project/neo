@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.Cryptography.ECC
@@ -144,8 +143,9 @@ namespace Neo.Cryptography.ECC
             if (data.Length == 32)
                 return data.Reverse();
             if (data.Length > 32)
-                return data.Take(32).Reverse().ToArray();
-            return Enumerable.Repeat<byte>(0, 32 - data.Length).Concat(data.Reverse()).ToArray();
+                return data.Take(32).Reverse();
+
+            return new byte[32 - data.Length].Concat(data.Reverse());
         }
 
         public static ECFieldElement operator -(ECFieldElement x)

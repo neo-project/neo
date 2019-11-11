@@ -36,11 +36,41 @@ namespace Neo
 
         public static T[] Reverse<T>(this T[] origin)
         {
-            T[] ret = new T[origin.Length];
+            var ret = new T[origin.Length];
             for (int x = 0, m = ret.Length - 1; x <= m; x++)
             {
                 ret[x] = origin[m - x];
             }
+            return ret;
+        }
+
+        public static byte[] Skip(this byte[] a, int index)
+        {
+            var length = a.Length - index;
+
+            if (length < 0) throw new ArgumentException(nameof(a));
+
+            var ret = new byte[length];
+            Buffer.BlockCopy(a, index, ret, 0, length);
+            return ret;
+        }
+
+        public static byte[] Take(this byte[] a, int count) => Take(a, 0, count);
+
+        public static byte[] Take(this byte[] a, int index, int count)
+        {
+            if (count < 0) throw new ArgumentException(nameof(count));
+
+            var ret = new byte[count];
+            Buffer.BlockCopy(a, index, ret, 0, a.Length);
+            return ret;
+        }
+
+        public static byte[] Concat(this byte[] a, byte[] b)
+        {
+            var ret = new byte[a.Length + b.Length];
+            Buffer.BlockCopy(a, 0, ret, 0, a.Length);
+            Buffer.BlockCopy(b, 0, ret, a.Length, b.Length);
             return ret;
         }
 

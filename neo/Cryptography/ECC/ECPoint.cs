@@ -1,7 +1,6 @@
 using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.Cryptography.ECC
@@ -18,10 +17,7 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        public ECPoint()
-            : this(null, null, ECCurve.Secp256r1)
-        {
-        }
+        public ECPoint() : this(null, null, ECCurve.Secp256r1) { }
 
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
@@ -51,7 +47,7 @@ namespace Neo.Cryptography.ECC
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
                         int yTilde = encoded[0] & 1;
-                        BigInteger X1 = ToUnsignedBigInteger(encoded.Skip(1).ToArray());
+                        BigInteger X1 = ToUnsignedBigInteger(encoded.Skip(1));
                         p = DecompressPoint(yTilde, X1, curve);
                         break;
                     }
@@ -59,8 +55,8 @@ namespace Neo.Cryptography.ECC
                     {
                         if (encoded.Length != (2 * curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
-                        BigInteger X1 = ToUnsignedBigInteger(encoded.Skip(1).Take(curve.ExpectedECPointLength).ToArray());
-                        BigInteger Y1 = ToUnsignedBigInteger(encoded.Skip(1 + curve.ExpectedECPointLength).ToArray());
+                        BigInteger X1 = ToUnsignedBigInteger(encoded.Take(1, curve.ExpectedECPointLength));
+                        BigInteger Y1 = ToUnsignedBigInteger(encoded.Skip(1 + curve.ExpectedECPointLength));
                         p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve);
                         break;
                     }
@@ -115,7 +111,7 @@ namespace Neo.Cryptography.ECC
                         {
                             throw new FormatException();
                         }
-                        return DecodePoint(buffer.Take(1 + curve.ExpectedECPointLength).ToArray(), curve);
+                        return DecodePoint(buffer.Take(1 + curve.ExpectedECPointLength), curve);
                     }
                 case 0x04:
                     {
@@ -183,10 +179,10 @@ namespace Neo.Cryptography.ECC
                     return DecodePoint(pubkey, curve);
                 case 64:
                 case 72:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 64)).ToArray(), curve);
+                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 64)), curve);
                 case 96:
                 case 104:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 96).Take(64)).ToArray(), curve);
+                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Take(pubkey.Length - 96, 64)), curve);
                 default:
                     throw new FormatException();
             }
