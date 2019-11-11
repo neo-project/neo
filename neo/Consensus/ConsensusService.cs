@@ -122,8 +122,11 @@ namespace Neo.Consensus
             if (context.CommitPayloads.Count(p => p?.ConsensusMessage.ViewNumber == context.ViewNumber) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Block block = context.CreateBlock();
-                Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
-                localNode.Tell(new LocalNode.Relay { Inventory = block });
+                if (context.EnsureHeader() != null)
+                {
+                    Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
+                    localNode.Tell(new LocalNode.Relay { Inventory = block });
+                }
             }
         }
 
