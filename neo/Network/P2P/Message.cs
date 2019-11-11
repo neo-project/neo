@@ -74,6 +74,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetData:
                     Payload = decompressed.AsSerializable<InvPayload>();
                     break;
+                case MessageCommand.GetBlockData:
+                    Payload = decompressed.AsSerializable<GetBlockDataPayload>();
+                    break;
                 case MessageCommand.Transaction:
                     Payload = decompressed.AsSerializable<Transaction>();
                     break;
