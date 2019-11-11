@@ -70,6 +70,11 @@ namespace Neo.Ledger
         public int Capacity { get; }
 
         /// <summary>
+        /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
+        /// </summary>
+        public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
+
+        /// <summary>
         /// Total count of transactions in the pool.
         /// </summary>
         public int Count
@@ -268,6 +273,7 @@ namespace Neo.Ledger
             try
             {
                 _unsortedTransactions.Add(hash, poolItem);
+                SendersFeeMonitor.AddSenderFee(tx);
                 _sortedTransactions.Add(poolItem);
 
                 if (Count > Capacity)
@@ -310,6 +316,7 @@ namespace Neo.Ledger
                 return false;
 
             _unsortedTransactions.Remove(hash);
+            SendersFeeMonitor.RemoveSenderFee(item.Tx);
             _sortedTransactions.Remove(item);
 
             return true;
@@ -337,6 +344,7 @@ namespace Neo.Ledger
 
             // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
+            SendersFeeMonitor = new SendersFeeMonitor();
             _sortedTransactions.Clear();
         }
 
@@ -409,7 +417,7 @@ namespace Neo.Ledger
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                if (item.Tx.Reverify(snapshot, _unsortedTransactions.Select(p => p.Value.Tx)))
+                if (item.Tx.Reverify(snapshot, SendersFeeMonitor.GetSenderFee(item.Tx.Sender)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
@@ -432,6 +440,7 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
+                        SendersFeeMonitor.AddSenderFee(item.Tx);
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
