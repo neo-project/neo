@@ -130,16 +130,14 @@ namespace Neo.Network.P2P.Payloads
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool Reverify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        public virtual bool Reverify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return false;
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
                 return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee;
-            if (balance < fee) return false;
-            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.SystemFee + p.NetworkFee)).Sum();
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return false;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (hashes.Length != Witnesses.Length) return false;
@@ -206,12 +204,12 @@ namespace Neo.Network.P2P.Payloads
 
         bool IInventory.Verify(Snapshot snapshot)
         {
-            return Verify(snapshot, Enumerable.Empty<Transaction>());
+            return Verify(snapshot, BigInteger.Zero);
         }
 
-        public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        public virtual bool Verify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
         {
-            if (!Reverify(snapshot, mempool)) return false;
+            if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
             int size = Size;
             if (size > MaxTransactionSize) return false;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
