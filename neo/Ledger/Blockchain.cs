@@ -12,6 +12,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -59,13 +60,19 @@ namespace Neo.Ledger
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
+        private Snapshot currentSnapshot;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
-        private Snapshot currentSnapshot;
+
+        private int ParallelVerifierIndex = 0;
+        private const int ParallelVerifierCount = 4;
+        private readonly Dictionary<IActorRef, int> ParallelVerifierToIndexDic = new Dictionary<IActorRef, int>();
+        private readonly Dictionary<int, IActorRef> IndexToParallelVerifierDic = new Dictionary<int, IActorRef>();
+        public readonly ConcurrentDictionary<int, TransactionParallelVerifier> IndexToParallelVerifierInstanceDic = new ConcurrentDictionary<int, TransactionParallelVerifier>();
 
         public Store Store { get; }
-        public MemoryPool MemPool { get; }
+        public MemoryPool MemPool { get; } 
         public uint Height => currentSnapshot.Height;
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
@@ -133,6 +140,13 @@ namespace Neo.Ledger
                     MemPool.LoadPolicy(currentSnapshot);
                 }
                 singleton = this;
+            }
+            for (int i = 0; i < ParallelVerifierCount; i++)
+            {
+                var subVerifier = Context.ActorOf(TransactionParallelVerifier.Props(IndexToParallelVerifierInstanceDic, currentSnapshot, MemPool, i), $"actor-parallel-verifier{i}");
+                Context.Watch(subVerifier);
+                ParallelVerifierToIndexDic.Add(subVerifier,i);
+                IndexToParallelVerifierDic.Add(i, subVerifier);
             }
         }
 
@@ -367,18 +381,28 @@ namespace Neo.Ledger
         private RelayResultReason OnNewTransaction(Transaction transaction, bool relay)
         {
             if (ContainsTransaction(transaction.Hash))
+            {
+                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
                 return RelayResultReason.AlreadyExists;
+            }
             if (!MemPool.CanTransactionFitInPool(transaction))
+            {
+                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
                 return RelayResultReason.OutOfMemory;
-            if (!transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender)))
-                return RelayResultReason.Invalid;
+            }
             if (!NativeContract.Policy.CheckPolicy(transaction, currentSnapshot))
+            {
+                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
                 return RelayResultReason.PolicyFail;
-
+            }
             if (!MemPool.TryAdd(transaction.Hash, transaction))
+            {
+                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
                 return RelayResultReason.OutOfMemory;
+            }
             if (relay)
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
+            MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
             return RelayResultReason.Succeed;
         }
 
@@ -408,11 +432,14 @@ namespace Neo.Ledger
                 case Transaction[] transactions:
                     {
                         // This message comes from a mempool's revalidation, already relayed
-                        foreach (var tx in transactions) OnNewTransaction(tx, false);
+                        foreach (var tx in transactions) OnParallelVerify(tx, false);
                         break;
                     }
                 case Transaction transaction:
-                    Sender.Tell(OnNewTransaction(transaction, true));
+                    OnParallelVerify(transaction, true);
+                    break;
+                case ParallelVerifiedTransaction parallelVerifiedTransaction:
+                    Sender.Tell(OnNewTransaction(parallelVerifiedTransaction.Transaction, parallelVerifiedTransaction.ShouldRelay));
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -421,7 +448,28 @@ namespace Neo.Ledger
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
+                case Terminated t:
+                    if (ParallelVerifierToIndexDic.TryGetValue(t.ActorRef, out int index))
+                    {
+                        ParallelVerifierToIndexDic.Remove(t.ActorRef);
+                        IndexToParallelVerifierDic.Remove(index);
+                        IndexToParallelVerifierInstanceDic.TryRemove(index, out TransactionParallelVerifier _);
+                    }
+                    break;
             }
+        }
+
+        private void OnParallelVerify(Transaction transaction, bool shouldRelay)
+        {
+            if (!transaction.Reverify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender), MemPool.VerifyingSenderFeeMonitor.GetSenderVerifyingFee(transaction.Sender)))
+            {
+                Sender.Tell(RelayResultReason.Invalid);
+                return;
+            }
+            MemPool.VerifyingSenderFeeMonitor.AddSenderVerifyingFee(transaction);
+            var subVerifier = IndexToParallelVerifierDic[ParallelVerifierIndex++];
+            ParallelVerifierIndex = ParallelVerifierIndex >= ParallelVerifierCount ? 0 : ParallelVerifierIndex;
+            subVerifier.Tell(new ParallelVerifiedTransaction(transaction, shouldRelay), Sender);
         }
 
         private void Persist(Block block)
@@ -536,6 +584,10 @@ namespace Neo.Ledger
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
+            foreach (var parallelVerifier in IndexToParallelVerifierInstanceDic.Values)
+            {
+                parallelVerifier.CurrentSnapshot = currentSnapshot;
+            }
         }
     }
 

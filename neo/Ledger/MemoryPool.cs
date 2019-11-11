@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -28,7 +29,6 @@ namespace Neo.Ledger
 
         private readonly NeoSystem _system;
 
-        //
         /// <summary>
         /// Guarantees consistency of the pool data structures.
         ///
@@ -73,6 +73,11 @@ namespace Neo.Ledger
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
         /// </summary>
         public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
+
+        /// <summary>
+        /// Store all verifying transactions' senders' fee currently in the memory pool.
+        /// </summary>
+        public VerifyingSenderFeeMonitor VerifyingSenderFeeMonitor = new VerifyingSenderFeeMonitor();
 
         /// <summary>
         /// Total count of transactions in the pool.
