@@ -92,7 +92,7 @@ namespace Neo.Consensus
             }
             Block.Witness = sc.GetWitnesses()[0];
             Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
-            return Block;
+            return EnsureHeader();
         }
 
         public void Deserialize(BinaryReader reader)
