@@ -62,7 +62,7 @@ namespace Neo
             if (count < 0) throw new ArgumentException(nameof(count));
 
             var ret = new byte[count];
-            Buffer.BlockCopy(a, index, ret, 0, a.Length);
+            Buffer.BlockCopy(a, index, ret, 0, count);
             return ret;
         }
 
