@@ -14,7 +14,7 @@ namespace Neo.UnitTests.Cryptography
             int m = 7;
             uint nTweak = 123456;
             byte[] elements = { 0, 1, 2, 3, 4 };
-            BloomFilter filter = new BloomFilter(m,  nTweak);
+            BloomFilter filter = new BloomFilter(m, nTweak);
             filter.Add(elements);
             filter.Check(elements).Should().BeTrue();
             byte[] anotherElements = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Cryptography
             int m = 7;
             uint nTweak = 123456;
             byte[] elements = { 0, 1, 2, 3, 4 };
-            BloomFilter filter = new BloomFilter(m,  nTweak);
+            BloomFilter filter = new BloomFilter(m, nTweak);
             byte[] result = new byte[m];
             filter.GetBits(result);
             foreach (byte value in result)
