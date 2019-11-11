@@ -29,8 +29,7 @@ namespace Neo.Cryptography
                 bi.ToByteArray()
                 .Reverse()// to big endian
                 .SkipWhile(b => b == 0);//strip sign byte
-            var result = leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
-            return result;
+            return leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
         }
 
         public static string Encode(byte[] input)
