@@ -12,8 +12,10 @@ namespace Neo.Ledger
     public class TransactionParallelVerifier : UntypedActor
     {
         private Snapshot _currentSnapshot;
+        private long feePeerByte;
         private readonly MemoryPool Mempool;
         public readonly int Index;
+
         /// <summary>
         /// This lock is to avoid concurrent issue when CurrentSnapshot is updating along with CheckWitnesses is being called.
         /// </summary>
@@ -28,6 +30,7 @@ namespace Neo.Ledger
                 try
                 {
                     _currentSnapshot = value;
+                    feePeerByte = NativeContract.Policy.GetFeePerByte(CurrentSnapshot);
                 }
                 finally
                 {
@@ -71,11 +74,12 @@ namespace Neo.Ledger
         {
             int size = transaction.Size;
             if (size > Transaction.MaxTransactionSize) return false;
+            long net_fee = transaction.NetworkFee - size * feePeerByte;
+            if (net_fee < 0) return false;
+            
             _updateSnapshotLock.EnterReadLock();
             try
             {
-                long net_fee = transaction.NetworkFee - size * NativeContract.Policy.GetFeePerByte(CurrentSnapshot);
-                if (net_fee < 0) return false;
                 return transaction.VerifyWitnesses(CurrentSnapshot, net_fee);
             }
             finally
