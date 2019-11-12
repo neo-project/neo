@@ -435,7 +435,7 @@ namespace Neo.Ledger
                 case Transaction transaction:
                     OnParallelVerify(transaction, true);
                     break;
-                case ParallelVerifiedTransaction parallelVerifiedTransaction:
+                case ParallelVerifyTransaction parallelVerifiedTransaction:
                     Sender.Tell(OnNewTransaction(parallelVerifiedTransaction.Transaction, parallelVerifiedTransaction.ShouldRelay));
                     break;
                 case ConsensusPayload payload:
@@ -475,7 +475,7 @@ namespace Neo.Ledger
             MemPool.VerifyingSenderFeeMonitor.AddSenderVerifyingFee(transaction);
             var subVerifier = IndexToParallelVerifierDic[ParallelVerifierIndex++];
             ParallelVerifierIndex = ParallelVerifierIndex >= ParallelVerifierCount ? 0 : ParallelVerifierIndex;
-            subVerifier.Tell(new ParallelVerifiedTransaction(transaction, shouldRelay), Sender);
+            subVerifier.Tell(new ParallelVerifyTransaction(transaction, shouldRelay), Sender);
         }
 
         private void Persist(Block block)

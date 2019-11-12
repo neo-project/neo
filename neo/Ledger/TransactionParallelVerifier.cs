@@ -48,13 +48,13 @@ namespace Neo.Ledger
         {
             switch (message)
             {
-                case ParallelVerifiedTransaction parallelVerifiedTransaction:
+                case ParallelVerifyTransaction parallelVerifiedTransaction:
                     OnParallelVerifiedTransactionReceived(parallelVerifiedTransaction);
                     break;
             }
         }
 
-        private void OnParallelVerifiedTransactionReceived(ParallelVerifiedTransaction parallelVerifiedTransaction)
+        private void OnParallelVerifiedTransactionReceived(ParallelVerifyTransaction parallelVerifiedTransaction)
         {
             if (CheckWitnesses(parallelVerifiedTransaction.Transaction))
             {
