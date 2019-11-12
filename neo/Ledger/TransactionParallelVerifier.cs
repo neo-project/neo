@@ -30,7 +30,7 @@ namespace Neo.Ledger
                 try
                 {
                     _currentSnapshot = value;
-                    feePeerByte = NativeContract.Policy.GetFeePerByte(CurrentSnapshot);
+                    feePeerByte = NativeContract.Policy.GetFeePerByte(value);
                 }
                 finally
                 {
