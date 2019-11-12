@@ -74,10 +74,10 @@ namespace Neo.Ledger
         {
             int size = transaction.Size;
             if (size > Transaction.MaxTransactionSize) return false;
-            long net_fee = transaction.NetworkFee - size * feePeerByte;
-            if (net_fee < 0) return false;
             
             _updateSnapshotLock.EnterReadLock();
+            long net_fee = transaction.NetworkFee - size * feePeerByte;
+            if (net_fee < 0) return false;
             try
             {
                 return transaction.VerifyWitnesses(CurrentSnapshot, net_fee);
