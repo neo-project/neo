@@ -22,10 +22,9 @@ namespace Neo.Ledger
             _verifyingFeeRwLock.EnterReadLock();
             try
             {
-                if (_senderVerifyingFee.ContainsKey(sender))
-                    return _senderVerifyingFee[sender];
-                else
+                if (!_senderVerifyingFee.TryGetValue(sender, out BigInteger value))
                     return BigInteger.Zero;
+                return value;
             }
             finally
             {
@@ -38,10 +37,10 @@ namespace Neo.Ledger
             _verifyingFeeRwLock.EnterWriteLock();
             try
             {
-                if (!_senderVerifyingFee.ContainsKey(tx.Sender))
+                if (!_senderVerifyingFee.TryGetValue(tx.Sender, out BigInteger value))
                     _senderVerifyingFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
                 else
-                    _senderVerifyingFee[tx.Sender] += tx.SystemFee + tx.NetworkFee;
+                    _senderVerifyingFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             }
             finally
             {
@@ -51,11 +50,11 @@ namespace Neo.Ledger
 
         public void RemoveSenderVerifyingFee(Transaction tx)
         {
+            
             _verifyingFeeRwLock.EnterWriteLock();
             try
             {
-                _senderVerifyingFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee;
-                if (_senderVerifyingFee[tx.Sender] == 0) _senderVerifyingFee.Remove(tx.Sender);
+                if ((_senderVerifyingFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) _senderVerifyingFee.Remove(tx.Sender);
             }
             finally
             {
