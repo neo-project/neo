@@ -233,7 +233,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Neo_Contract_Update).Should().BeTrue();
 
-            // Update to noStorage with something stored
+            // Remove Storage flag with something stored
 
             state.Manifest.Features = ContractFeatures.NoProperty;
             mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
