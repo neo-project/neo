@@ -111,7 +111,7 @@ These are a few features Neo has:
 - **[dBFT2.0](https://medium.com/neo-smart-economy/neos-dbft-2-0-single-block-finality-with-improved-availability-6a4aca7bd1c4)**
   - Single block finality consensus algorithm.
 - **[Smart Contracts using C#](https://github.com/neo-ngd/NEO3-Development-Guide/tree/master/en/SmartContract)**
-  - Classes and JSON support;
+  - Build smart-contracts using C# sintax;
   - Python, Typescript and Go Smart Contracts provided by community projects.
 - **[Unity support](https://github.com/neo-ngd/NEO3-Development-Guide/tree/master/en/SmartContract)**
   - Neo can be used to create your game in the blockchain.
@@ -267,6 +267,10 @@ If you found a security issue, please refer to our [security policy](https://git
 
 #### Bounty program
 You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
+
+#### How to contribute
+Please read our [contribution guide](.github/CONTRIBUTING.md).  
+The best way to start contributing is by testing open PRs.
 
 #### License
 The NEO project is licensed under the [MIT license](LICENSE).
