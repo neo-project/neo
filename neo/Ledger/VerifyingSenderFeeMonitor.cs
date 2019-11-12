@@ -50,7 +50,6 @@ namespace Neo.Ledger
 
         public void RemoveSenderVerifyingFee(Transaction tx)
         {
-            
             _verifyingFeeRwLock.EnterWriteLock();
             try
             {
