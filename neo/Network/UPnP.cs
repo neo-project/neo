@@ -76,7 +76,7 @@ namespace Neo.Network
         {
             try
             {
-                XmlDocument desc = new XmlDocument();
+                XmlDocument desc = new XmlDocument() { XmlResolver = null };
                 HttpWebRequest request = WebRequest.CreateHttp(resp);
                 using (WebResponse response = request.GetResponse())
                 {
