@@ -12,8 +12,8 @@ namespace Neo.Ledger
     public class TransactionParallelVerifier : UntypedActor
     {
         private Snapshot _currentSnapshot;
-        private MemoryPool Mempool;
-        public int Index;
+        private readonly MemoryPool Mempool;
+        public readonly int Index;
         /// <summary>
         /// This lock is to avoid concurrent issue when CurrentSnapshot is updating along with CheckWitnesses is being called.
         /// </summary>
