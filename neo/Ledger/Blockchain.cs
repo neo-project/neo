@@ -143,10 +143,7 @@ namespace Neo.Ledger
             }
             for (int i = 0; i < ParallelVerifierCount; i++)
             {
-                var subVerifier = Context.ActorOf(TransactionParallelVerifier.Props(IndexToParallelVerifierInstanceDic, currentSnapshot, MemPool, i), $"actor-parallel-verifier{i}");
-                Context.Watch(subVerifier);
-                ParallelVerifierToIndexDic.Add(subVerifier,i);
-                IndexToParallelVerifierDic.Add(i, subVerifier);
+                CreateParallelVerifier(i);
             }
         }
 
@@ -454,9 +451,18 @@ namespace Neo.Ledger
                         ParallelVerifierToIndexDic.Remove(t.ActorRef);
                         IndexToParallelVerifierDic.Remove(index);
                         IndexToParallelVerifierInstanceDic.TryRemove(index, out TransactionParallelVerifier _);
+                        CreateParallelVerifier(index);
                     }
                     break;
             }
+        }
+
+        private void CreateParallelVerifier(int index)
+        {
+            var subVerifier = Context.ActorOf(TransactionParallelVerifier.Props(IndexToParallelVerifierInstanceDic, currentSnapshot, MemPool, index), $"actor-parallel-verifier{index}");
+            Context.Watch(subVerifier);
+            ParallelVerifierToIndexDic.Add(subVerifier, index);
+            IndexToParallelVerifierDic.Add(index, subVerifier);
         }
 
         private void OnParallelVerify(Transaction transaction, bool shouldRelay)
