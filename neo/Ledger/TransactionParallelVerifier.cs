@@ -12,7 +12,6 @@ namespace Neo.Ledger
     public class TransactionParallelVerifier : UntypedActor
     {
         private Snapshot _currentSnapshot;
-        
         private MemoryPool Mempool;
         public int Index;
         /// <summary>
@@ -23,7 +22,9 @@ namespace Neo.Ledger
         public Snapshot CurrentSnapshot
         {
             get { return _currentSnapshot; }
-            set { _updateSnapshotLock.EnterWriteLock();
+            set
+            {
+                _updateSnapshotLock.EnterWriteLock();
                 try
                 {
                     _currentSnapshot = value;
@@ -72,7 +73,7 @@ namespace Neo.Ledger
             if (size > Transaction.MaxTransactionSize) return false;
             _updateSnapshotLock.EnterReadLock();
             try
-            { 
+            {
                 long net_fee = transaction.NetworkFee - size * NativeContract.Policy.GetFeePerByte(CurrentSnapshot);
                 if (net_fee < 0) return false;
                 return transaction.VerifyWitnesses(CurrentSnapshot, net_fee);
@@ -81,7 +82,6 @@ namespace Neo.Ledger
             {
                 _updateSnapshotLock.ExitReadLock();
             }
-            
         }
 
         public static Props Props(ConcurrentDictionary<int, TransactionParallelVerifier> parallelVerifierDic, Snapshot snapshot, MemoryPool mempool, int index) => Akka.Actor.Props.Create(() => new TransactionParallelVerifier(parallelVerifierDic, snapshot, mempool, index));

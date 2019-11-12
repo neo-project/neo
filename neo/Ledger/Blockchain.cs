@@ -72,7 +72,7 @@ namespace Neo.Ledger
         public readonly ConcurrentDictionary<int, TransactionParallelVerifier> IndexToParallelVerifierInstanceDic = new ConcurrentDictionary<int, TransactionParallelVerifier>();
 
         public Store Store { get; }
-        public MemoryPool MemPool { get; } 
+        public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
