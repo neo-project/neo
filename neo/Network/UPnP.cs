@@ -155,7 +155,7 @@ namespace Neo.Network
             using (Stream reqs = r.GetRequestStream())
             {
                 reqs.Write(b, 0, b.Length);
-                XmlDocument resp = new XmlDocument();
+                XmlDocument resp = new XmlDocument() { XmlResolver = null };
                 WebResponse wres = r.GetResponse();
                 using (Stream ress = wres.GetResponseStream())
                 {
