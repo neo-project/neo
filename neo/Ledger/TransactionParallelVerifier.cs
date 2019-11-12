@@ -56,7 +56,7 @@ namespace Neo.Ledger
 
         private void OnParallelVerifiedTransactionReceived(ParallelVerifyTransaction parallelVerifiedTransaction)
         {
-            if (CheckWitnesses(parallelVerifiedTransaction.Transaction))
+            if (Verify(parallelVerifiedTransaction.Transaction))
             {
                 Context.Parent.Tell(parallelVerifiedTransaction, Sender);
             }
@@ -67,7 +67,7 @@ namespace Neo.Ledger
             }
         }
 
-        private bool CheckWitnesses(Transaction transaction)
+        private bool Verify(Transaction transaction)
         {
             int size = transaction.Size;
             if (size > Transaction.MaxTransactionSize) return false;

@@ -4,14 +4,9 @@ namespace Neo.Network.P2P.Payloads
     {
         public Transaction Transaction { get; set; }
 
-        public bool ShouldRelay { get; set; } = true;
+        public bool ShouldRelay { get; set; }
 
-        public ParallelVerifyTransaction(Transaction tx)
-        {
-            Transaction = tx;
-        }
-
-        public ParallelVerifyTransaction(Transaction tx, bool shouldRelay)
+        public ParallelVerifyTransaction(Transaction tx, bool shouldRelay = true)
         {
             ShouldRelay = shouldRelay;
             Transaction = tx;
