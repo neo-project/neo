@@ -13,9 +13,23 @@ namespace Neo.Wallets.NEP6
         public static NEP6Contract FromJson(JObject json)
         {
             if (json == null) return null;
+
+            byte[] script;
+
+            try
+            {
+                script = Convert.FromBase64String(json["script"].AsString());
+            }
+            catch
+            {
+                // Compatible with hex format
+
+                script = json["script"].AsString().HexToBytes();
+            }
+
             return new NEP6Contract
             {
-                Script = Convert.FromBase64String(json["script"].AsString()),
+                Script = script,
                 ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].TryGetEnum<ContractParameterType>()).ToArray(),
                 ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
                 Deployed = json["deployed"].AsBoolean()
