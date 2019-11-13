@@ -64,7 +64,7 @@
   <a href="https://www.youtube.com/channel/UCl1AwEDN0w5lTmfJEMsY5Vw/videos">
       <img
       src=".github/images/youtube-logo.png"
-      width="32px">
+      width="30px">
   </a>
   &nbsp;
   <!--How to get a link? -->
@@ -94,6 +94,7 @@
 6. [Opening an issue](#opening-a-new-issue)  
 7. [Bounty program](#bounty-program)
 8. [How to contribute](#how-to-contribute)
+9. [License](#license)
 
 ## Overview
 Neo is a blockchain technology built using C# that levereages smart contracts to autonomumously manage digital assets. Using dBFT 2.0 as consensus mechanism, Neo can achieves single block finality in 15 seconds without forking.   
@@ -113,7 +114,7 @@ These are a few features Neo has:
 - **[Smart Contracts using C#](https://github.com/neo-ngd/NEO3-Development-Guide/tree/master/en/SmartContract)**
   - Build smart-contracts using C# sintax;
   - Python, Typescript and Go Smart Contracts provided by community projects.
-- **[Unity support](https://github.com/neo-ngd/NEO3-Development-Guide/tree/master/en/SmartContract)**
+- **[Unity support]()**
   - Neo can be used to create your game in the blockchain.
 - **[Neo Blockchain Toolkit for .NET]()**
   - Developer tools, supporting easy smart-contract development with debugging support using Visual Studio Code.
@@ -129,7 +130,6 @@ These are a few features Neo has:
   - NeoFS is a scalable, decentralized object storage network integrated with NEO contracts to provide trustless data storage facilities.
 - **[Digital identity]()**
   - Using trust, privacy and game theory models. (WIP)
-
 
 
 ## Quick Start
@@ -259,9 +259,9 @@ Code references are provided for all platform building blocks. Tha includes the 
 #### Opening a new issue
 Please feel free to create new issues in our repository. We encourage you to use one of our issue templates when creating a new issue.  
 
-- [Feature request](https://github.com/neo-project/neo/issues/new?assignees=&labels=&template=bug_report.md&title=)
-- [Bug report](https://github.com/neo-project/neo/issues/new?assignees=&labels=&template=bug_report.md&title=)
-- [Questions](https://github.com/neo-project/neo/issues/new?assignees=&labels=question&template=questions.md&title=)
+- [Feature request](https://github.com/neo-project/neo-cli/issues/new?assignees=&labels=&template=bug_report.md&title=)
+- [Bug report](https://github.com/neo-project/neo-cli/issues/new?assignees=&labels=&template=bug_report.md&title=)
+- [Questions](https://github.com/neo-project/neo-cli/issues/new?assignees=&labels=question&template=questions.md&title=)
 
 If you found a security issue, please refer to our [security policy](https://github.com/neo-project/neo/security/policy).
 
@@ -269,7 +269,7 @@ If you found a security issue, please refer to our [security policy](https://git
 You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
 
 #### How to contribute
-Please read our [contribution guide](.github/CONTRIBUTING.md).  
+Please read our [contribution guide](https://github.com/neo-project/neo/blob/master/CONTRIBUTING.md).  
 The best way to start contributing is by testing open PRs.
 
 #### License
