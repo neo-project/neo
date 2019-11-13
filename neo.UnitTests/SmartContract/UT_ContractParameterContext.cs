@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetComplete()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x1a2791a63139294337863c7d822d17454876977c");
             var context = new ContractParametersContext(tx);
             context.Completed.Should().BeFalse();
         }
@@ -42,11 +42,11 @@ namespace Neo.UnitTests.SmartContract
         public void TestToString()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x1a2791a63139294337863c7d822d17454876977c");
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             string str = context.ToString();
-            str.Should().Be("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAADyd\\/EUQDWkOJf5\\u002BhFSWOrAFa3KvgAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA==\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
+            str.Should().Be(@"{""type"":""Neo.Network.P2P.Payloads.Transaction"",""hex"":""AAAAAAB8l3ZIRRctgn08hjdDKTkxppEnGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA=="",""items"":{""0x1a2791a63139294337863c7d822d17454876977c"":{""script"":""IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFlBoCpBq1A=="",""parameters"":[{""type"":""Signature"",""value"":""AQ==""}]}}}");
         }
 
         [TestMethod]
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestFromJson()
         {
-            Action action = () => ContractParametersContext.Parse("{\"type\":\"wrongType\",\"hex\":\"0000000000f277f1144035a43897f9fa115258eac015adcabe0000000000000000000000000000000000000000000100\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1668747476aa\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
+            Action action = () => ContractParametersContext.Parse("{\"type\":\"wrongType\",\"hex\":\"00000000007c97764845172d827d3c863743293931a691271a0000000000000000000000000000000000000000000100\",\"items\":{\"0x1a2791a63139294337863c7d822d17454876977c\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1650680a906ad4\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}");
             action.Should().Throw<FormatException>();
         }
 
@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract
             var context1 = new ContractParametersContext(tx);
             context1.Add(contract, 0, new byte[] { 0x01 }).Should().BeFalse();
 
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x1a2791a63139294337863c7d822d17454876977c");
             var context2 = new ContractParametersContext(tx);
             context2.Add(contract, 0, new byte[] { 0x01 }).Should().BeTrue();
             //test repeatlly createItem
@@ -82,7 +82,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetParameter()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x1a2791a63139294337863c7d822d17454876977c");
             var context = new ContractParametersContext(tx);
             context.GetParameter(tx.Sender, 0).Should().BeNull();
 
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetWitnesses()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            tx.Sender = UInt160.Parse("0x1a2791a63139294337863c7d822d17454876977c");
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             Witness[] witnesses = context.GetWitnesses();
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestAddSignature()
         {
             Transaction tx = TestUtils.GetTransaction();
-            var singleSender = UInt160.Parse("0xbecaad15c0ea585211faf99738a4354014f177f2");
+            var singleSender = UInt160.Parse("0x1a2791a63139294337863c7d822d17454876977c");
             tx.Sender = singleSender;
 
             //singleSign
@@ -138,7 +138,7 @@ namespace Neo.UnitTests.SmartContract
                         key.PublicKey,
                         key2.PublicKey
                     });
-            var multiSender = UInt160.Parse("0xa4712ed1a8d813561b28ec828930d85e6e08ec7a");
+            var multiSender = UInt160.Parse("0xfc8b59f1a337dcc17b1a201d327a2081d41fac8d");
             tx.Sender = multiSender;
             context = new ContractParametersContext(tx);
             context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
