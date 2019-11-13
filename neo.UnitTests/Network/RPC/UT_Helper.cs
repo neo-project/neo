@@ -1,7 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.RPC;
-using Neo.SmartContract;
-using Neo.Wallets;
 using System;
 using System.Numerics;
 
@@ -10,50 +8,6 @@ namespace Neo.UnitTests.Network.RPC
     [TestClass]
     public class UT_Helper
     {
-        KeyPair keyPair;
-        UInt160 scriptHash;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            keyPair = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
-            scriptHash = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash();
-        }
-
-        [TestMethod]
-        public void TestToUInt160()
-        {
-            string nul = null;
-            Assert.ThrowsException<ArgumentNullException>(() => nul.ToUInt160());
-
-            string addr = Neo.Wallets.Helper.ToAddress(scriptHash);
-            var result = addr.ToUInt160();
-            Assert.AreEqual(scriptHash, result);
-
-            string hash = scriptHash.ToString();
-            result = hash.ToUInt160();
-            Assert.AreEqual(scriptHash, result);
-
-            string publicKey = keyPair.PublicKey.ToString();
-            result = publicKey.ToUInt160();
-            Assert.AreEqual(scriptHash, result);
-        }
-
-        [TestMethod]
-        public void TestToKeyPair()
-        {
-            string nul = null;
-            Assert.ThrowsException<ArgumentNullException>(() => nul.ToKeyPair());
-
-            string wif = "KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p";
-            var result = wif.ToKeyPair();
-            Assert.AreEqual(keyPair, result);
-
-            string privateKey = keyPair.PrivateKey.ToHexString();
-            result = privateKey.ToKeyPair();
-            Assert.AreEqual(keyPair, result);
-        }
-
         [TestMethod]
         public void TestToBigInteger()
         {

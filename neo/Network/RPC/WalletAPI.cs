@@ -38,7 +38,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public decimal GetUnclaimedGas(string account)
         {
-            UInt160 accountHash = account.ToUInt160();
+            UInt160 accountHash = Utility.GetScriptHash(account);
             return GetUnclaimedGas(accountHash);
         }
 
@@ -88,8 +88,8 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public BigInteger GetTokenBalance(string tokenHash, string account)
         {
-            UInt160 scriptHash = tokenHash.ToUInt160();
-            UInt160 accountHash = account.ToUInt160();
+            UInt160 scriptHash = Utility.GetScriptHash(tokenHash);
+            UInt160 accountHash = Utility.GetScriptHash(account);
             return nep5API.BalanceOf(scriptHash, accountHash);
         }
 
@@ -102,7 +102,7 @@ namespace Neo.Network.RPC
         /// <returns>The transaction sended</returns>
         public Transaction ClaimGas(string key)
         {
-            KeyPair keyPair = key.ToKeyPair();
+            KeyPair keyPair = Utility.GetKeyPair(key);
             return ClaimGas(keyPair);
         }
 
@@ -133,11 +133,11 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public Transaction Transfer(string tokenHash, string fromKey, string toAddress, decimal amount, decimal networkFee = 0)
         {
-            UInt160 scriptHash = tokenHash.ToUInt160();
+            UInt160 scriptHash = Utility.GetScriptHash(tokenHash);
             var decimals = nep5API.Decimals(scriptHash);
 
-            KeyPair from = fromKey.ToKeyPair();
-            UInt160 to = toAddress.ToUInt160();
+            KeyPair from = Utility.GetKeyPair(fromKey);
+            UInt160 to = Utility.GetScriptHash(toAddress);
             BigInteger amountInteger = amount.ToBigInteger(decimals);
             BigInteger networkFeeInteger = networkFee.ToBigInteger(NativeContract.GAS.Decimals);
             return Transfer(scriptHash, from, to, amountInteger, (long)networkFeeInteger);
