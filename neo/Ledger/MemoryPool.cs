@@ -17,8 +17,7 @@ namespace Neo.Ledger
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
         // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
-        private const int BlocksTillRebroadcastLowPriorityPoolTx = 30;
-        private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
+        private const int BlocksTillRebroadcast = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
         private static readonly double MaxMillisecondsToReverifyTx = (double)Blockchain.MillisecondsPerBlock / 3;
@@ -428,9 +427,8 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                int blocksTillRebroadcast = Object.ReferenceEquals(unverifiedSortedTxPool, _sortedTransactions)
-                    ? BlocksTillRebroadcastHighPriorityPoolTx : BlocksTillRebroadcastLowPriorityPoolTx;
-
+                int blocksTillRebroadcast = BlocksTillRebroadcast;
+                // Increases, proportionally, blocksTillRebroadcast if mempool has more items than threshold bigger RebroadcastMultiplierThreshold
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
@@ -478,7 +476,7 @@ namespace Neo.Ledger
         ///
         /// Note: this must only be called from a single thread (the Blockchain actor)
         /// </summary>
-        /// <param name="maxToVerify">Max transactions to reverify, the value passed cam be >=1</param>
+        /// <param name="maxToVerify">Max transactions to reverify, the value passed can be >=1</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
