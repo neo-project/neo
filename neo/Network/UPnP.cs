@@ -76,7 +76,7 @@ namespace Neo.Network
         {
             try
             {
-                XmlDocument desc = new XmlDocument();
+                XmlDocument desc = new XmlDocument() { XmlResolver = null };
                 HttpWebRequest request = WebRequest.CreateHttp(resp);
                 using (WebResponse response = request.GetResponse())
                 {
@@ -155,7 +155,7 @@ namespace Neo.Network
             using (Stream reqs = r.GetRequestStream())
             {
                 reqs.Write(b, 0, b.Length);
-                XmlDocument resp = new XmlDocument();
+                XmlDocument resp = new XmlDocument() { XmlResolver = null };
                 WebResponse wres = r.GetResponse();
                 using (Stream ress = wres.GetResponseStream())
                 {
