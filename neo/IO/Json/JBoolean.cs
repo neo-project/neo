@@ -60,5 +60,10 @@ namespace Neo.IO.Json
         {
             return AsString();
         }
+
+        public override object ToPrimitive()
+        {
+            return AsBoolean();
+        }
     }
 }

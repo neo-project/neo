@@ -151,5 +151,14 @@ namespace Neo.IO.Json
             }
             return sb.ToString();
         }
+
+        public override object ToPrimitive()
+        {
+            ArrayList list = new ArrayList();
+
+            items.ForEach(o => list.Add(o.ToPrimitive()));
+
+            return list.ToArray();
+        }
     }
 }

@@ -1,13 +1,11 @@
+using System;
 using Akka.Actor;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
-using Neo.Network.RPC;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
-using System;
-using System.Net;
 
 namespace Neo
 {
@@ -24,19 +22,18 @@ namespace Neo
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
-        public RpcServer RpcServer { get; private set; }
 
         private readonly Store store;
-        private ChannelsConfig start_message = null;
-        private bool suspend = false;
+        private ChannelsConfig start_message;
+        private bool suspend;
 
         public NeoSystem(Store store)
         {
             this.store = store;
             Plugin.LoadPlugins(this);
-            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
-            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
-            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
+            LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+            TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             Plugin.NotifyPluginsLoadedAfterSystemConstructed();
         }
 
@@ -44,7 +41,6 @@ namespace Neo
         {
             foreach (var p in Plugin.Plugins)
                 p.Dispose();
-            RpcServer?.Dispose();
             EnsureStoped(LocalNode);
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
@@ -71,7 +67,7 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet, Store consensus_store = null, bool ignoreRecoveryLogs = false)
         {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(LocalNode, TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
@@ -84,13 +80,6 @@ namespace Neo
                 LocalNode.Tell(start_message);
                 start_message = null;
             }
-        }
-
-        public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
-            string[] trustedAuthorities = null, long maxGasInvoke = default)
-        {
-            RpcServer = new RpcServer(this, wallet, maxGasInvoke);
-            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
         }
 
         internal void SuspendNodeStartup()
