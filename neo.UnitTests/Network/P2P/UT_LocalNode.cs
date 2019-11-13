@@ -152,9 +152,9 @@ namespace Neo.UnitTests.Network.P2P
             IPEndPoint remote = null;
             Tcp.Connected connected = null;
             var senderDict = new Dictionary<IPEndPoint, TestProbe>();
-            for (int i = 1; i <= LocalNode.Singleton.MaxConnections; i++)
+            for (int i = LocalNode.Singleton.ConnectedCount; i <= LocalNode.Singleton.MaxConnections; i++)
             {
-                remote = new IPEndPoint(IPAddress.Parse("192.168.1." + i), 8080);
+                remote = new IPEndPoint(IPAddress.Parse("192.169.2." + i), 8080);
                 connected = new Tcp.Connected(remote, local);
                 var proble = CreateTestProbe();
                 proble.Send(localNode, connected);
