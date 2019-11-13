@@ -98,7 +98,7 @@ namespace Neo.Network.RPC
             foreach (var hash in hashes)
             {
                 size += 166;
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
+                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_ECDsaVerify, null);
             }
 
             networkFee += size * new PolicyAPI(rpcClient).GetFeePerByte();

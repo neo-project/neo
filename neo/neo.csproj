@@ -17,6 +17,7 @@
     <RootNamespace>Neo</RootNamespace>
     <Company>The Neo Project</Company>
     <Description>Neo</Description>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
