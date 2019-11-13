@@ -21,11 +21,12 @@ namespace Neo.UnitTests.SmartContract
             KeyPair key = new KeyPair(privateKey);
             Contract contract = Contract.CreateSignatureContract(key.PublicKey);
             byte[] script = contract.Script;
-            byte[] expectedArray = new byte[39];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 1, 33);
-            expectedArray[34] = 0x68;
-            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_CheckSig), 0, expectedArray, 35, 4);
+            expectedArray[34] = 0x50;
+            expectedArray[35] = 0x68;
+            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_ECDsaVerify), 0, expectedArray, 36, 4);
             Assert.AreEqual(expectedArray.ToScriptHash().ToAddress(), contract.Address);
         }
 
@@ -38,11 +39,12 @@ namespace Neo.UnitTests.SmartContract
             KeyPair key = new KeyPair(privateKey);
             Contract contract = Contract.CreateSignatureContract(key.PublicKey);
             byte[] script = contract.Script;
-            byte[] expectedArray = new byte[39];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 1, 33);
-            expectedArray[34] = 0x68;
-            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_CheckSig), 0, expectedArray, 35, 4);
+            expectedArray[34] = 0x50;
+            expectedArray[35] = 0x68;
+            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_ECDsaVerify), 0, expectedArray, 36, 4);
             Assert.AreEqual(expectedArray.ToScriptHash(), contract.ScriptHash);
         }
 
@@ -73,15 +75,16 @@ namespace Neo.UnitTests.SmartContract
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
             Contract contract = Contract.CreateMultiSigContract(2, publicKeys);
-            byte[] expectedArray = new byte[75];
+            byte[] expectedArray = new byte[76];
             expectedArray[0] = 0x52;
             expectedArray[1] = 0x21;
             Array.Copy(publicKeys[0].EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = 0x21;
             Array.Copy(publicKeys[1].EncodePoint(true), 0, expectedArray, 36, 33);
             expectedArray[69] = 0x52;
-            expectedArray[70] = 0x68;
-            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_CheckMultiSig), 0, expectedArray, 71, 4);
+            expectedArray[70] = 0x50;
+            expectedArray[71] = 0x68;
+            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_ECDsaCheckMultiSig), 0, expectedArray, 72, 4);
             Assert.AreEqual(Encoding.Default.GetString(expectedArray), Encoding.Default.GetString(contract.Script));
             Assert.AreEqual(2, contract.ParameterList.Length);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
@@ -106,15 +109,16 @@ namespace Neo.UnitTests.SmartContract
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
             action.Should().Throw<ArgumentException>();
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
-            byte[] expectedArray = new byte[75];
+            byte[] expectedArray = new byte[76];
             expectedArray[0] = 0x52;
             expectedArray[1] = 0x21;
             Array.Copy(publicKeys[0].EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = 0x21;
             Array.Copy(publicKeys[1].EncodePoint(true), 0, expectedArray, 36, 33);
             expectedArray[69] = 0x52;
-            expectedArray[70] = 0x68;
-            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_CheckMultiSig), 0, expectedArray, 71, 4);
+            expectedArray[70] = 0x50;
+            expectedArray[71] = 0x68;
+            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_ECDsaCheckMultiSig), 0, expectedArray, 72, 4);
             Assert.AreEqual(Encoding.Default.GetString(expectedArray), Encoding.Default.GetString(script));
         }
 
@@ -127,11 +131,12 @@ namespace Neo.UnitTests.SmartContract
             KeyPair key = new KeyPair(privateKey);
             Contract contract = Contract.CreateSignatureContract(key.PublicKey);
             byte[] script = contract.Script;
-            byte[] expectedArray = new byte[39];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 1, 33);
-            expectedArray[34] = 0x68;
-            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_CheckSig), 0, expectedArray, 35, 4);
+            expectedArray[34] = 0x50;
+            expectedArray[35] = 0x68;
+            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_ECDsaVerify), 0, expectedArray, 36, 4);
             Assert.AreEqual(Encoding.Default.GetString(expectedArray), Encoding.Default.GetString(script));
             Assert.AreEqual(1, contract.ParameterList.Length);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
@@ -145,11 +150,12 @@ namespace Neo.UnitTests.SmartContract
             rng.GetBytes(privateKey);
             KeyPair key = new KeyPair(privateKey);
             byte[] script = Contract.CreateSignatureRedeemScript(key.PublicKey);
-            byte[] expectedArray = new byte[39];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 1, 33);
-            expectedArray[34] = 0x68;
-            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_CheckSig), 0, expectedArray, 35, 4);
+            expectedArray[34] = 0x50;
+            expectedArray[35] = 0x68;
+            Array.Copy(BitConverter.GetBytes(InteropService.Neo_Crypto_ECDsaVerify), 0, expectedArray, 36, 4);
             Assert.AreEqual(Encoding.Default.GetString(expectedArray), Encoding.Default.GetString(script));
         }
     }
