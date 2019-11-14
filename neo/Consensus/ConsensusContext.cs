@@ -109,10 +109,10 @@ namespace Neo.Consensus
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
-            PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
-            CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
-            ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
-            LastChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
+            PreparationPayloads = ReadConsensusPayload(reader, ViewNumber);
+            CommitPayloads = ReadConsensusPayload(reader, ViewNumber);
+            ChangeViewPayloads = ReadConsensusPayload(reader, ViewNumber);
+            LastChangeViewPayloads = ReadConsensusPayload(reader, ViewNumber);
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
@@ -122,6 +122,24 @@ namespace Neo.Consensus
                 foreach (Transaction tx in Transactions.Values)
                     SendersFeeMonitor.AddSenderFee(tx);
             }
+        }
+
+        private static ConsensusPayload[] ReadConsensusPayload(BinaryReader reader, byte viewNumber)
+        {
+            // Read
+            var payloads = reader.ReadNullableArray<ConsensusPayload>(Blockchain.MaxValidators);
+
+            // Remove other views
+            for (int x = 0; x < payloads.Length; x++)
+            {
+                var p = payloads[x];
+                if (p != null && p.ConsensusMessage.ViewNumber != viewNumber)
+                {
+                    payloads[x] = null;
+                }
+            }
+
+            return payloads;
         }
 
         public void Dispose()
