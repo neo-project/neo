@@ -109,13 +109,9 @@ namespace Neo.UnitTests.Network.RPC
         {
             JObject response = CreateResponse(1);
             response["result"] = "000000002deadfa82cbc4682f5800";
-
             MockResponse(response.ToString());
+
             var result = rpc.GetBlockHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
-            Assert.AreEqual("000000002deadfa82cbc4682f5800", result);
-
-            MockResponse(response.ToString());
-            result = rpc.GetBlockHex("100");
             Assert.AreEqual("000000002deadfa82cbc4682f5800", result);
         }
 
@@ -134,20 +130,15 @@ namespace Neo.UnitTests.Network.RPC
             };
 
             JObject json = block.ToJson();
+            json["confirmations"] = 20;
             JObject response = CreateResponse(1);
             response["result"] = json;
-
             MockResponse(response.ToString());
+
             var result = rpc.GetBlock("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
-            Assert.IsNull(result.Confirmations);
-            Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
-            Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Block.Transactions[0].Hash.ToString());
-
-            MockResponse(response.ToString());
-            result = rpc.GetBlock("100");
-            Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
-            Assert.IsNull(result.Confirmations);
+            Assert.IsNull(result.NextBlockHash);
+            Assert.AreEqual(20, result.Confirmations);
             Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
             Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Block.Transactions[0].Hash.ToString());
 
@@ -158,6 +149,7 @@ namespace Neo.UnitTests.Network.RPC
             result = rpc.GetBlock("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
             Assert.AreEqual(20, result.Confirmations);
+            Assert.AreEqual("0x773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e", result.NextBlockHash.ToString());
             Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
             Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Block.Transactions[0].Hash.ToString());
         }
@@ -189,13 +181,9 @@ namespace Neo.UnitTests.Network.RPC
         {
             JObject response = CreateResponse(1);
             response["result"] = "0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
-
             MockResponse(response.ToString());
+
             var result = rpc.GetBlockHeaderHex("100");
-            Assert.AreEqual("0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2", result);
-
-            MockResponse(response.ToString());
-            result = rpc.GetBlockHeaderHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             Assert.AreEqual("0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2", result);
         }
 
@@ -206,18 +194,15 @@ namespace Neo.UnitTests.Network.RPC
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 _, out UInt160 _, out ulong _, out uint _, out Witness _);
 
             JObject json = header.ToJson();
+            json["confirmations"] = 20;
             JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.GetBlockHeader("100");
             Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
-            Assert.IsNull(result.Confirmations);
-
-            MockResponse(response.ToString());
-            result = rpc.GetBlockHeader("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
-            Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
-            Assert.IsNull(result.Confirmations);
+            Assert.IsNull(result.NextBlockHash);
+            Assert.AreEqual(20, result.Confirmations);
 
             json["confirmations"] = 20;
             json["nextblockhash"] = "4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
@@ -373,9 +358,18 @@ namespace Neo.UnitTests.Network.RPC
             Assert.AreEqual(transaction.Hash, result.Transaction.Hash);
             Assert.AreEqual(json.ToString(), result.ToJson().ToString());
 
+            // make the code compatible with the old version
             json["blockhash"] = UInt256.Zero.ToString();
             json["confirmations"] = 100;
             json["blocktime"] = 10;
+            MockResponse(response.ToString());
+
+            result = rpc.GetRawTransaction("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e");
+            Assert.AreEqual(transaction.Hash, result.Transaction.Hash);
+            Assert.AreEqual(100, result.Confirmations);
+            Assert.AreEqual(null, result.VMState);
+            Assert.AreEqual(json.ToString(), result.ToJson().ToString());
+
             json["vmState"] = VMState.HALT;
             MockResponse(response.ToString());
 
@@ -472,8 +466,7 @@ namespace Neo.UnitTests.Network.RPC
                         ""type"": ""ByteArray"",
                         ""value"": ""262bec084432""
                     }
-                ],
-                ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
+                ]
             }");
             JObject response = CreateResponse(1);
             response["result"] = json;
@@ -496,8 +489,7 @@ namespace Neo.UnitTests.Network.RPC
                         ""type"": ""ByteArray"",
                         ""value"": ""262bec084432""
                     }
-                ],
-                ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
+                ]
             }");
             JObject response = CreateResponse(1);
             response["result"] = json;
