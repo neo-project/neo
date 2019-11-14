@@ -81,10 +81,10 @@ namespace Neo.SmartContract
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
                 Null _ => engine.ScriptContainer.GetHashData(),
-                _ => item0.GetByteArray()
+                _ => item0.GetByteArray().ToArray()
             };
-            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
+            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToArray();
             try
             {
                 engine.CurrentContext.EvaluationStack.Push(Crypto.Default.VerifySignature(message, signature, pubkey));
@@ -103,7 +103,7 @@ namespace Neo.SmartContract
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
                 Null _ => engine.ScriptContainer.GetHashData(),
-                _ => item0.GetByteArray()
+                _ => item0.GetByteArray().ToArray()
             };
             int n;
             byte[][] pubkeys;
