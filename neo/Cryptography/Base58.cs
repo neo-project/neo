@@ -35,11 +35,7 @@ namespace Neo.Cryptography
         public static string Encode(byte[] input)
         {
             // Decode byte[] to BigInteger
-            var intData = BigInteger.Zero;
-            for (int i = 0; i < input.Length; i++)
-            {
-                intData = intData * 256 + input[i];
-            }
+            var intData = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
 
             // Encode BigInteger to Base58 string
             var sb = new StringBuilder();
