@@ -119,6 +119,8 @@ namespace Neo.UnitTests.Consensus
         {
             context.Block.MerkleRoot = null;
 
+            // Fake commits
+
             for (int x = 0; x < _validatorKeys.Length; x++)
             {
                 _context.MyIndex = x;
@@ -127,19 +129,7 @@ namespace Neo.UnitTests.Consensus
                 _context.CommitPayloads[_context.MyIndex] = com;
             }
 
-            // Manual block sign
-
-            Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
-            ContractParametersContext sc = new ContractParametersContext(context.Block);
-            for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
-            {
-                if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber != context.ViewNumber) continue;
-                sc.AddSignature(contract, context.Validators[i], context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
-                j++;
-            }
-            context.Block.Witness = sc.GetWitnesses()[0];
-            context.Block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-            return context.Block;
+            return context.CreateBlock();
         }
 
         private void EnsureContext(ConsensusContext context, params Transaction[] expected)
