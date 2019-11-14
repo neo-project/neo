@@ -88,7 +88,7 @@ namespace Neo.Oracle
             {
                 TransactionHash = txHash,
                 RequestHash = requestHash,
-                Error =  OracleResultError.None,
+                Error = OracleResultError.None,
                 Result = Encoding.UTF8.GetBytes(result),
             };
         }
