@@ -123,7 +123,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Override of abstract class that is triggered UnconnectedPeers is empty
+        /// Override of abstract class that is triggered when UnconnectedPeers is empty
         /// Performs a BroadcastMessage with the command `MessageCommand.GetAddr`, which, eventually, tells all known connections
         /// If there are no connected peers it will try with the default, respecting MaxCountFromSeedList limit
         /// </summary>
