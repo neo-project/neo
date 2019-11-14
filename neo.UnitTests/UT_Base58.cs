@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Cryptography
                 Base58.Decode(entry.Value).Should().BeEquivalentTo(entry.Key.HexToBytes());
 
                 Action action = () => Base58.Decode(entry.Value + "l");
-                action.Should().Throw<FormatException>();
+                action.ShouldThrow<FormatException>();
             }
         }
     }
