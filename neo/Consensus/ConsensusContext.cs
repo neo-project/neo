@@ -26,6 +26,7 @@ namespace Neo.Consensus
         public Block Block;
         public byte ViewNumber;
         public ECPoint[] Validators;
+        public TimeSpan PrepareRequestThreshold;
         public int MyIndex;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
@@ -349,6 +350,7 @@ namespace Neo.Consensus
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
+                PrepareRequestThreshold = TimeSpan.FromMilliseconds((Validators.Length + 1) * Blockchain.TimePerBlock.TotalMilliseconds);
                 if (_witnessSize == 0 || (pv != null && pv.Length != Validators.Length))
                 {
                     // Compute the expected size of the witness
