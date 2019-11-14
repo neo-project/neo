@@ -3,6 +3,7 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Oracle.Protocols.HTTP;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
@@ -35,6 +36,11 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Iterator_Concat = Register("Neo.Iterator.Concat", Iterator_Concat, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Json_Serialize = Register("Neo.Json.Serialize", Json_Serialize, 0_00100000, TriggerType.All);
         public static readonly uint Neo_Json_Deserialize = Register("Neo.Json.Deserialize", Json_Deserialize, 0_00500000, TriggerType.All);
+
+        public static readonly uint Neo_Oracle_HTTPGet = Register("Neo.Oracle.HTTP.Get", Oracle_HTTP_Get, 0, TriggerType.Application);
+        public static readonly uint Neo_Oracle_HTTPPost = Register("Neo.Oracle.HTTP.Post", Oracle_HTTP_Post, 0, TriggerType.Application);
+        public static readonly uint Neo_Oracle_HTTPDelete = Register("Neo.Oracle.HTTP.Delete", Oracle_HTTP_Delete, 0, TriggerType.Application);
+        public static readonly uint Neo_Oracle_HTTPPut = Register("Neo.Oracle.HTTP.Put", Oracle_HTTP_Put, 0, TriggerType.Application);
 
         static InteropService()
         {
@@ -380,6 +386,50 @@ namespace Neo.SmartContract
 
             engine.CurrentContext.EvaluationStack.Push(json.ToString());
             return true;
+        }
+
+        private static bool Oracle_HTTP_Get(ApplicationEngine engine)
+        {
+            return Oracle_HTTP(engine, OracleHTTPMethod.GET);
+        }
+
+        private static bool Oracle_HTTP_Post(ApplicationEngine engine)
+        {
+            return Oracle_HTTP(engine, OracleHTTPMethod.POST);
+        }
+
+        private static bool Oracle_HTTP_Delete(ApplicationEngine engine)
+        {
+            return Oracle_HTTP(engine, OracleHTTPMethod.DELETE);
+        }
+
+        private static bool Oracle_HTTP_Put(ApplicationEngine engine)
+        {
+            return Oracle_HTTP(engine, OracleHTTPMethod.PUT);
+        }
+
+        private static bool Oracle_HTTP(ApplicationEngine engine, OracleHTTPMethod method)
+        {
+            var request = new OracleHTTPRequest()
+            {
+                TxHash = ((Transaction)engine.ScriptContainer).Hash,
+                Method = method,
+            };
+
+            request.Body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            request.Filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            request.URL = engine.CurrentContext.EvaluationStack.Pop().GetString();
+
+            // Extract from cache
+
+            if (engine.OracleCache != null &&
+                engine.OracleCache.TryGet(request, out var response))
+            {
+                engine.CurrentContext.EvaluationStack.Push(response.ToStackItem());
+                return true;
+            }
+
+            return false;
         }
     }
 }
