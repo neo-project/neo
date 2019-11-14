@@ -61,11 +61,11 @@ namespace Neo.Network.P2P
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(knownHashes);
-            // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under processement by other sessions)
+            // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
-            // Remove those that are already in processement by other sessions
+            // Remove those that are already in process by other sessions
             hashes.Remove(globalTasks);
             if (hashes.Count == 0)
             {
