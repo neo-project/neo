@@ -412,8 +412,7 @@ namespace Neo.SmartContract
         {
             var request = new OracleHTTPRequest()
             {
-                TxHash = ((Transaction)engine.ScriptContainer).Hash,
-                Method = method,
+                Method = method
             };
 
             request.Body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();

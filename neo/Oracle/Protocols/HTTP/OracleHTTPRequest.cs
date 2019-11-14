@@ -34,7 +34,6 @@ namespace Neo.Oracle.Protocols.HTTP
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-                writer.Write(TxHash.ToArray());
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL);
                 writer.WriteVarString(Filter);

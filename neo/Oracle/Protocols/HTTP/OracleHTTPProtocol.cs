@@ -13,11 +13,11 @@ namespace Neo.Oracle.Protocols.HTTP
         /// <param name="request">Request</param>
         /// <param name="timeout">Timeouts</param>
         /// <returns>Oracle result</returns>
-        public OracleResult Process(OracleRequest request, TimeSpan timeout)
+        public OracleResult Process(UInt256 txHash, OracleRequest request, TimeSpan timeout)
         {
             if (!(request is OracleHTTPRequest httpRequest))
             {
-                return OracleResult.CreateError(request.TxHash, request.Hash, OracleResultError.ServerError);
+                return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
             }
 
             using (var client = new HttpClient())
@@ -48,13 +48,13 @@ namespace Neo.Oracle.Protocols.HTTP
                         }
                     default:
                         {
-                            return OracleResult.CreateError(request.TxHash, request.Hash, OracleResultError.PolicyError);
+                            return OracleResult.CreateError(txHash, request.Hash, OracleResultError.PolicyError);
                         }
                 }
 
                 if (!result.Wait(timeout))
                 {
-                    return OracleResult.CreateError(request.TxHash, request.Hash, OracleResultError.Timeout);
+                    return OracleResult.CreateError(txHash, request.Hash, OracleResultError.Timeout);
                 }
 
                 if (result.Result.IsSuccessStatusCode)
@@ -63,21 +63,21 @@ namespace Neo.Oracle.Protocols.HTTP
 
                     if (!ret.Wait(timeout))
                     {
-                        return OracleResult.CreateError(request.TxHash, request.Hash, OracleResultError.Timeout);
+                        return OracleResult.CreateError(txHash, request.Hash, OracleResultError.Timeout);
                     }
 
                     if (!ret.IsFaulted)
                     {
                         if (!FilterResponse(ret.Result, httpRequest.Filter, out var filteredStr))
                         {
-                            return OracleResult.CreateError(request.TxHash, request.Hash, OracleResultError.FilterError);
+                            return OracleResult.CreateError(txHash, request.Hash, OracleResultError.FilterError);
                         }
 
-                        return OracleResult.CreateResult(request.TxHash, request.Hash, filteredStr);
+                        return OracleResult.CreateResult(txHash, request.Hash, filteredStr);
                     }
                 }
 
-                return OracleResult.CreateError(request.TxHash, request.Hash, OracleResultError.ServerError);
+                return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
             }
         }
 

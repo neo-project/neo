@@ -4,6 +4,6 @@ namespace Neo.Oracle.Protocols
 {
     public interface IOracleProtocol
     {
-        OracleResult Process(OracleRequest request, TimeSpan timeout);
+        OracleResult Process(UInt256 txHash, OracleRequest request, TimeSpan timeout);
     }
 }

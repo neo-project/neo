@@ -26,7 +26,7 @@ namespace Neo.Oracle
         /// <param name="tx">Transaction</param>
         public Dictionary<UInt160, OracleResult> Process(Transaction tx)
         {
-            var oracle = new OracleTransactionCache(ProcessInternal);
+            var oracle = new OracleTransactionCache(request => ProcessInternal(tx.Hash, request));
 
             using (var snapshot = Blockchain.Singleton.GetSnapshot())
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
@@ -43,15 +43,16 @@ namespace Neo.Oracle
         /// <summary>
         /// Process internal
         /// </summary>
+        /// <param name="txHash">Transaction hash</param>
         /// <param name="request">Request</param>
         /// <returns>OracleResult</returns>
-        private OracleResult ProcessInternal(OracleRequest request)
+        private OracleResult ProcessInternal(UInt256 txHash, OracleRequest request)
         {
             switch (request)
             {
-                case OracleHTTPRequest http: return HTTP.Process(http, TimeOut);
+                case OracleHTTPRequest http: return HTTP.Process(txHash, http, TimeOut);
 
-                default: return OracleResult.CreateError(request.TxHash, request.Hash, OracleResultError.ServerError);
+                default: return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
             }
         }
     }

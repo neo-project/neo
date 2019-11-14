@@ -7,11 +7,6 @@ namespace Neo.Oracle
         private UInt160 _hash;
 
         /// <summary>
-        /// Transaction Hash
-        /// </summary>
-        public UInt256 TxHash { get; set; }
-
-        /// <summary>
         /// Hash
         /// </summary>
         public UInt160 Hash
