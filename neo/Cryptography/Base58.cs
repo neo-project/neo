@@ -35,15 +35,15 @@ namespace Neo.Cryptography
         public static string Encode(byte[] input)
         {
             // Decode byte[] to BigInteger
-            var intData = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
+            BigInteger value = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
 
             // Encode BigInteger to Base58 string
             var sb = new StringBuilder();
 
-            while (intData > 0)
+            while (value > 0)
             {
-                int remainder = (int)(intData % 58);
-                intData /= 58;
+                int remainder = (int)(value % 58);
+                value /= 58;
                 sb.Insert(0, Alphabet[remainder]);
             }
 
