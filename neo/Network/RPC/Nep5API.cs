@@ -1,4 +1,5 @@
 using Neo.Network.P2P.Payloads;
+using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
@@ -71,15 +72,39 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Get name of NEP5 token
+        /// Get token information in one rpc call
+        /// </summary>
+        /// <param name="scriptHash">contract script hash</param>
+        /// <returns></returns>
+        public RpcNep5TokenInfo GetTokenInfo(UInt160 scriptHash)
+        {
+            byte[] script = scriptHash.MakeScript("name")
+                .Concat(scriptHash.MakeScript("symbol"))
+                .Concat(scriptHash.MakeScript("decimals"))
+                .Concat(scriptHash.MakeScript("totalSupply"))
+                .ToArray();
+
+            var result = rpcClient.InvokeScript(script).Stack;
+
+            return new RpcNep5TokenInfo
+            {
+                Name = result[0].ToStackItem().GetString(),
+                Symbol = result[1].ToStackItem().GetString(),
+                Decimals = (uint)result[2].ToStackItem().GetBigInteger(),
+                TotalSupply = result[3].ToStackItem().GetBigInteger()
+            };
+        }
+
+        /// <summary>
+        /// Create NEP5 token transfer transaction
         /// </summary>
         /// <param name="scriptHash">contract script hash</param>
         /// <param name="fromKey">from KeyPair</param>
         /// <param name="to">to account script hash</param>
         /// <param name="amount">transfer amount</param>
-        /// <param name="networkFee">netwotk fee, set to be 0 if you don't need higher priority</param>
+        /// <param name="networkFee">netwotk fee, set to be 0 will auto calculate the least fee</param>
         /// <returns></returns>
-        public Transaction Transfer(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
+        public Transaction CreateTransferTx(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, long networkFee = 0)
         {
             var sender = Contract.CreateSignatureRedeemScript(fromKey.PublicKey).ToScriptHash();
             Cosigner[] cosigners = new[] { new Cosigner { Scopes = WitnessScope.CalledByEntry, Account = sender } };
