@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Consensus;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -44,6 +45,7 @@ namespace Neo.UnitTests.Consensus
                 Validators = _validatorKeys.Select(u => u.PublicKey).ToArray()
             };
             _context.Reset(0);
+            Assert.AreEqual((_validatorKeys.Length + 1) * Blockchain.TimePerBlock.TotalMilliseconds, _context.PrepareRequestThreshold.TotalMilliseconds);
         }
 
         [TestCleanup]
