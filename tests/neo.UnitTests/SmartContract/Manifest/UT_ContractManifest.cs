@@ -87,17 +87,16 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
-        public void ParseFromJson_Details()
+        public void ParseFromJson_Contacts()
         {
             var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""safeMethods"":[],""contact"":{""author"":""author"",""email"":""email""}}";
             var manifest = ContractManifest.Parse(json);
             var manifestString = manifest.ToString();
             
             Assert.AreEqual(manifestString, json);
-
+            Assert.AreEqual("author", manifest.Contact.Author);
+            Assert.AreEqual("email", manifest.Contact.Email);
         }
-
-
 
         [TestMethod]
         public void TestDeserializeAndSerialize()
