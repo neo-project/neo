@@ -143,8 +143,7 @@ namespace Neo.Network.P2P
         }
 
         protected IEnumerable<IPEndPoint> ReadPeersFromDat()
-        {
-            
+        { 
             if (File.Exists("Peers.dat"))
             {
                 List<IPEndPoint> peers = new List<IPEndPoint>();
