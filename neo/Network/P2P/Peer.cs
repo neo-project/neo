@@ -8,11 +8,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -69,6 +71,18 @@ namespace Neo.Network.P2P
                 peers = peers.Where(p => (p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
                 ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
+        }
+
+        protected void WritePeersToDat(IEnumerable<IPEndPoint> peers)
+        {
+            if (!File.Exists("Peers.dat"))
+                File.Create("Peers.dat").Close();
+            using FileStream fs = new FileStream("Peers.dat", FileMode.Truncate, FileAccess.Write);
+            using BinaryWriter writer = new BinaryWriter(fs, Encoding.UTF8);
+            foreach (IPEndPoint peer in peers)
+            {
+                writer.Write(peer.ToString());
+            }   
         }
 
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
@@ -195,6 +209,7 @@ namespace Neo.Network.P2P
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
+                WritePeersToDat(ConnectedPeers.Values.AsEnumerable<IPEndPoint>().Union(UnconnectedPeers.AsEnumerable<IPEndPoint>()));
             }
         }
 
