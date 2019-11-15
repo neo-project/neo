@@ -119,7 +119,7 @@ namespace Neo.Network.P2P
 
             if (version.Nonce == Nonce)
             {
-                if (LocalAddresses.Count < MaxConnectionsPerAddress)
+                if (LocalAddresses.Count < MaxConnections)
                 {
                     LocalAddresses.Add(remote.Address);
                 }
