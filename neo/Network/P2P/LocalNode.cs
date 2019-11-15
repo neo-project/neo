@@ -112,7 +112,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        public bool CheckDuplicateConnection(RemoteNode remoteNode)
+        public bool CheckDuplicateNonce(IActorRef remoteActor, RemoteNode remoteNode)
         {
             var version = remoteNode.Version;
             var remote = remoteNode.Remote;
@@ -132,14 +132,14 @@ namespace Neo.Network.P2P
                 var otherNode = pair.Value;
                 if (otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
                 {
-                    // add the duplicate address in ConnectedPeers
-                    if (ConnectedPeers.TryGetValue(remoteActorRef, out List<IPEndPoint> endPoints))
-                    {
-                        endPoints.Add(remote);
-                    }
                     return true;
                 }
             }
+            if (remote.Port != remoteNode.ListenerTcpPort && remoteNode.ListenerTcpPort != 0)
+            {
+                ConnectedPeers.TryUpdate(remoteActor, remoteNode.Listener, remote);
+            }
+
             return false;
         }
 

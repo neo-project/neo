@@ -210,9 +210,9 @@ namespace Neo.Network.P2P
                 DisconnectWithReason(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
                 return;
             }
-            if (LocalNode.Singleton.CheckDuplicateConnection(this))
+            if (LocalNode.Singleton.CheckDuplicateNonce(Self, this))
             {
-                DisconnectWithReason(DisconnectReason.DuplicateConnection);
+                DisconnectWithReason(DisconnectReason.DuplicateNonce);
                 return;
             }
 

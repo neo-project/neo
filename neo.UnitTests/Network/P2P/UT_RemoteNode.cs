@@ -130,7 +130,7 @@ namespace Neo.UnitTests.Network.P2P
             message.Command.Should().Be(MessageCommand.Disconnect);
 
             var disconnectionPayload = (DisconnectPayload)message.Payload;
-            disconnectionPayload.Reason.Should().Be(DisconnectReason.DuplicateConnection);
+            disconnectionPayload.Reason.Should().Be(DisconnectReason.DuplicateNonce);
 
             connectionTestProbeB.ExpectMsg<Tcp.Abort>();
         }

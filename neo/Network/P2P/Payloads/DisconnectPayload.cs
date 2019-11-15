@@ -7,7 +7,7 @@ namespace Neo.Network.P2P.Payloads
     {
         MaxConnectionReached = 0x01,
         MaxConnectionPerAddressReached = 0x02,
-        DuplicateConnection = 0x03,
+        DuplicateNonce = 0x03,
         MagicNumberIncompatible = 0x04,
         ConnectionTimeout = 0x05,
 

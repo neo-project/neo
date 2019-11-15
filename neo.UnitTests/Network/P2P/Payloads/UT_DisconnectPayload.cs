@@ -12,7 +12,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateConnection, new byte[] { 0x01, 0x02 });
+            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateNonce, new byte[] { 0x01, 0x02 });
             payload.Size.Should().Be(4);
         }
 
@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     payload.Deserialize(reader);
                 }
             }
-            Assert.AreEqual(DisconnectReason.DuplicateConnection, payload.Reason);
+            Assert.AreEqual(DisconnectReason.DuplicateNonce, payload.Reason);
             Assert.AreEqual(2, payload.Data.Length);
             Assert.AreEqual(0x01, payload.Data[0]);
             Assert.AreEqual(0x02, payload.Data[1]);
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize()
         {
-            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateConnection, new byte[] { 0x01, 0x02 });
+            var payload = DisconnectPayload.Create(DisconnectReason.DuplicateNonce, new byte[] { 0x01, 0x02 });
             payload.ToArray().ToHexString().Should().Be("03020102");
         }
     }
