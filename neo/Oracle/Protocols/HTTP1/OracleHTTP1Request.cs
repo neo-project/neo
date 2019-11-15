@@ -35,6 +35,7 @@ namespace Neo.Oracle.Protocols.HTTP1
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
+                writer.Write((byte)RequestType.HTTP1);
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL);
                 writer.WriteVarString(Filter);

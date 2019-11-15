@@ -4,6 +4,12 @@ namespace Neo.Oracle
 {
     public abstract class OracleRequest
     {
+        internal enum RequestType : byte
+        {
+            HTTP1 = 0x01,
+            HTTP2 = 0x02,
+        }
+
         private UInt160 _hash;
 
         /// <summary>
@@ -21,7 +27,6 @@ namespace Neo.Oracle
                 return _hash;
             }
         }
-
 
         protected abstract byte[] GetHashData();
     }

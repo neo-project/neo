@@ -4,16 +4,24 @@ using Neo.Oracle.Protocols;
 using Neo.Oracle.Protocols.HTTP1;
 using Neo.SmartContract;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Oracle
 {
     public class OracleService
     {
+        #region Protocols
+
         /// <summary>
         /// HTTP1 Protocol
         /// </summary>
         private static readonly IOracleProtocol HTTP1 = new OracleHTTP1Protocol();
+
+        /// <summary>
+        /// HTTP2 Protocol
+        /// </summary>
+        private static readonly IOracleProtocol HTTP2 = new OracleHTTP2Protocol();
+
+        #endregion
 
         /// <summary>
         /// Timeout
@@ -24,6 +32,7 @@ namespace Neo.Oracle
         /// Process transaction
         /// </summary>
         /// <param name="tx">Transaction</param>
+        /// <returns>OracleResultsCache</returns>
         public OracleResultsCache Process(Transaction tx)
         {
             var oracle = new OracleResultsCache(request => ProcessInternal(tx.Hash, request));
@@ -50,7 +59,8 @@ namespace Neo.Oracle
         {
             switch (request)
             {
-                case OracleHTTP1Request http: return HTTP1.Process(txHash, http, TimeOut);
+                case OracleHTTP1Request http1: return HTTP1.Process(txHash, http1, TimeOut);
+                case OracleHTTP2Request http2: return HTTP2.Process(txHash, http2, TimeOut);
 
                 default: return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
             }

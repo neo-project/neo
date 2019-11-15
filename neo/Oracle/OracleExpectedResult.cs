@@ -39,6 +39,29 @@ namespace Neo.Oracle
             }
         }
 
+        /// <summary>
+        /// Match
+        /// </summary>
+        /// <param name="cache">Oracle cache</param>
+        /// <returns>Return TRUE if match</returns>
+        public bool Match(OracleResultsCache cache)
+        {
+            if (cache.Count != Count) return false;
+
+            foreach (var entry in cache)
+            {
+                // Not found
+
+                if (!_expectedResults.TryGetValue(entry.Key, out var value)) return false;
+
+                // Different
+
+                if (value != UInt160.Zero && value != entry.Value.Hash) return false;
+            }
+
+            return true;
+        }
+
         public void Deserialize(BinaryReader reader)
         {
             var count = (int)reader.ReadVarInt(byte.MaxValue);

@@ -31,6 +31,11 @@ namespace Neo.Oracle.Protocols.HTTP1
                             result = client.GetAsync(httpRequest.URL);
                             break;
                         }
+                    case OracleHTTP1Method.DELETE:
+                        {
+                            result = client.DeleteAsync(httpRequest.URL);
+                            break;
+                        }
                     case OracleHTTP1Method.POST:
                         {
                             result = client.PostAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
@@ -39,11 +44,6 @@ namespace Neo.Oracle.Protocols.HTTP1
                     case OracleHTTP1Method.PUT:
                         {
                             result = client.PutAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
-                            break;
-                        }
-                    case OracleHTTP1Method.DELETE:
-                        {
-                            result = client.DeleteAsync(httpRequest.URL);
                             break;
                         }
                     default:
