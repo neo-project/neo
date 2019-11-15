@@ -3,7 +3,6 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Oracle.Protocols.HTTP1;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
@@ -36,11 +35,6 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Iterator_Concat = Register("Neo.Iterator.Concat", Iterator_Concat, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Json_Serialize = Register("Neo.Json.Serialize", Json_Serialize, 0_00100000, TriggerType.All);
         public static readonly uint Neo_Json_Deserialize = Register("Neo.Json.Deserialize", Json_Deserialize, 0_00500000, TriggerType.All);
-
-        public static readonly uint Neo_Oracle_HTTP1_Get = Register("Neo.Oracle.HTTP.Get", Oracle_HTTP1_Get, 0, TriggerType.Application);
-        public static readonly uint Neo_Oracle_HTTP1_Post = Register("Neo.Oracle.HTTP.Post", Oracle_HTTP1_Post, 0, TriggerType.Application);
-        public static readonly uint Neo_Oracle_HTTP1_Delete = Register("Neo.Oracle.HTTP.Delete", Oracle_HTTP1_Delete, 0, TriggerType.Application);
-        public static readonly uint Neo_Oracle_HTTP1_Put = Register("Neo.Oracle.HTTP.Put", Oracle_HTTP1_Put, 0, TriggerType.Application);
 
         static InteropService()
         {
@@ -386,62 +380,6 @@ namespace Neo.SmartContract
 
             engine.CurrentContext.EvaluationStack.Push(json.ToString());
             return true;
-        }
-
-        private static bool Oracle_HTTP1_Get(ApplicationEngine engine)
-        {
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
-            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
-
-            return Oracle_HTTP1(engine, OracleHTTP1Method.GET, url, filter, null);
-        }
-
-        private static bool Oracle_HTTP1_Post(ApplicationEngine engine)
-        {
-            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
-            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
-
-            return Oracle_HTTP1(engine, OracleHTTP1Method.POST, url, filter, body);
-        }
-
-        private static bool Oracle_HTTP1_Delete(ApplicationEngine engine)
-        {
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
-            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
-
-            return Oracle_HTTP1(engine, OracleHTTP1Method.DELETE, url, filter, null);
-        }
-
-        private static bool Oracle_HTTP1_Put(ApplicationEngine engine)
-        {
-            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
-            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
-
-            return Oracle_HTTP1(engine, OracleHTTP1Method.PUT, url, filter, body);
-        }
-
-        private static bool Oracle_HTTP1(ApplicationEngine engine, OracleHTTP1Method method, string url, string filter, byte[] body)
-        {
-            var request = new OracleHTTP1Request()
-            {
-                Method = method,
-                URL = url,
-                Filter = filter,
-                Body = body
-            };
-
-            // Extract from cache
-
-            if (engine.OracleCache != null &&
-                engine.OracleCache.TryGet(request, out var response))
-            {
-                engine.CurrentContext.EvaluationStack.Push(response.ToStackItem());
-                return true;
-            }
-
-            return false;
         }
     }
 }
