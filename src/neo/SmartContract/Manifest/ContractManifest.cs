@@ -42,6 +42,11 @@ namespace Neo.SmartContract.Manifest
         public ContractAbi Abi { get; set; }
 
         /// <summary>
+        /// Contract details including author and contact email.
+        /// </summary>
+        public ContractContactInformation Contact { get; set; }
+        
+        /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
         public ContractPermission[] Permissions { get; set; }
@@ -78,7 +83,8 @@ namespace Neo.SmartContract.Manifest
                 Features = ContractFeatures.NoProperty,
                 Groups = new ContractGroup[0],
                 SafeMethods = WildCardContainer<string>.Create(),
-                Trusts = WildCardContainer<UInt160>.Create()
+                Trusts = WildCardContainer<UInt160>.Create(),
+                Contact = new ContractContactInformation(),
             };
         }
 
@@ -128,6 +134,7 @@ namespace Neo.SmartContract.Manifest
             json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
             json["trusts"] = Trusts.ToJson();
             json["safeMethods"] = SafeMethods.ToJson();
+            json["contact"] = Contact.ToJson();
 
             return json;
         }
@@ -173,7 +180,7 @@ namespace Neo.SmartContract.Manifest
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString());
-
+            Contact = ContractContactInformation.FromJson(json["contact"]);
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
         }
