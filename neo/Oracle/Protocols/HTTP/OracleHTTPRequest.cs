@@ -2,14 +2,32 @@ using Neo.IO;
 using System.IO;
 using System.Text;
 
-namespace Neo.Oracle.Protocols.HTTP1
+namespace Neo.Oracle.Protocols.HTTP
 {
-    public class OracleHTTP1Request : OracleRequest
+    public class OracleHTTPRequest : OracleRequest
     {
+        public enum HTTPMethod : byte
+        {
+            GET = 0,
+            POST = 1,
+            PUT = 2,
+            DELETE = 3
+        }
+
+        /// <summary>
+        /// Version Major
+        /// </summary>
+        public byte VersionMajor { get; set; } = 1;
+
+        /// <summary>
+        /// Version Minor
+        /// </summary>
+        public byte VersionMinor { get; set; } = 1;
+
         /// <summary>
         /// HTTP Methods
         /// </summary>
-        public OracleHTTP1Method Method { get; set; }
+        public HTTPMethod Method { get; set; }
 
         /// <summary>
         /// URL
@@ -36,6 +54,8 @@ namespace Neo.Oracle.Protocols.HTTP1
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
                 writer.Write((byte)RequestType.HTTP1);
+                writer.Write(VersionMajor);
+                writer.Write(VersionMinor);
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL);
                 writer.WriteVarString(Filter);

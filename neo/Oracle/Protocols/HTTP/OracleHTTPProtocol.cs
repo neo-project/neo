@@ -1,10 +1,9 @@
 using System;
 using System.Net.Http;
-using System.Threading.Tasks;
 
-namespace Neo.Oracle.Protocols.HTTP1
+namespace Neo.Oracle.Protocols.HTTP
 {
-    public class OracleHTTP1Protocol : IOracleProtocol
+    public class OracleHTTPProtocol : IOracleProtocol
     {
         /// <summary>
         /// Process HTTP1 oracle request
@@ -15,35 +14,50 @@ namespace Neo.Oracle.Protocols.HTTP1
         /// <returns>Oracle result</returns>
         public OracleResult Process(UInt256 txHash, OracleRequest request, TimeSpan timeout)
         {
-            if (!(request is OracleHTTP1Request httpRequest))
+            if (!(request is OracleHTTPRequest httpRequest))
             {
                 return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
             }
 
+            HttpRequestMessage req;
+            var version = new Version(httpRequest.VersionMajor, httpRequest.VersionMinor);
+
             using (var client = new HttpClient())
             {
-                Task<HttpResponseMessage> result;
-
                 switch (httpRequest.Method)
                 {
-                    case OracleHTTP1Method.GET:
+                    case OracleHTTPRequest.HTTPMethod.GET:
                         {
-                            result = client.GetAsync(httpRequest.URL);
+                            req = new HttpRequestMessage(HttpMethod.Get, httpRequest.URL)
+                            {
+                                Version = version
+                            };
                             break;
                         }
-                    case OracleHTTP1Method.DELETE:
+                    case OracleHTTPRequest.HTTPMethod.DELETE:
                         {
-                            result = client.DeleteAsync(httpRequest.URL);
+                            req = new HttpRequestMessage(HttpMethod.Delete, httpRequest.URL)
+                            {
+                                Version = version
+                            };
                             break;
                         }
-                    case OracleHTTP1Method.POST:
+                    case OracleHTTPRequest.HTTPMethod.POST:
                         {
-                            result = client.PostAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
+                            req = new HttpRequestMessage(HttpMethod.Post, httpRequest.URL)
+                            {
+                                Version = version,
+                                Content = new ByteArrayContent(httpRequest.Body)
+                            };
                             break;
                         }
-                    case OracleHTTP1Method.PUT:
+                    case OracleHTTPRequest.HTTPMethod.PUT:
                         {
-                            result = client.PutAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
+                            req = new HttpRequestMessage(HttpMethod.Put, httpRequest.URL)
+                            {
+                                Version = version,
+                                Content = new ByteArrayContent(httpRequest.Body)
+                            };
                             break;
                         }
                     default:
@@ -51,6 +65,8 @@ namespace Neo.Oracle.Protocols.HTTP1
                             return OracleResult.CreateError(txHash, request.Hash, OracleResultError.PolicyError);
                         }
                 }
+
+                var result = client.SendAsync(req);
 
                 if (!result.Wait(timeout))
                 {
@@ -68,7 +84,8 @@ namespace Neo.Oracle.Protocols.HTTP1
 
                     if (!ret.IsFaulted)
                     {
-                        if (!FilterResponse(ret.Result, httpRequest.Filter, out var filteredStr))
+                        if (!OracleFilters.FilterContent(result.Result.Content.Headers.ContentType,
+                            ret.Result, httpRequest.Filter, out var filteredStr))
                         {
                             return OracleResult.CreateError(txHash, request.Hash, OracleResultError.FilterError);
                         }
@@ -79,16 +96,6 @@ namespace Neo.Oracle.Protocols.HTTP1
 
                 return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
             }
-        }
-
-        private bool FilterResponse(string input, string filter, out string filtered)
-        {
-            // TODO: Filter
-            //filtered = "";
-            //return false;
-
-            filtered = input;
-            return true;
         }
     }
 }

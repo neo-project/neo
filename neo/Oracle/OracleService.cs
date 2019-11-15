@@ -1,7 +1,6 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols;
-using Neo.Oracle.Protocols.HTTP1;
-using Neo.Oracle.Protocols.HTTP2;
+using Neo.Oracle.Protocols.HTTP;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -13,14 +12,9 @@ namespace Neo.Oracle
         #region Protocols
 
         /// <summary>
-        /// HTTP1 Protocol
+        /// HTTP Protocol
         /// </summary>
-        private static readonly IOracleProtocol HTTP1 = new OracleHTTP1Protocol();
-
-        /// <summary>
-        /// HTTP2 Protocol
-        /// </summary>
-        private static readonly IOracleProtocol HTTP2 = new OracleHTTP2Protocol();
+        private static readonly IOracleProtocol HTTP = new OracleHTTPProtocol();
 
         #endregion
 
@@ -61,8 +55,7 @@ namespace Neo.Oracle
         {
             return request switch
             {
-                OracleHTTP1Request http1 => HTTP1.Process(txHash, http1, TimeOut),
-                OracleHTTP2Request http2 => HTTP2.Process(txHash, http2, TimeOut),
+                OracleHTTPRequest http => HTTP.Process(txHash, http, TimeOut),
 
                 _ => OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError),
             };

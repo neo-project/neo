@@ -1,10 +1,10 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Oracle.Protocols.HTTP1;
+using Neo.Oracle.Protocols.HTTP;
 
-namespace Neo.UnitTests.Oracle.Protocols.HTTP1
+namespace Neo.UnitTests.Oracle.Protocols.HTTP
 {
     [TestClass]
-    public class UT_OracleHTTP1Request
+    public class UT_OracleHTTPRequest
     {
         [TestMethod]
         public void TestHash()
@@ -24,17 +24,17 @@ namespace Neo.UnitTests.Oracle.Protocols.HTTP1
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
-            requestB.Method = OracleHTTP1Method.GET;
+            requestB.Method = OracleHTTPRequest.HTTPMethod.GET;
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
         }
 
-        private OracleHTTP1Request CreateDefault()
+        private OracleHTTPRequest CreateDefault()
         {
-            return new OracleHTTP1Request()
+            return new OracleHTTPRequest()
             {
                 Body = new byte[0],
                 Filter = "",
-                Method = OracleHTTP1Method.DELETE,
+                Method = OracleHTTPRequest.HTTPMethod.DELETE,
                 URL = ""
             };
         }
