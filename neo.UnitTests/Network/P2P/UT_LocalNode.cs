@@ -83,8 +83,8 @@ namespace Neo.UnitTests.Network.P2P
             var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8080);
 
             // Create the maximum number of per address connections
-            IPEndPoint remote = null;
-            Tcp.Connected connected = null;
+            IPEndPoint remote;
+            Tcp.Connected connected;
             var senderDict = new Dictionary<IPEndPoint, TestProbe>();
             for (int i = 1; i <= LocalNode.Singleton.MaxConnectionsPerAddress; i++)
             {
@@ -149,8 +149,8 @@ namespace Neo.UnitTests.Network.P2P
             var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8080);
 
             // Create the maximum number of connections
-            IPEndPoint remote = null;
-            Tcp.Connected connected = null;
+            IPEndPoint remote;
+            Tcp.Connected connected;
             var senderDict = new Dictionary<IPEndPoint, TestProbe>();
             for (int i = LocalNode.Singleton.ConnectedCount; i <= LocalNode.Singleton.MaxConnections; i++)
             {
