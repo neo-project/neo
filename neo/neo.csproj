@@ -38,8 +38,4 @@
     <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Oracle\Protocols\HTTP2\" />
-  </ItemGroup>
-
 </Project>

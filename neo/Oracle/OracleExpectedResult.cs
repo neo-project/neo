@@ -31,7 +31,7 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="cache">Cache</param>
         /// <param name="attachExpectedHashes">Attach expected hashes</param>
-        public OracleExpectedResult(OracleResultsCache cache, bool attachExpectedHashes = true)
+        public OracleExpectedResult(OracleResultsCache cache, bool attachExpectedHashes = true) : base()
         {
             foreach (var entry in cache)
             {

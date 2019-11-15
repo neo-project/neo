@@ -14,7 +14,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Engine
         /// </summary>
-        private readonly Func<OracleRequest, OracleResult> _oracleEngine;
+        private readonly Func<OracleRequest, OracleResult> _oracle;
 
         /// <summary>
         /// Count
@@ -24,10 +24,10 @@ namespace Neo.Oracle
         /// <summary>
         /// Constructor for oracles
         /// </summary>
-        /// <param name="engine">Engine</param>
-        public OracleResultsCache(Func<OracleRequest, OracleResult> engine = null)
+        /// <param name="oracle">Oracle Engine</param>
+        public OracleResultsCache(Func<OracleRequest, OracleResult> oracle = null)
         {
-            _oracleEngine = engine;
+            _oracle = oracle;
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Neo.Oracle
         /// <param name="results">Results</param>
         public OracleResultsCache(params OracleResult[] results)
         {
-            _oracleEngine = null;
+            _oracle = null;
 
             foreach (var result in results)
             {
@@ -59,7 +59,7 @@ namespace Neo.Oracle
 
             // Not found inside the cache, invoke it
 
-            result = _oracleEngine?.Invoke(request);
+            result = _oracle?.Invoke(request);
 
             if (result != null)
             {
@@ -67,7 +67,7 @@ namespace Neo.Oracle
                 return true;
             }
 
-            // No oracle logic attached
+            // Without oracle logic
 
             return false;
         }

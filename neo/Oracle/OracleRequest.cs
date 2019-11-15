@@ -4,6 +4,9 @@ namespace Neo.Oracle
 {
     public abstract class OracleRequest
     {
+        /// <summary>
+        /// Only for hashing entropy
+        /// </summary>
         internal enum RequestType : byte
         {
             HTTP1 = 0x01,

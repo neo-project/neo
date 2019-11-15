@@ -84,13 +84,7 @@ namespace Neo.Oracle
         /// <returns>OracleResult</returns>
         public static OracleResult CreateResult(UInt256 txHash, UInt160 requestHash, string result)
         {
-            return new OracleResult()
-            {
-                TransactionHash = txHash,
-                RequestHash = requestHash,
-                Error = OracleResultError.None,
-                Result = Encoding.UTF8.GetBytes(result),
-            };
+            return CreateResult(txHash, requestHash, Encoding.UTF8.GetBytes(result));
         }
 
         /// <summary>

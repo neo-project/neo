@@ -1,3 +1,4 @@
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
@@ -17,6 +18,11 @@ namespace Neo.Oracle
         /// Global queue
         /// </summary>
         private readonly ConcurrentQueue<Transaction> _queue = new ConcurrentQueue<Transaction>();
+
+        /// <summary>
+        /// TestMode
+        /// </summary>
+        public bool TestMode { get; set; } = false;
 
         /// <summary>
         /// On oracle result
@@ -62,7 +68,9 @@ namespace Neo.Oracle
             {
                 if (_queue.TryDequeue(out var tx))
                 {
-                    var res = Service.Process(tx);
+                    using var snapshot = Blockchain.Singleton.GetSnapshot();
+                    var res = Service.Process(snapshot, tx, TestMode);
+
                     OnResult?.Invoke(tx, res);
                 }
 

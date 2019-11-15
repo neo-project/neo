@@ -1,7 +1,8 @@
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols;
 using Neo.Oracle.Protocols.HTTP1;
+using Neo.Oracle.Protocols.HTTP2;
+using Neo.Persistence;
 using Neo.SmartContract;
 using System;
 
@@ -31,14 +32,15 @@ namespace Neo.Oracle
         /// <summary>
         /// Process transaction
         /// </summary>
+        /// <param name="snapshot">Snapshot</param>
         /// <param name="tx">Transaction</param>
+        /// <param name="testMode">Test mode</param>
         /// <returns>OracleResultsCache</returns>
-        public OracleResultsCache Process(Transaction tx)
+        public OracleResultsCache Process(Snapshot snapshot, Transaction tx, bool testMode = false)
         {
             var oracle = new OracleResultsCache(request => ProcessInternal(tx.Hash, request));
 
-            using (var snapshot = Blockchain.Singleton.GetSnapshot())
-            using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
+            using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, testMode, oracle))
             {
                 if (engine.Execute() == VM.VMState.HALT)
                 {
@@ -57,13 +59,13 @@ namespace Neo.Oracle
         /// <returns>OracleResult</returns>
         private OracleResult ProcessInternal(UInt256 txHash, OracleRequest request)
         {
-            switch (request)
+            return request switch
             {
-                case OracleHTTP1Request http1: return HTTP1.Process(txHash, http1, TimeOut);
-                case OracleHTTP2Request http2: return HTTP2.Process(txHash, http2, TimeOut);
+                OracleHTTP1Request http1 => HTTP1.Process(txHash, http1, TimeOut),
+                OracleHTTP2Request http2 => HTTP2.Process(txHash, http2, TimeOut),
 
-                default: return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
-            }
+                _ => OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError),
+            };
         }
     }
 }
