@@ -24,7 +24,10 @@ namespace Neo.Network.RPC.Models
                 json["blockhash"] = BlockHash.ToString();
                 json["confirmations"] = Confirmations;
                 json["blocktime"] = BlockTime;
-                json["vmState"] = VMState;
+                if (VMState != null)
+                {
+                    json["vmState"] = VMState;
+                }
             }
             return json;
         }
@@ -38,7 +41,7 @@ namespace Neo.Network.RPC.Models
                 transaction.BlockHash = UInt256.Parse(json["blockhash"].AsString());
                 transaction.Confirmations = (int)json["confirmations"].AsNumber();
                 transaction.BlockTime = (uint)json["blocktime"].AsNumber();
-                transaction.VMState = json["vmState"].TryGetEnum<VMState>();
+                transaction.VMState = json["vmState"]?.TryGetEnum<VMState>();
             }
             return transaction;
         }
