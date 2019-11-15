@@ -2,12 +2,12 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Neo.Oracle.Protocols.HTTP
+namespace Neo.Oracle.Protocols.HTTP1
 {
-    public class OracleHTTPProtocol : IOracleProtocol
+    public class OracleHTTP1Protocol : IOracleProtocol
     {
         /// <summary>
-        /// Process HTTP oracle request
+        /// Process HTTP1 oracle request
         /// </summary>
         /// <param name="txHash">Transaction Hash</param>
         /// <param name="request">Request</param>
@@ -15,7 +15,7 @@ namespace Neo.Oracle.Protocols.HTTP
         /// <returns>Oracle result</returns>
         public OracleResult Process(UInt256 txHash, OracleRequest request, TimeSpan timeout)
         {
-            if (!(request is OracleHTTPRequest httpRequest))
+            if (!(request is OracleHTTP1Request httpRequest))
             {
                 return OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError);
             }
@@ -26,22 +26,22 @@ namespace Neo.Oracle.Protocols.HTTP
 
                 switch (httpRequest.Method)
                 {
-                    case OracleHTTPMethod.GET:
+                    case OracleHTTP1Method.GET:
                         {
                             result = client.GetAsync(httpRequest.URL);
                             break;
                         }
-                    case OracleHTTPMethod.POST:
+                    case OracleHTTP1Method.POST:
                         {
                             result = client.PostAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
                             break;
                         }
-                    case OracleHTTPMethod.PUT:
+                    case OracleHTTP1Method.PUT:
                         {
                             result = client.PutAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
                             break;
                         }
-                    case OracleHTTPMethod.DELETE:
+                    case OracleHTTP1Method.DELETE:
                         {
                             result = client.DeleteAsync(httpRequest.URL);
                             break;

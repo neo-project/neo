@@ -1,14 +1,15 @@
 using Neo.IO;
 using System.IO;
+using System.Text;
 
-namespace Neo.Oracle.Protocols.HTTP
+namespace Neo.Oracle.Protocols.HTTP1
 {
-    public class OracleHTTPRequest : OracleRequest
+    public class OracleHTTP1Request : OracleRequest
     {
         /// <summary>
         /// HTTP Methods
         /// </summary>
-        public OracleHTTPMethod Method { get; set; }
+        public OracleHTTP1Method Method { get; set; }
 
         /// <summary>
         /// URL
@@ -32,7 +33,7 @@ namespace Neo.Oracle.Protocols.HTTP
         protected override byte[] GetHashData()
         {
             using (var stream = new MemoryStream())
-            using (var writer = new BinaryWriter(stream))
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL);

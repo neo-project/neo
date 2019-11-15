@@ -1,6 +1,6 @@
-namespace Neo.Oracle.Protocols.HTTP
+namespace Neo.Oracle.Protocols.HTTP1
 {
-    public enum OracleHTTPMethod : byte
+    public enum OracleHTTP1Method : byte
     {
         GET = 0,
         POST = 1,

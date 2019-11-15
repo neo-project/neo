@@ -7,6 +7,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.Network.RPC.Models;
+using Neo.Oracle;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -81,12 +82,13 @@ namespace Neo.UnitTests.Network.RPC
         {
             txManager = new TransactionManager(rpcClientMock.Object, sender);
 
+            var attr = new OracleExpectedResult();
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
                 new TransactionAttribute
                 {
-                    Usage = TransactionAttributeUsage.Url,
-                    Data = "53616d706c6555726c".HexToBytes() // "SampleUrl"
+                    Usage = TransactionAttributeUsage.OracleExpectedResult,
+                    Data = ((ISerializable)attr).ToArray()
                 }
             };
 
@@ -94,7 +96,7 @@ namespace Neo.UnitTests.Network.RPC
             txManager.MakeTransaction(script, attributes, null, 60000);
 
             var tx = txManager.Tx;
-            Assert.AreEqual("53616d706c6555726c", tx.Attributes[0].Data.ToHexString());
+            Assert.AreEqual(((ISerializable)attr).ToArray().ToHexString(), tx.Attributes[0].Data.ToHexString());
             Assert.AreEqual(0, tx.SystemFee % (long)NativeContract.GAS.Factor);
             Assert.AreEqual(60000, tx.NetworkFee);
         }
@@ -108,8 +110,8 @@ namespace Neo.UnitTests.Network.RPC
             {
                 new TransactionAttribute
                 {
-                    Usage = TransactionAttributeUsage.Url,
-                    Data = "53616d706c6555726c".HexToBytes() // "SampleUrl"
+                    Usage = TransactionAttributeUsage.OracleExpectedResult,
+                    Data = ((ISerializable)new OracleExpectedResult()).ToArray().ToArray()
                 }
             };
 

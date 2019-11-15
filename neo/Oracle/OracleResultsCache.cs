@@ -1,14 +1,15 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Neo.Oracle
 {
-    public class OracleTransactionCache
+    public class OracleResultsCache : IEnumerable<KeyValuePair<UInt160, OracleResult>>
     {
         /// <summary>
         /// Results
         /// </summary>
-        public readonly Dictionary<UInt160, OracleResult> Cache = new Dictionary<UInt160, OracleResult>();
+        private readonly Dictionary<UInt160, OracleResult> _cache = new Dictionary<UInt160, OracleResult>();
 
         /// <summary>
         /// Engine
@@ -16,10 +17,15 @@ namespace Neo.Oracle
         private readonly Func<OracleRequest, OracleResult> _oracleEngine;
 
         /// <summary>
+        /// Count
+        /// </summary>
+        public int Count => _cache.Count;
+
+        /// <summary>
         /// Constructor for oracles
         /// </summary>
         /// <param name="engine">Engine</param>
-        public OracleTransactionCache(Func<OracleRequest, OracleResult> engine = null)
+        public OracleResultsCache(Func<OracleRequest, OracleResult> engine = null)
         {
             _oracleEngine = engine;
         }
@@ -28,13 +34,13 @@ namespace Neo.Oracle
         /// Constructor for cached results
         /// </summary>
         /// <param name="results">Results</param>
-        public OracleTransactionCache(params OracleResult[] results)
+        public OracleResultsCache(params OracleResult[] results)
         {
             _oracleEngine = null;
 
             foreach (var result in results)
             {
-                Cache[result.Hash] = result;
+                _cache[result.RequestHash] = result;
             }
         }
 
@@ -46,7 +52,7 @@ namespace Neo.Oracle
         /// <returns></returns>
         public bool TryGet(OracleRequest request, out OracleResult result)
         {
-            if (Cache.TryGetValue(request.Hash, out result))
+            if (_cache.TryGetValue(request.Hash, out result))
             {
                 return true;
             }
@@ -57,13 +63,23 @@ namespace Neo.Oracle
 
             if (result != null)
             {
-                Cache[request.Hash] = result;
+                _cache[request.Hash] = result;
                 return true;
             }
 
             // No oracle logic attached
 
             return false;
+        }
+
+        public IEnumerator<KeyValuePair<UInt160, OracleResult>> GetEnumerator()
+        {
+            return _cache.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _cache.GetEnumerator();
         }
     }
 }

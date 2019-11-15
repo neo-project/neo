@@ -1,7 +1,6 @@
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,7 +21,7 @@ namespace Neo.Oracle
         /// <summary>
         /// On oracle result
         /// </summary>
-        public Action<Transaction, Dictionary<UInt160, OracleResult>> OnResult { get; set; }
+        public Action<Transaction, OracleResultsCache> OnResult { get; set; }
 
         /// <summary>
         /// Constructor
