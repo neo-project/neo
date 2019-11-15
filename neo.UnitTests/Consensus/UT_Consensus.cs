@@ -177,31 +177,36 @@ namespace Neo.UnitTests.Consensus
             consensusContext.Transactions = txs.ToDictionary(p => p.Hash);
 
             consensusContext.PreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-            consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, new PrepareRequest { TransactionHashes = consensusContext.TransactionHashes, Timestamp = 23, ViewNumber = 2 }, 6, new[] { (byte)'3', (byte)'!' });
-            consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, ViewNumber = 2 }, 0, new[] { (byte)'t', (byte)'e' });
-            consensusContext.PreparationPayloads[1] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, ViewNumber = 2 }, 1, new[] { (byte)'s', (byte)'t' });
+            var prepareRequestMessage = new PrepareRequest
+            {
+                TransactionHashes = consensusContext.TransactionHashes,
+                Timestamp = 23
+            };
+            consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
+            consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 0, new[] { (byte)'t', (byte)'e' });
+            consensusContext.PreparationPayloads[1] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 1, new[] { (byte)'s', (byte)'t' });
             consensusContext.PreparationPayloads[2] = null;
-            consensusContext.PreparationPayloads[3] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, ViewNumber = 2 }, 3, new[] { (byte)'1', (byte)'2' });
+            consensusContext.PreparationPayloads[3] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 3, new[] { (byte)'1', (byte)'2' });
             consensusContext.PreparationPayloads[4] = null;
             consensusContext.PreparationPayloads[5] = null;
 
             consensusContext.CommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             using (SHA256 sha256 = SHA256.Create())
             {
-                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()), ViewNumber = 2 }, 3, new[] { (byte)'3', (byte)'4' });
-                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()), ViewNumber = 2 }, 3, new[] { (byte)'6', (byte)'7' });
+                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()) }, 3, new[] { (byte)'3', (byte)'4' });
+                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
             }
 
             consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-            consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 2, Timestamp = 6 }, 0, new[] { (byte)'A' });
-            consensusContext.ChangeViewPayloads[1] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 2, Timestamp = 5 }, 1, new[] { (byte)'B' });
+            consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 6 }, 0, new[] { (byte)'A' });
+            consensusContext.ChangeViewPayloads[1] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 5 }, 1, new[] { (byte)'B' });
             consensusContext.ChangeViewPayloads[2] = null;
-            consensusContext.ChangeViewPayloads[3] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 2, Timestamp = uint.MaxValue }, 3, new[] { (byte)'C' });
+            consensusContext.ChangeViewPayloads[3] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = uint.MaxValue }, 3, new[] { (byte)'C' });
             consensusContext.ChangeViewPayloads[4] = null;
             consensusContext.ChangeViewPayloads[5] = null;
-            consensusContext.ChangeViewPayloads[6] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 2, Timestamp = 1 }, 6, new[] { (byte)'D' });
+            consensusContext.ChangeViewPayloads[6] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 1 }, 6, new[] { (byte)'D' });
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 
