@@ -37,12 +37,26 @@ namespace Neo.SmartContract.Native.Tokens
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;
+            BigInteger totalNetworkFee = 0;
+            BigInteger totalSysFee = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
-                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+            {
+                BigInteger burned = Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                if (burned >= tx.NetworkFee)
+                {
+                    totalNetworkFee += tx.NetworkFee;
+                    totalSysFee += burned - tx.NetworkFee;
+                }
+                else
+                {
+                    totalNetworkFee += burned;
+                }
+            }
+                
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
-            Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.SystemFee);
+            Mint(engine, primary, totalNetworkFee);
+            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + totalSysFee;
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
             engine.Snapshot.Storages.Add(key, new StorageItem
             {

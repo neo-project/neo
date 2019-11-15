@@ -104,22 +104,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
                 NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
 
-            // Burn more than expected
-
-            Assert.ThrowsException<InvalidOperationException>(() =>
-                NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000600000000001)));
-
             // Real burn
-
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1)).Should().Be(1);
 
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000599999999999);
 
-            keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());
-
-            // Burn all
-
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000599999999999));
+            // Burn more than expected
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000600000000000)).Should().Be(3000599999999999);
 
             (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
