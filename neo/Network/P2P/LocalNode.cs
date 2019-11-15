@@ -112,7 +112,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        public bool IsDuplicateConnection(RemoteNode remoteNode)
+        public bool CheckDuplicateConnection(RemoteNode remoteNode)
         {
             var version = remoteNode.Version;
             var remote = remoteNode.Remote;
@@ -121,6 +121,10 @@ namespace Neo.Network.P2P
             {
                 LocalAddresses.Add(remote.Address);
                 return true;
+            }
+            if (remote == null)
+            {
+                return false;
             }
             foreach (var pair in RemoteNodes)
             {

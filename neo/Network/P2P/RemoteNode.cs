@@ -205,17 +205,12 @@ namespace Neo.Network.P2P
                 }
             }
 
-            if (version.Nonce == LocalNode.Nonce)
-            {
-                DisconnectWithReason(DisconnectReason.DuplicateConnection);
-                return;
-            }
             if (version.Magic != ProtocolSettings.Default.Magic)
             {
                 DisconnectWithReason(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
                 return;
             }
-            if (Remote != null && LocalNode.Singleton.IsDuplicateConnection(this))
+            if (LocalNode.Singleton.CheckDuplicateConnection(this))
             {
                 DisconnectWithReason(DisconnectReason.DuplicateConnection);
                 return;
