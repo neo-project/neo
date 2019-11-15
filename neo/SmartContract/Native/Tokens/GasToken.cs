@@ -52,7 +52,6 @@ namespace Neo.SmartContract.Native.Tokens
                     totalNetworkFee += burned;
                 }
             }
-            
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, totalNetworkFee);
