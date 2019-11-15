@@ -390,34 +390,47 @@ namespace Neo.SmartContract
 
         private static bool Oracle_HTTP_Get(ApplicationEngine engine)
         {
-            return Oracle_HTTP(engine, OracleHTTPMethod.GET);
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+
+            return Oracle_HTTP(engine, OracleHTTPMethod.GET, url, filter, null);
         }
 
         private static bool Oracle_HTTP_Post(ApplicationEngine engine)
         {
-            return Oracle_HTTP(engine, OracleHTTPMethod.POST);
+            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+
+            return Oracle_HTTP(engine, OracleHTTPMethod.POST, url, filter, body);
         }
 
         private static bool Oracle_HTTP_Delete(ApplicationEngine engine)
         {
-            return Oracle_HTTP(engine, OracleHTTPMethod.DELETE);
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+
+            return Oracle_HTTP(engine, OracleHTTPMethod.DELETE, url, filter, null);
         }
 
         private static bool Oracle_HTTP_Put(ApplicationEngine engine)
         {
-            return Oracle_HTTP(engine, OracleHTTPMethod.PUT);
+            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+
+            return Oracle_HTTP(engine, OracleHTTPMethod.PUT, url, filter, body);
         }
 
-        private static bool Oracle_HTTP(ApplicationEngine engine, OracleHTTPMethod method)
+        private static bool Oracle_HTTP(ApplicationEngine engine, OracleHTTPMethod method, string url, string filter, byte[] body)
         {
             var request = new OracleHTTPRequest()
             {
-                Method = method
+                Method = method,
+                URL = url,
+                Filter = filter,
+                Body = body
             };
-
-            request.Body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            request.Filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
-            request.URL = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
             // Extract from cache
 

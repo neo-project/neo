@@ -11,7 +11,7 @@ namespace Neo.Oracle.Protocols.HTTP
         /// </summary>
         /// <param name="txHash">Transaction Hash</param>
         /// <param name="request">Request</param>
-        /// <param name="timeout">Timeouts</param>
+        /// <param name="timeout">Timeout</param>
         /// <returns>Oracle result</returns>
         public OracleResult Process(UInt256 txHash, OracleRequest request, TimeSpan timeout)
         {

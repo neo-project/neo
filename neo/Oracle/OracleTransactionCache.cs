@@ -16,12 +16,26 @@ namespace Neo.Oracle
         private readonly Func<OracleRequest, OracleResult> _oracleEngine;
 
         /// <summary>
-        /// Constructor
+        /// Constructor for oracles
         /// </summary>
         /// <param name="engine">Engine</param>
         public OracleTransactionCache(Func<OracleRequest, OracleResult> engine = null)
         {
             _oracleEngine = engine;
+        }
+
+        /// <summary>
+        /// Constructor for cached results
+        /// </summary>
+        /// <param name="results">Results</param>
+        public OracleTransactionCache(params OracleResult[] results)
+        {
+            _oracleEngine = null;
+
+            foreach (var result in results)
+            {
+                Cache[result.Hash] = result;
+            }
         }
 
         /// <summary>
