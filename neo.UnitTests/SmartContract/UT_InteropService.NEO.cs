@@ -240,6 +240,18 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Neo_Contract_Update).Should().BeTrue();
+
+            // Remove Storage flag with something stored
+
+            state.Manifest.Features = ContractFeatures.NoProperty;
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
+            mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
+
+            engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            engine.LoadScript(state.Script);
+            engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
+            engine.CurrentContext.EvaluationStack.Push(script);
+            InteropService.Invoke(engine, InteropService.Neo_Contract_Update).Should().BeFalse();
         }
 
         [TestMethod]
