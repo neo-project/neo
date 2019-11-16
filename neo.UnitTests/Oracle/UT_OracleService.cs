@@ -263,7 +263,8 @@ namespace Neo.UnitTests.Oracle
 
                 tx = new Transaction()
                 {
-                    Script = script.ToArray(),
+                    // Ensure that multiple execution are treated as one (with same hash)
+                    Script = script.ToArray().Concat(script.ToArray()).ToArray(), 
                     Attributes = new TransactionAttribute[0],
                     Cosigners = new Cosigner[0],
                     Sender = UInt160.Zero,
