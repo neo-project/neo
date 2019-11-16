@@ -16,11 +16,13 @@ namespace Neo.UnitTests.Oracle
 
             CollectionAssert.AreEqual(((ISerializable)a).ToArray(), ((ISerializable)b).ToArray());
             Assert.AreEqual(0, a.Count);
+            Assert.AreEqual(1, a.Size);
 
             b = new OracleExpectedResult(new OracleResultsCache(
                 OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)));
 
             CollectionAssert.AreNotEqual(((ISerializable)a).ToArray(), ((ISerializable)b).ToArray());
+            Assert.AreEqual(1 + (UInt160.Length * 2), b.Size);
 
             a = ((ISerializable)b).ToArray().AsSerializable<OracleExpectedResult>();
             CollectionAssert.AreEqual(((ISerializable)a).ToArray(), ((ISerializable)b).ToArray());

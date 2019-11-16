@@ -53,7 +53,7 @@ namespace Neo.Oracle.Protocols.HTTP
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
-                writer.Write((byte)RequestType.HTTP1);
+                writer.Write((byte)RequestType.HTTP);
                 writer.Write(VersionMajor);
                 writer.Write(VersionMinor);
                 writer.Write((byte)Method);
