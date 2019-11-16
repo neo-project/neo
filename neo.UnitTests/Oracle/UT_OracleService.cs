@@ -65,12 +65,12 @@ namespace Neo.UnitTests.Oracle
         private async Task ProcessAsync(HttpContext context)
         {
             var response = "";
+            context.Response.ContentType = "text/plain";
 
             switch (context.Request.Path.Value)
             {
                 case "/helloWorld":
                     {
-                        context.Response.ContentType = "text/plain";
                         response = "Hello world!";
                         break;
                     }
@@ -79,7 +79,31 @@ namespace Neo.UnitTests.Oracle
                         Thread.Sleep(2100);
                         break;
                     }
-                case "/echo":
+                case "/delete":
+                    {
+                        if (context.Request.Method != "DELETE")
+                        {
+                            context.Response.StatusCode = 404;
+                            break;
+                        }
+
+                        response = "true";
+                        break;
+                    }
+                case "/put":
+                    {
+                        if (context.Request.Method != "PUT")
+                        {
+                            context.Response.StatusCode = 404;
+                            break;
+                        }
+
+                        var read = new byte[4096];
+                        Array.Resize(ref read, context.Request.Body.Read(read, 0, read.Length));
+                        response = Encoding.UTF8.GetString(read);
+                        break;
+                    }
+                case "/post":
                     {
                         if (context.Request.Method != "POST")
                         {
@@ -108,7 +132,7 @@ namespace Neo.UnitTests.Oracle
             var request = new OracleHTTPRequest()
             {
                 Method = OracleHTTPRequest.HTTPMethod.POST,
-                URL = "http://127.0.0.1:9898/echo",
+                URL = "http://127.0.0.1:9898/post",
                 Filter = "",
                 Body = Encoding.UTF8.GetBytes("Hello from POST oracle!"),
                 VersionMajor = 1,
@@ -121,6 +145,48 @@ namespace Neo.UnitTests.Oracle
             Assert.IsTrue(ret.TryGet(request, out var result));
             Assert.AreEqual(OracleResultError.None, result.Error);
             CollectionAssert.AreEqual(request.Body, result.Result);
+        }
+
+        [TestMethod]
+        public void TestTransaction_PUT_Content()
+        {
+            var request = new OracleHTTPRequest()
+            {
+                Method = OracleHTTPRequest.HTTPMethod.PUT,
+                URL = "http://127.0.0.1:9898/put",
+                Filter = "",
+                Body = Encoding.UTF8.GetBytes("Hello from PUT oracle!"),
+                VersionMajor = 1,
+                VersionMinor = 1
+            };
+
+            var ret = ExecuteHTTP1Tx(request);
+
+            Assert.AreEqual(1, ret.Count);
+            Assert.IsTrue(ret.TryGet(request, out var result));
+            Assert.AreEqual(OracleResultError.None, result.Error);
+            CollectionAssert.AreEqual(request.Body, result.Result);
+        }
+
+        [TestMethod]
+        public void TestTransaction_DELETE_Content()
+        {
+            var request = new OracleHTTPRequest()
+            {
+                Method = OracleHTTPRequest.HTTPMethod.DELETE,
+                URL = "http://127.0.0.1:9898/delete",
+                Filter = "",
+                Body = null,
+                VersionMajor = 1,
+                VersionMinor = 1
+            };
+
+            var ret = ExecuteHTTP1Tx(request);
+
+            Assert.AreEqual(1, ret.Count);
+            Assert.IsTrue(ret.TryGet(request, out var result));
+            Assert.AreEqual(OracleResultError.None, result.Error);
+            CollectionAssert.AreEqual(Encoding.UTF8.GetBytes("true"), result.Result);
         }
 
         [TestMethod]
