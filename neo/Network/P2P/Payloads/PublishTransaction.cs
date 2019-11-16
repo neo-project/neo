@@ -45,8 +45,8 @@ namespace Neo.Network.P2P.Payloads
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             if (Version > 1) throw new FormatException();
-            Script = reader.ReadVarBytes();
-            ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
+            Script = reader.ReadVarBytes(ushort.MaxValue);
+            ParameterList = reader.ReadVarBytes(ushort.MaxValue).Select(p => (ContractParameterType)p).ToArray();
             ReturnType = (ContractParameterType)reader.ReadByte();
             if (Version >= 1)
                 NeedStorage = reader.ReadBoolean();
