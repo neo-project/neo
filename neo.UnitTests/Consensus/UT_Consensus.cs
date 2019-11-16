@@ -20,7 +20,6 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.Consensus
 {
-
     [TestClass]
     public class ConsensusTests : TestKit
     {
@@ -36,7 +35,7 @@ namespace Neo.UnitTests.Consensus
             Shutdown();
         }
 
-        [TestMethod]
+        [TestMethod, NotReRunnable]
         public void TestPrepareRequestThreshold()
         {
             var service = new ConsensusService(null, null, null);
