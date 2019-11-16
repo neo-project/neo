@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Neo.Oracle
 {
-    public class OracleResultsCache : IEnumerable<KeyValuePair<UInt160, OracleResult>>
+    public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResult>>
     {
         /// <summary>
         /// Results
@@ -25,7 +25,7 @@ namespace Neo.Oracle
         /// Constructor for oracles
         /// </summary>
         /// <param name="oracle">Oracle Engine</param>
-        public OracleResultsCache(Func<OracleRequest, OracleResult> oracle = null)
+        public OracleExecutionCache(Func<OracleRequest, OracleResult> oracle = null)
         {
             _oracle = oracle;
         }
@@ -34,7 +34,7 @@ namespace Neo.Oracle
         /// Constructor for cached results
         /// </summary>
         /// <param name="results">Results</param>
-        public OracleResultsCache(params OracleResult[] results)
+        public OracleExecutionCache(params OracleResult[] results)
         {
             _oracle = null;
 

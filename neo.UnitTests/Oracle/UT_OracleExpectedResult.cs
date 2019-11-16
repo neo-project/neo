@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(0, a.Count);
             Assert.AreEqual(1, a.Size);
 
-            b = new OracleExpectedResult(new OracleResultsCache(
+            b = new OracleExpectedResult(new OracleExecutionCache(
                 OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)));
 
             CollectionAssert.AreNotEqual(((ISerializable)a).ToArray(), ((ISerializable)b).ToArray());
@@ -39,27 +39,27 @@ namespace Neo.UnitTests.Oracle
 
             // Empty
 
-            var cache = new OracleResultsCache();
+            var cache = new OracleExecutionCache();
             Assert.IsTrue(attrib.Match(cache));
 
             // Distinct length
 
-            cache = new OracleResultsCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError));
+            cache = new OracleExecutionCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError));
             Assert.IsFalse(attrib.Match(cache));
 
             // Equal length, but distinct
 
-            attrib = new OracleExpectedResult(new OracleResultsCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.PolicyError)));
+            attrib = new OracleExpectedResult(new OracleExecutionCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.PolicyError)));
             Assert.IsFalse(attrib.Match(cache));
 
             // Equal all (with expected hash)
 
-            attrib = new OracleExpectedResult(new OracleResultsCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)), true);
+            attrib = new OracleExpectedResult(new OracleExecutionCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)), true);
             Assert.IsTrue(attrib.Match(cache));
 
             // Equal all (without expected hash)
 
-            attrib = new OracleExpectedResult(new OracleResultsCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)), false);
+            attrib = new OracleExpectedResult(new OracleExecutionCache(OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)), false);
             Assert.IsTrue(attrib.Match(cache));
         }
     }

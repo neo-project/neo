@@ -22,7 +22,7 @@ namespace Neo.SmartContract
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public Snapshot Snapshot { get; }
-        public OracleResultsCache OracleCache { get; }
+        public OracleExecutionCache OracleCache { get; }
         public long GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => InvocationStack.Count > 1 ? InvocationStack.Peek(1).GetState<ExecutionContextState>().ScriptHash : null;
@@ -30,7 +30,7 @@ namespace Neo.SmartContract
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false, OracleResultsCache oracleCache = null)
+        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false, OracleExecutionCache oracleCache = null)
         {
             this.gas_amount = GasFree + gas;
             this.testMode = testMode;

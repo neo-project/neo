@@ -7,7 +7,7 @@ using System.Linq;
 namespace Neo.UnitTests.Oracle
 {
     [TestClass]
-    public class UT_OracleResultsCache
+    public class UT_OracleExecutionCache
     {
         class CounterRequest : OracleHTTPRequest
         {
@@ -29,7 +29,7 @@ namespace Neo.UnitTests.Oracle
         [TestMethod]
         public void TestWithOracle()
         {
-            var cache = new OracleResultsCache(OracleLogic);
+            var cache = new OracleExecutionCache(OracleLogic);
 
             Assert.AreEqual(0, cache.Count);
             Assert.IsFalse(cache.GetEnumerator().MoveNext());
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.Oracle
             };
 
             var initRes = OracleResult.CreateError(_txHash, initReq.Hash, OracleResultError.ServerError);
-            var cache = new OracleResultsCache(initRes);
+            var cache = new OracleExecutionCache(initRes);
 
             Assert.AreEqual(1, cache.Count);
 
