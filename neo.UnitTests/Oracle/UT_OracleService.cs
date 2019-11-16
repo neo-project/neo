@@ -9,6 +9,7 @@ using Neo.Oracle;
 using Neo.Oracle.Protocols.HTTP;
 using Neo.SmartContract;
 using Neo.VM;
+using System;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
@@ -75,7 +76,20 @@ namespace Neo.UnitTests.Oracle
                     }
                 case "/timeout":
                     {
-                        Thread.Sleep(3100);
+                        Thread.Sleep(2100);
+                        break;
+                    }
+                case "/echo":
+                    {
+                        if (context.Request.Method != "POST")
+                        {
+                            context.Response.StatusCode = 404;
+                            break;
+                        }
+
+                        var read = new byte[4096];
+                        Array.Resize(ref read, context.Request.Body.Read(read, 0, read.Length));
+                        response = Encoding.UTF8.GetString(read);
                         break;
                     }
                 default:
@@ -86,6 +100,27 @@ namespace Neo.UnitTests.Oracle
             }
 
             await context.Response.WriteAsync(response, Encoding.UTF8);
+        }
+
+        [TestMethod]
+        public void TestTransaction_POST_Content()
+        {
+            var request = new OracleHTTPRequest()
+            {
+                Method = OracleHTTPRequest.HTTPMethod.POST,
+                URL = "http://127.0.0.1:9898/echo",
+                Filter = "",
+                Body = Encoding.UTF8.GetBytes("Hello from POST oracle!"),
+                VersionMajor = 1,
+                VersionMinor = 1
+            };
+
+            var ret = ExecuteHTTP1Tx(request);
+
+            Assert.AreEqual(1, ret.Count);
+            Assert.IsTrue(ret.TryGet(request, out var result));
+            Assert.AreEqual(OracleResultError.None, result.Error);
+            CollectionAssert.AreEqual(request.Body, result.Result);
         }
 
         [TestMethod]
@@ -101,7 +136,7 @@ namespace Neo.UnitTests.Oracle
                 VersionMinor = 1
             };
 
-            var ret = ExecuteHTTP1GetTx(request);
+            var ret = ExecuteHTTP1Tx(request);
 
             Assert.AreEqual(1, ret.Count);
             Assert.IsTrue(ret.TryGet(request, out var result));
@@ -122,7 +157,7 @@ namespace Neo.UnitTests.Oracle
                 VersionMinor = 1
             };
 
-            var ret = ExecuteHTTP1GetTx(request);
+            var ret = ExecuteHTTP1Tx(request);
 
             Assert.AreEqual(1, ret.Count);
             Assert.IsTrue(ret.TryGet(request, out var result));
@@ -130,13 +165,35 @@ namespace Neo.UnitTests.Oracle
             CollectionAssert.AreEqual(new byte[0], result.Result);
         }
 
-        private OracleResultsCache ExecuteHTTP1GetTx(OracleHTTPRequest request)
+        private OracleResultsCache ExecuteHTTP1Tx(OracleHTTPRequest request)
         {
             Transaction tx;
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Get, request.URL, request.Filter);
+                switch (request.Method)
+                {
+                    case OracleHTTPRequest.HTTPMethod.GET:
+                        {
+                            script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Get, request.URL, request.Filter);
+                            break;
+                        }
+                    case OracleHTTPRequest.HTTPMethod.POST:
+                        {
+                            script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Post, request.URL, request.Filter, request.Body);
+                            break;
+                        }
+                    case OracleHTTPRequest.HTTPMethod.DELETE:
+                        {
+                            script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Delete, request.URL, request.Filter);
+                            break;
+                        }
+                    case OracleHTTPRequest.HTTPMethod.PUT:
+                        {
+                            script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Put, request.URL, request.Filter, request.Body);
+                            break;
+                        }
+                }
 
                 tx = new Transaction()
                 {
@@ -154,7 +211,7 @@ namespace Neo.UnitTests.Oracle
 
             // With Oracle
 
-            var service = new OracleService();
+            var service = new OracleService() { TimeOut = TimeSpan.FromSeconds(2) };
             return service.Process(null, tx, true);
         }
 

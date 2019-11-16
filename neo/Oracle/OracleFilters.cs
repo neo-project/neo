@@ -59,6 +59,12 @@ namespace Neo.Oracle
         /// <returns>True if was filtered</returns>
         public static bool FilterContent(MediaTypeHeaderValue contentType, string input, string filter, out string output)
         {
+            if (string.IsNullOrEmpty(filter))
+            {
+                output = input;
+                return true;
+            }
+
             output = null;
 
             return (contentType.MediaType.ToLowerInvariant()) switch
