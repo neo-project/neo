@@ -231,7 +231,7 @@ namespace Neo.UnitTests.Oracle
             CollectionAssert.AreEqual(new byte[0], result.Result);
         }
 
-        private OracleResultsCache ExecuteHTTP1Tx(OracleHTTPRequest request)
+        private OracleExecutionCache ExecuteHTTP1Tx(OracleHTTPRequest request)
         {
             Transaction tx;
 

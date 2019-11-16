@@ -31,7 +31,7 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="cache">Cache</param>
         /// <param name="attachExpectedHashes">Attach expected hashes</param>
-        public OracleExpectedResult(OracleResultsCache cache, bool attachExpectedHashes = true) : this()
+        public OracleExpectedResult(OracleExecutionCache cache, bool attachExpectedHashes = true) : this()
         {
             foreach (var entry in cache)
             {
@@ -44,7 +44,7 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="cache">Oracle cache</param>
         /// <returns>Return TRUE if match</returns>
-        public bool Match(OracleResultsCache cache)
+        public bool Match(OracleExecutionCache cache)
         {
             if (cache.Count != Count) return false;
 

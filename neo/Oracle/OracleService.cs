@@ -30,9 +30,9 @@ namespace Neo.Oracle
         /// <param name="tx">Transaction</param>
         /// <param name="testMode">Test mode</param>
         /// <returns>OracleResultsCache</returns>
-        public OracleResultsCache Process(Snapshot snapshot, Transaction tx, bool testMode = false)
+        public OracleExecutionCache Process(Snapshot snapshot, Transaction tx, bool testMode = false)
         {
-            var oracle = new OracleResultsCache(request => ProcessInternal(tx.Hash, request));
+            var oracle = new OracleExecutionCache(request => ProcessInternal(tx.Hash, request));
 
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, testMode, oracle))
             {
@@ -44,7 +44,7 @@ namespace Neo.Oracle
                 }
             }
 
-            return new OracleResultsCache();
+            return new OracleExecutionCache();
         }
 
         /// <summary>
