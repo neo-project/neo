@@ -6,7 +6,7 @@ labels: discussion
 assignees: ''
 ---
 
-**Summary**
+**Summary or problem description**
 A summary of the problem you want to solve or metric you want to improve
 
 **Do you have any solution you want to propose?**
