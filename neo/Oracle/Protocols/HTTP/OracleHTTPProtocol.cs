@@ -85,8 +85,11 @@ namespace Neo.Oracle.Protocols.HTTP
                     return OracleResult.CreateError(txHash, request.Hash, OracleResultError.Timeout);
                 }
 
-                if (!OracleFilters.FilterContent(result.Result.Content.Headers.ContentType,
-                    ret.Result, httpRequest.Filter, out var filteredStr))
+                if (!OracleFilters.FilterContent
+                    (
+                    result.Result.Content.Headers.ContentType.MediaType.ToLowerInvariant(),
+                    ret.Result, httpRequest.Filter, out var filteredStr
+                    ))
                 {
                     return OracleResult.CreateError(txHash, request.Hash, OracleResultError.FilterError);
                 }

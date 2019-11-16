@@ -1,5 +1,3 @@
-using System.Net.Http.Headers;
-
 namespace Neo.Oracle
 {
     public class OracleFilters
@@ -57,7 +55,7 @@ namespace Neo.Oracle
         /// <param name="filter">Filter</param>
         /// <param name="output">output</param>
         /// <returns>True if was filtered</returns>
-        public static bool FilterContent(MediaTypeHeaderValue contentType, string input, string filter, out string output)
+        public static bool FilterContent(string contentType, string input, string filter, out string output)
         {
             if (string.IsNullOrEmpty(filter))
             {
@@ -67,7 +65,7 @@ namespace Neo.Oracle
 
             output = null;
 
-            return (contentType.MediaType.ToLowerInvariant()) switch
+            return (contentType) switch
             {
                 "application/json" => FilterJson(input, filter, out output),
                 "text/html" => FilterHtml(input, filter, out output),
