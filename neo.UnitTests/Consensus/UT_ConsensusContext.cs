@@ -45,7 +45,6 @@ namespace Neo.UnitTests.Consensus
                 Validators = _validatorKeys.Select(u => u.PublicKey).ToArray()
             };
             _context.Reset(0);
-            Assert.AreEqual((_validatorKeys.Length + 1) * Blockchain.TimePerBlock.TotalMilliseconds, _context.PrepareRequestThreshold.TotalMilliseconds);
         }
 
         [TestCleanup]

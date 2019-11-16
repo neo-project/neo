@@ -37,6 +37,12 @@ namespace Neo.UnitTests.Consensus
         }
 
         [TestMethod]
+        public void TestPrepareRequestThreshold()
+        {
+            Assert.AreEqual(8 * Blockchain.TimePerBlock.TotalMilliseconds, ConsensusService.PrepareRequestThreshold.TotalMilliseconds);
+        }
+
+        [TestMethod]
         public void ConsensusService_Primary_Sends_PrepareRequest_After_OnStart()
         {
             TestProbe subscriber = CreateTestProbe();

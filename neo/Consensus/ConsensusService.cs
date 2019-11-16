@@ -29,7 +29,7 @@ namespace Neo.Consensus
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
-        private static readonly TimeSpan prepareRequestThreshold = TimeSpan.FromMilliseconds(8 * Blockchain.TimePerBlock.TotalMilliseconds);
+        public static readonly TimeSpan PrepareRequestThreshold = TimeSpan.FromMilliseconds(8 * Blockchain.TimePerBlock.TotalMilliseconds);
 
         /// <summary>
         /// This will record the information from last scheduled timer
