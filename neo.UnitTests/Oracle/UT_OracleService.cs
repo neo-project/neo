@@ -127,7 +127,7 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void TestTransaction_POST_Content()
+        public void Test_HTTP_POST_Content()
         {
             var request = new OracleHTTPRequest()
             {
@@ -148,7 +148,7 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void TestTransaction_PUT_Content()
+        public void Test_HTTP_PUT_Content()
         {
             var request = new OracleHTTPRequest()
             {
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void TestTransaction_DELETE_Content()
+        public void Test_HTTP_DELETE_Content()
         {
             var request = new OracleHTTPRequest()
             {
@@ -190,7 +190,7 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void TestTransaction_GET_Content()
+        public void Test_HTTP_GET_Content()
         {
             var request = new OracleHTTPRequest()
             {
@@ -211,7 +211,7 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void TestTransaction_GET_Timeout()
+        public void Test_HTTP_GET_Timeout()
         {
             var request = new OracleHTTPRequest()
             {
