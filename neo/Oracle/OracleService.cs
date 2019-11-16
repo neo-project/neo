@@ -36,6 +36,8 @@ namespace Neo.Oracle
 
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, testMode, oracle))
             {
+                engine.LoadScript(tx.Script);
+
                 if (engine.Execute() == VM.VMState.HALT)
                 {
                     return oracle;
@@ -56,7 +58,6 @@ namespace Neo.Oracle
             return request switch
             {
                 OracleHTTPRequest http => HTTP.Process(txHash, http, TimeOut),
-
                 _ => OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError),
             };
         }

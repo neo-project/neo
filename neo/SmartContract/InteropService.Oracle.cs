@@ -18,34 +18,34 @@ namespace Neo.SmartContract
 
         private static bool Oracle_HTTP11_Get(ApplicationEngine engine)
         {
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
             return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.GET, url, filter, null);
         }
 
         private static bool Oracle_HTTP11_Post(ApplicationEngine engine)
         {
-            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.POST, url, filter, body);
         }
 
         private static bool Oracle_HTTP11_Delete(ApplicationEngine engine)
         {
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
             return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.DELETE, url, filter, null);
         }
 
         private static bool Oracle_HTTP11_Put(ApplicationEngine engine)
         {
-            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.PUT, url, filter, body);
         }
@@ -56,34 +56,34 @@ namespace Neo.SmartContract
 
         private static bool Oracle_HTTP20_Get(ApplicationEngine engine)
         {
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
             return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.GET, url, filter, null);
         }
 
         private static bool Oracle_HTTP20_Post(ApplicationEngine engine)
         {
-            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.POST, url, filter, body);
         }
 
         private static bool Oracle_HTTP20_Delete(ApplicationEngine engine)
         {
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
             return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.DELETE, url, filter, null);
         }
 
         private static bool Oracle_HTTP20_Put(ApplicationEngine engine)
         {
-            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.PUT, url, filter, body);
         }
