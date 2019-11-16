@@ -116,6 +116,11 @@ namespace Neo.UnitTests.Oracle
                         response = Encoding.UTF8.GetString(read);
                         break;
                     }
+                case "/error":
+                    {
+                        context.Response.StatusCode = 503;
+                        break;
+                    }
                 default:
                     {
                         context.Response.StatusCode = 404;
@@ -211,6 +216,27 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
+        public void Test_HTTP_GET_Error()
+        {
+            var request = new OracleHTTPRequest()
+            {
+                Method = OracleHTTPRequest.HTTPMethod.GET,
+                URL = "http://127.0.0.1:9898/error",
+                Filter = "",
+                Body = null,
+                VersionMajor = 1,
+                VersionMinor = 1
+            };
+
+            var ret = ExecuteHTTP1Tx(request);
+
+            Assert.AreEqual(1, ret.Count);
+            Assert.IsTrue(ret.TryGet(request, out var result));
+            Assert.AreEqual(OracleResultError.ServerError, result.Error);
+            CollectionAssert.AreEqual(new byte[0], result.Result);
+        }
+
+        [TestMethod]
         public void Test_HTTP_GET_Timeout()
         {
             var request = new OracleHTTPRequest()
@@ -264,7 +290,7 @@ namespace Neo.UnitTests.Oracle
                 tx = new Transaction()
                 {
                     // Ensure that multiple execution are treated as one (with same hash)
-                    Script = script.ToArray().Concat(script.ToArray()).ToArray(), 
+                    Script = script.ToArray().Concat(script.ToArray()).ToArray(),
                     Attributes = new TransactionAttribute[0],
                     Cosigners = new Cosigner[0],
                     Sender = UInt160.Zero,

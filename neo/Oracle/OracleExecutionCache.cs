@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -14,7 +13,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Engine
         /// </summary>
-        private readonly Func<OracleRequest, OracleResult> _oracle;
+        private readonly OracleService _oracle;
 
         /// <summary>
         /// Count
@@ -25,7 +24,7 @@ namespace Neo.Oracle
         /// Constructor for oracles
         /// </summary>
         /// <param name="oracle">Oracle Engine</param>
-        public OracleExecutionCache(Func<OracleRequest, OracleResult> oracle = null)
+        public OracleExecutionCache(OracleService oracle = null)
         {
             _oracle = oracle;
         }
@@ -59,7 +58,7 @@ namespace Neo.Oracle
 
             // Not found inside the cache, invoke it
 
-            result = _oracle?.Invoke(request);
+            result = _oracle?.ExecuteOracleRequest(request);
 
             if (result != null)
             {

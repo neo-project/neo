@@ -32,28 +32,28 @@ namespace Neo.Oracle
         /// <returns>OracleResultsCache</returns>
         public OracleExecutionCache Process(Snapshot snapshot, Transaction tx, bool testMode = false)
         {
-            var oracle = new OracleExecutionCache(request => ProcessInternal(tx.Hash, request));
+            var oracle = new OracleExecutionCache(this);
 
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, testMode, oracle))
             {
                 engine.LoadScript(tx.Script);
 
-                if (engine.Execute() == VM.VMState.HALT)
+                if (engine.Execute() != VM.VMState.HALT)
                 {
-                    return oracle;
+                    return new OracleExecutionCache();
                 }
             }
 
-            return new OracleExecutionCache();
+            return oracle;
         }
 
         /// <summary>
-        /// Process internal
+        /// Execute oracle request
         /// </summary>
         /// <param name="txHash">Transaction hash</param>
         /// <param name="request">Request</param>
         /// <returns>OracleResult</returns>
-        private OracleResult ProcessInternal(UInt256 txHash, OracleRequest request)
+        public OracleResult ExecuteRequest(UInt256 txHash, OracleRequest request)
         {
             return request switch
             {
