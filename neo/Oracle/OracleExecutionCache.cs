@@ -11,9 +11,16 @@ namespace Neo.Oracle
         private readonly Dictionary<UInt160, OracleResult> _cache = new Dictionary<UInt160, OracleResult>();
 
         /// <summary>
+        /// Oracle action
+        /// </summary>
+        /// <param name="request">Request</param>
+        /// <returns>Result</returns>
+        public delegate OracleResult oracleDelegate(OracleRequest request);
+
+        /// <summary>
         /// Engine
         /// </summary>
-        private readonly OracleService _oracle;
+        private readonly oracleDelegate _oracle;
 
         /// <summary>
         /// Count
@@ -24,7 +31,7 @@ namespace Neo.Oracle
         /// Constructor for oracles
         /// </summary>
         /// <param name="oracle">Oracle Engine</param>
-        public OracleExecutionCache(OracleService oracle = null)
+        public OracleExecutionCache(oracleDelegate oracle = null)
         {
             _oracle = oracle;
         }
@@ -58,7 +65,7 @@ namespace Neo.Oracle
 
             // Not found inside the cache, invoke it
 
-            result = _oracle?.ExecuteOracleRequest(request);
+            result = _oracle?.Invoke(request);
 
             if (result != null)
             {
