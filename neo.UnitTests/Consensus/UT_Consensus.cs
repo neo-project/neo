@@ -38,8 +38,7 @@ namespace Neo.UnitTests.Consensus
         [TestMethod, NotReRunnable]
         public void TestPrepareRequestThreshold()
         {
-            var service = new ConsensusService(null, null, null);
-            Assert.AreEqual(8 * Blockchain.TimePerBlock.TotalMilliseconds, service.PrepareRequestThreshold.TotalMilliseconds);
+            Assert.AreEqual(8 * Blockchain.TimePerBlock.TotalMilliseconds, ConsensusService.PrepareRequestThreshold.TotalMilliseconds);
         }
 
         [TestMethod]
