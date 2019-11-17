@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Oracle;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -208,7 +209,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
+        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, OracleExecutionType oracleType = OracleExecutionType.WithoutOracles)
         {
             UInt160[] accounts;
             if (from is null)
@@ -273,11 +274,11 @@ namespace Neo.Wallets
                              Account = new UInt160(p.ToArray())
                          }).ToArray();
 
-                return MakeTransaction(snapshot, script, new TransactionAttribute[0], cosigners, balances_gas);
+                return MakeTransaction(snapshot, script, new TransactionAttribute[0], cosigners, balances_gas, oracleType);
             }
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, OracleExecutionType oracleType = OracleExecutionType.WithoutOracles)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -293,11 +294,11 @@ namespace Neo.Wallets
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas);
+                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas, oracleType);
             }
         }
 
-        private Transaction MakeTransaction(Snapshot snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(Snapshot snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas, OracleExecutionType oracleType = OracleExecutionType.WithoutOracles)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
@@ -312,11 +313,70 @@ namespace Neo.Wallets
                     Attributes = attributes,
                     Cosigners = cosigners
                 };
+
+                // Configure oracle
+
+                OracleExecutionCache oracle;
+
+                switch (oracleType)
+                {
+                    case OracleExecutionType.WithoutOracles:
+                        {
+                            // Try to find the expected results
+
+                            var res = attributes
+                                .Where(u => u.Usage == TransactionAttributeUsage.OracleExpectedResult)
+                                .Select(u => u.Data.AsSerializable<OracleExpectedResult>())
+                                .FirstOrDefault();
+
+                            // If there are expected hash, we wil return an empty result
+
+                            oracle = res == null ? null : new OracleExecutionCache((r) =>
+                            {
+                                if (res.ContainsRequest(r.Hash)) return OracleResult.CreateResult(tx.Hash, r.Hash, new byte[0]);
+                                throw new ArgumentException();
+                            });
+                            break;
+                        }
+                    case OracleExecutionType.UnsecureOracle:
+                        {
+                            // All syscalls will be collected, but without the real expected hash
+                            oracle = new OracleExecutionCache((r) => OracleResult.CreateResult(tx.Hash, r.Hash, new byte[0]));
+                            break;
+                        }
+                    case OracleExecutionType.SecureOracle:
+                        {
+                            var service = new OracleService() { TimeOut = TimeSpan.FromSeconds(2) };
+                            oracle = service.CreateExecutionCache(tx.Hash);
+                            break;
+                        }
+                    default: throw new ArgumentException(nameof(oracle));
+                }
+
                 // will try to execute 'transfer' script to check if it works
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true, oracle: oracle))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
+
+                    if (oracleType != OracleExecutionType.WithoutOracles && oracle.Count > 0)
+                    {
+                        // Attach the OracleExpectedResult attribute
+
+                        var attr = new List<TransactionAttribute>(attributes);
+                        attr.RemoveAll(u => u.Usage == TransactionAttributeUsage.OracleExpectedResult);
+                        attr.Add(new TransactionAttribute()
+                        {
+                            Usage = TransactionAttributeUsage.OracleExpectedResult,
+                            Data = ((ISerializable)new OracleExpectedResult(oracle, oracleType == OracleExecutionType.SecureOracle)).ToArray()
+                        });
+                        tx.Attributes = attr.ToArray();
+
+                        // Try again, because it possible that the SC use the attributes of the TX
+
+                        return MakeTransaction(snapshot, script, attributes, cosigners, balances_gas, OracleExecutionType.WithoutOracles);
+                    }
+
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
                     if (tx.SystemFee > 0)
                     {

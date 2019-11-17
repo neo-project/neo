@@ -40,6 +40,16 @@ namespace Neo.Oracle
         }
 
         /// <summary>
+        /// Contains request
+        /// </summary>
+        /// <param name="oracleRequestHash">Oracle Request Hash</param>
+        /// <returns>True or False</returns>
+        public bool ContainsRequest(UInt160 oracleRequestHash)
+        {
+            return _expectedResults.ContainsKey(oracleRequestHash);
+        }
+
+        /// <summary>
         /// Match
         /// </summary>
         /// <param name="cache">Oracle cache</param>

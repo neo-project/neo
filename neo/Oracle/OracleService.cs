@@ -27,18 +27,17 @@ namespace Neo.Oracle
         /// Process transaction
         /// </summary>
         /// <param name="snapshot">Snapshot</param>
+        /// <param name="persistingBlock">Persisting block</param>
         /// <param name="tx">Transaction</param>
         /// <param name="testMode">Test mode</param>
         /// <returns>OracleResultsCache</returns>
-        public OracleExecutionCache Process(Snapshot snapshot, Transaction tx, bool testMode = false)
+        public OracleExecutionCache Process(Snapshot snapshot, Block persistingBlock, Transaction tx, bool testMode = false)
         {
             var oracle = CreateExecutionCache(tx.Hash);
 
-            using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, testMode, oracle))
+            using (var engine = ApplicationEngine.Run(tx.Script, snapshot, tx, persistingBlock, testMode, tx.SystemFee, oracle))
             {
-                engine.LoadScript(tx.Script);
-
-                if (engine.Execute() != VM.VMState.HALT)
+                if (engine.State != VM.VMState.HALT)
                 {
                     return new OracleExecutionCache();
                 }

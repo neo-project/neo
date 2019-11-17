@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.HTTP;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -22,11 +23,15 @@ namespace Neo.UnitTests.Oracle
     [TestClass]
     public class UT_OracleService
     {
+        Store store;
         IWebHost server;
 
         [TestInitialize]
         public void Init()
         {
+            TestBlockchain.InitializeMockNeoSystem();
+            store = TestBlockchain.GetStore();
+
             server = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, 9898, listenOptions =>
             {
 
@@ -304,13 +309,17 @@ namespace Neo.UnitTests.Oracle
 
             // With Oracle
 
-            var service = new OracleService() { TimeOut = TimeSpan.FromSeconds(2) };
-            return service.Process(null, tx, true);
+            using (var snapshot = store.GetSnapshot())
+            {
+                var service = new OracleService() { TimeOut = TimeSpan.FromSeconds(2) };
+                return service.Process(snapshot, null, tx, true);
+            }
         }
 
         private VMState ExecuteTxWithoutOracle(Transaction tx)
         {
-            using (var engine = new ApplicationEngine(TriggerType.Application, tx, null, tx.SystemFee, true, null))
+            using (var snapshot = store.GetSnapshot())
+            using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, true, null))
             {
                 engine.LoadScript(tx.Script);
                 return engine.Execute();
