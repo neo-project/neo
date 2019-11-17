@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Json;
@@ -92,7 +92,7 @@ namespace Neo.UnitTests.Ledger
         {
             JObject json = contract.ToJson();
             json["hash"].AsString().Should().Be("0x820944cfdc70976602d71b0091445eedbc661bc5");
-            json["script"].AsString().Should().Be("01");
+            json["script"].AsString().Should().Be("AQ==");
             json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
         }
     }

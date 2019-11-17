@@ -115,7 +115,7 @@ namespace Neo.SmartContract
         {
             m = 0; n = 0;
             int i = 0;
-            if (script.Length < 41) return false;
+            if (script.Length < 42) return false;
             if (script[i] > (byte)OpCode.PUSH16) return false;
             if (script[i] < (byte)OpCode.PUSH1 && script[i] != 1 && script[i] != 2) return false;
             switch (script[i])
@@ -154,19 +154,21 @@ namespace Neo.SmartContract
                     if (n != script[i++] - 80) return false;
                     break;
             }
+            if (script[i++] != (byte)OpCode.PUSHNULL) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
             if (script.Length != i + 4) return false;
-            if (BitConverter.ToUInt32(script, i) != InteropService.Neo_Crypto_CheckMultiSig)
+            if (BitConverter.ToUInt32(script, i) != InteropService.Neo_Crypto_ECDsaCheckMultiSig)
                 return false;
             return true;
         }
 
         public static bool IsSignatureContract(this byte[] script)
         {
-            if (script.Length != 39) return false;
+            if (script.Length != 40) return false;
             if (script[0] != (byte)OpCode.PUSHBYTES33
-                || script[34] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 35) != InteropService.Neo_Crypto_CheckSig)
+                || script[34] != (byte)OpCode.PUSHNULL
+                || script[35] != (byte)OpCode.SYSCALL
+                || BitConverter.ToUInt32(script, 36) != InteropService.Neo_Crypto_ECDsaVerify)
                 return false;
             return true;
         }
