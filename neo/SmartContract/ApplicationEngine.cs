@@ -108,20 +108,20 @@ namespace Neo.SmartContract
         }
 
         public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
-            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default, OracleExecutionCache oracle = null)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode, oracle);
             engine.LoadScript(script);
             engine.Execute();
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default, OracleExecutionCache oracle = null)
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                return Run(script, snapshot, container, persistingBlock, testMode, extraGAS);
+                return Run(script, snapshot, container, persistingBlock, testMode, extraGAS, oracle);
             }
         }
 

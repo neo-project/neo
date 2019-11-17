@@ -32,7 +32,7 @@ namespace Neo.Oracle
         /// <returns>OracleResultsCache</returns>
         public OracleExecutionCache Process(Snapshot snapshot, Transaction tx, bool testMode = false)
         {
-            var oracle = new OracleExecutionCache((req) => ExecuteRequest(tx.Hash, req));
+            var oracle = CreateExecutionCache(tx.Hash);
 
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, testMode, oracle))
             {
@@ -45,6 +45,16 @@ namespace Neo.Oracle
             }
 
             return oracle;
+        }
+
+        /// <summary>
+        /// Create Execution Cache
+        /// </summary>
+        /// <param name="txHash">Tx hash</param>
+        /// <returns>OracleExecutionCache</returns>
+        public OracleExecutionCache CreateExecutionCache(UInt256 txHash)
+        {
+            return new OracleExecutionCache((req) => ExecuteRequest(txHash, req));
         }
 
         /// <summary>
