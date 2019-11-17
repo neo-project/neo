@@ -210,7 +210,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject scObj = ((JArray)jObj["witnesses"])[0];
             scObj["invocation"].AsString().Should().Be("");
-            scObj["verification"].AsString().Should().Be("51");
+            scObj["verification"].AsString().Should().Be("UQ==");
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];

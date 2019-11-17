@@ -18,19 +18,11 @@ namespace Neo.SmartContract
     static partial class InteropService
     {
         public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application);
-        public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000, TriggerType.All);
-        public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice, TriggerType.All);
-        public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400, TriggerType.All);
-        public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 0_00010000, TriggerType.All);
-        public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Crypto_ECDsaVerify = Register("Neo.Crypto.ECDsaVerify", Crypto_ECDsaVerify, 0_01000000, TriggerType.All);
+        public static readonly uint Neo_Crypto_ECDsaCheckMultiSig = Register("Neo.Crypto.ECDsaCheckMultiSig", Crypto_ECDsaCheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
         public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application);
-        public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 0_00000400, TriggerType.Application);
-        public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 0_00000400, TriggerType.Application);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application);
         public static readonly uint Neo_Enumerator_Create = Register("Neo.Enumerator.Create", Enumerator_Create, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Enumerator_Next = Register("Neo.Enumerator.Next", Enumerator_Next, 0_01000000, TriggerType.All);
@@ -50,15 +42,15 @@ namespace Neo.SmartContract
                 Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application);
         }
 
-        private static long GetCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
+        private static long GetECDsaCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
         {
-            if (stack.Count == 0) return 0;
-            var item = stack.Peek();
+            if (stack.Count < 2) return 0;
+            var item = stack.Peek(1);
             int n;
             if (item is VMArray array) n = array.Count;
             else n = (int)item.GetBigInteger();
             if (n < 1) return 0;
-            return GetPrice(Neo_Crypto_CheckSig, stack) * n;
+            return GetPrice(Neo_Crypto_ECDsaVerify, stack) * n;
         }
 
         private static long GetDeploymentPrice(RandomAccessStack<StackItem> stack)
@@ -82,14 +74,20 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool Crypto_CheckSig(ApplicationEngine engine)
+        private static bool Crypto_ECDsaVerify(ApplicationEngine engine)
         {
+            StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
+            byte[] message = item0 switch
+            {
+                InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
+                Null _ => engine.ScriptContainer.GetHashData(),
+                _ => item0.GetByteArray()
+            };
             byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-
             try
             {
-                engine.CurrentContext.EvaluationStack.Push(Crypto.Default.VerifySignature(engine.ScriptContainer.GetHashData(), signature, pubkey));
+                engine.CurrentContext.EvaluationStack.Push(Crypto.Default.VerifySignature(message, signature, pubkey));
             }
             catch (ArgumentException)
             {
@@ -98,12 +96,18 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool Crypto_CheckMultiSig(ApplicationEngine engine)
+        private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine)
         {
+            StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
+            byte[] message = item0 switch
+            {
+                InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
+                Null _ => engine.ScriptContainer.GetHashData(),
+                _ => item0.GetByteArray()
+            };
             int n;
             byte[][] pubkeys;
             StackItem item = engine.CurrentContext.EvaluationStack.Pop();
-
             if (item is VMArray array1)
             {
                 pubkeys = array1.Select(p => p.GetByteArray()).ToArray();
@@ -118,7 +122,6 @@ namespace Neo.SmartContract
                 for (int i = 0; i < n; i++)
                     pubkeys[i] = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             }
-
             int m;
             byte[][] signatures;
             item = engine.CurrentContext.EvaluationStack.Pop();
@@ -136,7 +139,6 @@ namespace Neo.SmartContract
                 for (int i = 0; i < m; i++)
                     signatures[i] = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             }
-            byte[] message = engine.ScriptContainer.GetHashData();
             bool fSuccess = true;
             try
             {
@@ -155,80 +157,6 @@ namespace Neo.SmartContract
             }
             engine.CurrentContext.EvaluationStack.Push(fSuccess);
             return true;
-        }
-
-        private static bool Header_GetVersion(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Version);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetMerkleRoot(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.MerkleRoot.ToArray());
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetNextConsensus(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.NextConsensus.ToArray());
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Transaction_GetScript(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(tx.Script);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Transaction_GetWitnesses(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                if (tx.Witnesses.Length > engine.MaxArraySize)
-                    return false;
-                engine.CurrentContext.EvaluationStack.Push(WitnessWrapper.Create(tx, engine.Snapshot).Select(p => StackItem.FromInterface(p)).ToArray());
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Witness_GetVerificationScript(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                WitnessWrapper witness = _interface.GetInterface<WitnessWrapper>();
-                if (witness == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(witness.VerificationScript);
-                return true;
-            }
-            return false;
         }
 
         private static bool Account_IsStandard(ApplicationEngine engine)
@@ -308,33 +236,10 @@ namespace Neo.SmartContract
                 contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                 contract.Manifest = ContractManifest.Parse(manifest);
                 if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
+                if (!contract.HasStorage && engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).Any()) return false;
             }
 
             return true;
-        }
-
-        private static bool Contract_GetScript(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                ContractState contract = _interface.GetInterface<ContractState>();
-                if (contract == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(contract.Script);
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Contract_IsPayable(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                ContractState contract = _interface.GetInterface<ContractState>();
-                if (contract == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(contract.Payable);
-                return true;
-            }
-            return false;
         }
 
         private static bool Storage_Find(ApplicationEngine engine)

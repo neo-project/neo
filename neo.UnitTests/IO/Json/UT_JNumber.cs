@@ -39,10 +39,10 @@ namespace Neo.UnitTests.IO.Json
         public void TestAsString()
         {
             Action action1 = () => new JNumber(double.PositiveInfinity).AsString();
-            action1.ShouldThrow<FormatException>();
+            action1.Should().Throw<FormatException>();
 
             Action action2 = () => new JNumber(double.NegativeInfinity).AsString();
-            action2.ShouldThrow<FormatException>();
+            action2.Should().Throw<FormatException>();
         }
 
         [TestMethod]
@@ -58,10 +58,10 @@ namespace Neo.UnitTests.IO.Json
         public void TestParse()
         {
             Action action1 = () => JNumber.Parse(new StringReader("100.a"));
-            action1.ShouldThrow<FormatException>();
+            action1.Should().Throw<FormatException>();
 
             Action action2 = () => JNumber.Parse(new StringReader("100.+"));
-            action2.ShouldThrow<FormatException>();
+            action2.Should().Throw<FormatException>();
         }
     }
 }

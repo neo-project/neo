@@ -50,10 +50,10 @@ namespace Neo.Network
                     {
                         length = s.Receive(buffer);
 
-                        string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLower();
+                        string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLowerInvariant();
                         if (resp.Contains("upnp:rootdevice"))
                         {
-                            resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
+                            resp = resp.Substring(resp.IndexOf("location:") + 9);
                             resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
                             if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
                             {
@@ -76,7 +76,7 @@ namespace Neo.Network
         {
             try
             {
-                XmlDocument desc = new XmlDocument();
+                XmlDocument desc = new XmlDocument() { XmlResolver = null };
                 HttpWebRequest request = WebRequest.CreateHttp(resp);
                 using (WebResponse response = request.GetResponse())
                 {
@@ -155,7 +155,7 @@ namespace Neo.Network
             using (Stream reqs = r.GetRequestStream())
             {
                 reqs.Write(b, 0, b.Length);
-                XmlDocument resp = new XmlDocument();
+                XmlDocument resp = new XmlDocument() { XmlResolver = null };
                 WebResponse wres = r.GetResponse();
                 using (Stream ress = wres.GetResponseStream())
                 {

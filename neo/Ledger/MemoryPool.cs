@@ -17,8 +17,7 @@ namespace Neo.Ledger
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
         // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
-        private const int BlocksTillRebroadcastLowPriorityPoolTx = 30;
-        private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
+        private const int BlocksTillRebroadcast = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
         private static readonly double MaxMillisecondsToReverifyTx = (double)Blockchain.MillisecondsPerBlock / 3;
@@ -68,6 +67,11 @@ namespace Neo.Ledger
         /// Total maximum capacity of transactions the pool can hold.
         /// </summary>
         public int Capacity { get; }
+
+        /// <summary>
+        /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
+        /// </summary>
+        public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
 
         /// <summary>
         /// Total count of transactions in the pool.
@@ -268,6 +272,7 @@ namespace Neo.Ledger
             try
             {
                 _unsortedTransactions.Add(hash, poolItem);
+                SendersFeeMonitor.AddSenderFee(tx);
                 _sortedTransactions.Add(poolItem);
 
                 if (Count > Capacity)
@@ -310,6 +315,7 @@ namespace Neo.Ledger
                 return false;
 
             _unsortedTransactions.Remove(hash);
+            SendersFeeMonitor.RemoveSenderFee(item.Tx);
             _sortedTransactions.Remove(item);
 
             return true;
@@ -337,6 +343,7 @@ namespace Neo.Ledger
 
             // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
+            SendersFeeMonitor = new SendersFeeMonitor();
             _sortedTransactions.Clear();
         }
 
@@ -365,11 +372,11 @@ namespace Neo.Ledger
                         if (item.Tx.FeePerByte >= _feePerByte)
                             tx.Add(item.Tx);
 
-                    if (tx.Count > 0)
-                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
-
                     _unverifiedTransactions.Clear();
                     _unverifiedSortedTransactions.Clear();
+
+                    if (tx.Count > 0)
+                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
                 }
             }
             finally
@@ -409,7 +416,7 @@ namespace Neo.Ledger
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                if (item.Tx.Reverify(snapshot, _unsortedTransactions.Select(p => p.Value.Tx)))
+                if (item.Tx.Reverify(snapshot, SendersFeeMonitor.GetSenderFee(item.Tx.Sender)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
@@ -420,9 +427,8 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                int blocksTillRebroadcast = Object.ReferenceEquals(unverifiedSortedTxPool, _sortedTransactions)
-                    ? BlocksTillRebroadcastHighPriorityPoolTx : BlocksTillRebroadcastLowPriorityPoolTx;
-
+                int blocksTillRebroadcast = BlocksTillRebroadcast;
+                // Increases, proportionally, blocksTillRebroadcast if mempool has more items than threshold bigger RebroadcastMultiplierThreshold
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
@@ -432,6 +438,7 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
+                        SendersFeeMonitor.AddSenderFee(item.Tx);
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
@@ -469,7 +476,7 @@ namespace Neo.Ledger
         ///
         /// Note: this must only be called from a single thread (the Blockchain actor)
         /// </summary>
-        /// <param name="maxToVerify">Max transactions to reverify, the value passed cam be >=1</param>
+        /// <param name="maxToVerify">Max transactions to reverify, the value passed can be >=1</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)

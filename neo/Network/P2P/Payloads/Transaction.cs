@@ -4,6 +4,8 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
+using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -13,7 +15,7 @@ using System.Numerics;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Transaction : IEquatable<Transaction>, IInventory
+    public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
@@ -68,7 +70,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
             20 +            //Sender
-            sizeof(long) +  //Gas
+            sizeof(long) +  //SystemFee
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
@@ -128,16 +130,14 @@ namespace Neo.Network.P2P.Payloads
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool Reverify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        public virtual bool Reverify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return false;
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
                 return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee;
-            if (balance < fee) return false;
-            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.SystemFee + p.NetworkFee)).Sum();
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return false;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (hashes.Length != Witnesses.Length) return false;
@@ -181,7 +181,7 @@ namespace Neo.Network.P2P.Payloads
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
-            json["script"] = Script.ToHexString();
+            json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -197,24 +197,48 @@ namespace Neo.Network.P2P.Payloads
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
             tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
             tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
-            tx.Script = json["script"].AsString().HexToBytes();
+            tx.Script = Convert.FromBase64String(json["script"].AsString());
             tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
             return tx;
         }
 
         bool IInventory.Verify(Snapshot snapshot)
         {
-            return Verify(snapshot, Enumerable.Empty<Transaction>());
+            return Verify(snapshot, BigInteger.Zero);
         }
 
-        public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        public virtual bool Verify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
         {
-            if (!Reverify(snapshot, mempool)) return false;
+            if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
             int size = Size;
             if (size > MaxTransactionSize) return false;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return false;
             return this.VerifyWitnesses(snapshot, net_fee);
+        }
+
+        public StackItem ToStackItem()
+        {
+            return new VM.Types.Array
+            (
+                new StackItem[]
+                {
+                    // Computed properties
+                    new ByteArray(Hash.ToArray()),
+
+                    // Transaction properties
+                    new Integer(Version),
+                    new Integer(Nonce),
+                    new ByteArray(Sender.ToArray()),
+                    new Integer(SystemFee),
+                    new Integer(NetworkFee),
+                    new Integer(ValidUntilBlock),
+                    // Attributes
+                    // Cosigners
+                    new ByteArray(Script),
+                    // Witnesses
+                }
+            );
         }
     }
 }
