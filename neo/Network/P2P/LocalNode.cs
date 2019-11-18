@@ -5,12 +5,9 @@ using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 
 namespace Neo.Network.P2P
@@ -71,24 +68,6 @@ namespace Neo.Network.P2P
             Connections.Tell(message);
         }
 
-        private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
-        {
-            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
-                return new IPEndPoint(ipAddress, port);
-            IPHostEntry entry;
-            try
-            {
-                entry = Dns.GetHostEntry(hostNameOrAddress);
-            }
-            catch (SocketException)
-            {
-                return null;
-            }
-            ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
-            if (ipAddress == null) return null;
-            return new IPEndPoint(ipAddress, port);
-        }
-
         private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
         {
             if (seedsToTake > 0)
@@ -134,39 +113,7 @@ namespace Neo.Network.P2P
             else
             {
                 AddPeers(GetIPEndPointsFromSeedList(count));
-                IEnumerable<IPEndPoint> peerFromDat = ReadPeersFromDat();
-                if (peerFromDat != null)
-                {
-                    AddPeers(peerFromDat);
-                }
             }
-        }
-
-        protected IEnumerable<IPEndPoint> ReadPeersFromDat()
-        { 
-            if (File.Exists("Peers.dat"))
-            {
-                List<IPEndPoint> peers = new List<IPEndPoint>();
-                using FileStream fs = new FileStream("Peers.dat", FileMode.Open, FileAccess.Read);
-                using BinaryReader reader = new BinaryReader(fs, Encoding.UTF8);
-                while (reader.BaseStream.Position < reader.BaseStream.Length)
-                {
-                    string[] s = reader.ReadString().Split(':');
-                    IPEndPoint peer;
-                    try
-                    {
-                        peer = GetIPEndpointFromHostPort(s[0], int.Parse(s[1]));
-                    }
-                    catch (AggregateException)
-                    {
-                        continue;
-                    }
-                    peers.Add(peer);
-                }
-                return peers.AsEnumerable<IPEndPoint>();
-            }
-            else
-                return null;            
         }
 
         protected override void OnReceive(object message)

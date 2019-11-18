@@ -30,6 +30,7 @@ namespace Neo.Network.P2P
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
+        public const string PeersFilePath = "Peers.dat";
         private IActorRef tcp_listener;
         private IWebHost ws_host;
         private ICancelable timer;
@@ -75,9 +76,9 @@ namespace Neo.Network.P2P
 
         protected void WritePeersToDat(IEnumerable<IPEndPoint> peers)
         {
-            if (!File.Exists("Peers.dat"))
-                File.Create("Peers.dat").Close();
-            using FileStream fs = new FileStream("Peers.dat", FileMode.Truncate, FileAccess.Write);
+            if (!File.Exists(PeersFilePath))
+                File.Create(PeersFilePath).Close();
+            using FileStream fs = new FileStream(PeersFilePath, FileMode.Truncate, FileAccess.Write);
             using BinaryWriter writer = new BinaryWriter(fs, Encoding.UTF8);
             foreach (IPEndPoint peer in peers)
             {
@@ -186,6 +187,64 @@ namespace Neo.Network.P2P
                 ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ListenerWsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
                 ws_host.Start();
             }
+            ConnectFromPeersDat();
+        }
+
+        private void ConnectFromPeersDat()
+        {
+            IEnumerable<IPEndPoint> peerFromDat = ReadPeersFromDat();
+            if (peerFromDat != null)
+            {
+                foreach (IPEndPoint peer in peerFromDat)
+                {
+                    ConnectToPeer(peer);
+                }
+            }
+        }
+
+        protected static IEnumerable<IPEndPoint> ReadPeersFromDat()
+        {
+            if (File.Exists(PeersFilePath))
+            {
+                List<IPEndPoint> peers = new List<IPEndPoint>();
+                using FileStream fs = new FileStream(PeersFilePath, FileMode.Open, FileAccess.Read);
+                using BinaryReader reader = new BinaryReader(fs, Encoding.UTF8);
+                while (reader.BaseStream.Position < reader.BaseStream.Length)
+                {
+                    string[] s = reader.ReadString().Split(':');
+                    IPEndPoint peer;
+                    try
+                    {
+                        peer = GetIPEndpointFromHostPort(s[0], int.Parse(s[1]));
+                    }
+                    catch (AggregateException)
+                    {
+                        continue;
+                    }
+                    peers.Add(peer);
+                }
+                return peers.AsEnumerable<IPEndPoint>();
+            }
+            else
+                return null;
+        }
+
+        protected static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
+        {
+            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
+                return new IPEndPoint(ipAddress, port);
+            IPHostEntry entry;
+            try
+            {
+                entry = System.Net.Dns.GetHostEntry(hostNameOrAddress);
+            }
+            catch (SocketException)
+            {
+                return null;
+            }
+            ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
+            if (ipAddress == null) return null;
+            return new IPEndPoint(ipAddress, port);
         }
 
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
@@ -209,7 +268,7 @@ namespace Neo.Network.P2P
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
-                WritePeersToDat(ConnectedPeers.Values.AsEnumerable<IPEndPoint>().Union(UnconnectedPeers.AsEnumerable<IPEndPoint>()));
+                WritePeersToDat(ConnectedPeers.Values.AsEnumerable<IPEndPoint>());
             }
         }
 
