@@ -1,3 +1,8 @@
+using System.IO;
+using System.Text;
+using System.Xml;
+using System.Xml.XPath;
+
 namespace Neo.Oracle
 {
     public class OracleFilters
@@ -11,7 +16,7 @@ namespace Neo.Oracle
         /// <returns>True if was filtered</returns>
         public static bool FilterJson(string input, string filter, out string output)
         {
-            // TODO: Filter
+            // TODO: Json Filter?
 
             output = input;
             return true;
@@ -26,7 +31,7 @@ namespace Neo.Oracle
         /// <returns>True if was filtered</returns>
         public static bool FilterHtml(string input, string filter, out string output)
         {
-            // TODO: Filter
+            // TODO: XPath Filter?
 
             output = input;
             return true;
@@ -41,10 +46,38 @@ namespace Neo.Oracle
         /// <returns>True if was filtered</returns>
         public static bool FilterText(string input, string filter, out string output)
         {
-            // TODO: Filter
+            // TODO: Regex Filter?
 
             output = input;
             return true;
+        }
+
+        /// <summary>
+        /// Filter XML using XPath filters
+        /// </summary>
+        /// <param name="input">Input</param>
+        /// <param name="filter">Filter</param>
+        /// <param name="output">output</param>
+        /// <returns>True if was filtered</returns>
+        public static bool FilterXml(string input, string filter, out string output)
+        {
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(input)))
+            using (var reader = XmlReader.Create(stream, new XmlReaderSettings() { XmlResolver = null }))
+            {
+                var doc = new XPathDocument(reader);
+                var nav = doc.CreateNavigator();
+                var node = nav.Select(filter);
+
+                var sb = new StringBuilder();
+                while (node.MoveNext())
+                {
+                    if (sb.Length > 0) sb.Append("\n");
+                    sb.Append(node.Current.Value);
+                }
+
+                output = sb.ToString();
+                return true;
+            }
         }
 
         /// <summary>
@@ -67,6 +100,8 @@ namespace Neo.Oracle
 
             return (contentType) switch
             {
+                "application/xml" => FilterXml(input, filter, out output),
+                "text/xml" => FilterXml(input, filter, out output),
                 "application/json" => FilterJson(input, filter, out output),
                 "text/html" => FilterHtml(input, filter, out output),
                 "text/plain" => FilterText(input, filter, out output),

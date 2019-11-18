@@ -74,6 +74,28 @@ namespace Neo.UnitTests.Oracle
 
             switch (context.Request.Path.Value)
             {
+                case "/xPath":
+                    {
+                        context.Response.ContentType = "text/xml";
+                        response =
+                            @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<bookstore>
+<book category=""cooking"">
+  <title lang=""en"">Everyday Italian</title>
+  <author>Giada De Laurentiis</author>
+  <year>2005</year>
+  <price>30.00</price>
+</book>
+
+<book category=""children"">
+  <title lang=""en"">Harry Potter</title>
+  <author>J K. Rowling</author>
+  <year>2005</year>
+  <price>29.99</price>
+</book>
+</bookstore>";
+                        break;
+                    }
                 case "/helloWorld":
                     {
                         response = "Hello world!";
@@ -134,6 +156,25 @@ namespace Neo.UnitTests.Oracle
             }
 
             await context.Response.WriteAsync(response, Encoding.UTF8);
+        }
+
+        [TestMethod]
+        public void Test_HTTP_Filter_XPath()
+        {
+            var request = new OracleHTTPRequest()
+            {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
+                Method = OracleHTTPRequest.HTTPMethod.GET,
+                URL = "http://127.0.0.1:9898/xPath",
+                Filter = "/bookstore/book/title"
+            };
+
+            var ret = ExecuteHTTP1Tx(request);
+
+            Assert.AreEqual(1, ret.Count);
+            Assert.IsTrue(ret.TryGet(request, out var result));
+            Assert.AreEqual(OracleResultError.None, result.Error);
+            CollectionAssert.AreEqual(Encoding.UTF8.GetBytes("Everyday Italian\nHarry Potter"), result.Result);
         }
 
         [TestMethod]
