@@ -236,6 +236,7 @@ namespace Neo.SmartContract
                 contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                 contract.Manifest = ContractManifest.Parse(manifest);
                 if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
+                if (!contract.HasStorage && engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).Any()) return false;
             }
 
             return true;

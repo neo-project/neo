@@ -1,7 +1,10 @@
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -257,9 +260,14 @@ namespace Neo.Network.RPC
         /// Returns the result after passing a script through the VM.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        public RpcInvokeResult InvokeScript(byte[] script)
+        public RpcInvokeResult InvokeScript(byte[] script, params UInt160[] scriptHashesForVerifying)
         {
-            return RpcInvokeResult.FromJson(RpcSend("invokescript", script.ToHexString()));
+            List<JObject> parameters = new List<JObject>
+            {
+                script.ToHexString()
+            };
+            parameters.AddRange(scriptHashesForVerifying.Select(p => (JObject)p.ToString()));
+            return RpcInvokeResult.FromJson(RpcSend("invokescript", parameters.ToArray()));
         }
 
         /// <summary>
@@ -271,7 +279,7 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Broadcasts a transaction over the NEO network.
+        /// Broadcasts a serialized transaction over the NEO network.
         /// </summary>
         public bool SendRawTransaction(byte[] rawTransaction)
         {
@@ -279,7 +287,15 @@ namespace Neo.Network.RPC
         }
 
         /// <summary>
-        /// Broadcasts a raw block over the NEO network.
+        /// Broadcasts a transaction over the NEO network.
+        /// </summary>
+        public bool SendRawTransaction(Transaction transaction)
+        {
+            return SendRawTransaction(transaction.ToArray());
+        }
+
+        /// <summary>
+        /// Broadcasts a serialized block over the NEO network.
         /// </summary>
         public bool SubmitBlock(byte[] block)
         {
