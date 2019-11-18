@@ -96,6 +96,43 @@ namespace Neo.UnitTests.Oracle
 </bookstore>";
                         break;
                     }
+                case "/json":
+                    {
+                        context.Response.ContentType = "application/json";
+                        response =
+@"{
+  'Stores': [
+    'Lambton Quay',
+    'Willis Street'
+  ],
+  'Manufacturers': [
+    {
+      'Name': 'Acme Co',
+      'Products': [
+        {
+          'Name': 'Anvil',
+          'Price': 50
+        }
+      ]
+    },
+    {
+      'Name': 'Contoso',
+      'Products': [
+        {
+          'Name': 'Elbow Grease',
+          'Price': 99.95
+        },
+        {
+          'Name': 'Headlight Fluid',
+          'Price': 4
+        }
+      ]
+    }
+  ]
+}
+";
+                        break;
+                    }
                 case "/helloWorld":
                     {
                         response = "Hello world!";
@@ -174,7 +211,26 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(1, ret.Count);
             Assert.IsTrue(ret.TryGet(request, out var result));
             Assert.AreEqual(OracleResultError.None, result.Error);
-            CollectionAssert.AreEqual(Encoding.UTF8.GetBytes("Everyday Italian\nHarry Potter"), result.Result);
+            Assert.AreEqual("Everyday Italian\nHarry Potter", Encoding.UTF8.GetString(result.Result));
+        }
+
+        [TestMethod]
+        public void Test_HTTP_Filter_Json()
+        {
+            var request = new OracleHTTPRequest()
+            {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
+                Method = OracleHTTPRequest.HTTPMethod.GET,
+                URL = "http://127.0.0.1:9898/json",
+                Filter = "$.Manufacturers[?(@.Name == 'Acme Co')].Products[?(@.Price >= 50)].Name"
+            };
+
+            var ret = ExecuteHTTP1Tx(request);
+
+            Assert.AreEqual(1, ret.Count);
+            Assert.IsTrue(ret.TryGet(request, out var result));
+            Assert.AreEqual(OracleResultError.None, result.Error);
+            Assert.AreEqual(@"""Anvil""", Encoding.UTF8.GetString(result.Result));
         }
 
         [TestMethod]

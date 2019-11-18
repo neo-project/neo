@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Text;
 using System.Xml;
@@ -16,9 +17,22 @@ namespace Neo.Oracle
         /// <returns>True if was filtered</returns>
         public static bool FilterJson(string input, string filter, out string output)
         {
-            // TODO: Json Filter?
+            var json = JObject.Parse(input);
+            var tokens = json.SelectTokens(filter);
 
-            output = input;
+            var array = false;
+            var sb = new StringBuilder();
+            foreach (var token in tokens)
+            {
+                if (sb.Length > 0)
+                {
+                    array = true;
+                    sb.Append(",\n");
+                }
+                sb.Append(token.ToString(Newtonsoft.Json.Formatting.None));
+            }
+
+            output = array ? "[" + sb.ToString() + "]" : sb.ToString();
             return true;
         }
 
