@@ -1,6 +1,8 @@
 using Newtonsoft.Json.Linq;
+using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -36,36 +38,6 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// Filter html
-        /// </summary>
-        /// <param name="input">Input</param>
-        /// <param name="filter">Filter</param>
-        /// <param name="output">output</param>
-        /// <returns>True if was filtered</returns>
-        public static bool FilterHtml(string input, string filter, out string output)
-        {
-            // TODO: XPath Filter?
-
-            output = input;
-            return true;
-        }
-
-        /// <summary>
-        /// Filter text
-        /// </summary>
-        /// <param name="input">Input</param>
-        /// <param name="filter">Filter</param>
-        /// <param name="output">output</param>
-        /// <returns>True if was filtered</returns>
-        public static bool FilterText(string input, string filter, out string output)
-        {
-            // TODO: Regex Filter?
-
-            output = input;
-            return true;
-        }
-
-        /// <summary>
         /// Filter XML using XPath filters
         /// </summary>
         /// <param name="input">Input</param>
@@ -94,6 +66,34 @@ namespace Neo.Oracle
         }
 
         /// <summary>
+        /// Filter text
+        /// </summary>
+        /// <param name="input">Input</param>
+        /// <param name="filter">Filter</param>
+        /// <param name="output">output</param>
+        /// <returns>True if was filtered</returns>
+        public static bool FilterText(string input, string filter, out string output)
+        {
+            var regex = new Regex(filter, RegexOptions.ExplicitCapture | RegexOptions.Multiline);
+
+            var sb = new StringBuilder();
+            foreach (Match match in regex.Matches(input))
+            {
+                if (!match.Success) throw new ArgumentException(nameof(filter));
+                foreach (Group group in match.Groups)
+                {
+                    if (!group.Success) throw new ArgumentException(nameof(filter));
+
+                    if (sb.Length > 0) sb.Append("\n");
+                    sb.Append(group.Value);
+                }
+            }
+
+            output = sb.ToString();
+            return true;
+        }
+
+        /// <summary>
         /// Filter string according to the media type
         /// </summary>
         /// <param name="contentType">Content type</param>
@@ -116,8 +116,8 @@ namespace Neo.Oracle
                 "application/xml" => FilterXml(input, filter, out output),
                 "text/xml" => FilterXml(input, filter, out output),
                 "application/json" => FilterJson(input, filter, out output),
-                "text/html" => FilterHtml(input, filter, out output),
                 "text/plain" => FilterText(input, filter, out output),
+                "text/html" => FilterText(input, filter, out output),
                 _ => false,
             };
         }

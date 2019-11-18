@@ -130,6 +130,11 @@ namespace Neo.UnitTests.Oracle
 ";
                         break;
                     }
+                case "/text":
+                    {
+                        response = @"Mahesh Chand, Raj Kumar, Mike Gold, Allen O'Neill, Marshal Troll";
+                        break;
+                    }
                 case "/helloWorld":
                     {
                         response = "Hello world!";
@@ -209,6 +214,25 @@ namespace Neo.UnitTests.Oracle
             Assert.IsTrue(ret.TryGet(request, out var result));
             Assert.AreEqual(OracleResultError.None, result.Error);
             Assert.AreEqual("Everyday Italian\nHarry Potter", Encoding.UTF8.GetString(result.Result));
+        }
+
+        [TestMethod]
+        public void Test_HTTP_Filter_Text()
+        {
+            var request = new OracleHTTPRequest()
+            {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
+                Method = OracleHTTPRequest.HTTPMethod.GET,
+                URL = "http://127.0.0.1:9898/text",
+                Filter = @"\b[M]\w+"
+            };
+
+            var ret = ExecuteHTTP1Tx(request);
+
+            Assert.AreEqual(1, ret.Count);
+            Assert.IsTrue(ret.TryGet(request, out var result));
+            Assert.AreEqual(OracleResultError.None, result.Error);
+            Assert.AreEqual("Mahesh\nMike\nMarshal", Encoding.UTF8.GetString(result.Result));
         }
 
         [TestMethod]
