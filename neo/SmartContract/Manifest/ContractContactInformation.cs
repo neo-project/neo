@@ -11,12 +11,18 @@ namespace Neo.SmartContract.Manifest
 
         public string Email { get; set; } = "";
 
+        public string Description { get; set; } = "";
+
+        public string Website { get; set; } = "";
+
         public static ContractContactInformation FromJson(JObject jsonObject)
         {
             return jsonObject != null ? new ContractContactInformation
             {
                 Author = jsonObject["author"]?.AsString(),
                 Email = jsonObject["email"]?.AsString(),
+                Description = jsonObject["description"]?.AsString(),
+                Website = jsonObject["website"]?.AsString(),
             } : new ContractContactInformation();
         }
 
@@ -25,6 +31,8 @@ namespace Neo.SmartContract.Manifest
             var json = new JObject();
             json["author"] = Author;
             json["email"] = Email;
+            json["description"] = Description;
+            json["website"] = Website;
             return json;
         }
     }
