@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Manifest
         /// Contract details including author and contact email.
         /// </summary>
         public ContractContactInformation Contact { get; set; }
-        
+
         /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
