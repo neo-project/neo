@@ -269,7 +269,7 @@ namespace Neo.Network.P2P
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
-                if (ConnectedPeers.Count > 7)
+                if (ConnectedPeers.Count > UpdatePeersDatThreshold)
                 {
                     WritePeersToDat(ConnectedPeers.Values.AsEnumerable<IPEndPoint>());
                 }
