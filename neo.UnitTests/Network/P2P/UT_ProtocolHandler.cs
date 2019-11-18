@@ -9,18 +9,10 @@ namespace Neo.UnitTests.Network.P2P
     [TestClass]
     public class UT_ProtocolHandler : TestKit
     {
-        private NeoSystem testBlockchain;
-
         [TestCleanup]
         public void Cleanup()
         {
             Shutdown();
-        }
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
         }
 
         [TestMethod]
@@ -28,7 +20,7 @@ namespace Neo.UnitTests.Network.P2P
         {
             var senderProbe = CreateTestProbe();
             var parent = CreateTestProbe();
-            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain), parent);
+            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(TestBlockchain.TheNeoSystem), parent);
 
             var payload = new VersionPayload()
             {

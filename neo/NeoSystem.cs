@@ -26,11 +26,11 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        private readonly Store store;
+        private readonly IStore store;
         private ChannelsConfig start_message = null;
         private bool suspend = false;
 
-        public NeoSystem(Store store)
+        public NeoSystem(IStore store)
         {
             this.store = store;
             Plugin.LoadPlugins(this);
@@ -69,7 +69,7 @@ namespace Neo
             }
         }
 
-        public void StartConsensus(Wallet wallet, Store consensus_store = null, bool ignoreRecoveryLogs = false)
+        public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
         {
             Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);

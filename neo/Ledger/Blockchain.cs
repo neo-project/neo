@@ -62,9 +62,10 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
-        private Snapshot currentSnapshot;
+        private SnapshotView currentSnapshot;
 
-        public Store Store { get; }
+        public IStore Store { get; }
+        public RawView RawView { get; }
         public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
@@ -95,27 +96,28 @@ namespace Neo.Ledger
             }
         }
 
-        public Blockchain(NeoSystem system, Store store)
+        public Blockchain(NeoSystem system, IStore store)
         {
             this.system = system;
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
+            this.RawView = new RawView(store);
             lock (lockObj)
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                header_index.AddRange(store.GetHeaderHashList().Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
+                header_index.AddRange(RawView.HeaderHashList.Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
                 stored_header_count += (uint)header_index.Count;
                 if (stored_header_count == 0)
                 {
-                    header_index.AddRange(store.GetBlocks().Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
+                    header_index.AddRange(RawView.Blocks.Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
                 }
                 else
                 {
-                    HashIndexState hashIndex = store.GetHeaderHashIndex().Get();
+                    HashIndexState hashIndex = RawView.HeaderHashIndex.Get();
                     if (hashIndex.Index >= stored_header_count)
                     {
-                        DataCache<UInt256, TrimmedBlock> cache = store.GetBlocks();
+                        DataCache<UInt256, TrimmedBlock> cache = RawView.Blocks;
                         for (UInt256 hash = hashIndex.Hash; hash != header_index[(int)stored_header_count - 1];)
                         {
                             header_index.Insert((int)stored_header_count, hash);
@@ -139,13 +141,13 @@ namespace Neo.Ledger
         public bool ContainsBlock(UInt256 hash)
         {
             if (block_cache.ContainsKey(hash)) return true;
-            return Store.ContainsBlock(hash);
+            return RawView.ContainsBlock(hash);
         }
 
         public bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;
-            return Store.ContainsTransaction(hash);
+            return RawView.ContainsTransaction(hash);
         }
 
         private static Transaction DeployNativeContracts()
@@ -179,7 +181,7 @@ namespace Neo.Ledger
         {
             if (block_cache.TryGetValue(hash, out Block block))
                 return block;
-            return Store.GetBlock(hash);
+            return RawView.GetBlock(hash);
         }
 
         public UInt256 GetBlockHash(uint index)
@@ -193,16 +195,16 @@ namespace Neo.Ledger
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
-        public Snapshot GetSnapshot()
+        public SnapshotView GetSnapshot()
         {
-            return Store.GetSnapshot();
+            return new SnapshotView(Store);
         }
 
         public Transaction GetTransaction(UInt256 hash)
         {
             if (MemPool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
-            return Store.GetTransaction(hash);
+            return RawView.GetTransaction(hash);
         }
 
         private void OnImport(IEnumerable<Block> blocks)
@@ -237,7 +239,7 @@ namespace Neo.Ledger
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
-                if (Store.ContainsTransaction(tx.Hash))
+                if (RawView.ContainsTransaction(tx.Hash))
                     continue;
                 if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
                     continue;
@@ -320,7 +322,7 @@ namespace Neo.Ledger
                 if (block.Index == header_index.Count)
                 {
                     header_index.Add(block.Hash);
-                    using (Snapshot snapshot = GetSnapshot())
+                    using (SnapshotView snapshot = GetSnapshot())
                     {
                         snapshot.Blocks.Add(block.Hash, block.Header.Trim());
                         snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
@@ -345,7 +347,7 @@ namespace Neo.Ledger
 
         private void OnNewHeaders(Header[] headers)
         {
-            using (Snapshot snapshot = GetSnapshot())
+            using (SnapshotView snapshot = GetSnapshot())
             {
                 foreach (Header header in headers)
                 {
@@ -426,7 +428,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (Snapshot snapshot = GetSnapshot())
+            using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
@@ -504,12 +506,12 @@ namespace Neo.Ledger
             currentSnapshot?.Dispose();
         }
 
-        public static Props Props(NeoSystem system, Store store)
+        public static Props Props(NeoSystem system, IStore store)
         {
             return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
         }
 
-        private void SaveHeaderHashList(Snapshot snapshot = null)
+        private void SaveHeaderHashList(SnapshotView snapshot = null)
         {
             if ((header_index.Count - stored_header_count < 2000))
                 return;

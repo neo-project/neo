@@ -7,8 +7,8 @@ namespace Neo.Plugins
 {
     public interface IPersistencePlugin
     {
-        void OnPersist(Snapshot snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList);
-        void OnCommit(Snapshot snapshot);
+        void OnPersist(SnapshotView snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList);
+        void OnCommit(SnapshotView snapshot);
         bool ShouldThrowExceptionFromCommit(Exception ex);
     }
 }
