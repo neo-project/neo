@@ -21,7 +21,7 @@ namespace Neo.SmartContract
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
-            return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.GET, url, filter, null);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v1_1, OracleHTTPRequest.HTTPMethod.GET, url, filter, null);
         }
 
         private static bool Oracle_HTTP11_Post(ApplicationEngine engine)
@@ -30,7 +30,7 @@ namespace Neo.SmartContract
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
-            return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.POST, url, filter, body);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v1_1, OracleHTTPRequest.HTTPMethod.POST, url, filter, body);
         }
 
         private static bool Oracle_HTTP11_Delete(ApplicationEngine engine)
@@ -38,7 +38,7 @@ namespace Neo.SmartContract
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
-            return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.DELETE, url, filter, null);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v1_1, OracleHTTPRequest.HTTPMethod.DELETE, url, filter, null);
         }
 
         private static bool Oracle_HTTP11_Put(ApplicationEngine engine)
@@ -47,7 +47,7 @@ namespace Neo.SmartContract
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
-            return Oracle_HTTP(engine, 1, 1, OracleHTTPRequest.HTTPMethod.PUT, url, filter, body);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v1_1, OracleHTTPRequest.HTTPMethod.PUT, url, filter, body);
         }
 
         #endregion
@@ -59,7 +59,7 @@ namespace Neo.SmartContract
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
-            return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.GET, url, filter, null);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v2_0, OracleHTTPRequest.HTTPMethod.GET, url, filter, null);
         }
 
         private static bool Oracle_HTTP20_Post(ApplicationEngine engine)
@@ -68,7 +68,7 @@ namespace Neo.SmartContract
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
-            return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.POST, url, filter, body);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v2_0, OracleHTTPRequest.HTTPMethod.POST, url, filter, body);
         }
 
         private static bool Oracle_HTTP20_Delete(ApplicationEngine engine)
@@ -76,7 +76,7 @@ namespace Neo.SmartContract
             var url = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
 
-            return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.DELETE, url, filter, null);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v2_0, OracleHTTPRequest.HTTPMethod.DELETE, url, filter, null);
         }
 
         private static bool Oracle_HTTP20_Put(ApplicationEngine engine)
@@ -85,12 +85,12 @@ namespace Neo.SmartContract
             var filter = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var body = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
-            return Oracle_HTTP(engine, 2, 0, OracleHTTPRequest.HTTPMethod.PUT, url, filter, body);
+            return Oracle_HTTP(engine, OracleHTTPRequest.HTTPVersion.v2_0, OracleHTTPRequest.HTTPMethod.PUT, url, filter, body);
         }
 
         #endregion
 
-        private static bool Oracle_HTTP(ApplicationEngine engine, byte versionMajor, byte versionMinor, OracleHTTPRequest.HTTPMethod method, string url, string filter, byte[] body)
+        private static bool Oracle_HTTP(ApplicationEngine engine, OracleHTTPRequest.HTTPVersion version, OracleHTTPRequest.HTTPMethod method, string url, string filter, byte[] body)
         {
             var request = new OracleHTTPRequest()
             {
@@ -98,8 +98,7 @@ namespace Neo.SmartContract
                 URL = url,
                 Filter = filter,
                 Body = body,
-                VersionMajor = versionMajor,
-                VersionMinor = versionMinor
+                Version = version
             };
 
             // Extract from cache

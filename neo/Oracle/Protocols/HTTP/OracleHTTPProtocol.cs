@@ -20,7 +20,7 @@ namespace Neo.Oracle.Protocols.HTTP
             }
 
             HttpRequestMessage req;
-            var version = new Version(httpRequest.VersionMajor, httpRequest.VersionMinor);
+            var version = httpRequest.Version == OracleHTTPRequest.HTTPVersion.v1_1 ? new Version(1, 1) : new Version(2, 0);
 
             using (var client = new HttpClient())
             {

@@ -14,15 +14,16 @@ namespace Neo.Oracle.Protocols.HTTP
             DELETE = 3
         }
 
-        /// <summary>
-        /// Version Major
-        /// </summary>
-        public byte VersionMajor { get; set; } = 1;
+        public enum HTTPVersion : byte
+        {
+            v1_1 = 11,
+            v2_0 = 20
+        }
 
         /// <summary>
-        /// Version Minor
+        /// Version
         /// </summary>
-        public byte VersionMinor { get; set; } = 1;
+        public HTTPVersion Version { get; set; } = HTTPVersion.v1_1;
 
         /// <summary>
         /// HTTP Methods
@@ -54,8 +55,7 @@ namespace Neo.Oracle.Protocols.HTTP
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
                 writer.Write((byte)RequestType.HTTP);
-                writer.Write(VersionMajor);
-                writer.Write(VersionMinor);
+                writer.Write((byte)Version);
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL);
                 writer.WriteVarString(Filter);

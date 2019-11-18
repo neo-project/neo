@@ -141,12 +141,11 @@ namespace Neo.UnitTests.Oracle
         {
             var request = new OracleHTTPRequest()
             {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
                 Method = OracleHTTPRequest.HTTPMethod.POST,
                 URL = "http://127.0.0.1:9898/post",
                 Filter = "",
-                Body = Encoding.UTF8.GetBytes("Hello from POST oracle!"),
-                VersionMajor = 1,
-                VersionMinor = 1
+                Body = Encoding.UTF8.GetBytes("Hello from POST oracle!")
             };
 
             var ret = ExecuteHTTP1Tx(request);
@@ -162,12 +161,11 @@ namespace Neo.UnitTests.Oracle
         {
             var request = new OracleHTTPRequest()
             {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
                 Method = OracleHTTPRequest.HTTPMethod.PUT,
                 URL = "http://127.0.0.1:9898/put",
                 Filter = "",
-                Body = Encoding.UTF8.GetBytes("Hello from PUT oracle!"),
-                VersionMajor = 1,
-                VersionMinor = 1
+                Body = Encoding.UTF8.GetBytes("Hello from PUT oracle!")
             };
 
             var ret = ExecuteHTTP1Tx(request);
@@ -183,12 +181,11 @@ namespace Neo.UnitTests.Oracle
         {
             var request = new OracleHTTPRequest()
             {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
                 Method = OracleHTTPRequest.HTTPMethod.DELETE,
                 URL = "http://127.0.0.1:9898/delete",
                 Filter = "",
-                Body = null,
-                VersionMajor = 1,
-                VersionMinor = 1
+                Body = null
             };
 
             var ret = ExecuteHTTP1Tx(request);
@@ -204,12 +201,11 @@ namespace Neo.UnitTests.Oracle
         {
             var request = new OracleHTTPRequest()
             {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
                 Method = OracleHTTPRequest.HTTPMethod.GET,
                 URL = "http://127.0.0.1:9898/helloWorld",
                 Filter = "",
-                Body = null,
-                VersionMajor = 1,
-                VersionMinor = 1
+                Body = null
             };
 
             var ret = ExecuteHTTP1Tx(request);
@@ -225,12 +221,11 @@ namespace Neo.UnitTests.Oracle
         {
             var request = new OracleHTTPRequest()
             {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
                 Method = OracleHTTPRequest.HTTPMethod.GET,
                 URL = "http://127.0.0.1:9898/error",
                 Filter = "",
-                Body = null,
-                VersionMajor = 1,
-                VersionMinor = 1
+                Body = null
             };
 
             var ret = ExecuteHTTP1Tx(request);
@@ -246,12 +241,11 @@ namespace Neo.UnitTests.Oracle
         {
             var request = new OracleHTTPRequest()
             {
+                Version = OracleHTTPRequest.HTTPVersion.v1_1,
                 Method = OracleHTTPRequest.HTTPMethod.GET,
                 URL = "http://127.0.0.1:9898/timeout",
                 Filter = "",
-                Body = null,
-                VersionMajor = 1,
-                VersionMinor = 1
+                Body = null
             };
 
             var ret = ExecuteHTTP1Tx(request);
