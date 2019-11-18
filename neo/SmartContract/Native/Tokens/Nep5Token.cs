@@ -87,25 +87,15 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
         }
 
-        /// <summary>
-        /// Burn token, when the account balance less than amount, it will burn all the balance of the account
-        /// </summary>
-        /// <param name="engine">The application engine</param>
-        /// <param name="account">The burning account</param>
-        /// <param name="amount">The amount to be burned</param>
-        /// <returns>The actual amount of burned</returns>
-        internal protected virtual BigInteger Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (amount.IsZero) return amount;
+            if (amount.IsZero) return;
             StorageKey key = CreateAccountKey(account);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
             TState state = new TState();
             state.FromByteArray(storage.Value);
-            if (state.Balance < amount)
-            {
-                amount = state.Balance;
-            }
+            if (state.Balance < amount) throw new InvalidOperationException();
             OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
             {
@@ -121,7 +111,6 @@ namespace Neo.SmartContract.Native.Tokens
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArray();
             engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
-            return amount;
         }
 
         [ContractMethod(0, ContractParameterType.String, Name = "name", SafeMethod = true)]

@@ -441,7 +441,6 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
-                        
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
