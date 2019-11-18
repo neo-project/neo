@@ -32,10 +32,7 @@ namespace Neo.UnitTests.Oracle
             TestBlockchain.InitializeMockNeoSystem();
             store = TestBlockchain.GetStore();
 
-            server = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, 9898, listenOptions =>
-            {
-
-            }))
+            server = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, 9898))
             .Configure(app =>
             {
                 app.UseResponseCompression();

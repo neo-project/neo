@@ -17,12 +17,11 @@ namespace Neo.Oracle
         /// <returns>True if was filtered</returns>
         public static bool FilterJson(string input, string filter, out string output)
         {
-            var json = JObject.Parse(input);
-            var tokens = json.SelectTokens(filter);
-
             var array = false;
             var sb = new StringBuilder();
-            foreach (var token in tokens)
+            var json = JObject.Parse(input);
+
+            foreach (var token in json.SelectTokens(filter))
             {
                 if (sb.Length > 0)
                 {
