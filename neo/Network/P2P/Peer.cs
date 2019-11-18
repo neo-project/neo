@@ -28,9 +28,10 @@ namespace Neo.Network.P2P
 
         public const int DefaultMinDesiredConnections = 10;
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
+        public const int UpdatePeersDatThreshold = 5;
+        public const string PeersFilePath = "Peers.dat";
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
-        public const string PeersFilePath = "Peers.dat";
         private IActorRef tcp_listener;
         private IWebHost ws_host;
         private ICancelable timer;
@@ -268,7 +269,10 @@ namespace Neo.Network.P2P
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
-                WritePeersToDat(ConnectedPeers.Values.AsEnumerable<IPEndPoint>());
+                if (ConnectedPeers.Count > 7)
+                {
+                    WritePeersToDat(ConnectedPeers.Values.AsEnumerable<IPEndPoint>());
+                }
             }
         }
 
