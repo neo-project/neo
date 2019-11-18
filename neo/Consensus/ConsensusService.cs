@@ -29,7 +29,7 @@ namespace Neo.Consensus
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
-        public static readonly TimeSpan PrepareRequestThreshold = TimeSpan.FromMilliseconds(8 * Blockchain.TimePerBlock.TotalMilliseconds);
+        private static readonly TimeSpan prepareRequestThreshold = TimeSpan.FromMilliseconds(8 * Blockchain.MillisecondsPerBlock);
 
         /// <summary>
         /// This will record the information from last scheduled timer
@@ -406,7 +406,7 @@ namespace Neo.Consensus
             if (context.RequestSentOrReceived || context.NotAcceptingPayloadsDueToViewChanging) return;
             if (payload.ValidatorIndex != context.Block.ConsensusData.PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
-            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.Add(PrepareRequestThreshold).ToTimestampMS())
+            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.Add(prepareRequestThreshold).ToTimestampMS())
             {
                 Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
                 return;
