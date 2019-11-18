@@ -58,11 +58,11 @@ namespace Neo.Network.P2P
                 return;
             }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
-            hashes.ExceptWith(knownHashes);
+            hashes.Remove(knownHashes);
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
-            hashes.ExceptWith(globalTasks.Keys);
+            hashes.Remove(globalTasks);
             if (hashes.Count == 0)
             {
                 RequestTasks(session);
@@ -203,7 +203,7 @@ namespace Neo.Network.P2P
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
             {
-                session.AvailableTasks.ExceptWith(knownHashes);
+                session.AvailableTasks.Remove(knownHashes);
                 session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
                 if (hashes.Count > 0)
@@ -213,7 +213,7 @@ namespace Neo.Network.P2P
                         if (!IncrementGlobalTask(hash))
                             hashes.Remove(hash);
                     }
-                    session.AvailableTasks.ExceptWith(hashes);
+                    session.AvailableTasks.Remove(hashes);
                     foreach (UInt256 hash in hashes)
                         session.Tasks[hash] = DateTime.UtcNow;
                     foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
