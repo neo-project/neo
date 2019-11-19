@@ -226,7 +226,6 @@ namespace Neo.UnitTests.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
             ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (long)balance);
             NativeContract.GAS.Burn(applicationEngine, sender, balance);
-            snapshot.Commit();
 
             // Persist block and reverify all the txs in mempool, but all the txs will be discarded
             _unit.UpdatePoolForBlockPersisted(block, snapshot);
@@ -235,7 +234,6 @@ namespace Neo.UnitTests.Ledger
 
             // Withdraw the GAS by minting gas to the sender
             NativeContract.GAS.Mint(applicationEngine, sender, balance);
-            snapshot.Commit();
         }
 
         private void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
