@@ -84,7 +84,7 @@ namespace Neo.Network.P2P
             foreach (IPEndPoint peer in peers)
             {
                 writer.Write(peer.ToString());
-            }   
+            }
         }
 
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
