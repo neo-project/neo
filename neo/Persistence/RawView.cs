@@ -5,6 +5,9 @@ using System;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// Provide a read-only <see cref="StoreView"/> for accessing directly from database instead of from snapshot.
+    /// </summary>
     public class RawView : StoreView
     {
         private readonly IReadOnlyStore store;

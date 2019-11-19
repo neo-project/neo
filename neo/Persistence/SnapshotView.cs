@@ -5,6 +5,9 @@ using System;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// Provide a <see cref="StoreView"/> for accessing snapshots.
+    /// </summary>
     public class SnapshotView : StoreView, IDisposable
     {
         private readonly ISnapshot snapshot;
