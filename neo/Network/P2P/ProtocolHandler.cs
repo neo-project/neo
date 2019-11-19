@@ -22,11 +22,11 @@ namespace Neo.Network.P2P
         public class SetFilter { public BloomFilter Filter; }
         internal class Timer { }
 
-        private class PendingKnownHashesCollection : KeyedCollection<UInt256, KeyValuePair<UInt256, DateTime>>
+        private class PendingKnownHashesCollection : KeyedCollection<UInt256, (UInt256, DateTime)>
         {
-            protected override UInt256 GetKeyForItem(KeyValuePair<UInt256, DateTime> item)
+            protected override UInt256 GetKeyForItem((UInt256, DateTime) item)
             {
-                return item.Key;
+                return item.Item1;
             }
         }
 
@@ -299,7 +299,7 @@ namespace Neo.Network.P2P
             }
             if (hashes.Length == 0) return;
             foreach (UInt256 hash in hashes)
-                pendingKnownHashes.Add(new KeyValuePair<UInt256, DateTime>(hash, DateTime.UtcNow));
+                pendingKnownHashes.Add((hash, DateTime.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) }, Context.Parent);
         }
 
@@ -347,10 +347,10 @@ namespace Neo.Network.P2P
         {
             while (pendingKnownHashes.Count > 0)
             {
-                KeyValuePair<UInt256, DateTime> item = pendingKnownHashes.First();
-                if (DateTime.UtcNow - item.Value <= PendingTimeout)
+                var (_, time) = pendingKnownHashes[0];
+                if (DateTime.UtcNow - time <= PendingTimeout)
                     break;
-                pendingKnownHashes.Remove(item);
+                pendingKnownHashes.RemoveAt(0);
             }
         }
 
