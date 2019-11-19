@@ -14,7 +14,7 @@ namespace Neo.Oracle
         private readonly IDictionary<UInt160, UInt160> _expectedResults;
 
         public override int Size => base.Size +
-            _expectedResults.Count.GetVarSize() +
+            IO.Helper.GetVarSize(_expectedResults.Count) +
             (_expectedResults.Count * UInt160.Length * 2);
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Constructor
         /// </summary>
-        public OracleExpectedResult() : base(TransactionAttributeUsage.OracleExpectedResult)
+        public OracleExpectedResult() : base(TransactionAttributeUsage.OracleRequest)
         {
             _expectedResults = new Dictionary<UInt160, UInt160>();
         }
@@ -115,7 +115,7 @@ namespace Neo.Oracle
         public new static OracleExpectedResult FromJson(JObject json)
         {
             if (!Enum.TryParse<TransactionAttributeUsage>(json["usage"].AsString(), out var usage)
-                || usage != TransactionAttributeUsage.OracleExpectedResult)
+                || usage != TransactionAttributeUsage.OracleRequest)
             {
                 throw new FormatException();
             }

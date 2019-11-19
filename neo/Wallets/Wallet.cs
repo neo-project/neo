@@ -325,7 +325,7 @@ namespace Neo.Wallets
                             // Try to find the expected results
 
                             var res = attributes
-                                .Where(u => u.Usage == TransactionAttributeUsage.OracleExpectedResult)
+                                .Where(u => u.Usage == TransactionAttributeUsage.OracleRequest)
                                 .Cast<OracleExpectedResult>()
                                 .FirstOrDefault();
 
@@ -364,7 +364,7 @@ namespace Neo.Wallets
                         // Attach the OracleExpectedResult attribute
 
                         var attr = new List<TransactionAttribute>(attributes);
-                        attr.RemoveAll(u => u.Usage == TransactionAttributeUsage.OracleExpectedResult);
+                        attr.RemoveAll(u => u.Usage == TransactionAttributeUsage.OracleRequest);
                         attr.Add(new OracleExpectedResult(oracle, oracleType == OracleExecutionType.SecureOracle));
                         tx.Attributes = attr.ToArray();
 

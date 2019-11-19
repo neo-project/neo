@@ -104,8 +104,6 @@ namespace Neo.Network.P2P.Payloads
             Attributes = new TransactionAttribute[reader.ReadVarInt(MaxTransactionAttributes)];
             for (int x = 0, max = Attributes.Length; x < max; x++)
                 Attributes[x] = TransactionAttribute.DeserializeFrom(reader);
-            if (Attributes.Select(p => p.Usage).Distinct().Count() != Attributes.Length)
-                throw new FormatException();
 
             Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();

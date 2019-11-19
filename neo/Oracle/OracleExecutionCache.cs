@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -11,16 +12,9 @@ namespace Neo.Oracle
         private readonly Dictionary<UInt160, OracleResult> _cache = new Dictionary<UInt160, OracleResult>();
 
         /// <summary>
-        /// Oracle action
-        /// </summary>
-        /// <param name="request">Request</param>
-        /// <returns>Result</returns>
-        public delegate OracleResult oracleDelegate(OracleRequest request);
-
-        /// <summary>
         /// Engine
         /// </summary>
-        private readonly oracleDelegate _oracle;
+        private readonly Func<OracleRequest, OracleResult> _oracle;
 
         /// <summary>
         /// Count
@@ -31,7 +25,7 @@ namespace Neo.Oracle
         /// Constructor for oracles
         /// </summary>
         /// <param name="oracle">Oracle Engine</param>
-        public OracleExecutionCache(oracleDelegate oracle = null)
+        public OracleExecutionCache(Func<OracleRequest, OracleResult> oracle = null)
         {
             _oracle = oracle;
         }

@@ -43,7 +43,7 @@ namespace Neo.IO
             }
         }
 
-        public static int GetVarSize(this int value)
+        public static int GetVarSize(int value)
         {
             if (value < 0xFD)
                 return sizeof(byte);

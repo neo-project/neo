@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
 
             return usage switch
             {
-                TransactionAttributeUsage.OracleExpectedResult => OracleExpectedResult.FromJson(json),
+                TransactionAttributeUsage.OracleRequest => OracleExpectedResult.FromJson(json),
                 _ => throw new FormatException(),
             };
         }
@@ -62,7 +62,7 @@ namespace Neo.Network.P2P.Payloads
             TransactionAttribute attrib;
             switch (usage)
             {
-                case TransactionAttributeUsage.OracleExpectedResult:
+                case TransactionAttributeUsage.OracleRequest:
                     {
                         attrib = new OracleExpectedResult();
                         break;
