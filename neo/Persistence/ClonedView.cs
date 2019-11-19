@@ -4,7 +4,7 @@ using Neo.Ledger;
 
 namespace Neo.Persistence
 {
-    internal class ClonedView : View
+    internal class ClonedView : StoreView
     {
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
@@ -14,7 +14,7 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
-        public ClonedView(View view)
+        public ClonedView(StoreView view)
         {
             this.PersistingBlock = view.PersistingBlock;
             this.Blocks = view.Blocks.CreateSnapshot();

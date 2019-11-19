@@ -5,7 +5,7 @@ using System;
 
 namespace Neo.Persistence
 {
-    public class RawView : View
+    public class RawView : StoreView
     {
         private readonly IReadOnlyStore store;
 

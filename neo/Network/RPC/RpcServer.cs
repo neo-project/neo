@@ -57,7 +57,7 @@ namespace Neo.Network.RPC
                 throw new NotImplementedException();
             }
 
-            public UInt160[] GetScriptHashesForVerifying(View snapshot)
+            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
             {
                 return _scriptHashesForVerifying;
             }

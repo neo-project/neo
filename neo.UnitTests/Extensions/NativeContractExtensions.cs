@@ -9,12 +9,12 @@ namespace Neo.UnitTests.Extensions
 {
     public static class NativeContractExtensions
     {
-        public static StackItem Call(this NativeContract contract, SnapshotView snapshot, string method, params ContractParameter[] args)
+        public static StackItem Call(this NativeContract contract, StoreView snapshot, string method, params ContractParameter[] args)
         {
             return Call(contract, snapshot, null, method, args);
         }
 
-        public static StackItem Call(this NativeContract contract, SnapshotView snapshot, IVerifiable container, string method, params ContractParameter[] args)
+        public static StackItem Call(this NativeContract contract, StoreView snapshot, IVerifiable container, string method, params ContractParameter[] args)
         {
             var engine = new ApplicationEngine(TriggerType.Application, container, snapshot, 0, true);
 

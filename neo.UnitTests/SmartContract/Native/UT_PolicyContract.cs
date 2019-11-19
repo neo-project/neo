@@ -229,7 +229,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestCheckPolicy()
         {
             Transaction tx = Blockchain.GenesisBlock.Transactions[0];
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             StorageKey storageKey = new StorageKey
             {

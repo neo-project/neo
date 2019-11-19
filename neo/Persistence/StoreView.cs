@@ -5,7 +5,7 @@ using Neo.Network.P2P.Payloads;
 
 namespace Neo.Persistence
 {
-    public abstract class View
+    public abstract class StoreView
     {
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, TrimmedBlock> Blocks { get; }
@@ -21,7 +21,7 @@ namespace Neo.Persistence
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
-        public View Clone()
+        public StoreView Clone()
         {
             return new ClonedView(this);
         }

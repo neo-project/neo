@@ -10,7 +10,7 @@ namespace Neo.Network.P2P.Payloads
 
         void DeserializeUnsigned(BinaryReader reader);
 
-        UInt160[] GetScriptHashesForVerifying(View snapshot);
+        UInt160[] GetScriptHashesForVerifying(StoreView snapshot);
 
         void SerializeUnsigned(BinaryWriter writer);
     }

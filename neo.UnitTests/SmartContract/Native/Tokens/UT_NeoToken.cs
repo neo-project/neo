@@ -249,7 +249,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestCalculateBonus()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
             snapshot.Storages.Add(key, new StorageItem
             {
@@ -292,7 +292,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestGetNextBlockValidators2()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var result = NativeContract.NEO.GetNextBlockValidators(snapshot);
             result.Length.Should().Be(7);
             result[0].ToArray().ToHexString().Should().Be("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c");
@@ -340,7 +340,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestGetRegisteredValidators2()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var result = NativeContract.NEO.GetRegisteredValidators(snapshot).ToArray();
             result.Length.Should().Be(7);
             result[0].PublicKey.ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
@@ -387,7 +387,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestGetValidators2()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var result = NativeContract.NEO.GetValidators(snapshot);
             result[0].ToArray().ToHexString().Should().Be("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c");
             result[1].ToArray().ToHexString().Should().Be("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093");
@@ -413,7 +413,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestInitialize()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true);
             Action action = () => NativeContract.NEO.Initialize(engine);
             action.Should().Throw<InvalidOperationException>();
@@ -446,14 +446,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestTotalSupply()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             NativeContract.NEO.TotalSupply(snapshot).Should().Be(new BigInteger(100000000));
         }
 
         [TestMethod]
         public void TestUnclaimedGas()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             snapshot.Storages.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem
             {
@@ -465,7 +465,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestVote()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             UInt160 account = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
             StorageKey keyAccount = CreateStorageKey(20, account.ToArray());
             StorageKey keyValidator = CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray());
@@ -527,7 +527,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.PersistingBlock = Blockchain.GenesisBlock;
             var engine = new ApplicationEngine(TriggerType.Application, Blockchain.GenesisBlock, snapshot, 0, true);
             ScriptBuilder sb = new ScriptBuilder();
@@ -577,7 +577,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return (true, (result as VM.Types.Boolean).GetBoolean());
         }
 
-        internal static (bool State, bool Result) Check_Vote(SnapshotView snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
+        internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
                 new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, 0, true);
@@ -607,7 +607,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return (true, (result as VM.Types.Boolean).GetBoolean());
         }
 
-        internal static (bool State, bool Result) Check_RegisterValidator(SnapshotView snapshot, byte[] pubkey)
+        internal static (bool State, bool Result) Check_RegisterValidator(StoreView snapshot, byte[] pubkey)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
 
@@ -631,7 +631,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return (true, (result as VM.Types.Boolean).GetBoolean());
         }
 
-        internal static ECPoint[] Check_GetValidators(SnapshotView snapshot)
+        internal static ECPoint[] Check_GetValidators(StoreView snapshot)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
 
@@ -651,7 +651,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return (result as VM.Types.Array).Select(u => u.GetByteArray().AsSerializable<ECPoint>()).ToArray();
         }
 
-        internal static (BigInteger Value, bool State) Check_UnclaimedGas(SnapshotView snapshot, byte[] address)
+        internal static (BigInteger Value, bool State) Check_UnclaimedGas(StoreView snapshot, byte[] address)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
 

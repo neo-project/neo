@@ -137,7 +137,7 @@ namespace Neo.SmartContract.Native.Tokens
             return TotalSupply(engine.Snapshot);
         }
 
-        public virtual BigInteger TotalSupply(View snapshot)
+        public virtual BigInteger TotalSupply(StoreView snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native.Tokens
             return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
         }
 
-        public virtual BigInteger BalanceOf(View snapshot, UInt160 account)
+        public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;

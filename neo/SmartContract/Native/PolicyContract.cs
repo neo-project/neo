@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        internal bool CheckPolicy(Transaction tx, SnapshotView snapshot)
+        internal bool CheckPolicy(Transaction tx, StoreView snapshot)
         {
             UInt160[] blockedAccounts = GetBlockedAccounts(snapshot);
             if (blockedAccounts.Intersect(tx.GetScriptHashesForVerifying(snapshot)).Any())
@@ -71,7 +71,7 @@ namespace Neo.SmartContract.Native
             return GetMaxTransactionsPerBlock(engine.Snapshot);
         }
 
-        public uint GetMaxTransactionsPerBlock(View snapshot)
+        public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
         }
@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native
             return GetMaxBlockSize(engine.Snapshot);
         }
 
-        public uint GetMaxBlockSize(View snapshot)
+        public uint GetMaxBlockSize(StoreView snapshot)
         {
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)].Value, 0);
         }
@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native
             return GetFeePerByte(engine.Snapshot);
         }
 
-        public long GetFeePerByte(View snapshot)
+        public long GetFeePerByte(StoreView snapshot)
         {
             return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
             return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
         }
 
-        public UInt160[] GetBlockedAccounts(View snapshot)
+        public UInt160[] GetBlockedAccounts(StoreView snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
         }

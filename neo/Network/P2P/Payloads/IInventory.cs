@@ -8,6 +8,6 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType InventoryType { get; }
 
-        bool Verify(SnapshotView snapshot);
+        bool Verify(StoreView snapshot);
     }
 }

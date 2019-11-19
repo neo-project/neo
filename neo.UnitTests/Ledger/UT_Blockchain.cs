@@ -9,7 +9,7 @@ namespace Neo.UnitTests.Ledger
 {
     internal class TestBlock : Block
     {
-        public override bool Verify(SnapshotView snapshot)
+        public override bool Verify(StoreView snapshot)
         {
             return true;
         }
@@ -22,7 +22,7 @@ namespace Neo.UnitTests.Ledger
 
     internal class TestHeader : Header
     {
-        public override bool Verify(SnapshotView snapshot)
+        public override bool Verify(StoreView snapshot)
         {
             return true;
         }

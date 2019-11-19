@@ -5,7 +5,7 @@ using System;
 
 namespace Neo.Persistence
 {
-    public class SnapshotView : View, IDisposable
+    public class SnapshotView : StoreView, IDisposable
     {
         private readonly ISnapshot snapshot;
 

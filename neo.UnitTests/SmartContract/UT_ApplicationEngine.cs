@@ -108,7 +108,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateDummyBlock()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
             snapshot.PersistingBlock.Version.Should().Be(0);
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.SmartContract
 
     public class TestApplicationEngine : ApplicationEngine
     {
-        public TestApplicationEngine(TriggerType trigger, IVerifiable container, SnapshotView snapshot, long gas, bool testMode = false) : base(trigger, container, snapshot, gas, testMode)
+        public TestApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false) : base(trigger, container, snapshot, gas, testMode)
         {
         }
 
