@@ -92,6 +92,8 @@ namespace Neo.SmartContract
 
         private static bool Oracle_HTTP(ApplicationEngine engine, OracleHTTPRequest.HTTPVersion version, OracleHTTPRequest.HTTPMethod method, string url, string filter, byte[] body)
         {
+            if (engine.OracleCache == null) return false;
+
             var request = new OracleHTTPRequest()
             {
                 Method = method,
@@ -103,7 +105,7 @@ namespace Neo.SmartContract
 
             // Extract from cache
 
-            if (engine.OracleCache != null && engine.OracleCache.TryGet(request, out var response))
+            if (engine.OracleCache.TryGet(request, out var response))
             {
                 engine.CurrentContext.EvaluationStack.Push(response.ToStackItem());
                 return true;
