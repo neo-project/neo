@@ -85,18 +85,14 @@ namespace Neo.UnitTests.Network.RPC
             var attr = new OracleExpectedResult();
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
-                new TransactionAttribute
-                {
-                    Usage = TransactionAttributeUsage.OracleExpectedResult,
-                    Data = ((ISerializable)attr).ToArray()
-                }
+                attr
             };
 
             byte[] script = new byte[1];
             txManager.MakeTransaction(script, attributes, null, 60000);
 
             var tx = txManager.Tx;
-            Assert.AreEqual(((ISerializable)attr).ToArray().ToHexString(), tx.Attributes[0].Data.ToHexString());
+            Assert.AreEqual(((ISerializable)attr).ToArray().ToHexString(), tx.Attributes[0].ToArray().ToHexString());
             Assert.AreEqual(0, tx.SystemFee % (long)NativeContract.GAS.Factor);
             Assert.AreEqual(60000, tx.NetworkFee);
         }
@@ -108,11 +104,7 @@ namespace Neo.UnitTests.Network.RPC
 
             TransactionAttribute[] attributes = new TransactionAttribute[1]
             {
-                new TransactionAttribute
-                {
-                    Usage = TransactionAttributeUsage.OracleExpectedResult,
-                    Data = ((ISerializable)new OracleExpectedResult()).ToArray().ToArray()
-                }
+                new OracleExpectedResult()
             };
 
             byte[] script = new byte[1];

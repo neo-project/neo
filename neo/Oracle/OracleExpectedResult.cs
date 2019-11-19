@@ -1,15 +1,19 @@
 using Neo.IO;
+using Neo.IO.Json;
+using Neo.Network.P2P.Payloads;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Oracle
 {
-    public class OracleExpectedResult : ISerializable, IEnumerable<KeyValuePair<UInt160, UInt160>>
+    public class OracleExpectedResult : TransactionAttribute, IEnumerable<KeyValuePair<UInt160, UInt160>>
     {
         private readonly IDictionary<UInt160, UInt160> _expectedResults;
 
-        public int Size =>
+        public override int Size => base.Size +
             _expectedResults.Count.GetVarSize() +
             (_expectedResults.Count * UInt160.Length * 2);
 
@@ -21,7 +25,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Constructor
         /// </summary>
-        public OracleExpectedResult()
+        public OracleExpectedResult() : base(TransactionAttributeUsage.OracleExpectedResult)
         {
             _expectedResults = new Dictionary<UInt160, UInt160>();
         }
@@ -72,7 +76,7 @@ namespace Neo.Oracle
             return true;
         }
 
-        public void Deserialize(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader)
         {
             var count = (int)reader.ReadVarInt(byte.MaxValue);
 
@@ -82,7 +86,7 @@ namespace Neo.Oracle
             }
         }
 
-        public void Serialize(BinaryWriter writer)
+        protected override void SerializeWithoutType(BinaryWriter writer)
         {
             writer.WriteVarInt(_expectedResults.Count);
 
@@ -91,6 +95,42 @@ namespace Neo.Oracle
                 writer.Write(entry.Key);
                 writer.Write(entry.Value);
             }
+        }
+
+        public override JObject ToJson()
+        {
+            var json = base.ToJson();
+
+            json["expectedHashes"] = new JArray(_expectedResults.Select(t =>
+            {
+                var ret = new JObject();
+                ret["requestHash"] = t.Key.ToString();
+                ret["expectedHash"] = t.Value.ToString();
+                return ret;
+            }));
+
+            return json;
+        }
+
+        public new static OracleExpectedResult FromJson(JObject json)
+        {
+            if (!Enum.TryParse<TransactionAttributeUsage>(json["usage"].AsString(), out var usage)
+                || usage != TransactionAttributeUsage.OracleExpectedResult)
+            {
+                throw new FormatException();
+            }
+
+            var attr = new OracleExpectedResult();
+
+            foreach (var entry in (JArray)json["expectedHashes"])
+            {
+                var key = UInt160.Parse(entry["requestHash"].AsString());
+                var value = UInt160.Parse(entry["expectedHash"].AsString());
+
+                attr._expectedResults.Add(key, value);
+            }
+
+            return attr;
         }
 
         public IEnumerator<KeyValuePair<UInt160, UInt160>> GetEnumerator()

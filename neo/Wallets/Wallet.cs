@@ -326,7 +326,7 @@ namespace Neo.Wallets
 
                             var res = attributes
                                 .Where(u => u.Usage == TransactionAttributeUsage.OracleExpectedResult)
-                                .Select(u => u.Data.AsSerializable<OracleExpectedResult>())
+                                .Cast<OracleExpectedResult>()
                                 .FirstOrDefault();
 
                             // If there are expected hash, we wil return an empty result
@@ -365,11 +365,7 @@ namespace Neo.Wallets
 
                         var attr = new List<TransactionAttribute>(attributes);
                         attr.RemoveAll(u => u.Usage == TransactionAttributeUsage.OracleExpectedResult);
-                        attr.Add(new TransactionAttribute()
-                        {
-                            Usage = TransactionAttributeUsage.OracleExpectedResult,
-                            Data = ((ISerializable)new OracleExpectedResult(oracle, oracleType == OracleExecutionType.SecureOracle)).ToArray()
-                        });
+                        attr.Add(new OracleExpectedResult(oracle, oracleType == OracleExecutionType.SecureOracle));
                         tx.Attributes = attr.ToArray();
 
                         // Try again, because it possible that the SC use the attributes of the TX

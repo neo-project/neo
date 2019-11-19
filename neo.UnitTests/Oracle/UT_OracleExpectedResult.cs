@@ -16,16 +16,38 @@ namespace Neo.UnitTests.Oracle
 
             CollectionAssert.AreEqual(((ISerializable)a).ToArray(), ((ISerializable)b).ToArray());
             Assert.AreEqual(0, a.Count);
-            Assert.AreEqual(1, a.Size);
+            Assert.AreEqual(2, a.Size);
 
             b = new OracleExpectedResult(new OracleExecutionCache(
                 OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)));
 
             CollectionAssert.AreNotEqual(((ISerializable)a).ToArray(), ((ISerializable)b).ToArray());
-            Assert.AreEqual(1 + (UInt160.Length * 2), b.Size);
+            Assert.AreEqual(2 + (UInt160.Length * 2), b.Size);
 
             a = ((ISerializable)b).ToArray().AsSerializable<OracleExpectedResult>();
             CollectionAssert.AreEqual(((ISerializable)a).ToArray(), ((ISerializable)b).ToArray());
+            Assert.AreEqual(1, a.Count);
+
+            CollectionAssert.AreEqual(a.Select(u => u.Key).ToArray(), b.Select(u => u.Key).ToArray());
+            CollectionAssert.AreEqual(a.Select(u => u.Value).ToArray(), b.Select(u => u.Value).ToArray());
+        }
+
+        [TestMethod]
+        public void TestJson()
+        {
+            var a = new OracleExpectedResult();
+            var b = new OracleExpectedResult();
+
+            Assert.AreEqual(a.ToJson().ToString(), b.ToJson().ToString());
+            Assert.AreEqual(0, a.Count);
+
+            b = new OracleExpectedResult(new OracleExecutionCache(
+                OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError)));
+
+            Assert.AreNotEqual(a.ToJson().ToString(), b.ToJson().ToString());
+
+            a = OracleExpectedResult.FromJson(b.ToJson());
+            Assert.AreEqual(a.ToJson().ToString(), b.ToJson().ToString());
             Assert.AreEqual(1, a.Count);
 
             CollectionAssert.AreEqual(a.Select(u => u.Key).ToArray(), b.Select(u => u.Key).ToArray());
