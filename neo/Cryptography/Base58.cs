@@ -17,16 +17,15 @@ namespace Neo.Cryptography
             {
                 int digit = Alphabet.IndexOf(input[i]);
                 if (digit < 0)
-                    throw new FormatException(string.Format("Invalid Base58 character `{0}` at position {1}", input[i], i));
-                bi = bi * 58 + digit;
+                    throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
+                bi = bi * Alphabet.Length + digit;
             }
 
             // Encode BigInteger to byte[]
             // Leading zero bytes get encoded as leading `1` characters
-            int leadingZeroCount = input.TakeWhile(c => c == '1').Count();
+            int leadingZeroCount = input.TakeWhile(c => c == Alphabet[0]).Count();
             var leadingZeros = new byte[leadingZeroCount];
-            var bytesWithoutLeadingZeros =
-                bi.ToByteArray()
+            var bytesWithoutLeadingZeros = bi.ToByteArray()
                 .Reverse()// to big endian
                 .SkipWhile(b => b == 0);//strip sign byte
             return leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
@@ -42,15 +41,14 @@ namespace Neo.Cryptography
 
             while (value > 0)
             {
-                int remainder = (int)(value % 58);
-                value /= 58;
-                sb.Insert(0, Alphabet[remainder]);
+                value = BigInteger.DivRem(value, Alphabet.Length, out var remainder);
+                sb.Insert(0, Alphabet[(int)remainder]);
             }
 
             // Append `1` for each leading 0 byte
             for (int i = 0; i < input.Length && input[i] == 0; i++)
             {
-                sb.Insert(0, "1");
+                sb.Insert(0, Alphabet[0]);
             }
             return sb.ToString();
         }
