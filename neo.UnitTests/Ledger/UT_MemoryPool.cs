@@ -230,7 +230,7 @@ namespace Neo.UnitTests.Ledger
             NativeContract.GAS.Burn(applicationEngine, sender, balance);
             NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30); // Set the balance to meet 30 txs only
 
-            // Persist block and reverify all the txs in mempool, but all the txs will be discarded
+            // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
             _unit.UpdatePoolForBlockPersisted(block, snapshot);
             _unit.SortedTxCount.Should().Be(30);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
