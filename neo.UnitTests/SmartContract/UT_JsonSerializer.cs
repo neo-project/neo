@@ -281,7 +281,7 @@ namespace Neo.UnitTests.SmartContract
 
             var array = (VM.Types.Array)items;
 
-            Assert.IsTrue(array[0].GetBoolean());
+            Assert.IsTrue(array[0].ToBoolean());
             Assert.AreEqual(array[1].GetString(), "test");
             Assert.AreEqual(array[2].GetBigInteger(), 123);
         }
@@ -316,7 +316,7 @@ namespace Neo.UnitTests.SmartContract
             array = (VM.Types.Array)array[0];
             Assert.AreEqual(array.Count, 3);
 
-            Assert.IsTrue(array[0].GetBoolean());
+            Assert.IsTrue(array[0].ToBoolean());
             Assert.AreEqual(array[1].GetString(), "test1");
             Assert.AreEqual(array[2].GetBigInteger(), 123);
 
@@ -324,7 +324,7 @@ namespace Neo.UnitTests.SmartContract
             array = (VM.Types.Array)array[1];
             Assert.AreEqual(array.Count, 3);
 
-            Assert.IsTrue(array[0].GetBoolean());
+            Assert.IsTrue(array[0].ToBoolean());
             Assert.AreEqual(array[1].GetString(), "test2");
             Assert.AreEqual(array[2].GetBigInteger(), 321);
         }
