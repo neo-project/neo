@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Account = reader.ReadSerializable<UInt160>();
-            Scopes = (WitnessScope)reader.ReadByte();
+            Scopes = Neo.Helper.StrictEnum<WitnessScope>(reader.ReadByte());
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
                 ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
                 : new UInt160[0];

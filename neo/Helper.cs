@@ -321,25 +321,9 @@ namespace Neo
                 .Build();
         }
 
-        public static T StrictEnum<T>(int value) where T : Enum
-        {
-            T state = (T)Enum.ToObject(typeof(T), value);
-            if (!EnumValueCache<T>.definedValues.Contains(state))
-                throw new FormatException();
-            return state;
-        }
-
         public static T StrictEnum<T>(byte value) where T : Enum
         {
             T state = (T)Enum.ToObject(typeof(T), value);
-            if (!EnumValueCache<T>.definedValues.Contains(state))
-                throw new FormatException();
-            return state;
-        }
-
-        public static T StrictEnumParse<T>(string value) where T : Enum
-        {
-            T state = (T)Enum.Parse(typeof(T), value);
             if (!EnumValueCache<T>.definedValues.Contains(state))
                 throw new FormatException();
             return state;
