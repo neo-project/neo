@@ -158,7 +158,7 @@ namespace Neo.UnitTests
             te.Should().Be(TestEnum.ENTRY1);
 
             Action action = () => Helper.StrictEnum<TestEnum>(0x2);
-            action.Should().Throw<FormatException>();
+            action.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]

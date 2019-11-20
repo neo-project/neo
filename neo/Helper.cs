@@ -325,7 +325,7 @@ namespace Neo
         {
             T state = (T)Enum.ToObject(typeof(T), value);
             if (!EnumValueCache<T>.definedValues.Contains(state))
-                throw new FormatException();
+                throw new ArgumentOutOfRangeException();
             return state;
         }
 
