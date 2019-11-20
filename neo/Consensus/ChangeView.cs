@@ -31,7 +31,7 @@ namespace Neo.Consensus
         {
             base.Deserialize(reader);
             Timestamp = reader.ReadUInt64();
-            Reason = (ChangeViewReason)reader.ReadByte();
+            Reason = Helper.StrictEnum<ChangeViewReason>(reader.ReadByte());
         }
 
         public override void Serialize(BinaryWriter writer)

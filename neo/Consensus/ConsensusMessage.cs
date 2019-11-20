@@ -24,7 +24,7 @@ namespace Neo.Consensus
 
         public virtual void Deserialize(BinaryReader reader)
         {
-            if (Type != (ConsensusMessageType)reader.ReadByte())
+            if (Type != Helper.StrictEnum<ConsensusMessageType>(reader.ReadByte()))
                 throw new FormatException();
             ViewNumber = reader.ReadByte();
         }

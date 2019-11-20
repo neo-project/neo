@@ -101,7 +101,7 @@ namespace Neo.Network.P2P
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Flags = (MessageFlags)reader.ReadByte();
-            Command = (MessageCommand)reader.ReadByte();
+            Command = Neo.Helper.StrictEnum<MessageCommand>(reader.ReadByte());
             _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
             DecompressPayload();
         }
@@ -149,7 +149,7 @@ namespace Neo.Network.P2P
             msg = new Message()
             {
                 Flags = flags,
-                Command = (MessageCommand)header[1],
+                Command = Neo.Helper.StrictEnum<MessageCommand>(header[1]),
                 _payload_compressed = length <= 0 ? new byte[0] : data.Slice(payloadIndex, (int)length).ToArray()
             };
             msg.DecompressPayload();
