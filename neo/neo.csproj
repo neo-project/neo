@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>2015-2019 The Neo Project</Copyright>
@@ -17,7 +17,6 @@
     <RootNamespace>Neo</RootNamespace>
     <Company>The Neo Project</Company>
     <Description>Neo</Description>
-    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
