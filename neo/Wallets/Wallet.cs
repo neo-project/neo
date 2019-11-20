@@ -346,7 +346,8 @@ namespace Neo.Wallets
                         }
                     case OracleExecutionType.SecureOracle:
                         {
-                            var service = new OracleService() { TimeOut = TimeSpan.FromSeconds(2) };
+                            var service = new OracleService();
+                            service.Policy.Timeout = TimeSpan.FromSeconds(2);
                             oracle = service.CreateExecutionCache(tx.Hash);
                             break;
                         }

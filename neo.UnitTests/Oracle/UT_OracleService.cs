@@ -349,7 +349,8 @@ namespace Neo.UnitTests.Oracle
 
             using (var snapshot = store.GetSnapshot())
             {
-                var service = new OracleService() { TimeOut = TimeSpan.FromSeconds(2) };
+                var service = new OracleService();
+                service.Policy.Timeout = TimeSpan.FromSeconds(2);
                 return service.Process(snapshot, null, tx, true);
             }
         }

@@ -10,9 +10,9 @@ namespace Neo.Oracle.Protocols.HTTP
         /// </summary>
         /// <param name="txHash">Transaction Hash</param>
         /// <param name="request">Request</param>
-        /// <param name="timeout">Timeout</param>
+        /// <param name="policy">Policy</param>
         /// <returns>Oracle result</returns>
-        public OracleResult Process(UInt256 txHash, OracleRequest request, TimeSpan timeout)
+        public OracleResult Process(UInt256 txHash, OracleRequest request, OraclePolicy policy)
         {
             if (!(request is OracleHTTPRequest httpRequest))
             {
@@ -51,7 +51,7 @@ namespace Neo.Oracle.Protocols.HTTP
 
                 var result = client.SendAsync(req);
 
-                if (!result.Wait(timeout) || result.IsFaulted)
+                if (!result.Wait(policy.Timeout) || result.IsFaulted)
                 {
                     return OracleResult.CreateError(txHash, request.Hash, OracleResultError.Timeout);
                 }
@@ -63,7 +63,7 @@ namespace Neo.Oracle.Protocols.HTTP
 
                 var ret = result.Result.Content.ReadAsStringAsync();
 
-                if (!ret.Wait(timeout) || ret.IsFaulted)
+                if (!ret.Wait(policy.Timeout) || ret.IsFaulted)
                 {
                     return OracleResult.CreateError(txHash, request.Hash, OracleResultError.Timeout);
                 }

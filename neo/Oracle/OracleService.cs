@@ -3,7 +3,6 @@ using Neo.Oracle.Protocols;
 using Neo.Oracle.Protocols.HTTP;
 using Neo.Persistence;
 using Neo.SmartContract;
-using System;
 
 namespace Neo.Oracle
 {
@@ -19,9 +18,9 @@ namespace Neo.Oracle
         #endregion
 
         /// <summary>
-        /// Timeout
+        /// Policy
         /// </summary>
-        public TimeSpan TimeOut { get; set; } = TimeSpan.FromSeconds(3);
+        public OraclePolicy Policy { get; set; } = new OraclePolicy();
 
         /// <summary>
         /// Process transaction
@@ -66,7 +65,7 @@ namespace Neo.Oracle
         {
             return request switch
             {
-                OracleHTTPRequest http => HTTP.Process(txHash, http, TimeOut),
+                OracleHTTPRequest http => HTTP.Process(txHash, http, Policy),
                 _ => OracleResult.CreateError(txHash, request.Hash, OracleResultError.ServerError),
             };
         }
