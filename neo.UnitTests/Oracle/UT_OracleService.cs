@@ -145,30 +145,6 @@ namespace Neo.UnitTests.Oracle
                         Thread.Sleep(2100);
                         break;
                     }
-                case "/delete":
-                    {
-                        if (context.Request.Method != "DELETE")
-                        {
-                            context.Response.StatusCode = 404;
-                            break;
-                        }
-
-                        response = "true";
-                        break;
-                    }
-                case "/put":
-                    {
-                        if (context.Request.Method != "PUT")
-                        {
-                            context.Response.StatusCode = 404;
-                            break;
-                        }
-
-                        var read = new byte[4096];
-                        Array.Resize(ref read, context.Request.Body.Read(read, 0, read.Length));
-                        response = Encoding.UTF8.GetString(read);
-                        break;
-                    }
                 case "/post":
                     {
                         if (context.Request.Method != "POST")
@@ -275,46 +251,6 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void Test_HTTP_PUT_Content()
-        {
-            var request = new OracleHTTPRequest()
-            {
-                Version = OracleHTTPRequest.HTTPVersion.v1_1,
-                Method = OracleHTTPRequest.HTTPMethod.PUT,
-                URL = "http://127.0.0.1:9898/put",
-                Filter = "",
-                Body = Encoding.UTF8.GetBytes("Hello from PUT oracle!")
-            };
-
-            var ret = ExecuteHTTP1Tx(request);
-
-            Assert.AreEqual(1, ret.Count);
-            Assert.IsTrue(ret.TryGet(request, out var result));
-            Assert.AreEqual(OracleResultError.None, result.Error);
-            CollectionAssert.AreEqual(request.Body, result.Result);
-        }
-
-        [TestMethod]
-        public void Test_HTTP_DELETE_Content()
-        {
-            var request = new OracleHTTPRequest()
-            {
-                Version = OracleHTTPRequest.HTTPVersion.v1_1,
-                Method = OracleHTTPRequest.HTTPMethod.DELETE,
-                URL = "http://127.0.0.1:9898/delete",
-                Filter = "",
-                Body = null
-            };
-
-            var ret = ExecuteHTTP1Tx(request);
-
-            Assert.AreEqual(1, ret.Count);
-            Assert.IsTrue(ret.TryGet(request, out var result));
-            Assert.AreEqual(OracleResultError.None, result.Error);
-            CollectionAssert.AreEqual(Encoding.UTF8.GetBytes("true"), result.Result);
-        }
-
-        [TestMethod]
         public void Test_HTTP_GET_Content()
         {
             var request = new OracleHTTPRequest()
@@ -390,16 +326,6 @@ namespace Neo.UnitTests.Oracle
                     case OracleHTTPRequest.HTTPMethod.POST:
                         {
                             script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Post, request.URL, request.Filter, request.Body);
-                            break;
-                        }
-                    case OracleHTTPRequest.HTTPMethod.DELETE:
-                        {
-                            script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Delete, request.URL, request.Filter);
-                            break;
-                        }
-                    case OracleHTTPRequest.HTTPMethod.PUT:
-                        {
-                            script.EmitSysCall(InteropService.Neo_Oracle_HTTP11_Put, request.URL, request.Filter, request.Body);
                             break;
                         }
                 }

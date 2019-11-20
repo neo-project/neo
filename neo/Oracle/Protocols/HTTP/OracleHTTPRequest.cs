@@ -9,9 +9,7 @@ namespace Neo.Oracle.Protocols.HTTP
         public enum HTTPMethod : byte
         {
             GET = 0,
-            POST = 1,
-            PUT = 2,
-            DELETE = 3
+            POST = 1
         }
 
         public enum HTTPVersion : byte

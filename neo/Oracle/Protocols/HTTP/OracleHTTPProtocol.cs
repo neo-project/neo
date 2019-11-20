@@ -34,26 +34,9 @@ namespace Neo.Oracle.Protocols.HTTP
                             };
                             break;
                         }
-                    case OracleHTTPRequest.HTTPMethod.DELETE:
-                        {
-                            req = new HttpRequestMessage(HttpMethod.Delete, httpRequest.URL)
-                            {
-                                Version = version
-                            };
-                            break;
-                        }
                     case OracleHTTPRequest.HTTPMethod.POST:
                         {
                             req = new HttpRequestMessage(HttpMethod.Post, httpRequest.URL)
-                            {
-                                Version = version,
-                                Content = new ByteArrayContent(httpRequest.Body)
-                            };
-                            break;
-                        }
-                    case OracleHTTPRequest.HTTPMethod.PUT:
-                        {
-                            req = new HttpRequestMessage(HttpMethod.Put, httpRequest.URL)
                             {
                                 Version = version,
                                 Content = new ByteArrayContent(httpRequest.Body)
