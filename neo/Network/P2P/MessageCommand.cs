@@ -11,7 +11,7 @@ namespace Neo.Network.P2P
         Addr = 0x11,
         Ping = 0x18,
         Pong = 0x19,
-        Disconnect = 0x88,
+        Disconnect = 0x1f,
 
         //synchronization
         GetHeaders = 0x20,
