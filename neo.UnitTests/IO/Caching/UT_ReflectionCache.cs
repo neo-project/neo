@@ -1,10 +1,17 @@
+using System.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.IO.Caching;
 
 namespace Neo.UnitTests.IO.Caching
 {
-    public class TestItem { }
+    public class TestItem : ISerializable
+    {
+        public int Size => 0;
+        public void Deserialize(BinaryReader reader) { }
+        public void Serialize(BinaryWriter writer) { }
+    }
 
     public class TestItem1 : TestItem { }
 
@@ -40,6 +47,19 @@ namespace Neo.UnitTests.IO.Caching
             (item2 is TestItem2).Should().BeTrue();
 
             object item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, null);
+            item3.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestCreateSerializable()
+        {
+            object item1 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item1, new byte[0]);
+            (item1 is TestItem1).Should().BeTrue();
+
+            object item2 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item2, new byte[0]);
+            (item2 is TestItem2).Should().BeTrue();
+
+            object item3 = ReflectionCache<MyTestEnum>.CreateSerializable((MyTestEnum)0x02, new byte[0]);
             item3.Should().BeNull();
         }
 
