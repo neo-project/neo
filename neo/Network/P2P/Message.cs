@@ -151,9 +151,11 @@ namespace Neo.Network.P2P
             msg = new Message()
             {
                 Flags = flags,
-                Command = Neo.Helper.StrictEnum<MessageCommand>(header[1]),
+                Command = (MessageCommand)header[1],
                 _payload_compressed = length <= 0 ? new byte[0] : data.Slice(payloadIndex, (int)length).ToArray()
             };
+            if (!Enum.IsDefined(typeof(MessageCommand), msg.Command))
+                throw new FormatException();
             msg.DecompressPayload();
 
             return payloadIndex + (int)length;
