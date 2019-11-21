@@ -146,7 +146,7 @@ namespace Neo.UnitTests.Network.P2P
         public void Test_Peer_MaxConnection_Reached()
         {
             var localNode = testBlockchain.LocalNode;
-            var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8080);
+            var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8991);
 
             // Create the maximum number of connections
             IPEndPoint remote;
@@ -154,7 +154,7 @@ namespace Neo.UnitTests.Network.P2P
             var senderDict = new Dictionary<IPEndPoint, TestProbe>();
             for (int i = LocalNode.Singleton.ConnectedCount; i <= LocalNode.Singleton.MaxConnections; i++)
             {
-                remote = new IPEndPoint(IPAddress.Parse("192.169.2." + i), 8080);
+                remote = new IPEndPoint(IPAddress.Parse("191.13.2." + i), 8991);
                 connected = new Tcp.Connected(remote, local);
                 var proble = CreateTestProbe();
                 proble.Send(localNode, connected);
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.Network.P2P
                 Version = 6,
                 Capabilities = new NodeCapability[]
                {
-                    new ServerCapability(NodeCapabilityType.TcpServer, 8080)
+                    new ServerCapability(NodeCapabilityType.TcpServer, 8991)
                }
             };
             var versionReceived = new Tcp.Received(ByteString.FromBytes(Message.Create(MessageCommand.Version, payload).ToArray()));
@@ -187,7 +187,7 @@ namespace Neo.UnitTests.Network.P2P
             testProbe.ExpectMsg<Tcp.Write>(); // remote node will send verack and change its listenerPort
 
             // create one more remote connection and localnode will disconnect with `MaxConnectionReached`
-            remote = new IPEndPoint(IPAddress.Parse("192.168.2.1"), 8080);
+            remote = new IPEndPoint(IPAddress.Parse("192.168.2.1"), 8991);
             connected = new Tcp.Connected(remote, local);
             testProbe.Send(localNode, connected);
 
@@ -204,7 +204,7 @@ namespace Neo.UnitTests.Network.P2P
             var count = DisconnectPayload.MaxDataSize;
             NetworkAddressWithTime[] addrs = disconnectionPayload.Data.AsSerializableArray<NetworkAddressWithTime>(count);
             addrs.Length.Should().Be(1);
-            addrs[0].EndPoint.Port.Should().Be(8080);
+            addrs[0].EndPoint.Port.Should().Be(8991);
         }
 
         [TestMethod]
