@@ -210,30 +210,5 @@ namespace Neo.UnitTests.Network.P2P
             addrs.Length.Should().Be(1);
             addrs[0].EndPoint.Port.Should().Be(8991);
         }
-
-        [TestMethod]
-        public void Test_Received_MaxConnectionReached_Disconnection()
-        {
-            //send MaxConnectionReached disconnection
-            NetworkAddressWithTime[] addressWithTimes = new NetworkAddressWithTime[]
-            {
-                new NetworkAddressWithTime()
-                {
-                    Timestamp = 0,
-                    Address = IPAddress.Parse("192.167.1.1"),
-                    Capabilities = new NodeCapability[]
-                    {
-                        new ServerCapability(NodeCapabilityType.TcpServer, 8080)
-                    }
-                }
-            };
-
-            var payload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, addressWithTimes.ToByteArray());
-            var testProbe = CreateTestProbe();
-            testProbe.Send(testBlockchain.LocalNode, payload);
-
-            testProbe.ExpectNoMsg();
-            LocalNode.Singleton.GetUnconnectedPeers().Any(p => p.Equals(new IPEndPoint(IPAddress.Parse("192.167.1.1"), 8080))).Should().BeTrue();
-        }
     }
 }
