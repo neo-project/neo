@@ -4,7 +4,6 @@ using Neo.IO;
 using Neo.IO.Caching;
 using System;
 using System.IO;
-using System.Reflection;
 
 namespace Neo.Network.P2P
 {
@@ -52,11 +51,7 @@ namespace Neo.Network.P2P
             byte[] decompressed = Flags.HasFlag(MessageFlags.Compressed)
                 ? _payload_compressed.DecompressLz4(PayloadMaxSize)
                 : _payload_compressed;
-            MemberInfo[] members = typeof(MessageCommand).GetMember(Command.ToString());
-            if (members?.Length != 1) return;
-            ReflectionCacheAttribute attribute = members[0].GetCustomAttribute<ReflectionCacheAttribute>();
-            if (attribute is null) return;
-            Payload = decompressed.AsSerializable(attribute.Type);
+            Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);
         }
 
         void ISerializable.Deserialize(BinaryReader reader)

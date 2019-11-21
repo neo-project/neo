@@ -33,5 +33,12 @@ namespace Neo.IO.Caching
             // return null
             return def;
         }
+
+        public static ISerializable CreateSerializable(T key, byte[] data)
+        {
+            if (dictionary.TryGetValue(key, out Type t))
+                return data.AsSerializable(t);
+            return null;
+        }
     }
 }

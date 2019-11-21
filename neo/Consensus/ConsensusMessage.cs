@@ -26,15 +26,10 @@ namespace Neo.Consensus
 
         public static ConsensusMessage DeserializeFrom(byte[] data)
         {
-            ConsensusMessage message = (ConsensusMessage)ReflectionCache<ConsensusMessageType>.CreateInstance((ConsensusMessageType)data[0]);
-            if (message == null) throw new FormatException();
-
-            using (MemoryStream ms = new MemoryStream(data, false))
-            using (BinaryReader r = new BinaryReader(ms))
-            {
-                message.Deserialize(r);
-            }
-            return message;
+            ConsensusMessageType type = (ConsensusMessageType)data[0];
+            ISerializable message = ReflectionCache<ConsensusMessageType>.CreateSerializable(type, data);
+            if (message is null) throw new FormatException();
+            return (ConsensusMessage)message;
         }
 
         public virtual void Serialize(BinaryWriter writer)
