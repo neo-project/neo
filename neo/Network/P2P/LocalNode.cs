@@ -244,8 +244,18 @@ namespace Neo.Network.P2P
 
         private Message CreateDisconnectMessage(DisconnectReason reason)
         {
-            NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
-            var payload = DisconnectPayload.Create(reason, networkAddresses.ToByteArray());
+            byte[] data;
+            switch (reason)
+            {
+                case DisconnectReason.MaxConnectionReached:
+                case DisconnectReason.MaxConnectionPerAddressReached:
+                    data = GetRandomConnectedPeers(AddrPayload.MaxCountToSend).ToByteArray();
+                    break;
+                default:
+                    data = new byte[0];
+                    break;
+            }
+            var payload = DisconnectPayload.Create(reason, data);
             return Message.Create(MessageCommand.Disconnect, payload);
         }
 
