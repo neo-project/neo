@@ -101,7 +101,9 @@ namespace Neo.Network.P2P
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Flags = (MessageFlags)reader.ReadByte();
-            Command = Neo.Helper.StrictEnum<MessageCommand>(reader.ReadByte());
+            Command = (MessageCommand)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(MessageCommand), Command))
+                throw new FormatException();
             _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
             DecompressPayload();
         }

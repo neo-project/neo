@@ -14,7 +14,9 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Usage = Neo.Helper.StrictEnum<TransactionAttributeUsage>(reader.ReadByte());
+            Usage = (TransactionAttributeUsage)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
+                throw new FormatException();
             Data = reader.ReadVarBytes(252);
         }
 
@@ -35,7 +37,9 @@ namespace Neo.Network.P2P.Payloads
         public static TransactionAttribute FromJson(JObject json)
         {
             TransactionAttribute transactionAttribute = new TransactionAttribute();
-            transactionAttribute.Usage = Neo.Helper.StrictEnum<TransactionAttributeUsage>(byte.Parse(json["usage"].AsString()));
+            transactionAttribute.Usage = (TransactionAttributeUsage)byte.Parse(json["usage"].AsString());
+            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), transactionAttribute.Usage))
+                throw new ArgumentException();
             transactionAttribute.Data = Convert.FromBase64String(json["data"].AsString());
             return transactionAttribute;
         }

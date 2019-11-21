@@ -152,16 +152,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestStrictEnum()
-        {
-            TestEnum te = Helper.StrictEnum<TestEnum>(0x1);
-            te.Should().Be(TestEnum.ENTRY1);
-
-            Action action = () => Helper.StrictEnum<TestEnum>(0x2);
-            action.Should().Throw<ArgumentOutOfRangeException>();
-        }
-
-        [TestMethod]
         public void TestWeightedAverage()
         {
             var foo1 = new Foo
@@ -291,11 +281,6 @@ namespace Neo.UnitTests
                 Weight = w
             }).WeightedAverage(p => p.Weight, p => p.Weight);
             action.Should().Throw<ArgumentNullException>();
-        }
-
-        internal enum TestEnum : byte
-        {
-            ENTRY1 = 0x1
         }
     }
 

@@ -320,18 +320,5 @@ namespace Neo
                 .AddJsonFile(configFile, true)
                 .Build();
         }
-
-        public static T StrictEnum<T>(byte value) where T : Enum
-        {
-            T state = (T)Enum.ToObject(typeof(T), value);
-            if (!EnumValueCache<T>.definedValues.Contains(state))
-                throw new ArgumentOutOfRangeException();
-            return state;
-        }
-
-        private static class EnumValueCache<T> where T : Enum
-        {
-            public static readonly HashSet<T> definedValues = new HashSet<T>((T[])Enum.GetValues(typeof(T)));
-        }
     }
 }

@@ -36,7 +36,9 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Type = Neo.Helper.StrictEnum<InventoryType>(reader.ReadByte());
+            Type = (InventoryType)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(InventoryType), Type))
+                throw new FormatException();
             Hashes = reader.ReadSerializableArray<UInt256>(MaxHashesCount);
         }
 

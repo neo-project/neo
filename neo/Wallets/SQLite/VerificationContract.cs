@@ -14,7 +14,12 @@ namespace Neo.Wallets.SQLite
         public void Deserialize(BinaryReader reader)
         {
             reader.ReadSerializable<UInt160>();
-            ParameterList = reader.ReadVarBytes().Select(p => Neo.Helper.StrictEnum<ContractParameterType>(p)).ToArray();
+            ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
+            foreach (var parameter in ParameterList)
+            {
+                if (!Enum.IsDefined(typeof(ContractParameterType), parameter))
+                    throw new FormatException();
+            }
             Script = reader.ReadVarBytes();
         }
 

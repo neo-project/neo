@@ -24,7 +24,11 @@ namespace Neo.Consensus
 
         public virtual void Deserialize(BinaryReader reader)
         {
-            if (Type != Helper.StrictEnum<ConsensusMessageType>(reader.ReadByte()))
+            ConsensusMessageType cmt = (ConsensusMessageType)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(ConsensusMessageType), cmt))
+                throw new FormatException();
+
+            if (Type != cmt)
                 throw new FormatException();
             ViewNumber = reader.ReadByte();
         }
