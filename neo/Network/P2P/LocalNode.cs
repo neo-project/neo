@@ -249,7 +249,7 @@ namespace Neo.Network.P2P
             {
                 case DisconnectReason.MaxConnectionReached:
                 case DisconnectReason.MaxConnectionPerAddressReached:
-                    data = GetRandomConnectedPeers(MinDesiredConnections).ToByteArray();
+                    data = GetRandomConnectedPeers(10).ToByteArray();
                     break;
                 default:
                     data = new byte[0];
