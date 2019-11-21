@@ -1,6 +1,7 @@
 using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Caching;
 using System;
 using System.IO;
 using System.Reflection;
@@ -53,7 +54,7 @@ namespace Neo.Network.P2P
                 : _payload_compressed;
             MemberInfo[] members = typeof(MessageCommand).GetMember(Command.ToString());
             if (members?.Length != 1) return;
-            PayloadAttribute attribute = members[0].GetCustomAttribute<PayloadAttribute>();
+            ReflectionCacheAttribute attribute = members[0].GetCustomAttribute<ReflectionCacheAttribute>();
             if (attribute is null) return;
             Payload = decompressed.AsSerializable(attribute.Type);
         }
