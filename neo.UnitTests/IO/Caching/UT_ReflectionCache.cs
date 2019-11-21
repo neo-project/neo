@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
-using System;
 
 namespace Neo.UnitTests.IO.Caching
 {
@@ -25,44 +24,22 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_ReflectionCache
     {
-        ReflectionCache<byte> reflectionCache;
-
-        [TestInitialize]
-        public void SetUp()
-        {
-            reflectionCache = ReflectionCache<byte>.CreateFromEnum<MyTestEnum>();
-        }
-
-        [TestMethod]
-        public void TestCreateFromEnum()
-        {
-            reflectionCache.Should().NotBeNull();
-        }
-
-        [TestMethod]
-        public void TestCreateFromObjectNotEnum()
-        {
-            Action action = () => ReflectionCache<byte>.CreateFromEnum<int>();
-            action.Should().Throw<ArgumentException>();
-        }
-
         [TestMethod]
         public void TestCreateFromEmptyEnum()
         {
-            reflectionCache = ReflectionCache<byte>.CreateFromEnum<MyEmptyEnum>();
-            reflectionCache.Count.Should().Be(0);
+            ReflectionCache<MyEmptyEnum>.Count.Should().Be(0);
         }
 
         [TestMethod]
         public void TestCreateInstance()
         {
-            object item1 = reflectionCache.CreateInstance((byte)MyTestEnum.Item1, null);
+            object item1 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item1, null);
             (item1 is TestItem1).Should().BeTrue();
 
-            object item2 = reflectionCache.CreateInstance((byte)MyTestEnum.Item2, null);
+            object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, null);
             (item2 is TestItem2).Should().BeTrue();
 
-            object item3 = reflectionCache.CreateInstance(0x02, null);
+            object item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, null);
             item3.Should().BeNull();
         }
 
@@ -70,10 +47,10 @@ namespace Neo.UnitTests.IO.Caching
         public void TestCreateInstance2()
         {
             TestItem defaultItem = new TestItem1();
-            object item2 = reflectionCache.CreateInstance((byte)MyTestEnum.Item2, defaultItem);
+            object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, defaultItem);
             (item2 is TestItem2).Should().BeTrue();
 
-            object item1 = reflectionCache.CreateInstance(0x02, new TestItem1());
+            object item1 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, new TestItem1());
             (item1 is TestItem1).Should().BeTrue();
         }
     }
