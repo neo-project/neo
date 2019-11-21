@@ -8,7 +8,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -316,7 +315,23 @@ namespace Neo.Network.P2P
 
         private void OnDisconnectMessageReceived(DisconnectPayload payload)
         {
-            system.LocalNode.Tell(payload, Context.Parent); // As the priority of message is lower than Tcp.Close
+            switch (payload.Reason)
+            {
+                case DisconnectReason.MaxConnectionReached:
+                case DisconnectReason.MaxConnectionPerAddressReached:
+                    try
+                    {
+                        var addressList = payload.Data
+                            .AsSerializableArray<NetworkAddressWithTime>(AddrPayload.MaxCountToSend)
+                            .Select(p => p.EndPoint)
+                            .Where(p => p.Port > 0);
+                        system.LocalNode.Tell(new Peer.Peers { EndPoints = addressList });
+                    }
+                    catch { }
+                    break;
+                default: break;
+            }
+            Context.Stop(Self);
         }
 
         public static Props Props(NeoSystem system)

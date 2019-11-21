@@ -200,9 +200,6 @@ namespace Neo.Network.P2P
                     break;
                 case RelayResultReason _:
                     break;
-                case DisconnectPayload payload:
-                    OnDisconnectPayload(payload);
-                    break;
             }
         }
 
@@ -257,24 +254,6 @@ namespace Neo.Network.P2P
             }
             var payload = DisconnectPayload.Create(reason, data);
             return Message.Create(MessageCommand.Disconnect, payload);
-        }
-
-        private void OnDisconnectPayload(DisconnectPayload payload)
-        {
-            switch (payload.Reason)
-            {
-                case DisconnectReason.MaxConnectionReached:
-                case DisconnectReason.MaxConnectionPerAddressReached:
-                    try
-                    {
-                        NetworkAddressWithTime[] addressList = payload.Data.AsSerializableArray<NetworkAddressWithTime>(AddrPayload.MaxCountToSend);
-                        AddPeers(addressList.Select(p => p.EndPoint).Where(p => p.Port > 0));
-                    }
-                    catch { }
-                    break;
-                default: break;
-            }
-            Context.Stop(Sender);
         }
 
         public static Props Props(NeoSystem system)
