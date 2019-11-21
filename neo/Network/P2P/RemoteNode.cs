@@ -26,6 +26,7 @@ namespace Neo.Network.P2P
         private BloomFilter bloom_filter;
         private bool ack = true;
         private bool verack = false;
+        private bool isWaitingForDisconnect = false;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public int ListenerTcpPort { get; private set; } = 0;
@@ -106,8 +107,15 @@ namespace Neo.Network.P2P
 
         protected override void OnAck()
         {
-            ack = true;
-            CheckMessageQueue();
+            if (isWaitingForDisconnect)
+            {
+                Disconnect(true);
+            }
+            else
+            {
+                ack = true;
+                CheckMessageQueue();
+            }
         }
 
         protected override void OnData(ByteString data)
@@ -256,9 +264,14 @@ namespace Neo.Network.P2P
 
         private void DisconnectWithReason(DisconnectReason reason, byte[] data = null)
         {
+            message_queue_high.Clear();
+            message_queue_low.Clear();
+
             var payload = DisconnectPayload.Create(reason, data);
-            var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
-            Disconnect(disconnectMessage.ToArray());
+            var message = Message.Create(MessageCommand.Disconnect, payload);
+            SendMessage(message);
+
+            isWaitingForDisconnect = true;
         }
     }
 

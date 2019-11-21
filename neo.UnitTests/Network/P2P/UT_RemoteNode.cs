@@ -59,6 +59,7 @@ namespace Neo.UnitTests.Network.P2P
             var disconnectionPayload = (DisconnectPayload)message.Payload;
             disconnectionPayload.Reason.Should().Be(DisconnectReason.MagicNumberIncompatible);
 
+            testProbe.Send(remoteNodeActor, RemoteNode.Ack.Instance);
             connectionTestProbe.ExpectMsg<Tcp.Abort>();
         }
 
@@ -132,6 +133,7 @@ namespace Neo.UnitTests.Network.P2P
             var disconnectionPayload = (DisconnectPayload)message.Payload;
             disconnectionPayload.Reason.Should().Be(DisconnectReason.DuplicateNonce);
 
+            testProbe.Send(remoteNodeActorB, RemoteNode.Ack.Instance);
             connectionTestProbeB.ExpectMsg<Tcp.Abort>();
         }
     }

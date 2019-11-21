@@ -1,4 +1,5 @@
 using Akka.Actor;
+using Akka.IO;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Reflection;
 using System.Threading;
 
@@ -76,7 +78,7 @@ namespace Neo.Network.P2P
             IPHostEntry entry;
             try
             {
-                entry = Dns.GetHostEntry(hostNameOrAddress);
+                entry = System.Net.Dns.GetHostEntry(hostNameOrAddress);
             }
             catch (SocketException)
             {
@@ -169,7 +171,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        public override NetworkAddressWithTime[] GetRandomConnectedPeers(int count)
+        public NetworkAddressWithTime[] GetRandomConnectedPeers(int count)
         {
             Random rand = new Random();
             IEnumerable<RemoteNode> peers = RemoteNodes.Values
@@ -219,6 +221,32 @@ namespace Neo.Network.P2P
         private void OnSendDirectly(IInventory inventory)
         {
             Connections.Tell(inventory);
+        }
+
+        protected override void TcpDisconnect(DisconnectReason reason)
+        {
+            var disconnectMessage = CreateDisconnectMessage(reason);
+            var command = Tcp.Write.Create(ByteString.FromBytes(disconnectMessage.ToArray()));
+
+            Sender.Tell(new Tcp.Register(ActorRefs.NoSender));
+            Sender.Ask(command).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
+        }
+
+        protected override void WsDisconnect(WebSocket ws, DisconnectReason reason)
+        {
+            var disconnectMessage = CreateDisconnectMessage(reason);
+            ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
+
+            ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                failure: ex => new Tcp.ErrorClosed(ex.Message));
+            ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+        }
+
+        private Message CreateDisconnectMessage(DisconnectReason reason)
+        {
+            NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
+            var payload = DisconnectPayload.Create(reason, networkAddresses.ToByteArray());
+            return Message.Create(MessageCommand.Disconnect, payload);
         }
 
         private void OnDisconnectPayload(DisconnectPayload payload)

@@ -66,49 +66,19 @@ namespace Neo.Network.P2P
                 failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
-        protected void Disconnect(byte[] lastMessage = null)
+        public void Disconnect(bool abort = false)
         {
             disconnected = true;
 
-            if (lastMessage == null)
-            {
-                if (tcp != null)
-                {
-                    tcp.Tell(Tcp.Abort.Instance);
-                }
-                else
-                {
-                    ws.Abort();
-                }
-                Context.Stop(Self);
-                return;
-            }
-
             if (tcp != null)
             {
-                tcp.Tell(Tcp.Write.Create(ByteString.FromBytes(lastMessage), Ack.Instance));
-                Context.SetReceiveTimeout(TimeSpan.FromSeconds(2.5));
-                Become(msg =>
-                {
-                    if (msg is Ack || msg is ReceiveTimeout)
-                    {
-                        tcp.Tell(Tcp.Abort.Instance);
-                        Context.Stop(Self);
-                    }
-                });
+                tcp.Tell(abort ? (Tcp.CloseCommand)Tcp.Abort.Instance : Tcp.Close.Instance);
             }
             else
             {
-                ArraySegment<byte> segment = new ArraySegment<byte>(lastMessage);
-                var task = ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
-                    success: () => Ack.Instance,
-                    failure: ex => new Tcp.ErrorClosed(ex.Message));
-                task.ContinueWith(t =>
-                {
-                    ws.Abort();
-                    Context.Stop(Self);
-                });
+                ws.Abort();
             }
+            Context.Stop(Self);
         }
 
         protected virtual void OnAck()

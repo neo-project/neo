@@ -14,7 +14,6 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -100,8 +99,6 @@ namespace Neo.Network.P2P
 
         protected abstract void NeedMorePeers(int count);
 
-        public abstract NetworkAddressWithTime[] GetRandomConnectedPeers(int count);
-
         protected override void OnReceive(object message)
         {
             switch (message)
@@ -183,14 +180,14 @@ namespace Neo.Network.P2P
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
-                Disconnect(DisconnectReason.MaxConnectionReached);
+                TcpDisconnect(DisconnectReason.MaxConnectionReached);
                 return;
             }
 
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
-                Disconnect(DisconnectReason.MaxConnectionPerAddressReached);
+                TcpDisconnect(DisconnectReason.MaxConnectionPerAddressReached);
                 return;
             }
             else
@@ -202,16 +199,7 @@ namespace Neo.Network.P2P
                 ConnectedPeers.TryAdd(connection, remote);
             }
         }
-        private void Disconnect(DisconnectReason reason)
-        {
-            NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
-            var payload = DisconnectPayload.Create(reason, networkAddresses.ToByteArray());
-            var disconnect = Message.Create(MessageCommand.Disconnect, payload);
-            var command = Tcp.Write.Create(ByteString.FromBytes(disconnect.ToArray()));
-
-            Sender.Tell(new Tcp.Register(Context.ActorOf(EmptyActor.Props())));
-            Sender.Ask(command).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
-        }
+        protected abstract void TcpDisconnect(DisconnectReason reason);
 
         private void OnTcpCommandFailed(Tcp.Command cmd)
         {
@@ -254,13 +242,7 @@ namespace Neo.Network.P2P
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
-                NetworkAddressWithTime[] networkAddresses = GetRandomConnectedPeers(AddrPayload.MaxCountToSend);
-                var payload = DisconnectPayload.Create(DisconnectReason.MaxConnectionPerAddressReached, networkAddresses.ToByteArray());
-                var disconnectMessage = Message.Create(MessageCommand.Disconnect, payload);
-                ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
-                ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
-                    failure: ex => new Tcp.ErrorClosed(ex.Message));
-                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+                WsDisconnect(ws, DisconnectReason.MaxConnectionPerAddressReached);
             }
             else
             {
@@ -268,6 +250,8 @@ namespace Neo.Network.P2P
                 Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
             }
         }
+
+        protected abstract void WsDisconnect(WebSocket ws, DisconnectReason reason);
 
         protected override void PostStop()
         {
