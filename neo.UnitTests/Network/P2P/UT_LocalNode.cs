@@ -152,14 +152,16 @@ namespace Neo.UnitTests.Network.P2P
             IPEndPoint remote;
             Tcp.Connected connected;
             var senderDict = new Dictionary<IPEndPoint, TestProbe>();
-            for (int i = LocalNode.Singleton.ConnectedCount; i <= LocalNode.Singleton.MaxConnections; i++)
+            for (int i = LocalNode.Singleton.ConnectedCount; i < LocalNode.Singleton.MaxConnections; i++)
             {
                 remote = new IPEndPoint(IPAddress.Parse("191.13.2." + i), 8991);
                 connected = new Tcp.Connected(remote, local);
                 var proble = CreateTestProbe();
                 proble.Send(localNode, connected);
                 proble.ExpectMsg<Tcp.Register>(); // register msg is earlier than version msg
-                proble.ExpectMsg<Tcp.Write>();    // remote ndoe send version msg
+                var verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote ndoe send version msg
+                Message version = verionMsg.Data.ToArray().AsSerializable<Message>();
+                version.Command.Should().Be(MessageCommand.Version);
 
                 senderDict[remote] = proble;
             }
