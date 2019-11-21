@@ -5,7 +5,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class DisconnectPayload : ISerializable
     {
-        public const int MaxDataSize = 5120;
+        public const int MaxDataSize = 1024;
 
         public DisconnectReason Reason;
         public byte[] Data;
