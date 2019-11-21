@@ -88,13 +88,15 @@ namespace Neo.UnitTests.Network.P2P
             var senderDict = new Dictionary<IPEndPoint, TestProbe>();
             for (int i = 1; i <= LocalNode.Singleton.MaxConnectionsPerAddress; i++)
             {
-                remote = new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080 + i);
+                remote = new IPEndPoint(IPAddress.Parse("192.167.1.1"), 8080 + i);
                 connected = new Tcp.Connected(remote, local);
 
                 var proble = CreateTestProbe();
                 proble.Send(localNode, connected);
                 proble.ExpectMsg<Tcp.Register>(); // register msg is earlier than version msg
-                proble.ExpectMsg<Tcp.Write>();    // remote ndoe send version msg
+                var verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote ndoe send version msg
+                Message version = verionMsg.Data.ToArray().AsSerializable<Message>();
+                version.Command.Should().Be(MessageCommand.Version); // check version msg
 
                 senderDict[remote] = proble;
             }
@@ -122,7 +124,7 @@ namespace Neo.UnitTests.Network.P2P
             testProbe.ExpectMsg<Tcp.Write>(); // remote node will send verack and change its listenerPort
 
             // create one more remote connection and localnode will disconnect with `MaxConnectionPerAddressReached`
-            remote = new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8079);
+            remote = new IPEndPoint(IPAddress.Parse("192.167.1.1"), 8079);
             connected = new Tcp.Connected(remote, local);
             testProbe.Send(localNode, connected);
 
@@ -139,7 +141,7 @@ namespace Neo.UnitTests.Network.P2P
             var count = DisconnectPayload.MaxDataSize;
             NetworkAddressWithTime[] addrs = disconnectionPayload.Data.AsSerializableArray<NetworkAddressWithTime>(count);
             addrs.Length.Should().Be(1);
-            addrs[0].EndPoint.Address.Should().BeEquivalentTo(IPAddress.Parse("192.168.1.1"));
+            addrs[0].EndPoint.Address.Should().BeEquivalentTo(IPAddress.Parse("192.167.1.1"));
         }
 
         [TestMethod]
