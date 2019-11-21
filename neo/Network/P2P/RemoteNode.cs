@@ -212,7 +212,6 @@ namespace Neo.Network.P2P
                         break;
                 }
             }
-
             if (version.Magic != ProtocolSettings.Default.Magic)
             {
                 DisconnectWithReason(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
@@ -223,7 +222,6 @@ namespace Neo.Network.P2P
                 DisconnectWithReason(DisconnectReason.DuplicateNonce);
                 return;
             }
-
             SendMessage(Message.Create(MessageCommand.Verack));
         }
 

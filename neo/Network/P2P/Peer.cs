@@ -188,7 +188,6 @@ namespace Neo.Network.P2P
             if (count >= MaxConnectionsPerAddress)
             {
                 TcpDisconnect(DisconnectReason.MaxConnectionPerAddressReached);
-                return;
             }
             else
             {

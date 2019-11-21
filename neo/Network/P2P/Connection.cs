@@ -69,7 +69,6 @@ namespace Neo.Network.P2P
         public void Disconnect(bool abort = false)
         {
             disconnected = true;
-
             if (tcp != null)
             {
                 tcp.Tell(abort ? (Tcp.CloseCommand)Tcp.Abort.Instance : Tcp.Close.Instance);
@@ -92,7 +91,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Timer _:
-                    Disconnect();
+                    Disconnect(true);
                     break;
                 case Ack _:
                     OnAck();
@@ -116,7 +115,7 @@ namespace Neo.Network.P2P
             }
             catch
             {
-                Disconnect();
+                Disconnect(true);
             }
         }
 
