@@ -1,7 +1,7 @@
 using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Network.P2P.Payloads;
+using Neo.IO.Caching;
 using System;
 using System.IO;
 
@@ -51,51 +51,7 @@ namespace Neo.Network.P2P
             byte[] decompressed = Flags.HasFlag(MessageFlags.Compressed)
                 ? _payload_compressed.DecompressLz4(PayloadMaxSize)
                 : _payload_compressed;
-            switch (Command)
-            {
-                case MessageCommand.Version:
-                    Payload = decompressed.AsSerializable<VersionPayload>();
-                    break;
-                case MessageCommand.Addr:
-                    Payload = decompressed.AsSerializable<AddrPayload>();
-                    break;
-                case MessageCommand.Ping:
-                case MessageCommand.Pong:
-                    Payload = decompressed.AsSerializable<PingPayload>();
-                    break;
-                case MessageCommand.GetHeaders:
-                case MessageCommand.GetBlocks:
-                    Payload = decompressed.AsSerializable<GetBlocksPayload>();
-                    break;
-                case MessageCommand.Headers:
-                    Payload = decompressed.AsSerializable<HeadersPayload>();
-                    break;
-                case MessageCommand.Inv:
-                case MessageCommand.GetData:
-                    Payload = decompressed.AsSerializable<InvPayload>();
-                    break;
-                case MessageCommand.GetBlockData:
-                    Payload = decompressed.AsSerializable<GetBlockDataPayload>();
-                    break;
-                case MessageCommand.Transaction:
-                    Payload = decompressed.AsSerializable<Transaction>();
-                    break;
-                case MessageCommand.Block:
-                    Payload = decompressed.AsSerializable<Block>();
-                    break;
-                case MessageCommand.Consensus:
-                    Payload = decompressed.AsSerializable<ConsensusPayload>();
-                    break;
-                case MessageCommand.FilterLoad:
-                    Payload = decompressed.AsSerializable<FilterLoadPayload>();
-                    break;
-                case MessageCommand.FilterAdd:
-                    Payload = decompressed.AsSerializable<FilterAddPayload>();
-                    break;
-                case MessageCommand.MerkleBlock:
-                    Payload = decompressed.AsSerializable<MerkleBlockPayload>();
-                    break;
-            }
+            Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
