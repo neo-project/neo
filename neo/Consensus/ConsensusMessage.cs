@@ -15,7 +15,7 @@ namespace Neo.Consensus
         protected ConsensusMessage(ConsensusMessageType type)
         {
             if (!Enum.IsDefined(typeof(ConsensusMessageType), type))
-                throw new ArgumentException();
+                throw new ArgumentOutOfRangeException(nameof(type));
             this.Type = type;
         }
 
