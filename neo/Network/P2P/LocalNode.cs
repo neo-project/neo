@@ -225,7 +225,7 @@ namespace Neo.Network.P2P
             var disconnectMessage = CreateDisconnectMessage(reason);
             var command = Tcp.Write.Create(ByteString.FromBytes(disconnectMessage.ToArray()));
 
-            Sender.Tell(new Tcp.Register(ActorRefs.NoSender));
+            Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
             Sender.Ask(command).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
         }
 
