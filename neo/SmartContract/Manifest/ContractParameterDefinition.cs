@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Manifest
             return new ContractParameterDefinition
             {
                 Name = json["name"].AsString(),
-                Type = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["type"].AsString())
+                Type = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["type"].AsString()),
             };
         }
 
