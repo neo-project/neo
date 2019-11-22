@@ -417,7 +417,10 @@ namespace Neo.Ledger
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
                 if (item.Tx.Reverify(snapshot, SendersFeeMonitor.GetSenderFee(item.Tx.Sender)))
+                {
                     reverifiedItems.Add(item);
+                    SendersFeeMonitor.AddSenderFee(item.Tx);
+                }
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
 
@@ -438,7 +441,6 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
-                        SendersFeeMonitor.AddSenderFee(item.Tx);
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
@@ -447,6 +449,8 @@ namespace Neo.Ledger
                             item.LastBroadcastTimestamp = DateTime.UtcNow;
                         }
                     }
+                    else
+                        SendersFeeMonitor.RemoveSenderFee(item.Tx);
 
                     _unverifiedTransactions.Remove(item.Tx.Hash);
                     unverifiedSortedTxPool.Remove(item);
