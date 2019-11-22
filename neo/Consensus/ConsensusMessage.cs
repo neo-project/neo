@@ -19,16 +19,14 @@ namespace Neo.Consensus
 
         protected ConsensusMessage(ConsensusMessageType type)
         {
+            if (!Enum.IsDefined(typeof(ConsensusMessageType), type))
+                throw new ArgumentException();
             this.Type = type;
         }
 
         public virtual void Deserialize(BinaryReader reader)
         {
-            ConsensusMessageType cmt = (ConsensusMessageType)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(ConsensusMessageType), cmt))
-                throw new FormatException();
-
-            if (Type != cmt)
+            if (Type != (ConsensusMessageType)reader.ReadByte())
                 throw new FormatException();
             ViewNumber = reader.ReadByte();
         }

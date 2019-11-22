@@ -32,8 +32,6 @@ namespace Neo.Network.P2P.Payloads
         {
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(WitnessScope), Scopes))
-                throw new FormatException();
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
                 ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
                 : new UInt160[0];
