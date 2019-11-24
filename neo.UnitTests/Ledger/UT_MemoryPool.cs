@@ -99,8 +99,8 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
             UInt160 sender = UInt160.Zero;
-            mock.Setup(p => p.Reverify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(((Snapshot snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee));
-            mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(true);
+            mock.Setup(p => p.Reverify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(((StoreView snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee));
+            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(true);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = sender;
             mock.Object.NetworkFee = fee;
@@ -222,7 +222,7 @@ namespace Neo.UnitTests.Ledger
 
             // Simulate the transfer process in tx by burning the balance
             UInt160 sender = block.Transactions[0].Sender;
-            Snapshot snapshot = Blockchain.Singleton.GetSnapshot();
+            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
 
             ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (long)balance);
