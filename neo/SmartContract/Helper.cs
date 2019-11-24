@@ -100,7 +100,7 @@ namespace Neo.SmartContract
                             {
                                 StackItem key = stack_temp.Pop();
                                 StackItem value = stack_temp.Pop();
-                                map.Add(key, value);
+                                map.Add((PrimitiveType)key, value);
                             }
                             item = map;
                             break;
@@ -199,17 +199,17 @@ namespace Neo.SmartContract
                 item = unserialized.Pop();
                 switch (item)
                 {
-                    case ByteArray _:
+                    case ByteArray bytes:
                         writer.Write((byte)StackItemType.ByteArray);
-                        writer.WriteVarBytes(item.GetByteArray());
+                        writer.WriteVarBytes(bytes.ToByteArray());
                         break;
                     case VMBoolean _:
                         writer.Write((byte)StackItemType.Boolean);
-                        writer.Write(item.GetBoolean());
+                        writer.Write(item.ToBoolean());
                         break;
-                    case Integer _:
+                    case Integer integer:
                         writer.Write((byte)StackItemType.Integer);
-                        writer.WriteVarBytes(item.GetByteArray());
+                        writer.WriteVarBytes(integer.ToByteArray());
                         break;
                     case InteropInterface _:
                         throw new NotSupportedException();
@@ -285,7 +285,7 @@ namespace Neo.SmartContract
                     engine.LoadScript(verification);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
                     if (engine.Execute().HasFlag(VMState.FAULT)) return false;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().ToBoolean()) return false;
                 }
             }
             return true;

@@ -5,7 +5,7 @@
     <AssemblyTitle>Neo</AssemblyTitle>
     <Version>3.0.0-preview1</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
@@ -17,25 +17,19 @@
     <RootNamespace>Neo</RootNamespace>
     <Company>The Neo Project</Company>
     <Description>Neo</Description>
-    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.3.14" />
+    <PackageReference Include="Akka" Version="1.3.16" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.1.11" />
     <PackageReference Include="Microsoft.AspNetCore.ResponseCompression" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.2.1" />
-    <!-- Check https://github.com/neo-project/neo/pull/535 before upgrade this package -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.4" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
-    <PackageReference Include="Neo.VM" Version="3.0.0-CI00042" />
-    <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
-    <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.1" />
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00170" />
+    <PackageReference Include="System.Text.Encodings.Web" Version="4.6.0" />
   </ItemGroup>
 
 </Project>

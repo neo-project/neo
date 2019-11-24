@@ -1,3 +1,5 @@
+#pragma warning disable CS1718
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;

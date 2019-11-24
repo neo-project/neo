@@ -1,10 +1,10 @@
 using Neo.SmartContract.Enumerators;
-using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Iterators
 {
     internal interface IIterator : IEnumerator
     {
-        StackItem Key();
+        PrimitiveType Key();
     }
 }

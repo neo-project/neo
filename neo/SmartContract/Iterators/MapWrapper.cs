@@ -1,13 +1,13 @@
-using Neo.VM;
+using Neo.VM.Types;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
 {
     internal class MapWrapper : IIterator
     {
-        private readonly IEnumerator<KeyValuePair<StackItem, StackItem>> enumerator;
+        private readonly IEnumerator<KeyValuePair<PrimitiveType, StackItem>> enumerator;
 
-        public MapWrapper(IEnumerable<KeyValuePair<StackItem, StackItem>> map)
+        public MapWrapper(IEnumerable<KeyValuePair<PrimitiveType, StackItem>> map)
         {
             this.enumerator = map.GetEnumerator();
         }
@@ -17,7 +17,7 @@ namespace Neo.SmartContract.Iterators
             enumerator.Dispose();
         }
 
-        public StackItem Key()
+        public PrimitiveType Key()
         {
             return enumerator.Current.Key;
         }
