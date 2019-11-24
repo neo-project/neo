@@ -82,9 +82,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check max size
 
-            witness.Size.Should().Be(1003);
+            witness.Size.Should().Be(1004);
             witness.InvocationScript.GetVarSize().Should().Be(653);
-            witness.VerificationScript.GetVarSize().Should().Be(350);
+            witness.VerificationScript.GetVarSize().Should().Be(351);
 
             Assert.IsTrue(witness.Size <= 1024);
 
@@ -146,8 +146,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             JObject json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));
             Assert.IsTrue(json.ContainsProperty("verification"));
-            Assert.AreEqual(json["invocation"].AsString(), "2020");
-            Assert.AreEqual(json["verification"].AsString(), "202020");
+            Assert.AreEqual(json["invocation"].AsString(), "ICA=");
+            Assert.AreEqual(json["verification"].AsString(), "ICAg");
         }
     }
 }

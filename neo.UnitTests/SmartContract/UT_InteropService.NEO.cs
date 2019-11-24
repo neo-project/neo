@@ -11,6 +11,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System.Linq;
@@ -33,12 +34,14 @@ namespace Neo.UnitTests.SmartContract
             byte[] signature = Crypto.Default.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));
-            InteropService.Invoke(engine, InteropService.Neo_Crypto_CheckSig).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaVerify).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeTrue();
 
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(new byte[70]);
-            InteropService.Invoke(engine, InteropService.Neo_Crypto_CheckSig).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaVerify).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
         }
 
@@ -73,13 +76,15 @@ namespace Neo.UnitTests.SmartContract
             };
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
-            InteropService.Invoke(engine, InteropService.Neo_Crypto_CheckMultiSig).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeTrue();
 
             pubkeys = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
-            InteropService.Invoke(engine, InteropService.Neo_Crypto_CheckMultiSig).Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeFalse();
 
             pubkeys = new VMArray
             {
@@ -89,7 +94,8 @@ namespace Neo.UnitTests.SmartContract
             signatures = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
-            InteropService.Invoke(engine, InteropService.Neo_Crypto_CheckMultiSig).Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeFalse();
 
             pubkeys = new VMArray
             {
@@ -103,7 +109,8 @@ namespace Neo.UnitTests.SmartContract
             };
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
-            InteropService.Invoke(engine, InteropService.Neo_Crypto_CheckMultiSig).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
 
             pubkeys = new VMArray
@@ -118,7 +125,8 @@ namespace Neo.UnitTests.SmartContract
             };
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
-            InteropService.Invoke(engine, InteropService.Neo_Crypto_CheckMultiSig).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
         }
 
@@ -232,6 +240,18 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Neo_Contract_Update).Should().BeTrue();
+
+            // Remove Storage flag with something stored
+
+            state.Manifest.Features = ContractFeatures.NoProperty;
+            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
+            mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
+
+            engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            engine.LoadScript(state.Script);
+            engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
+            engine.CurrentContext.EvaluationStack.Push(script);
+            InteropService.Invoke(engine, InteropService.Neo_Contract_Update).Should().BeFalse();
         }
 
         [TestMethod]

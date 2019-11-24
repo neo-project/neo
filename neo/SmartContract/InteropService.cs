@@ -2,7 +2,6 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -42,7 +41,6 @@ namespace Neo.SmartContract
         public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 0_00500000, TriggerType.All);
         public static readonly uint System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", Runtime_GetInvocationCounter, 0_00000400, TriggerType.All);
         public static readonly uint System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", Runtime_GetNotifications, 0_00010000, TriggerType.All);
-        public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 0_01000000, TriggerType.All);
         public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application);
         public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000, TriggerType.Application);
         public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000, TriggerType.Application);
@@ -326,23 +324,6 @@ namespace Neo.SmartContract
                 return false;
             }
             engine.CurrentContext.EvaluationStack.Push(item);
-            return true;
-        }
-
-        private static bool Crypto_Verify(ApplicationEngine engine)
-        {
-            StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
-            byte[] message;
-            if (item0 is InteropInterface _interface)
-                message = _interface.GetInterface<IVerifiable>().GetHashData();
-            else
-                message = item0.GetByteArray();
-            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if (pubkey[0] != 2 && pubkey[0] != 3 && pubkey[0] != 4)
-                return false;
-            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            bool result = Crypto.Default.VerifySignature(message, signature, pubkey);
-            engine.CurrentContext.EvaluationStack.Push(result);
             return true;
         }
 
