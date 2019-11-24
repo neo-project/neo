@@ -163,13 +163,13 @@ namespace Neo.UnitTests.Consensus
             prm.PreparationHash.Should().Be(prepReq.Hash);
 
             // Simulating CN 3
-            actorConsensus.Tell(getPayloadAndModifyValidator(prepResponsePayload, 2));
+            actorConsensus.Tell(GetPayloadAndModifyValidator(prepResponsePayload, 2));
 
             // Simulating CN 5
-            actorConsensus.Tell(getPayloadAndModifyValidator(prepResponsePayload, 4));
+            actorConsensus.Tell(GetPayloadAndModifyValidator(prepResponsePayload, 4));
 
             // Simulating CN 4
-            actorConsensus.Tell(getPayloadAndModifyValidator(prepResponsePayload, 3));
+            actorConsensus.Tell(GetPayloadAndModifyValidator(prepResponsePayload, 3));
 
             var onCommitPayload = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
@@ -222,19 +222,19 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nCN2 simulation time");
-            actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], blockToSign));
 
             Console.WriteLine("\nCN3 simulation time");
-            actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(commitPayload, 2, kp_array[2], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 2, kp_array[2], blockToSign));
 
             Console.WriteLine("\nCN4 simulation time");
-            actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], blockToSign));
 
             // =============================================
             // Testing commit with wrong signature not valid
             // It will be invalid signature because we did not change ECPoint
             Console.WriteLine("\nCN6 simulation time. Wrong signature, KeyPair is not known");
-            actorConsensus.Tell(getPayloadAndModifyValidator(commitPayload, 5));
+            actorConsensus.Tell(GetPayloadAndModifyValidator(commitPayload, 5));
 
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryMessageAfterCommit = subscriber.ExpectMsg<LocalNode.SendDirectly>();
@@ -243,7 +243,7 @@ namespace Neo.UnitTests.Consensus
             // =============================================
 
             Console.WriteLine("\nCN5 simulation time");
-            actorConsensus.Tell(getCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], blockToSign));
 
             var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
             var utBlock = (Block)onBlockRelay.Inventory;
@@ -271,7 +271,7 @@ namespace Neo.UnitTests.Consensus
             Assert.AreEqual(1, 1);
         }
 
-        public ConsensusPayload getCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, Block blockToSign)
+        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, Block blockToSign)
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
@@ -281,7 +281,7 @@ namespace Neo.UnitTests.Consensus
             return cpCommitTemp;
         }
 
-        public ConsensusPayload getPayloadAndModifyValidator(ConsensusPayload cpToCopy, ushort vI)
+        public ConsensusPayload GetPayloadAndModifyValidator(ConsensusPayload cpToCopy, ushort vI)
         {
             var cpTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpTemp.ValidatorIndex = vI;
