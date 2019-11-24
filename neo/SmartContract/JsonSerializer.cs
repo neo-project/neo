@@ -26,7 +26,7 @@ namespace Neo.SmartContract
                     }
                 case ByteArray buffer:
                     {
-                        return Convert.ToBase64String(buffer.GetByteArray());
+                        return Convert.ToBase64String(buffer.GetSpan());
                     }
                 case Integer num:
                     {
@@ -37,7 +37,7 @@ namespace Neo.SmartContract
                     }
                 case VMBoolean boolean:
                     {
-                        return boolean.GetBoolean();
+                        return boolean.ToBoolean();
                     }
                 case Map map:
                     {
