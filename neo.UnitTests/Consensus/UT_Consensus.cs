@@ -21,7 +21,6 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.Consensus
 {
-
     [TestClass]
     public class ConsensusTests : TestKit
     {
