@@ -45,7 +45,7 @@ namespace Neo.UnitTests.Network.RPC.Models
             balance.Amount = BigInteger.Zero;
             balance.LastUpdatedBlock = 0;
             var json = balance.ToJson();
-            json["asset_hash"].AsString().Should().Be("0000000000000000000000000000000000000000");
+            json["asset_hash"].AsString().Should().Be("0x0000000000000000000000000000000000000000");
             json["amount"].AsNumber().Should().Be(0);
             json["last_updated_block"].AsNumber().Should().Be(0);
         }
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Network.RPC.Models
         public void TestFromJson()
         {
             var json = new JObject();
-            json["asset_hash"] = "0000000000000000000000000000000000000000";
+            json["asset_hash"] = "0x0000000000000000000000000000000000000000";
             json["amount"] = "0";
             json["last_updated_block"] = "0";
             var rpcNep5Balance = RpcNep5Balance.FromJson(json);

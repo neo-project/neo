@@ -5,6 +5,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.UnitTests.Network.RPC
@@ -77,12 +78,34 @@ namespace Neo.UnitTests.Network.RPC
         }
 
         [TestMethod]
+        public void TestGetTokenInfo()
+        {
+            UInt160 scriptHash = NativeContract.GAS.Hash;
+            byte[] testScript = scriptHash.MakeScript("name")
+                .Concat(scriptHash.MakeScript("symbol"))
+                .Concat(scriptHash.MakeScript("decimals"))
+                .Concat(scriptHash.MakeScript("totalSupply"))
+                .ToArray(); ;
+            UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript,
+                new ContractParameter { Type = ContractParameterType.String, Value = NativeContract.GAS.Name },
+                new ContractParameter { Type = ContractParameterType.String, Value = NativeContract.GAS.Symbol },
+                new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(NativeContract.GAS.Decimals) },
+                new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_00000000) });
+
+            var result = nep5API.GetTokenInfo(NativeContract.GAS.Hash);
+            Assert.AreEqual(NativeContract.GAS.Name, result.Name);
+            Assert.AreEqual(NativeContract.GAS.Symbol, result.Symbol);
+            Assert.AreEqual(8, (int)result.Decimals);
+            Assert.AreEqual(1_00000000, (int)result.TotalSupply);
+        }
+
+        [TestMethod]
         public void TestTransfer()
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("transfer", sender, UInt160.Zero, new BigInteger(1_00000000));
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter());
 
-            var result = nep5API.Transfer(NativeContract.GAS.Hash, keyPair1, UInt160.Zero, new BigInteger(1_00000000));
+            var result = nep5API.CreateTransferTx(NativeContract.GAS.Hash, keyPair1, UInt160.Zero, new BigInteger(1_00000000));
             Assert.IsNotNull(result);
         }
     }

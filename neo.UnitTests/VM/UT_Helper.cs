@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 
-namespace Neo.UnitTests.IO
+namespace Neo.UnitTests.VMT
 {
     [TestClass]
     public class UT_Helper
@@ -82,6 +83,15 @@ namespace Neo.UnitTests.IO
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 31, 4);//api.data
             byte[] resultArray = sb.ToArray();
             Assert.AreEqual(Encoding.Default.GetString(tempArray), Encoding.Default.GetString(resultArray));
+        }
+
+        [TestMethod]
+        public void TestMakeScript()
+        {
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
+
+            Assert.AreEqual("14000000000000000000000000000000000000000051c10962616c616e63654f66142582d1b275e86c8f0e93a9b2facd5fdb760976a168627d5b52",
+                            testScript.ToHexString());
         }
 
         [TestMethod]
