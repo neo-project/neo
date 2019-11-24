@@ -2,12 +2,13 @@ using System;
 
 namespace Neo.IO.Caching
 {
-    public class ReflectionCacheAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
+    internal class ReflectionCacheAttribute : Attribute
     {
         /// <summary>
         /// Type
         /// </summary>
-        public Type Type { get; private set; }
+        public Type Type { get; }
 
         /// <summary>
         /// Constructor
