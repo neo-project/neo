@@ -82,6 +82,7 @@ namespace Neo.Consensus
 
         public Block CreateBlock()
         {
+            EnsureHeader();
             Contract contract = Contract.CreateMultiSigContract(M, Validators);
             ContractParametersContext sc = new ContractParametersContext(Block);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
