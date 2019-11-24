@@ -138,7 +138,7 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("will tell PrepRequest!");
             mockContext.Object.PrevHeader.Timestamp = 328665601000;
-            mockContext.Object.PrevHeader.NextConsensus.Should().Be(UInt160.Parse("0x0656f4bee614d132409c587097522bf789ab15e4"));
+            mockContext.Object.PrevHeader.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
             var prepReq = mockContext.Object.MakePrepareRequest();
             var ppToSend = (PrepareRequest)prepReq.ConsensusMessage;
 
@@ -180,8 +180,8 @@ namespace Neo.UnitTests.Consensus
             // Original Contract
             Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             // Console.WriteLine($"\n Contract is: {contract.ScriptHash}");
-            originalContract.ScriptHash.Should().Be(UInt160.Parse("0x0656f4bee614d132409c587097522bf789ab15e4"));
-            mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0x0656f4bee614d132409c587097522bf789ab15e4"));
+            originalContract.ScriptHash.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
+            mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
 
             Console.WriteLine($"\nBlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"\nBlock NextConsensus: {mockContext.Object.Block.NextConsensus}");
