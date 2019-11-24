@@ -1,4 +1,4 @@
-using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Iterators
 {
@@ -13,7 +13,7 @@ namespace Neo.SmartContract.Iterators
             this.second = second;
         }
 
-        public StackItem Key() => current.Key();
+        public PrimitiveType Key() => current.Key();
         public StackItem Value() => current.Value();
 
         public bool Next()
