@@ -52,13 +52,16 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
+            // Do not accept payload of type InventoryType.TX if not synced on best known top HeaderHeight
             if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
             {
                 RequestTasks(session);
                 return;
             }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
+            // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(knownHashes);
+            // Add to AvailableTasks the ones that are global (already in processing by other sessions)
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
@@ -201,9 +204,11 @@ namespace Neo.Network.P2P
         private void RequestTasks(TaskSession session)
         {
             if (session.HasTask) return;
+            // If there are pending tasks of InventoryType.Block we should process them
             if (session.AvailableTasks.Count > 0)
             {
                 session.AvailableTasks.Remove(knownHashes);
+                // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
                 if (hashes.Count > 0)
