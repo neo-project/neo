@@ -1,4 +1,4 @@
-using Neo.VM;
+using Neo.VM.Types;
 using System;
 
 namespace Neo.SmartContract
@@ -10,8 +10,8 @@ namespace Neo.SmartContract
 
         public override bool Equals(StackItem other) => throw new NotSupportedException();
 
-        public override bool GetBoolean() => throw new NotImplementedException();
+        public override int GetHashCode() => throw new NotSupportedException();
 
-        public override byte[] GetByteArray() => throw new NotSupportedException();
+        public override bool ToBoolean() => throw new NotSupportedException();
     }
 }

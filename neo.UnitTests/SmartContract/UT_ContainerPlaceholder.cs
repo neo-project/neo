@@ -28,15 +28,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetBoolean()
         {
             ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
-            Action action = () => containerPlaceholder.GetBoolean();
-            action.Should().Throw<NotImplementedException>();
-        }
-
-        [TestMethod]
-        public void TestGetByteArray()
-        {
-            ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
-            Action action = () => containerPlaceholder.GetByteArray();
+            Action action = () => containerPlaceholder.ToBoolean();
             action.Should().Throw<NotSupportedException>();
         }
     }
