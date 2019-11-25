@@ -25,9 +25,8 @@ namespace Neo.Cryptography
             // Leading zero bytes get encoded as leading `1` characters
             int leadingZeroCount = input.TakeWhile(c => c == Alphabet[0]).Count();
             var leadingZeros = new byte[leadingZeroCount];
+            if (bi.IsZero) return leadingZeros;
             var bytesWithoutLeadingZeros = bi.ToByteArray(isUnsigned: true, isBigEndian: true);
-            if (bytesWithoutLeadingZeros.Length == 1 && bytesWithoutLeadingZeros[0] == 0)
-                bytesWithoutLeadingZeros = new byte[0];
             return leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
         }
 
