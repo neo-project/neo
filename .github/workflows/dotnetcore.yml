@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 2.2.402
+  DOTNET_VERSION: 3.0.100
 
 jobs:
 
