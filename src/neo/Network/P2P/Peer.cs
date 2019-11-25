@@ -106,7 +106,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Abstract class for asking for more peers
+        /// Abstract method for asking for more peers
         /// Currently triggered when UnconnectedPeers is empty
         /// </summary>
         /// <param name="count">Number of peers that are being requested</param>
