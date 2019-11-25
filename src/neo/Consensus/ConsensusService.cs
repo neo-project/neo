@@ -305,23 +305,23 @@ namespace Neo.Consensus
                 switch (futureMessage)
                 {
                     case ChangeView view:
-                        tryToSavePayloadIntoArray(context.FutureChangeViewPayloads, payload, futureMessage.ViewNumber);
+                        TryToSavePayloadIntoArray(context.FutureChangeViewPayloads, payload, futureMessage.ViewNumber);
                         break;
                     case Commit commit:
-                        tryToSavePayloadIntoArray(context.FutureCommitPayloads, payload, futureMessage.ViewNumber);
+                        TryToSavePayloadIntoArray(context.FutureCommitPayloads, payload, futureMessage.ViewNumber);
                         break;
                     case RecoveryMessage recovery:
-                        tryToSavePayloadIntoArray(context.FutureRecoveryPayloads, payload, futureMessage.ViewNumber);
+                        TryToSavePayloadIntoArray(context.FutureRecoveryPayloads, payload, futureMessage.ViewNumber);
                         break;
                     case PrepareRequest request:
                     case PrepareResponse response:
-                        tryToSavePayloadIntoArray(context.FuturePreparationPayloads, payload, futureMessage.ViewNumber);
+                        TryToSavePayloadIntoArray(context.FuturePreparationPayloads, payload, futureMessage.ViewNumber);
                         break;
                 }
             }
         }
 
-        private void tryToSavePayloadIntoArray(ConsensusPayload[] payloadsArray, ConsensusPayload payload, byte pViewNumber)
+        private void TryToSavePayloadIntoArray(ConsensusPayload[] payloadsArray, ConsensusPayload payload, byte pViewNumber)
         {
             byte lastViewNumber = payloadsArray[payload.ValidatorIndex] != null ? (byte)payloadsArray[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
             uint lastHeight = payloadsArray[payload.ValidatorIndex] != null ? payloadsArray[payload.ValidatorIndex].BlockIndex : 0;
