@@ -4,11 +4,13 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Array = System.Array;
 
 namespace Neo.UnitTests.VMT
 {
@@ -112,7 +114,7 @@ namespace Neo.UnitTests.VMT
             StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
             Assert.AreEqual(1000, (BigInteger)(arrayItem.ToParameter().Value as List<ContractParameter>)[2].Value);
 
-            StackItem mapItem = new VM.Types.Map(new Dictionary<StackItem, StackItem>(new[] { new KeyValuePair<StackItem, StackItem>(byteItem, intItem) }));
+            StackItem mapItem = new Map(new Dictionary<PrimitiveType, StackItem> { [(PrimitiveType)byteItem] = intItem });
             Assert.AreEqual(1000, (BigInteger)(mapItem.ToParameter().Value as List<KeyValuePair<ContractParameter, ContractParameter>>)[0].Value.Value);
         }
 
@@ -123,7 +125,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetBigInteger());
 
             ContractParameter boolParameter = new ContractParameter { Type = ContractParameterType.Boolean, Value = false };
-            Assert.AreEqual(false, boolParameter.ToStackItem().GetBoolean());
+            Assert.AreEqual(false, boolParameter.ToStackItem().ToBoolean());
 
             ContractParameter intParameter = new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) };
             Assert.AreEqual(1000, intParameter.ToStackItem().GetBigInteger());
@@ -135,10 +137,10 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(0, h256Parameter.ToStackItem().GetBigInteger());
 
             ContractParameter pkParameter = new ContractParameter { Type = ContractParameterType.PublicKey, Value = ECPoint.Parse("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", ECCurve.Secp256r1) };
-            Assert.AreEqual("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", pkParameter.ToStackItem().GetByteArray().ToHexString());
+            Assert.AreEqual("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", pkParameter.ToStackItem().GetSpan().ToHexString());
 
             ContractParameter strParameter = new ContractParameter { Type = ContractParameterType.String, Value = "test😂👍" };
-            Assert.AreEqual("test😂👍", Encoding.UTF8.GetString(strParameter.ToStackItem().GetByteArray()));
+            Assert.AreEqual("test😂👍", strParameter.ToStackItem().GetString());
 
             ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface };
             Assert.AreEqual(null, interopParameter.ToStackItem());
