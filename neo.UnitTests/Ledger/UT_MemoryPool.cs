@@ -8,6 +8,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -92,6 +93,31 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
+        private Transaction CreateTransactionWithFeeAndBalanceVerify(long fee)
+        {
+            Random random = new Random();
+            var randomBytes = new byte[16];
+            random.NextBytes(randomBytes);
+            Mock<Transaction> mock = new Mock<Transaction>();
+            UInt160 sender = UInt160.Zero;
+            mock.Setup(p => p.Reverify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(((Snapshot snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee));
+            mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(true);
+            mock.Object.Script = randomBytes;
+            mock.Object.Sender = sender;
+            mock.Object.NetworkFee = fee;
+            mock.Object.Attributes = new TransactionAttribute[0];
+            mock.Object.Cosigners = new Cosigner[0];
+            mock.Object.Witnesses = new[]
+            {
+                new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                }
+            };
+            return mock.Object;
+        }
+
         private Transaction CreateTransaction(long fee = -1)
         {
             if (fee != -1)
@@ -113,6 +139,17 @@ namespace Neo.UnitTests.Ledger
         private void AddTransaction(Transaction txToAdd)
         {
             _unit.TryAdd(txToAdd.Hash, txToAdd);
+        }
+
+        private void AddTransactionsWithBalanceVerify(int count, long fee)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var txToAdd = CreateTransactionWithFeeAndBalanceVerify(fee);
+                _unit.TryAdd(txToAdd.Hash, txToAdd);
+            }
+
+            Console.WriteLine($"created {count} tx");
         }
 
         [TestMethod]
@@ -169,6 +206,38 @@ namespace Neo.UnitTests.Ledger
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
             _unit.SortedTxCount.Should().Be(60);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
+        {
+            long txFee = 1;
+            AddTransactionsWithBalanceVerify(70, txFee);
+
+            _unit.SortedTxCount.Should().Be(70);
+
+            var block = new Block
+            {
+                Transactions = _unit.GetSortedVerifiedTransactions().Take(10).ToArray()
+            };
+
+            // Simulate the transfer process in tx by burning the balance
+            UInt160 sender = block.Transactions[0].Sender;
+            Snapshot snapshot = Blockchain.Singleton.GetSnapshot();
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
+
+            ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (long)balance);
+            NativeContract.GAS.Burn(applicationEngine, sender, balance);
+            NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30); // Set the balance to meet 30 txs only
+
+            // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
+            _unit.UpdatePoolForBlockPersisted(block, snapshot);
+            _unit.SortedTxCount.Should().Be(30);
+            _unit.UnverifiedSortedTxCount.Should().Be(0);
+
+            // Revert the balance
+            NativeContract.GAS.Burn(applicationEngine, sender, txFee * 30);
+            NativeContract.GAS.Mint(applicationEngine, sender, balance);
         }
 
         private void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
