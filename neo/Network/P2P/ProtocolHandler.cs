@@ -362,10 +362,10 @@ namespace Neo.Network.P2P
         {
             while (pendingKnownHashes.Count > 0)
             {
-                var (hash, time) = pendingKnownHashes[0];
+                var (_, time) = pendingKnownHashes[0];
                 if (DateTime.UtcNow - time <= PendingTimeout)
                     break;
-                pendingKnownHashes.Remove(hash);
+                pendingKnownHashes.RemoveAt(0);
             }
         }
 
