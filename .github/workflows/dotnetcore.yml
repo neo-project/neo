@@ -1,0 +1,73 @@
+name: .NET Core Test and Publish
+
+on:
+  push:
+    branches: master
+  pull_request:
+
+env:
+  DOTNET_VERSION: 3.0.100
+
+jobs:
+
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Chectout
+      uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Check format
+      run: |
+        dotnet tool install --tool-path ./ dotnet-format
+        ./dotnet-format --check --dry-run -v diagnostic
+    - name: Test
+      run: |
+        find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
+        dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  PublishGithub:
+    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    needs: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Chectout
+      uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Setup NuGet.exe for use with actions
+      uses: NuGet/setup-nuget@v1
+    - name: Pack with dotnet
+      run: git rev-list --count HEAD |xargs printf "CI%05d" |xargs dotnet pack -c Debug -o out --include-source --version-suffix
+    - name: Publish to Github Packages
+      run: |
+        nuget source Add -Name "GitHub" -Source "https://nuget.pkg.github.com/neo-project/index.json" -UserName neo-project -Password ${GITHUB_TOKEN}
+        nuget push out/*.nupkg -Source "GitHub"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  PublishMyGet:
+    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    needs: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Chectout
+      uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Pack with dotnet
+      run: git rev-list --count HEAD |xargs printf "CI%05d" |xargs dotnet pack -c Debug -o out --include-source --version-suffix
+    - name: Publish to MyGet
+      run: dotnet nuget push out/*.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
+      env:
+        MYGET_TOKEN: ${{ secrets.MYGET_TOKEN }}
