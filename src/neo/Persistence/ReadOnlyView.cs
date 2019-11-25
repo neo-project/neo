@@ -8,7 +8,7 @@ namespace Neo.Persistence
     /// <summary>
     /// Provide a read-only <see cref="StoreView"/> for accessing directly from database instead of from snapshot.
     /// </summary>
-    public class RawView : StoreView
+    public class ReadOnlyView : StoreView
     {
         private readonly IReadOnlyStore store;
 
@@ -20,7 +20,7 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> BlockHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentBlock);
         public override MetaDataCache<HashIndexState> HeaderHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentHeader);
 
-        public RawView(IReadOnlyStore store)
+        public ReadOnlyView(IReadOnlyStore store)
         {
             this.store = store;
         }

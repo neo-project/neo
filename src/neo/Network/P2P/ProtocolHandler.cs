@@ -162,7 +162,7 @@ namespace Neo.Network.P2P
         {
             UInt256 hash = payload.HashStart;
             int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
-            TrimmedBlock state = Blockchain.Singleton.RawView.Blocks.TryGet(hash);
+            TrimmedBlock state = Blockchain.Singleton.View.Blocks.TryGet(hash);
             if (state == null) return;
             List<UInt256> hashes = new List<UInt256>();
             for (uint i = 1; i <= count; i++)
@@ -182,7 +182,7 @@ namespace Neo.Network.P2P
         {
             for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
             {
-                Block block = Blockchain.Singleton.RawView.GetBlock(i);
+                Block block = Blockchain.Singleton.View.GetBlock(i);
                 if (block == null)
                     break;
 
@@ -237,7 +237,7 @@ namespace Neo.Network.P2P
         {
             UInt256 hash = payload.HashStart;
             int count = payload.Count < 0 || payload.Count > HeadersPayload.MaxHeadersCount ? HeadersPayload.MaxHeadersCount : payload.Count;
-            DataCache<UInt256, TrimmedBlock> cache = Blockchain.Singleton.RawView.Blocks;
+            DataCache<UInt256, TrimmedBlock> cache = Blockchain.Singleton.View.Blocks;
             TrimmedBlock state = cache.TryGet(hash);
             if (state == null) return;
             List<Header> headers = new List<Header>();

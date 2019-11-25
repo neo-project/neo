@@ -435,12 +435,12 @@ namespace Neo.Network.RPC
             if (key is JNumber)
             {
                 uint index = uint.Parse(key.AsString());
-                block = Blockchain.Singleton.RawView.GetBlock(index);
+                block = Blockchain.Singleton.View.GetBlock(index);
             }
             else
             {
                 UInt256 hash = UInt256.Parse(key.AsString());
-                block = Blockchain.Singleton.RawView.GetBlock(hash);
+                block = Blockchain.Singleton.View.GetBlock(hash);
             }
             if (block == null)
                 throw new RpcException(-100, "Unknown block");
@@ -448,7 +448,7 @@ namespace Neo.Network.RPC
             {
                 JObject json = block.ToJson();
                 json["confirmations"] = Blockchain.Singleton.Height - block.Index + 1;
-                UInt256 hash = Blockchain.Singleton.RawView.GetNextBlockHash(block.Hash);
+                UInt256 hash = Blockchain.Singleton.View.GetNextBlockHash(block.Hash);
                 if (hash != null)
                     json["nextblockhash"] = hash.ToString();
                 return json;
@@ -476,12 +476,12 @@ namespace Neo.Network.RPC
             if (key is JNumber)
             {
                 uint height = uint.Parse(key.AsString());
-                header = Blockchain.Singleton.RawView.GetHeader(height);
+                header = Blockchain.Singleton.View.GetHeader(height);
             }
             else
             {
                 UInt256 hash = UInt256.Parse(key.AsString());
-                header = Blockchain.Singleton.RawView.GetHeader(hash);
+                header = Blockchain.Singleton.View.GetHeader(hash);
             }
             if (header == null)
                 throw new RpcException(-100, "Unknown block");
@@ -490,7 +490,7 @@ namespace Neo.Network.RPC
             {
                 JObject json = header.ToJson();
                 json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
-                UInt256 hash = Blockchain.Singleton.RawView.GetNextBlockHash(header.Hash);
+                UInt256 hash = Blockchain.Singleton.View.GetNextBlockHash(header.Hash);
                 if (hash != null)
                     json["nextblockhash"] = hash.ToString();
                 return json;
@@ -516,7 +516,7 @@ namespace Neo.Network.RPC
 
         private JObject GetContractState(UInt160 script_hash)
         {
-            ContractState contract = Blockchain.Singleton.RawView.Contracts.TryGet(script_hash);
+            ContractState contract = Blockchain.Singleton.View.Contracts.TryGet(script_hash);
             return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
         }
 
@@ -564,10 +564,10 @@ namespace Neo.Network.RPC
             if (verbose)
             {
                 JObject json = tx.ToJson();
-                TransactionState txState = Blockchain.Singleton.RawView.Transactions.TryGet(hash);
+                TransactionState txState = Blockchain.Singleton.View.Transactions.TryGet(hash);
                 if (txState != null)
                 {
-                    Header header = Blockchain.Singleton.RawView.GetHeader(txState.BlockIndex);
+                    Header header = Blockchain.Singleton.View.GetHeader(txState.BlockIndex);
                     json["blockhash"] = header.Hash.ToString();
                     json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
                     json["blocktime"] = header.Timestamp;
@@ -580,7 +580,7 @@ namespace Neo.Network.RPC
 
         private JObject GetStorage(UInt160 script_hash, byte[] key)
         {
-            StorageItem item = Blockchain.Singleton.RawView.Storages.TryGet(new StorageKey
+            StorageItem item = Blockchain.Singleton.View.Storages.TryGet(new StorageKey
             {
                 ScriptHash = script_hash,
                 Key = key
@@ -590,7 +590,7 @@ namespace Neo.Network.RPC
 
         private JObject GetTransactionHeight(UInt256 hash)
         {
-            uint? height = Blockchain.Singleton.RawView.Transactions.TryGet(hash)?.BlockIndex;
+            uint? height = Blockchain.Singleton.View.Transactions.TryGet(hash)?.BlockIndex;
             if (height.HasValue) return height.Value;
             throw new RpcException(-100, "Unknown transaction");
         }

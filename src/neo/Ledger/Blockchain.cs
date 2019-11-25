@@ -65,7 +65,7 @@ namespace Neo.Ledger
         private SnapshotView currentSnapshot;
 
         public IStore Store { get; }
-        public RawView RawView { get; }
+        public ReadOnlyView View { get; }
         public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
@@ -101,23 +101,23 @@ namespace Neo.Ledger
             this.system = system;
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
-            this.RawView = new RawView(store);
+            this.View = new ReadOnlyView(store);
             lock (lockObj)
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                header_index.AddRange(RawView.HeaderHashList.Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
+                header_index.AddRange(View.HeaderHashList.Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
                 stored_header_count += (uint)header_index.Count;
                 if (stored_header_count == 0)
                 {
-                    header_index.AddRange(RawView.Blocks.Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
+                    header_index.AddRange(View.Blocks.Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
                 }
                 else
                 {
-                    HashIndexState hashIndex = RawView.HeaderHashIndex.Get();
+                    HashIndexState hashIndex = View.HeaderHashIndex.Get();
                     if (hashIndex.Index >= stored_header_count)
                     {
-                        DataCache<UInt256, TrimmedBlock> cache = RawView.Blocks;
+                        DataCache<UInt256, TrimmedBlock> cache = View.Blocks;
                         for (UInt256 hash = hashIndex.Hash; hash != header_index[(int)stored_header_count - 1];)
                         {
                             header_index.Insert((int)stored_header_count, hash);
@@ -141,13 +141,13 @@ namespace Neo.Ledger
         public bool ContainsBlock(UInt256 hash)
         {
             if (block_cache.ContainsKey(hash)) return true;
-            return RawView.ContainsBlock(hash);
+            return View.ContainsBlock(hash);
         }
 
         public bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;
-            return RawView.ContainsTransaction(hash);
+            return View.ContainsTransaction(hash);
         }
 
         private static Transaction DeployNativeContracts()
@@ -181,7 +181,7 @@ namespace Neo.Ledger
         {
             if (block_cache.TryGetValue(hash, out Block block))
                 return block;
-            return RawView.GetBlock(hash);
+            return View.GetBlock(hash);
         }
 
         public UInt256 GetBlockHash(uint index)
@@ -204,7 +204,7 @@ namespace Neo.Ledger
         {
             if (MemPool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
-            return RawView.GetTransaction(hash);
+            return View.GetTransaction(hash);
         }
 
         private void OnImport(IEnumerable<Block> blocks)
@@ -239,7 +239,7 @@ namespace Neo.Ledger
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
-                if (RawView.ContainsTransaction(tx.Hash))
+                if (View.ContainsTransaction(tx.Hash))
                     continue;
                 if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
                     continue;
