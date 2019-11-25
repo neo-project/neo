@@ -285,7 +285,7 @@ namespace Neo.SmartContract
                     engine.LoadScript(verification);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
                     if (engine.Execute() == VMState.FAULT) return false;
-                    if (!engine.ResultStack.TryPop<PrimitiveType>(out var result) || !result.ToBoolean()) return false;
+                    if (!engine.ResultStack.TryPop(out var result) || !result.ToBoolean()) return false;
                 }
             }
             return true;
