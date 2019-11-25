@@ -51,7 +51,7 @@ namespace Neo.Network.RPC
         public UInt160[] GetBlockedAccounts()
         {
             var result = (VM.Types.Array)TestInvoke(scriptHash, "getBlockedAccounts").Stack.Single().ToStackItem();
-            return result.Select(p => new UInt160(p.GetByteArray())).ToArray();
+            return result.Select(p => new UInt160(p.GetSpan().ToArray())).ToArray();
         }
     }
 }
