@@ -21,6 +21,17 @@ namespace Neo.IO
             }
         }
 
+        public static unsafe T AsSerializable<T>(this ReadOnlySpan<byte> value) where T : ISerializable, new()
+        {
+            if (value.IsEmpty) throw new FormatException();
+            fixed (byte* pointer = value)
+            {
+                using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
+                using BinaryReader reader = new BinaryReader(ms, Encoding.UTF8);
+                return reader.ReadSerializable<T>();
+            }
+        }
+
         public static ISerializable AsSerializable(this byte[] value, Type type)
         {
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
@@ -39,6 +50,17 @@ namespace Neo.IO
             using (MemoryStream ms = new MemoryStream(value, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
+                return reader.ReadSerializableArray<T>(max);
+            }
+        }
+
+        public static unsafe T[] AsSerializableArray<T>(this ReadOnlySpan<byte> value, int max = 0x1000000) where T : ISerializable, new()
+        {
+            if (value.IsEmpty) throw new FormatException();
+            fixed (byte* pointer = value)
+            {
+                using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
+                using BinaryReader reader = new BinaryReader(ms, Encoding.UTF8);
                 return reader.ReadSerializableArray<T>(max);
             }
         }
@@ -245,7 +267,7 @@ namespace Neo.IO
             }
         }
 
-        public static void WriteVarBytes(this BinaryWriter writer, byte[] value)
+        public static void WriteVarBytes(this BinaryWriter writer, ReadOnlySpan<byte> value)
         {
             writer.WriteVarInt(value.Length);
             writer.Write(value);

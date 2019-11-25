@@ -1,80 +1,44 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace Neo.IO.Caching
 {
-    public class ReflectionCache<T> : Dictionary<T, Type>
+    internal static class ReflectionCache<T> where T : Enum
     {
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public ReflectionCache() { }
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <typeparam name="EnumType">Enum type</typeparam>
-        public static ReflectionCache<T> CreateFromEnum<EnumType>() where EnumType : struct, IConvertible
+        private static readonly Dictionary<T, Type> dictionary = new Dictionary<T, Type>();
+
+        public static int Count => dictionary.Count;
+
+        static ReflectionCache()
         {
-            Type enumType = typeof(EnumType);
-
-            if (!enumType.GetTypeInfo().IsEnum)
-                throw new ArgumentException("K must be an enumerated type");
-
-            // Cache all types
-            ReflectionCache<T> r = new ReflectionCache<T>();
-
-            foreach (object t in Enum.GetValues(enumType))
+            Type enumType = typeof(T);
+            foreach (FieldInfo field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
             {
-                // Get enumn member
-                MemberInfo[] memInfo = enumType.GetMember(t.ToString());
-                if (memInfo == null || memInfo.Length != 1)
-                    throw (new FormatException());
-
                 // Get attribute
-                ReflectionCacheAttribute attribute = memInfo[0].GetCustomAttributes(typeof(ReflectionCacheAttribute), false)
-                    .Cast<ReflectionCacheAttribute>()
-                    .FirstOrDefault();
-
-                if (attribute == null)
-                    throw (new FormatException());
+                ReflectionCacheAttribute attribute = field.GetCustomAttribute<ReflectionCacheAttribute>();
+                if (attribute == null) continue;
 
                 // Append to cache
-                r.Add((T)t, attribute.Type);
+                dictionary.Add((T)field.GetValue(null), attribute.Type);
             }
-            return r;
         }
-        /// <summary>
-        /// Create object from key
-        /// </summary>
-        /// <param name="key">Key</param>
-        /// <param name="def">Default value</param>
-        public object CreateInstance(T key, object def = null)
-        {
-            Type tp;
 
+        public static object CreateInstance(T key, object def = null)
+        {
             // Get Type from cache
-            if (TryGetValue(key, out tp)) return Activator.CreateInstance(tp);
+            if (dictionary.TryGetValue(key, out Type t))
+                return Activator.CreateInstance(t);
 
             // return null
             return def;
         }
-        /// <summary>
-        /// Create object from key
-        /// </summary>
-        /// <typeparam name="K">Type</typeparam>
-        /// <param name="key">Key</param>
-        /// <param name="def">Default value</param>
-        public K CreateInstance<K>(T key, K def = default(K))
+
+        public static ISerializable CreateSerializable(T key, byte[] data)
         {
-            Type tp;
-
-            // Get Type from cache
-            if (TryGetValue(key, out tp)) return (K)Activator.CreateInstance(tp);
-
-            // return null
-            return def;
+            if (dictionary.TryGetValue(key, out Type t))
+                return data.AsSerializable(t);
+            return null;
         }
     }
 }

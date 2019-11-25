@@ -5,7 +5,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -169,7 +168,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(Encoding.Default.GetString(expectedArray7), Encoding.Default.GetString(result7));
 
             StackItem stackItem81 = new VM.Types.Integer(1);
-            Dictionary<StackItem, StackItem> list8 = new Dictionary<StackItem, StackItem>
+            Dictionary<PrimitiveType, StackItem> list8 = new Dictionary<PrimitiveType, StackItem>
                     {
                         { new VM.Types.Integer(2), stackItem81 }
                     };
@@ -180,7 +179,7 @@ namespace Neo.UnitTests.SmartContract
                     };
             Assert.AreEqual(Encoding.Default.GetString(expectedArray8), Encoding.Default.GetString(result8));
 
-            StackItem stackItem9 = new VM.Types.Integer(1);
+            Integer stackItem9 = new VM.Types.Integer(1);
             Map stackItem91 = new VM.Types.Map();
             stackItem91.Add(stackItem9, stackItem91);
             Action action9 = () => Neo.SmartContract.Helper.Serialize(stackItem91);
@@ -235,7 +234,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(((VM.Types.Struct)stackItem62).GetEnumerator().Current, ((VM.Types.Struct)result6).GetEnumerator().Current);
 
             StackItem stackItem71 = new VM.Types.Integer(1);
-            Dictionary<StackItem, StackItem> list7 = new Dictionary<StackItem, StackItem>();
+            Dictionary<PrimitiveType, StackItem> list7 = new Dictionary<PrimitiveType, StackItem>();
             list7.Add(new VM.Types.Integer(2), stackItem71);
             StackItem stackItem72 = new VM.Types.Map(list7);
             byte[] byteArray7 = Neo.SmartContract.Helper.Serialize(stackItem72);
