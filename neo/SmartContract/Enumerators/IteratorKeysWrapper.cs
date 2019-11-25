@@ -1,5 +1,5 @@
 using Neo.SmartContract.Iterators;
-using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Enumerators
 {

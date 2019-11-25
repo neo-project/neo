@@ -1,8 +1,8 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.UnitTests.SmartContract
 {
