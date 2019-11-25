@@ -323,8 +323,13 @@ namespace Neo.Consensus
 
         private void TryToSavePayloadIntoArray(ConsensusPayload[] payloadsArray, ConsensusPayload payload, byte pViewNumber)
         {
-            byte lastViewNumber = payloadsArray[payload.ValidatorIndex] != null ? (byte)payloadsArray[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
-            uint lastHeight = payloadsArray[payload.ValidatorIndex] != null ? payloadsArray[payload.ValidatorIndex].BlockIndex : 0;
+            byte lastViewNumber = 0;
+            byte lastHeight = 0;
+            if (payloadsArray[payload.ValidatorIndex] != null)
+            {
+                lastViewNumber = (byte)payloadsArray[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber;
+                lastHeight = (byte)payloadsArray[payload.ValidatorIndex].BlockIndex;
+            }
             if (payload.BlockIndex < lastHeight)
             {
                 Log($"Trying to save validator {payload.ValidatorIndex} payload from height {payload.BlockIndex} but payload of {lastHeight} is already known", LogLevel.Warning);
