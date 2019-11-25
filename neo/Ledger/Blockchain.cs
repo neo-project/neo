@@ -90,7 +90,7 @@ namespace Neo.Ledger
                 foreach (NativeContract contract in contracts)
                     sb.EmitAppCall(contract.Hash, "onPersist");
 
-                onPersistNativeContractScript = new Script(sb.ToArray());
+                onPersistNativeContractScript = sb.ToArray();
             }
         }
 
