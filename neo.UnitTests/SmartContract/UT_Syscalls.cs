@@ -75,8 +75,8 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
-                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().ToHexString(),
-                    "5b22556168355c2f4b6f446d39723064555950636353714346745a30594f726b583164646e7334366e676e3962383d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c312c224141414141414141414141414141414141414141414141414141413d222c315d");
+                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
+                    "5b22556168352f4b6f446d39723064555950636353714346745a30594f726b583164646e7334366e676e3962383d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c312c224141414141414141414141414141414141414141414141414141413d222c315d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // Clean
@@ -126,8 +126,8 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
-                Assert.AreEqual(engine.ResultStack.Pop().GetByteArray().ToHexString(),
-                    @"5b225c75303032426b53415959527a4c4b69685a676464414b50596f754655737a63544d7867445a6572584a3172784c37303d222c362c342c225c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f5c2f383d222c332c322c352c2241513d3d225d");
+                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
+                    @"5b225c75303032426b53415959527a4c4b69685a676464414b50596f754655737a63544d7867445a6572584a3172784c37303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }

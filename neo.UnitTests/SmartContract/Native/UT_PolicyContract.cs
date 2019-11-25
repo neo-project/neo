@@ -7,6 +7,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -67,7 +68,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
                 "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = 1024 });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -78,7 +79,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                  "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = Neo.Network.P2P.Message.PayloadMaxSize });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -89,7 +90,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = 1024 });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeTrue();
+            ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -113,7 +114,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "setMaxTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -124,7 +125,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "setMaxTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeTrue();
+            ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -148,7 +149,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -159,7 +160,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeTrue();
+            ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -183,7 +184,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
@@ -194,31 +195,31 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeTrue();
+            ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(1);
-            ((VM.Types.Array)ret)[0].GetByteArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
+            ((VM.Types.Array)ret)[0].GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
 
             // Unblock without signature
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(1);
-            ((VM.Types.Array)ret)[0].GetByteArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
+            ((VM.Types.Array)ret)[0].GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
 
             // Unblock with signature
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeTrue();
+            ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();

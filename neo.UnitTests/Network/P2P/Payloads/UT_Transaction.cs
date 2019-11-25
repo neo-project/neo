@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -247,7 +247,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -367,7 +367,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -461,7 +461,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -558,7 +558,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -715,7 +715,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -1065,7 +1065,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }

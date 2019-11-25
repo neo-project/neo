@@ -8,7 +8,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 
 namespace Neo.UnitTests.Extensions
 {
@@ -66,7 +65,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
-            return (result as VM.Types.Boolean).GetBoolean();
+            return result.ToBoolean();
         }
 
         public static string[] SupportedStandards(this NativeContract contract)
@@ -87,7 +86,7 @@ namespace Neo.UnitTests.Extensions
             result.Should().BeOfType(typeof(VM.Types.Array));
 
             return (result as VM.Types.Array).ToArray()
-                .Select(u => Encoding.ASCII.GetString(u.GetByteArray()))
+                .Select(u => u.GetString())
                 .ToArray();
         }
 
@@ -169,7 +168,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
 
-            return Encoding.UTF8.GetString((result as VM.Types.ByteArray).GetByteArray());
+            return result.GetString();
         }
 
         public static string Name(this NativeContract contract)
@@ -189,7 +188,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
 
-            return Encoding.UTF8.GetString((result as VM.Types.ByteArray).GetByteArray());
+            return result.GetString();
         }
     }
 }

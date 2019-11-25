@@ -7,6 +7,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -144,7 +145,7 @@ namespace Neo.SmartContract.Native
         private StackItem BlockAccount(ApplicationEngine engine, VMArray args)
         {
             if (!CheckValidators(engine)) return false;
-            UInt160 account = new UInt160(args[0].GetByteArray());
+            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
             HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
@@ -158,7 +159,7 @@ namespace Neo.SmartContract.Native
         private StackItem UnblockAccount(ApplicationEngine engine, VMArray args)
         {
             if (!CheckValidators(engine)) return false;
-            UInt160 account = new UInt160(args[0].GetByteArray());
+            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
             HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());

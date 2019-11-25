@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, SafeMethod = true)]
         private StackItem UnclaimedGas(ApplicationEngine engine, VMArray args)
         {
-            UInt160 account = new UInt160(args[0].GetByteArray());
+            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             uint end = (uint)args[1].GetBigInteger();
             return UnclaimedGas(engine.Snapshot, account, end);
         }
@@ -135,7 +135,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
         private StackItem RegisterValidator(ApplicationEngine engine, VMArray args)
         {
-            ECPoint pubkey = args[0].GetByteArray().AsSerializable<ECPoint>();
+            ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
             return RegisterValidator(engine.Snapshot, pubkey);
         }
 
@@ -153,8 +153,8 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
         private StackItem Vote(ApplicationEngine engine, VMArray args)
         {
-            UInt160 account = new UInt160(args[0].GetByteArray());
-            ECPoint[] pubkeys = ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray();
+            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
+            ECPoint[] pubkeys = ((VMArray)args[1]).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToArray();
             if (!InteropService.CheckWitness(engine, account)) return false;
             StorageKey key_account = CreateAccountKey(account);
             if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
@@ -266,7 +266,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 base.FromStruct(@struct);
                 BalanceHeight = (uint)@struct[1].GetBigInteger();
-                Votes = @struct[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators);
+                Votes = @struct[2].GetSpan().AsSerializableArray<ECPoint>(Blockchain.MaxValidators);
             }
 
             protected override Struct ToStruct()

@@ -1,5 +1,5 @@
 using Neo.Ledger;
-using Neo.VM;
+using Neo.VM.Types;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
@@ -18,7 +18,7 @@ namespace Neo.SmartContract.Iterators
             enumerator.Dispose();
         }
 
-        public StackItem Key()
+        public PrimitiveType Key()
         {
             return enumerator.Current.Key.Key;
         }

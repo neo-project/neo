@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;

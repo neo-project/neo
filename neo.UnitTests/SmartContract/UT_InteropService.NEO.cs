@@ -34,13 +34,13 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaVerify).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(new byte[70]);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaVerify).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
         }
 
         [TestMethod]
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             pubkeys = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(signatures);
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
 
             pubkeys = new VMArray
             {
@@ -125,7 +125,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             InteropService.Invoke(engine, InteropService.Neo_Crypto_ECDsaCheckMultiSig).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
         }
 
         [TestMethod]
@@ -138,7 +138,7 @@ namespace Neo.UnitTests.SmartContract
                                     0x01, 0x01, 0x01, 0x01, 0x01 };
             engine.CurrentContext.EvaluationStack.Push(hash);
             InteropService.Invoke(engine, InteropService.Neo_Account_IsStandard).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
@@ -147,7 +147,7 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
             InteropService.Invoke(engine, InteropService.Neo_Account_IsStandard).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
         }
 
         [TestMethod]
@@ -284,7 +284,7 @@ namespace Neo.UnitTests.SmartContract
             var iterator = ((InteropInterface<StorageIterator>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<StorageIterator>();
             iterator.Next();
             var ele = iterator.Value();
-            ele.GetByteArray().ToHexString().Should().Be(storageItem.Value.ToHexString());
+            ele.GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Neo_Storage_Find).Should().BeFalse();
@@ -302,7 +302,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Create).Should().BeTrue();
             var ret = (InteropInterface<IEnumerator>)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<IEnumerator>().Next();
-            ret.GetInterface<IEnumerator>().Value().GetByteArray().ToHexString()
+            ret.GetInterface<IEnumerator>().Value().GetSpan().ToHexString()
                 .Should().Be(new byte[] { 0x01 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
@@ -319,7 +319,7 @@ namespace Neo.UnitTests.SmartContract
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<ArrayWrapper>(new ArrayWrapper(arr)));
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Next).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBoolean().Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Next).Should().BeFalse();
@@ -337,7 +337,7 @@ namespace Neo.UnitTests.SmartContract
             wrapper.Next();
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<ArrayWrapper>(wrapper));
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Value).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Value).Should().BeFalse();
@@ -362,7 +362,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Enumerator_Concat).Should().BeTrue();
             var ret = ((InteropInterface<IEnumerator>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<IEnumerator>();
             ret.Next().Should().BeTrue();
-            ret.Value().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            ret.Value().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
         }
 
         [TestMethod]
@@ -377,7 +377,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Create).Should().BeTrue();
             var ret = (InteropInterface<IIterator>)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<IIterator>().Next();
-            ret.GetInterface<IIterator>().Value().GetByteArray().ToHexString()
+            ret.GetInterface<IIterator>().Value().GetSpan().ToHexString()
                 .Should().Be(new byte[] { 0x01 }.ToHexString());
 
             var map = new Map
@@ -446,7 +446,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Values).Should().BeTrue();
             var ret = ((InteropInterface<IteratorValuesWrapper>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<IteratorValuesWrapper>();
             ret.Next();
-            ret.Value().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            ret.Value().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Values).Should().BeFalse();
@@ -471,7 +471,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Concat).Should().BeTrue();
             var ret = ((InteropInterface<IIterator>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<IIterator>();
             ret.Next().Should().BeTrue();
-            ret.Value().GetByteArray().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            ret.Value().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
         }
 
         [TestMethod]
