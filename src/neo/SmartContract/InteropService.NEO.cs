@@ -259,11 +259,20 @@ namespace Neo.SmartContract
 
         private static bool Enumerator_Create(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is VMArray array)
+            switch (engine.CurrentContext.EvaluationStack.Pop())
             {
-                IEnumerator enumerator = new ArrayWrapper(array);
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
-                return true;
+                case VMArray array:
+                    {
+                        IEnumerator enumerator = new ArrayWrapper(array);
+                        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
+                        return true;
+                    }
+                case PrimitiveType primitive:
+                    {
+                        IEnumerator enumerator = new PrimitiveWrapper(primitive);
+                        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
+                        return true;
+                    }
             }
             return false;
         }
