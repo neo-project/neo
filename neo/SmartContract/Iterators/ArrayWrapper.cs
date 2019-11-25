@@ -1,4 +1,4 @@
-using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 
@@ -18,7 +18,7 @@ namespace Neo.SmartContract.Iterators
         {
         }
 
-        public StackItem Key()
+        public PrimitiveType Key()
         {
             if (index < 0)
                 throw new InvalidOperationException();
