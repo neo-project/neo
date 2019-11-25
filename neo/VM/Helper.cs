@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using VMArray = Neo.VM.Types.Array;
 using VMBoolean = Neo.VM.Types.Boolean;
 
@@ -165,6 +166,32 @@ namespace Neo.VM
             return sb.EmitSysCall(method);
         }
 
+        public static BigInteger GetBigInteger(this StackItem item)
+        {
+            if (!(item is PrimitiveType primitive))
+                throw new ArgumentException();
+            return primitive.ToBigInteger();
+        }
+
+        public static int GetByteLength(this StackItem item)
+        {
+            if (!(item is PrimitiveType primitive))
+                throw new ArgumentException();
+            return primitive.GetByteLength();
+        }
+
+        public static ReadOnlySpan<byte> GetSpan(this StackItem item)
+        {
+            if (!(item is PrimitiveType primitive))
+                throw new ArgumentException();
+            return primitive.ToByteArray();
+        }
+
+        public static string GetString(this StackItem item)
+        {
+            return Encoding.UTF8.GetString(item.GetSpan());
+        }
+
         /// <summary>
         /// Generate scripts to call a specific method from a specific contract.
         /// </summary>
@@ -222,14 +249,14 @@ namespace Neo.VM
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Boolean,
-                        Value = item.GetBoolean()
+                        Value = item.ToBoolean()
                     };
                     break;
                 case ByteArray _:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
-                        Value = item.GetByteArray()
+                        Value = item.GetSpan().ToArray()
                     };
                     break;
                 case Integer _:
@@ -279,7 +306,7 @@ namespace Neo.VM
                         stackItem = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter))?.Item1;
                     if (stackItem is null)
                     {
-                        stackItem = new Map(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).ToDictionary(p => ToStackItem(p.Key, context), p => ToStackItem(p.Value, context)));
+                        stackItem = new Map(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).ToDictionary(p => (PrimitiveType)ToStackItem(p.Key, context), p => ToStackItem(p.Value, context)));
                         context.Add(new Tuple<StackItem, ContractParameter>(stackItem, parameter));
                     }
                     break;
