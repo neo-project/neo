@@ -55,6 +55,7 @@ namespace Neo.Ledger
 
         private readonly static Script onPersistNativeContractScript;
         private const int MaxTxToReverifyPerIdle = 10;
+        private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
@@ -99,7 +100,7 @@ namespace Neo.Ledger
             this.system = system;
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
-            lock (typeof(Blockchain))
+            lock (lockObj)
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
