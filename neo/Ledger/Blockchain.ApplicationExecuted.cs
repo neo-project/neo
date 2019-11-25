@@ -1,6 +1,7 @@
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
+using Neo.VM.Types;
 using System.Linq;
 
 namespace Neo.Ledger

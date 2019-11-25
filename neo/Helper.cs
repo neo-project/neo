@@ -186,6 +186,14 @@ namespace Neo
             return sb.ToString();
         }
 
+        public static string ToHexString(this ReadOnlySpan<byte> value)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in value)
+                sb.AppendFormat("{0:x2}", b);
+            return sb.ToString();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe internal static int ToInt32(this byte[] value, int startIndex)
         {
