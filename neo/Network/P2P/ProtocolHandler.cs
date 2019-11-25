@@ -11,6 +11,7 @@ using Neo.Plugins;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 
@@ -19,24 +20,52 @@ namespace Neo.Network.P2P
     internal class ProtocolHandler : UntypedActor
     {
         public class SetFilter { public BloomFilter Filter; }
+        internal class Timer { }
+
+        private class PendingKnownHashesCollection : KeyedCollection<UInt256, (UInt256, DateTime)>
+        {
+            protected override UInt256 GetKeyForItem((UInt256, DateTime) item)
+            {
+                return item.Item1;
+            }
+        }
 
         private readonly NeoSystem system;
+        private readonly PendingKnownHashesCollection pendingKnownHashes;
         private readonly FIFOSet<UInt256> knownHashes;
         private readonly FIFOSet<UInt256> sentHashes;
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
 
+        private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
+
+        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
+
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;
+            this.pendingKnownHashes = new PendingKnownHashesCollection();
             this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
             this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
         }
 
         protected override void OnReceive(object message)
         {
-            if (!(message is Message msg)) return;
+            switch (message)
+            {
+                case Message msg:
+                    OnMessage(msg);
+                    break;
+                case Timer _:
+                    OnTimer();
+                    break;
+            }
+        }
+
+        private void OnMessage(Message msg)
+        {
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnP2PMessage(msg))
                     return;
@@ -249,11 +278,13 @@ namespace Neo.Network.P2P
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
             if (inventory is MinerTransaction) return;
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+            pendingKnownHashes.Remove(inventory.Hash);
+            knownHashes.Add(inventory.Hash);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            UInt256[] hashes = payload.Hashes.Where(p => knownHashes.Add(p) && !sentHashes.Contains(p)).ToArray();
+            UInt256[] hashes = payload.Hashes.Where(p => !pendingKnownHashes.Contains(p) && !knownHashes.Contains(p) && !sentHashes.Contains(p)).ToArray();
             if (hashes.Length == 0) return;
             switch (payload.Type)
             {
@@ -267,6 +298,8 @@ namespace Neo.Network.P2P
                     break;
             }
             if (hashes.Length == 0) return;
+            foreach (UInt256 hash in hashes)
+                pendingKnownHashes.Add((hash, DateTime.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) }, Context.Parent);
         }
 
@@ -297,6 +330,28 @@ namespace Neo.Network.P2P
         {
             version = payload;
             Context.Parent.Tell(payload);
+        }
+
+        private void OnTimer()
+        {
+            RefreshPendingKnownHashes();
+        }
+
+        protected override void PostStop()
+        {
+            timer.CancelIfNotNull();
+            base.PostStop();
+        }
+
+        private void RefreshPendingKnownHashes()
+        {
+            while (pendingKnownHashes.Count > 0)
+            {
+                var (_, time) = pendingKnownHashes[0];
+                if (DateTime.UtcNow - time <= PendingTimeout)
+                    break;
+                pendingKnownHashes.RemoveAt(0);
+            }
         }
 
         public static Props Props(NeoSystem system)
@@ -332,6 +387,7 @@ namespace Neo.Network.P2P
 
         internal protected override bool ShallDrop(object message, IEnumerable queue)
         {
+            if (message is ProtocolHandler.Timer) return false;
             if (!(message is Message msg)) return true;
             switch (msg.Command)
             {
