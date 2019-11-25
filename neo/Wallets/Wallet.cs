@@ -279,6 +279,7 @@ namespace Neo.Wallets
 
         public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
         {
+            Random rand = new Random();
             var cOutputs = outputs.Where(p => !p.IsGlobalAsset).GroupBy(p => new
             {
                 AssetId = (UInt160)p.AssetId,
@@ -291,13 +292,22 @@ namespace Neo.Wallets
             }).ToArray();
             Transaction tx;
             if (attributes == null) attributes = new List<TransactionAttribute>();
+
+            // Generate nonce
+            var nonce = new byte[8];
+            rand.NextBytes(nonce);
+            attributes.Add(new TransactionAttribute()
+            {
+                Usage = TransactionAttributeUsage.Remark,
+                Data = nonce
+            });
+
             if (cOutputs.Length == 0)
             {
                 tx = new ContractTransaction();
             }
             else
             {
-                Random rand = new Random();
                 UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
                 HashSet<UInt160> sAttributes = new HashSet<UInt160>();
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -347,9 +357,7 @@ namespace Neo.Wallets
                             sb.Emit(OpCode.THROWIFNOT);
                         }
                     }
-                    byte[] nonce = new byte[8];
-                    rand.NextBytes(nonce);
-                    sb.Emit(OpCode.RET, nonce);
+                    sb.Emit(OpCode.RET);
                     tx = new InvocationTransaction
                     {
                         Version = 1,
