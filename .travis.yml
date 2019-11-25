@@ -18,7 +18,7 @@ install:
 script: |
   echo "Checking format..." 
   dotnet format --check --dry-run -w . -v diagnostic # check C# formatting for neo.sln
-  cd neo.UnitTests
+  cd tests/neo.UnitTests
   if [[ "$TEST_SUITE" == "cultures" ]]; then
       dotnet test -v m --filter FullyQualifiedName=Neo.UnitTests.UT_Culture.All_Tests_Cultures
   else
