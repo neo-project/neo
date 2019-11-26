@@ -1,4 +1,3 @@
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -6,12 +5,12 @@ namespace Neo.SmartContract.Iterators
 {
     internal class ByteArrayWrapper : IIterator
     {
-        private readonly byte[] value;
+        private readonly byte[] array;
         private int index = -1;
 
-        public ByteArrayWrapper(PrimitiveType array)
+        public ByteArrayWrapper(PrimitiveType value)
         {
-            this.value = array.GetSpan().ToArray();
+            this.array = value.ToByteArray().ToArray();
         }
 
         public void Dispose() { }
@@ -26,7 +25,7 @@ namespace Neo.SmartContract.Iterators
         public bool Next()
         {
             int next = index + 1;
-            if (next >= value.Length)
+            if (next >= array.Length)
                 return false;
             index = next;
             return true;
@@ -36,7 +35,7 @@ namespace Neo.SmartContract.Iterators
         {
             if (index < 0)
                 throw new InvalidOperationException();
-            return new Integer(value[index]);
+            return new Integer(array[index]);
         }
     }
 }
