@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Ledger
             do
             {
                 tx = GenerateTx(networkFee, size);
-            } while (tx.Hash >= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
+            } while (tx.Hash < new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
 
             return tx;
         }
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.Ledger
             do
             {
                 tx = GenerateTx(networkFee, size);
-            } while (tx.Hash <= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
+            } while (tx.Hash > new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
 
             return tx;
         }
