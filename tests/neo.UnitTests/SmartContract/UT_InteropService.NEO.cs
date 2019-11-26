@@ -308,7 +308,7 @@ namespace Neo.UnitTests.SmartContract
                 .Should().Be(new byte[] { 0x01 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Enumerator_Create).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Neo_Enumerator_Create).Should().BeTrue();
         }
 
         [TestMethod]
