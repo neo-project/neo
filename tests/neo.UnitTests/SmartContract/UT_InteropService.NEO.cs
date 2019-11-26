@@ -382,6 +382,10 @@ namespace Neo.UnitTests.SmartContract
             ret.GetInterface<IIterator>().Value().GetSpan().ToHexString()
                 .Should().Be(new byte[] { 0x01 }.ToHexString());
 
+            var interop = new InteropInterface<object>(1);
+            engine.CurrentContext.EvaluationStack.Push(interop);
+            InteropService.Invoke(engine, InteropService.Neo_Iterator_Create).Should().BeFalse();
+
             var map = new Map
             {
                 { new Integer(1), new Integer(2) },
