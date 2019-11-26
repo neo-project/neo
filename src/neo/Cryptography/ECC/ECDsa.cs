@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 
@@ -26,7 +25,7 @@ namespace Neo.Cryptography.ECC
         private BigInteger CalculateE(BigInteger n, byte[] message)
         {
             int messageBitLength = message.Length * 8;
-            BigInteger trunc = new BigInteger(message.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger trunc = new BigInteger(message, isUnsigned: true, isBigEndian: true);
             if (n.GetBitLength() < messageBitLength)
             {
                 trunc >>= messageBitLength - n.GetBitLength();
@@ -38,7 +37,7 @@ namespace Neo.Cryptography.ECC
         {
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
-            BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger d = new BigInteger(privateKey, isUnsigned: true, isBigEndian: true);
             BigInteger r, s;
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
