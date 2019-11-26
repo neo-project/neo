@@ -28,9 +28,7 @@ namespace Neo.Cryptography.ECC
             if (obj == this)
                 return true;
 
-            ECFieldElement other = obj as ECFieldElement;
-
-            if (other == null)
+            if (!(obj is ECFieldElement other))
                 return false;
 
             return Equals(other);
@@ -145,7 +143,7 @@ namespace Neo.Cryptography.ECC
             byte[] data = Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             if (data.Length == 32)
                 return data;
-            return Enumerable.Repeat<byte>(0, 32 - data.Length).Concat(data).ToArray();
+            return new byte[32 - data.Length].Concat(data);
         }
 
         public static ECFieldElement operator -(ECFieldElement x)

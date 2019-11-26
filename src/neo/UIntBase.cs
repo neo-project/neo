@@ -1,7 +1,6 @@
 using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Neo
@@ -62,7 +61,7 @@ namespace Neo
                 return true;
             if (data_bytes.Length != other.data_bytes.Length)
                 return false;
-            return data_bytes.SequenceEqual(other.data_bytes);
+            return Helper.MemoryEquals(data_bytes, other.data_bytes);
         }
 
         /// <summary>

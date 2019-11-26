@@ -17,6 +17,77 @@ namespace Neo
     {
         private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        #region Avoid Linq
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static bool MemoryEquals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
+        {
+            if (x == y) return true;
+            int len = x.Length;
+            if (len != y.Length) return false;
+            if (len == 0) return true;
+            fixed (byte* xp = x, yp = y)
+            {
+                long* xlp = (long*)xp, ylp = (long*)yp;
+                for (; len >= 8; len -= 8)
+                {
+                    if (*xlp != *ylp) return false;
+                    xlp++;
+                    ylp++;
+                }
+                byte* xbp = (byte*)xlp, ybp = (byte*)ylp;
+                for (; len > 0; len--)
+                {
+                    if (*xbp != *ybp) return false;
+                    xbp++;
+                    ybp++;
+                }
+            }
+            return true;
+        }
+
+        public static T[] Reverse<T>(this T[] origin)
+        {
+            var ret = new T[origin.Length];
+            for (int x = 0, m = ret.Length - 1; x <= m; x++)
+            {
+                ret[x] = origin[m - x];
+            }
+            return ret;
+        }
+
+        public static byte[] Skip(this byte[] a, int index)
+        {
+            var length = a.Length - index;
+
+            if (length < 0) throw new ArgumentException(nameof(a));
+
+            var ret = new byte[length];
+            Buffer.BlockCopy(a, index, ret, 0, length);
+            return ret;
+        }
+
+        public static byte[] Take(this byte[] a, int count) => Take(a, 0, count);
+
+        public static byte[] Take(this byte[] a, int index, int count)
+        {
+            if (count < 0) throw new ArgumentException(nameof(count));
+
+            var ret = new byte[count];
+            Buffer.BlockCopy(a, index, ret, 0, count);
+            return ret;
+        }
+
+        public static byte[] Concat(this byte[] a, byte[] b)
+        {
+            var ret = new byte[a.Length + b.Length];
+            Buffer.BlockCopy(a, 0, ret, 0, a.Length);
+            Buffer.BlockCopy(b, 0, ret, a.Length, b.Length);
+            return ret;
+        }
+
+        #endregion
+
         private static int BitLen(int w)
         {
             return (w < 1 << 15 ? (w < 1 << 7

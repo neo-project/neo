@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Linq;
 
 namespace Neo
 {
@@ -82,7 +81,7 @@ namespace Neo
                 value = value.Substring(2);
             if (value.Length != Length * 2)
                 throw new FormatException();
-            return new UInt160(value.HexToBytes().Reverse().ToArray());
+            return new UInt160(value.HexToBytes().Reverse());
         }
 
         /// <summary>
@@ -110,7 +109,7 @@ namespace Neo
                     result = null;
                     return false;
                 }
-            result = new UInt160(data.Reverse().ToArray());
+            result = new UInt160(data.Reverse());
             return true;
         }
 

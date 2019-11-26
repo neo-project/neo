@@ -27,7 +27,7 @@ namespace Neo.Cryptography
             var leadingZeros = new byte[leadingZeroCount];
             if (bi.IsZero) return leadingZeros;
             var bytesWithoutLeadingZeros = bi.ToByteArray(isUnsigned: true, isBigEndian: true);
-            return leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
+            return leadingZeros.Concat(bytesWithoutLeadingZeros);
         }
 
         public static string Encode(byte[] input)
