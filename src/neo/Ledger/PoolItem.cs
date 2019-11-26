@@ -27,12 +27,7 @@ namespace Neo.Ledger
         public DateTime LastBroadcastTimestamp;
 
         /// <summary>
-        /// Cache Tx's Hash to avoid recompute when comparing
-        /// </summary>
-        public UInt256 TxHashCache;
-
-        /// <summary>
-        /// Cache Tx's Hash to avoid recompute when comparing
+        /// Cache Tx's FeePerByte to avoid recompute when comparing
         /// </summary>
         public long TxFeePerByteCache;
 
@@ -41,7 +36,6 @@ namespace Neo.Ledger
             Tx = tx;
             Timestamp = TimeProvider.Current.UtcNow;
             LastBroadcastTimestamp = Timestamp;
-            TxHashCache = tx.Hash;
             TxFeePerByteCache = tx.FeePerByte;
         }
 
@@ -65,7 +59,7 @@ namespace Neo.Ledger
             if (ret != 0) return ret;
             ret = Tx.NetworkFee.CompareTo(otherItem.Tx.NetworkFee);
             if (ret != 0) return ret;
-            return TxHashCache.CompareTo(otherItem.TxHashCache);
+            return otherItem.Tx.Hash.CompareTo(Tx.Hash);
         }
     }
 }
