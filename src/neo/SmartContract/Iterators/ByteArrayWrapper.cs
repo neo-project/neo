@@ -4,12 +4,12 @@ using System;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class PrimitiveWrapper : IIterator
+    internal class ByteArrayWrapper : IIterator
     {
         private readonly byte[] value;
         private int index = -1;
 
-        public PrimitiveWrapper(PrimitiveType array)
+        public ByteArrayWrapper(PrimitiveType array)
         {
             this.value = array.GetSpan().ToArray();
         }

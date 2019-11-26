@@ -269,7 +269,7 @@ namespace Neo.SmartContract
                     }
                 case PrimitiveType primitive:
                     {
-                        IEnumerator enumerator = new PrimitiveWrapper(primitive);
+                        IEnumerator enumerator = new ByteArrayWrapper(primitive);
                         engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
                         return true;
                     }
