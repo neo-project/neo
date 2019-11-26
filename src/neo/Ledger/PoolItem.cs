@@ -61,11 +61,11 @@ namespace Neo.Ledger
         {
             if (otherItem == null) return 1;
             if (otherItem.Tx == null) return 1;
-            int ret = TxFeePerByteCache.CompareTo(otherItem.TxFeePerByte);
+            int ret = TxFeePerByteCache.CompareTo(otherItem.TxFeePerByteCache);
             if (ret != 0) return ret;
             ret = Tx.NetworkFee.CompareTo(otherItem.Tx.NetworkFee);
             if (ret != 0) return ret;
-            return TxHashCache.CompareTo(otherItem.TxHash);
+            return TxHashCache.CompareTo(otherItem.TxHashCache);
         }
     }
 }
