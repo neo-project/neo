@@ -142,12 +142,10 @@ namespace Neo.Cryptography.ECC
 
         public byte[] ToByteArray()
         {
-            byte[] data = Value.ToByteArray();
+            byte[] data = Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             if (data.Length == 32)
-                return data.Reverse().ToArray();
-            if (data.Length > 32)
-                return data.Take(32).Reverse().ToArray();
-            return Enumerable.Repeat<byte>(0, 32 - data.Length).Concat(data.Reverse()).ToArray();
+                return data;
+            return Enumerable.Repeat<byte>(0, 32 - data.Length).Concat(data).ToArray();
         }
 
         public static ECFieldElement operator -(ECFieldElement x)
