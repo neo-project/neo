@@ -46,6 +46,7 @@ namespace Neo
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T[] Reverse<T>(this T[] origin)
         {
             var ret = new T[origin.Length];
@@ -56,6 +57,7 @@ namespace Neo
             return ret;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Skip(this byte[] a, int index)
         {
             var length = a.Length - index;
@@ -67,8 +69,10 @@ namespace Neo
             return ret;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Take(this byte[] a, int count) => Take(a, 0, count);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Take(this byte[] a, int index, int count)
         {
             if (count < 0) throw new ArgumentException(nameof(count));
@@ -78,6 +82,7 @@ namespace Neo
             return ret;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Concat(this byte[] a, byte[] b)
         {
             var ret = new byte[a.Length + b.Length];
