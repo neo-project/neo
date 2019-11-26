@@ -395,7 +395,7 @@ namespace Neo.UnitTests.SmartContract
             ret.GetInterface<IIterator>().Value().GetBigInteger().Should().Be(2);
 
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Neo_Iterator_Create).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Neo_Iterator_Create).Should().BeTrue();
         }
 
         [TestMethod]

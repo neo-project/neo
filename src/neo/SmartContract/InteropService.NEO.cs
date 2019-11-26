@@ -259,22 +259,20 @@ namespace Neo.SmartContract
 
         private static bool Enumerator_Create(ApplicationEngine engine)
         {
+            IEnumerator enumerator;
             switch (engine.CurrentContext.EvaluationStack.Pop())
             {
                 case VMArray array:
-                    {
-                        IEnumerator enumerator = new ArrayWrapper(array);
-                        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
-                        return true;
-                    }
+                    enumerator = new ArrayWrapper(array);
+                    break;
                 case PrimitiveType primitive:
-                    {
-                        IEnumerator enumerator = new ByteArrayWrapper(primitive);
-                        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
-                        return true;
-                    }
+                    enumerator = new ByteArrayWrapper(primitive);
+                    break;
+                default:
+                    return false;
             }
-            return false;
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
+            return true;
         }
 
         private static bool Enumerator_Next(ApplicationEngine engine)
@@ -320,6 +318,9 @@ namespace Neo.SmartContract
                     break;
                 case Map map:
                     iterator = new MapWrapper(map);
+                    break;
+                case PrimitiveType primitive:
+                    iterator = new ByteArrayWrapper(primitive);
                     break;
                 default:
                     return false;
