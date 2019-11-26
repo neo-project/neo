@@ -58,8 +58,6 @@ namespace Neo.Network.P2P
         {
             Flags = (MessageFlags)reader.ReadByte();
             Command = (MessageCommand)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(MessageCommand), Command))
-                throw new FormatException();
             _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
             DecompressPayload();
         }
@@ -110,8 +108,6 @@ namespace Neo.Network.P2P
                 Command = (MessageCommand)header[1],
                 _payload_compressed = length <= 0 ? new byte[0] : data.Slice(payloadIndex, (int)length).ToArray()
             };
-            if (!Enum.IsDefined(typeof(MessageCommand), msg.Command))
-                throw new FormatException();
             msg.DecompressPayload();
 
             return payloadIndex + (int)length;

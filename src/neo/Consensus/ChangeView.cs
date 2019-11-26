@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 
 namespace Neo.Consensus
@@ -33,8 +32,6 @@ namespace Neo.Consensus
             base.Deserialize(reader);
             Timestamp = reader.ReadUInt64();
             Reason = (ChangeViewReason)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(ChangeViewReason), Reason))
-                throw new FormatException();
         }
 
         public override void Serialize(BinaryWriter writer)
