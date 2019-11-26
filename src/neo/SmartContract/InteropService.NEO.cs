@@ -266,7 +266,7 @@ namespace Neo.SmartContract
                     enumerator = new ArrayWrapper(array);
                     break;
                 case PrimitiveType primitive:
-                    enumerator = new PrimitiveWrapper(primitive);
+                    enumerator = new ByteArrayWrapper(primitive);
                     break;
                 default:
                     return false;
@@ -320,7 +320,7 @@ namespace Neo.SmartContract
                     iterator = new MapWrapper(map);
                     break;
                 case PrimitiveType primitive:
-                    iterator = new PrimitiveWrapper(primitive);
+                    iterator = new ByteArrayWrapper(primitive);
                     break;
                 default:
                     return false;

@@ -3,12 +3,12 @@ using System;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class PrimitiveWrapper : IIterator
+    internal class ByteArrayWrapper : IIterator
     {
         private readonly byte[] array;
         private int index = -1;
 
-        public PrimitiveWrapper(PrimitiveType value)
+        public ByteArrayWrapper(PrimitiveType value)
         {
             this.array = value.ToByteArray().ToArray();
         }

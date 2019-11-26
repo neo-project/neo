@@ -13,7 +13,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestGeneratorAndDispose()
         {
-            PrimitiveWrapper arrayWrapper = new PrimitiveWrapper(new ByteArray(new byte[0]));
+            ByteArrayWrapper arrayWrapper = new ByteArrayWrapper(new ByteArray(new byte[0]));
             Assert.IsNotNull(arrayWrapper);
             Action action = () => arrayWrapper.Dispose();
             action.Should().NotThrow<Exception>();
@@ -22,7 +22,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestKeyAndValue()
         {
-            PrimitiveWrapper arrayWrapper = new PrimitiveWrapper(new byte[] { 0x01, 0x02 });
+            ByteArrayWrapper arrayWrapper = new ByteArrayWrapper(new byte[] { 0x01, 0x02 });
             Action action1 = () => arrayWrapper.Key();
             action1.Should().Throw<InvalidOperationException>();
             Action action2 = () => arrayWrapper.Value();
@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestNext()
         {
-            PrimitiveWrapper arrayWrapper = new PrimitiveWrapper(new byte[] { 0x01, 0x02 });
+            ByteArrayWrapper arrayWrapper = new ByteArrayWrapper(new byte[] { 0x01, 0x02 });
             Assert.AreEqual(true, arrayWrapper.Next());
             Assert.AreEqual(0x01, arrayWrapper.Value());
             Assert.AreEqual(true, arrayWrapper.Next());
