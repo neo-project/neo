@@ -1,11 +1,14 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.15
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neo", "neo\neo.csproj", "{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neo", "src\neo\neo.csproj", "{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neo.UnitTests", "neo.UnitTests\neo.UnitTests.csproj", "{5B783B30-B422-4C2F-AC22-187A8D1993F4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neo.UnitTests", "tests\neo.UnitTests\neo.UnitTests.csproj", "{5B783B30-B422-4C2F-AC22-187A8D1993F4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{5D16A9C5-3F8A-4453-95F3-47D25F83F205}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9A80E6CD-9CC7-475E-BD2A-99413779DB2C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +27,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC} = {5D16A9C5-3F8A-4453-95F3-47D25F83F205}
+		{5B783B30-B422-4C2F-AC22-187A8D1993F4} = {9A80E6CD-9CC7-475E-BD2A-99413779DB2C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2A3024EC-B162-42C4-B42B-E2F5D18529D9}
 	EndGlobalSection
 EndGlobal
