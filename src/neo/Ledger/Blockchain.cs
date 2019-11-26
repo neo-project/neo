@@ -53,7 +53,7 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private readonly static byte[] onPersistNativeContractScript;
+        private readonly static Script onPersistNativeContractScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -323,8 +323,7 @@ namespace Neo.Ledger
                     using (Snapshot snapshot = GetSnapshot())
                     {
                         snapshot.Blocks.Add(block.Hash, block.Header.Trim());
-                        snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
-                        snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
+                        snapshot.HeaderHashIndex.GetAndChange().Set(block);
                         SaveHeaderHashList(snapshot);
                         snapshot.Commit();
                     }
