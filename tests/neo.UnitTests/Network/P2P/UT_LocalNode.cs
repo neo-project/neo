@@ -93,10 +93,19 @@ namespace Neo.UnitTests.Network.P2P
 
                 var proble = CreateTestProbe();
                 proble.Send(localNode, connected);
-                proble.ExpectMsg<Tcp.Register>(); // register msg is earlier than version msg
-                var verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote node send version msg
+
+                var tcpMessage = proble.ExpectMsg<Tcp.Message>();
+                Tcp.Write verionMsg;
+                if (tcpMessage is Tcp.Register)
+                {
+                    verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote node send version msg
+                }
+                else // It may lost Tcp.Register sometimes
+                {
+                    verionMsg = (Tcp.Write)tcpMessage;
+                }
                 Message version = verionMsg.Data.ToArray().AsSerializable<Message>();
-                version.Command.Should().Be(MessageCommand.Version); // check version msg
+                version.Command.Should().Be(MessageCommand.Version);
 
                 senderDict[remote] = proble;
             }
@@ -160,8 +169,17 @@ namespace Neo.UnitTests.Network.P2P
                 connected = new Tcp.Connected(remote, local);
                 var proble = CreateTestProbe();
                 proble.Send(localNode, connected);
-                proble.ExpectMsg<Tcp.Register>(); // register msg is earlier than version msg
-                var verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote node send version msg
+
+                var tcpMessage = proble.ExpectMsg<Tcp.Message>();
+                Tcp.Write verionMsg;
+                if (tcpMessage is Tcp.Register)
+                {
+                    verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote node send version msg
+                }
+                else // It may lost Tcp.Register sometimes
+                {
+                    verionMsg = (Tcp.Write)tcpMessage;
+                }
                 Message version = verionMsg.Data.ToArray().AsSerializable<Message>();
                 version.Command.Should().Be(MessageCommand.Version);
 
