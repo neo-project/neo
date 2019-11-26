@@ -186,6 +186,7 @@ namespace Neo
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static BigInteger Mod(this BigInteger x, BigInteger y)
         {
             x %= y;
@@ -248,6 +249,7 @@ namespace Neo
             return sum;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool TestBit(this BigInteger i, int index)
         {
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
