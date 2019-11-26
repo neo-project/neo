@@ -1,40 +1,34 @@
 using Neo.IO;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading;
 
 namespace Neo.Persistence.Memory
 {
     internal class Snapshot : ISnapshot
     {
-        private readonly ReaderWriterLockSlim readerWriterLock;
-        private readonly Dictionary<byte[], byte[]>[] innerData;
+        private readonly ConcurrentDictionary<byte[], byte[]>[] innerData;
         private readonly ImmutableDictionary<byte[], byte[]>[] immutableData;
-        private readonly Dictionary<byte[], byte[]>[] writeBatch;
+        private readonly ConcurrentDictionary<byte[], byte[]>[] writeBatch;
 
-        public Snapshot(Dictionary<byte[], byte[]>[] innerData, ReaderWriterLockSlim readerWriterLock)
+        public Snapshot(ConcurrentDictionary<byte[], byte[]>[] innerData)
         {
-            this.readerWriterLock = readerWriterLock;
             this.innerData = innerData;
-            readerWriterLock.EnterReadLock();
             this.immutableData = innerData.Select(p => p.ToImmutableDictionary(ByteArrayEqualityComparer.Default)).ToArray();
-            readerWriterLock.ExitReadLock();
-            this.writeBatch = new Dictionary<byte[], byte[]>[innerData.Length];
+            this.writeBatch = new ConcurrentDictionary<byte[], byte[]>[innerData.Length];
             for (int i = 0; i < writeBatch.Length; i++)
-                writeBatch[i] = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+                writeBatch[i] = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()
         {
-            readerWriterLock.EnterWriteLock();
             for (int i = 0; i < writeBatch.Length; i++)
                 foreach (var pair in writeBatch[i])
                     if (pair.Value is null)
-                        innerData[i].Remove(pair.Key);
+                        innerData[i].TryRemove(pair.Key, out _);
                     else
                         innerData[i][pair.Key] = pair.Value;
-            readerWriterLock.ExitWriteLock();
         }
 
         public void Delete(byte table, byte[] key)
