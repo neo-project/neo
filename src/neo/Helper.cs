@@ -93,6 +93,7 @@ namespace Neo
 
         #endregion
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int BitLen(int w)
         {
             return (w < 1 << 15 ? (w < 1 << 7
@@ -110,6 +111,7 @@ namespace Neo
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetBitLength(this BigInteger i)
         {
             byte[] b = i.ToByteArray();
