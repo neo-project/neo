@@ -26,11 +26,23 @@ namespace Neo.Ledger
         /// </summary>
         public DateTime LastBroadcastTimestamp;
 
+        /// <summary>
+        /// Cache Tx's Hash to avoid recompute when comparing
+        /// </summary>
+        public UInt256 TxHashCache;
+
+        /// <summary>
+        /// Cache Tx's Hash to avoid recompute when comparing
+        /// </summary>
+        public long TxFeePerByteCache;
+
         internal PoolItem(Transaction tx)
         {
             Tx = tx;
             Timestamp = TimeProvider.Current.UtcNow;
             LastBroadcastTimestamp = Timestamp;
+            TxHashCache = tx.Hash;
+            TxFeePerByteCache = tx.FeePerByte;
         }
 
         public int CompareTo(Transaction otherTx)
@@ -48,7 +60,12 @@ namespace Neo.Ledger
         public int CompareTo(PoolItem otherItem)
         {
             if (otherItem == null) return 1;
-            return CompareTo(otherItem.Tx);
+            if (otherItem.Tx == null) return 1;
+            int ret = TxFeePerByteCache.CompareTo(otherItem.TxFeePerByte);
+            if (ret != 0) return ret;
+            ret = Tx.NetworkFee.CompareTo(otherItem.Tx.NetworkFee);
+            if (ret != 0) return ret;
+            return TxHashCache.CompareTo(otherItem.TxHash);
         }
     }
 }
