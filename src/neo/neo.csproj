@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>2015-2019 The Neo Project</Copyright>
@@ -15,9 +15,14 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RootNamespace>Neo</RootNamespace>
     <Company>The Neo Project</Company>
     <Description>Neo</Description>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +36,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.1" />
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00170" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.6.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-19554-01" PrivateAssets="All"/>
   </ItemGroup>
 
 </Project>
