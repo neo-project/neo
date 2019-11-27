@@ -18,8 +18,8 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.Reverify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(true);
-            mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(true);
+            mock.Setup(p => p.Reverify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(true);
+            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(true);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = networkFee;

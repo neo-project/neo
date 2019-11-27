@@ -1,8 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.Ledger;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
@@ -20,8 +18,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestTotalSupply()
         {
-            var mockSnapshot = new Mock<Snapshot>();
-            var myDataCache = new TestDataCache<StorageKey, StorageItem>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             StorageItem item = new StorageItem
             {
                 Value = new byte[] { 0x01 }
@@ -38,10 +35,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var Hash = script.ToScriptHash();
             key.ScriptHash = Hash;
 
-            myDataCache.Add(key, item);
-            mockSnapshot.SetupGet(p => p.Storages).Returns(myDataCache);
+            snapshot.Storages.Add(key, item);
             TestNep5Token test = new TestNep5Token();
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             StackItem stackItem = test.TotalSupply(ae, null);
             stackItem.GetBigInteger().Should().Be(1);
         }
@@ -49,8 +45,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestTotalSupplyDecimal()
         {
-            var mockSnapshot = new Mock<Snapshot>();
-            var myDataCache = new TestDataCache<StorageKey, StorageItem>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             TestNep5Token test = new TestNep5Token();
             BigInteger totalSupply = 100_000_000;
@@ -73,10 +68,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var Hash = script.ToScriptHash();
             key.ScriptHash = Hash;
 
-            myDataCache.Add(key, item);
-            mockSnapshot.SetupGet(p => p.Storages).Returns(myDataCache);
+            snapshot.Storages.Add(key, item);
 
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             StackItem stackItem = test.TotalSupply(ae, null);
             stackItem.GetBigInteger().Should().Be(10_000_000_000_000_000);
         }

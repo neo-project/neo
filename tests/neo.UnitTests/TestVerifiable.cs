@@ -27,7 +27,7 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             throw new NotImplementedException();
         }

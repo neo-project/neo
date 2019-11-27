@@ -2,11 +2,13 @@ using Neo.IO.Caching;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using System;
 
 namespace Neo.Persistence
 {
-    public abstract class Snapshot : IDisposable, IPersistence
+    /// <summary>
+    /// It provides a set of properties and methods for reading formatted data from the underlying storage. Such as <see cref="Blocks"/> and <see cref="Transactions"/>.
+    /// </summary>
+    public abstract class StoreView
     {
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, TrimmedBlock> Blocks { get; }
@@ -22,9 +24,9 @@ namespace Neo.Persistence
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
-        public Snapshot Clone()
+        public StoreView Clone()
         {
-            return new CloneSnapshot(this);
+            return new ClonedView(this);
         }
 
         public virtual void Commit()
@@ -38,8 +40,35 @@ namespace Neo.Persistence
             HeaderHashIndex.Commit();
         }
 
-        public virtual void Dispose()
+        public bool ContainsBlock(UInt256 hash)
         {
+            TrimmedBlock state = Blocks.TryGet(hash);
+            if (state == null) return false;
+            return state.IsBlock;
+        }
+
+        public bool ContainsTransaction(UInt256 hash)
+        {
+            TransactionState state = Transactions.TryGet(hash);
+            return state != null;
+        }
+
+        public Block GetBlock(UInt256 hash)
+        {
+            TrimmedBlock state = Blocks.TryGet(hash);
+            if (state == null) return null;
+            if (!state.IsBlock) return null;
+            return state.GetBlock(Transactions);
+        }
+
+        public Header GetHeader(UInt256 hash)
+        {
+            return Blocks.TryGet(hash)?.Header;
+        }
+
+        public Transaction GetTransaction(UInt256 hash)
+        {
+            return Transactions.TryGet(hash)?.Transaction;
         }
     }
 }
