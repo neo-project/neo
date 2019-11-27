@@ -13,7 +13,10 @@ namespace Neo.UnitTests.Plugins
         [TestInitialize]
         public void Init()
         {
-            Plugin.SendMessage("hey1").Should().BeFalse();
+            if (Plugin.Plugins.Length == 0)
+            {
+                Plugin.SendMessage("hey1").Should().BeFalse();
+            }
         }
 
         [TestMethod]
