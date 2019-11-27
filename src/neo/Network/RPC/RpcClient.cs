@@ -45,7 +45,7 @@ namespace Neo.Network.RPC
 
                 if (response.Error != null)
                 {
-                    throw new RpcException(response.Error.Code, response.Error.Message);
+                    throw new HttpException(response.Error.Code, response.Error.Message);
                 }
 
                 return response;

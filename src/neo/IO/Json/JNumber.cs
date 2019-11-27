@@ -116,5 +116,10 @@ namespace Neo.IO.Json
             object result = Enum.ToObject(enumType, value);
             return Enum.IsDefined(enumType, result) ? (T)result : defaultValue;
         }
+
+        public override object ToPrimitive()
+        {
+            return AsNumber();
+        }
     }
 }
