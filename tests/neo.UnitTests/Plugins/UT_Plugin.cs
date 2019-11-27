@@ -10,6 +10,12 @@ namespace Neo.UnitTests.Plugins
     {
         private static readonly object locker = new object();
 
+        [TestInitialize]
+        public void Init()
+        {
+            Plugin.SendMessage("hey1").Should().BeFalse();
+        }
+
         [TestMethod]
         public void TestGetConfigFile()
         {
@@ -46,8 +52,6 @@ namespace Neo.UnitTests.Plugins
         {
             lock (locker)
             {
-                Plugin.SendMessage("hey1").Should().BeFalse();
-
                 var lp = new TestLogPlugin();
                 Plugin.SendMessage("hey2").Should().BeTrue();
             }
