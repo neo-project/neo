@@ -50,6 +50,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
                 Assert.AreEqual(x + 1, arrayWrapper.Value());
             }
 
+            Assert.IsFalse(arrayWrapper.Next());
             arrayWrapper = new ArrayWrapper(list).Reverse();
 
             for (int x = 2; x >= 0; x--)
@@ -59,6 +60,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
                 Assert.AreEqual(x + 1, arrayWrapper.Value());
             }
 
+            Assert.IsFalse(arrayWrapper.Next());
             arrayWrapper = new ArrayWrapper(list);
 
             Assert.IsTrue(arrayWrapper.Next());
