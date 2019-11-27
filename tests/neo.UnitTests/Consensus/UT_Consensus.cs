@@ -41,7 +41,7 @@ namespace Neo.UnitTests.Consensus
             TestProbe subscriber = CreateTestProbe();
             var mockWallet = new Mock<Wallet>();
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
-            ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
+            ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.Store);
 
             int timeIndex = 0;
             var timeValues = new[] {

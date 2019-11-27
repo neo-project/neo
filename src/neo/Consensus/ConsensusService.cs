@@ -46,7 +46,7 @@ namespace Neo.Consensus
         /// </summary>
         private bool isRecovering = false;
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, IStore store, Wallet wallet)
             : this(localNode, taskManager, new ConsensusContext(wallet, store))
         {
         }
@@ -601,7 +601,7 @@ namespace Neo.Consensus
             base.PostStop();
         }
 
-        public static Props Props(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
+        public static Props Props(IActorRef localNode, IActorRef taskManager, IStore store, Wallet wallet)
         {
             return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
         }

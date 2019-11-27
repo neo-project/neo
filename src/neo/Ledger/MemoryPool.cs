@@ -105,7 +105,7 @@ namespace Neo.Ledger
             Capacity = capacity;
         }
 
-        internal bool LoadPolicy(Snapshot snapshot)
+        internal bool LoadPolicy(StoreView snapshot)
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
             long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
@@ -348,7 +348,7 @@ namespace Neo.Ledger
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
-        internal void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
+        internal void UpdatePoolForBlockPersisted(Block block, StoreView snapshot)
         {
             bool policyChanged = LoadPolicy(snapshot);
 
@@ -407,7 +407,7 @@ namespace Neo.Ledger
         }
 
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
-            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, Snapshot snapshot)
+            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, StoreView snapshot)
         {
             DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
@@ -483,7 +483,7 @@ namespace Neo.Ledger
         /// <param name="maxToVerify">Max transactions to reverify, the value passed can be >=1</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
-        internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
+        internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, StoreView snapshot)
         {
             if (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
                 return false;

@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -40,11 +39,11 @@ namespace Neo.UnitTests.Ledger
             // protect against external changes on TimeProvider
             TimeProvider.ResetToDefault();
 
-            NeoSystem TheNeoSystem = TestBlockchain.InitializeMockNeoSystem();
+            TestBlockchain.InitializeMockNeoSystem();
 
             // Create a MemoryPool with capacity of 100
-            _unit = new MemoryPool(TheNeoSystem, 100);
-            _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
+            _unit = new MemoryPool(TestBlockchain.TheNeoSystem, 100);
+            _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
 
             // Verify capacity equals the amount specified
             _unit.Capacity.Should().Be(100);
@@ -52,7 +51,7 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.Count.Should().Be(0);
-            _unit2 = new MemoryPool(TheNeoSystem, 0);
+            _unit2 = new MemoryPool(TestBlockchain.TheNeoSystem, 0);
             plugin = new TestIMemoryPoolTxObserverPlugin();
         }
 
@@ -75,8 +74,8 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.Reverify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(true);
-            mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(true);
+            mock.Setup(p => p.Reverify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(true);
+            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(true);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = fee;
@@ -100,8 +99,8 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
             UInt160 sender = UInt160.Zero;
-            mock.Setup(p => p.Reverify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(((Snapshot snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee));
-            mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<BigInteger>())).Returns(true);
+            mock.Setup(p => p.Reverify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(((StoreView snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee));
+            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(true);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = sender;
             mock.Object.NetworkFee = fee;
@@ -223,7 +222,7 @@ namespace Neo.UnitTests.Ledger
 
             // Simulate the transfer process in tx by burning the balance
             UInt160 sender = block.Transactions[0].Sender;
-            Snapshot snapshot = Blockchain.Singleton.GetSnapshot();
+            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
 
             ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (long)balance);
@@ -412,10 +411,8 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
         {
-            NeoSystem TheNeoSystem = TestBlockchain.InitializeMockNeoSystem();
-            var s = Blockchain.Singleton.Height;
-            _unit = new MemoryPool(TheNeoSystem, 600);
-            _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
+            _unit = new MemoryPool(TestBlockchain.TheNeoSystem, 600);
+            _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
@@ -475,7 +472,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestUpdatePoolForBlockPersisted()
         {
-            var mockSnapshot = new Mock<Snapshot>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 }; // 24
             byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }; // 1048576
             StorageItem item1 = new StorageItem
@@ -486,14 +483,12 @@ namespace Neo.UnitTests.Ledger
             {
                 Value = feePerByte
             };
-            var myDataCache = new MyDataCache<StorageKey, StorageItem>();
             var key1 = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
             var key2 = CreateStorageKey(Prefix_FeePerByte);
             key1.ScriptHash = NativeContract.Policy.Hash;
             key2.ScriptHash = NativeContract.Policy.Hash;
-            myDataCache.Add(key1, item1);
-            myDataCache.Add(key2, item2);
-            mockSnapshot.SetupGet(p => p.Storages).Returns(myDataCache);
+            snapshot.Storages.Add(key1, item1);
+            snapshot.Storages.Add(key2, item2);
 
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
@@ -505,7 +500,7 @@ namespace Neo.UnitTests.Ledger
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.VerifiedCount.Should().Be(1);
 
-            _unit.UpdatePoolForBlockPersisted(block, mockSnapshot.Object);
+            _unit.UpdatePoolForBlockPersisted(block, snapshot);
 
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.VerifiedCount.Should().Be(0);
@@ -522,50 +517,6 @@ namespace Neo.UnitTests.Ledger
             if (key != null)
                 Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
             return storageKey;
-        }
-    }
-
-    public class MyDataCache<TKey, TValue> : DataCache<TKey, TValue>
-        where TKey : IEquatable<TKey>, ISerializable
-        where TValue : class, ICloneable<TValue>, ISerializable, new()
-    {
-        private readonly TValue _defaultValue;
-
-        public MyDataCache()
-        {
-            _defaultValue = null;
-        }
-
-        public MyDataCache(TValue defaultValue)
-        {
-            this._defaultValue = defaultValue;
-        }
-        public override void DeleteInternal(TKey key)
-        {
-        }
-
-        protected override void AddInternal(TKey key, TValue value)
-        {
-            Add(key, value);
-        }
-
-        protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
-        {
-            return Enumerable.Empty<KeyValuePair<TKey, TValue>>();
-        }
-
-        protected override TValue GetInternal(TKey key)
-        {
-            return TryGet(key);
-        }
-
-        protected override TValue TryGetInternal(TKey key)
-        {
-            return _defaultValue;
-        }
-
-        protected override void UpdateInternal(TKey key, TValue value)
-        {
         }
     }
 }

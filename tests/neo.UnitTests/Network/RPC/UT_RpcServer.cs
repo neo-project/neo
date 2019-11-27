@@ -14,8 +14,7 @@ namespace Neo.UnitTests.Network.RPC
         [TestInitialize]
         public void Setup()
         {
-            var system = TestBlockchain.InitializeMockNeoSystem();
-            server = new RpcServer(system);
+            server = new RpcServer(TestBlockchain.TheNeoSystem);
         }
 
         [TestCleanup]

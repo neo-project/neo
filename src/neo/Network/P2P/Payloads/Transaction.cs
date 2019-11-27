@@ -123,14 +123,14 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             var hashes = new HashSet<UInt160> { Sender };
             hashes.UnionWith(Cosigners.Select(p => p.Account));
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool Reverify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual bool Reverify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return false;
@@ -202,12 +202,12 @@ namespace Neo.Network.P2P.Payloads
             return tx;
         }
 
-        bool IInventory.Verify(Snapshot snapshot)
+        bool IInventory.Verify(StoreView snapshot)
         {
             return Verify(snapshot, BigInteger.Zero);
         }
 
-        public virtual bool Verify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual bool Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
             int size = Size;

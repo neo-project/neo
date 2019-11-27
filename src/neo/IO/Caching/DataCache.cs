@@ -107,7 +107,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        public abstract void DeleteInternal(TKey key);
+        protected abstract void DeleteInternal(TKey key);
 
         public void DeleteWhere(Func<TKey, TValue, bool> predicate)
         {
@@ -123,7 +123,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="key_prefix">Must maintain the deserialized format of TKey</param>
         /// <returns>Entries found with the desired prefix</returns>
-        public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix = null)
+        public IEnumerable<(TKey Key, TValue Value)> Find(byte[] key_prefix = null)
         {
             IEnumerable<(byte[], TKey, TValue)> cached;
             lock (dictionary)
@@ -159,13 +159,13 @@ namespace Neo.IO.Caching
                 {
                     if (!c2 || (c1 && ByteArrayComparer.Default.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                     {
-                        yield return new KeyValuePair<TKey, TValue>(i1.Key, i1.Item);
+                        yield return (i1.Key, i1.Item);
                         c1 = e1.MoveNext();
                         i1 = c1 ? e1.Current : default;
                     }
                     else
                     {
-                        yield return new KeyValuePair<TKey, TValue>(i2.Key, i2.Item);
+                        yield return (i2.Key, i2.Item);
                         c2 = e2.MoveNext();
                         i2 = c2 ? e2.Current : default;
                     }
@@ -173,7 +173,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected abstract IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix);
+        protected abstract IEnumerable<(TKey Key, TValue Value)> FindInternal(byte[] key_prefix);
 
         public IEnumerable<Trackable> GetChangeSet()
         {

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -33,14 +34,14 @@ namespace Neo.UnitTests.Extensions
 
             public void DeserializeUnsigned(BinaryReader reader) { }
 
-            public UInt160[] GetScriptHashesForVerifying(Persistence.Snapshot snapshot) => _hashForVerify;
+            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot) => _hashForVerify;
 
             public void Serialize(BinaryWriter writer) { }
 
             public void SerializeUnsigned(BinaryWriter writer) { }
         }
 
-        public static bool Transfer(this NativeContract contract, Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
+        public static bool Transfer(this NativeContract contract, StoreView snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, 0, true);
@@ -89,7 +90,7 @@ namespace Neo.UnitTests.Extensions
                 .ToArray();
         }
 
-        public static BigInteger TotalSupply(this NativeContract contract, Persistence.Snapshot snapshot)
+        public static BigInteger TotalSupply(this NativeContract contract, StoreView snapshot)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
 
@@ -109,7 +110,7 @@ namespace Neo.UnitTests.Extensions
             return (result as VM.Types.Integer).GetBigInteger();
         }
 
-        public static BigInteger BalanceOf(this NativeContract contract, Persistence.Snapshot snapshot, byte[] account)
+        public static BigInteger BalanceOf(this NativeContract contract, StoreView snapshot, byte[] account)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
 
