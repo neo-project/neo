@@ -11,14 +11,13 @@ using System.Net;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
+    [NotReRunnable]
     public class UT_ProtocolHandler : TestKit
     {
-        private static NeoSystem testBlockchain;
-
-        [ClassInitialize]
-        public static void TestSetup(TestContext ctx)
+        [TestCleanup]
+        public void Cleanup()
         {
-            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
+            Shutdown();
         }
 
         [TestMethod]
@@ -26,7 +25,7 @@ namespace Neo.UnitTests.Network.P2P
         {
             var senderProbe = CreateTestProbe();
             var parent = CreateTestProbe();
-            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain), parent);
+            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(TestBlockchain.TheNeoSystem), parent);
 
             var payload = new VersionPayload()
             {
@@ -61,7 +60,7 @@ namespace Neo.UnitTests.Network.P2P
                     }
                 }
             };
-            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain));
+            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(TestBlockchain.TheNeoSystem));
             var disconnectionPayload = DisconnectPayload.Create(DisconnectReason.MaxConnectionReached, addressWithTimes.ToByteArray());
             var senderProbe = CreateTestProbe();
             senderProbe.Send(protocolActor, Message.Create(MessageCommand.Disconnect, disconnectionPayload));

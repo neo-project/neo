@@ -38,7 +38,7 @@ namespace Neo.UnitTests.Consensus
                 _validatorKeys[x] = new KeyPair(pk);
             }
 
-            _context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore())
+            _context = new ConsensusContext(mockWallet.Object, TestBlockchain.Store)
             {
                 Validators = _validatorKeys.Select(u => u.PublicKey).ToArray()
             };

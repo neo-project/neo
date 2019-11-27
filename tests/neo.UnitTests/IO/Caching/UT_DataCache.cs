@@ -105,7 +105,7 @@ namespace Neo.UnitTests.IO.Caching
     {
         public Dictionary<TKey, TValue> InnerDict = new Dictionary<TKey, TValue>();
 
-        public override void DeleteInternal(TKey key)
+        protected override void DeleteInternal(TKey key)
         {
             InnerDict.Remove(key);
         }
@@ -115,9 +115,9 @@ namespace Neo.UnitTests.IO.Caching
             InnerDict.Add(key, value);
         }
 
-        protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
+        protected override IEnumerable<(TKey, TValue)> FindInternal(byte[] key_prefix)
         {
-            return InnerDict.Where(kvp => kvp.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix));
+            return InnerDict.Where(kvp => kvp.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)).Select(p => (p.Key, p.Value));
         }
 
         protected override TValue GetInternal(TKey key)

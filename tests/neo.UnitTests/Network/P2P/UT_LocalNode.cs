@@ -17,14 +17,6 @@ namespace Neo.UnitTests.Network.P2P
     [NotReRunnable]
     public class UT_LocalNode : TestKit
     {
-        private NeoSystem testBlockchain;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestCleanup]
         public void TestCleanup()
         {
@@ -34,12 +26,13 @@ namespace Neo.UnitTests.Network.P2P
             {
                 testProbe.Send(remoteActor, new Tcp.ConnectionClosed());
             }
+            Shutdown();
         }
 
         [TestMethod]
         public void Test_GetRandomConnectedPeers()
         {
-            var localNode = testBlockchain.LocalNode;
+            var localNode = TestBlockchain.TheNeoSystem.LocalNode;
             var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8080);
             var remote = new IPEndPoint(IPAddress.Parse("133.133.133.133"), 8080);
             var connected = new Tcp.Connected(remote, local);
@@ -79,7 +72,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void Test_Peer_Max_Per_Address_Connection_Reached()
         {
-            var localNode = testBlockchain.LocalNode;
+            var localNode = TestBlockchain.TheNeoSystem.LocalNode;
             var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8080);
 
             // Create the maximum number of per address connections
@@ -156,7 +149,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void Test_Peer_MaxConnection_Reached()
         {
-            var localNode = testBlockchain.LocalNode;
+            var localNode = TestBlockchain.TheNeoSystem.LocalNode;
             var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8991);
 
             // Create the maximum number of connections

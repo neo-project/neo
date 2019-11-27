@@ -228,7 +228,8 @@ namespace Neo.Network.P2P
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
-            IPEndPoint[] endpoints = UnconnectedPeers.Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
+            Random rand = new Random();
+            IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(p => rand.Next()).Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (IPEndPoint endpoint in endpoints)
             {

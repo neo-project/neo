@@ -65,8 +65,7 @@ namespace Neo.UnitTests.Plugins
         [TestMethod]
         public void TestResumeNodeStartupAndSuspendNodeStartup()
         {
-            var system = TestBlockchain.InitializeMockNeoSystem();
-            TestLogPlugin.TestLoadPlugins(system);
+            TestLogPlugin.TestLoadPlugins(TestBlockchain.TheNeoSystem);
             TestLogPlugin.TestSuspendNodeStartup();
             TestLogPlugin.TestSuspendNodeStartup();
             TestLogPlugin.TestResumeNodeStartup().Should().BeFalse();

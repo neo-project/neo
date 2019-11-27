@@ -1,9 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM.Types;
 using Neo.Wallets;
@@ -265,41 +263,31 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestVerifyWitnesses()
         {
-            var mockSnapshot1 = new Mock<Snapshot>();
+            var snapshot1 = Blockchain.Singleton.GetSnapshot();
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-            TestDataCache<UInt256, TrimmedBlock> testDataCache1 = new TestDataCache<UInt256, TrimmedBlock>();
-            testDataCache1.Add(index1, new TrimmedBlock());
-            testDataCache1.Delete(index1);
-            mockSnapshot1.SetupGet(p => p.Blocks).Returns(testDataCache1);
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, mockSnapshot1.Object, 100));
+            snapshot1.Blocks.Add(index1, new TrimmedBlock());
+            snapshot1.Blocks.Delete(index1);
+            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, snapshot1, 100));
 
-            var mockSnapshot2 = new Mock<Snapshot>();
+            var snapshot2 = Blockchain.Singleton.GetSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new TrimmedBlock();
             block2.NextConsensus = UInt160.Zero;
-            TestDataCache<UInt256, TrimmedBlock> testDataCache21 = new TestDataCache<UInt256, TrimmedBlock>();
-            testDataCache21.Add(index2, block2);
+            snapshot2.Blocks.Add(index2, block2);
             Header header2 = new Header() { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
-            mockSnapshot2.SetupGet(p => p.Blocks).Returns(testDataCache21);
 
-            TestDataCache<UInt160, ContractState> testDataCache22 = new TestDataCache<UInt160, ContractState>();
-            testDataCache22.Add(UInt160.Zero, new ContractState());
-            testDataCache22.Delete(UInt160.Zero);
-            mockSnapshot2.SetupGet(p => p.Contracts).Returns(testDataCache22);
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, mockSnapshot2.Object, 100));
+            snapshot2.Contracts.Add(UInt160.Zero, new ContractState());
+            snapshot2.Contracts.Delete(UInt160.Zero);
+            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, snapshot2, 100));
 
-            var mockSnapshot3 = new Mock<Snapshot>();
+            var snapshot3 = Blockchain.Singleton.GetSnapshot();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block3 = new TrimmedBlock();
             block3.NextConsensus = UInt160.Zero;
-            TestDataCache<UInt256, TrimmedBlock> testDataCache31 = new TestDataCache<UInt256, TrimmedBlock>();
-            testDataCache31.Add(index3, block3);
+            snapshot3.Blocks.Add(index3, block3);
             Header header3 = new Header() { PrevHash = index3, Witness = new Witness { VerificationScript = new byte[0] } };
-            mockSnapshot3.SetupGet(p => p.Blocks).Returns(testDataCache31);
-            TestDataCache<UInt160, ContractState> testDataCache32 = new TestDataCache<UInt160, ContractState>();
-            testDataCache32.Add(UInt160.Zero, new ContractState());
-            mockSnapshot3.SetupGet(p => p.Contracts).Returns(testDataCache32);
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, mockSnapshot3.Object, 100));
+            snapshot3.Contracts.Add(UInt160.Zero, new ContractState());
+            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
         }
     }
 }

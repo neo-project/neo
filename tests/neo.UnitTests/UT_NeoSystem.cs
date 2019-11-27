@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Neo.UnitTests
@@ -11,7 +11,7 @@ namespace Neo.UnitTests
         [TestInitialize]
         public void Setup()
         {
-            neoSystem = TestBlockchain.InitializeMockNeoSystem();
+            neoSystem = TestBlockchain.TheNeoSystem;
         }
 
         [TestMethod]
