@@ -153,7 +153,7 @@ namespace Neo.SmartContract
                     }
                     while (contract.Script[i++] == 33)
                     {
-                        points.Add(ECPoint.DecodePoint(contract.Script[i..^(i + 33)], ECCurve.Secp256r1));
+                        points.Add(ECPoint.DecodePoint(contract.Script[i..(i + 33)], ECCurve.Secp256r1));
                         i += 33;
                     }
                 }
