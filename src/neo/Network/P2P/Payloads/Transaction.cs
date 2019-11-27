@@ -4,7 +4,6 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -212,6 +211,7 @@ namespace Neo.Network.P2P.Payloads
             if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
             return VerifySizeAndFeeAndWitness(snapshot);
         }
+
         public bool VerifySizeAndFeeAndWitness(StoreView snapshot)
         {
             int size = Size;
