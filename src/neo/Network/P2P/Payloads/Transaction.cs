@@ -93,9 +93,10 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            var startPosition = (int)reader.BaseStream.Position;
             DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
-            _size = (int)reader.BaseStream.Position;
+            _size = (int)reader.BaseStream.Position - startPosition;
         }
 
         public void DeserializeUnsigned(BinaryReader reader)
