@@ -11,11 +11,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TestConstructor()
         {
             var tx = TestUtils.GetTransaction();
-            var pvt1 = new ParallelVerifyTransaction(tx);
+            var pvt1 = new ParallelVerifiedTransaction(tx);
             pvt1.Transaction.Should().Be(tx);
             pvt1.ShouldRelay.Should().BeTrue();
 
-            var pvt2 = new ParallelVerifyTransaction(tx, false);
+            var pvt2 = new ParallelVerifiedTransaction(tx, false);
             pvt2.Transaction.Should().Be(tx);
             pvt2.ShouldRelay.Should().BeFalse();
         }

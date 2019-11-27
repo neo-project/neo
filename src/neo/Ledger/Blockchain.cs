@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -136,10 +137,6 @@ namespace Neo.Ledger
                     MemPool.LoadPolicy(currentSnapshot);
                 }
                 singleton = this;
-            }
-            for (int i = 0; i < ParallelVerifierCount; i++)
-            {
-                CreateParallelVerifier(i);
             }
         }
 
@@ -400,31 +397,22 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private RelayResultReason OnNewTransaction(Transaction transaction, bool relay)
+        private RelayResultReason OnNewTransaction(ParallelVerifiedTransaction parallelVerifiedTransaction, bool relay)
         {
-            if (ContainsTransaction(transaction.Hash))
-            {
-                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
+            if (!parallelVerifiedTransaction.VerifyResult)
+                return RelayResultReason.Invalid;
+            if (ContainsTransaction(parallelVerifiedTransaction.Transaction.Hash))
                 return RelayResultReason.AlreadyExists;
-            }
-            if (!MemPool.CanTransactionFitInPool(transaction))
-            {
-                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
+            if (!MemPool.CanTransactionFitInPool(parallelVerifiedTransaction.Transaction))
                 return RelayResultReason.OutOfMemory;
-            }
-            if (!NativeContract.Policy.CheckPolicy(transaction, currentSnapshot))
-            {
-                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
+            if (!parallelVerifiedTransaction.Transaction.Reverify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(parallelVerifiedTransaction.Transaction.Sender)))
+                return RelayResultReason.Invalid;
+            if (!NativeContract.Policy.CheckPolicy(parallelVerifiedTransaction.Transaction, currentSnapshot))
                 return RelayResultReason.PolicyFail;
-            }
-            if (!MemPool.TryAdd(transaction.Hash, transaction))
-            {
-                MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
+            if (!MemPool.TryAdd(parallelVerifiedTransaction.Transaction.Hash, parallelVerifiedTransaction.Transaction))
                 return RelayResultReason.OutOfMemory;
-            }
             if (relay)
-                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
-            MemPool.VerifyingSenderFeeMonitor.RemoveSenderVerifyingFee(transaction);
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerifiedTransaction.Transaction });
             return RelayResultReason.Succeed;
         }
 
@@ -460,8 +448,8 @@ namespace Neo.Ledger
                 case Transaction transaction:
                     OnParallelVerify(transaction, true);
                     break;
-                case ParallelVerifyTransaction parallelVerifiedTransaction:
-                    Sender.Tell(OnNewTransaction(parallelVerifiedTransaction.Transaction, parallelVerifiedTransaction.ShouldRelay));
+                case ParallelVerifiedTransaction parallelVerifiedTransaction:
+                    Sender.Tell(OnNewTransaction(parallelVerifiedTransaction, parallelVerifiedTransaction.ShouldRelay));
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -470,37 +458,12 @@ namespace Neo.Ledger
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
-                case Terminated t:
-                    if (ParallelVerifierToIndexDic.TryGetValue(t.ActorRef, out int index))
-                    {
-                        ParallelVerifierToIndexDic.Remove(t.ActorRef);
-                        IndexToParallelVerifierDic.Remove(index);
-                        IndexToParallelVerifierInstanceDic.TryRemove(index, out TransactionParallelVerifier _);
-                        CreateParallelVerifier(index);
-                    }
-                    break;
             }
-        }
-
-        private void CreateParallelVerifier(int index)
-        {
-            var subVerifier = Context.ActorOf(TransactionParallelVerifier.Props(IndexToParallelVerifierInstanceDic, currentSnapshot, MemPool, index), $"actor-parallel-verifier{index}");
-            Context.Watch(subVerifier);
-            ParallelVerifierToIndexDic.Add(subVerifier, index);
-            IndexToParallelVerifierDic.Add(index, subVerifier);
         }
 
         private void OnParallelVerify(Transaction transaction, bool shouldRelay)
         {
-            if (!transaction.Reverify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender), MemPool.VerifyingSenderFeeMonitor.GetSenderVerifyingFee(transaction.Sender)))
-            {
-                Sender.Tell(RelayResultReason.Invalid);
-                return;
-            }
-            MemPool.VerifyingSenderFeeMonitor.AddSenderVerifyingFee(transaction);
-            var subVerifier = IndexToParallelVerifierDic[ParallelVerifierIndex++];
-            ParallelVerifierIndex = ParallelVerifierIndex >= ParallelVerifierCount ? 0 : ParallelVerifierIndex;
-            subVerifier.Tell(new ParallelVerifyTransaction(transaction, shouldRelay), Sender);
+            Task.Run(() => { return transaction.VerifySizeAndFeeAndWitness(currentSnapshot); }).ContinueWith((result) => { return new ParallelVerifiedTransaction(transaction, result.Result, shouldRelay); }).PipeTo(Self, Sender);
         }
 
         private void Persist(Block block)
@@ -615,10 +578,6 @@ namespace Neo.Ledger
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
-            foreach (var parallelVerifier in IndexToParallelVerifierInstanceDic.Values)
-            {
-                parallelVerifier.CurrentSnapshot = currentSnapshot;
-            }
         }
     }
 

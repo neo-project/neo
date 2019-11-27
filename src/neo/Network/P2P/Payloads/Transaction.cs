@@ -210,6 +210,10 @@ namespace Neo.Network.P2P.Payloads
         public virtual bool Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
+            return VerifySizeAndFeeAndWitness(snapshot);
+        }
+        public bool VerifySizeAndFeeAndWitness(StoreView snapshot)
+        {
             int size = Size;
             if (size > MaxTransactionSize) return false;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);

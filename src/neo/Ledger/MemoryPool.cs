@@ -73,11 +73,6 @@ namespace Neo.Ledger
         public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
 
         /// <summary>
-        /// Store all verifying transactions' senders' fee currently in the memory pool.
-        /// </summary>
-        public VerifyingSenderFeeMonitor VerifyingSenderFeeMonitor = new VerifyingSenderFeeMonitor();
-
-        /// <summary>
         /// Total count of transactions in the pool.
         /// </summary>
         public int Count
