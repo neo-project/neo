@@ -38,19 +38,22 @@ namespace Neo.IO.Data.LevelDB
 
         public SliceBuilder Add(IEnumerable<byte> value)
         {
-            data.AddRange(value);
+            if (value != null)
+                data.AddRange(value);
             return this;
         }
 
         public SliceBuilder Add(string value)
         {
-            data.AddRange(Encoding.UTF8.GetBytes(value));
+            if (value != null)
+                data.AddRange(Encoding.UTF8.GetBytes(value));
             return this;
         }
 
         public SliceBuilder Add(ISerializable value)
         {
-            data.AddRange(value.ToArray());
+            if (value != null)
+                data.AddRange(value.ToArray());
             return this;
         }
 

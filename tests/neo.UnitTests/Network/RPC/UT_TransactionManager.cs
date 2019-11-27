@@ -3,6 +3,7 @@ using Moq;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
@@ -156,8 +157,7 @@ namespace Neo.UnitTests.Network.RPC
                 .AddSignature(keyPair1)
                 .Sign();
 
-            var store = TestBlockchain.GetStore();
-            var snapshot = store.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             var tx = txManager.Tx;
             Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
