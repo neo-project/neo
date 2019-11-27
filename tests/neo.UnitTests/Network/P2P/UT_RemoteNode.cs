@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Network.P2P
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
         {
-            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
+            testBlockchain = TestBlockchain.TheNeoSystem;
         }
 
         [TestMethod]

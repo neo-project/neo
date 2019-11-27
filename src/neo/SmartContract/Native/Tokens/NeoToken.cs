@@ -33,7 +33,7 @@ namespace Neo.SmartContract.Native.Tokens
             this.TotalAmount = 100000000 * Factor;
         }
 
-        public override BigInteger TotalSupply(Snapshot snapshot)
+        public override BigInteger TotalSupply(StoreView snapshot)
         {
             return TotalAmount;
         }
@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native.Tokens
             engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
         }
 
-        private BigInteger CalculateBonus(Snapshot snapshot, BigInteger value, uint start, uint end)
+        private BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
@@ -124,7 +124,7 @@ namespace Neo.SmartContract.Native.Tokens
             return UnclaimedGas(engine.Snapshot, account, end);
         }
 
-        public BigInteger UnclaimedGas(Snapshot snapshot, UInt160 account, uint end)
+        public BigInteger UnclaimedGas(StoreView snapshot, UInt160 account, uint end)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native.Tokens
             return RegisterValidator(engine.Snapshot, pubkey);
         }
 
-        private bool RegisterValidator(Snapshot snapshot, ECPoint pubkey)
+        private bool RegisterValidator(StoreView snapshot, ECPoint pubkey)
         {
             StorageKey key = CreateStorageKey(Prefix_Validator, pubkey);
             if (snapshot.Storages.TryGet(key) != null) return false;
@@ -199,7 +199,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
         }
 
-        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(Snapshot snapshot)
+        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(StoreView snapshot)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, new[] { Prefix_Validator });
             return snapshot.Storages.Find(prefix_key).Select(p =>
@@ -215,7 +215,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
         }
 
-        public ECPoint[] GetValidators(Snapshot snapshot)
+        public ECPoint[] GetValidators(StoreView snapshot)
         {
             StorageItem storage_count = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
             if (storage_count is null) return Blockchain.StandbyValidators;
@@ -240,7 +240,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
         }
 
-        public ECPoint[] GetNextBlockValidators(Snapshot snapshot)
+        public ECPoint[] GetNextBlockValidators(StoreView snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
             if (storage is null) return Blockchain.StandbyValidators;

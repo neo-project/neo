@@ -21,7 +21,7 @@ namespace Neo.Consensus
         /// <summary>
         /// Key for saving consensus state.
         /// </summary>
-        private static readonly byte[] ConsensusStateKey = { 0xf4 };
+        private const byte ConsensusStatePrefix = 0xf4;
 
         public Block Block;
         public byte ViewNumber;
@@ -42,11 +42,11 @@ namespace Neo.Consensus
         /// </summary>
         public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
 
-        public Snapshot Snapshot { get; private set; }
+        public SnapshotView Snapshot { get; private set; }
         private KeyPair keyPair;
         private int _witnessSize;
         private readonly Wallet wallet;
-        private readonly Store store;
+        private readonly IStore store;
 
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
@@ -74,7 +74,7 @@ namespace Neo.Consensus
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(Wallet wallet, Store store)
+        public ConsensusContext(Wallet wallet, IStore store)
         {
             this.wallet = wallet;
             this.store = store;
@@ -146,7 +146,7 @@ namespace Neo.Consensus
 
         public bool Load()
         {
-            byte[] data = store.Get(ConsensusStateKey);
+            byte[] data = store.TryGet(ConsensusStatePrefix, null);
             if (data is null || data.Length == 0) return false;
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms))
@@ -409,7 +409,7 @@ namespace Neo.Consensus
 
         public void Save()
         {
-            store.PutSync(ConsensusStateKey, this.ToArray());
+            store.PutSync(ConsensusStatePrefix, null, this.ToArray());
         }
 
         public void Serialize(BinaryWriter writer)
