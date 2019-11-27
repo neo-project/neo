@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -45,22 +44,15 @@ namespace Neo.Plugins
 
         protected Plugin()
         {
-            Plugins = Add(Plugins, this);
+            Plugins = Plugins.Concat(new Plugin[] { this }).ToArray();
 
-            if (this is ILogPlugin logger) Loggers = Add(Loggers, logger);
-            if (this is IP2PPlugin p2p) P2PPlugins = Add(P2PPlugins, p2p);
-            if (this is IRpcPlugin rpc) RpcPlugins = Add(RpcPlugins, rpc);
-            if (this is IPersistencePlugin persistence) PersistencePlugins = Add(PersistencePlugins, persistence);
-            if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins = Add(TxObserverPlugins, txObserver);
+            Loggers = Plugins.Where(u => u is ILogPlugin).Cast<ILogPlugin>().ToArray();
+            P2PPlugins = Plugins.Where(u => u is IP2PPlugin).Cast<IP2PPlugin>().ToArray();
+            RpcPlugins = Plugins.Where(u => u is IRpcPlugin).Cast<IRpcPlugin>().ToArray();
+            PersistencePlugins = Plugins.Where(u => u is IPersistencePlugin).Cast<IPersistencePlugin>().ToArray();
+            TxObserverPlugins = Plugins.Where(u => u is IMemoryPoolTxObserverPlugin).Cast<IMemoryPoolTxObserverPlugin>().ToArray();
 
             Configure();
-        }
-
-        private T[] Add<T>(T[] plugins, T plugin)
-        {
-            var list = new List<T>(plugins);
-            list.Add(plugin);
-            return list.ToArray();
         }
 
         public abstract void Configure();
