@@ -55,12 +55,6 @@ namespace Neo.UnitTests.Ledger
             plugin = new TestIMemoryPoolTxObserverPlugin();
         }
 
-        [TestCleanup]
-        public void CleanUp()
-        {
-            Plugin.TxObserverPlugins.Remove(plugin);
-        }
-
         long LongRandom(long min, long max, Random rand)
         {
             // Only returns positive random long values.

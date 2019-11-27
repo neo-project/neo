@@ -46,7 +46,6 @@ namespace Neo.UnitTests.Plugins
         {
             lock (locker)
             {
-                Plugin.Plugins.Clear();
                 Plugin.SendMessage("hey1").Should().BeFalse();
 
                 var lp = new TestLogPlugin();

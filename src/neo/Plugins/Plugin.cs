@@ -10,12 +10,12 @@ namespace Neo.Plugins
 {
     public abstract class Plugin : IDisposable
     {
-        public static readonly List<Plugin> Plugins = new List<Plugin>();
-        private static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
-        internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
-        internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
-        internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
-        internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
+        public static Plugin[] Plugins { get; private set; } = new Plugin[0];
+        internal static ILogPlugin[] Loggers { get; private set; } = new ILogPlugin[0];
+        internal static IRpcPlugin[] RpcPlugins { get; private set; } = new IRpcPlugin[0];
+        internal static IPersistencePlugin[] PersistencePlugins { get; private set; } = new IPersistencePlugin[0];
+        internal static IP2PPlugin[] P2PPlugins { get; private set; } = new IP2PPlugin[0];
+        internal static IMemoryPoolTxObserverPlugin[] TxObserverPlugins { get; private set; } = new IMemoryPoolTxObserverPlugin[0];
 
         private static readonly string pluginsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
         private static readonly FileSystemWatcher configWatcher;
@@ -45,15 +45,22 @@ namespace Neo.Plugins
 
         protected Plugin()
         {
-            Plugins.Add(this);
+            Plugins = Add(Plugins, this);
 
-            if (this is ILogPlugin logger) Loggers.Add(logger);
-            if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
-            if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
-            if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
-            if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
+            if (this is ILogPlugin logger) Loggers = Add(Loggers, logger);
+            if (this is IP2PPlugin p2p) P2PPlugins = Add(P2PPlugins, p2p);
+            if (this is IRpcPlugin rpc) RpcPlugins = Add(RpcPlugins, rpc);
+            if (this is IPersistencePlugin persistence) PersistencePlugins = Add(PersistencePlugins, persistence);
+            if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins = Add(TxObserverPlugins, txObserver);
 
             Configure();
+        }
+
+        private T[] Add<T>(T[] plugins, T plugin)
+        {
+            var list = new List<T>(plugins);
+            list.Add(plugin);
+            return list.ToArray();
         }
 
         public abstract void Configure();
