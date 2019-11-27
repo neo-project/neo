@@ -90,7 +90,8 @@ namespace Neo.Network.P2P
 
         private static bool IsIntranetAddress(IPAddress address)
         {
-            byte[] data = address.MapToIPv4().GetAddressBytes().Reverse();
+            byte[] data = address.MapToIPv4().GetAddressBytes();
+            Array.Reverse(data);
             uint value = data.ToUInt32(0);
             return (value & 0xff000000) == 0x0a000000 || (value & 0xff000000) == 0x7f000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000 || (value & 0xffff0000) == 0xa9fe0000;
         }

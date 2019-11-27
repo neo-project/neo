@@ -111,7 +111,7 @@ namespace Neo.Cryptography.ECC
                         {
                             throw new FormatException();
                         }
-                        return DecodePoint(buffer.Take(1 + curve.ExpectedECPointLength), curve);
+                        return DecodePoint(buffer[..(1 + curve.ExpectedECPointLength)], curve);
                     }
                 case 0x04:
                     {
@@ -169,10 +169,10 @@ namespace Neo.Cryptography.ECC
                     return DecodePoint(pubkey, curve);
                 case 64:
                 case 72:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 64)), curve);
+                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey[^64..]), curve);
                 case 96:
                 case 104:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Take(pubkey.Length - 96, 64)), curve);
+                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey[^96..^32]), curve);
                 default:
                     throw new FormatException();
             }

@@ -61,7 +61,7 @@ namespace Neo
                 return true;
             if (data_bytes.Length != other.data_bytes.Length)
                 return false;
-            return Helper.MemoryEquals(data_bytes, other.data_bytes);
+            return MemoryExtensions.SequenceEqual<byte>(data_bytes, other.data_bytes);
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace Neo
         /// </summary>
         public override string ToString()
         {
-            return "0x" + data_bytes.Reverse().ToHexString();
+            return "0x" + data_bytes.ToHexString(reverse: true);
         }
 
         /// <summary>

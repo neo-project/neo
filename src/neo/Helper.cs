@@ -17,82 +17,6 @@ namespace Neo
     {
         private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        #region Avoid Linq
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static bool MemoryEquals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
-        {
-            if (x == y) return true;
-            int len = x.Length;
-            if (len != y.Length) return false;
-            if (len == 0) return true;
-            fixed (byte* xp = x, yp = y)
-            {
-                long* xlp = (long*)xp, ylp = (long*)yp;
-                for (; len >= 8; len -= 8)
-                {
-                    if (*xlp != *ylp) return false;
-                    xlp++;
-                    ylp++;
-                }
-                byte* xbp = (byte*)xlp, ybp = (byte*)ylp;
-                for (; len > 0; len--)
-                {
-                    if (*xbp != *ybp) return false;
-                    xbp++;
-                    ybp++;
-                }
-            }
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T[] Reverse<T>(this T[] origin)
-        {
-            var ret = new T[origin.Length];
-            for (int x = 0, m = ret.Length - 1; x <= m; x++)
-            {
-                ret[x] = origin[m - x];
-            }
-            return ret;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Skip(this byte[] a, int index)
-        {
-            var length = a.Length - index;
-
-            if (length < 0) throw new ArgumentException(nameof(a));
-
-            var ret = new byte[length];
-            Buffer.BlockCopy(a, index, ret, 0, length);
-            return ret;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Take(this byte[] a, int count) => Take(a, 0, count);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Take(this byte[] a, int index, int count)
-        {
-            if (count < 0) throw new ArgumentException(nameof(count));
-
-            var ret = new byte[count];
-            Buffer.BlockCopy(a, index, ret, 0, count);
-            return ret;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Concat(this byte[] a, byte[] b)
-        {
-            var ret = new byte[a.Length + b.Length];
-            Buffer.BlockCopy(a, 0, ret, 0, a.Length);
-            Buffer.BlockCopy(b, 0, ret, a.Length, b.Length);
-            return ret;
-        }
-
-        #endregion
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int BitLen(int w)
         {
@@ -109,6 +33,15 @@ namespace Neo
                 : (w < 1 << 21 ? (w < 1 << 20 ? 20 : 21) : (w < 1 << 22 ? 22 : 23))) : (w < 1 << 27
                 ? (w < 1 << 25 ? (w < 1 << 24 ? 24 : 25) : (w < 1 << 26 ? 26 : 27))
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Concat(this byte[] a, byte[] b)
+        {
+            var ret = new byte[a.Length + b.Length];
+            Buffer.BlockCopy(a, 0, ret, 0, a.Length);
+            Buffer.BlockCopy(b, 0, ret, a.Length, b.Length);
+            return ret;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -257,12 +190,19 @@ namespace Neo
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
-
-        public static string ToHexString(this IEnumerable<byte> value)
+        public static string ToHexString(this byte[] value)
         {
             StringBuilder sb = new StringBuilder();
             foreach (byte b in value)
                 sb.AppendFormat("{0:x2}", b);
+            return sb.ToString();
+        }
+
+        public static string ToHexString(this byte[] value, bool reverse = false)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < value.Length; i++)
+                sb.AppendFormat("{0:x2}", value[reverse ? value.Length - i - 1 : i]);
             return sb.ToString();
         }
 
