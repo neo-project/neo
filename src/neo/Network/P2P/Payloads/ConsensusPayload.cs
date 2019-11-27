@@ -95,7 +95,7 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
             ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
             if (validators.Length <= ValidatorIndex)
@@ -118,7 +118,7 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public bool Verify(Snapshot snapshot)
+        public bool Verify(StoreView snapshot)
         {
             if (BlockIndex <= snapshot.Height)
                 return false;

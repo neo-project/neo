@@ -17,19 +17,17 @@ namespace Neo.UnitTests.SmartContract
     {
         private string message = null;
         private StackItem item = null;
-        private Store Store;
 
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
         public void TestLog()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             ApplicationEngine.Log += Test_Log1;
             string logMessage = "TestMessage";
@@ -54,7 +52,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestNotify()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             ApplicationEngine.Notify += Test_Notify1;
             StackItem notifyItem = "TestItem";
@@ -79,10 +77,10 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestDisposable()
         {
-            var snapshot = Store.GetSnapshot().Clone();
-            var replica = snapshot.Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var m = new Mock<IDisposable>();
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            engine.AddDisposable(replica).Should().Be(replica);
+            engine.AddDisposable(m.Object).Should().Be(m.Object);
             Action action = () => engine.Dispose();
             action.Should().NotThrow();
         }
@@ -110,19 +108,12 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateDummyBlock()
         {
-            var mockSnapshot = new Mock<Snapshot>();
-            UInt256 currentBlockHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000");
-            TrimmedBlock block = new TrimmedBlock();
-            var cache = new TestDataCache<UInt256, TrimmedBlock>();
-            cache.Add(currentBlockHash, block);
-            mockSnapshot.SetupGet(p => p.Blocks).Returns(cache);
-            TestMetaDataCache<HashIndexState> testCache = new TestMetaDataCache<HashIndexState>();
-            mockSnapshot.SetupGet(p => p.BlockHashIndex).Returns(testCache);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, mockSnapshot.Object);
-            mockSnapshot.Object.PersistingBlock.Version.Should().Be(0);
-            mockSnapshot.Object.PersistingBlock.PrevHash.Should().Be(currentBlockHash);
-            mockSnapshot.Object.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
+            ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
+            snapshot.PersistingBlock.Version.Should().Be(0);
+            snapshot.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
+            snapshot.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
         }
 
         [TestMethod]
@@ -134,10 +125,8 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
             engine.GetOnSysCall(descriptor.Hash).Should().BeFalse();
 
-            var mockSnapshot = new Mock<Snapshot>();
-            TestMetaDataCache<HashIndexState> testCache = new TestMetaDataCache<HashIndexState>();
-            mockSnapshot.SetupGet(p => p.BlockHashIndex).Returns(testCache);
-            engine = new TestApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0, true);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            engine = new TestApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
             engine.GetOnSysCall(descriptor.Hash).Should().BeTrue();
         }
@@ -151,7 +140,7 @@ namespace Neo.UnitTests.SmartContract
 
     public class TestApplicationEngine : ApplicationEngine
     {
-        public TestApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false) : base(trigger, container, snapshot, gas, testMode)
+        public TestApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false) : base(trigger, container, snapshot, gas, testMode)
         {
         }
 

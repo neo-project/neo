@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlock()
         {
-            var cache = new TestDataCache<UInt256, TransactionState>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = TestUtils.GetTransaction();
             tx1.Script = new byte[] { 0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,
@@ -63,12 +63,12 @@ namespace Neo.UnitTests.Ledger
                 Transaction = tx2,
                 BlockIndex = 1
             };
-            cache.Add(tx1.Hash, state1);
-            cache.Add(tx2.Hash, state2);
+            snapshot.Transactions.Add(tx1.Hash, state1);
+            snapshot.Transactions.Add(tx2.Hash, state2);
 
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
-            Block block = tblock.GetBlock(cache);
+            Block block = tblock.GetBlock(snapshot.Transactions);
 
             block.Index.Should().Be(1);
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));

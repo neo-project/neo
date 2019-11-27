@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
@@ -90,7 +89,6 @@ namespace Neo.UnitTests.Wallets
     [TestClass]
     public class UT_Wallet
     {
-        Store store;
         private static KeyPair glkey;
         private static string nep2Key;
 
@@ -104,7 +102,7 @@ namespace Neo.UnitTests.Wallets
         [TestInitialize]
         public void TestSetup()
         {
-            store = TestBlockchain.GetStore();
+            TestBlockchain.InitializeMockNeoSystem();
         }
 
         [TestMethod]
@@ -198,7 +196,7 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = store.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
@@ -209,6 +207,7 @@ namespace Neo.UnitTests.Wallets
                 Balance = 10000 * NativeContract.GAS.Factor
             }
             .ToByteArray();
+            snapshot.Commit();
 
             wallet.GetAvailable(NativeContract.GAS.Hash).Should().Be(new BigDecimal(1000000000000, 8));
 
@@ -217,6 +216,7 @@ namespace Neo.UnitTests.Wallets
                 Balance = 0
             }
             .ToByteArray();
+            snapshot.Commit();
         }
 
         [TestMethod]
@@ -228,7 +228,7 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = store.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
@@ -239,6 +239,7 @@ namespace Neo.UnitTests.Wallets
                 Balance = 10000 * NativeContract.GAS.Factor
             }
             .ToByteArray();
+            snapshot.Commit();
 
             wallet.GetBalance(UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(0, 0));
             wallet.GetBalance(NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(1000000000000, 8));
@@ -248,6 +249,7 @@ namespace Neo.UnitTests.Wallets
                 Balance = 0
             }
             .ToByteArray();
+            snapshot.Commit();
         }
 
         [TestMethod]
@@ -336,28 +338,30 @@ namespace Neo.UnitTests.Wallets
             action.Should().Throw<InvalidOperationException>();
 
             // Fake balance
-            var snapshot = store.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
-            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+            var entry1 = snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
                 Value = new Nep5AccountState().ToByteArray()
             });
-            entry.Value = new Nep5AccountState()
+            entry1.Value = new Nep5AccountState()
             {
                 Balance = 10000 * NativeContract.GAS.Factor
             }
             .ToByteArray();
 
             key = NativeContract.NEO.CreateStorageKey(20, account.ScriptHash);
-            entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+            var entry2 = snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
                 Value = new Nep5AccountState().ToByteArray()
             });
-            entry.Value = new NeoToken.AccountState()
+            entry2.Value = new NeoToken.AccountState()
             {
                 Balance = 10000 * NativeContract.NEO.Factor
             }
             .ToByteArray();
+
+            snapshot.Commit();
 
             var tx = wallet.MakeTransaction(new TransferOutput[]
             {
@@ -381,11 +385,17 @@ namespace Neo.UnitTests.Wallets
             });
             tx.Should().NotBeNull();
 
-            entry.Value = new NeoToken.AccountState()
+            entry1.Value = new Nep5AccountState()
             {
                 Balance = 0
             }
             .ToByteArray();
+            entry2.Value = new NeoToken.AccountState()
+            {
+                Balance = 0
+            }
+            .ToByteArray();
+            snapshot.Commit();
         }
 
         [TestMethod]
@@ -400,7 +410,7 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = store.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
@@ -411,6 +421,7 @@ namespace Neo.UnitTests.Wallets
                 Balance = 1000000 * NativeContract.GAS.Factor
             }
             .ToByteArray();
+            snapshot.Commit();
 
             var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new TransactionAttribute[] { });
             tx.Should().NotBeNull();
@@ -423,6 +434,7 @@ namespace Neo.UnitTests.Wallets
                 Balance = 0
             }
             .ToByteArray();
+            snapshot.Commit();
         }
 
         [TestMethod]

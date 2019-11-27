@@ -1,12 +1,10 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
@@ -142,10 +140,10 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Neo_Account_IsStandard).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
-            var mockSnapshot = new Mock<Snapshot>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
-            engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
             InteropService.Invoke(engine, InteropService.Neo_Account_IsStandard).Should().BeTrue();
@@ -176,10 +174,10 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Neo_Contract_Create).Should().BeTrue();
 
-            var mockSnapshot = new Mock<Snapshot>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
-            engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(state.Script);
@@ -219,7 +217,7 @@ namespace Neo.UnitTests.SmartContract
                     Signature = signature
                 }
             };
-            var mockSnapshot = new Mock<Snapshot>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
             var storageItem = new StorageItem
@@ -233,9 +231,9 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = state.ScriptHash,
                 Key = new byte[] { 0x01 }
             };
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
-            mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
-            engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Storages.Add(storageKey, storageItem);
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(state.Script);
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
@@ -244,10 +242,10 @@ namespace Neo.UnitTests.SmartContract
             // Remove Storage flag with something stored
 
             state.Manifest.Features = ContractFeatures.NoProperty;
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
-            mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Storages.Add(storageKey, storageItem);
 
-            engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(state.Script);
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
@@ -257,7 +255,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_Find()
         {
-            var mockSnapshot = new Mock<Snapshot>();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
 
@@ -271,9 +269,9 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = state.ScriptHash,
                 Key = new byte[] { 0x01 }
             };
-            mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>(state.ScriptHash, state));
-            mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>(storageKey, storageItem));
-            var engine = new ApplicationEngine(TriggerType.Application, null, mockSnapshot.Object, 0);
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Storages.Add(storageKey, storageItem);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
 
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
