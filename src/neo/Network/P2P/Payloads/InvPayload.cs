@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
                 yield return new InvPayload
                 {
                     Type = type,
-                    Hashes = hashes.Skip(i).Take(MaxHashesCount).ToArray()
+                    Hashes = hashes[i..^(i + MaxHashesCount)]
                 };
         }
 

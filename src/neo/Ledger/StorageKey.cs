@@ -44,7 +44,7 @@ namespace Neo.Ledger
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return ScriptHash.Equals(other.ScriptHash) && Key.SequenceEqual(other.Key);
+            return ScriptHash.Equals(other.ScriptHash) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
         }
 
         public override bool Equals(object obj)
