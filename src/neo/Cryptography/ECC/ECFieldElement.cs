@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.Cryptography.ECC
@@ -143,7 +142,9 @@ namespace Neo.Cryptography.ECC
             byte[] data = Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             if (data.Length == 32)
                 return data;
-            return new byte[32 - data.Length].Concat(data);
+            byte[] buffer = new byte[32];
+            Buffer.BlockCopy(data, 0, buffer, buffer.Length - data.Length, data.Length);
+            return buffer;
         }
 
         public static ECFieldElement operator -(ECFieldElement x)

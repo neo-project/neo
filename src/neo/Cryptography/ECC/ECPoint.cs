@@ -2,6 +2,7 @@ using Neo.IO;
 using System;
 using System.IO;
 using System.Numerics;
+using static Neo.Helper;
 
 namespace Neo.Cryptography.ECC
 {
@@ -169,10 +170,10 @@ namespace Neo.Cryptography.ECC
                     return DecodePoint(pubkey, curve);
                 case 64:
                 case 72:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey[^64..]), curve);
+                    return DecodePoint(Concat(new byte[] { 0x04 }, pubkey[^64..]), curve);
                 case 96:
                 case 104:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey[^96..^32]), curve);
+                    return DecodePoint(Concat(new byte[] { 0x04 }, pubkey[^96..^32]), curve);
                 default:
                     throw new FormatException();
             }

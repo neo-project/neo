@@ -2,7 +2,6 @@ using Neo.Cryptography;
 using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Ledger
 {
@@ -28,7 +27,7 @@ namespace Neo.Ledger
                 }
                 if (remain > 0)
                     ms.Write(prefix, index, remain);
-                return hash.ToArray().Concat(ms.ToArray()).ToArray();
+                return Helper.Concat(hash.ToArray(), ms.ToArray());
             }
         }
 

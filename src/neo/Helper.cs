@@ -36,11 +36,15 @@ namespace Neo
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Concat(this byte[] a, byte[] b)
+        public static byte[] Concat(params byte[][] buffers)
         {
-            var ret = new byte[a.Length + b.Length];
-            Buffer.BlockCopy(a, 0, ret, 0, a.Length);
-            Buffer.BlockCopy(b, 0, ret, a.Length, b.Length);
+            var ret = new byte[buffers.Sum(p => p.Length)];
+            int i = 0;
+            foreach (byte[] buffer in buffers)
+            {
+                Buffer.BlockCopy(buffer, 0, ret, i, buffer.Length);
+                i += buffer.Length;
+            }
             return ret;
         }
 
