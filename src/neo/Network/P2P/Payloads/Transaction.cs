@@ -4,6 +4,7 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
