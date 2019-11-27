@@ -57,7 +57,7 @@ namespace Neo.Network.RPC
                 throw new NotImplementedException();
             }
 
-            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
             {
                 return _scriptHashesForVerifying;
             }
@@ -435,12 +435,12 @@ namespace Neo.Network.RPC
             if (key is JNumber)
             {
                 uint index = uint.Parse(key.AsString());
-                block = Blockchain.Singleton.Store.GetBlock(index);
+                block = Blockchain.Singleton.GetBlock(index);
             }
             else
             {
                 UInt256 hash = UInt256.Parse(key.AsString());
-                block = Blockchain.Singleton.Store.GetBlock(hash);
+                block = Blockchain.Singleton.View.GetBlock(hash);
             }
             if (block == null)
                 throw new RpcException(-100, "Unknown block");
@@ -448,7 +448,7 @@ namespace Neo.Network.RPC
             {
                 JObject json = block.ToJson();
                 json["confirmations"] = Blockchain.Singleton.Height - block.Index + 1;
-                UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(block.Hash);
+                UInt256 hash = Blockchain.Singleton.GetNextBlockHash(block.Hash);
                 if (hash != null)
                     json["nextblockhash"] = hash.ToString();
                 return json;
@@ -476,12 +476,12 @@ namespace Neo.Network.RPC
             if (key is JNumber)
             {
                 uint height = uint.Parse(key.AsString());
-                header = Blockchain.Singleton.Store.GetHeader(height);
+                header = Blockchain.Singleton.GetHeader(height);
             }
             else
             {
                 UInt256 hash = UInt256.Parse(key.AsString());
-                header = Blockchain.Singleton.Store.GetHeader(hash);
+                header = Blockchain.Singleton.View.GetHeader(hash);
             }
             if (header == null)
                 throw new RpcException(-100, "Unknown block");
@@ -490,7 +490,7 @@ namespace Neo.Network.RPC
             {
                 JObject json = header.ToJson();
                 json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
-                UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(header.Hash);
+                UInt256 hash = Blockchain.Singleton.GetNextBlockHash(header.Hash);
                 if (hash != null)
                     json["nextblockhash"] = hash.ToString();
                 return json;
@@ -516,7 +516,7 @@ namespace Neo.Network.RPC
 
         private JObject GetContractState(UInt160 script_hash)
         {
-            ContractState contract = Blockchain.Singleton.Store.GetContracts().TryGet(script_hash);
+            ContractState contract = Blockchain.Singleton.View.Contracts.TryGet(script_hash);
             return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
         }
 
@@ -564,10 +564,10 @@ namespace Neo.Network.RPC
             if (verbose)
             {
                 JObject json = tx.ToJson();
-                TransactionState txState = Blockchain.Singleton.Store.GetTransactions().TryGet(hash);
+                TransactionState txState = Blockchain.Singleton.View.Transactions.TryGet(hash);
                 if (txState != null)
                 {
-                    Header header = Blockchain.Singleton.Store.GetHeader(txState.BlockIndex);
+                    Header header = Blockchain.Singleton.GetHeader(txState.BlockIndex);
                     json["blockhash"] = header.Hash.ToString();
                     json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
                     json["blocktime"] = header.Timestamp;
@@ -580,7 +580,7 @@ namespace Neo.Network.RPC
 
         private JObject GetStorage(UInt160 script_hash, byte[] key)
         {
-            StorageItem item = Blockchain.Singleton.Store.GetStorages().TryGet(new StorageKey
+            StorageItem item = Blockchain.Singleton.View.Storages.TryGet(new StorageKey
             {
                 ScriptHash = script_hash,
                 Key = key
@@ -590,14 +590,14 @@ namespace Neo.Network.RPC
 
         private JObject GetTransactionHeight(UInt256 hash)
         {
-            uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
+            uint? height = Blockchain.Singleton.View.Transactions.TryGet(hash)?.BlockIndex;
             if (height.HasValue) return height.Value;
             throw new RpcException(-100, "Unknown transaction");
         }
 
         private JObject GetValidators()
         {
-            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var validators = NativeContract.NEO.GetValidators(snapshot);
                 return NativeContract.NEO.GetRegisteredValidators(snapshot).Select(p =>

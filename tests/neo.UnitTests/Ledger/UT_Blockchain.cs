@@ -9,7 +9,7 @@ namespace Neo.UnitTests.Ledger
 {
     internal class TestBlock : Block
     {
-        public override bool Verify(Snapshot snapshot)
+        public override bool Verify(StoreView snapshot)
         {
             return true;
         }
@@ -22,7 +22,7 @@ namespace Neo.UnitTests.Ledger
 
     internal class TestHeader : Header
     {
-        public override bool Verify(Snapshot snapshot)
+        public override bool Verify(StoreView snapshot)
         {
             return true;
         }
@@ -37,14 +37,14 @@ namespace Neo.UnitTests.Ledger
     public class UT_Blockchain
     {
         private NeoSystem system;
-        private Store store;
+        private IStore store;
         Transaction txSample = Blockchain.GenesisBlock.Transactions[0];
 
         [TestInitialize]
         public void Initialize()
         {
-            system = TestBlockchain.InitializeMockNeoSystem();
-            store = TestBlockchain.GetStore();
+            system = TestBlockchain.TheNeoSystem;
+            store = TestBlockchain.Store;
             Blockchain.Singleton.MemPool.TryAdd(txSample.Hash, txSample);
         }
 
