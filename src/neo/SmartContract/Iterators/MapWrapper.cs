@@ -12,6 +12,18 @@ namespace Neo.SmartContract.Iterators
             this.enumerator = map.GetEnumerator();
         }
 
+        public IIterator Reverse()
+        {
+            var list = new List<KeyValuePair<PrimitiveType, StackItem>>();
+
+            while (enumerator.MoveNext())
+            {
+                list.Insert(0, enumerator.Current);
+            }
+
+            return new MapWrapper(list);
+        }
+
         public void Dispose()
         {
             enumerator.Dispose();

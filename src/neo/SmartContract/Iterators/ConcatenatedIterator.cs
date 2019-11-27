@@ -1,4 +1,5 @@
 using Neo.VM.Types;
+using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
 {
@@ -24,6 +25,17 @@ namespace Neo.SmartContract.Iterators
             return current.Next();
         }
 
+        public IIterator Reverse()
+        {
+            var list = new List<KeyValuePair<PrimitiveType, StackItem>>();
+
+            while (Next())
+            {
+                list.Insert(0, new KeyValuePair<PrimitiveType, StackItem>(Key(), Value()));
+            }
+
+            return new MapWrapper(list);
+        }
 
         public void Dispose()
         {

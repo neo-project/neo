@@ -6,5 +6,6 @@ namespace Neo.SmartContract.Iterators
     internal interface IIterator : IEnumerator
     {
         PrimitiveType Key();
+        IIterator Reverse();
     }
 }

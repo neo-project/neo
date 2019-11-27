@@ -13,6 +13,18 @@ namespace Neo.SmartContract.Iterators
             this.enumerator = enumerator;
         }
 
+        public IIterator Reverse()
+        {
+            var list = new List<(StorageKey, StorageItem)>();
+
+            while (enumerator.MoveNext())
+            {
+                list.Insert(0, enumerator.Current);
+            }
+
+            return new StorageIterator(list.GetEnumerator());
+        }
+
         public void Dispose()
         {
             enumerator.Dispose();

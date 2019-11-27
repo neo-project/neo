@@ -37,6 +37,47 @@ namespace Neo.UnitTests.SmartContract.Iterators
         }
 
         [TestMethod]
+        public void TestReverse()
+        {
+            List<StackItem> list = new List<StackItem>(new StackItem[] { 1, 2, 3 });
+
+            IIterator arrayWrapper = new ArrayWrapper(list);
+
+            for (int x = 0; x < 3; x++)
+            {
+                Assert.IsTrue(arrayWrapper.Next());
+                Assert.AreEqual(x, arrayWrapper.Key());
+                Assert.AreEqual(x + 1, arrayWrapper.Value());
+            }
+
+            arrayWrapper = new ArrayWrapper(list).Reverse();
+
+            for (int x = 2; x >= 0; x--)
+            {
+                Assert.IsTrue(arrayWrapper.Next());
+                Assert.AreEqual(x, arrayWrapper.Key());
+                Assert.AreEqual(x + 1, arrayWrapper.Value());
+            }
+
+            arrayWrapper = new ArrayWrapper(list);
+
+            Assert.IsTrue(arrayWrapper.Next());
+            Assert.AreEqual(0, arrayWrapper.Key());
+            Assert.AreEqual(1, arrayWrapper.Value());
+            Assert.IsTrue(arrayWrapper.Next());
+            Assert.AreEqual(1, arrayWrapper.Key());
+            Assert.AreEqual(2, arrayWrapper.Value());
+
+            arrayWrapper = arrayWrapper.Reverse();
+
+            Assert.IsTrue(arrayWrapper.Next());
+            Assert.AreEqual(0, arrayWrapper.Key());
+            Assert.AreEqual(1, arrayWrapper.Value());
+
+            Assert.IsFalse(arrayWrapper.Next());
+        }
+
+        [TestMethod]
         public void TestNext()
         {
             List<StackItem> list = new List<StackItem>();

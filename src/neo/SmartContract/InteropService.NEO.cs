@@ -29,6 +29,7 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Enumerator_Value = Register("Neo.Enumerator.Value", Enumerator_Value, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Enumerator_Concat = Register("Neo.Enumerator.Concat", Enumerator_Concat, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Iterator_Create = Register("Neo.Iterator.Create", Iterator_Create, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Iterator_Reverse = Register("Neo.Iterator.Reverse", Iterator_Reverse, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Iterator_Key = Register("Neo.Iterator.Key", Iterator_Key, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Iterator_Keys = Register("Neo.Iterator.Keys", Iterator_Keys, 0_00000400, TriggerType.All);
         public static readonly uint Neo_Iterator_Values = Register("Neo.Iterator.Values", Iterator_Values, 0_00000400, TriggerType.All);
@@ -316,6 +317,17 @@ namespace Neo.SmartContract
                     return false;
             }
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
+            return true;
+        }
+
+        private static bool Iterator_Reverse(ApplicationEngine engine)
+        {
+            if (!engine.CurrentContext.EvaluationStack.TryPop<InteropInterface<IIterator>>(out var item))
+            {
+                return false;
+            }
+
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(item.GetInterface<IIterator>().Reverse()));
             return true;
         }
 
