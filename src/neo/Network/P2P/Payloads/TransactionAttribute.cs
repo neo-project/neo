@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads
             TransactionAttribute transactionAttribute = new TransactionAttribute();
             transactionAttribute.Usage = (TransactionAttributeUsage)byte.Parse(json["usage"].AsString());
             if (!Enum.IsDefined(typeof(TransactionAttributeUsage), transactionAttribute.Usage))
-                throw new ArgumentException();
+                throw new FormatException();
             transactionAttribute.Data = Convert.FromBase64String(json["data"].AsString());
             return transactionAttribute;
         }
