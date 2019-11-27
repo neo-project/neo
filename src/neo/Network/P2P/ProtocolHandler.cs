@@ -182,7 +182,7 @@ namespace Neo.Network.P2P
         {
             for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
             {
-                Block block = Blockchain.Singleton.View.GetBlock(i);
+                Block block = Blockchain.Singleton.GetBlock(i);
                 if (block == null)
                     break;
 

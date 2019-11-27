@@ -435,7 +435,7 @@ namespace Neo.Network.RPC
             if (key is JNumber)
             {
                 uint index = uint.Parse(key.AsString());
-                block = Blockchain.Singleton.View.GetBlock(index);
+                block = Blockchain.Singleton.GetBlock(index);
             }
             else
             {
@@ -448,7 +448,7 @@ namespace Neo.Network.RPC
             {
                 JObject json = block.ToJson();
                 json["confirmations"] = Blockchain.Singleton.Height - block.Index + 1;
-                UInt256 hash = Blockchain.Singleton.View.GetNextBlockHash(block.Hash);
+                UInt256 hash = Blockchain.Singleton.GetNextBlockHash(block.Hash);
                 if (hash != null)
                     json["nextblockhash"] = hash.ToString();
                 return json;
@@ -476,7 +476,7 @@ namespace Neo.Network.RPC
             if (key is JNumber)
             {
                 uint height = uint.Parse(key.AsString());
-                header = Blockchain.Singleton.View.GetHeader(height);
+                header = Blockchain.Singleton.GetHeader(height);
             }
             else
             {
@@ -490,7 +490,7 @@ namespace Neo.Network.RPC
             {
                 JObject json = header.ToJson();
                 json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
-                UInt256 hash = Blockchain.Singleton.View.GetNextBlockHash(header.Hash);
+                UInt256 hash = Blockchain.Singleton.GetNextBlockHash(header.Hash);
                 if (hash != null)
                     json["nextblockhash"] = hash.ToString();
                 return json;
@@ -567,7 +567,7 @@ namespace Neo.Network.RPC
                 TransactionState txState = Blockchain.Singleton.View.Transactions.TryGet(hash);
                 if (txState != null)
                 {
-                    Header header = Blockchain.Singleton.View.GetHeader(txState.BlockIndex);
+                    Header header = Blockchain.Singleton.GetHeader(txState.BlockIndex);
                     json["blockhash"] = header.Hash.ToString();
                     json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
                     json["blocktime"] = header.Timestamp;

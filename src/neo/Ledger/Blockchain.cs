@@ -177,6 +177,14 @@ namespace Neo.Ledger
             };
         }
 
+        public Block GetBlock(uint index)
+        {
+            if (index == 0) return GenesisBlock;
+            UInt256 hash = GetBlockHash(index);
+            if (hash == null) return null;
+            return GetBlock(hash);
+        }
+
         public Block GetBlock(UInt256 hash)
         {
             if (block_cache.TryGetValue(hash, out Block block))
@@ -193,6 +201,28 @@ namespace Neo.Ledger
         public static UInt160 GetConsensusAddress(ECPoint[] validators)
         {
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
+        }
+
+        public Header GetHeader(uint index)
+        {
+            if (index == 0) return GenesisBlock.Header;
+            UInt256 hash = GetBlockHash(index);
+            if (hash == null) return null;
+            return GetHeader(hash);
+        }
+
+        public Header GetHeader(UInt256 hash)
+        {
+            if (block_cache.TryGetValue(hash, out Block block))
+                return block.Header;
+            return View.GetHeader(hash);
+        }
+
+        public UInt256 GetNextBlockHash(UInt256 hash)
+        {
+            Header header = GetHeader(hash);
+            if (header == null) return null;
+            return GetBlockHash(header.Index + 1);
         }
 
         public SnapshotView GetSnapshot()

@@ -53,14 +53,6 @@ namespace Neo.Persistence
             return state != null;
         }
 
-        public Block GetBlock(uint index)
-        {
-            if (index == 0) return Blockchain.GenesisBlock;
-            UInt256 hash = Blockchain.Singleton.GetBlockHash(index);
-            if (hash == null) return null;
-            return GetBlock(hash);
-        }
-
         public Block GetBlock(UInt256 hash)
         {
             TrimmedBlock state = Blocks.TryGet(hash);
@@ -69,24 +61,9 @@ namespace Neo.Persistence
             return state.GetBlock(Transactions);
         }
 
-        public Header GetHeader(uint index)
-        {
-            if (index == 0) return Blockchain.GenesisBlock.Header;
-            UInt256 hash = Blockchain.Singleton.GetBlockHash(index);
-            if (hash == null) return null;
-            return GetHeader(hash);
-        }
-
         public Header GetHeader(UInt256 hash)
         {
             return Blocks.TryGet(hash)?.Header;
-        }
-
-        public UInt256 GetNextBlockHash(UInt256 hash)
-        {
-            TrimmedBlock state = Blocks.TryGet(hash);
-            if (state == null) return null;
-            return Blockchain.Singleton.GetBlockHash(state.Index + 1);
         }
 
         public Transaction GetTransaction(UInt256 hash)
