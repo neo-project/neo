@@ -18,6 +18,8 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using Neo.Persistence;
+
 
 namespace Neo.UnitTests.Consensus
 {
@@ -41,6 +43,8 @@ namespace Neo.UnitTests.Consensus
         {
             var mockWallet = new Mock<Wallet>();
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
+            Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
+
             var mockContext = new Mock<ConsensusContext>(mockWallet.Object, Blockchain.Singleton.Store);
             mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0 };
 
@@ -87,9 +91,6 @@ namespace Neo.UnitTests.Consensus
                                      Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, mockContext.Object }, null))
                                      );
 
-            Console.WriteLine("\n==========================");
-            Console.WriteLine("Telling a new block to actor consensus...");
-
             var testPersistCompleted = new Blockchain.PersistCompleted
             {
                 Block = new Block
@@ -103,8 +104,10 @@ namespace Neo.UnitTests.Consensus
                     Transactions = new Transaction[0]
                 }
             };
-            actorConsensus.Tell(testPersistCompleted);
+            Console.WriteLine("\n==========================");
+            Console.WriteLine("Telling a new block to actor consensus...");
             Console.WriteLine("will trigger OnPersistCompleted without OnStart flag!");
+            actorConsensus.Tell(testPersistCompleted);
             // OnPersist will not launch timer, we need OnStart
             Console.WriteLine("\n==========================");
 
@@ -188,8 +191,6 @@ namespace Neo.UnitTests.Consensus
             var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
             Commit cm = (Commit)commitPayload.ConsensusMessage;
 
-            Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
-
             // Original Contract
             Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             // Console.WriteLine($"\n Contract is: {contract.ScriptHash}");
@@ -198,9 +199,8 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
-            Console.WriteLine($"{mockContext.Object.Validators[0]}");
-            Console.WriteLine($"{mockContext.Object.Validators[0]}");
-            Console.WriteLine($"{mockWallet.Object.GetAccount(mockContext.Object.Validators[0]).ScriptHash}");
+            Console.WriteLine($"VALIDATOR[0] {mockContext.Object.Validators[0]}");
+            Console.WriteLine($"VALIDATOR[0]ScriptHash: {mockWallet.Object.GetAccount(mockContext.Object.Validators[0]).ScriptHash}");
 
             KeyPair[] kp_array = new KeyPair[7]
                 {
@@ -285,8 +285,38 @@ namespace Neo.UnitTests.Consensus
             actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData));
             
 
+            Console.WriteLine($"\nFocing block PrevHash to UInt256.Zero {mockContext.Object.Block.GetHashData().ToScriptHash()}");
+            mockContext.Object.Block.PrevHash = UInt256.Zero;
+            // Payload should also be forced, otherwise OnConsensus will not pass
+            commitPayload.PrevHash = UInt256.Zero;
+            Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
+            
+            Console.WriteLine($"\nForcing block VerificationScript to {updatedContract.Script.ToScriptHash()}");
+            mockContext.Object.Block.Witness = new Witness {};
+            mockContext.Object.Block.Witness.VerificationScript = updatedContract.Script;
+            Console.WriteLine($"\nUpdating BlockBase Witness scripthash  is {mockContext.Object.Block.Witness.ScriptHash}");
+            Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
+            //mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(updatedContract.ScriptHash));
+            
+            
+            
+
+            /*
+            var blockchainSingletonCurrentHash = UInt256.Parse("0x0d492ce0f38090a65b2b01af50f7a6d685b6b76fbc41672762e96b05d15d742c");
+            Blockchain.Singleton.CurrentBlockHash.Should().Be(blockchainSingletonCurrentHash);
+            Blockchain.Singleton.GetSnapshot().GetHeader(blockchainSingletonCurrentHash);
+            Console.WriteLine($"{Blockchain.Singleton.GetBlock(blockchainSingletonCurrentHash).ToJson()}");
+            Blockchain.Singleton.GetSnapshot().*/
+            // Another option would be to Mock GetScriptHashesForVerifying
+            //var blockToBeMocked = mockContext.Object.Block;
+            //var mockBlock = new Mock<Block>();
+            //mockBlock.Object.MerkleRoot = blockToBeMocked.MerkleRoot;
+            //mockBlock.Setup(p => p.GetScriptHashesForVerifying(It.IsAny<StoreView>())).Returns<UInt160[]>(updatedContract.ScriptHash);
+            //mockContext.Object.Block = mockBlock.Object;
+
             Console.WriteLine("\nCN6 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData));
+            // Here we used modified mockContext.Object.Block.GetHashData().ToScriptHash() for blockhash
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], mockContext.Object.Block.GetHashData()));
 
             Console.WriteLine("\nWait for subscriber Local.Node Relay");
             var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
@@ -303,6 +333,7 @@ namespace Neo.UnitTests.Consensus
             //Thread.Sleep(4000);
             Console.WriteLine("Finalizing consensus service actor and returning states.");
 
+/*
             // Returning values to context beucase tests are not isolated
             mockContext.Object.Block.NextConsensus = originalContract.ScriptHash;
             mockContext.Object.PrevHeader.NextConsensus = originalContract.ScriptHash;
@@ -313,6 +344,7 @@ namespace Neo.UnitTests.Consensus
             TimeProvider.ResetToDefault();
             // Ensure thread is clear
             Assert.AreEqual(1, 1);
+            */
         }
 
         public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
