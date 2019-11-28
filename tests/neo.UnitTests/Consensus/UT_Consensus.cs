@@ -296,23 +296,6 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.Block.Witness.VerificationScript = updatedContract.Script;
             Console.WriteLine($"\nUpdating BlockBase Witness scripthash  is {mockContext.Object.Block.Witness.ScriptHash}");
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
-            //mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(updatedContract.ScriptHash));
-
-
-
-
-            /*
-            var blockchainSingletonCurrentHash = UInt256.Parse("0x0d492ce0f38090a65b2b01af50f7a6d685b6b76fbc41672762e96b05d15d742c");
-            Blockchain.Singleton.CurrentBlockHash.Should().Be(blockchainSingletonCurrentHash);
-            Blockchain.Singleton.GetSnapshot().GetHeader(blockchainSingletonCurrentHash);
-            Console.WriteLine($"{Blockchain.Singleton.GetBlock(blockchainSingletonCurrentHash).ToJson()}");
-            Blockchain.Singleton.GetSnapshot().*/
-            // Another option would be to Mock GetScriptHashesForVerifying
-            //var blockToBeMocked = mockContext.Object.Block;
-            //var mockBlock = new Mock<Block>();
-            //mockBlock.Object.MerkleRoot = blockToBeMocked.MerkleRoot;
-            //mockBlock.Setup(p => p.GetScriptHashesForVerifying(It.IsAny<StoreView>())).Returns<UInt160[]>(updatedContract.ScriptHash);
-            //mockContext.Object.Block = mockBlock.Object;
 
             Console.WriteLine("\nCN6 simulation time");
             // Here we used modified mockContext.Object.Block.GetHashData().ToScriptHash() for blockhash
@@ -332,19 +315,9 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
             //Thread.Sleep(4000);
             Console.WriteLine("Finalizing consensus service actor and returning states.");
+            TimeProvider.ResetToDefault();
 
-            /*
-                        // Returning values to context beucase tests are not isolated
-                        mockContext.Object.Block.NextConsensus = originalContract.ScriptHash;
-                        mockContext.Object.PrevHeader.NextConsensus = originalContract.ScriptHash;
-                        mockContext.Object.Block.MerkleRoot = originalBlockMerkleRoot;
-
-                        mockContext.Object.Reset(0);
-                        Sys.Stop(actorConsensus);
-                        TimeProvider.ResetToDefault();
-                        // Ensure thread is clear
-                        Assert.AreEqual(1, 1);
-                        */
+            //Sys.Stop(actorConsensus);
         }
 
         public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
