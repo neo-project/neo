@@ -41,7 +41,7 @@ namespace Neo.UnitTests.Consensus
         {
             var mockWallet = new Mock<Wallet>();
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
-            var mockContext = new Mock<ConsensusContext>(mockWallet.Object, TestBlockchain.Store);
+            var mockContext = new Mock<ConsensusContext>(mockWallet.Object, Blockchain.Singleton.Store);
             mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0 };
 
             var timeValues = new[] {

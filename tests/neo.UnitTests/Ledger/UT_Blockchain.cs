@@ -37,21 +37,19 @@ namespace Neo.UnitTests.Ledger
     public class UT_Blockchain
     {
         private NeoSystem system;
-        private IStore store;
         Transaction txSample = Blockchain.GenesisBlock.Transactions[0];
 
         [TestInitialize]
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-            store = TestBlockchain.Store;
             Blockchain.Singleton.MemPool.TryAdd(txSample.Hash, txSample);
         }
 
         [TestMethod]
         public void TestConstructor()
         {
-            system.ActorSystem.ActorOf(Blockchain.Props(system, store)).Should().NotBeSameAs(system.Blockchain);
+            system.ActorSystem.ActorOf(Blockchain.Props(system, Blockchain.Singleton.Store)).Should().NotBeSameAs(system.Blockchain);
         }
 
         [TestMethod]
