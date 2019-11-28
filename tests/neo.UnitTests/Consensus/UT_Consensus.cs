@@ -190,7 +190,7 @@ namespace Neo.UnitTests.Consensus
 
             // Original Contract
             Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
-            Console.WriteLine($"\nORIGINAL Contract is: {contract.ScriptHash}");
+            Console.WriteLine($"\nORIGINAL Contract is: {originalContract.ScriptHash}");
             originalContract.ScriptHash.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
             mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
 
