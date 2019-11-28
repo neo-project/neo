@@ -93,7 +93,7 @@ namespace Neo.UnitTests.Network.P2P
                 {
                     verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote node send version msg
                 }
-                else // It may lost Tcp.Register sometimes
+                else // It may delay Tcp.Register sometimes
                 {
                     verionMsg = (Tcp.Write)tcpMessage;
                     proble.ExpectMsg<Tcp.Register>();
@@ -170,7 +170,7 @@ namespace Neo.UnitTests.Network.P2P
                 {
                     verionMsg = proble.ExpectMsg<Tcp.Write>();    // remote node send version msg
                 }
-                else // It may lost Tcp.Register sometimes
+                else // It may delay Tcp.Register sometimes
                 {
                     verionMsg = (Tcp.Write)tcpMessage;
                     proble.ExpectMsg<Tcp.Register>();
