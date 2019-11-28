@@ -316,7 +316,7 @@ namespace Neo.UnitTests.Consensus
         }
 
         /// <summary>
-        /// Get a ConsensusPayload that contains a Commit Message, change its currentValidatorIndex and sign it
+        /// Get a clone of a ConsensusPayload that contains a Commit Message, change its currentValidatorIndex and sign it
         /// </summary>
         /// <param name="cpToCopy">ConsensusPayload that will be modified
         /// <param name="vI">new ValidatorIndex for the cpToCopy
@@ -333,7 +333,7 @@ namespace Neo.UnitTests.Consensus
         }
 
         /// <summary>
-        /// Get a ConsensusPayload and change its currentValidatorIndex
+        /// Get a clone of a ConsensusPayload and change its currentValidatorIndex
         /// </summary>
         /// <param name="cpToCopy">ConsensusPayload that will be modified
         /// <param name="vI">new ValidatorIndex for the cpToCopy
