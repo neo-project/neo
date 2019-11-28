@@ -78,12 +78,13 @@ namespace Neo.UnitTests.Consensus
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
             header.Size.Should().Be(105);
             Console.WriteLine($"header {header} hash {header.Hash} {header.PrevHash} timestamp {timestampVal}");
-            timestampVal.Should().Be(328665601001);    // GMT: Sunday, June 1, 1980 12:00:01.001 AM
-                                                       // check basic ConsensusContext
-                                                       // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
-                                                       // ============================================================================
-                                                       //                      creating ConsensusService actor
-                                                       // ============================================================================
+            ulong defaultTimestamp = 328665601001;   // GMT: Sunday, June 1, 1980 12:00:01.001 AM
+                                                     // check basic ConsensusContext
+                                                     // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
+                                                     // ============================================================================
+                                                     //                      creating ConsensusService actor
+                                                     // ============================================================================
+            timestampVal.Should().Be(defaultTimestamp);
             TestProbe subscriber = CreateTestProbe();
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
                                      Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, mockContext.Object }, null))
@@ -126,13 +127,13 @@ namespace Neo.UnitTests.Consensus
             ConsensusPayload initialRecoveryPayload = (ConsensusPayload)askingForInitialRecovery.Inventory;
             // Ensuring casting of type RecoveryRequest
             RecoveryRequest rrm = (RecoveryRequest)initialRecoveryPayload.ConsensusMessage;
-            rrm.Timestamp.Should().Be(328665601001);
+            rrm.Timestamp.Should().Be(defaultTimestamp);
 
             Console.WriteLine("Waiting for backupChange View... ");
             var backupOnAskingChangeView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var changeViewPayload = (ConsensusPayload)backupOnAskingChangeView.Inventory;
             ChangeView cvm = (ChangeView)changeViewPayload.ConsensusMessage;
-            cvm.Timestamp.Should().Be(328665601001);
+            cvm.Timestamp.Should().Be(defaultTimestamp);
             cvm.ViewNumber.Should().Be(0);
             cvm.Reason.Should().Be(ChangeViewReason.Timeout);
 
@@ -151,7 +152,7 @@ namespace Neo.UnitTests.Consensus
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
             rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
-            rrm.Timestamp.Should().Be(328665601001);
+            rrm.Timestamp.Should().Be(defaultTimestamp);
 
             Console.WriteLine("will tell PrepRequest!");
             mockContext.Object.PrevHeader.Timestamp = 328665601000;
