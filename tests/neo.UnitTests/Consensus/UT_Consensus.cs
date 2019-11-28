@@ -87,8 +87,10 @@ namespace Neo.UnitTests.Consensus
                                      Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, mockContext.Object }, null))
                                      );
 
+            Console.WriteLine("\n==========================");
             Console.WriteLine("Telling a new block to actor consensus...");
-            actorConsensus.Tell(new Blockchain.PersistCompleted
+
+            var testPersistCompleted = new Blockchain.PersistCompleted
             {
                 Block = new Block
                 {
@@ -97,12 +99,16 @@ namespace Neo.UnitTests.Consensus
                     MerkleRoot = header.MerkleRoot,
                     Timestamp = header.Timestamp,
                     Index = header.Index,
-                    NextConsensus = header.NextConsensus
+                    NextConsensus = header.NextConsensus,
+                    Transactions = new Transaction[0]
                 }
-            });
-            Console.WriteLine("will trigger OnPersistCompleted!");
+            };
+            actorConsensus.Tell(testPersistCompleted);
+            Console.WriteLine("will trigger OnPersistCompleted without OnStart flag!");
             // OnPersist will not launch timer, we need OnStart
+            Console.WriteLine("\n==========================");
 
+            Console.WriteLine("\n==========================");
             Console.WriteLine("will start consensus!");
             actorConsensus.Tell(new ConsensusService.Start
             {
@@ -123,9 +129,16 @@ namespace Neo.UnitTests.Consensus
             cvm.Timestamp.Should().Be(328665601001);
             cvm.ViewNumber.Should().Be(0);
             cvm.Reason.Should().Be(ChangeViewReason.Timeout);
+
+
+            Console.WriteLine("\n==========================");
+            Console.WriteLine("will trigger OnPersistCompleted again with OnStart flag!");
+            actorConsensus.Tell(testPersistCompleted);
+            // OnPersist will not launch timer, we need OnStart
+            Console.WriteLine("\n==========================");
+
             // Disabling flag ViewChanging by reverting cache of changeview that was sent
             mockContext.Object.ChangeViewPayloads[mockContext.Object.MyIndex] = null;
-
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
             mockContext.Object.LastSeenMessage = new int[] { -1, -1, -1, -1, -1, -1, -1 };
@@ -236,8 +249,18 @@ namespace Neo.UnitTests.Consensus
             //mockContext.Object.CommitPayloads[0] = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 0, kp_array[0], updatedBlockHashData);
 
             Console.WriteLine("\n\n==========================");
+            Console.WriteLine("\nBasic commits Signatures verification");
+
+            // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
+            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], updatedBlockHashData);
+            Crypto.Default.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
+            Crypto.Default.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
+            Crypto.Default.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeFalse();
+            Crypto.Default.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeTrue();
+
+            Console.WriteLine("\n==========================");
             Console.WriteLine("\nCN2 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], updatedBlockHashData));
+            actorConsensus.Tell(cmPayloadTemp);
 
             Console.WriteLine("\nCN3 simulation time");
             actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 2, kp_array[2], updatedBlockHashData));
@@ -273,6 +296,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nAsserting block NextConsensus..{utBlock.NextConsensus}");
             utBlock.NextConsensus.Should().Be(updatedContract.ScriptHash);
 
+            Console.WriteLine("\n==========================");
             // ============================================================================
             //                      finalize ConsensusService actor
             // ============================================================================
