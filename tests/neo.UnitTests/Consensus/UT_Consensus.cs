@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Consensus
             Header header = new Header();
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
             header.Size.Should().Be(105);
-            Console.WriteLine($"header {header} hash {header.Hash} timestamp {timestampVal}");
+            Console.WriteLine($"header {header} hash {header.Hash} {header.PrevHash} timestamp {timestampVal}");
             timestampVal.Should().Be(328665601001);    // GMT: Sunday, June 1, 1980 12:00:01.001 AM
                                                        // check basic ConsensusContext
                                                        // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.Consensus
             var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
             Commit cm = (Commit)commitPayload.ConsensusMessage;
 
-            Console.WriteLine($"(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
+            Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
 
             // Original Contract
             Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
@@ -183,17 +183,24 @@ namespace Neo.UnitTests.Consensus
             originalContract.ScriptHash.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
             mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
 
-            Console.WriteLine($"\nBlockHash: {mockContext.Object.Block.Hash}");
-            Console.WriteLine($"\nBlock NextConsensus: {mockContext.Object.Block.NextConsensus}");
+            Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
+            Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
+            Console.WriteLine($"{mockContext.Object.Validators[0]}");
+            Console.WriteLine($"{mockContext.Object.Validators[0]}");
+            Console.WriteLine($"{mockWallet.Object.GetAccount(mockContext.Object.Validators[0]).ScriptHash}");
 
-            KeyPair[] kp_array = new KeyPair[5]
+            KeyPair[] kp_array = new KeyPair[7]
                 {
                     UT_Crypto.generateKey(32), // not used, kept for index consistency, didactically
                     UT_Crypto.generateKey(32),
                     UT_Crypto.generateKey(32),
                     UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
                     UT_Crypto.generateKey(32)
                 };
+            for (int i = 0; i < mockContext.Object.Validators.Length; i++)
+                Console.WriteLine($"{mockContext.Object.Validators[i]}");                
             mockContext.Object.Validators = new ECPoint[7]
                 {
                     mockContext.Object.Validators[0],
@@ -201,8 +208,8 @@ namespace Neo.UnitTests.Consensus
                     kp_array[2].PublicKey,
                     kp_array[3].PublicKey,
                     kp_array[4].PublicKey,
-                    mockContext.Object.Validators[5],
-                    mockContext.Object.Validators[6]
+                    kp_array[5].PublicKey,
+                    kp_array[6].PublicKey
                 };
             Console.WriteLine($"Generated keypairs PKey:");
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
@@ -213,28 +220,36 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // Forcing next consensus
+            var originalBlockHashData = mockContext.Object.Block.GetHashData();
             mockContext.Object.Block.NextConsensus = updatedContract.ScriptHash;
+            mockContext.Object.Block.Header.NextConsensus = updatedContract.ScriptHash;
             mockContext.Object.PrevHeader.NextConsensus = updatedContract.ScriptHash;
+            //mockContext.SetupGet(mos => mos.Snapshot).Returns(() => timeValues[timeIndex]);
             var originalBlockMerkleRoot = mockContext.Object.Block.MerkleRoot;
+            Console.WriteLine($"\noriginalBlockMerkleRoot: {originalBlockMerkleRoot}");
+            var updatedBlockHashData = mockContext.Object.Block.GetHashData();
+            Console.WriteLine($"originalBlockHashData: {originalBlockHashData.ToScriptHash()}");
+            Console.WriteLine($"updatedBlockHashData: {updatedBlockHashData.ToScriptHash()}");
+            //mockContext.Object.Block.GetHashData().ToScriptHash().Should().Be(originalBlockHashData.ToScriptHash());
 
-            var blockToSign = mockContext.Object.EnsureHeader();
-            Console.WriteLine($"\nBlockHash: {blockToSign.Hash}");
+            //Console.WriteLine($"forcing an update on Commit 0 due to modified originalBlockHash...");
+            //mockContext.Object.CommitPayloads[0] = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 0, kp_array[0], updatedBlockHashData);
 
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nCN2 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], updatedBlockHashData));
 
             Console.WriteLine("\nCN3 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 2, kp_array[2], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 2, kp_array[2], updatedBlockHashData));
 
             Console.WriteLine("\nCN4 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], updatedBlockHashData));
 
             // =============================================
             // Testing commit with wrong signature not valid
             // It will be invalid signature because we did not change ECPoint
-            Console.WriteLine("\nCN6 simulation time. Wrong signature, KeyPair is not known");
-            actorConsensus.Tell(GetPayloadAndModifyValidator(commitPayload, 5));
+            Console.WriteLine("\nCN7 simulation time. Wrong signature, KeyPair is not known");
+            actorConsensus.Tell(GetPayloadAndModifyValidator(commitPayload, 6));
 
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryMessageAfterCommit = subscriber.ExpectMsg<LocalNode.SendDirectly>();
@@ -242,13 +257,18 @@ namespace Neo.UnitTests.Consensus
             RecoveryMessage rmm = (RecoveryMessage)rmPayload.ConsensusMessage;
             // =============================================
 
+            mockContext.Object.CommitPayloads[0] = null;
             Console.WriteLine("\nCN5 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], blockToSign));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData));
+            
 
+            Console.WriteLine("\nCN6 simulation time");
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData));
+
+            Console.WriteLine("\nWait for subscriber Local.Node Relay");
             var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
+            Console.WriteLine("\nAsserting time was Block...");
             var utBlock = (Block)onBlockRelay.Inventory;
-
-            //var lastPayloadOfChangeView = subscriber.ExpectMsg<Neo.Consensus.ConsensusService.Timer>();
 
             Console.WriteLine($"\nAsserting block NextConsensus..{utBlock.NextConsensus}");
             utBlock.NextConsensus.Should().Be(updatedContract.ScriptHash);
@@ -271,13 +291,13 @@ namespace Neo.UnitTests.Consensus
             Assert.AreEqual(1, 1);
         }
 
-        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, Block blockToSign)
+        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
             cpCommitTemp.ConsensusMessage = cpToCopy.ConsensusMessage.ToArray().AsSerializable<Commit>();
-            ((Commit)cpCommitTemp.ConsensusMessage).Signature = blockToSign.Sign(kp);
-            Console.WriteLine($"getCommitPayloadModifiedAndSignedCopy: {((Commit)cpCommitTemp.ConsensusMessage).Signature.ToHexString()}");
+            ((Commit)cpCommitTemp.ConsensusMessage).Signature = Crypto.Default.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            // Payload is not being signed by vI, since we are bypassing this check as directly talking to subscriber
             return cpCommitTemp;
         }
 
