@@ -18,8 +18,6 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
-using Neo.Persistence;
-
 
 namespace Neo.UnitTests.Consensus
 {
@@ -107,8 +105,8 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n==========================");
             Console.WriteLine("Telling a new block to actor consensus...");
             Console.WriteLine("will trigger OnPersistCompleted without OnStart flag!");
-            actorConsensus.Tell(testPersistCompleted);
             // OnPersist will not launch timer, we need OnStart
+            actorConsensus.Tell(testPersistCompleted);
             Console.WriteLine("\n==========================");
 
             Console.WriteLine("\n==========================");
@@ -132,7 +130,6 @@ namespace Neo.UnitTests.Consensus
             cvm.Timestamp.Should().Be(328665601001);
             cvm.ViewNumber.Should().Be(0);
             cvm.Reason.Should().Be(ChangeViewReason.Timeout);
-
 
             Console.WriteLine("\n==========================");
             Console.WriteLine("will trigger OnPersistCompleted again with OnStart flag!");
@@ -193,14 +190,14 @@ namespace Neo.UnitTests.Consensus
 
             // Original Contract
             Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
-            // Console.WriteLine($"\n Contract is: {contract.ScriptHash}");
+            Console.WriteLine($"\nORIGINAL Contract is: {contract.ScriptHash}");
             originalContract.ScriptHash.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
             mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
 
             Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
-            Console.WriteLine($"VALIDATOR[0] {mockContext.Object.Validators[0]}");
-            Console.WriteLine($"VALIDATOR[0]ScriptHash: {mockWallet.Object.GetAccount(mockContext.Object.Validators[0]).ScriptHash}");
+            //Console.WriteLine($"VALIDATOR[0] {mockContext.Object.Validators[0]}");
+            //Console.WriteLine($"VALIDATOR[0]ScriptHash: {mockWallet.Object.GetAccount(mockContext.Object.Validators[0]).ScriptHash}");
 
             KeyPair[] kp_array = new KeyPair[7]
                 {
@@ -237,26 +234,21 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.Block.NextConsensus = updatedContract.ScriptHash;
             mockContext.Object.Block.Header.NextConsensus = updatedContract.ScriptHash;
             mockContext.Object.PrevHeader.NextConsensus = updatedContract.ScriptHash;
-            //mockContext.SetupGet(mos => mos.Snapshot).Returns(() => timeValues[timeIndex]);
             var originalBlockMerkleRoot = mockContext.Object.Block.MerkleRoot;
             Console.WriteLine($"\noriginalBlockMerkleRoot: {originalBlockMerkleRoot}");
             var updatedBlockHashData = mockContext.Object.Block.GetHashData();
             Console.WriteLine($"originalBlockHashData: {originalBlockHashData.ToScriptHash()}");
             Console.WriteLine($"updatedBlockHashData: {updatedBlockHashData.ToScriptHash()}");
-            //mockContext.Object.Block.GetHashData().ToScriptHash().Should().Be(originalBlockHashData.ToScriptHash());
-
-            //Console.WriteLine($"forcing an update on Commit 0 due to modified originalBlockHash...");
-            //mockContext.Object.CommitPayloads[0] = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 0, kp_array[0], updatedBlockHashData);
 
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nBasic commits Signatures verification");
-
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
             var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], updatedBlockHashData);
             Crypto.Default.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
             Crypto.Default.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
             Crypto.Default.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeFalse();
             Crypto.Default.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeTrue();
+            Console.WriteLine("\n==========================");
 
             Console.WriteLine("\n==========================");
             Console.WriteLine("\nCN2 simulation time");
@@ -313,7 +305,6 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
             //                      finalize ConsensusService actor
             // ============================================================================
-            //Thread.Sleep(4000);
             Console.WriteLine("Finalizing consensus service actor and returning states.");
             TimeProvider.ResetToDefault();
 
