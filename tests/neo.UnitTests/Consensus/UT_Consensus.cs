@@ -315,6 +315,13 @@ namespace Neo.UnitTests.Consensus
             //Sys.Stop(actorConsensus);
         }
 
+        /// <summary>
+        /// Get a ConsensusPayload that contains a Commit Message, change its currentValidatorIndex and sign it
+        /// </summary>
+        /// <param name="cpToCopy">ConsensusPayload that will be modified
+        /// <param name="vI">new ValidatorIndex for the cpToCopy
+        /// <param name="kp">KeyPair that will be used for signing the Commit message used for creating blocks
+        /// <param name="blockHashToSign">HashCode of the Block that is being produced and current being signed
         public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
@@ -325,6 +332,11 @@ namespace Neo.UnitTests.Consensus
             return cpCommitTemp;
         }
 
+        /// <summary>
+        /// Get a ConsensusPayload and change its currentValidatorIndex
+        /// </summary>
+        /// <param name="cpToCopy">ConsensusPayload that will be modified
+        /// <param name="vI">new ValidatorIndex for the cpToCopy
         public ConsensusPayload GetPayloadAndModifyValidator(ConsensusPayload cpToCopy, ushort vI)
         {
             var cpTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
