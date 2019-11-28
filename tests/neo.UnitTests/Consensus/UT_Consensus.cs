@@ -213,7 +213,7 @@ namespace Neo.UnitTests.Consensus
                     UT_Crypto.generateKey(32)
                 };
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
-                Console.WriteLine($"{mockContext.Object.Validators[i]}");                
+                Console.WriteLine($"{mockContext.Object.Validators[i]}");
             mockContext.Object.Validators = new ECPoint[7]
                 {
                     mockContext.Object.Validators[0],
@@ -283,23 +283,23 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CommitPayloads[0] = null;
             Console.WriteLine("\nCN5 simulation time");
             actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData));
-            
+
 
             Console.WriteLine($"\nFocing block PrevHash to UInt256.Zero {mockContext.Object.Block.GetHashData().ToScriptHash()}");
             mockContext.Object.Block.PrevHash = UInt256.Zero;
             // Payload should also be forced, otherwise OnConsensus will not pass
             commitPayload.PrevHash = UInt256.Zero;
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
-            
+
             Console.WriteLine($"\nForcing block VerificationScript to {updatedContract.Script.ToScriptHash()}");
-            mockContext.Object.Block.Witness = new Witness {};
+            mockContext.Object.Block.Witness = new Witness { };
             mockContext.Object.Block.Witness.VerificationScript = updatedContract.Script;
             Console.WriteLine($"\nUpdating BlockBase Witness scripthash  is {mockContext.Object.Block.Witness.ScriptHash}");
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
             //mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(updatedContract.ScriptHash));
-            
-            
-            
+
+
+
 
             /*
             var blockchainSingletonCurrentHash = UInt256.Parse("0x0d492ce0f38090a65b2b01af50f7a6d685b6b76fbc41672762e96b05d15d742c");
@@ -333,18 +333,18 @@ namespace Neo.UnitTests.Consensus
             //Thread.Sleep(4000);
             Console.WriteLine("Finalizing consensus service actor and returning states.");
 
-/*
-            // Returning values to context beucase tests are not isolated
-            mockContext.Object.Block.NextConsensus = originalContract.ScriptHash;
-            mockContext.Object.PrevHeader.NextConsensus = originalContract.ScriptHash;
-            mockContext.Object.Block.MerkleRoot = originalBlockMerkleRoot;
+            /*
+                        // Returning values to context beucase tests are not isolated
+                        mockContext.Object.Block.NextConsensus = originalContract.ScriptHash;
+                        mockContext.Object.PrevHeader.NextConsensus = originalContract.ScriptHash;
+                        mockContext.Object.Block.MerkleRoot = originalBlockMerkleRoot;
 
-            mockContext.Object.Reset(0);
-            Sys.Stop(actorConsensus);
-            TimeProvider.ResetToDefault();
-            // Ensure thread is clear
-            Assert.AreEqual(1, 1);
-            */
+                        mockContext.Object.Reset(0);
+                        Sys.Stop(actorConsensus);
+                        TimeProvider.ResetToDefault();
+                        // Ensure thread is clear
+                        Assert.AreEqual(1, 1);
+                        */
         }
 
         public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
