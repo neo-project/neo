@@ -152,8 +152,13 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            int startPosition = -1;
+            if (reader.BaseStream.CanSeek)
+                startPosition = (int)reader.BaseStream.Position;
             DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
+            if (startPosition >= 0)
+                _size = (int)reader.BaseStream.Position - startPosition;
         }
 
         public void DeserializeUnsigned(BinaryReader reader)
