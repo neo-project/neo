@@ -117,9 +117,14 @@ namespace Neo.UnitTests.Consensus
             });
 
             Console.WriteLine("Waiting for subscriber recovery message...");
+            // The next line force a waits, then, subscriber keeps running its thread
+            // In the next case it waits for a Msg of type LocalNode.SendDirectly
+            // As we may expect, as soon as consensus start it sends a RecoveryRequest of this aforementioned type
             var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
+            // Ensuring cast of type ConsensusPayload from the received message from subscriber
             ConsensusPayload initialRecoveryPayload = (ConsensusPayload)askingForInitialRecovery.Inventory;
+            // Ensuring casting of type RecoveryRequest
             RecoveryRequest rrm = (RecoveryRequest)initialRecoveryPayload.ConsensusMessage;
             rrm.Timestamp.Should().Be(328665601001);
 
@@ -134,7 +139,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n==========================");
             Console.WriteLine("will trigger OnPersistCompleted again with OnStart flag!");
             actorConsensus.Tell(testPersistCompleted);
-            // OnPersist will not launch timer, we need OnStart
             Console.WriteLine("\n==========================");
 
             // Disabling flag ViewChanging by reverting cache of changeview that was sent
