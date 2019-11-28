@@ -54,6 +54,12 @@ namespace Neo.UnitTests.Consensus
             };
             for (int i = 0; i < timeValues.Length; i++)
                 Console.WriteLine($"time {i}: {timeValues[i].ToString()} ");
+            ulong defaultTimestamp = 328665601001;   // GMT: Sunday, June 1, 1980 12:00:01.001 AM
+                                                     // check basic ConsensusContext
+                                                     // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
+                                                     // ============================================================================
+                                                     //                      creating ConsensusService actor
+                                                     // ============================================================================
 
             int timeIndex = 0;
             var timeMock = new Mock<TimeProvider>();
@@ -61,7 +67,7 @@ namespace Neo.UnitTests.Consensus
             //.Callback(() => timeIndex = timeIndex + 1); //Comment while index is not fixed
 
             TimeProvider.Current = timeMock.Object;
-            TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(328665601001); //1980-06-01 00:00:15:001
+            TimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(defaultTimestamp); //1980-06-01 00:00:15:001
 
             //public void Log(string message, LogLevel level)
             //create ILogPlugin for Tests
@@ -78,12 +84,6 @@ namespace Neo.UnitTests.Consensus
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
             header.Size.Should().Be(105);
             Console.WriteLine($"header {header} hash {header.Hash} {header.PrevHash} timestamp {timestampVal}");
-            ulong defaultTimestamp = 328665601001;   // GMT: Sunday, June 1, 1980 12:00:01.001 AM
-                                                     // check basic ConsensusContext
-                                                     // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
-                                                     // ============================================================================
-                                                     //                      creating ConsensusService actor
-                                                     // ============================================================================
             timestampVal.Should().Be(defaultTimestamp);
             TestProbe subscriber = CreateTestProbe();
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
@@ -155,7 +155,7 @@ namespace Neo.UnitTests.Consensus
             rrm.Timestamp.Should().Be(defaultTimestamp);
 
             Console.WriteLine("will tell PrepRequest!");
-            mockContext.Object.PrevHeader.Timestamp = 328665601000;
+            mockContext.Object.PrevHeader.Timestamp = defaultTimestamp;
             mockContext.Object.PrevHeader.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
             var prepReq = mockContext.Object.MakePrepareRequest();
             var ppToSend = (PrepareRequest)prepReq.ConsensusMessage;
