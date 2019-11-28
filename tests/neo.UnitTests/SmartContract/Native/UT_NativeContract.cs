@@ -1,6 +1,6 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence;
+using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -13,13 +13,10 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NativeContract
     {
-        Store Store;
-
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
@@ -37,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestInvoke()
         {
-            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
+            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), 0);
             TestNativeContract testNativeContract = new TestNativeContract();
 
             ScriptBuilder sb1 = new ScriptBuilder();
@@ -46,7 +43,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine1.LoadScript(sb1.ToArray());
             testNativeContract.Invoke(engine1).Should().BeFalse();
 
-            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
+            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), 0);
 
             ScriptBuilder sb2 = new ScriptBuilder();
             sb2.EmitSysCall("test".ToInteropMethodHash());
@@ -68,14 +65,14 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestOnPersistWithArgs()
         {
-            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
+            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), 0);
             TestNativeContract testNativeContract = new TestNativeContract();
             VMArray args = new VMArray();
 
             VM.Types.Boolean result1 = new VM.Types.Boolean(false);
             testNativeContract.TestOnPersist(engine1, args).Should().Be(result1);
 
-            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.System, null, Store.GetSnapshot(), 0);
+            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.System, null, Blockchain.Singleton.GetSnapshot(), 0);
             VM.Types.Boolean result2 = new VM.Types.Boolean(true);
             testNativeContract.TestOnPersist(engine2, args).Should().Be(result2);
         }
