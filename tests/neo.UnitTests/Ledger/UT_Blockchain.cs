@@ -103,7 +103,7 @@ namespace Neo.UnitTests.Ledger
         public void TestParallelVerifiedTransactionConstructor()
         {
             var tx = TestUtils.GetTransaction();
-            var pvt1 = new Blockchain.ParallelVerifiedTransaction()
+            var pvt1 = new Blockchain.ParallelVerified()
             {
                 Transaction = tx,
                 VerifyResult = true
@@ -112,7 +112,7 @@ namespace Neo.UnitTests.Ledger
             pvt1.ShouldRelay.Should().BeTrue();
             pvt1.VerifyResult.Should().BeTrue();
 
-            var pvt2 = new Blockchain.ParallelVerifiedTransaction()
+            var pvt2 = new Blockchain.ParallelVerified()
             {
                 Transaction = tx,
                 VerifyResult = true,

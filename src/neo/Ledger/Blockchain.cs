@@ -27,12 +27,7 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        public class ParallelVerifiedTransaction
-        {
-            public Transaction Transaction;
-            public bool ShouldRelay = true;
-            public bool VerifyResult;
-        }
+        internal class ParallelVerified { public Transaction Transaction; public bool ShouldRelay; public bool VerifyResult; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
@@ -402,23 +397,43 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private RelayResultReason OnNewTransaction(ParallelVerifiedTransaction parallelVerifiedTransaction)
+        private void OnNewTransaction(Transaction transaction, bool relay)
         {
-            if (!parallelVerifiedTransaction.VerifyResult)
-                return RelayResultReason.Invalid;
-            if (ContainsTransaction(parallelVerifiedTransaction.Transaction.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (!MemPool.CanTransactionFitInPool(parallelVerifiedTransaction.Transaction))
-                return RelayResultReason.OutOfMemory;
-            if (!parallelVerifiedTransaction.Transaction.Reverify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(parallelVerifiedTransaction.Transaction.Sender)))
-                return RelayResultReason.Invalid;
-            if (!NativeContract.Policy.CheckPolicy(parallelVerifiedTransaction.Transaction, currentSnapshot))
-                return RelayResultReason.PolicyFail;
-            if (!MemPool.TryAdd(parallelVerifiedTransaction.Transaction.Hash, parallelVerifiedTransaction.Transaction))
-                return RelayResultReason.OutOfMemory;
-            if (parallelVerifiedTransaction.ShouldRelay)
-                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerifiedTransaction.Transaction });
-            return RelayResultReason.Succeed;
+            RelayResultReason reason = RelayResultReason.Succeed;
+            if (ContainsTransaction(transaction.Hash))
+                reason = RelayResultReason.AlreadyExists;
+            else if (!MemPool.CanTransactionFitInPool(transaction))
+                reason = RelayResultReason.OutOfMemory;
+            else if (!transaction.Reverify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender)))
+                reason = RelayResultReason.Invalid;
+            else if (!NativeContract.Policy.CheckPolicy(transaction, currentSnapshot))
+                reason = RelayResultReason.PolicyFail;
+            if (reason != RelayResultReason.Succeed)
+            {
+                Sender.Tell(reason);
+                return;
+            }
+            Task.Run(() =>
+            {
+                return new ParallelVerified
+                {
+                    Transaction = transaction,
+                    ShouldRelay = relay,
+                    VerifyResult = transaction.VerifyParallelParts(currentSnapshot)
+                };
+            }).PipeTo(Self, Sender);
+        }
+
+        private void OnParallelVerified(ParallelVerified parallelVerified)
+        {
+            RelayResultReason reason = RelayResultReason.Succeed;
+            if (!parallelVerified.VerifyResult)
+                reason = RelayResultReason.Invalid;
+            else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
+                reason = RelayResultReason.OutOfMemory;
+            if (reason == RelayResultReason.Succeed && parallelVerified.ShouldRelay)
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });
+            Sender.Tell(reason);
         }
 
         private void OnPersistCompleted(Block block)
@@ -447,14 +462,14 @@ namespace Neo.Ledger
                 case Transaction[] transactions:
                     {
                         // This message comes from a mempool's revalidation, already relayed
-                        foreach (var tx in transactions) OnParallelVerify(tx, false);
+                        foreach (var tx in transactions) OnNewTransaction(tx, false);
                         break;
                     }
                 case Transaction transaction:
-                    OnParallelVerify(transaction, true);
+                    OnNewTransaction(transaction, true);
                     break;
-                case ParallelVerifiedTransaction parallelVerifiedTransaction:
-                    Sender.Tell(OnNewTransaction(parallelVerifiedTransaction));
+                case ParallelVerified parallelVerified:
+                    OnParallelVerified(parallelVerified);
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -464,21 +479,6 @@ namespace Neo.Ledger
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
             }
-        }
-
-        private void OnParallelVerify(Transaction transaction, bool shouldRelay)
-        {
-            Task.Run(() => { return transaction.VerifyParallelParts(currentSnapshot); })
-                .ContinueWith((result) =>
-                {
-                    return new ParallelVerifiedTransaction()
-                    {
-                        Transaction = transaction,
-                        VerifyResult = result.Result,
-                        ShouldRelay = shouldRelay
-                    };
-                })
-                .PipeTo(Self, Sender);
         }
 
         private void Persist(Block block)
