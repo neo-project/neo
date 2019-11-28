@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.RPC;
 using Neo.Persistence;
+using Neo.Persistence.Memory;
 using Neo.Plugins;
 using Neo.Wallets;
 using System;
@@ -26,14 +27,14 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        private readonly Store store;
+        private readonly IStore store;
         private ChannelsConfig start_message = null;
         private bool suspend = false;
 
-        public NeoSystem(Store store)
+        public NeoSystem(string storageEngine = null)
         {
-            this.store = store;
             Plugin.LoadPlugins(this);
+            this.store = storageEngine is null ? new Store() : Plugin.Storages[storageEngine].GetStore();
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
@@ -49,6 +50,7 @@ namespace Neo
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
+            store.Dispose();
         }
 
         public void EnsureStoped(IActorRef actor)
@@ -69,7 +71,7 @@ namespace Neo
             }
         }
 
-        public void StartConsensus(Wallet wallet, Store consensus_store = null, bool ignoreRecoveryLogs = false)
+        public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
         {
             Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);

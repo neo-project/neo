@@ -15,13 +15,10 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_PolicyContract
     {
-        Store Store;
-
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
@@ -30,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Initialize()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
@@ -57,7 +54,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetMaxBlockSize()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Fake blockchain
 
@@ -103,7 +100,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetMaxTransactionsPerBlock()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Fake blockchain
 
@@ -138,7 +135,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetFeePerByte()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Fake blockchain
 
@@ -173,7 +170,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Block_UnblockAccount()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Fake blockchain
 
@@ -233,7 +230,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestCheckPolicy()
         {
             Transaction tx = Blockchain.GenesisBlock.Transactions[0];
-            Snapshot snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             StorageKey storageKey = new StorageKey
             {
@@ -248,7 +245,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeFalse();
 
-            snapshot = Store.GetSnapshot().Clone();
+            snapshot = Blockchain.Singleton.GetSnapshot();
             NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeTrue();
         }
     }
