@@ -140,27 +140,27 @@ namespace Neo.Network.P2P
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DecrementGlobalTask(UInt256 hash)
         {
-            if (globalTasks.ContainsKey(hash))
+            if (globalTasks.TryGetValue(hash, out var value))
             {
-                if (globalTasks[hash] == 1)
+                if (value == 1)
                     globalTasks.Remove(hash);
                 else
-                    globalTasks[hash]--;
+                    globalTasks[hash] = value - 1;
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IncrementGlobalTask(UInt256 hash)
         {
-            if (!globalTasks.ContainsKey(hash))
+            if (!globalTasks.TryGetValue(hash, out var value))
             {
                 globalTasks[hash] = 1;
                 return true;
             }
-            if (globalTasks[hash] >= MaxConncurrentTasks)
+            if (value >= MaxConncurrentTasks)
                 return false;
 
-            globalTasks[hash]++;
+            globalTasks[hash] = value + 1;
 
             return true;
         }
