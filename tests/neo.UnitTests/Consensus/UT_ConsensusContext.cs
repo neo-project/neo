@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Consensus;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
@@ -38,7 +39,7 @@ namespace Neo.UnitTests.Consensus
                 _validatorKeys[x] = new KeyPair(pk);
             }
 
-            _context = new ConsensusContext(mockWallet.Object, TestBlockchain.Store)
+            _context = new ConsensusContext(mockWallet.Object, Blockchain.Singleton.Store)
             {
                 Validators = _validatorKeys.Select(u => u.PublicKey).ToArray()
             };
