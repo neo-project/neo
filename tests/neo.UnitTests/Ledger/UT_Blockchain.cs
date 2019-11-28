@@ -98,5 +98,29 @@ namespace Neo.UnitTests.Ledger
             Blockchain.Singleton.GetTransaction(UInt256.Zero).Should().BeNull();
             Blockchain.Singleton.GetTransaction(txSample.Hash).Should().NotBeNull();
         }
+
+        [TestMethod]
+        public void TestParallelVerifiedTransactionConstructor()
+        {
+            var tx = TestUtils.GetTransaction();
+            var pvt1 = new Blockchain.ParallelVerifiedTransaction()
+            {
+                Transaction = tx,
+                VerifyResult = true
+            };
+            pvt1.Transaction.Should().Be(tx);
+            pvt1.ShouldRelay.Should().BeTrue();
+            pvt1.VerifyResult.Should().BeTrue();
+
+            var pvt2 = new Blockchain.ParallelVerifiedTransaction()
+            {
+                Transaction = tx,
+                VerifyResult = true,
+                ShouldRelay = false
+            };
+            pvt2.Transaction.Should().Be(tx);
+            pvt2.ShouldRelay.Should().BeFalse();
+            pvt2.VerifyResult.Should().BeTrue();
+        }
     }
 }

@@ -27,6 +27,12 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
+        public class ParallelVerifiedTransaction
+        {
+            public Transaction Transaction;
+            public bool ShouldRelay = true;
+            public bool VerifyResult;
+        }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
@@ -396,7 +402,7 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private RelayResultReason OnNewTransaction(ParallelVerifiedTransaction parallelVerifiedTransaction, bool relay)
+        private RelayResultReason OnNewTransaction(ParallelVerifiedTransaction parallelVerifiedTransaction)
         {
             if (!parallelVerifiedTransaction.VerifyResult)
                 return RelayResultReason.Invalid;
@@ -410,7 +416,7 @@ namespace Neo.Ledger
                 return RelayResultReason.PolicyFail;
             if (!MemPool.TryAdd(parallelVerifiedTransaction.Transaction.Hash, parallelVerifiedTransaction.Transaction))
                 return RelayResultReason.OutOfMemory;
-            if (relay)
+            if (parallelVerifiedTransaction.ShouldRelay)
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerifiedTransaction.Transaction });
             return RelayResultReason.Succeed;
         }
@@ -448,7 +454,7 @@ namespace Neo.Ledger
                     OnParallelVerify(transaction, true);
                     break;
                 case ParallelVerifiedTransaction parallelVerifiedTransaction:
-                    Sender.Tell(OnNewTransaction(parallelVerifiedTransaction, parallelVerifiedTransaction.ShouldRelay));
+                    Sender.Tell(OnNewTransaction(parallelVerifiedTransaction));
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -462,7 +468,17 @@ namespace Neo.Ledger
 
         private void OnParallelVerify(Transaction transaction, bool shouldRelay)
         {
-            Task.Run(() => { return transaction.VerifySizeAndFeeAndWitness(currentSnapshot); }).ContinueWith((result) => { return new ParallelVerifiedTransaction(transaction, result.Result, shouldRelay); }).PipeTo(Self, Sender);
+            Task.Run(() => { return transaction.VerifyParallelParts(currentSnapshot); })
+                .ContinueWith((result) =>
+                {
+                    return new ParallelVerifiedTransaction()
+                    {
+                        Transaction = transaction,
+                        VerifyResult = result.Result,
+                        ShouldRelay = shouldRelay
+                    };
+                })
+                .PipeTo(Self, Sender);
         }
 
         private void Persist(Block block)
