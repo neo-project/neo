@@ -96,6 +96,7 @@ namespace Neo.UnitTests.Network.P2P
                 else // It may lost Tcp.Register sometimes
                 {
                     verionMsg = (Tcp.Write)tcpMessage;
+                    proble.ExpectMsg<Tcp.Register>();
                 }
                 Message version = verionMsg.Data.ToArray().AsSerializable<Message>();
                 version.Command.Should().Be(MessageCommand.Version);
@@ -119,8 +120,8 @@ namespace Neo.UnitTests.Network.P2P
             };
             var message = Message.Create(MessageCommand.Version, payload);
             var versionReceived = new Tcp.Received(ByteString.FromBytes(message.ToArray()));
-            var remoteAddr = LocalNode.Singleton.RemoteNodes.Values.First().Remote;
-            var remoteNodeActor = LocalNode.Singleton.RemoteNodes.Keys.First();
+            var remoteAddr = LocalNode.Singleton.RemoteNodes.Values.Last().Remote;
+            var remoteNodeActor = LocalNode.Singleton.RemoteNodes.Keys.Last();
             var testProbe = senderDict[remoteAddr];
             testProbe.Send(remoteNodeActor, versionReceived);
             testProbe.ExpectMsg<Tcp.Write>(); // remote node will send verack and change its listenerPort
@@ -172,6 +173,7 @@ namespace Neo.UnitTests.Network.P2P
                 else // It may lost Tcp.Register sometimes
                 {
                     verionMsg = (Tcp.Write)tcpMessage;
+                    proble.ExpectMsg<Tcp.Register>();
                 }
                 Message version = verionMsg.Data.ToArray().AsSerializable<Message>();
                 version.Command.Should().Be(MessageCommand.Version);
@@ -194,8 +196,8 @@ namespace Neo.UnitTests.Network.P2P
                }
             };
             var versionReceived = new Tcp.Received(ByteString.FromBytes(Message.Create(MessageCommand.Version, payload).ToArray()));
-            var remoteAddr = LocalNode.Singleton.RemoteNodes.Values.First().Remote;
-            var remoteNodeActor = LocalNode.Singleton.RemoteNodes.Keys.First();
+            var remoteAddr = LocalNode.Singleton.RemoteNodes.Values.Last().Remote;
+            var remoteNodeActor = LocalNode.Singleton.RemoteNodes.Keys.Last();
             var testProbe = senderDict[remoteAddr];
 
             testProbe.Send(remoteNodeActor, versionReceived);
