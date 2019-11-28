@@ -117,7 +117,7 @@ namespace Neo.Network.P2P.Payloads
                         Attributes.GetVarSize() +   //Attributes
                         Cosigners.GetVarSize() +    //Cosigners
                         Script.GetVarSize() +       //Script
-                        Witnesses.GetVarSize();      //Witnesses
+                        Witnesses.GetVarSize();     //Witnesses
                 }
                 return _size;
             }
