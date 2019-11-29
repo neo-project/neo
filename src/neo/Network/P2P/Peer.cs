@@ -42,13 +42,13 @@ namespace Neo.Network.P2P
         /// </summary>
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
         /// <summary>
-        /// A ImmutableHashSet that stores the Peers received from other nodes.
-        /// If the number of desired connections is not enough, first try to connect with the peers in UnconnectedPeers.
+        /// An ImmutableHashSet that stores the Peers received: 1) from other nodes or 2) from default file.
+        /// If the number of desired connections is not enough, first try to connect with the peers from this set.
         /// </summary>
         protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
         /// <summary>
         /// When a TCP connection request is sent to a peer, the peer will be added to the ImmutableHashSet.
-        /// If a Tcp.Connected or a Tcp.CommandFailed is received, the related peer will be removed.
+        /// If a Tcp.Connected or a Tcp.CommandFailed (with TCP.Command of type Tcp.Connect) is received, the related peer will be removed.
         /// </summary>
         protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
         protected HashSet<IPAddress> TrustedIpAddresses { get; } = new HashSet<IPAddress>();
@@ -76,7 +76,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Tries to add a set of peers to an immutable hashset of UnconnectedPeers
+        /// Tries to add a set of peers to the immutable ImmutableHashSet of UnconnectedPeers
         /// </summary>
         /// <param name="peers">Peers that the method will try to add (union) to (with) UnconnectedPeers</param>
         protected void AddPeers(IEnumerable<IPEndPoint> peers)
@@ -203,7 +203,7 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Will be triggered when a Tcp.Connected message is received.
-        /// If the conditions are met, the remote endpoint will be removed from ConnectingPeers and added to ConnectedPeers.
+        /// If the conditions are met, the remote endpoint will be added to ConnectedPeers.
         /// Increase the connection number with the remote endpoint by one.
         /// </summary>
         /// <param name="remote">The remote endpoint of TCP connection</param>
@@ -216,7 +216,7 @@ namespace Neo.Network.P2P
                 Sender.Tell(Tcp.Abort.Instance);
                 return;
             }
-            // If connections with the peer greater than or equal to MaxConnectionsPerAddress, abort the TCP connection.
+            
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
@@ -225,7 +225,6 @@ namespace Neo.Network.P2P
             else
             {
                 ConnectedAddresses[remote.Address] = count + 1;
-                // An actor reference of the connection.
                 IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
