@@ -205,7 +205,7 @@ namespace Neo.Network.P2P.Payloads
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool Reverify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual bool VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return false;
@@ -284,7 +284,7 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
-            if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
+            if (!VerifyForEachBlock(snapshot, totalSenderFeeFromPool)) return false;
             return VerifyParallelParts(snapshot);
         }
 
