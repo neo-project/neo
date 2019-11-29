@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetSysFeeAmount(engine.Snapshot, index);
         }
 
-        public BigInteger GetSysFeeAmount(Snapshot snapshot, uint index)
+        public BigInteger GetSysFeeAmount(StoreView snapshot, uint index)
         {
             if (index == 0) return Blockchain.GenesisBlock.Transactions.Sum(p => p.SystemFee);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(index));

@@ -4,7 +4,6 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -28,22 +27,36 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         private const int MaxCosigners = 16;
 
-        public byte Version;
-        public uint Nonce;
-        public UInt160 Sender;
-        /// <summary>
-        /// Distributed to NEO holders.
-        /// </summary>
-        public long SystemFee;
-        /// <summary>
-        /// Distributed to consensus nodes.
-        /// </summary>
-        public long NetworkFee;
-        public uint ValidUntilBlock;
-        public TransactionAttribute[] Attributes;
-        public Cosigner[] Cosigners { get; set; }
-        public byte[] Script;
-        public Witness[] Witnesses { get; set; }
+        private byte version;
+        private uint nonce;
+        private UInt160 sender;
+        private long sysfee;
+        private long netfee;
+        private uint validUntilBlock;
+        private TransactionAttribute[] attributes;
+        private Cosigner[] cosigners;
+        private byte[] script;
+        private Witness[] witnesses;
+
+        public const int HeaderSize =
+            sizeof(byte) +  //Version
+            sizeof(uint) +  //Nonce
+            20 +            //Sender
+            sizeof(long) +  //SystemFee
+            sizeof(long) +  //NetworkFee
+            sizeof(uint);   //ValidUntilBlock
+
+        public TransactionAttribute[] Attributes
+        {
+            get => attributes;
+            set { attributes = value; _hash = null; _size = 0; }
+        }
+
+        public Cosigner[] Cosigners
+        {
+            get => cosigners;
+            set { cosigners = value; _hash = null; _size = 0; }
+        }
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -66,24 +79,86 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
-        public const int HeaderSize =
-            sizeof(byte) +  //Version
-            sizeof(uint) +  //Nonce
-            20 +            //Sender
-            sizeof(long) +  //SystemFee
-            sizeof(long) +  //NetworkFee
-            sizeof(uint);   //ValidUntilBlock
+        /// <summary>
+        /// Distributed to consensus nodes.
+        /// </summary>
+        public long NetworkFee
+        {
+            get => netfee;
+            set { netfee = value; _hash = null; }
+        }
 
-        public int Size => HeaderSize +
-            Attributes.GetVarSize() +   //Attributes
-            Cosigners.GetVarSize() +    //Cosigners
-            Script.GetVarSize() +       //Script
-            Witnesses.GetVarSize();     //Witnesses
+        public uint Nonce
+        {
+            get => nonce;
+            set { nonce = value; _hash = null; }
+        }
+
+        public byte[] Script
+        {
+            get => script;
+            set { script = value; _hash = null; _size = 0; }
+        }
+
+        public UInt160 Sender
+        {
+            get => sender;
+            set { sender = value; _hash = null; }
+        }
+
+        private int _size;
+        public int Size
+        {
+            get
+            {
+                if (_size == 0)
+                {
+                    _size = HeaderSize +
+                        Attributes.GetVarSize() +   //Attributes
+                        Cosigners.GetVarSize() +    //Cosigners
+                        Script.GetVarSize() +       //Script
+                        Witnesses.GetVarSize();     //Witnesses
+                }
+                return _size;
+            }
+        }
+
+        /// <summary>
+        /// Distributed to NEO holders.
+        /// </summary>
+        public long SystemFee
+        {
+            get => sysfee;
+            set { sysfee = value; _hash = null; }
+        }
+
+        public uint ValidUntilBlock
+        {
+            get => validUntilBlock;
+            set { validUntilBlock = value; _hash = null; }
+        }
+
+        public byte Version
+        {
+            get => version;
+            set { version = value; _hash = null; }
+        }
+
+        public Witness[] Witnesses
+        {
+            get => witnesses;
+            set { witnesses = value; _size = 0; }
+        }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            int startPosition = -1;
+            if (reader.BaseStream.CanSeek)
+                startPosition = (int)reader.BaseStream.Position;
             DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
+            if (startPosition >= 0)
+                _size = (int)reader.BaseStream.Position - startPosition;
         }
 
         public void DeserializeUnsigned(BinaryReader reader)
@@ -123,14 +198,14 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             var hashes = new HashSet<UInt160> { Sender };
             hashes.UnionWith(Cosigners.Select(p => p.Account));
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool Reverify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual bool Reverify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return false;
@@ -202,12 +277,12 @@ namespace Neo.Network.P2P.Payloads
             return tx;
         }
 
-        bool IInventory.Verify(Snapshot snapshot)
+        bool IInventory.Verify(StoreView snapshot)
         {
             return Verify(snapshot, BigInteger.Zero);
         }
 
-        public virtual bool Verify(Snapshot snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual bool Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
             int size = Size;
