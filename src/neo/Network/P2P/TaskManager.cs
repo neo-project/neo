@@ -26,7 +26,7 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
         /// <summary>
-        /// The hashes corresponding to the completed tasks.
+        /// A set of known hashes for inventories or payloads already received
         /// </summary>
         private readonly FIFOSet<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
@@ -231,7 +231,8 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            // When the number of AvailableTasks is no more than 0, processing the task of getting the headers and blocks.
+            // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
+            // If not HeaderTask pending to be processed it should ask for more Blocks
             if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.StartHeight)
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
