@@ -205,25 +205,6 @@ namespace Neo.Network.P2P.Payloads
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
-                return false;
-            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
-                return false;
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return false;
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (hashes.Length != Witnesses.Length) return false;
-            for (int i = 0; i < hashes.Length; i++)
-            {
-                if (Witnesses[i].VerificationScript.Length > 0) continue;
-                if (snapshot.Contracts.TryGet(hashes[i]) is null) return false;
-            }
-            return true;
-        }
-
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
@@ -286,6 +267,25 @@ namespace Neo.Network.P2P.Payloads
         {
             if (!VerifyForEachBlock(snapshot, totalSenderFeeFromPool)) return false;
             return VerifyParallelParts(snapshot);
+        }
+
+        public virtual bool VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
+                return false;
+            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
+                return false;
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
+            if (balance < fee) return false;
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (hashes.Length != Witnesses.Length) return false;
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                if (Witnesses[i].VerificationScript.Length > 0) continue;
+                if (snapshot.Contracts.TryGet(hashes[i]) is null) return false;
+            }
+            return true;
         }
 
         public bool VerifyParallelParts(StoreView snapshot)
