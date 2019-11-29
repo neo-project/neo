@@ -265,8 +265,8 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
-            if (!VerifyForEachBlock(snapshot, totalSenderFeeFromPool)) return false;
-            return VerifyParallelParts(snapshot);
+            return VerifyForEachBlock(snapshot, totalSenderFeeFromPool)
+                && VerifyParallelParts(snapshot);
         }
 
         public virtual bool VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
