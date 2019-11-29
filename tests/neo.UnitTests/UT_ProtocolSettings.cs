@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Wallets;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -28,6 +29,15 @@ namespace Neo.UnitTests
         public void Cleanup()
         {
             ResetProtocolSettings();
+        }
+
+        [TestMethod]
+        public void CheckFirstLetterOfAddresses()
+        {
+            UInt160 min = UInt160.Parse("0x0000000000000000000000000000000000000000");
+            min.ToAddress()[0].Should().Be('N');
+            UInt160 max = UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff");
+            max.ToAddress()[0].Should().Be('N');
         }
 
         [TestMethod]
