@@ -216,7 +216,7 @@ namespace Neo.Network.P2P
                 Sender.Tell(Tcp.Abort.Instance);
                 return;
             }
-            
+
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {

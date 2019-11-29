@@ -172,7 +172,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// For Transaction type of IInventory, it will tell Transaction to the actor of Consensus.
         /// Otherwise, tell the inventory to the actor of Blockchain.
-         /// There are, currently, three implementations of IInventory: TX, Block and ConsensusPayload
+        /// There are, currently, three implementations of IInventory: TX, Block and ConsensusPayload
         /// </summary>
         /// <param name="inventory">The inventory to be relayed.</param>
         private void OnRelay(IInventory inventory)
