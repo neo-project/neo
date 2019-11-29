@@ -54,7 +54,7 @@ namespace Neo.Wallets.NEP6
         private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra)
         {
             this.version = Version.Parse(wallet["version"].AsString());
-            if (this.version.Major < 3) throw new FormatException(nameof(version));
+            if (this.version.Major < 3) throw new FormatException();
 
             this.name = wallet["name"]?.AsString();
             scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
