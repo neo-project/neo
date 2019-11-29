@@ -406,8 +406,6 @@ namespace Neo.Ledger
                 reason = RelayResultReason.OutOfMemory;
             else if (!transaction.VerifyForEachBlock(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender)))
                 reason = RelayResultReason.Invalid;
-            else if (!NativeContract.Policy.CheckPolicy(transaction, currentSnapshot))
-                reason = RelayResultReason.PolicyFail;
             if (reason != RelayResultReason.Succeed)
             {
                 Sender.Tell(reason);

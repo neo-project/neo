@@ -7,7 +7,6 @@ namespace Neo.Ledger
         OutOfMemory,
         UnableToVerify,
         Invalid,
-        PolicyFail,
         Unknown
     }
 }
