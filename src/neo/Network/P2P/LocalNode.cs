@@ -131,7 +131,7 @@ namespace Neo.Network.P2P
         /// Performs a BroadcastMessage with the command `MessageCommand.GetAddr`, which, eventually, tells all known connections
         /// If there are no connected peers it will try with the default, respecting MaxCountFromSeedList limit
         /// </summary>
-        /// <param name="count">The count of peers it needs.</param>
+        /// <param name="count">The count of peers required</param>
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, MaxCountFromSeedList);

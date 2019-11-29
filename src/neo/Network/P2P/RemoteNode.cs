@@ -53,8 +53,8 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Check the message queue.
         /// If the high-priority message queue is not empty, choose the high-priority message queue,.
-        /// Otherwis, choose the low-priority message queue.
-        /// Send the message queue.
+        /// Otherwise, choose the low-priority message queue.
+        /// Send the first message of the queue.
         /// </summary>
         private void CheckMessageQueue()
         {

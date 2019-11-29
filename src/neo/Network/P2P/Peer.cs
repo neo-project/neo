@@ -42,13 +42,13 @@ namespace Neo.Network.P2P
         /// </summary>
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
         /// <summary>
-        /// A ImmutableHashSet that stores the Peers message received from other nodes.
+        /// A ImmutableHashSet that stores the Peers received from other nodes.
         /// If the number of desired connections is not enough, first try to connect with the peers in UnconnectedPeers.
         /// </summary>
         protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
         /// <summary>
-        /// When a TCP connection request is sent to a peer, the IPEndPoint will be added to the ImmutableHashSet.
-        /// If a Tcp.Connected or a Tcp.CommandFailed is received,the related IPEndPoint will be removed.
+        /// When a TCP connection request is sent to a peer, the peer will be added to the ImmutableHashSet.
+        /// If a Tcp.Connected or a Tcp.CommandFailed is received, the related peer will be removed.
         /// </summary>
         protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
         protected HashSet<IPAddress> TrustedIpAddresses { get; } = new HashSet<IPAddress>();
