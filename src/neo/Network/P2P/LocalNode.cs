@@ -59,13 +59,19 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// Packs a MessageCommand to a full Message with an optional ISerializable payload.
+        /// Forwards it to <see cref="BroadcastMessage(Message message)"/>.
+        /// </summary>
+        /// <param name="command">The message command to be packed.</param>
+        /// <param name="payload">Optional payload to be Serialized along the message.</param>
         private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
         {
             BroadcastMessage(Message.Create(command, payload));
         }
 
         /// <summary>
-        /// Broadcast a message to all connected nodes.
+        /// Broadcast a message to all connected nodes, namely <see cref="Connections"/>.
         /// </summary>
         /// <param name="message">The message to be broadcasted.</param>
         private void BroadcastMessage(Message message)
