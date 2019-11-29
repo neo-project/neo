@@ -64,6 +64,10 @@ namespace Neo.Network.P2P
             BroadcastMessage(Message.Create(command, payload));
         }
 
+        /// <summary>
+        /// Broadcast a message to all connected nodes.
+        /// </summary>
+        /// <param name="message">The message to be broadcasted.</param>
         private void BroadcastMessage(Message message)
         {
             Connections.Tell(message);
@@ -127,6 +131,7 @@ namespace Neo.Network.P2P
         /// Performs a BroadcastMessage with the command `MessageCommand.GetAddr`, which, eventually, tells all known connections
         /// If there are no connected peers it will try with the default, respecting MaxCountFromSeedList limit
         /// </summary>
+        /// <param name="count">The count of peers it needs.</param>
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, MaxCountFromSeedList);
@@ -164,6 +169,12 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// There are three implementations of IInventory. Block, ConsensusPayload and Transaction.
+        /// For Transaction, it will tell Transaction to the actor of Consensus.
+        /// Otherwise, tell the inventory to the actor of Blockchain.
+        /// </summary>
+        /// <param name="inventory">The inventory to be relayed.</param>
         private void OnRelay(IInventory inventory)
         {
             if (inventory is Transaction transaction)

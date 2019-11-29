@@ -37,8 +37,19 @@ namespace Neo.Network.P2P
 
         private static readonly HashSet<IPAddress> localAddresses = new HashSet<IPAddress>();
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
+        /// <summary>
+        /// A dictionary that stores the connected nodes.
+        /// </summary>
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
+        /// <summary>
+        /// A ImmutableHashSet that stores the Peers message received from other nodes.
+        /// If the number of desired connections is not enough, first try to connect with the peers in UnconnectedPeers.
+        /// </summary>
         protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
+        /// <summary>
+        /// When a TCP connection request is sent to a peer, the IPEndPoint will be added to the ImmutableHashSet.
+        /// If a Tcp.Connected or a Tcp.CommandFailed is received,the related IPEndPoint will be removed.
+        /// </summary>
         protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
         protected HashSet<IPAddress> TrustedIpAddresses { get; } = new HashSet<IPAddress>();
 
@@ -65,7 +76,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Tries to add a set ff peers to an immutable hashset of UnconnectedPeers
+        /// Tries to add a set of peers to an immutable hashset of UnconnectedPeers
         /// </summary>
         /// <param name="peers">Peers that the method will try to add (union) to (with) UnconnectedPeers</param>
         protected void AddPeers(IEnumerable<IPEndPoint> peers)
@@ -86,6 +97,7 @@ namespace Neo.Network.P2P
             if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
+            // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
                 return;
             if (ConnectedPeers.Values.Contains(endPoint)) return;
@@ -189,6 +201,13 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// Will be triggered when a Tcp.Connected message is received.
+        /// If the conditions are met, the remote endpoint will be removed from ConnectingPeers and added to ConnectedPeers.
+        /// Increase the connection number with the remote endpoint by one.
+        /// </summary>
+        /// <param name="remote">The remote endpoint of TCP connection</param>
+        /// <param name="local">The local endpoint of TCP connection</param>
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
@@ -197,7 +216,7 @@ namespace Neo.Network.P2P
                 Sender.Tell(Tcp.Abort.Instance);
                 return;
             }
-
+            // If connections with the peer greater than or equal to MaxConnectionsPerAddress, abort the TCP connection.
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
@@ -206,6 +225,7 @@ namespace Neo.Network.P2P
             else
             {
                 ConnectedAddresses[remote.Address] = count + 1;
+                // An actor reference of the connection.
                 IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
@@ -213,6 +233,11 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// Will be triggered when a Tcp.CommandFailed message is received.
+        /// If it's a Tcp.Connect command, remove the related endpoint from ConnectingPeers.
+        /// </summary>
+        /// <param name="cmd"></param>
         private void OnTcpCommandFailed(Tcp.Command cmd)
         {
             switch (cmd)

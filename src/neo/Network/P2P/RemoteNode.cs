@@ -50,6 +50,12 @@ namespace Neo.Network.P2P
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
+        /// <summary>
+        /// Check the message queue.
+        /// If the high-priority message queue is not empty, choose the high-priority message queue,.
+        /// Otherwis, choose the low-priority message queue.
+        /// Send the message queue.
+        /// </summary>
         private void CheckMessageQueue()
         {
             if (!verack || !ack) return;
@@ -67,6 +73,10 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(command, payload));
         }
 
+        /// <summary>
+        /// Add message to high priority queue or low priority queue depending on the message type.
+        /// </summary>
+        /// <param name="message">The message to be added</param>
         private void EnqueueMessage(Message message)
         {
             bool is_single = false;
