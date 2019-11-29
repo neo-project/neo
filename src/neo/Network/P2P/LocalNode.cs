@@ -97,6 +97,10 @@ namespace Neo.Network.P2P
             return new IPEndPoint(ipAddress, port);
         }
 
+        /// <summary>
+        /// Return an amount of random seeds nodes from the default SeedList file defined on <see cref="ProtocolSettings"/>.
+        /// </summary>
+        /// <param name="seedsToTake">Limit of random seed nodes to be obtained, also limited by the available seeds from file.</param>
         private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
         {
             if (seedsToTake > 0)
