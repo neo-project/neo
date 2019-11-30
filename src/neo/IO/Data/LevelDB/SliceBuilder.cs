@@ -1,15 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.IO.Data.LevelDB
 {
     public class SliceBuilder
     {
-        private List<byte> data = new List<byte>();
+        private readonly List<byte> data;
 
         private SliceBuilder()
         {
+            data = new List<byte>();
+        }
+
+        private SliceBuilder(params byte[] input)
+        {
+            data = new List<byte>(input);
         }
 
         public SliceBuilder Add(byte value)
@@ -57,16 +64,19 @@ namespace Neo.IO.Data.LevelDB
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SliceBuilder Begin()
         {
             return new SliceBuilder();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SliceBuilder Begin(byte prefix)
         {
-            return new SliceBuilder().Add(prefix);
+            return new SliceBuilder(prefix);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(SliceBuilder value)
         {
             return value.data.ToArray();

@@ -55,7 +55,7 @@ namespace Neo.Persistence.LevelDB
 
         public void PutSync(byte table, byte[] key, byte[] value)
         {
-            db.Put(new WriteOptions { Sync = true }, SliceBuilder.Begin(table).Add(key), value);
+            db.Put(WriteOptions.SyncWrite, SliceBuilder.Begin(table).Add(key), value);
         }
 
         public byte[] TryGet(byte table, byte[] key)

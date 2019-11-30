@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -7,12 +8,27 @@ namespace Neo.IO.Data.LevelDB
 {
     public struct Slice : IComparable<Slice>, IEquatable<Slice>
     {
-        internal byte[] buffer;
+        internal readonly byte[] buffer;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="data">Data</param>
+        /// <param name="length">Length</param>
         internal Slice(IntPtr data, UIntPtr length)
         {
             buffer = new byte[(int)length];
             Marshal.Copy(data, buffer, 0, (int)length);
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="input">Input</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal Slice(byte[] input)
+        {
+            buffer = input;
         }
 
         public int CompareTo(Slice other)
@@ -33,9 +49,8 @@ namespace Neo.IO.Data.LevelDB
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (!(obj is Slice)) return false;
-            return Equals((Slice)obj);
+            if (!(obj is Slice slide)) return false;
+            return Equals(slide);
         }
 
         public override int GetHashCode()
@@ -43,6 +58,7 @@ namespace Neo.IO.Data.LevelDB
             return (int)buffer.Murmur32(0);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[] ToArray()
         {
             return buffer ?? new byte[0];
@@ -150,91 +166,109 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(byte[] data)
         {
-            return new Slice { buffer = data };
+            return new Slice(data);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(bool data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(byte data)
         {
-            return new Slice { buffer = new[] { data } };
+            return new Slice(new[] { data });
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(double data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(short data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(int data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(long data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(float data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(string data)
         {
-            return new Slice { buffer = Encoding.UTF8.GetBytes(data) };
+            return new Slice(Encoding.UTF8.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(ushort data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(uint data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Slice(ulong data)
         {
-            return new Slice { buffer = BitConverter.GetBytes(data) };
+            return new Slice(BitConverter.GetBytes(data));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <(Slice x, Slice y)
         {
             return x.CompareTo(y) < 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <=(Slice x, Slice y)
         {
             return x.CompareTo(y) <= 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >(Slice x, Slice y)
         {
             return x.CompareTo(y) > 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >=(Slice x, Slice y)
         {
             return x.CompareTo(y) >= 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Slice x, Slice y)
         {
             return x.Equals(y);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Slice x, Slice y)
         {
             return !x.Equals(y);
