@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using static Neo.Helper;
 
 namespace Neo.Cryptography
 {
@@ -27,7 +28,7 @@ namespace Neo.Cryptography
             var leadingZeros = new byte[leadingZeroCount];
             if (bi.IsZero) return leadingZeros;
             var bytesWithoutLeadingZeros = bi.ToByteArray(isUnsigned: true, isBigEndian: true);
-            return leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
+            return Concat(leadingZeros, bytesWithoutLeadingZeros);
         }
 
         public static string Encode(byte[] input)
