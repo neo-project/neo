@@ -292,7 +292,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             public byte[] ToByteArray()
             {
-                return Votes.ToByteArray();
+                return Votes.ToByteArrayStandard();
             }
         }
 
@@ -322,7 +322,7 @@ namespace Neo.SmartContract.Native.Tokens
                 {
                     w.WriteVarInt(Votes.Length);
                     foreach (BigInteger vote in Votes)
-                        w.WriteVarBytes(vote.ToByteArray());
+                        w.WriteVarBytes(vote.ToByteArrayStandard());
                     w.Flush();
                     return ms.ToArray();
                 }
