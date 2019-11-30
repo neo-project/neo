@@ -197,6 +197,13 @@ namespace Neo
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] ToByteArrayStandard(this BigInteger i)
+        {
+            if (i.IsZero) return Array.Empty<byte>();
+            return i.ToByteArray();
+        }
+
         public static string ToHexString(this byte[] value)
         {
             StringBuilder sb = new StringBuilder();
