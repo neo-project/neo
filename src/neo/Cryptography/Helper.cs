@@ -77,9 +77,9 @@ namespace Neo.Cryptography
             byte[] buffer = Base58.Decode(input);
             if (buffer.Length < 4) throw new FormatException();
             byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
-            if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
+            if (!buffer.AsSpan(^4).SequenceEqual(checksum.AsSpan(..4)))
                 throw new FormatException();
-            var ret = buffer.Take(buffer.Length - 4).ToArray();
+            var ret = buffer[..^4];
             Array.Clear(buffer, 0, buffer.Length);
             return ret;
         }

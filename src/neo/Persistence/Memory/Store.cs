@@ -30,7 +30,7 @@ namespace Neo.Persistence.Memory
         {
             IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData[table];
             if (prefix?.Length > 0)
-                records = records.Where(p => p.Key.Length >= prefix.Length && p.Key.Take(prefix.Length).SequenceEqual(prefix));
+                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
             records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
             foreach (var pair in records)
                 yield return (pair.Key, pair.Value);

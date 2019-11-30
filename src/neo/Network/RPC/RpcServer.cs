@@ -411,7 +411,7 @@ namespace Neo.Network.RPC
                 {
                     // options.EnableForHttps = false;
                     options.Providers.Add<GzipCompressionProvider>();
-                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json-rpc" });
+                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json-rpc");
                 });
 
                 services.Configure<GzipCompressionProviderOptions>(options =>

@@ -151,8 +151,8 @@ namespace Neo.Wallets
             byte[] datapassphrase = Encoding.UTF8.GetBytes(passphrase);
             byte[] derivedkey = SCrypt.DeriveKey(datapassphrase, addresshash, N, r, p, 64);
             Array.Clear(datapassphrase, 0, datapassphrase.Length);
-            byte[] derivedhalf1 = derivedkey.Take(32).ToArray();
-            byte[] derivedhalf2 = derivedkey.Skip(32).ToArray();
+            byte[] derivedhalf1 = derivedkey[..32];
+            byte[] derivedhalf2 = derivedkey[32..];
             Array.Clear(derivedkey, 0, derivedkey.Length);
             byte[] encryptedkey = new byte[32];
             Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
@@ -163,7 +163,7 @@ namespace Neo.Wallets
             ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             string address = script_hash.ToAddress();
-            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).SequenceEqual(addresshash))
+            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
                 throw new FormatException();
             return prikey;
         }

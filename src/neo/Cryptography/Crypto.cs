@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Security.Cryptography;
 
 namespace Neo.Cryptography
@@ -26,8 +25,8 @@ namespace Neo.Cryptography
                 D = prikey,
                 Q = new ECPoint
                 {
-                    X = pubkey.Take(32).ToArray(),
-                    Y = pubkey.Skip(32).ToArray()
+                    X = pubkey[..32],
+                    Y = pubkey[32..]
                 }
             }))
             {
@@ -41,7 +40,7 @@ namespace Neo.Cryptography
             {
                 try
                 {
-                    pubkey = Cryptography.ECC.ECPoint.DecodePoint(pubkey, Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
+                    pubkey = ECC.ECPoint.DecodePoint(pubkey, ECC.ECCurve.Secp256r1).EncodePoint(false)[1..];
                 }
                 catch
                 {
@@ -50,7 +49,7 @@ namespace Neo.Cryptography
             }
             else if (pubkey.Length == 65 && pubkey[0] == 0x04)
             {
-                pubkey = pubkey.Skip(1).ToArray();
+                pubkey = pubkey[1..];
             }
             else if (pubkey.Length != 64)
             {
@@ -61,8 +60,8 @@ namespace Neo.Cryptography
                 Curve = ECCurve.NamedCurves.nistP256,
                 Q = new ECPoint
                 {
-                    X = pubkey.Take(32).ToArray(),
-                    Y = pubkey.Skip(32).ToArray()
+                    X = pubkey[..32],
+                    Y = pubkey[32..]
                 }
             }))
             {
