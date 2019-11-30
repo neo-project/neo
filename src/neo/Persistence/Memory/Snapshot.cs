@@ -1,4 +1,5 @@
 using Neo.IO;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -44,7 +45,7 @@ namespace Neo.Persistence.Memory
         {
             IEnumerable<KeyValuePair<byte[], byte[]>> records = immutableData[table];
             if (prefix?.Length > 0)
-                records = records.Where(p => p.Key.Length >= prefix.Length && p.Key.Take(prefix.Length).SequenceEqual(prefix));
+                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
             records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
             return records.Select(p => (p.Key, p.Value));
         }

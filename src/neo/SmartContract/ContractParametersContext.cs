@@ -153,7 +153,7 @@ namespace Neo.SmartContract
                     }
                     while (contract.Script[i++] == 33)
                     {
-                        points.Add(ECPoint.DecodePoint(contract.Script.Skip(i).Take(33).ToArray(), ECCurve.Secp256r1));
+                        points.Add(ECPoint.DecodePoint(contract.Script[i..(i + 33)], ECCurve.Secp256r1));
                         i += 33;
                     }
                 }
@@ -256,9 +256,9 @@ namespace Neo.SmartContract
                 ContextItem item = ContextItems[ScriptHashes[i]];
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    foreach (ContractParameter parameter in item.Parameters.Reverse())
+                    for (int j = item.Parameters.Length - 1; j >= 0; j--)
                     {
-                        sb.EmitPush(parameter);
+                        sb.EmitPush(item.Parameters[j]);
                     }
                     witnesses[i] = new Witness
                     {

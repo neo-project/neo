@@ -1,6 +1,5 @@
 using Neo.Cryptography;
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -29,7 +28,7 @@ namespace Neo.IO.Data.LevelDB
         public bool Equals(Slice other)
         {
             if (buffer.Length != other.buffer.Length) return false;
-            return buffer.SequenceEqual(other.buffer);
+            return MemoryExtensions.SequenceEqual<byte>(buffer, other.buffer);
         }
 
         public override bool Equals(object obj)

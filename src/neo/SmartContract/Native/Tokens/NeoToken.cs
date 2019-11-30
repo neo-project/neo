@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native.Tokens
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, new[] { Prefix_Validator });
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
-                p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
+                p.Key.Key.AsSerializable<ECPoint>(1),
                 ValidatorState.FromByteArray(p.Value.Value).Votes
             ));
         }

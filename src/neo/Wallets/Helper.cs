@@ -2,7 +2,6 @@ using Neo.Cryptography;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
-using System.Linq;
 
 namespace Neo.Wallets
 {
@@ -10,7 +9,7 @@ namespace Neo.Wallets
     {
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
         {
-            return Crypto.Default.Sign(verifiable.GetHashData(), key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            return Crypto.Default.Sign(verifiable.GetHashData(), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
         }
 
         public static string ToAddress(this UInt160 scriptHash)
@@ -28,7 +27,7 @@ namespace Neo.Wallets
                 throw new FormatException();
             if (data[0] != ProtocolSettings.Default.AddressVersion)
                 throw new FormatException();
-            return new UInt160(data.Skip(1).ToArray());
+            return new UInt160(data[1..]);
         }
     }
 }
