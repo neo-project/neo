@@ -172,7 +172,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             BigInteger sys_fee = new BigInteger(10);
             snapshot.Storages.Add(storageKey, new StorageItem
             {
-                Value = sys_fee.ToByteArray(),
+                Value = sys_fee.ToByteArrayStandard(),
                 IsConstant = true
             });
 
