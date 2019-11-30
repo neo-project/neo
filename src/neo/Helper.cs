@@ -38,14 +38,17 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Concat(params byte[][] buffers)
         {
-            var ret = new byte[buffers.Sum(p => p.Length)];
-            int i = 0;
-            foreach (byte[] buffer in buffers)
+            int length = 0;
+            for (int i = 0; i < buffers.Length; i++)
+                length += buffers[i].Length;
+            byte[] dst = new byte[length];
+            int p = 0;
+            foreach (byte[] src in buffers)
             {
-                Buffer.BlockCopy(buffer, 0, ret, i, buffer.Length);
-                i += buffer.Length;
+                Buffer.BlockCopy(src, 0, dst, p, src.Length);
+                p += src.Length;
             }
-            return ret;
+            return dst;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
