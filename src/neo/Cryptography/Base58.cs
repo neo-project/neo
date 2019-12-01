@@ -2,12 +2,36 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using static Neo.Helper;
 
 namespace Neo.Cryptography
 {
     public static class Base58
     {
         public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+        public static byte[] Base58CheckDecode(this string input)
+        {
+            byte[] buffer = Decode(input);
+            if (buffer.Length < 4) throw new FormatException();
+            byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
+            if (!buffer.AsSpan(^4).SequenceEqual(checksum.AsSpan(..4)))
+                throw new FormatException();
+            var ret = buffer[..^4];
+            Array.Clear(buffer, 0, buffer.Length);
+            return ret;
+        }
+
+        public static string Base58CheckEncode(this ReadOnlySpan<byte> data)
+        {
+            byte[] checksum = data.Sha256().Sha256();
+            Span<byte> buffer = stackalloc byte[data.Length + 4];
+            data.CopyTo(buffer);
+            checksum.AsSpan(..4).CopyTo(buffer[data.Length..]);
+            var ret = Encode(buffer);
+            buffer.Clear();
+            return ret;
+        }
 
         public static byte[] Decode(string input)
         {
@@ -27,10 +51,10 @@ namespace Neo.Cryptography
             var leadingZeros = new byte[leadingZeroCount];
             if (bi.IsZero) return leadingZeros;
             var bytesWithoutLeadingZeros = bi.ToByteArray(isUnsigned: true, isBigEndian: true);
-            return leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
+            return Concat(leadingZeros, bytesWithoutLeadingZeros);
         }
 
-        public static string Encode(byte[] input)
+        public static string Encode(ReadOnlySpan<byte> input)
         {
             // Decode byte[] to BigInteger
             BigInteger value = new BigInteger(input, isUnsigned: true, isBigEndian: true);

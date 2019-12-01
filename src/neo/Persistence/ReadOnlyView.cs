@@ -1,5 +1,5 @@
+using Neo.IO;
 using Neo.IO.Caching;
-using Neo.IO.Wrappers;
 using Neo.Ledger;
 using System;
 
@@ -16,7 +16,7 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TransactionState> Transactions => new StoreDataCache<UInt256, TransactionState>(store, Prefixes.DATA_Transaction);
         public override DataCache<UInt160, ContractState> Contracts => new StoreDataCache<UInt160, ContractState>(store, Prefixes.ST_Contract);
         public override DataCache<StorageKey, StorageItem> Storages => new StoreDataCache<StorageKey, StorageItem>(store, Prefixes.ST_Storage);
-        public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList => new StoreDataCache<UInt32Wrapper, HeaderHashList>(store, Prefixes.IX_HeaderHashList);
+        public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList => new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(store, Prefixes.IX_HeaderHashList);
         public override MetaDataCache<HashIndexState> BlockHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentBlock);
         public override MetaDataCache<HashIndexState> HeaderHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentHeader);
 

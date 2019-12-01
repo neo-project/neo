@@ -38,7 +38,7 @@ namespace Neo.Wallets.NEP6
             else
             {
                 this.name = name;
-                this.version = Version.Parse("1.0");
+                this.version = Version.Parse("3.0");
                 this.Scrypt = ScryptParameters.Default;
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
@@ -53,8 +53,10 @@ namespace Neo.Wallets.NEP6
 
         private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra)
         {
-            this.name = wallet["name"]?.AsString();
             this.version = Version.Parse(wallet["version"].AsString());
+            if (this.version.Major < 3) throw new FormatException();
+
+            this.name = wallet["name"]?.AsString();
             scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
             accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
