@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -205,25 +206,6 @@ namespace Neo.Network.P2P.Payloads
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        public virtual bool Reverify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
-                return false;
-            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
-                return false;
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return false;
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (hashes.Length != Witnesses.Length) return false;
-            for (int i = 0; i < hashes.Length; i++)
-            {
-                if (Witnesses[i].VerificationScript.Length > 0) continue;
-                if (snapshot.Contracts.TryGet(hashes[i]) is null) return false;
-            }
-            return true;
-        }
-
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
@@ -279,17 +261,43 @@ namespace Neo.Network.P2P.Payloads
 
         bool IInventory.Verify(StoreView snapshot)
         {
-            return Verify(snapshot, BigInteger.Zero);
+            return Verify(snapshot, BigInteger.Zero) == RelayResultReason.Succeed;
         }
 
-        public virtual bool Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
-            if (!Reverify(snapshot, totalSenderFeeFromPool)) return false;
+            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            if (result != RelayResultReason.Succeed) return result;
+            return VerifyParallelParts(snapshot);
+        }
+
+        public virtual RelayResultReason VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
+                return RelayResultReason.Expired;
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
+                return RelayResultReason.PolicyFail;
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
+            if (balance < fee) return RelayResultReason.InsufficientFunds;
+            if (hashes.Length != Witnesses.Length) return RelayResultReason.Invalid;
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                if (Witnesses[i].VerificationScript.Length > 0) continue;
+                if (snapshot.Contracts.TryGet(hashes[i]) is null) return RelayResultReason.Invalid;
+            }
+            return RelayResultReason.Succeed;
+        }
+
+        public RelayResultReason VerifyParallelParts(StoreView snapshot)
+        {
             int size = Size;
-            if (size > MaxTransactionSize) return false;
+            if (size > MaxTransactionSize) return RelayResultReason.Invalid;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return false;
-            return this.VerifyWitnesses(snapshot, net_fee);
+            if (net_fee < 0) return RelayResultReason.InsufficientFunds;
+            if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
+            return RelayResultReason.Succeed;
         }
 
         public StackItem ToStackItem()
