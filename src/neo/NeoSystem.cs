@@ -55,7 +55,7 @@ namespace Neo
 
         public void EnsureStoped(IActorRef actor)
         {
-            Inbox inbox = Inbox.Create(ActorSystem);
+            using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromMinutes(5));

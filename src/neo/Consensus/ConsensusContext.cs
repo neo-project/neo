@@ -280,9 +280,9 @@ namespace Neo.Consensus
         public ConsensusPayload MakePrepareRequest()
         {
             var random = new Random();
-            byte[] buffer = new byte[sizeof(ulong)];
+            Span<byte> buffer = stackalloc byte[sizeof(ulong)];
             random.NextBytes(buffer);
-            Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
+            Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer);
             EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
 
@@ -346,7 +346,7 @@ namespace Neo.Consensus
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,
-                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot).ToArray())
+                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot))
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);

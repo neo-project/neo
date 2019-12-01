@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             _wallet = TestUtils.GenerateTestWallet();
             byte[] array1 = { 0x01 };
-            _hash = new UInt160(Crypto.Default.Hash160(array1));
+            _hash = new UInt160(Crypto.Hash160(array1));
             _account = new NEP6Account(_wallet, _hash);
         }
 
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             var wallet = TestUtils.GenerateTestWallet();
             byte[] array1 = { 0x01 };
-            var hash = new UInt160(Crypto.Default.Hash160(array1));
+            var hash = new UInt160(Crypto.Hash160(array1));
             string password = "hello world";
             NEP6Account account = new NEP6Account(wallet, hash, _keyPair, password);
             account.ScriptHash.Should().Be(hash);

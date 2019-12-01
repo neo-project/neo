@@ -13,6 +13,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
@@ -390,11 +391,5 @@ namespace Neo.Wallets
         }
 
         public abstract bool VerifyPassword(string password);
-
-        private static byte[] XOR(byte[] x, byte[] y)
-        {
-            if (x.Length != y.Length) throw new ArgumentException();
-            return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
-        }
     }
 }

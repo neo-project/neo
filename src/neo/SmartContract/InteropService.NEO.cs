@@ -1,4 +1,5 @@
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -77,17 +78,17 @@ namespace Neo.SmartContract
         private static bool Crypto_ECDsaVerify(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
-            byte[] message = item0 switch
+            ReadOnlySpan<byte> message = item0 switch
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
                 Null _ => engine.ScriptContainer.GetHashData(),
-                _ => item0.GetSpan().ToArray()
+                _ => item0.GetSpan()
             };
             byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             try
             {
-                engine.CurrentContext.EvaluationStack.Push(Crypto.Default.VerifySignature(message, signature, pubkey));
+                engine.CurrentContext.EvaluationStack.Push(Crypto.VerifySignature(message, signature, pubkey));
             }
             catch (ArgumentException)
             {
@@ -99,11 +100,11 @@ namespace Neo.SmartContract
         private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
-            byte[] message = item0 switch
+            ReadOnlySpan<byte> message = item0 switch
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
                 Null _ => engine.ScriptContainer.GetHashData(),
-                _ => item0.GetSpan().ToArray()
+                _ => item0.GetSpan()
             };
             int n;
             byte[][] pubkeys;
@@ -144,7 +145,7 @@ namespace Neo.SmartContract
             {
                 for (int i = 0, j = 0; fSuccess && i < m && j < n;)
                 {
-                    if (Crypto.Default.VerifySignature(message, signatures[i], pubkeys[j]))
+                    if (Crypto.VerifySignature(message, signatures[i], pubkeys[j]))
                         i++;
                     j++;
                     if (m - i > n - j)
@@ -216,15 +217,15 @@ namespace Neo.SmartContract
                 engine.Snapshot.Contracts.Add(hash_new, contract);
                 if (contract.HasStorage)
                 {
-                    foreach (var pair in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
+                    foreach (var (key, value) in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
                     {
                         engine.Snapshot.Storages.Add(new StorageKey
                         {
                             ScriptHash = hash_new,
-                            Key = pair.Key.Key
+                            Key = key.Key
                         }, new StorageItem
                         {
-                            Value = pair.Value.Value,
+                            Value = value.Value,
                             IsConstant = false
                         });
                     }

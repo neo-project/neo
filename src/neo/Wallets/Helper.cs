@@ -1,4 +1,5 @@
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -9,15 +10,15 @@ namespace Neo.Wallets
     {
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
         {
-            return Crypto.Default.Sign(verifiable.GetHashData(), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
+            return Crypto.Sign(verifiable.GetHashData(), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
         }
 
         public static string ToAddress(this UInt160 scriptHash)
         {
-            byte[] data = new byte[21];
+            Span<byte> data = stackalloc byte[21];
             data[0] = ProtocolSettings.Default.AddressVersion;
-            Buffer.BlockCopy(scriptHash.ToArray(), 0, data, 1, 20);
-            return data.Base58CheckEncode();
+            scriptHash.ToArray().CopyTo(data[1..]);
+            return Base58.Base58CheckEncode(data);
         }
 
         public static UInt160 ToScriptHash(this string address)
@@ -28,6 +29,15 @@ namespace Neo.Wallets
             if (data[0] != ProtocolSettings.Default.AddressVersion)
                 throw new FormatException();
             return new UInt160(data[1..]);
+        }
+
+        internal static byte[] XOR(byte[] x, byte[] y)
+        {
+            if (x.Length != y.Length) throw new ArgumentException();
+            byte[] r = new byte[x.Length];
+            for (int i = 0; i < r.Length; i++)
+                r[i] = (byte)(x[i] ^ y[i]);
+            return r;
         }
     }
 }

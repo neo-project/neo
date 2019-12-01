@@ -43,11 +43,6 @@ namespace Neo.Persistence.Memory
 
         public void Put(byte table, byte[] key, byte[] value)
         {
-            PutSync(table, key, value);
-        }
-
-        public void PutSync(byte table, byte[] key, byte[] value)
-        {
             innerData[table][key.EnsureNotNull()] = value;
         }
 

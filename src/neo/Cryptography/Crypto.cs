@@ -3,21 +3,19 @@ using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
-    public class Crypto
+    public static class Crypto
     {
-        public static readonly Crypto Default = new Crypto();
-
-        public byte[] Hash160(byte[] message)
+        public static byte[] Hash160(ReadOnlySpan<byte> message)
         {
             return message.Sha256().RIPEMD160();
         }
 
-        public byte[] Hash256(byte[] message)
+        public static byte[] Hash256(ReadOnlySpan<byte> message)
         {
             return message.Sha256().Sha256();
         }
 
-        public byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
+        public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
         {
             using (var ecdsa = ECDsa.Create(new ECParameters
             {
@@ -34,7 +32,7 @@ namespace Neo.Cryptography
             }
         }
 
-        public bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, byte[] pubkey)
         {
             if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
             {

@@ -1,5 +1,6 @@
 #pragma warning disable IDE0060
 
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
