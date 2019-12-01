@@ -10,6 +10,9 @@ namespace Neo.Persistence
         void Delete(byte table, byte[] key);
         ISnapshot GetSnapshot();
         void Put(byte table, byte[] key, byte[] value);
-        void PutSync(byte table, byte[] key, byte[] value);
+        void PutSync(byte table, byte[] key, byte[] value)
+        {
+            Put(table, key, value);
+        }
     }
 }

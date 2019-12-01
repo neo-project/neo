@@ -1,5 +1,6 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.SmartContract;
 
 namespace Neo.UnitTests.SmartContract
@@ -16,7 +17,7 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = script_hash,
                 IsReadOnly = true
             };
-            context.ToArray().Should().BeEquivalentTo(new byte[] { 0x00 }.ToScriptHash().ToArray());
+            context.ScriptHash.ToArray().Should().BeEquivalentTo(new byte[] { 0x00 }.ToScriptHash().ToArray());
         }
     }
 }

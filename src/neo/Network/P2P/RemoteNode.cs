@@ -171,7 +171,7 @@ namespace Neo.Network.P2P
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage(inventory.InventoryType.ToMessageCommand(), inventory);
+            EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
         private void OnSetFilter(BloomFilter filter)

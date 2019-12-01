@@ -1,5 +1,6 @@
 #pragma warning disable IDE0060
 
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -80,11 +81,11 @@ namespace Neo.SmartContract.Native.Tokens
             storage.Value = state.ToByteArray();
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
             {
-                Value = BigInteger.Zero.ToByteArray()
+                Value = BigInteger.Zero.ToByteArrayStandard()
             });
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
-            storage.Value = totalSupply.ToByteArray();
+            storage.Value = totalSupply.ToByteArrayStandard();
             engine.SendNotification(Hash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
         }
 
@@ -110,7 +111,7 @@ namespace Neo.SmartContract.Native.Tokens
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
-            storage.Value = totalSupply.ToByteArray();
+            storage.Value = totalSupply.ToByteArrayStandard();
             engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 

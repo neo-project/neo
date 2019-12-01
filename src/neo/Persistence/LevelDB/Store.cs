@@ -1,7 +1,6 @@
 using Neo.IO.Data.LevelDB;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace Neo.Persistence.LevelDB
@@ -41,7 +40,7 @@ namespace Neo.Persistence.LevelDB
 
         public IEnumerable<(byte[], byte[])> Find(byte table, byte[] prefix)
         {
-            return db.Find(ReadOptions.Default, SliceBuilder.Begin(table).Add(prefix), (k, v) => (k.ToArray().Skip(1).ToArray(), v.ToArray()));
+            return db.Find(ReadOptions.Default, SliceBuilder.Begin(table).Add(prefix), (k, v) => (k.ToArray()[1..], v.ToArray()));
         }
 
         public ISnapshot GetSnapshot()

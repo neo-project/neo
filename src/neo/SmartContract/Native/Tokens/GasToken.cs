@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
             engine.Snapshot.Storages.Add(key, new StorageItem
             {
-                Value = sys_fee.ToByteArray(),
+                Value = sys_fee.ToByteArrayStandard(),
                 IsConstant = true
             });
             return true;

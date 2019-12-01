@@ -129,7 +129,7 @@ namespace Neo.IO.Caching
             lock (dictionary)
             {
                 cached = dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)))
+                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().AsSpan().StartsWith(key_prefix)))
                     .Select(p =>
                     (
                         KeyBytes: p.Key.ToArray(),
@@ -139,7 +139,7 @@ namespace Neo.IO.Caching
                     .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
                     .ToArray();
             }
-            var uncached = FindInternal(key_prefix ?? new byte[0])
+            var uncached = FindInternal(key_prefix ?? Array.Empty<byte>())
                 .Where(p => !dictionary.ContainsKey(p.Key))
                 .Select(p =>
                 (

@@ -44,7 +44,7 @@ namespace Neo.Ledger
             NextConsensus = GetConsensusAddress(StandbyValidators),
             Witness = new Witness
             {
-                InvocationScript = new byte[0],
+                InvocationScript = Array.Empty<byte>(),
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             },
             ConsensusData = new ConsensusData
@@ -172,7 +172,7 @@ namespace Neo.Ledger
                 {
                     new Witness
                     {
-                        InvocationScript = new byte[0],
+                        InvocationScript = Array.Empty<byte>(),
                         VerificationScript = new[] { (byte)OpCode.PUSHT }
                     }
                 }

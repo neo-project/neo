@@ -1,6 +1,5 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract;
@@ -8,7 +7,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
-using System.Linq;
 
 namespace Neo.Network.RPC
 {
@@ -70,7 +68,7 @@ namespace Neo.Network.RPC
             };
 
             // Add witness hashes parameter to pass CheckWitness
-            UInt160[] hashes = Tx.GetScriptHashesForVerifying(null).ToArray();
+            UInt160[] hashes = Tx.GetScriptHashesForVerifying(null);
             RpcInvokeResult result = rpcClient.InvokeScript(script, hashes);
             Tx.SystemFee = Math.Max(long.Parse(result.GasConsumed) - ApplicationEngine.GasFree, 0);
             if (Tx.SystemFee > 0)

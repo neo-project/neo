@@ -3,7 +3,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -229,10 +228,10 @@ namespace Neo.SmartContract
 
         private static bool Runtime_CheckWitness(ApplicationEngine engine)
         {
-            byte[] hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             bool result;
             if (hashOrPubkey.Length == 20)
-                result = CheckWitness(engine, new UInt160(hashOrPubkey));
+                result = CheckWitness(engine, new UInt160(hashOrPubkey.ToArray()));
             else if (hashOrPubkey.Length == 33)
                 result = CheckWitness(engine, ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
             else
@@ -269,7 +268,7 @@ namespace Neo.SmartContract
             byte[] serialized;
             try
             {
-                serialized = engine.CurrentContext.EvaluationStack.Pop().Serialize();
+                serialized = StackItemSerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop());
             }
             catch (NotSupportedException)
             {
@@ -313,7 +312,7 @@ namespace Neo.SmartContract
             StackItem item;
             try
             {
-                item = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().DeserializeStackItem(engine.MaxArraySize, engine.MaxItemSize);
+                item = StackItemSerializer.Deserialize(engine.CurrentContext.EvaluationStack.Pop().GetSpan(), engine.MaxArraySize, engine.MaxItemSize);
             }
             catch (FormatException)
             {
