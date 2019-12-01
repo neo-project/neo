@@ -5,6 +5,7 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -14,6 +15,7 @@ namespace Neo.Network.P2P
     internal class TaskManager : UntypedActor
     {
         public class Register { public VersionPayload Version; }
+        public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
@@ -25,6 +27,7 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
+        private const int PingCoolingOffPeriod = 60; // in secconds.
         private readonly FIFOSet<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
@@ -86,6 +89,9 @@ namespace Neo.Network.P2P
                 case Register register:
                     OnRegister(register.Version);
                     break;
+                case Update update:
+                    OnUpdate(update.LastBlockIndex);
+                    break;
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
                     break;
@@ -113,6 +119,13 @@ namespace Neo.Network.P2P
             TaskSession session = new TaskSession(Sender, version);
             sessions.Add(Sender, session);
             RequestTasks(session);
+        }
+
+        private void OnUpdate(uint lastBlockIndex)
+        {
+            if (!sessions.TryGetValue(Sender, out TaskSession session))
+                return;
+            session.LastBlockIndex = lastBlockIndex;
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -221,13 +234,13 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.StartHeight)
+            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.LastBlockIndex)
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
             }
-            else if (Blockchain.Singleton.Height < session.StartHeight)
+            else if (Blockchain.Singleton.Height < session.LastBlockIndex)
             {
                 UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
                 for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
@@ -240,6 +253,11 @@ namespace Neo.Network.P2P
                     }
                 }
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
+            }
+            else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
+                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
+            {
+                session.RemoteNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
             }
         }
     }
@@ -256,6 +274,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case TaskManager.Register _:
+                case TaskManager.Update _:
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:
@@ -265,6 +284,14 @@ namespace Neo.Network.P2P
                 default:
                     return false;
             }
+        }
+
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        {
+            if (!(message is TaskManager.NewTasks tasks)) return false;
+            // Remove duplicate tasks
+            if (queue.OfType<TaskManager.NewTasks>().Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes))) return true;
+            return false;
         }
     }
 }
