@@ -1,6 +1,6 @@
 using System;
 
-namespace Neo.Persistence.Memory
+namespace Neo.Persistence
 {
     internal static class Helper
     {

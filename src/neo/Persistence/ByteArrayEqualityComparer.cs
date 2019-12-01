@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Neo.Persistence.Memory
+namespace Neo.Persistence
 {
     internal class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
     {

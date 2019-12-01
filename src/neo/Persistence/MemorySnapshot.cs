@@ -5,15 +5,15 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Neo.Persistence.Memory
+namespace Neo.Persistence
 {
-    internal class Snapshot : ISnapshot
+    internal class MemorySnapshot : ISnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]>[] innerData;
         private readonly ImmutableDictionary<byte[], byte[]>[] immutableData;
         private readonly ConcurrentDictionary<byte[], byte[]>[] writeBatch;
 
-        public Snapshot(ConcurrentDictionary<byte[], byte[]>[] innerData)
+        public MemorySnapshot(ConcurrentDictionary<byte[], byte[]>[] innerData)
         {
             this.innerData = innerData;
             this.immutableData = innerData.Select(p => p.ToImmutableDictionary(ByteArrayEqualityComparer.Default)).ToArray();

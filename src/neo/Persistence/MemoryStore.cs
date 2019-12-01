@@ -4,13 +4,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Persistence.Memory
+namespace Neo.Persistence
 {
-    public class Store : IStore
+    public class MemoryStore : IStore
     {
         private readonly ConcurrentDictionary<byte[], byte[]>[] innerData;
 
-        public Store()
+        public MemoryStore()
         {
             innerData = new ConcurrentDictionary<byte[], byte[]>[256];
             for (int i = 0; i < innerData.Length; i++)
@@ -38,7 +38,7 @@ namespace Neo.Persistence.Memory
 
         public ISnapshot GetSnapshot()
         {
-            return new Snapshot(innerData);
+            return new MemorySnapshot(innerData);
         }
 
         public void Put(byte table, byte[] key, byte[] value)
