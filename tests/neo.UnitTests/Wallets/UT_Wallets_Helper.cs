@@ -15,7 +15,7 @@ namespace Neo.UnitTests.Wallets
         {
             byte[] array = { 0x01 };
             UInt160 scriptHash = new UInt160(Crypto.Hash160(array));
-            "AZk5bAanTtD6AvpeesmYgL8CLRYUt5JQsX".ToScriptHash().Should().Be(scriptHash);
+            "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash().Should().Be(scriptHash);
 
             Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash();
             action.Should().Throw<FormatException>();
