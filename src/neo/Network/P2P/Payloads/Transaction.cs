@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -260,41 +261,43 @@ namespace Neo.Network.P2P.Payloads
 
         bool IInventory.Verify(StoreView snapshot)
         {
-            return Verify(snapshot, BigInteger.Zero);
+            return Verify(snapshot, BigInteger.Zero) == RelayResultReason.Succeed;
         }
 
-        public virtual bool Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
-            return VerifyForEachBlock(snapshot, totalSenderFeeFromPool)
-                && VerifyParallelParts(snapshot);
+            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            if (result != RelayResultReason.Succeed) return result;
+            return VerifyParallelParts(snapshot);
         }
 
-        public virtual bool VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual RelayResultReason VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
-                return false;
+                return RelayResultReason.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
-                return false;
+                return RelayResultReason.PolicyFail;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return false;
-            if (hashes.Length != Witnesses.Length) return false;
+            if (balance < fee) return RelayResultReason.InsufficientFunds;
+            if (hashes.Length != Witnesses.Length) return RelayResultReason.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
-                if (snapshot.Contracts.TryGet(hashes[i]) is null) return false;
+                if (snapshot.Contracts.TryGet(hashes[i]) is null) return RelayResultReason.Invalid;
             }
-            return true;
+            return RelayResultReason.Succeed;
         }
 
-        public bool VerifyParallelParts(StoreView snapshot)
+        public RelayResultReason VerifyParallelParts(StoreView snapshot)
         {
             int size = Size;
-            if (size > MaxTransactionSize) return false;
+            if (size > MaxTransactionSize) return RelayResultReason.Invalid;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return false;
-            return this.VerifyWitnesses(snapshot, net_fee);
+            if (net_fee < 0) return RelayResultReason.InsufficientFunds;
+            if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
+            return RelayResultReason.Succeed;
         }
 
         public StackItem ToStackItem()
