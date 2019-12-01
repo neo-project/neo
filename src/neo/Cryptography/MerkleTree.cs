@@ -1,3 +1,4 @@
+using Neo.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,9 +13,9 @@ namespace Neo.Cryptography
 
         public int Depth { get; private set; }
 
-        internal MerkleTree(IReadOnlyList<UInt256> hashes)
+        internal MerkleTree(UInt256[] hashes)
         {
-            if (hashes.Count == 0) throw new ArgumentException();
+            if (hashes.Length == 0) throw new ArgumentException();
             this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
             int depth = 1;
             for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
@@ -27,7 +28,7 @@ namespace Neo.Cryptography
             if (leaves.Length == 0) throw new ArgumentException();
             if (leaves.Length == 1) return leaves[0];
 
-            var buffer = new byte[64];
+            Span<byte> buffer = stackalloc byte[64];
             MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
             for (int i = 0; i < parents.Length; i++)
             {
@@ -49,18 +50,18 @@ namespace Neo.Cryptography
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static UInt256 Concat(byte[] buffer, UInt256 hash1, UInt256 hash2)
+        private static UInt256 Concat(Span<byte> buffer, UInt256 hash1, UInt256 hash2)
         {
-            Buffer.BlockCopy(hash1.ToArray(), 0, buffer, 0, 32);
-            Buffer.BlockCopy(hash2.ToArray(), 0, buffer, 32, 32);
+            hash1.ToArray().CopyTo(buffer);
+            hash2.ToArray().CopyTo(buffer[32..]);
 
-            return new UInt256(Crypto.Default.Hash256(buffer));
+            return new UInt256(Crypto.Hash256(buffer));
         }
 
-        public static UInt256 ComputeRoot(IReadOnlyList<UInt256> hashes)
+        public static UInt256 ComputeRoot(UInt256[] hashes)
         {
-            if (hashes.Count == 0) throw new ArgumentException();
-            if (hashes.Count == 1) return hashes[0];
+            if (hashes.Length == 0) throw new ArgumentException();
+            if (hashes.Length == 1) return hashes[0];
             MerkleTree tree = new MerkleTree(hashes);
             return tree.root.Hash;
         }

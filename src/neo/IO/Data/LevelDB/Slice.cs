@@ -45,7 +45,7 @@ namespace Neo.IO.Data.LevelDB
 
         public byte[] ToArray()
         {
-            return buffer ?? new byte[0];
+            return buffer ?? Array.Empty<byte>();
         }
 
         unsafe public bool ToBoolean()

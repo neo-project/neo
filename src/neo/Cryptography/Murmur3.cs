@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
@@ -32,7 +33,7 @@ namespace Neo.Cryptography
             int alignedLength = ibStart + (cbSize - remainder);
             for (int i = ibStart; i < alignedLength; i += 4)
             {
-                uint k = array.ToUInt32(i);
+                uint k = BinaryPrimitives.ReadUInt32LittleEndian(array.AsSpan(i));
                 k *= c1;
                 k = RotateLeft(k, r1);
                 k *= c2;

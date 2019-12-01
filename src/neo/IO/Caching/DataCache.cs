@@ -139,7 +139,7 @@ namespace Neo.IO.Caching
                     .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
                     .ToArray();
             }
-            var uncached = FindInternal(key_prefix ?? new byte[0])
+            var uncached = FindInternal(key_prefix ?? Array.Empty<byte>())
                 .Where(p => !dictionary.ContainsKey(p.Key))
                 .Select(p =>
                 (

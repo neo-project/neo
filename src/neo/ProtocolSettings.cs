@@ -33,7 +33,7 @@ namespace Neo
             {
                 if (_default == null)
                 {
-                    var configuration = Helper.LoadConfig("protocol");
+                    var configuration = Utility.LoadConfig("protocol");
                     UpdateDefault(configuration);
                 }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.IO;
 
 namespace Neo
 {
@@ -11,62 +12,68 @@ namespace Neo
         public const int Length = 20;
         public static readonly UInt160 Zero = new UInt160();
 
-        /// <summary>
-        /// The empty constructor stores a null byte array
-        /// </summary>
+        private ulong value1;
+        private ulong value2;
+        private uint value3;
+
+        public override int Size => Length;
+
         public UInt160()
-            : this(null)
         {
         }
 
-        /// <summary>
-        /// The byte[] constructor invokes base class UIntBase constructor for 20 bytes
-        /// </summary>
-        public UInt160(byte[] value)
-            : base(Length, value)
+        public unsafe UInt160(byte[] value)
         {
+            fixed (ulong* p = &value1)
+            {
+                Span<byte> dst = new Span<byte>(p, Length);
+                value[..Length].CopyTo(dst);
+            }
         }
 
         /// <summary>
         /// Method CompareTo returns 1 if this UInt160 is bigger than other UInt160; -1 if it's smaller; 0 if it's equals
         /// Example: assume this is 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4, this.CompareTo(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) returns 1
         /// </summary>
-        public unsafe int CompareTo(UInt160 other)
+        public int CompareTo(UInt160 other)
         {
-            fixed (byte* px = ToArray(), py = other.ToArray())
-            {
-                uint* lpx = (uint*)px;
-                uint* lpy = (uint*)py;
-                //160 bit / 32 bit step   -1
-                for (int i = (160 / 32 - 1); i >= 0; i--)
-                {
-                    if (lpx[i] > lpy[i])
-                        return 1;
-                    if (lpx[i] < lpy[i])
-                        return -1;
-                }
-            }
-            return 0;
+            int result = value3.CompareTo(other.value3);
+            if (result != 0) return result;
+            result = value2.CompareTo(other.value2);
+            if (result != 0) return result;
+            return value1.CompareTo(other.value1);
+        }
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            value1 = reader.ReadUInt64();
+            value2 = reader.ReadUInt64();
+            value3 = reader.ReadUInt32();
         }
 
         /// <summary>
         /// Method Equals returns true if objects are equal, false otherwise
         /// </summary>
-        public unsafe bool Equals(UInt160 other)
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(obj, this)) return true;
+            return Equals(obj as UInt160);
+        }
+
+        /// <summary>
+        /// Method Equals returns true if objects are equal, false otherwise
+        /// </summary>
+        public bool Equals(UInt160 other)
         {
             if (other is null) return false;
-            fixed (byte* px = ToArray(), py = other.ToArray())
-            {
-                uint* lpx = (uint*)px;
-                uint* lpy = (uint*)py;
-                //160 bit / 32 bit(uint step)   -1
-                for (int i = (160 / 32 - 1); i >= 0; i--)
-                {
-                    if (lpx[i] != lpy[i])
-                        return false;
-                }
-            }
-            return true;
+            return value1 == other.value1
+                && value2 == other.value2
+                && value3 == other.value3;
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)value1;
         }
 
         /// <summary>
@@ -84,6 +91,13 @@ namespace Neo
             byte[] data = value.HexToBytes();
             Array.Reverse(data);
             return new UInt160(data);
+        }
+
+        public override void Serialize(BinaryWriter writer)
+        {
+            writer.Write(value1);
+            writer.Write(value2);
+            writer.Write(value3);
         }
 
         /// <summary>
@@ -114,6 +128,24 @@ namespace Neo
             Array.Reverse(data);
             result = new UInt160(data);
             return true;
+        }
+
+        /// <summary>
+        /// Returns true if left UInt160 is equals to right UInt160
+        /// </summary>
+        public static bool operator ==(UInt160 left, UInt160 right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left is null || right is null) return false;
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Returns true if left UIntBase is not equals to right UIntBase
+        /// </summary>
+        public static bool operator !=(UInt160 left, UInt160 right)
+        {
+            return !(left == right);
         }
 
         /// <summary>

@@ -5,6 +5,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using Array = System.Array;
 
 namespace Neo.SmartContract
 {
@@ -97,8 +98,8 @@ namespace Neo.SmartContract
                 NextConsensus = currentBlock.NextConsensus,
                 Witness = new Witness
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
                 },
                 ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]

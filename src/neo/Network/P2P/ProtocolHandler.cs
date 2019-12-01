@@ -251,7 +251,7 @@ namespace Neo.Network.P2P
                 headers.Add(header);
             }
             if (headers.Count == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers)));
+            Context.Parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
         private void OnHeadersMessageReceived(HeadersPayload payload)

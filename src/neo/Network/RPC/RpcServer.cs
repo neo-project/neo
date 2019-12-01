@@ -631,11 +631,6 @@ namespace Neo.Network.RPC
             return GetInvokeResult(script);
         }
 
-        private JObject InvokeScript(byte[] script)
-        {
-            return GetInvokeResult(script);
-        }
-
         private JObject ListPlugins()
         {
             return new JArray(Plugin.Plugins

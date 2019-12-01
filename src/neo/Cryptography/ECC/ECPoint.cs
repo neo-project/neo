@@ -37,7 +37,7 @@ namespace Neo.Cryptography.ECC
             return Y.CompareTo(other.Y);
         }
 
-        public static ECPoint DecodePoint(byte[] encoded, ECCurve curve)
+        public static ECPoint DecodePoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
             ECPoint p = null;
             switch (encoded[0])
@@ -48,7 +48,7 @@ namespace Neo.Cryptography.ECC
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
                         int yTilde = encoded[0] & 1;
-                        BigInteger X1 = new BigInteger(encoded.AsSpan(1), isUnsigned: true, isBigEndian: true);
+                        BigInteger X1 = new BigInteger(encoded[1..], isUnsigned: true, isBigEndian: true);
                         p = DecompressPoint(yTilde, X1, curve);
                         break;
                     }
@@ -56,8 +56,8 @@ namespace Neo.Cryptography.ECC
                     {
                         if (encoded.Length != (2 * curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
-                        BigInteger X1 = new BigInteger(encoded.AsSpan(1, curve.ExpectedECPointLength), isUnsigned: true, isBigEndian: true);
-                        BigInteger Y1 = new BigInteger(encoded.AsSpan(1 + curve.ExpectedECPointLength), isUnsigned: true, isBigEndian: true);
+                        BigInteger X1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
+                        BigInteger Y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
                         p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve);
                         break;
                     }
@@ -101,14 +101,14 @@ namespace Neo.Cryptography.ECC
 
         public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
-            byte[] buffer = new byte[1 + curve.ExpectedECPointLength * 2];
+            Span<byte> buffer = stackalloc byte[1 + curve.ExpectedECPointLength * 2];
             buffer[0] = reader.ReadByte();
             switch (buffer[0])
             {
                 case 0x02:
                 case 0x03:
                     {
-                        if (reader.Read(buffer, 1, curve.ExpectedECPointLength) != curve.ExpectedECPointLength)
+                        if (reader.Read(buffer[1..(1 + curve.ExpectedECPointLength)]) != curve.ExpectedECPointLength)
                         {
                             throw new FormatException();
                         }
@@ -116,7 +116,7 @@ namespace Neo.Cryptography.ECC
                     }
                 case 0x04:
                     {
-                        if (reader.Read(buffer, 1, curve.ExpectedECPointLength * 2) != curve.ExpectedECPointLength * 2)
+                        if (reader.Read(buffer[1..(1 + curve.ExpectedECPointLength * 2)]) != curve.ExpectedECPointLength * 2)
                         {
                             throw new FormatException();
                         }

@@ -153,7 +153,7 @@ namespace Neo.SmartContract
                     }
                     while (contract.Script[i++] == 33)
                     {
-                        points.Add(ECPoint.DecodePoint(contract.Script[i..(i + 33)], ECCurve.Secp256r1));
+                        points.Add(ECPoint.DecodePoint(contract.Script.AsSpan(i, 33), ECCurve.Secp256r1));
                         i += 33;
                     }
                 }
@@ -263,7 +263,7 @@ namespace Neo.SmartContract
                     witnesses[i] = new Witness
                     {
                         InvocationScript = sb.ToArray(),
-                        VerificationScript = item.Script ?? new byte[0]
+                        VerificationScript = item.Script ?? Array.Empty<byte>()
                     };
                 }
             }

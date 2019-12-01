@@ -1,7 +1,6 @@
 using Neo.IO;
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace Neo
 {
@@ -9,81 +8,22 @@ namespace Neo
     /// Base class for little-endian unsigned integers. Two classes inherit from this: UInt160 and UInt256.
     /// Only basic comparison/serialization are proposed for these classes. For arithmetic purposes, use BigInteger class.
     /// </summary>
-    public abstract class UIntBase : IEquatable<UIntBase>, ISerializable
+    public abstract class UIntBase : ISerializable
     {
-        /// <summary>
-        /// Storing unsigned int in a little-endian byte array.
-        /// </summary>
-        private readonly byte[] data_bytes;
-
         /// <summary>
         /// Number of bytes of the unsigned int.
         /// Currently, inherited classes use 20-bytes (UInt160) or 32-bytes (UInt256)
         /// </summary>
-        public int Size => data_bytes.Length;
+        public abstract int Size { get; }
 
-        /// <summary>
-        /// Base constructor receives the intended number of bytes and a byte array. 
-        /// If byte array is null, it's automatically initialized with given size.
-        /// </summary>
-        protected UIntBase(int bytes, byte[] value)
-        {
-            if (value == null)
-            {
-                this.data_bytes = new byte[bytes];
-                return;
-            }
-            if (value.Length != bytes)
-                throw new ArgumentException();
-            this.data_bytes = value;
-        }
+        public abstract void Deserialize(BinaryReader reader);
 
-        /// <summary>
-        /// Deserialize function reads the expected size in bytes from the given BinaryReader and stores in data_bytes array.
-        /// </summary>
-        void ISerializable.Deserialize(BinaryReader reader)
-        {
-            if (reader.Read(data_bytes, 0, data_bytes.Length) != data_bytes.Length)
-            {
-                throw new FormatException();
-            }
-        }
-
-        /// <summary>
-        /// Method Equals returns true if objects are equal, false otherwise
-        /// If null is passed as parameter, this method returns false. If it's a self-reference, it returns true.
-        /// </summary>
-        public bool Equals(UIntBase other)
-        {
-            if (other is null)
-                return false;
-            if (ReferenceEquals(this, other))
-                return true;
-            if (data_bytes.Length != other.data_bytes.Length)
-                return false;
-            return MemoryExtensions.SequenceEqual<byte>(data_bytes, other.data_bytes);
-        }
-
-        /// <summary>
-        /// Method Equals returns true if objects are equal, false otherwise
-        /// If null is passed as parameter or if it's not a UIntBase object, this method returns false.
-        /// </summary>
-        public override bool Equals(object obj)
-        {
-            if (obj is null)
-                return false;
-            if (!(obj is UIntBase))
-                return false;
-            return this.Equals((UIntBase)obj);
-        }
+        public abstract override bool Equals(object obj);
 
         /// <summary>
         /// Method GetHashCode returns a 32-bit int representing a hash code, composed of the first 4 bytes.
         /// </summary>
-        public override int GetHashCode()
-        {
-            return data_bytes.ToInt32(0);
-        }
+        public abstract override int GetHashCode();
 
         /// <summary>
         /// Method Parse receives a big-endian hex string and stores as a UInt160 or UInt256 little-endian byte array
@@ -99,22 +39,7 @@ namespace Neo
                 throw new FormatException();
         }
 
-        /// <summary>
-        /// Method Serialize writes the data_bytes array into a BinaryWriter object
-        /// </summary>
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.Write(data_bytes);
-        }
-
-        /// <summary>
-        /// Method ToArray() returns the byte array data_bytes, which stores the little-endian unsigned int
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte[] ToArray()
-        {
-            return data_bytes;
-        }
+        public abstract void Serialize(BinaryWriter writer);
 
         /// <summary>
         /// Method ToString returns a big-endian string starting by "0x" representing the little-endian unsigned int
@@ -122,7 +47,7 @@ namespace Neo
         /// </summary>
         public override string ToString()
         {
-            return "0x" + data_bytes.ToHexString(reverse: true);
+            return "0x" + this.ToArray().ToHexString(reverse: true);
         }
 
         /// <summary>
@@ -160,29 +85,6 @@ namespace Neo
             }
             result = null;
             return false;
-        }
-
-        /// <summary>
-        /// Operator == returns true if left UIntBase is equals to right UIntBase
-        /// If any parameter is null, it returns false. If both are the same object, it returns true.
-        /// Example: UIntBase(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) == UIntBase(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) is true
-        /// </summary>
-        public static bool operator ==(UIntBase left, UIntBase right)
-        {
-            if (ReferenceEquals(left, right))
-                return true;
-            if (ReferenceEquals(left, null) || ReferenceEquals(right, null))
-                return false;
-            return left.Equals(right);
-        }
-
-        /// <summary>
-        /// Operator != returns true if left UIntBase is not equals to right UIntBase
-        /// Example: UIntBase(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) != UIntBase(01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) is true
-        /// </summary>
-        public static bool operator !=(UIntBase left, UIntBase right)
-        {
-            return !(left == right);
         }
     }
 }
