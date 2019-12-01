@@ -411,7 +411,7 @@ namespace Neo.Network.RPC
                 {
                     // options.EnableForHttps = false;
                     options.Providers.Add<GzipCompressionProvider>();
-                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json-rpc" });
+                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json-rpc");
                 });
 
                 services.Configure<GzipCompressionProviderOptions>(options =>
@@ -628,11 +628,6 @@ namespace Neo.Network.RPC
             {
                 script = sb.EmitAppCall(script_hash, operation, args).ToArray();
             }
-            return GetInvokeResult(script);
-        }
-
-        private JObject InvokeScript(byte[] script)
-        {
             return GetInvokeResult(script);
         }
 

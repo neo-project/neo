@@ -41,7 +41,7 @@ namespace Neo.Network
                     return false;
                 }
 
-                byte[] buffer = new byte[0x1000];
+                Span<byte> buffer = stackalloc byte[0x1000];
 
                 do
                 {
@@ -50,7 +50,7 @@ namespace Neo.Network
                     {
                         length = s.Receive(buffer);
 
-                        string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLowerInvariant();
+                        string resp = Encoding.ASCII.GetString(buffer[..length]).ToLowerInvariant();
                         if (resp.Contains("upnp:rootdevice"))
                         {
                             resp = resp.Substring(resp.IndexOf("location:") + 9);

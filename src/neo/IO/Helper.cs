@@ -1,4 +1,6 @@
+using K4os.Compression.LZ4;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -63,6 +65,27 @@ namespace Neo.IO
                 using BinaryReader reader = new BinaryReader(ms, Encoding.UTF8);
                 return reader.ReadSerializableArray<T>(max);
             }
+        }
+
+        public static byte[] CompressLz4(this byte[] data)
+        {
+            int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
+            using var buffer = MemoryPool<byte>.Shared.Rent(maxLength);
+            int length = LZ4Codec.Encode(data, buffer.Memory.Span);
+            byte[] result = new byte[length];
+            buffer.Memory[..length].CopyTo(result);
+            return result;
+        }
+
+        public static byte[] DecompressLz4(this byte[] data, int maxOutput)
+        {
+            maxOutput = Math.Min(maxOutput, data.Length * 255);
+            using var buffer = MemoryPool<byte>.Shared.Rent(maxOutput);
+            int length = LZ4Codec.Decode(data, buffer.Memory.Span);
+            if (length < 0 || length > maxOutput) throw new FormatException();
+            byte[] result = new byte[length];
+            buffer.Memory[..length].CopyTo(result);
+            return result;
         }
 
         public static int GetVarSize(int value)
@@ -197,7 +220,7 @@ namespace Neo.IO
             }
         }
 
-        public static byte[] ToByteArray<T>(this T[] value) where T : ISerializable
+        public static byte[] ToByteArray<T>(this IReadOnlyCollection<T> value) where T : ISerializable
         {
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
@@ -213,12 +236,12 @@ namespace Neo.IO
             value.Serialize(writer);
         }
 
-        public static void Write<T>(this BinaryWriter writer, T[] value) where T : ISerializable
+        public static void Write<T>(this BinaryWriter writer, IReadOnlyCollection<T> value) where T : ISerializable
         {
-            writer.WriteVarInt(value.Length);
-            for (int i = 0; i < value.Length; i++)
+            writer.WriteVarInt(value.Count);
+            foreach (T item in value)
             {
-                value[i].Serialize(writer);
+                item.Serialize(writer);
             }
         }
 
@@ -252,7 +275,7 @@ namespace Neo.IO
                 throw new ArgumentException();
             writer.Write(bytes);
             if (bytes.Length < length)
-                writer.Write(new byte[length - bytes.Length]);
+                writer.Write(stackalloc byte[length - bytes.Length]);
         }
 
         public static void WriteNullableArray<T>(this BinaryWriter writer, T[] value) where T : class, ISerializable

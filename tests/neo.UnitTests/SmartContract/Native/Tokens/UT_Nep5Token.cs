@@ -51,10 +51,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             BigInteger totalSupply = 100_000_000;
             totalSupply *= test.Factor;
 
-            byte[] value = totalSupply.ToByteArray();
             StorageItem item = new StorageItem
             {
-                Value = value
+                Value = totalSupply.ToByteArrayStandard()
             };
             var key = CreateStorageKey(Prefix_TotalSupply);
 

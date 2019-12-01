@@ -1,6 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System;
@@ -30,7 +29,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01 };
-            byte[] signature = Crypto.Default.Sign(message, keyPair.PrivateKey, keyPair.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature = Crypto.Sign(message, keyPair.PrivateKey, keyPair.PublicKey.EncodePoint(false).Skip(1).ToArray());
             contractGroup = new ContractGroup
             {
                 PubKey = keyPair.PublicKey,

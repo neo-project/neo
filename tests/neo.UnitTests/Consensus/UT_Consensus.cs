@@ -5,12 +5,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Consensus;
 using Neo.Cryptography;
-using Neo.UnitTests.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -249,10 +249,10 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nBasic commits Signatures verification");
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
             var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 1, kp_array[1], updatedBlockHashData);
-            Crypto.Default.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
-            Crypto.Default.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
-            Crypto.Default.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeFalse();
-            Crypto.Default.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeTrue();
+            Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
+            Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
+            Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeFalse();
+            Crypto.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[1].EncodePoint(false)).Should().BeTrue();
             Console.WriteLine("\n==========================");
 
             Console.WriteLine("\n==========================");
@@ -328,7 +328,7 @@ namespace Neo.UnitTests.Consensus
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
             cpCommitTemp.ConsensusMessage = cpToCopy.ConsensusMessage.ToArray().AsSerializable<Commit>();
-            ((Commit)cpCommitTemp.ConsensusMessage).Signature = Crypto.Default.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            ((Commit)cpCommitTemp.ConsensusMessage).Signature = Crypto.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
             // Payload is not being signed by vI, since we are bypassing this check as directly talking to subscriber
             return cpCommitTemp;
         }
@@ -489,7 +489,7 @@ namespace Neo.UnitTests.Consensus
                         }
                     }
                 },
-                PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
+                PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
@@ -589,7 +589,7 @@ namespace Neo.UnitTests.Consensus
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
-                PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
+                PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {

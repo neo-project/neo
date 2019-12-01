@@ -4,10 +4,5 @@ namespace Neo.SmartContract
     {
         public UInt160 ScriptHash;
         public bool IsReadOnly;
-
-        public byte[] ToArray()
-        {
-            return ScriptHash.ToArray();
-        }
     }
 }

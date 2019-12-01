@@ -5,6 +5,7 @@ using Neo.VM;
 using Neo.Wallets;
 using System.Linq;
 using System.Numerics;
+using static Neo.Helper;
 
 namespace Neo.Network.RPC
 {
@@ -78,11 +79,10 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public RpcNep5TokenInfo GetTokenInfo(UInt160 scriptHash)
         {
-            byte[] script = scriptHash.MakeScript("name")
-                .Concat(scriptHash.MakeScript("symbol"))
-                .Concat(scriptHash.MakeScript("decimals"))
-                .Concat(scriptHash.MakeScript("totalSupply"))
-                .ToArray();
+            byte[] script = Concat(scriptHash.MakeScript("name"),
+                scriptHash.MakeScript("symbol"),
+                scriptHash.MakeScript("decimals"),
+                scriptHash.MakeScript("totalSupply"));
 
             var result = rpcClient.InvokeScript(script).Stack;
 

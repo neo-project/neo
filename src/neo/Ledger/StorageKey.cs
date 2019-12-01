@@ -2,7 +2,6 @@ using Neo.Cryptography;
 using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Ledger
 {
@@ -28,7 +27,7 @@ namespace Neo.Ledger
                 }
                 if (remain > 0)
                     ms.Write(prefix, index, remain);
-                return hash.ToArray().Concat(ms.ToArray()).ToArray();
+                return Helper.Concat(hash.ToArray(), ms.ToArray());
             }
         }
 
@@ -44,7 +43,7 @@ namespace Neo.Ledger
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return ScriptHash.Equals(other.ScriptHash) && Key.SequenceEqual(other.Key);
+            return ScriptHash.Equals(other.ScriptHash) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
         }
 
         public override bool Equals(object obj)

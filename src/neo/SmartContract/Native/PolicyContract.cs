@@ -148,10 +148,10 @@ namespace Neo.SmartContract.Native
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
-            HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
+            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Add(account)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToArray().ToByteArray();
+            storage.Value = accounts.ToByteArray();
             return true;
         }
 
@@ -162,10 +162,10 @@ namespace Neo.SmartContract.Native
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
-            HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
+            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Remove(account)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToArray().ToByteArray();
+            storage.Value = accounts.ToByteArray();
             return true;
         }
     }

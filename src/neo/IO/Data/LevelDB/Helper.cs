@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.IO.Data.LevelDB
 {
@@ -26,7 +25,7 @@ namespace Neo.IO.Data.LevelDB
                     byte[] x = key.ToArray();
                     byte[] y = prefix.ToArray();
                     if (x.Length < y.Length) break;
-                    if (!x.Take(y.Length).SequenceEqual(y)) break;
+                    if (!x.AsSpan().StartsWith(y)) break;
                     yield return resultSelector(key, it.Value());
                 }
             }
