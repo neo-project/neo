@@ -60,7 +60,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestFromJson()
         {
             JObject json = new JObject();
-            json["address"] = "ARxgjcH2K1yeW5f5ryuRQNaBzSa9TZzmVS";
+            json["address"] = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             json["key"] = null;
             json["label"] = null;
             json["isDefault"] = true;
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["contract"] = null;
             json["extra"] = null;
             NEP6Account account = NEP6Account.FromJson(json, _wallet);
-            account.ScriptHash.Should().Be("ARxgjcH2K1yeW5f5ryuRQNaBzSa9TZzmVS".ToScriptHash());
+            account.ScriptHash.Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash());
             account.Label.Should().BeNull();
             account.IsDefault.Should().BeTrue();
             account.Lock.Should().BeFalse();
