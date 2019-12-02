@@ -39,6 +39,7 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
+            Context.Watch(this.protocol);
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
             var capabilities = new List<NodeCapability>
@@ -151,6 +152,9 @@ namespace Neo.Network.P2P
                     break;
                 case PingPayload payload:
                     OnPingPayload(payload);
+                    break;
+                case Terminated child:
+                    Context.Stop(Self);
                     break;
             }
         }
