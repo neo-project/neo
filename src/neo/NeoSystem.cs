@@ -33,7 +33,9 @@ namespace Neo
         public NeoSystem(string storageEngine = null)
         {
             Plugin.LoadPlugins(this);
-            this.store = storageEngine is null ? new MemoryStore() : Plugin.Storages[storageEngine].GetStore();
+            this.store = string.IsNullOrEmpty(storageEngine) || storageEngine == nameof(MemoryStore)
+                ? new MemoryStore()
+                : Plugin.Storages[storageEngine].GetStore();
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
