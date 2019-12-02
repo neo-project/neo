@@ -1,9 +1,17 @@
+using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
+using System.Linq;
+using System.Reflection;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -34,7 +42,7 @@ namespace Neo.UnitTests.Ledger
     }
 
     [TestClass]
-    public class UT_Blockchain
+    public class UT_Blockchain : TestKit
     {
         private NeoSystem system;
         Transaction txSample = Blockchain.GenesisBlock.Transactions[0];
@@ -95,6 +103,73 @@ namespace Neo.UnitTests.Ledger
         {
             Blockchain.Singleton.GetTransaction(UInt256.Zero).Should().BeNull();
             Blockchain.Singleton.GetTransaction(txSample.Hash).Should().NotBeNull();
+        }
+
+        [TestMethod]
+        public void TestValidTransaction()
+        {
+            var senderProbe = CreateTestProbe();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var walletA = TestUtils.GenerateTestWallet();
+
+            using (var unlockA = walletA.Unlock("123"))
+            {
+                var acc = walletA.CreateAccount();
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = new Nep5AccountState().ToByteArray()
+                });
+
+                entry.Value = new Nep5AccountState()
+                {
+                    Balance = 100_000_000 * NativeContract.GAS.Factor
+                }
+                .ToByteArray();
+
+                snapshot.Commit();
+
+                typeof(Blockchain)
+                    .GetMethod("UpdateCurrentSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(Blockchain.Singleton, null);
+
+                // Make transaction
+
+                var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
+
+                senderProbe.Send(system.Blockchain, tx);
+                senderProbe.ExpectMsg(RelayResultReason.Succeed);
+
+                senderProbe.Send(system.Blockchain, tx);
+                senderProbe.ExpectMsg(RelayResultReason.AlreadyExists);
+            }
+        }
+
+        private Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
+        {
+            var tx = wallet.MakeTransaction(new TransferOutput[]
+                {
+                    new TransferOutput()
+                    {
+                            AssetId = NativeContract.GAS.Hash,
+                            ScriptHash = account,
+                            Value = new BigDecimal(1,8)
+                    }
+                },
+                account);
+
+            tx.Nonce = nonce;
+
+            var data = new ContractParametersContext(tx);
+            Assert.IsTrue(wallet.Sign(data));
+            Assert.IsTrue(data.Completed);
+
+            tx.Witnesses = data.GetWitnesses();
+
+            return tx;
         }
     }
 }
