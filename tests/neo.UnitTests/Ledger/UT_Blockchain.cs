@@ -55,12 +55,6 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void TestConstructor()
-        {
-            system.ActorSystem.ActorOf(Blockchain.Props(system, Blockchain.Singleton.Store)).Should().NotBeSameAs(system.Blockchain);
-        }
-
-        [TestMethod]
         public void TestContainsBlock()
         {
             Blockchain.Singleton.ContainsBlock(UInt256.Zero).Should().BeFalse();
