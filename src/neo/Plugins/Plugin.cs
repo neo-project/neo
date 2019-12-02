@@ -96,7 +96,7 @@ namespace Neo.Plugins
 
             try
             {
-                return Assembly.LoadFrom(filename);
+                return Assembly.Load(File.ReadAllBytes(filename));
             }
             catch (Exception ex)
             {
