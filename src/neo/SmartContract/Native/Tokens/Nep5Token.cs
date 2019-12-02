@@ -1,5 +1,6 @@
 #pragma warning disable IDE0060
 
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -80,11 +81,11 @@ namespace Neo.SmartContract.Native.Tokens
             storage.Value = state.ToByteArray();
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
             {
-                Value = BigInteger.Zero.ToByteArray()
+                Value = BigInteger.Zero.ToByteArrayStandard()
             });
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
-            storage.Value = totalSupply.ToByteArray();
+            storage.Value = totalSupply.ToByteArrayStandard();
             engine.SendNotification(Hash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
         }
 
@@ -110,7 +111,7 @@ namespace Neo.SmartContract.Native.Tokens
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
-            storage.Value = totalSupply.ToByteArray();
+            storage.Value = totalSupply.ToByteArrayStandard();
             engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
@@ -138,7 +139,7 @@ namespace Neo.SmartContract.Native.Tokens
             return TotalSupply(engine.Snapshot);
         }
 
-        public virtual BigInteger TotalSupply(Snapshot snapshot)
+        public virtual BigInteger TotalSupply(StoreView snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
@@ -151,7 +152,7 @@ namespace Neo.SmartContract.Native.Tokens
             return BalanceOf(engine.Snapshot, new UInt160(args[0].GetSpan().ToArray()));
         }
 
-        public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
+        public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;

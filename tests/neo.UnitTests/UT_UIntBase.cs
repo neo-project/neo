@@ -1,51 +1,12 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using System;
-using System.IO;
 
 namespace Neo.UnitTests.IO
 {
     [TestClass]
     public class UT_UIntBase
     {
-        [TestMethod]
-        public void TestDeserialize()
-        {
-            using (MemoryStream stream = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            using (BinaryReader reader = new BinaryReader(stream))
-            {
-                writer.Write(new byte[20]);
-                stream.Seek(0, SeekOrigin.Begin);
-                MyUIntBase uIntBase = new MyUIntBase();
-                Action action = () => ((ISerializable)uIntBase).Deserialize(reader);
-                action.Should().Throw<FormatException>();
-            }
-        }
-
-        [TestMethod]
-        public void TestEquals1()
-        {
-            MyUIntBase temp1 = new MyUIntBase();
-            MyUIntBase temp2 = new MyUIntBase();
-            UInt160 temp3 = new UInt160();
-            Assert.AreEqual(false, temp1.Equals(null));
-            Assert.AreEqual(true, temp1.Equals(temp1));
-            Assert.AreEqual(true, temp1.Equals(temp2));
-            Assert.AreEqual(false, temp1.Equals(temp3));
-        }
-
-        [TestMethod]
-        public void TestEquals2()
-        {
-            MyUIntBase temp1 = new MyUIntBase();
-            object temp2 = null;
-            object temp3 = new object();
-            Assert.AreEqual(false, temp1.Equals(temp2));
-            Assert.AreEqual(false, temp1.Equals(temp3));
-        }
-
         [TestMethod]
         public void TestParse()
         {
@@ -84,19 +45,5 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(UInt256.Zero, uIntBase);
             Assert.AreEqual(false, UIntBase.TryParse("00000000000000000000000000000000000000000000000000000000000000", out uIntBase));
         }
-
-        [TestMethod]
-        public void TestOperatorEqual()
-        {
-            Assert.AreEqual(false, new MyUIntBase() == null);
-            Assert.AreEqual(false, null == new MyUIntBase());
-        }
-    }
-
-    internal class MyUIntBase : UIntBase
-    {
-        public const int Length = 32;
-        public MyUIntBase() : this(null) { }
-        public MyUIntBase(byte[] value) : base(Length, value) { }
     }
 }

@@ -16,6 +16,7 @@ namespace Neo.Network.P2P
 
         public bool HasTask => Tasks.Count > 0;
         public uint StartHeight { get; }
+        public uint LastBlockIndex { get; set; }
 
         public TaskSession(IActorRef node, VersionPayload version)
         {
@@ -24,6 +25,7 @@ namespace Neo.Network.P2P
             this.StartHeight = version.Capabilities
                 .OfType<FullNodeCapability>()
                 .FirstOrDefault()?.StartHeight ?? 0;
+            this.LastBlockIndex = this.StartHeight;
         }
     }
 }

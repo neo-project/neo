@@ -1,8 +1,8 @@
 using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 using System.Numerics;
+using static Neo.Helper;
 
 namespace Neo.Cryptography.ECC
 {
@@ -18,10 +18,7 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        public ECPoint()
-            : this(null, null, ECCurve.Secp256r1)
-        {
-        }
+        public ECPoint() : this(null, null, ECCurve.Secp256r1) { }
 
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
@@ -40,28 +37,27 @@ namespace Neo.Cryptography.ECC
             return Y.CompareTo(other.Y);
         }
 
-        public static ECPoint DecodePoint(byte[] encoded, ECCurve curve)
+        public static ECPoint DecodePoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
             ECPoint p = null;
-            int expectedLength = (curve.Q.GetBitLength() + 7) / 8;
             switch (encoded[0])
             {
                 case 0x02: // compressed
                 case 0x03: // compressed
                     {
-                        if (encoded.Length != (expectedLength + 1))
+                        if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
                         int yTilde = encoded[0] & 1;
-                        BigInteger X1 = new BigInteger(encoded.Skip(1).Reverse().Concat(new byte[1]).ToArray());
+                        BigInteger X1 = new BigInteger(encoded[1..], isUnsigned: true, isBigEndian: true);
                         p = DecompressPoint(yTilde, X1, curve);
                         break;
                     }
                 case 0x04: // uncompressed
                     {
-                        if (encoded.Length != (2 * expectedLength + 1))
+                        if (encoded.Length != (2 * curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
-                        BigInteger X1 = new BigInteger(encoded.Skip(1).Take(expectedLength).Reverse().Concat(new byte[1]).ToArray());
-                        BigInteger Y1 = new BigInteger(encoded.Skip(1 + expectedLength).Reverse().Concat(new byte[1]).ToArray());
+                        BigInteger X1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
+                        BigInteger Y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
                         p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve);
                         break;
                     }
@@ -105,23 +101,22 @@ namespace Neo.Cryptography.ECC
 
         public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
-            int expectedLength = (curve.Q.GetBitLength() + 7) / 8;
-            byte[] buffer = new byte[1 + expectedLength * 2];
+            Span<byte> buffer = stackalloc byte[1 + curve.ExpectedECPointLength * 2];
             buffer[0] = reader.ReadByte();
             switch (buffer[0])
             {
                 case 0x02:
                 case 0x03:
                     {
-                        if (reader.Read(buffer, 1, expectedLength) != expectedLength)
+                        if (reader.Read(buffer[1..(1 + curve.ExpectedECPointLength)]) != curve.ExpectedECPointLength)
                         {
                             throw new FormatException();
                         }
-                        return DecodePoint(buffer.Take(1 + expectedLength).ToArray(), curve);
+                        return DecodePoint(buffer[..(1 + curve.ExpectedECPointLength)], curve);
                     }
                 case 0x04:
                     {
-                        if (reader.Read(buffer, 1, expectedLength * 2) != expectedLength * 2)
+                        if (reader.Read(buffer[1..(1 + curve.ExpectedECPointLength * 2)]) != curve.ExpectedECPointLength * 2)
                         {
                             throw new FormatException();
                         }
@@ -143,10 +138,10 @@ namespace Neo.Cryptography.ECC
             else
             {
                 data = new byte[65];
-                byte[] yBytes = Y.Value.ToByteArray().Reverse().ToArray();
+                byte[] yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
             }
-            byte[] xBytes = X.Value.ToByteArray().Reverse().ToArray();
+            byte[] xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
             return data;
@@ -175,10 +170,10 @@ namespace Neo.Cryptography.ECC
                     return DecodePoint(pubkey, curve);
                 case 64:
                 case 72:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 64)).ToArray(), curve);
+                    return DecodePoint(Concat(new byte[] { 0x04 }, pubkey[^64..]), curve);
                 case 96:
                 case 104:
-                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 96).Take(64)).ToArray(), curve);
+                    return DecodePoint(Concat(new byte[] { 0x04 }, pubkey[^96..^32]), curve);
                 default:
                     throw new FormatException();
             }
@@ -241,7 +236,7 @@ namespace Neo.Cryptography.ECC
             // The length of the precomputation array
             int preCompLen = 1;
 
-            ECPoint[] preComp = preComp = new ECPoint[] { p };
+            ECPoint[] preComp = new ECPoint[] { p };
             ECPoint twiceP = p.Twice();
 
             if (preCompLen < reqPreCompLen)
@@ -379,7 +374,7 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentException();
             if (p.IsInfinity)
                 return p;
-            BigInteger k = new BigInteger(n.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger k = new BigInteger(n, isUnsigned: true, isBigEndian: true);
             if (k.Sign == 0)
                 return p.Curve.Infinity;
             return Multiply(p, k);

@@ -3,7 +3,6 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -48,11 +47,9 @@ namespace Neo.Network.P2P.Payloads
             + ConsensusData.Size                            //ConsensusData
             + Transactions.Sum(p => p.Size);                //Transactions
 
-        public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, params UInt256[] transactionHashes)
+        public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, IEnumerable<UInt256> transactionHashes)
         {
-            List<UInt256> hashes = new List<UInt256>(transactionHashes.Length + 1) { consensusDataHash };
-            hashes.AddRange(transactionHashes);
-            return MerkleTree.ComputeRoot(hashes);
+            return MerkleTree.ComputeRoot(transactionHashes.Prepend(consensusDataHash).ToArray());
         }
 
         public override void Deserialize(BinaryReader reader)
@@ -66,7 +63,7 @@ namespace Neo.Network.P2P.Payloads
                 Transactions[i] = reader.ReadSerializable<Transaction>();
             if (Transactions.Distinct().Count() != Transactions.Length)
                 throw new FormatException();
-            if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+            if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash)) != MerkleRoot)
                 throw new FormatException();
         }
 
@@ -89,7 +86,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void RebuildMerkleRoot()
         {
-            MerkleRoot = CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash).ToArray());
+            MerkleRoot = CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash));
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -130,7 +127,7 @@ namespace Neo.Network.P2P.Payloads
                 Index = Index,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Hashes = new[] { ConsensusData.Hash }.Concat(Transactions.Select(p => p.Hash)).ToArray(),
+                Hashes = Transactions.Select(p => p.Hash).Prepend(ConsensusData.Hash).ToArray(),
                 ConsensusData = ConsensusData
             };
         }

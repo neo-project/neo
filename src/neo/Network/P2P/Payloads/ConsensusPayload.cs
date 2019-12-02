@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt256(Crypto.Default.Hash256(this.GetHashData()));
+                    _hash = new UInt256(Crypto.Hash256(this.GetHashData()));
                 }
                 return _hash;
             }
@@ -95,7 +95,7 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
             ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
             if (validators.Length <= ValidatorIndex)
@@ -118,7 +118,7 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public bool Verify(Snapshot snapshot)
+        public bool Verify(StoreView snapshot)
         {
             if (BlockIndex <= snapshot.Height)
                 return false;

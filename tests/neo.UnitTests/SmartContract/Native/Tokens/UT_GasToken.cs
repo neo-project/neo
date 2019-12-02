@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -17,13 +17,10 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
     [TestClass]
     public class UT_GasToken
     {
-        Store Store;
-
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
@@ -41,7 +38,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
@@ -133,7 +130,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), 0);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
@@ -160,7 +157,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestGetSysFeeAmount2()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             NativeContract.GAS.GetSysFeeAmount(snapshot, 0).Should().Be(new BigInteger(0));
             NativeContract.GAS.GetSysFeeAmount(snapshot, 1).Should().Be(new BigInteger(0));
 
@@ -176,7 +173,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             BigInteger sys_fee = new BigInteger(10);
             snapshot.Storages.Add(storageKey, new StorageItem
             {
-                Value = sys_fee.ToByteArray(),
+                Value = sys_fee.ToByteArrayStandard(),
                 IsConstant = true
             });
 
