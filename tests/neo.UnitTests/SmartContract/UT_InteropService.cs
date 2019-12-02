@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -358,7 +359,7 @@ namespace Neo.UnitTests.SmartContract
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
-            byte[] signature = Crypto.Default.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
 
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));

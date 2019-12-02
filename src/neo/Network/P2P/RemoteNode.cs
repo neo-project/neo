@@ -162,7 +162,10 @@ namespace Neo.Network.P2P
         private void OnPingPayload(PingPayload payload)
         {
             if (payload.LastBlockIndex > LastBlockIndex)
+            {
                 LastBlockIndex = payload.LastBlockIndex;
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+            }
         }
 
         private void OnRelay(IInventory inventory)
@@ -184,7 +187,7 @@ namespace Neo.Network.P2P
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage(inventory.InventoryType.ToMessageCommand(), inventory);
+            EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
         private void OnSetFilter(BloomFilter filter)

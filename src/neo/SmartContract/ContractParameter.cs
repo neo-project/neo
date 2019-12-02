@@ -36,7 +36,7 @@ namespace Neo.SmartContract
                     this.Value = new UInt256();
                     break;
                 case ContractParameterType.ByteArray:
-                    this.Value = new byte[0];
+                    this.Value = Array.Empty<byte>();
                     break;
                 case ContractParameterType.PublicKey:
                     this.Value = ECCurve.Secp256r1.G;

@@ -33,7 +33,7 @@ namespace Neo
             {
                 if (_default == null)
                 {
-                    var configuration = Helper.LoadConfig("protocol");
+                    var configuration = Utility.LoadConfig("protocol");
                     UpdateDefault(configuration);
                 }
 
@@ -44,7 +44,7 @@ namespace Neo
         private ProtocolSettings(IConfigurationSection section)
         {
             this.Magic = section.GetValue("Magic", 0x4F454Eu);
-            this.AddressVersion = section.GetValue("AddressVersion", (byte)0x17);
+            this.AddressVersion = section.GetValue("AddressVersion", (byte)0x35);
             IConfigurationSection section_sv = section.GetSection("StandbyValidators");
             if (section_sv.Exists())
                 this.StandbyValidators = section_sv.GetChildren().Select(p => p.Get<string>()).ToArray();

@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -29,7 +30,7 @@ namespace Neo.UnitTests.SmartContract
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
-            byte[] signature = Crypto.Default.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
@@ -54,13 +55,13 @@ namespace Neo.UnitTests.SmartContract
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair key1 = new KeyPair(privkey1);
             ECPoint pubkey1 = key1.PublicKey;
-            byte[] signature1 = Crypto.Default.Sign(message, privkey1, pubkey1.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature1 = Crypto.Sign(message, privkey1, pubkey1.EncodePoint(false).Skip(1).ToArray());
 
             byte[] privkey2 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02};
             KeyPair key2 = new KeyPair(privkey2);
             ECPoint pubkey2 = key2.PublicKey;
-            byte[] signature2 = Crypto.Default.Sign(message, privkey2, pubkey2.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature2 = Crypto.Sign(message, privkey2, pubkey2.EncodePoint(false).Skip(1).ToArray());
 
             var pubkeys = new VMArray
             {
@@ -208,7 +209,7 @@ namespace Neo.UnitTests.SmartContract
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair key = new KeyPair(privkey);
             ECPoint pubkey = key.PublicKey;
-            byte[] signature = Crypto.Default.Sign(script.ToScriptHash().ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature = Crypto.Sign(script.ToScriptHash().ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
             manifest.Groups = new ContractGroup[]
             {
                 new ContractGroup()

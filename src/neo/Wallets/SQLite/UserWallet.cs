@@ -3,6 +3,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.SmartContract;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,10 +29,10 @@ namespace Neo.Wallets.SQLite
             {
                 byte[] buffer = LoadStoredData("Version");
                 if (buffer == null || buffer.Length < 16) return new Version(0, 0);
-                int major = buffer.ToInt32(0);
-                int minor = buffer.ToInt32(4);
-                int build = buffer.ToInt32(8);
-                int revision = buffer.ToInt32(12);
+                int major = BinaryPrimitives.ReadInt32LittleEndian(buffer);
+                int minor = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(4));
+                int build = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(8));
+                int revision = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(12));
                 return new Version(major, minor, build, revision);
             }
         }
