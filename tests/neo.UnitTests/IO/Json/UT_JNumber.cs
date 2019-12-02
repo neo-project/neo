@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using System;
-using System.IO;
 
 namespace Neo.UnitTests.IO.Json
 {
@@ -52,16 +51,6 @@ namespace Neo.UnitTests.IO.Json
             new JNumber(1).TryGetEnum<Woo>().Should().Be(Woo.Jerry);
             new JNumber(2).TryGetEnum<Woo>().Should().Be(Woo.James);
             new JNumber(3).TryGetEnum<Woo>().Should().Be(Woo.Tom);
-        }
-
-        [TestMethod]
-        public void TestParse()
-        {
-            Action action1 = () => JNumber.Parse(new StringReader("100.a"));
-            action1.Should().Throw<FormatException>();
-
-            Action action2 = () => JNumber.Parse(new StringReader("100.+"));
-            action2.Should().Throw<FormatException>();
         }
     }
 }

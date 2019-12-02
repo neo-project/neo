@@ -295,7 +295,7 @@ namespace Neo.Network.RPC
                 {
                     try
                     {
-                        request = JObject.Parse(reader);
+                        request = JObject.Parse(reader.ReadToEnd());
                     }
                     catch (FormatException) { }
                 }
