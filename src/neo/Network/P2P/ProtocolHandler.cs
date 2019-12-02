@@ -367,7 +367,7 @@ namespace Neo.Network.P2P
             }
             Context.Stop(Self);
         }
-        
+
         private void OnTimer()
         {
             RefreshPendingKnownHashes();
