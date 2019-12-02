@@ -129,7 +129,7 @@ namespace Neo.UnitTests.Consensus
             RecoveryRequest rrm = (RecoveryRequest)initialRecoveryPayload.ConsensusMessage;
             rrm.Timestamp.Should().Be(defaultTimestamp);
 
-            Console.WriteLine("Waiting for backupChange View... ");
+            Console.WriteLine("Waiting for backup ChangeView... ");
             var backupOnAskingChangeView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var changeViewPayload = (ConsensusPayload)backupOnAskingChangeView.Inventory;
             ChangeView cvm = (ChangeView)changeViewPayload.ConsensusMessage;
@@ -193,6 +193,12 @@ namespace Neo.UnitTests.Consensus
 
             // Simulating CN 3
             actorConsensus.Tell(GetPayloadAndModifyValidator(prepResponsePayload, 2));
+            //Waiting for RecoveryRequest for a more deterministic UT
+            backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
+            rrm.Timestamp.Should().Be(defaultTimestamp);
+            //Asserts
             Console.WriteLine("\nAsserting PreparationPayloads count is 3...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(3);
             Console.WriteLine($"\nAsserting CountFailed is 4...");
@@ -200,6 +206,12 @@ namespace Neo.UnitTests.Consensus
 
             // Simulating CN 5
             actorConsensus.Tell(GetPayloadAndModifyValidator(prepResponsePayload, 4));
+            //Waiting for RecoveryRequest for a more deterministic UT
+            backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
+            rrm.Timestamp.Should().Be(defaultTimestamp);
+            //Asserts            
             Console.WriteLine("\nAsserting PreparationPayloads count is 4...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(4);
             Console.WriteLine($"\nAsserting CountFailed is 3...");
