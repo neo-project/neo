@@ -73,7 +73,11 @@ namespace Neo.Plugins
                 case ".dll":
                     if (e.ChangeType != WatcherChangeTypes.Created) return;
                     if (GetDirectoryName(e.FullPath) != PluginsDirectory) return;
-                    LoadPlugin(Assembly.Load(File.ReadAllBytes(e.FullPath)));
+                    try
+                    {
+                        LoadPlugin(Assembly.Load(File.ReadAllBytes(e.FullPath)));
+                    }
+                    catch { }
                     break;
             }
         }
