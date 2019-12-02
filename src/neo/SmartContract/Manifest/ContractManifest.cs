@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.IO.Json;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -42,11 +43,6 @@ namespace Neo.SmartContract.Manifest
         public ContractAbi Abi { get; set; }
 
         /// <summary>
-        /// Contract details including author and contact email.
-        /// </summary>
-        public ContractContactInformation Contact { get; set; }
-
-        /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
         public ContractPermission[] Permissions { get; set; }
@@ -55,13 +51,18 @@ namespace Neo.SmartContract.Manifest
         /// The trusts field is an array containing a set of contract hashes or group public keys. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that it trusts any contract.
         /// If a contract is trusted, the user interface will not give any warnings when called by the contract.
         /// </summary>
-        public WildCardContainer<UInt160> Trusts { get; set; }
+        public WildcardContainer<UInt160> Trusts { get; set; }
 
         /// <summary>
         /// The safemethods field is an array containing a set of method names. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that all methods of the contract are safe.
         /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
         /// </summary>
-        public WildCardContainer<string> SafeMethods { get; set; }
+        public WildcardContainer<string> SafeMethods { get; set; }
+
+        /// <summary>
+        /// Custom user data
+        /// </summary>
+        public JObject Extra { get; set; }
 
         /// <summary>
         /// Create Default Contract manifest
@@ -82,9 +83,9 @@ namespace Neo.SmartContract.Manifest
                 },
                 Features = ContractFeatures.NoProperty,
                 Groups = new ContractGroup[0],
-                SafeMethods = WildCardContainer<string>.Create(),
-                Trusts = WildCardContainer<UInt160>.Create(),
-                Contact = new ContractContactInformation(),
+                SafeMethods = WildcardContainer<string>.Create(),
+                Trusts = WildcardContainer<UInt160>.Create(),
+                Extra = new JObject(),
             };
         }
 
@@ -134,7 +135,7 @@ namespace Neo.SmartContract.Manifest
             json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
             json["trusts"] = Trusts.ToJson();
             json["safeMethods"] = SafeMethods.ToJson();
-            json["contact"] = Contact.ToJson();
+            json["extra"] = Extra;
 
             return json;
         }
@@ -178,9 +179,9 @@ namespace Neo.SmartContract.Manifest
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
             Features = ContractFeatures.NoProperty;
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
-            Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
-            SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString());
-            Contact = ContractContactInformation.FromJson(json["contact"]);
+            Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
+            SafeMethods = WildcardContainer<string>.FromJson(json["safeMethods"], u => u.AsString());
+            Extra = JObject.Parse(json["extra"].AsString());
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
         }
