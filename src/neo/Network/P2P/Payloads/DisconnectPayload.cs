@@ -1,4 +1,5 @@
 using Neo.IO;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -17,7 +18,7 @@ namespace Neo.Network.P2P.Payloads
             return new DisconnectPayload
             {
                 Reason = reason,
-                Data = data ?? (new byte[0])
+                Data = data ?? Array.Empty<byte>()
             };
         }
 
