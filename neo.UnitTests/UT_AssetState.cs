@@ -233,7 +233,7 @@ namespace Neo.UnitTests
             feeAddress = new UInt160(TestUtils.GetByteArray(20, 0x21));
             assetState.FeeAddress = feeAddress;
 
-            owner = ECPoint.DecodePoint(TestUtils.GetByteArray(1,0x00), ECCurve.Secp256r1);
+            owner = ECPoint.DecodePoint(TestUtils.GetByteArray(1, 0x00), ECCurve.Secp256r1);
             assetState.Owner = owner;
 
             admin = new UInt160(TestUtils.GetByteArray(20, 0x22));

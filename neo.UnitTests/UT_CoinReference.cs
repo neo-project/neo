@@ -130,7 +130,7 @@ namespace Neo.UnitTests
             ushort prevIndexVal;
             setupCoinReferenceWithVals(uut, out prevHashVal, out prevIndexVal);
             CoinReference newCoinRef = new CoinReference();
-            setupCoinReferenceWithVals(newCoinRef, out prevHashVal, out prevIndexVal);           
+            setupCoinReferenceWithVals(newCoinRef, out prevHashVal, out prevIndexVal);
 
             uut.Equals(newCoinRef).Should().BeTrue();
         }
@@ -182,7 +182,7 @@ namespace Neo.UnitTests
         {
             UInt256 prevHashVal;
             ushort prevIndexVal;
-            setupCoinReferenceWithVals(uut, out prevHashVal, out prevIndexVal);          
+            setupCoinReferenceWithVals(uut, out prevHashVal, out prevIndexVal);
 
             uut.GetHashCode().Should().Be(538976344);
         }
