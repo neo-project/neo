@@ -26,11 +26,15 @@ namespace Neo.Network.P2P.Payloads
         public static IEnumerable<InvPayload> CreateGroup(InventoryType type, UInt256[] hashes)
         {
             for (int i = 0; i < hashes.Length; i += MaxHashesCount)
+            {
+                int endIndex = i + MaxHashesCount;
+                if (endIndex > hashes.Length) endIndex = hashes.Length;
                 yield return new InvPayload
                 {
                     Type = type,
-                    Hashes = hashes[i..(i + MaxHashesCount)]
+                    Hashes = hashes[i..endIndex]
                 };
+            }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
