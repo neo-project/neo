@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-using System.Linq;
+using System.IO;
 
 namespace Neo
 {
@@ -12,63 +12,73 @@ namespace Neo
         public const int Length = 32;
         public static readonly UInt256 Zero = new UInt256();
 
+        private ulong value1;
+        private ulong value2;
+        private ulong value3;
+        private ulong value4;
 
-        /// <summary>
-        /// The empty constructor stores a null byte array
-        /// </summary>
+        public override int Size => Length;
+
         public UInt256()
-            : this(null)
         {
         }
 
-        /// <summary>
-        /// The byte[] constructor invokes base class UIntBase constructor for 32 bytes
-        /// </summary>
-        public UInt256(byte[] value)
-            : base(Length, value)
+        public unsafe UInt256(ReadOnlySpan<byte> value)
         {
+            fixed (ulong* p = &value1)
+            {
+                Span<byte> dst = new Span<byte>(p, Length);
+                value[..Length].CopyTo(dst);
+            }
         }
 
         /// <summary>
         /// Method CompareTo returns 1 if this UInt256 is bigger than other UInt256; -1 if it's smaller; 0 if it's equals
         /// Example: assume this is 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4, this.CompareTo(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) returns 1
         /// </summary>
-        public unsafe int CompareTo(UInt256 other)
+        public int CompareTo(UInt256 other)
         {
-            fixed (byte* px = ToArray(), py = other.ToArray())
-            {
-                ulong* lpx = (ulong*)px;
-                ulong* lpy = (ulong*)py;
-                //256bit / 64bit(ulong step) -1
-                for (int i = (256 / 64 - 1); i >= 0; i--)
-                {
-                    if (lpx[i] > lpy[i])
-                        return 1;
-                    if (lpx[i] < lpy[i])
-                        return -1;
-                }
-            }
-            return 0;
+            int result = value4.CompareTo(other.value4);
+            if (result != 0) return result;
+            result = value3.CompareTo(other.value3);
+            if (result != 0) return result;
+            result = value2.CompareTo(other.value2);
+            if (result != 0) return result;
+            return value1.CompareTo(other.value1);
+        }
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            value1 = reader.ReadUInt64();
+            value2 = reader.ReadUInt64();
+            value3 = reader.ReadUInt64();
+            value4 = reader.ReadUInt64();
         }
 
         /// <summary>
         /// Method Equals returns true if objects are equal, false otherwise
         /// </summary>
-        public unsafe bool Equals(UInt256 other)
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(obj, this)) return true;
+            return Equals(obj as UInt256);
+        }
+
+        /// <summary>
+        /// Method Equals returns true if objects are equal, false otherwise
+        /// </summary>
+        public bool Equals(UInt256 other)
         {
             if (other is null) return false;
-            fixed (byte* px = ToArray(), py = other.ToArray())
-            {
-                ulong* lpx = (ulong*)px;
-                ulong* lpy = (ulong*)py;
-                //256bit / 64bit(ulong step) -1
-                for (int i = (256 / 64 - 1); i >= 0; i--)
-                {
-                    if (lpx[i] != lpy[i])
-                        return false;
-                }
-            }
-            return true;
+            return value1 == other.value1
+                && value2 == other.value2
+                && value3 == other.value3
+                && value4 == other.value4;
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)value1;
         }
 
         /// <summary>
@@ -83,7 +93,17 @@ namespace Neo
                 s = s.Substring(2);
             if (s.Length != Length * 2)
                 throw new FormatException();
-            return new UInt256(s.HexToBytes().Reverse().ToArray());
+            byte[] data = s.HexToBytes();
+            Array.Reverse(data);
+            return new UInt256(data);
+        }
+
+        public override void Serialize(BinaryWriter writer)
+        {
+            writer.Write(value1);
+            writer.Write(value2);
+            writer.Write(value3);
+            writer.Write(value4);
         }
 
         /// <summary>
@@ -111,8 +131,27 @@ namespace Neo
                     result = null;
                     return false;
                 }
-            result = new UInt256(data.Reverse().ToArray());
+            Array.Reverse(data);
+            result = new UInt256(data);
             return true;
+        }
+
+        /// <summary>
+        /// Returns true if left UInt256 is equals to right UInt256
+        /// </summary>
+        public static bool operator ==(UInt256 left, UInt256 right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left is null || right is null) return false;
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Returns true if left UIntBase is not equals to right UIntBase
+        /// </summary>
+        public static bool operator !=(UInt256 left, UInt256 right)
+        {
+            return !(left == right);
         }
 
         /// <summary>

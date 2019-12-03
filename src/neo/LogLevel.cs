@@ -1,4 +1,4 @@
-namespace Neo.Plugins
+namespace Neo
 {
     public enum LogLevel : byte
     {

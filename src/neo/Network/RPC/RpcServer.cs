@@ -129,26 +129,15 @@ namespace Neo.Network.RPC
 
         private static JObject GetRelayResult(RelayResultReason reason, UInt256 hash)
         {
-            switch (reason)
+            if (reason == RelayResultReason.Succeed)
             {
-                case RelayResultReason.Succeed:
-                    {
-                        var ret = new JObject();
-                        ret["hash"] = hash.ToString();
-                        return ret;
-                    }
-                case RelayResultReason.AlreadyExists:
-                    throw new RpcException(-501, "Block or transaction already exists and cannot be sent repeatedly.");
-                case RelayResultReason.OutOfMemory:
-                    throw new RpcException(-502, "The memory pool is full and no more transactions can be sent.");
-                case RelayResultReason.UnableToVerify:
-                    throw new RpcException(-503, "The block cannot be validated.");
-                case RelayResultReason.Invalid:
-                    throw new RpcException(-504, "Block or transaction validation failed.");
-                case RelayResultReason.PolicyFail:
-                    throw new RpcException(-505, "One of the Policy filters failed.");
-                default:
-                    throw new RpcException(-500, "Unknown error.");
+                var ret = new JObject();
+                ret["hash"] = hash.ToString();
+                return ret;
+            }
+            else
+            {
+                throw new RpcException(-500, reason.ToString());
             }
         }
 
@@ -411,7 +400,7 @@ namespace Neo.Network.RPC
                 {
                     // options.EnableForHttps = false;
                     options.Providers.Add<GzipCompressionProvider>();
-                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json-rpc" });
+                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json-rpc");
                 });
 
                 services.Configure<GzipCompressionProviderOptions>(options =>
@@ -628,11 +617,6 @@ namespace Neo.Network.RPC
             {
                 script = sb.EmitAppCall(script_hash, operation, args).ToArray();
             }
-            return GetInvokeResult(script);
-        }
-
-        private JObject InvokeScript(byte[] script)
-        {
             return GetInvokeResult(script);
         }
 

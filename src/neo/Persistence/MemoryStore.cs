@@ -4,13 +4,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Persistence.Memory
+namespace Neo.Persistence
 {
-    public class Store : IStore
+    public class MemoryStore : IStore
     {
         private readonly ConcurrentDictionary<byte[], byte[]>[] innerData;
 
-        public Store()
+        public MemoryStore()
         {
             innerData = new ConcurrentDictionary<byte[], byte[]>[256];
             for (int i = 0; i < innerData.Length; i++)
@@ -30,7 +30,7 @@ namespace Neo.Persistence.Memory
         {
             IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData[table];
             if (prefix?.Length > 0)
-                records = records.Where(p => p.Key.Length >= prefix.Length && p.Key.Take(prefix.Length).SequenceEqual(prefix));
+                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
             records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
             foreach (var pair in records)
                 yield return (pair.Key, pair.Value);
@@ -38,15 +38,10 @@ namespace Neo.Persistence.Memory
 
         public ISnapshot GetSnapshot()
         {
-            return new Snapshot(innerData);
+            return new MemorySnapshot(innerData);
         }
 
         public void Put(byte table, byte[] key, byte[] value)
-        {
-            PutSync(table, key, value);
-        }
-
-        public void PutSync(byte table, byte[] key, byte[] value)
         {
             innerData[table][key.EnsureNotNull()] = value;
         }

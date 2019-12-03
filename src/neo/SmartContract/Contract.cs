@@ -54,7 +54,7 @@ namespace Neo.SmartContract
         {
             return new Contract
             {
-                Script = new byte[0],
+                Script = Array.Empty<byte>(),
                 _scriptHash = scriptHash,
                 ParameterList = parameterList
             };

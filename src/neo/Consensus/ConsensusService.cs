@@ -61,7 +61,7 @@ namespace Neo.Consensus
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (verify && !tx.Verify(context.Snapshot, context.SendersFeeMonitor.GetSenderFee(tx.Sender)))
+            if (verify && tx.Verify(context.Snapshot, context.SendersFeeMonitor.GetSenderFee(tx.Sender)) != RelayResultReason.Succeed)
             {
                 Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView(ChangeViewReason.TxInvalid);
@@ -189,7 +189,7 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
-            Plugin.Log(nameof(ConsensusService), level, message);
+            Utility.Log(nameof(ConsensusService), level, message);
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
@@ -231,7 +231,7 @@ namespace Neo.Consensus
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.Default.VerifySignature(hashData, commit.Signature,
+                else if (Crypto.VerifySignature(hashData, commit.Signature,
                     context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 {
                     existingCommitPayload = payload;
@@ -433,7 +433,7 @@ namespace Neo.Consensus
             byte[] hashData = context.EnsureHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    if (!Crypto.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
 
             if (context.TransactionHashes.Length == 0)
@@ -573,7 +573,7 @@ namespace Neo.Consensus
                 {
                     var reason = ChangeViewReason.Timeout;
 
-                    if (context.Block != null && context.TransactionHashes?.Count() > context.Transactions?.Count)
+                    if (context.Block != null && context.TransactionHashes?.Length > context.Transactions?.Count)
                     {
                         reason = ChangeViewReason.TxNotFound;
                     }

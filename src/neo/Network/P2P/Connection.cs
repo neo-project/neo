@@ -48,8 +48,7 @@ namespace Neo.Network.P2P
         private void WsReceive()
         {
             byte[] buffer = new byte[512];
-            ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
-            ws.ReceiveAsync(segment, CancellationToken.None).PipeTo(Self,
+            ws.ReceiveAsync(buffer, CancellationToken.None).PipeTo(Self,
                 success: p =>
                 {
                     switch (p.MessageType)

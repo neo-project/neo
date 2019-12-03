@@ -103,33 +103,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestToInt64()
-        {
-            byte[] bytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-            var ret = bytes.ToInt64(0);
-            ret.GetType().Should().Be(typeof(long));
-            ret.Should().Be(67305985);
-        }
-
-        [TestMethod]
-        public void TestToUInt16()
-        {
-            byte[] bytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-            var ret = bytes.ToUInt16(0);
-            ret.GetType().Should().Be(typeof(ushort));
-            ret.Should().Be(513);
-        }
-
-        [TestMethod]
-        public void TestToUInt64()
-        {
-            byte[] bytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-            var ret = bytes.ToUInt64(0);
-            ret.GetType().Should().Be(typeof(ulong));
-            ret.Should().Be(67305985);
-        }
-
-        [TestMethod]
         public void TestUnmapForIPAddress()
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
