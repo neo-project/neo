@@ -55,14 +55,6 @@ namespace Neo.UnitTests.Plugins
         }
 
         [TestMethod]
-        public void TestNotifyPluginsLoadedAfterSystemConstructed()
-        {
-            var pp = new TestLogPlugin();
-            Action action = () => Plugin.NotifyPluginsLoadedAfterSystemConstructed();
-            action.Should().NotThrow();
-        }
-
-        [TestMethod]
         public void TestResumeNodeStartupAndSuspendNodeStartup()
         {
             TestLogPlugin.TestLoadPlugins(TestBlockchain.TheNeoSystem);
