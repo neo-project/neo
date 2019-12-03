@@ -39,7 +39,8 @@ namespace Neo
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Plugin.NotifyPluginsLoadedAfterSystemConstructed();
+            foreach (var plugin in Plugin.Plugins)
+                plugin.OnPluginsLoaded();
         }
 
         public void Dispose()

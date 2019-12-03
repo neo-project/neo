@@ -5,7 +5,7 @@ namespace Neo.Plugins
 {
     public interface IP2PPlugin
     {
-        bool OnP2PMessage(Message message);
-        bool OnConsensusMessage(ConsensusPayload payload);
+        bool OnP2PMessage(Message message) => true;
+        bool OnConsensusMessage(ConsensusPayload payload) => true;
     }
 }
