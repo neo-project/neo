@@ -29,8 +29,6 @@ namespace Neo.IO.Json
 
         public override string AsString()
         {
-            if (double.IsPositiveInfinity(Value)) throw new FormatException("Positive infinity number");
-            if (double.IsNegativeInfinity(Value)) throw new FormatException("Negative infinity number");
             return Value.ToString(CultureInfo.InvariantCulture);
         }
 
