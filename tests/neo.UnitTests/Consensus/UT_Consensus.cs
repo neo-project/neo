@@ -291,7 +291,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nBasic commits Signatures verification");
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
-            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData);
+            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData,updatedContract);
             Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
             Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
             Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6].EncodePoint(false)).Should().BeFalse();
@@ -310,7 +310,7 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(1);
 
             Console.WriteLine("\nCN6 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData,updatedContract));
             tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             rmPayload = (ConsensusPayload)tempPayloadToBlockAndWait.Inventory;
             rmm = (RecoveryMessage)rmPayload.ConsensusMessage;
@@ -320,7 +320,7 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(0);
 
             Console.WriteLine("\nCN5 simulation time");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData,updatedContract));
             tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine("\nAsserting CountCommitted is 4...");
             mockContext.Object.CountCommitted.Should().Be(4);
@@ -360,7 +360,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
 
             Console.WriteLine("\nCN4 simulation time - Final needed signatures");
-            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], mockContext.Object.Block.GetHashData()));
+            actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], mockContext.Object.Block.GetHashData(),updatedContract));
             Console.WriteLine("\nAsserting CountCommitted is 5...");
             mockContext.Object.CountCommitted.Should().Be(5);
 
@@ -377,10 +377,10 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n==========================");
 
             byte key = 14;
-            StorageKey sKey = NativeContract.NEO.CreateStorageKey(key);
+            StorageKey sKey = NativeContract.NEO.CreateStorageKey(key);           
             var entry = mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
             {
-                Value = updatedContract.Script
+                Value = mockContext.Object.Validators.ToByteArray()
             });
 
             // =============================================
@@ -408,12 +408,13 @@ namespace Neo.UnitTests.Consensus
         /// <param name="vI">new ValidatorIndex for the cpToCopy
         /// <param name="kp">KeyPair that will be used for signing the Commit message used for creating blocks
         /// <param name="blockHashToSign">HashCode of the Block that is being produced and current being signed
-        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
+        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign, Contract updatedContract)
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
             cpCommitTemp.ConsensusMessage = cpToCopy.ConsensusMessage.ToArray().AsSerializable<Commit>();
             ((Commit)cpCommitTemp.ConsensusMessage).Signature = Crypto.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            SignPayload(cpCommitTemp,kp,updatedContract);
             // Payload is not being signed by vI, since we are bypassing this check as directly talking to subscriber
             return cpCommitTemp;
         }
@@ -428,6 +429,31 @@ namespace Neo.UnitTests.Consensus
             var cpTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpTemp.ValidatorIndex = vI;
             return cpTemp;
+        }
+
+        private void SignPayload(ConsensusPayload payload, KeyPair kp, Contract updatedContract)
+        {
+            //payload.Witness = null;
+            payload.Witness.VerificationScript = Contract.CreateSignatureContract(kp.PublicKey).Script;
+            payload.Witness.InvocationScript = payload.Sign(kp);
+            Console.WriteLine($"payload {payload.Witness.ScriptHash}");
+            Console.WriteLine($"payload {payload.Witness.InvocationScript.ToScriptHash()}");
+            /*
+            payload.Witness = null;
+            ContractParametersContext sc;
+            try
+            {
+                sc = new ContractParametersContext(payload);
+                byte[] signature = sc.Verifiable.Sign(kp);
+                Console.WriteLine($"signature{signature.ToScriptHash()}");
+                sc.AddSignature(updatedContract, kp.PublicKey, signature);
+            }
+            catch (InvalidOperationException)
+            {
+                return;
+            }
+            var tempWitness = sc.GetWitnesses()[0];
+            payload.Witness = tempWitness;*/
         }
 
         [TestMethod]
