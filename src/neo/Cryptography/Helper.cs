@@ -1,21 +1,18 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 
 namespace Neo.Cryptography
 {
     public static class Helper
     {
-        private static ThreadLocal<SHA256> _sha256 = new ThreadLocal<SHA256>(() => SHA256.Create());
-        private static ThreadLocal<RIPEMD160Managed> _ripemd160 = new ThreadLocal<RIPEMD160Managed>(() => new RIPEMD160Managed());
-
         internal static byte[] AES256Decrypt(this byte[] block, byte[] key)
         {
             using (Aes aes = Aes.Create())
@@ -72,50 +69,43 @@ namespace Neo.Cryptography
             }
         }
 
-        public static byte[] Base58CheckDecode(this string input)
+        public static byte[] RIPEMD160(this byte[] value)
         {
-            byte[] buffer = Base58.Decode(input);
-            if (buffer.Length < 4) throw new FormatException();
-            byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
-            if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
-                throw new FormatException();
-            var ret = buffer.Take(buffer.Length - 4).ToArray();
-            Array.Clear(buffer, 0, buffer.Length);
-            return ret;
+            using var ripemd160 = new RIPEMD160Managed();
+            return ripemd160.ComputeHash(value);
         }
 
-        public static string Base58CheckEncode(this byte[] data)
-        {
-            byte[] checksum = data.Sha256().Sha256();
-            byte[] buffer = new byte[data.Length + 4];
-            Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
-            Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
-            var ret = Base58.Encode(buffer);
-            Array.Clear(buffer, 0, buffer.Length);
-            return ret;
-        }
-
-        public static byte[] RIPEMD160(this IEnumerable<byte> value)
-        {
-            return _ripemd160.Value.ComputeHash(value.ToArray());
-        }
-
-        public static uint Murmur32(this IEnumerable<byte> value, uint seed)
+        public static uint Murmur32(this byte[] value, uint seed)
         {
             using (Murmur3 murmur = new Murmur3(seed))
             {
-                return murmur.ComputeHash(value.ToArray()).ToUInt32(0);
+                return BinaryPrimitives.ReadUInt32LittleEndian(murmur.ComputeHash(value));
             }
         }
 
-        public static byte[] Sha256(this IEnumerable<byte> value)
+        public static byte[] Sha256(this byte[] value)
         {
-            return _sha256.Value.ComputeHash(value.ToArray());
+            using var sha256 = SHA256.Create();
+            return sha256.ComputeHash(value);
         }
 
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
-            return _sha256.Value.ComputeHash(value, offset, count);
+            using var sha256 = SHA256.Create();
+            return sha256.ComputeHash(value, offset, count);
+        }
+
+        public static byte[] Sha256(this ReadOnlySpan<byte> value)
+        {
+            byte[] buffer = new byte[32];
+            using var sha256 = SHA256.Create();
+            sha256.TryComputeHash(value, buffer, out _);
+            return buffer;
+        }
+
+        public static byte[] Sha256(this Span<byte> value)
+        {
+            return Sha256((ReadOnlySpan<byte>)value);
         }
 
         internal static bool Test(this BloomFilter filter, Transaction tx)
@@ -157,7 +147,7 @@ namespace Neo.Cryptography
             if (s == null)
                 throw new NullReferenceException();
             if (s.Length == 0)
-                return new byte[0];
+                return Array.Empty<byte>();
             List<byte> result = new List<byte>();
             IntPtr ptr = SecureStringMarshal.SecureStringToGlobalAllocAnsi(s);
             try

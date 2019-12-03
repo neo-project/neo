@@ -9,9 +9,9 @@ namespace Neo.UnitTests.Plugins
 
         public string Output { set; get; }
 
-        public override void Configure() { }
+        protected override void Configure() { }
 
-        public new void Log(string source, LogLevel level, string message)
+        void ILogPlugin.Log(string source, LogLevel level, string message)
         {
             Output = source + "_" + level.ToString() + "_" + message;
         }

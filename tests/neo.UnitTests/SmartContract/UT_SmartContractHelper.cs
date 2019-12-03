@@ -1,12 +1,9 @@
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.VM.Types;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -103,143 +100,6 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(3, publicKeys2);
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsStandardContract(script2));
-        }
-
-        [TestMethod]
-        public void TestSerialize()
-        {
-            StackItem stackItem1 = new ByteArray(new byte[5]);
-            byte[] result1 = Neo.SmartContract.Helper.Serialize(stackItem1);
-            byte[] expectedArray1 = new byte[] {
-                        0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00
-                    };
-            Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString(result1));
-
-            StackItem stackItem2 = new VM.Types.Boolean(true);
-            byte[] result2 = Neo.SmartContract.Helper.Serialize(stackItem2);
-            byte[] expectedArray2 = new byte[] {
-                        0x01, 0x01
-                    };
-            Assert.AreEqual(Encoding.Default.GetString(expectedArray2), Encoding.Default.GetString(result2));
-
-            StackItem stackItem3 = new VM.Types.Integer(1);
-            byte[] result3 = Neo.SmartContract.Helper.Serialize(stackItem3);
-            byte[] expectedArray3 = new byte[] {
-                        0x02, 0x01, 0x01
-                    };
-            Assert.AreEqual(Encoding.Default.GetString(expectedArray3), Encoding.Default.GetString(result3));
-
-            StackItem stackItem4 = new InteropInterface<object>(new object());
-            Action action4 = () => Neo.SmartContract.Helper.Serialize(stackItem4);
-            action4.Should().Throw<NotSupportedException>();
-
-            StackItem stackItem5 = new VM.Types.Integer(1);
-            byte[] result5 = Neo.SmartContract.Helper.Serialize(stackItem5);
-            byte[] expectedArray5 = new byte[] {
-                        0x02, 0x01, 0x01
-                    };
-            Assert.AreEqual(Encoding.Default.GetString(expectedArray5), Encoding.Default.GetString(result5));
-
-
-            StackItem stackItem61 = new VM.Types.Integer(1);
-            List<StackItem> list6 = new List<StackItem>
-                    {
-                        stackItem61
-                    };
-            StackItem stackItem62 = new VM.Types.Array(list6);
-            byte[] result6 = Neo.SmartContract.Helper.Serialize(stackItem62);
-            byte[] expectedArray6 = new byte[] {
-                        0x80,0x01,0x02,0x01,0x01
-                    };
-            Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString(result6));
-
-            StackItem stackItem71 = new VM.Types.Integer(1);
-            List<StackItem> list7 = new List<StackItem>
-                    {
-                        stackItem71
-                    };
-            StackItem stackItem72 = new VM.Types.Struct(list7);
-            byte[] result7 = Neo.SmartContract.Helper.Serialize(stackItem72);
-            byte[] expectedArray7 = new byte[] {
-                        0x81,0x01,0x02,0x01,0x01
-                    };
-            Assert.AreEqual(Encoding.Default.GetString(expectedArray7), Encoding.Default.GetString(result7));
-
-            StackItem stackItem81 = new VM.Types.Integer(1);
-            Dictionary<PrimitiveType, StackItem> list8 = new Dictionary<PrimitiveType, StackItem>
-                    {
-                        { new VM.Types.Integer(2), stackItem81 }
-                    };
-            StackItem stackItem82 = new VM.Types.Map(list8);
-            byte[] result8 = Neo.SmartContract.Helper.Serialize(stackItem82);
-            byte[] expectedArray8 = new byte[] {
-                        0x82,0x01,0x02,0x01,0x02,0x02,0x01,0x01
-                    };
-            Assert.AreEqual(Encoding.Default.GetString(expectedArray8), Encoding.Default.GetString(result8));
-
-            Integer stackItem9 = new VM.Types.Integer(1);
-            Map stackItem91 = new VM.Types.Map();
-            stackItem91.Add(stackItem9, stackItem91);
-            Action action9 = () => Neo.SmartContract.Helper.Serialize(stackItem91);
-            action9.Should().Throw<NotSupportedException>();
-
-            VM.Types.Array stackItem10 = new VM.Types.Array();
-            stackItem10.Add(stackItem10);
-            Action action10 = () => Neo.SmartContract.Helper.Serialize(stackItem10);
-            action10.Should().Throw<NotSupportedException>();
-        }
-
-        [TestMethod]
-        public void TestDeserializeStackItem()
-        {
-            StackItem stackItem1 = new ByteArray(new byte[5]);
-            byte[] byteArray1 = Neo.SmartContract.Helper.Serialize(stackItem1);
-            StackItem result1 = Neo.SmartContract.Helper.DeserializeStackItem(byteArray1, 1, (uint)byteArray1.Length);
-            Assert.AreEqual(stackItem1, result1);
-
-            StackItem stackItem2 = new VM.Types.Boolean(true);
-            byte[] byteArray2 = Neo.SmartContract.Helper.Serialize(stackItem2);
-            StackItem result2 = Neo.SmartContract.Helper.DeserializeStackItem(byteArray2, 1, (uint)byteArray2.Length);
-            Assert.AreEqual(stackItem2, result2);
-
-            StackItem stackItem3 = new VM.Types.Integer(1);
-            byte[] byteArray3 = Neo.SmartContract.Helper.Serialize(stackItem3);
-            StackItem result3 = Neo.SmartContract.Helper.DeserializeStackItem(byteArray3, 1, (uint)byteArray3.Length);
-            Assert.AreEqual(stackItem3, result3);
-
-            StackItem stackItem4 = new VM.Types.Integer(1);
-            byte[] byteArray4 = Neo.SmartContract.Helper.Serialize(stackItem4);
-            byteArray4[0] = 0x40;
-            Action action4 = () => Neo.SmartContract.Helper.DeserializeStackItem(byteArray4, 1, (uint)byteArray4.Length);
-            action4.Should().Throw<FormatException>();
-
-            StackItem stackItem51 = new VM.Types.Integer(1);
-            List<StackItem> list5 = new List<StackItem>();
-            list5.Add(stackItem51);
-            StackItem stackItem52 = new VM.Types.Array(list5);
-            byte[] byteArray5 = Neo.SmartContract.Helper.Serialize(stackItem52);
-            StackItem result5 = Neo.SmartContract.Helper.DeserializeStackItem(byteArray5, 1, (uint)byteArray5.Length);
-            Assert.AreEqual(((VM.Types.Array)stackItem52).Count, ((VM.Types.Array)result5).Count);
-            Assert.AreEqual(((VM.Types.Array)stackItem52).GetEnumerator().Current, ((VM.Types.Array)result5).GetEnumerator().Current);
-
-            StackItem stackItem61 = new VM.Types.Integer(1);
-            List<StackItem> list6 = new List<StackItem>();
-            list6.Add(stackItem61);
-            StackItem stackItem62 = new VM.Types.Struct(list6);
-            byte[] byteArray6 = Neo.SmartContract.Helper.Serialize(stackItem62);
-            StackItem result6 = Neo.SmartContract.Helper.DeserializeStackItem(byteArray6, 1, (uint)byteArray6.Length);
-            Assert.AreEqual(((VM.Types.Struct)stackItem62).Count, ((VM.Types.Struct)result6).Count);
-            Assert.AreEqual(((VM.Types.Struct)stackItem62).GetEnumerator().Current, ((VM.Types.Struct)result6).GetEnumerator().Current);
-
-            StackItem stackItem71 = new VM.Types.Integer(1);
-            Dictionary<PrimitiveType, StackItem> list7 = new Dictionary<PrimitiveType, StackItem>();
-            list7.Add(new VM.Types.Integer(2), stackItem71);
-            StackItem stackItem72 = new VM.Types.Map(list7);
-            byte[] byteArray7 = Neo.SmartContract.Helper.Serialize(stackItem72);
-            StackItem result7 = Neo.SmartContract.Helper.DeserializeStackItem(byteArray7, 1, (uint)byteArray7.Length);
-            Assert.AreEqual(((VM.Types.Map)stackItem72).Count, ((VM.Types.Map)result7).Count);
-            Assert.AreEqual(((VM.Types.Map)stackItem72).Keys.GetEnumerator().Current, ((VM.Types.Map)result7).Keys.GetEnumerator().Current);
-            Assert.AreEqual(((VM.Types.Map)stackItem72).Values.GetEnumerator().Current, ((VM.Types.Map)result7).Values.GetEnumerator().Current);
         }
 
         [TestMethod]

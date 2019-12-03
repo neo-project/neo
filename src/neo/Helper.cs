@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
@@ -17,6 +16,7 @@ namespace Neo
     {
         private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int BitLen(int w)
         {
             return (w < 1 << 15 ? (w < 1 << 7
@@ -34,6 +34,23 @@ namespace Neo
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Concat(params byte[][] buffers)
+        {
+            int length = 0;
+            for (int i = 0; i < buffers.Length; i++)
+                length += buffers[i].Length;
+            byte[] dst = new byte[length];
+            int p = 0;
+            foreach (byte[] src in buffers)
+            {
+                Buffer.BlockCopy(src, 0, dst, p, src.Length);
+                p += src.Length;
+            }
+            return dst;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetBitLength(this BigInteger i)
         {
             byte[] b = i.ToByteArray();
@@ -101,7 +118,7 @@ namespace Neo
         public static byte[] HexToBytes(this string value)
         {
             if (value == null || value.Length == 0)
-                return new byte[0];
+                return Array.Empty<byte>();
             if (value.Length % 2 == 1)
                 throw new FormatException();
             byte[] result = new byte[value.Length / 2];
@@ -110,6 +127,7 @@ namespace Neo
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static BigInteger Mod(this BigInteger x, BigInteger y)
         {
             x %= y;
@@ -141,7 +159,7 @@ namespace Neo
                 throw new ArgumentException("sizeInBits must be non-negative");
             if (sizeInBits == 0)
                 return 0;
-            byte[] b = new byte[sizeInBits / 8 + 1];
+            Span<byte> b = stackalloc byte[sizeInBits / 8 + 1];
             rand.NextBytes(b);
             if (sizeInBits % 8 == 0)
                 b[b.Length - 1] = 0;
@@ -156,7 +174,7 @@ namespace Neo
                 throw new ArgumentException("sizeInBits must be non-negative");
             if (sizeInBits == 0)
                 return 0;
-            byte[] b = new byte[sizeInBits / 8 + 1];
+            Span<byte> b = stackalloc byte[sizeInBits / 8 + 1];
             rng.GetBytes(b);
             if (sizeInBits % 8 == 0)
                 b[b.Length - 1] = 0;
@@ -172,17 +190,32 @@ namespace Neo
             return sum;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool TestBit(this BigInteger i, int index)
         {
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] ToByteArrayStandard(this BigInteger i)
+        {
+            if (i.IsZero) return Array.Empty<byte>();
+            return i.ToByteArray();
+        }
 
-        public static string ToHexString(this IEnumerable<byte> value)
+        public static string ToHexString(this byte[] value)
         {
             StringBuilder sb = new StringBuilder();
             foreach (byte b in value)
                 sb.AppendFormat("{0:x2}", b);
+            return sb.ToString();
+        }
+
+        public static string ToHexString(this byte[] value, bool reverse = false)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < value.Length; i++)
+                sb.AppendFormat("{0:x2}", value[reverse ? value.Length - i - 1 : i]);
             return sb.ToString();
         }
 
@@ -194,24 +227,6 @@ namespace Neo
             return sb.ToString();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static int ToInt32(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((int*)pbyte);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static long ToInt64(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((long*)pbyte);
-            }
-        }
-
         public static uint ToTimestamp(this DateTime time)
         {
             return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
@@ -220,33 +235,6 @@ namespace Neo
         public static ulong ToTimestampMS(this DateTime time)
         {
             return (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static ushort ToUInt16(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((ushort*)pbyte);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static uint ToUInt32(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((uint*)pbyte);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static ulong ToUInt64(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((ulong*)pbyte);
-            }
         }
 
         internal static IPAddress Unmap(this IPAddress address)
@@ -313,20 +301,6 @@ namespace Neo
                 }
                 yield return resultSelector(item, weight);
             }
-        }
-
-        /// <summary>
-        /// Load configuration with different Environment Variable
-        /// </summary>
-        /// <param name="config">Configuration</param>
-        /// <returns>IConfigurationRoot</returns>
-        public static IConfigurationRoot LoadConfig(string config)
-        {
-            var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
-            var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
-            return new ConfigurationBuilder()
-                .AddJsonFile(configFile, true)
-                .Build();
         }
     }
 }

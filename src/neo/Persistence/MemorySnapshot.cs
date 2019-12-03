@@ -1,18 +1,19 @@
 using Neo.IO;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Neo.Persistence.Memory
+namespace Neo.Persistence
 {
-    internal class Snapshot : ISnapshot
+    internal class MemorySnapshot : ISnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]>[] innerData;
         private readonly ImmutableDictionary<byte[], byte[]>[] immutableData;
         private readonly ConcurrentDictionary<byte[], byte[]>[] writeBatch;
 
-        public Snapshot(ConcurrentDictionary<byte[], byte[]>[] innerData)
+        public MemorySnapshot(ConcurrentDictionary<byte[], byte[]>[] innerData)
         {
             this.innerData = innerData;
             this.immutableData = innerData.Select(p => p.ToImmutableDictionary(ByteArrayEqualityComparer.Default)).ToArray();
@@ -44,7 +45,7 @@ namespace Neo.Persistence.Memory
         {
             IEnumerable<KeyValuePair<byte[], byte[]>> records = immutableData[table];
             if (prefix?.Length > 0)
-                records = records.Where(p => p.Key.Length >= prefix.Length && p.Key.Take(prefix.Length).SequenceEqual(prefix));
+                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
             records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
             return records.Select(p => (p.Key, p.Value));
         }

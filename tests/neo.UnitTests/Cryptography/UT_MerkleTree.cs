@@ -1,9 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.IO;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.UnitTests.Cryptography
@@ -14,14 +14,14 @@ namespace Neo.UnitTests.Cryptography
         public UInt256 GetByteArrayHash(byte[] byteArray)
         {
             if (byteArray == null || byteArray.Length == 0) throw new ArgumentNullException();
-            var hash = new UInt256(Crypto.Default.Hash256(byteArray));
+            var hash = new UInt256(Crypto.Hash256(byteArray));
             return hash;
         }
 
         [TestMethod]
         public void TestBuildAndDepthFirstSearch()
         {
-            IReadOnlyList<UInt256> hashNull = new UInt256[] { };
+            UInt256[] hashNull = new UInt256[0];
             Action action = () => new MerkleTree(hashNull);
             action.Should().Throw<ArgumentException>();
 
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] array3 = { 0x03 };
             var hash3 = GetByteArrayHash(array3);
 
-            IReadOnlyList<UInt256> hashes = new UInt256[] { hash1, hash2, hash3 };
+            UInt256[] hashes = { hash1, hash2, hash3 };
             MerkleTree tree = new MerkleTree(hashes);
             var hashArray = tree.ToHashArray();
             hashArray[0].Should().Be(hash1);
@@ -43,9 +43,9 @@ namespace Neo.UnitTests.Cryptography
             hashArray[3].Should().Be(hash3);
 
             var rootHash = MerkleTree.ComputeRoot(hashes);
-            var hash4 = Crypto.Default.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
-            var hash5 = Crypto.Default.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
-            var result = new UInt256(Crypto.Default.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));
+            var hash4 = Crypto.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
+            var hash5 = Crypto.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
+            var result = new UInt256(Crypto.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));
             rootHash.Should().Be(result);
         }
 
@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] array3 = { 0x03 };
             var hash3 = GetByteArrayHash(array3);
 
-            IReadOnlyList<UInt256> hashes = new UInt256[] { hash1, hash2, hash3 };
+            UInt256[] hashes = { hash1, hash2, hash3 };
             MerkleTree tree = new MerkleTree(hashes);
 
             bool[] boolArray = { false, false, false };
@@ -71,9 +71,9 @@ namespace Neo.UnitTests.Cryptography
 
             hashArray.Length.Should().Be(1);
             var rootHash = MerkleTree.ComputeRoot(hashes);
-            var hash4 = Crypto.Default.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
-            var hash5 = Crypto.Default.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
-            var result = new UInt256(Crypto.Default.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));
+            var hash4 = Crypto.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
+            var hash5 = Crypto.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
+            var result = new UInt256(Crypto.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));
             hashArray[0].Should().Be(result);
         }
     }

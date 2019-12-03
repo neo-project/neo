@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -172,7 +173,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             BigInteger sys_fee = new BigInteger(10);
             snapshot.Storages.Add(storageKey, new StorageItem
             {
-                Value = sys_fee.ToByteArray(),
+                Value = sys_fee.ToByteArrayStandard(),
                 IsConstant = true
             });
 
