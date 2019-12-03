@@ -19,6 +19,10 @@ using System.Reflection;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
+
+using Neo.SmartContract.Native;
+
+
 namespace Neo.UnitTests.Consensus
 {
     [TestClass]
@@ -45,6 +49,17 @@ namespace Neo.UnitTests.Consensus
 
             var mockContext = new Mock<ConsensusContext>(mockWallet.Object, Blockchain.Singleton.Store);
             mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0 };
+
+            KeyPair[] kp_array = new KeyPair[7]
+                {
+                    UT_Crypto.generateKey(32), // not used, kept for index consistency, didactically
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32),
+                    UT_Crypto.generateKey(32)
+                };
 
             var timeValues = new[] {
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
@@ -181,6 +196,9 @@ namespace Neo.UnitTests.Consensus
             prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
             // cleaning old try with Self ValidatorIndex
             mockContext.Object.PreparationPayloads[mockContext.Object.MyIndex] = null;
+            // Forcing this value for testing recovery at the end
+            prepReq.Sign(kp_array[prepReq.ValidatorIndex]);
+
             actorConsensus.Tell(prepReq);
             var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var prepResponsePayload = (ConsensusPayload)OnPrepResponse.Inventory;
@@ -239,17 +257,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
             //Console.WriteLine($"VALIDATOR[0] {mockContext.Object.Validators[0]}");
             //Console.WriteLine($"VALIDATOR[0]ScriptHash: {mockWallet.Object.GetAccount(mockContext.Object.Validators[0]).ScriptHash}");
-
-            KeyPair[] kp_array = new KeyPair[7]
-                {
-                    UT_Crypto.generateKey(32), // not used, kept for index consistency, didactically
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32),
-                    UT_Crypto.generateKey(32)
-                };
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}");
             mockContext.Object.Validators = new ECPoint[7]
@@ -335,6 +342,11 @@ namespace Neo.UnitTests.Consensus
             rmm.CommitMessages.Count().Should().Be(4);
             // =============================================
 
+            // =============================================
+            Console.WriteLine("\nRecovery simulation...");
+            actorConsensus.Tell(rmPayload);
+            // =============================================
+
             Console.WriteLine($"\nForcing block PrevHash to UInt256.Zero {mockContext.Object.Block.GetHashData().ToScriptHash()}");
             mockContext.Object.Block.PrevHash = UInt256.Zero;
             // Payload should also be forced, otherwise OnConsensus will not pass
@@ -363,6 +375,23 @@ namespace Neo.UnitTests.Consensus
             utBlock.NextConsensus.Should().Be(updatedContract.ScriptHash);
 
             Console.WriteLine("\n==========================");
+
+            byte key = 14;
+            StorageKey sKey = NativeContract.NEO.CreateStorageKey(key);
+            var entry = mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
+            {
+                Value = updatedContract.Script
+            });
+
+            // =============================================
+            Console.WriteLine("\nRecovery simulation...");
+            mockContext.Object.CommitPayloads = new ConsensusPayload[mockContext.Object.Validators.Length];
+            mockContext.Object.Block.Transactions = null;
+            rmPayload.PrevHash = UInt256.Zero;
+            actorConsensus.Tell(rmPayload);
+            // =============================================
+
+            // =============================================
             // ============================================================================
             //                      finalize ConsensusService actor
             // ============================================================================
