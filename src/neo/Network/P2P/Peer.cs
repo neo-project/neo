@@ -36,7 +36,7 @@ namespace Neo.Network.P2P
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
 
         protected static readonly HashSet<IPAddress> LocalAddresses = new HashSet<IPAddress>();
-        private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
+        protected readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
         protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
         protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
@@ -175,30 +175,8 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
-        {
-            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
-            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
-            {
-                TcpDisconnect(DisconnectReason.MaxConnectionReached);
-                return;
-            }
+        protected abstract void OnTcpConnected(IPEndPoint remote, IPEndPoint local);
 
-            ConnectedAddresses.TryGetValue(remote.Address, out int count);
-            if (count >= MaxConnectionsPerAddress)
-            {
-                TcpDisconnect(DisconnectReason.MaxConnectionPerAddressReached);
-            }
-            else
-            {
-                ConnectedAddresses[remote.Address] = count + 1;
-                IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
-                Context.Watch(connection);
-                Sender.Tell(new Tcp.Register(connection));
-                ConnectedPeers.TryAdd(connection, remote);
-            }
-        }
-        protected abstract void TcpDisconnect(DisconnectReason reason);
 
         private void OnTcpCommandFailed(Tcp.Command cmd)
         {
@@ -236,21 +214,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
-        {
-            ConnectedAddresses.TryGetValue(remote.Address, out int count);
-            if (count >= MaxConnectionsPerAddress)
-            {
-                WsDisconnect(ws, DisconnectReason.MaxConnectionPerAddressReached);
-            }
-            else
-            {
-                ConnectedAddresses[remote.Address] = count + 1;
-                Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
-            }
-        }
-
-        protected abstract void WsDisconnect(WebSocket ws, DisconnectReason reason);
+        protected abstract void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local);
 
         protected override void PostStop()
         {
