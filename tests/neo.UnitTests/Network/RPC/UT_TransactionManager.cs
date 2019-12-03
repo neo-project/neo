@@ -123,7 +123,7 @@ namespace Neo.UnitTests.Network.RPC
             var tx = txManager.Tx;
             byte[] signature = tx.Witnesses[0].InvocationScript.Skip(1).ToArray();
 
-            Assert.IsTrue(Crypto.Default.VerifySignature(tx.GetHashData(), signature, keyPair1.PublicKey.EncodePoint(false).Skip(1).ToArray()));
+            Assert.IsTrue(Crypto.VerifySignature(tx.GetHashData(), signature, keyPair1.PublicKey.EncodePoint(false).Skip(1).ToArray()));
 
             // duplicate sign should not add new witness
             txManager.AddSignature(keyPair1).Sign();

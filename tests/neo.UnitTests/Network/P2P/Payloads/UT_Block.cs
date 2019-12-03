@@ -206,7 +206,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["merkleroot"].AsString().Should().Be("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
             jObj["time"].AsNumber().Should().Be(328665601001);
             jObj["index"].AsNumber().Should().Be(0);
-            jObj["nextconsensus"].AsString().Should().Be("AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM");
+            jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
 
             JObject scObj = ((JArray)jObj["witnesses"])[0];
             scObj["invocation"].AsString().Should().Be("");

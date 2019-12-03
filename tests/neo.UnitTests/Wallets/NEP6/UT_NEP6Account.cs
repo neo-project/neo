@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             _wallet = TestUtils.GenerateTestWallet();
             byte[] array1 = { 0x01 };
-            _hash = new UInt160(Crypto.Default.Hash160(array1));
+            _hash = new UInt160(Crypto.Hash160(array1));
             _account = new NEP6Account(_wallet, _hash);
         }
 
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             var wallet = TestUtils.GenerateTestWallet();
             byte[] array1 = { 0x01 };
-            var hash = new UInt160(Crypto.Default.Hash160(array1));
+            var hash = new UInt160(Crypto.Hash160(array1));
             string password = "hello world";
             NEP6Account account = new NEP6Account(wallet, hash, _keyPair, password);
             account.ScriptHash.Should().Be(hash);
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestFromJson()
         {
             JObject json = new JObject();
-            json["address"] = "ARxgjcH2K1yeW5f5ryuRQNaBzSa9TZzmVS";
+            json["address"] = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             json["key"] = null;
             json["label"] = null;
             json["isDefault"] = true;
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["contract"] = null;
             json["extra"] = null;
             NEP6Account account = NEP6Account.FromJson(json, _wallet);
-            account.ScriptHash.Should().Be("ARxgjcH2K1yeW5f5ryuRQNaBzSa9TZzmVS".ToScriptHash());
+            account.ScriptHash.Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash());
             account.Label.Should().BeNull();
             account.IsDefault.Should().BeTrue();
             account.Lock.Should().BeFalse();

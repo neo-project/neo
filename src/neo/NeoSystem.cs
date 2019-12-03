@@ -4,7 +4,6 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.RPC;
 using Neo.Persistence;
-using Neo.Persistence.Memory;
 using Neo.Plugins;
 using Neo.Wallets;
 using System;
@@ -34,11 +33,14 @@ namespace Neo
         public NeoSystem(string storageEngine = null)
         {
             Plugin.LoadPlugins(this);
-            this.store = storageEngine is null ? new Store() : Plugin.Storages[storageEngine].GetStore();
+            this.store = string.IsNullOrEmpty(storageEngine) || storageEngine == nameof(MemoryStore)
+                ? new MemoryStore()
+                : Plugin.Storages[storageEngine].GetStore();
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Plugin.NotifyPluginsLoadedAfterSystemConstructed();
+            foreach (var plugin in Plugin.Plugins)
+                plugin.OnPluginsLoaded();
         }
 
         public void Dispose()
@@ -55,7 +57,7 @@ namespace Neo
 
         public void EnsureStoped(IActorRef actor)
         {
-            Inbox inbox = Inbox.Create(ActorSystem);
+            using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromMinutes(5));

@@ -75,7 +75,7 @@ namespace Neo.SmartContract
 
             writer.Write(ScriptHash);
             writer.Write(CheckSum);
-            writer.WriteVarBytes(Script ?? new byte[0]);
+            writer.WriteVarBytes(Script ?? Array.Empty<byte>());
         }
 
         public void Deserialize(BinaryReader reader)
@@ -118,9 +118,9 @@ namespace Neo.SmartContract
 
                 // Read header without CRC
 
-                var buffer = new byte[HeaderSize - sizeof(uint)];
+                Span<byte> buffer = stackalloc byte[HeaderSize - sizeof(uint)];
                 ms.Seek(0, SeekOrigin.Begin);
-                ms.Read(buffer, 0, buffer.Length);
+                ms.Read(buffer);
 
                 return BitConverter.ToUInt32(buffer.Sha256(), 0);
             }

@@ -1,7 +1,5 @@
 using Neo.IO;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -13,11 +11,11 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => Headers.GetVarSize();
 
-        public static HeadersPayload Create(IEnumerable<Header> headers)
+        public static HeadersPayload Create(params Header[] headers)
         {
             return new HeadersPayload
             {
-                Headers = headers.ToArray()
+                Headers = headers
             };
         }
 

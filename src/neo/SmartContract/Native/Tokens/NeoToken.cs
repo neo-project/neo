@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native.Tokens
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, new[] { Prefix_Validator });
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
-                p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
+                p.Key.Key.AsSerializable<ECPoint>(1),
                 ValidatorState.FromByteArray(p.Value.Value).Votes
             ));
         }
@@ -292,7 +292,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             public byte[] ToByteArray()
             {
-                return Votes.ToByteArray();
+                return Votes.ToByteArrayStandard();
             }
         }
 
@@ -322,7 +322,7 @@ namespace Neo.SmartContract.Native.Tokens
                 {
                     w.WriteVarInt(Votes.Length);
                     foreach (BigInteger vote in Votes)
-                        w.WriteVarBytes(vote.ToByteArray());
+                        w.WriteVarBytes(vote.ToByteArrayStandard());
                     w.Flush();
                     return ms.ToArray();
                 }

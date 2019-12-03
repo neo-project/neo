@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Cryptography
         public void TestConstructor()
         {
             byte[] byteArray = Encoding.ASCII.GetBytes("hello world");
-            var hash = new UInt256(Crypto.Default.Hash256(byteArray));
+            var hash = new UInt256(Crypto.Hash256(byteArray));
             node.Hash = hash;
 
             node.Hash.Should().Be(hash);
