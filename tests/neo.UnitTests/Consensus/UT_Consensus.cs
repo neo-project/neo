@@ -429,13 +429,14 @@ namespace Neo.UnitTests.Consensus
         private void SignPayload(ConsensusPayload payload, KeyPair kp)
         {
             Contract contractToSign = Contract.CreateSignatureContract(kp.PublicKey);
-            /*
+
             payload.Witness.VerificationScript = contractToSign.Script;
             payload.Witness.InvocationScript = payload.Sign(kp);
             Console.WriteLine($"SH {payload.Witness.ScriptHash}");
             Console.WriteLine($"IS {payload.Witness.InvocationScript.ToScriptHash()}");
-            */
 
+
+            /*
             ContractParametersContext sc;
             try
             {
@@ -450,6 +451,7 @@ namespace Neo.UnitTests.Consensus
             }
             var tempWitness = sc.GetWitnesses()[0];
             payload.Witness = tempWitness;
+            */
         }
 
         [TestMethod]
