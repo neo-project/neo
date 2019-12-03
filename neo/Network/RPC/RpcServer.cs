@@ -30,6 +30,48 @@ namespace Neo.Network.RPC
 {
     public sealed class RpcServer : IDisposable
     {
+        private class CheckWitnessHashes : IVerifiable
+        {
+            private readonly UInt160[] _scriptHashesForVerifying;
+            public Witness[] Witnesses { get; set; }
+            public int Size { get; }
+
+            public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
+            {
+                _scriptHashesForVerifying = scriptHashesForVerifying;
+            }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Deserialize(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void DeserializeUnsigned(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+            {
+                return _scriptHashesForVerifying;
+            }
+
+            public void SerializeUnsigned(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public byte[] GetMessage()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public Wallet Wallet { get; set; }
         public Fixed8 MaxGasInvoke { get; }
         public int MaxConcurrentConnections { get; }
@@ -73,24 +115,22 @@ namespace Neo.Network.RPC
             }
         }
 
-        private JObject GetInvokeResult(byte[] script)
+        private JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            using (ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke))
+            ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: MaxGasInvoke);
+            JObject json = new JObject();
+            json["script"] = script.ToHexString();
+            json["state"] = engine.State;
+            json["gas_consumed"] = engine.GasConsumed.ToString();
+            try
             {
-                JObject json = new JObject();
-                json["script"] = script.ToHexString();
-                json["state"] = engine.State;
-                json["gas_consumed"] = engine.GasConsumed.ToString();
-                try
-                {
-                    json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
-                }
-                catch (InvalidOperationException)
-                {
-                    json["stack"] = "error: recursive reference";
-                }
-                return json;
+                json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
             }
+            catch (InvalidOperationException)
+            {
+                json["stack"] = "error: recursive reference";
+            }
+            return json;
         }
 
         private static JObject GetRelayResult(RelayResultReason reason)
@@ -223,6 +263,12 @@ namespace Neo.Network.RPC
                 case "invokescript":
                     {
                         byte[] script = _params[0].AsString().HexToBytes();
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 1)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(1).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
                         return InvokeScript(script);
                     }
                 case "listplugins":
