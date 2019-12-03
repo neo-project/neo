@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Cryptography.ECC;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -71,6 +72,12 @@ namespace Neo
             return new ConfigurationBuilder()
                 .AddJsonFile(configFile, true)
                 .Build();
+        }
+
+        public static void Log(string source, LogLevel level, string message)
+        {
+            foreach (ILogPlugin plugin in Plugin.Loggers)
+                plugin.Log(source, level, message);
         }
     }
 }
