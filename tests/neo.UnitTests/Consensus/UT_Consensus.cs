@@ -371,7 +371,7 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("\n==========================");
 
-            StorageKey sKey = NativeContract.NEO.CreateStorageKey(14);
+            StorageKey sKey = NativeContract.NEO.CreateStorageKey(14, originalContract.ScriptHash);
             var entry = mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
             {
                 Value = mockContext.Object.Validators.ToByteArray()
