@@ -9,7 +9,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using VMArray = Neo.VM.Types.Array;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -86,7 +86,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
+            engine.SendNotification(Hash, new Array(engine.ReferenceCounter, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount }));
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -112,29 +112,29 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
+            engine.SendNotification(Hash, new Array(engine.ReferenceCounter, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount }));
         }
 
         [ContractMethod(0, ContractParameterType.String, Name = "name", SafeMethod = true)]
-        protected StackItem NameMethod(ApplicationEngine engine, VMArray args)
+        protected StackItem NameMethod(ApplicationEngine engine, Array args)
         {
             return Name;
         }
 
         [ContractMethod(0, ContractParameterType.String, Name = "symbol", SafeMethod = true)]
-        protected StackItem SymbolMethod(ApplicationEngine engine, VMArray args)
+        protected StackItem SymbolMethod(ApplicationEngine engine, Array args)
         {
             return Symbol;
         }
 
         [ContractMethod(0, ContractParameterType.Integer, Name = "decimals", SafeMethod = true)]
-        protected StackItem DecimalsMethod(ApplicationEngine engine, VMArray args)
+        protected StackItem DecimalsMethod(ApplicationEngine engine, Array args)
         {
             return (uint)Decimals;
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
-        protected StackItem TotalSupply(ApplicationEngine engine, VMArray args)
+        protected StackItem TotalSupply(ApplicationEngine engine, Array args)
         {
             return TotalSupply(engine.Snapshot);
         }
@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
-        protected StackItem BalanceOf(ApplicationEngine engine, VMArray args)
+        protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
             return BalanceOf(engine.Snapshot, new UInt160(args[0].GetSpan().ToArray()));
         }
@@ -161,7 +161,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
-        protected StackItem Transfer(ApplicationEngine engine, VMArray args)
+        protected StackItem Transfer(ApplicationEngine engine, Array args)
         {
             UInt160 from = new UInt160(args[0].GetSpan().ToArray());
             UInt160 to = new UInt160(args[1].GetSpan().ToArray());
@@ -222,7 +222,7 @@ namespace Neo.SmartContract.Native.Tokens
                     storage_to.Value = state_to.ToByteArray();
                 }
             }
-            engine.SendNotification(Hash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
+            engine.SendNotification(Hash, new Array(engine.ReferenceCounter, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount }));
             return true;
         }
 

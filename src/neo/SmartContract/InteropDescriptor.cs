@@ -1,5 +1,4 @@
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 
 namespace Neo.SmartContract
@@ -10,7 +9,7 @@ namespace Neo.SmartContract
         public uint Hash { get; }
         public Func<ApplicationEngine, bool> Handler { get; }
         public long Price { get; }
-        public Func<RandomAccessStack<StackItem>, long> PriceCalculator { get; }
+        public Func<EvaluationStack, long> PriceCalculator { get; }
         public TriggerType AllowedTriggers { get; }
 
         public InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers)
@@ -19,7 +18,7 @@ namespace Neo.SmartContract
             this.Price = price;
         }
 
-        public InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<RandomAccessStack<StackItem>, long> priceCalculator, TriggerType allowedTriggers)
+        public InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers)
             : this(method, handler, allowedTriggers)
         {
             this.PriceCalculator = priceCalculator;
@@ -33,7 +32,7 @@ namespace Neo.SmartContract
             this.AllowedTriggers = allowedTriggers;
         }
 
-        public long GetPrice(RandomAccessStack<StackItem> stack)
+        public long GetPrice(EvaluationStack stack)
         {
             return PriceCalculator is null ? Price : PriceCalculator(stack);
         }
