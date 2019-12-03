@@ -42,6 +42,9 @@ namespace Neo.UnitTests.IO.Json
 
             Action action2 = () => new JNumber(double.NegativeInfinity).AsString();
             action2.Should().Throw<FormatException>();
+
+            Action action3 = () => new JNumber(double.NaN).AsString();
+            action3.Should().Throw<FormatException>();
         }
 
         [TestMethod]

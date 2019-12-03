@@ -19,7 +19,7 @@ namespace Neo.IO.Json
 
         public override bool AsBoolean()
         {
-            return Value != 0 && !double.IsNaN(Value);
+            return Value != 0;
         }
 
         public override double AsNumber()
