@@ -387,8 +387,8 @@ namespace Neo.UnitTests.SmartContract
 
             var map = new Map
             {
-                { new Integer(1), new Integer(2) },
-                { new Integer(3), new Integer(4) }
+                [1] = 2,
+                [3] = 4
             };
             engine.CurrentContext.EvaluationStack.Push(map);
             InteropService.Invoke(engine, InteropService.Neo_Iterator_Create).Should().BeTrue();

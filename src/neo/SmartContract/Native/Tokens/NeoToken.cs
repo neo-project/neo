@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using VMArray = Neo.VM.Types.Array;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -117,7 +117,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, SafeMethod = true)]
-        private StackItem UnclaimedGas(ApplicationEngine engine, VMArray args)
+        private StackItem UnclaimedGas(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             uint end = (uint)args[1].GetBigInteger();
@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
-        private StackItem RegisterValidator(ApplicationEngine engine, VMArray args)
+        private StackItem RegisterValidator(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
             return RegisterValidator(engine.Snapshot, pubkey);
@@ -151,10 +151,10 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
-        private StackItem Vote(ApplicationEngine engine, VMArray args)
+        private StackItem Vote(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
-            ECPoint[] pubkeys = ((VMArray)args[1]).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToArray();
+            ECPoint[] pubkeys = ((Array)args[1]).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToArray();
             if (!InteropService.CheckWitness(engine, account)) return false;
             StorageKey key_account = CreateAccountKey(account);
             if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
@@ -194,9 +194,9 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
-        private StackItem GetRegisteredValidators(ApplicationEngine engine, VMArray args)
+        private StackItem GetRegisteredValidators(ApplicationEngine engine, Array args)
         {
-            return GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
+            return new Array(engine.ReferenceCounter, GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
         }
 
         public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(StoreView snapshot)
@@ -210,9 +210,9 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
-        private StackItem GetValidators(ApplicationEngine engine, VMArray args)
+        private StackItem GetValidators(ApplicationEngine engine, Array args)
         {
-            return GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
+            return new Array(engine.ReferenceCounter, GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
         }
 
         public ECPoint[] GetValidators(StoreView snapshot)
@@ -235,9 +235,9 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
-        private StackItem GetNextBlockValidators(ApplicationEngine engine, VMArray args)
+        private StackItem GetNextBlockValidators(ApplicationEngine engine, Array args)
         {
-            return GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
+            return new Array(engine.ReferenceCounter, GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
         }
 
         public ECPoint[] GetNextBlockValidators(StoreView snapshot)
