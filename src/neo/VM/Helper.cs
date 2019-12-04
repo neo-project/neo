@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using VMArray = Neo.VM.Types.Array;
-using VMBoolean = Neo.VM.Types.Boolean;
+using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.VM
 {
@@ -221,7 +221,7 @@ namespace Neo.VM
             ContractParameter parameter = null;
             switch (item)
             {
-                case VMArray array:
+                case Array array:
                     if (context is null)
                         context = new List<(StackItem, ContractParameter)>();
                     else
@@ -245,7 +245,7 @@ namespace Neo.VM
                         parameter.Value = map.Select(p => new KeyValuePair<ContractParameter, ContractParameter>(ToParameter(p.Key, context), ToParameter(p.Value, context))).ToList();
                     }
                     break;
-                case VMBoolean _:
+                case Boolean _:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Boolean,
@@ -295,7 +295,7 @@ namespace Neo.VM
                         (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
                     if (stackItem is null)
                     {
-                        stackItem = ((IList<ContractParameter>)parameter.Value).Select(p => ToStackItem(p, context)).ToList();
+                        stackItem = new Array(((IList<ContractParameter>)parameter.Value).Select(p => ToStackItem(p, context)));
                         context.Add((stackItem, parameter));
                     }
                     break;
