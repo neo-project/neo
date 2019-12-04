@@ -24,11 +24,11 @@
   ·
   <a href="https://github.com/neo-project/neo-cli">Neo CLI</a>
 </p>
-<p style="display: flex; flex-direction: row; justify-content: center; align-items: center">
+<p align="center">
   <a href="https://twitter.com/neo_blockchain">
       <img
       src=".github/images/twitter-logo.png"
-      style="height: 20px; margin: 4px">
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;
   <a href="https://medium.com/neo-smart-economy">
@@ -64,7 +64,7 @@
   <a href="https://www.youtube.com/channel/UCl1AwEDN0w5lTmfJEMsY5Vw/videos">
       <img
       src=".github/images/youtube-logo.png"
-      style="height: 20px; margin: 4px">
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;
   <!--How to get a link? -->
