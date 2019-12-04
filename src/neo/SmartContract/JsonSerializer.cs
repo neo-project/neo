@@ -4,8 +4,8 @@ using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
-using VMArray = Neo.VM.Types.Array;
-using VMBoolean = Neo.VM.Types.Boolean;
+using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
@@ -20,7 +20,7 @@ namespace Neo.SmartContract
         {
             switch (item)
             {
-                case VMArray array:
+                case Array array:
                     {
                         return array.Select(p => Serialize(p)).ToArray();
                     }
@@ -35,7 +35,7 @@ namespace Neo.SmartContract
                             return integer.ToString();
                         return (double)num.GetBigInteger();
                     }
-                case VMBoolean boolean:
+                case Boolean boolean:
                     {
                         return boolean.ToBoolean();
                     }
@@ -66,7 +66,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return stack item</returns>
-        public static StackItem Deserialize(JObject json)
+        public static StackItem Deserialize(JObject json, ReferenceCounter referenceCounter = null)
         {
             switch (json)
             {
@@ -76,7 +76,7 @@ namespace Neo.SmartContract
                     }
                 case JArray array:
                     {
-                        return array.Select(p => Deserialize(p)).ToList();
+                        return new Array(referenceCounter, array.Select(p => Deserialize(p, referenceCounter)));
                     }
                 case JString str:
                     {
@@ -90,18 +90,18 @@ namespace Neo.SmartContract
                     }
                 case JBoolean boolean:
                     {
-                        return new VMBoolean(boolean.Value);
+                        return new Boolean(boolean.Value);
                     }
                 case JObject obj:
                     {
-                        var item = new Map();
+                        var item = new Map(referenceCounter);
 
                         foreach (var entry in obj.Properties)
                         {
                             var key = entry.Key;
-                            var value = Deserialize(entry.Value);
+                            var value = Deserialize(entry.Value, referenceCounter);
 
-                            item.Add(key, value);
+                            item[key] = value;
                         }
 
                         return item;
