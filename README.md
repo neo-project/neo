@@ -28,56 +28,56 @@
   <a href="https://twitter.com/neo_blockchain">
       <img
       src=".github/images/twitter-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;
   <a href="https://medium.com/neo-smart-economy">
       <img
       src=".github/images/medium-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;
   <a href="https://neonewstoday.com">
       <img
       src=".github/images/nnt-logo.jpg"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;  
   <a href="https://t.me/NEO_EN">
       <img
       src=".github/images/telegram-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;
   <a href="https://www.reddit.com/r/NEO/">
       <img
       src=".github/images/reddit-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;
   <a href="https://discord.io/neo">
       <img
       src=".github/images/discord-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;
   <a href="https://www.youtube.com/channel/UCl1AwEDN0w5lTmfJEMsY5Vw/videos">
       <img
       src=".github/images/youtube-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;
   <!--How to get a link? -->
   <a href="https://neo.org/">
       <img
       src=".github/images/we-chat-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
   &nbsp;
   <a href="https://weibo.com/neosmarteconomy">
       <img
       src=".github/images/weibo-logo.png"
-      style="height: 25px; margin: 4px">
+      height="25px">
   </a>
 </p>
 
