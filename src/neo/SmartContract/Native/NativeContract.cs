@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using VMArray = Neo.VM.Types.Array;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
@@ -57,7 +57,7 @@ namespace Neo.SmartContract.Native
                 if (attribute.SafeMethod) safeMethods.Add(name);
                 methods.Add(name, new ContractMethodMetadata
                 {
-                    Delegate = (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this),
+                    Delegate = (Func<ApplicationEngine, Array, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, Array, StackItem>), this),
                     Price = attribute.Price
                 });
             }
@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
             if (!engine.CurrentScriptHash.Equals(Hash))
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
-            VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
+            Array args = (Array)engine.CurrentContext.EvaluationStack.Pop();
             if (!methods.TryGetValue(operation, out ContractMethodMetadata method))
                 return false;
             StackItem result = method.Delegate(engine, args);
@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        internal long GetPrice(RandomAccessStack<StackItem> stack)
+        internal long GetPrice(EvaluationStack stack)
         {
             return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
         }
@@ -110,7 +110,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, ContractParameterType.Boolean)]
-        protected StackItem OnPersist(ApplicationEngine engine, VMArray args)
+        protected StackItem OnPersist(ApplicationEngine engine, Array args)
         {
             if (engine.Trigger != TriggerType.System) return false;
             return OnPersist(engine);
@@ -122,9 +122,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards", SafeMethod = true)]
-        protected StackItem SupportedStandardsMethod(ApplicationEngine engine, VMArray args)
+        protected StackItem SupportedStandardsMethod(ApplicationEngine engine, Array args)
         {
-            return SupportedStandards.Select(p => (StackItem)p).ToList();
+            return new Array(engine.ReferenceCounter, SupportedStandards.Select(p => (StackItem)p));
         }
 
         public ApplicationEngine TestCall(string operation, params object[] args)
