@@ -63,9 +63,9 @@ namespace Neo.IO.Json
             {
                 throw new FormatException(ex.Message, ex);
             }
-            catch (Exception)
+            catch (InvalidOperationException)
             {
-                throw new FormatException();
+                throw new FormatException(ex.Message, ex);
             }
         }
 
