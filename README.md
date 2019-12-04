@@ -24,77 +24,79 @@
   ·
   <a href="https://github.com/neo-project/neo-cli">Neo CLI</a>
 </p>
-<p align="center">
+<p style="display: flex; flex-direction: row; justify-content: center; align-items: center">
   <a href="https://twitter.com/neo_blockchain">
       <img
       src=".github/images/twitter-logo.png"
-      width="25px">
+      style="height: 20px; margin: 4px">
   </a>
   &nbsp;
   <a href="https://medium.com/neo-smart-economy">
       <img
       src=".github/images/medium-logo.png"
-      width="23px">
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;
   <a href="https://neonewstoday.com">
       <img
       src=".github/images/nnt-logo.jpg"
-      width="23px">
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;  
   <a href="https://t.me/NEO_EN">
       <img
       src=".github/images/telegram-logo.png"
-      width="24px" >
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;
   <a href="https://www.reddit.com/r/NEO/">
       <img
       src=".github/images/reddit-logo.png"
-      width="24px">
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;
   <a href="https://discord.io/neo">
       <img
       src=".github/images/discord-logo.png"
-      width="25px">
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;
   <a href="https://www.youtube.com/channel/UCl1AwEDN0w5lTmfJEMsY5Vw/videos">
       <img
       src=".github/images/youtube-logo.png"
-      width="30px">
+      style="height: 20px; margin: 4px">
   </a>
   &nbsp;
   <!--How to get a link? -->
   <a href="https://neo.org/">
       <img
       src=".github/images/we-chat-logo.png"
-      width="25px">
+      style="height: 25px; margin: 4px">
   </a>
   &nbsp;
   <a href="https://weibo.com/neosmarteconomy">
       <img
       src=".github/images/weibo-logo.png"
-      width="28px">
+      style="height: 25px; margin: 4px">
   </a>
 </p>
 
 
 ## Table of Contents
-1. [Overview](#overview)
-1. [Features](#features)
-2. [Quickstart](#quick-start)
-    1. [Using for smart-contract development](#building-a-smart-contract)
-    1. [Using neo library](#using-neo-library)
-    3. [Using neo-cli releases](#using-neo-cli-releases)
-4. [Status](#status)
-5. [Reference implementations](#reference-implementations)
-6. [Opening an issue](#opening-a-new-issue)  
-7. [Bounty program](#bounty-program)
-8. [How to contribute](#how-to-contribute)
-9. [License](#license)
+- [Table of Contents](#table-of-contents)
+- [Overview](#overview)
+- [Features](#features)
+- [Quick Start](#quick-start)
+    - [Building a smart-contract](#building-a-smart-contract)
+  - [Using source code](#using-source-code)
+    - [Using Neo library](#using-neo-library)
+    - [Using neo-cli releases](#using-neo-cli-releases)
+- [Status](#status)
+    - [Reference implementations](#reference-implementations)
+    - [Opening a new issue](#opening-a-new-issue)
+    - [Bounty program](#bounty-program)
+    - [How to contribute](#how-to-contribute)
+    - [License](#license)
 
 ## Overview
 Neo is a blockchain technology built using C# that levereages smart contracts to autonomumously manage digital assets. Using dBFT 2.0 as consensus mechanism, Neo can achieves single block finality in 15 seconds without forking.   
