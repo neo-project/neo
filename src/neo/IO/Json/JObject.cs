@@ -63,6 +63,10 @@ namespace Neo.IO.Json
             {
                 throw new FormatException(ex.Message, ex);
             }
+            catch (Exception)
+            {
+                throw new FormatException();
+            }
         }
 
         public static JObject Parse(string value, int max_nest = 100)
