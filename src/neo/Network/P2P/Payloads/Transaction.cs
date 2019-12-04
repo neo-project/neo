@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -300,28 +302,22 @@ namespace Neo.Network.P2P.Payloads
             return RelayResultReason.Succeed;
         }
 
-        public StackItem ToStackItem()
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array
-            (
-                new StackItem[]
-                {
-                    // Computed properties
-                    new ByteArray(Hash.ToArray()),
+            return new Array(referenceCounter, new StackItem[]
+            {
+                // Computed properties
+                Hash.ToArray(),
 
-                    // Transaction properties
-                    new Integer(Version),
-                    new Integer(Nonce),
-                    new ByteArray(Sender.ToArray()),
-                    new Integer(SystemFee),
-                    new Integer(NetworkFee),
-                    new Integer(ValidUntilBlock),
-                    // Attributes
-                    // Cosigners
-                    new ByteArray(Script),
-                    // Witnesses
-                }
-            );
+                // Transaction properties
+                (int)Version,
+                Nonce,
+                Sender.ToArray(),
+                SystemFee,
+                NetworkFee,
+                ValidUntilBlock,
+                Script,
+            });
         }
     }
 }
