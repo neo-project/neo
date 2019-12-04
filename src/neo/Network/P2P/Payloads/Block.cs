@@ -3,11 +3,13 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -132,30 +134,24 @@ namespace Neo.Network.P2P.Payloads
             };
         }
 
-        public StackItem ToStackItem()
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array
-            (
-                new StackItem[]
-                {
-                    // Computed properties
-                    new ByteArray(Hash.ToArray()),
+            return new Array(referenceCounter, new StackItem[]
+            {
+                // Computed properties
+                Hash.ToArray(),
 
-                    // BlockBase properties
-                    new Integer(Version),
-                    new ByteArray(PrevHash.ToArray()),
-                    new ByteArray(MerkleRoot.ToArray()),
-                    new Integer(Timestamp),
-                    new Integer(Index),
-                    new ByteArray(NextConsensus.ToArray()),
-                    // Witness
+                // BlockBase properties
+                Version,
+                PrevHash.ToArray(),
+                MerkleRoot.ToArray(),
+                Timestamp,
+                Index,
+                NextConsensus.ToArray(),
 
-                    // Block properties
-                    // Count
-                    // ConsensusData
-                    new Integer(Transactions.Length)
-                }
-            );
+                // Block properties
+                Transactions.Length
+            });
         }
     }
 }
