@@ -6,10 +6,10 @@ namespace Neo.SmartContract.Iterators
 {
     internal class ArrayWrapper : IIterator
     {
-        private readonly IList<StackItem> array;
+        private readonly IReadOnlyList<StackItem> array;
         private int index = -1;
 
-        public ArrayWrapper(IList<StackItem> array)
+        public ArrayWrapper(IReadOnlyList<StackItem> array)
         {
             this.array = array;
         }

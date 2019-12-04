@@ -6,6 +6,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Ledger
 {
@@ -76,17 +77,9 @@ namespace Neo.Ledger
             return contractState;
         }
 
-        public StackItem ToStackItem()
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array
-           (
-               new StackItem[]
-               {
-                    new ByteArray(Script),
-                    new VM.Types.Boolean(HasStorage),
-                    new VM.Types.Boolean(Payable),
-               }
-           );
+            return new Array(referenceCounter, new StackItem[] { Script, HasStorage, Payable });
         }
     }
 }

@@ -11,7 +11,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VMArray = Neo.VM.Types.Array;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
-        private StackItem GetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
+        private StackItem GetMaxTransactionsPerBlock(ApplicationEngine engine, Array args)
         {
             return GetMaxTransactionsPerBlock(engine.Snapshot);
         }
@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
-        private StackItem GetMaxBlockSize(ApplicationEngine engine, VMArray args)
+        private StackItem GetMaxBlockSize(ApplicationEngine engine, Array args)
         {
             return GetMaxBlockSize(engine.Snapshot);
         }
@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
-        private StackItem GetFeePerByte(ApplicationEngine engine, VMArray args)
+        private StackItem GetFeePerByte(ApplicationEngine engine, Array args)
         {
             return GetFeePerByte(engine.Snapshot);
         }
@@ -100,9 +100,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Array, SafeMethod = true)]
-        private StackItem GetBlockedAccounts(ApplicationEngine engine, VMArray args)
+        private StackItem GetBlockedAccounts(ApplicationEngine engine, Array args)
         {
-            return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
+            return new Array(engine.ReferenceCounter, GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
         }
 
         public UInt160[] GetBlockedAccounts(StoreView snapshot)
@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
-        private StackItem SetMaxBlockSize(ApplicationEngine engine, VMArray args)
+        private StackItem SetMaxBlockSize(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
@@ -122,7 +122,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
-        private StackItem SetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
+        private StackItem SetMaxTransactionsPerBlock(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
-        private StackItem SetFeePerByte(ApplicationEngine engine, VMArray args)
+        private StackItem SetFeePerByte(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             long value = (long)args[0].GetBigInteger();
@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
-        private StackItem BlockAccount(ApplicationEngine engine, VMArray args)
+        private StackItem BlockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
@@ -156,7 +156,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
-        private StackItem UnblockAccount(ApplicationEngine engine, VMArray args)
+        private StackItem UnblockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
