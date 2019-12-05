@@ -63,10 +63,6 @@ namespace Neo.IO.Json
             {
                 throw new FormatException(ex.Message, ex);
             }
-            catch (InvalidOperationException ex)
-            {
-                throw new FormatException(ex.Message, ex);
-            }
         }
 
         public static JObject Parse(string value, int max_nest = 100)
@@ -117,7 +113,15 @@ namespace Neo.IO.Json
                     case JsonTokenType.EndObject:
                         return obj;
                     case JsonTokenType.PropertyName:
-                        string name = reader.GetString();
+                        string name;
+                        try
+                        {
+                            name = reader.GetString();
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            throw new FormatException(ex.Message, ex);
+                        }
                         if (obj.Properties.ContainsKey(name)) throw new FormatException();
                         JObject value = Read(ref reader);
                         obj.Properties.Add(name, value);
