@@ -16,6 +16,15 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterType Type { get; set; }
 
+        public ContractParameterDefinition Clone()
+        {
+            return new ContractParameterDefinition
+            {
+                Name = Name,
+                Type = Type
+            };
+        }
+
         /// <summary>
         /// Parse ContractParameterDefinition from json
         /// </summary>

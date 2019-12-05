@@ -69,7 +69,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(Encoding.Default.GetString(expectedArray8), Encoding.Default.GetString(result8));
 
             Map stackItem91 = new Map();
-            stackItem91.Add(1, stackItem91);
+            stackItem91[1] = stackItem91;
             Action action9 = () => StackItemSerializer.Serialize(stackItem91);
             action9.Should().Throw<NotSupportedException>();
 
@@ -84,42 +84,42 @@ namespace Neo.UnitTests.SmartContract
         {
             StackItem stackItem1 = new ByteArray(new byte[5]);
             byte[] byteArray1 = StackItemSerializer.Serialize(stackItem1);
-            StackItem result1 = StackItemSerializer.Deserialize(byteArray1, 1, (uint)byteArray1.Length);
+            StackItem result1 = StackItemSerializer.Deserialize(byteArray1, (uint)byteArray1.Length);
             Assert.AreEqual(stackItem1, result1);
 
             StackItem stackItem2 = new VM.Types.Boolean(true);
             byte[] byteArray2 = StackItemSerializer.Serialize(stackItem2);
-            StackItem result2 = StackItemSerializer.Deserialize(byteArray2, 1, (uint)byteArray2.Length);
+            StackItem result2 = StackItemSerializer.Deserialize(byteArray2, (uint)byteArray2.Length);
             Assert.AreEqual(stackItem2, result2);
 
             StackItem stackItem3 = new Integer(1);
             byte[] byteArray3 = StackItemSerializer.Serialize(stackItem3);
-            StackItem result3 = StackItemSerializer.Deserialize(byteArray3, 1, (uint)byteArray3.Length);
+            StackItem result3 = StackItemSerializer.Deserialize(byteArray3, (uint)byteArray3.Length);
             Assert.AreEqual(stackItem3, result3);
 
             byte[] byteArray4 = StackItemSerializer.Serialize(1);
             byteArray4[0] = 0x40;
-            Action action4 = () => StackItemSerializer.Deserialize(byteArray4, 1, (uint)byteArray4.Length);
+            Action action4 = () => StackItemSerializer.Deserialize(byteArray4, (uint)byteArray4.Length);
             action4.Should().Throw<FormatException>();
 
             List<StackItem> list5 = new List<StackItem> { 1 };
             StackItem stackItem52 = new VM.Types.Array(list5);
             byte[] byteArray5 = StackItemSerializer.Serialize(stackItem52);
-            StackItem result5 = StackItemSerializer.Deserialize(byteArray5, 1, (uint)byteArray5.Length);
+            StackItem result5 = StackItemSerializer.Deserialize(byteArray5, (uint)byteArray5.Length);
             Assert.AreEqual(((VM.Types.Array)stackItem52).Count, ((VM.Types.Array)result5).Count);
             Assert.AreEqual(((VM.Types.Array)stackItem52).GetEnumerator().Current, ((VM.Types.Array)result5).GetEnumerator().Current);
 
             List<StackItem> list6 = new List<StackItem> { 1 };
             StackItem stackItem62 = new Struct(list6);
             byte[] byteArray6 = StackItemSerializer.Serialize(stackItem62);
-            StackItem result6 = StackItemSerializer.Deserialize(byteArray6, 1, (uint)byteArray6.Length);
+            StackItem result6 = StackItemSerializer.Deserialize(byteArray6, (uint)byteArray6.Length);
             Assert.AreEqual(((Struct)stackItem62).Count, ((Struct)result6).Count);
             Assert.AreEqual(((Struct)stackItem62).GetEnumerator().Current, ((Struct)result6).GetEnumerator().Current);
 
             Dictionary<PrimitiveType, StackItem> list7 = new Dictionary<PrimitiveType, StackItem> { [2] = 1 };
             StackItem stackItem72 = new Map(list7);
             byte[] byteArray7 = StackItemSerializer.Serialize(stackItem72);
-            StackItem result7 = StackItemSerializer.Deserialize(byteArray7, 1, (uint)byteArray7.Length);
+            StackItem result7 = StackItemSerializer.Deserialize(byteArray7, (uint)byteArray7.Length);
             Assert.AreEqual(((Map)stackItem72).Count, ((Map)result7).Count);
             Assert.AreEqual(((Map)stackItem72).Keys.GetEnumerator().Current, ((Map)result7).Keys.GetEnumerator().Current);
             Assert.AreEqual(((Map)stackItem72).Values.GetEnumerator().Current, ((Map)result7).Values.GetEnumerator().Current);
