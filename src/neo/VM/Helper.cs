@@ -272,6 +272,12 @@ namespace Neo.VM
                         Type = ContractParameterType.InteropInterface
                     };
                     break;
+                case Null _:
+                    parameter = new ContractParameter
+                    {
+                        Type = ContractParameterType.Any
+                    };
+                    break;
                 default: // Null included
                     throw new ArgumentException();
             }
