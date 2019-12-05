@@ -236,7 +236,7 @@ namespace Neo
         {
             return (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
         }
-      
+
         /// <summary>
         /// Checks if address is IPv4 Maped to IPv6 format, if so, Map to IPv4.
         /// Otherwise, return current address.
