@@ -250,13 +250,12 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
-            //Console.WriteLine($"VALIDATOR[0] {mockContext.Object.Validators[0]}");
-            //Console.WriteLine($"VALIDATOR[0]ScriptHash: {mockWallet.Object.GetAccount(mockContext.Object.Validators[0]).ScriptHash}");
+
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
-                Console.WriteLine($"{mockContext.Object.Validators[i]}");
+                Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             mockContext.Object.Validators = new ECPoint[7]
                 {
-                    mockContext.Object.Validators[0],
+                    kp_array[0].PublicKey,
                     kp_array[1].PublicKey,
                     kp_array[2].PublicKey,
                     kp_array[3].PublicKey,
@@ -266,17 +265,23 @@ namespace Neo.UnitTests.Consensus
                 };
             Console.WriteLine($"Generated keypairs PKey:");
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
-                Console.WriteLine($"{mockContext.Object.Validators[i]}");
-
-            // update Contract with some random validators
+                Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
+
+            // ===============================================================
+            StorageKey sKey = NativeContract.NEO.CreateStorageKey(14);
+            var entry = mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
+            {
+                Value = mockContext.Object.Validators.ToByteArray()
+            });
+            mockContext.Object.Snapshot.Commit();
+            // ===============================================================
 
             // Forcing next consensus
             var originalBlockHashData = mockContext.Object.Block.GetHashData();
             mockContext.Object.Block.NextConsensus = updatedContract.ScriptHash;
             mockContext.Object.Block.Header.NextConsensus = updatedContract.ScriptHash;
-            mockContext.Object.PrevHeader.NextConsensus = updatedContract.ScriptHash;
             var originalBlockMerkleRoot = mockContext.Object.Block.MerkleRoot;
             Console.WriteLine($"\noriginalBlockMerkleRoot: {originalBlockMerkleRoot}");
             var updatedBlockHashData = mockContext.Object.Block.GetHashData();
@@ -342,16 +347,19 @@ namespace Neo.UnitTests.Consensus
             actorConsensus.Tell(rmPayload);
             // =============================================
 
-            Console.WriteLine($"\nForcing block PrevHash to UInt256.Zero {mockContext.Object.Block.GetHashData().ToScriptHash()}");
+            Console.WriteLine($"\nForcing block {mockContext.Object.Block.GetHashData().ToScriptHash()} PrevHash to UInt256.Zero");
+            // Another option would be to manipulate Blockchain.Singleton.GetSnapshot().Blocks.GetAndChange
+            // We would need to get the PrevHash and change the NextConsensus field
+            var oldPrevHash = mockContext.Object.Block.PrevHash;
             mockContext.Object.Block.PrevHash = UInt256.Zero;
-            // Payload should also be forced, otherwise OnConsensus will not pass
+            //Payload should also be forced, otherwise OnConsensus will not pass
             commitPayload.PrevHash = UInt256.Zero;
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
-
             Console.WriteLine($"\nForcing block VerificationScript to {updatedContract.Script.ToScriptHash()}");
+            // The default behavior for BlockBase, when PrevHash = UInt256.Zero, is to use its own Witness
             mockContext.Object.Block.Witness = new Witness { };
             mockContext.Object.Block.Witness.VerificationScript = updatedContract.Script;
-            Console.WriteLine($"\nUpdating BlockBase Witness scripthash  is {mockContext.Object.Block.Witness.ScriptHash}");
+            Console.WriteLine($"\nUpdating BlockBase Witness scripthash to: {mockContext.Object.Block.Witness.ScriptHash}");
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
 
             Console.WriteLine("\nCN4 simulation time - Final needed signatures");
@@ -368,21 +376,23 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine($"\nAsserting block NextConsensus..{utBlock.NextConsensus}");
             utBlock.NextConsensus.Should().Be(updatedContract.ScriptHash);
-
             Console.WriteLine("\n==========================");
-
-            StorageKey sKey = NativeContract.NEO.CreateStorageKey(14, originalContract.ScriptHash);
-            var entry = mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
-            {
-                Value = mockContext.Object.Validators.ToByteArray()
-            });
 
             // =============================================
             Console.WriteLine("\nRecovery simulation...");
             mockContext.Object.CommitPayloads = new ConsensusPayload[mockContext.Object.Validators.Length];
+            // avoiding the BlockSent flag
             mockContext.Object.Block.Transactions = null;
-            rmPayload.PrevHash = UInt256.Zero;
+            // ensuring same hash as snapshot
+            mockContext.Object.Block.PrevHash = oldPrevHash;
+
+            // It should be 3 because the commit generated by the default wallet is still invalid
+            Console.WriteLine("\nAsserting CountCommitted is 3...");
+            mockContext.Object.CountCommitted.Should().Be(3);
             actorConsensus.Tell(rmPayload);
+
+            Console.WriteLine("\nAsserting CountCommitted is 4 (after recovery)...");
+            //mockContext.Object.CountCommitted.Should().Be(4);
             // =============================================
 
             // =============================================
@@ -406,10 +416,13 @@ namespace Neo.UnitTests.Consensus
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
-            cpCommitTemp.ConsensusMessage = cpToCopy.ConsensusMessage.ToArray().AsSerializable<Commit>();
-            ((Commit)cpCommitTemp.ConsensusMessage).Signature = Crypto.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            var oldViewNumber = ((Commit)cpCommitTemp.ConsensusMessage).ViewNumber;
+            cpCommitTemp.ConsensusMessage = new Commit
+            {
+                ViewNumber = oldViewNumber,
+                Signature = Crypto.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray())
+            };
             SignPayload(cpCommitTemp, kp);
-            // Payload is not being signed by vI, since we are bypassing this check as directly talking to subscriber
             return cpCommitTemp;
         }
 
@@ -429,28 +442,22 @@ namespace Neo.UnitTests.Consensus
         {
             Contract contractToSign = Contract.CreateSignatureContract(kp.PublicKey);
 
-            payload.Witness.VerificationScript = contractToSign.Script;
-            payload.Witness.InvocationScript = payload.Sign(kp);
-            Console.WriteLine($"SH {payload.Witness.ScriptHash}");
-            Console.WriteLine($"IS {payload.Witness.InvocationScript.ToScriptHash()}");
-
-
-            /*
             ContractParametersContext sc;
+            Console.WriteLine($"\nTryContractParametersContext signatures...");
             try
             {
                 sc = new ContractParametersContext(payload);
                 byte[] signature = sc.Verifiable.Sign(kp);
                 Console.WriteLine($"signature{signature.ToScriptHash()}");
                 sc.AddSignature(contractToSign, kp.PublicKey, signature);
+                Console.WriteLine($"CheckSig IS: {Crypto.VerifySignature(payload.GetHashData(), signature, kp.PublicKey.EncodePoint(false))}");
             }
             catch (InvalidOperationException)
             {
                 return;
             }
-            var tempWitness = sc.GetWitnesses()[0];
-            payload.Witness = tempWitness;
-            */
+            Console.WriteLine($" sc.GetWitnesses()[0];..");
+            payload.Witness = sc.GetWitnesses()[0];
         }
 
         [TestMethod]
