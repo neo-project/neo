@@ -34,6 +34,16 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterType ReturnType { get; set; }
 
+        public new ContractMethodDescriptor Clone()
+        {
+            return new ContractMethodDescriptor
+            {
+                Name = Name,
+                Parameters = Parameters.Select(p => p.Clone()).ToArray(),
+                ReturnType = ReturnType
+            };
+        }
+
         /// <summary>
         /// Parse ContractMethodDescription from json
         /// </summary>
