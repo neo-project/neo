@@ -252,17 +252,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
 
-            var originalValidators = new ECPoint[7]
-                {
-                    mockContext.Object.Validators[0],
-                    mockContext.Object.Validators[1],
-                    mockContext.Object.Validators[2],
-                    mockContext.Object.Validators[3],
-                    mockContext.Object.Validators[4],
-                    mockContext.Object.Validators[5],
-                    mockContext.Object.Validators[6]
-                };
-
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             mockContext.Object.Validators = new ECPoint[7]
@@ -282,7 +271,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
-            Console.WriteLine($"GetChangeSet CountI: {mockContext.Object.Snapshot.Storages.GetChangeSet().Count()}");
             mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem()
             {
                 Value = new ECPoint[7]
@@ -296,11 +284,7 @@ namespace Neo.UnitTests.Consensus
                     kp_array[6].PublicKey
                 }.ToByteArray()
             });
-
-            Console.WriteLine($"GetChangeSet CountII: {mockContext.Object.Snapshot.Storages.GetChangeSet().Count()}");
-
             mockContext.Object.Snapshot.Commit();
-            Console.WriteLine($"GetChangeSet CountAfterCommit: {mockContext.Object.Snapshot.Storages.GetChangeSet().Count()}");
             // ===============================================================
 
             // Forcing next consensus
@@ -425,62 +409,13 @@ namespace Neo.UnitTests.Consensus
             //                      finalize ConsensusService actor
             // ============================================================================
             Console.WriteLine("Returning states.");
-            //for (int i = 0; i < mockContext.Object.Validators.Length; i++)
-            //    Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
-
             // Updating context.Snapshot with the one that was committed
+            Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
-            Console.WriteLine($"GetChangeSet CountI: {mockContext.Object.Snapshot.Storages.GetChangeSet().Count()}");
-            //mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
-            //mockContext.Object.Snapshot.Dispose();
-            //Blockchain.Singleton.GetSnapshot().Dispose();
-
-            /*entry.Value = new ECPoint[7]
-                {
-                    originalValidators[0],
-                    originalValidators[1],
-                    originalValidators[2],
-                    originalValidators[3],
-                    originalValidators[4],
-                    originalValidators[5],
-                    originalValidators[6]
-                }.ToByteArray();*/
-
-            //var entryII = mockContext.Object.Snapshot.Storages.GetAndChange(CreateStorageKeyForNativeNeo(14), null);           
-            /*var entryII = mockContext.Object.Snapshot.Storages.GetAndChange(CreateStorageKeyForNativeNeo(14), () => new StorageItem
-            {
-                Value = null
-            });*/
-            Console.WriteLine($"GetChangeSet CountII: {mockContext.Object.Snapshot.Storages.GetChangeSet().Count()}");
-            //mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
-            //var entryIII = Blockchain.Singleton.GetSnapshot().Storages.GetAndChange(CreateStorageKeyForNativeNeo(14), () => null);
-            //entryII.Value = null;
             mockContext.Object.Snapshot.Commit();
-            //mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
-            Console.WriteLine($"GetChangeSet Count AfterCommit: {mockContext.Object.Snapshot.Storages.GetChangeSet().Count()}");
-            //Blockchain.Singleton.GetSnapshot().Commit();
 
-            /*
-                        mockContext.Object.Validators = new ECPoint[7]
-                            {
-                                originalValidators[0],
-                                originalValidators[1],
-                                originalValidators[2],
-                                originalValidators[3],
-                                originalValidators[4],
-                                originalValidators[5],
-                                originalValidators[6]
-                            };
-                        Console.WriteLine("Ensuring contract original is the same as before.");
-                        Contract originalContractII = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
-                        originalContractII.ScriptHash.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
-            */
-
-            //for (int i = 0; i < mockContext.Object.Validators.Length; i++)
-            //    Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
-
-            Console.WriteLine("mocked Context Reset...");
+            Console.WriteLine("mockContext Reset.");
             mockContext.Object.Reset(0);
             Console.WriteLine("TimeProvider Reset.");
             TimeProvider.ResetToDefault();
