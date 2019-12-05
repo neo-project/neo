@@ -45,6 +45,18 @@ namespace Neo.IO.Json
             return Properties.ContainsKey(key);
         }
 
+        private static string GetString(ref Utf8JsonReader reader)
+        {
+            try
+            {
+                return reader.GetString();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new FormatException(ex.Message, ex);
+            }
+        }
+
         public static JObject Parse(ReadOnlySpan<byte> value, int max_nest = 100)
         {
             Utf8JsonReader reader = new Utf8JsonReader(value, new JsonReaderOptions
@@ -80,7 +92,7 @@ namespace Neo.IO.Json
                 JsonTokenType.Number => reader.GetDouble(),
                 JsonTokenType.StartArray => ReadArray(ref reader),
                 JsonTokenType.StartObject => ReadObject(ref reader),
-                JsonTokenType.String => reader.GetString(),
+                JsonTokenType.String => GetString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException(),
             };
@@ -113,15 +125,7 @@ namespace Neo.IO.Json
                     case JsonTokenType.EndObject:
                         return obj;
                     case JsonTokenType.PropertyName:
-                        string name;
-                        try
-                        {
-                            name = reader.GetString();
-                        }
-                        catch (InvalidOperationException ex)
-                        {
-                            throw new FormatException(ex.Message, ex);
-                        }
+                        string name = GetString(ref reader);
                         if (obj.Properties.ContainsKey(name)) throw new FormatException();
                         JObject value = Read(ref reader);
                         obj.Properties.Add(name, value);
