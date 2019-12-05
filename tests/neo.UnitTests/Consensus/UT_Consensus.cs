@@ -273,16 +273,7 @@ namespace Neo.UnitTests.Consensus
             // ===============================================================
             mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem()
             {
-                Value = new ECPoint[7]
-                {
-                    kp_array[0].PublicKey,
-                    kp_array[1].PublicKey,
-                    kp_array[2].PublicKey,
-                    kp_array[3].PublicKey,
-                    kp_array[4].PublicKey,
-                    kp_array[5].PublicKey,
-                    kp_array[6].PublicKey
-                }.ToByteArray()
+                Value = mockContext.Object.Validators.ToByteArray()
             });
             mockContext.Object.Snapshot.Commit();
             // ===============================================================
@@ -421,7 +412,7 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("Finalizing consensus service actor.");
             Sys.Stop(actorConsensus);
-            Console.WriteLine("Actor actorConsensus Stopped.\n\n");
+            Console.WriteLine("Actor actorConsensus Stopped.\n");
         }
 
         /// <summary>
