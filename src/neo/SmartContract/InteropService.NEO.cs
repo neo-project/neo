@@ -43,7 +43,7 @@ namespace Neo.SmartContract
                 Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application);
         }
 
-        private static long GetECDsaCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
+        private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack)
         {
             if (stack.Count < 2) return 0;
             var item = stack.Peek(1);
@@ -54,7 +54,7 @@ namespace Neo.SmartContract
             return GetPrice(Neo_Crypto_ECDsaVerify, stack) * n;
         }
 
-        private static long GetDeploymentPrice(RandomAccessStack<StackItem> stack)
+        private static long GetDeploymentPrice(EvaluationStack stack)
         {
             int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
             return GasPerByte * size;
@@ -378,7 +378,7 @@ namespace Neo.SmartContract
         {
             var json = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var obj = JObject.Parse(json, 10);
-            var item = JsonSerializer.Deserialize(obj);
+            var item = JsonSerializer.Deserialize(obj, engine.ReferenceCounter);
 
             engine.CurrentContext.EvaluationStack.Push(item);
             return true;
