@@ -270,7 +270,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
-            StorageKey sKey = NativeContract.NEO.CreateStorageKey(14);
+            StorageKey sKey = CreateStorageKeyForNativeNeo(14);
             var entry = mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
             {
                 Value = mockContext.Object.Validators.ToByteArray()
@@ -899,6 +899,17 @@ namespace Neo.UnitTests.Consensus
                     VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[validatorIndex])
                 }
             };
+        }
+
+        private StorageKey CreateStorageKeyForNativeNeo(byte prefix)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                ScriptHash = NativeContract.NEO.Hash,
+                Key = new byte[sizeof(byte)]
+            };
+            storageKey.Key[0] = prefix;
+            return storageKey;
         }
     }
 }
