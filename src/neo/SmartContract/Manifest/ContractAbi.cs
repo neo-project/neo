@@ -28,6 +28,17 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractEventDescriptor[] Events { get; set; }
 
+        public ContractAbi Clone()
+        {
+            return new ContractAbi
+            {
+                Hash = Hash,
+                EntryPoint = EntryPoint.Clone(),
+                Methods = Methods.Select(p => p.Clone()).ToArray(),
+                Events = Events.Select(p => p.Clone()).ToArray()
+            };
+        }
+
         /// <summary>
         /// Parse ContractAbi from json
         /// </summary>
