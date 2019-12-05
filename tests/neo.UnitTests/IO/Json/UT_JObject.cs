@@ -64,7 +64,7 @@ namespace Neo.UnitTests.IO.Json
             Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\":\"v1\""));
             Assert.ThrowsException<FormatException>(() => JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
             Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
-            
+
             JObject.Parse("null").Should().BeNull();
             JObject.Parse("true").AsBoolean().Should().BeTrue();
             JObject.Parse("false").AsBoolean().Should().BeFalse();
