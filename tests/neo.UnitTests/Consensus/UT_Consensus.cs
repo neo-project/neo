@@ -251,6 +251,17 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
             Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
 
+            var originalValidators = new ECPoint[7]
+                {
+                    mockContext.Object.Validators[0],
+                    mockContext.Object.Validators[1],
+                    mockContext.Object.Validators[2],
+                    mockContext.Object.Validators[3],
+                    mockContext.Object.Validators[4],
+                    mockContext.Object.Validators[5],
+                    mockContext.Object.Validators[6]
+                };
+
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             mockContext.Object.Validators = new ECPoint[7]
@@ -271,7 +282,7 @@ namespace Neo.UnitTests.Consensus
 
             // ===============================================================
             StorageKey sKey = CreateStorageKeyForNativeNeo(14);
-            var entry = mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
+            mockContext.Object.Snapshot.Storages.GetAndChange(sKey, () => new StorageItem
             {
                 Value = mockContext.Object.Validators.ToByteArray()
             });
@@ -399,10 +410,27 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
             //                      finalize ConsensusService actor
             // ============================================================================
-            Console.WriteLine("Finalizing consensus service actor and returning states.");
+            Console.WriteLine("Returning states.");
+            for (int i = 0; i < mockContext.Object.Validators.Length; i++)
+                Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
+
+            mockContext.Object.Validators = originalValidators;
+            var sKey2 = CreateStorageKeyForNativeNeo(14);
+            mockContext.Object.Snapshot.Storages.GetAndChange(sKey2, () => new StorageItem
+            {
+                Value = mockContext.Object.Validators.ToByteArray()
+            });
+            mockContext.Object.Snapshot.Commit();
+
+            for (int i = 0; i < mockContext.Object.Validators.Length; i++)
+                Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
+
+            mockContext.Object.Reset(0);
             TimeProvider.ResetToDefault();
 
-            //Sys.Stop(actorConsensus);
+            Console.WriteLine("Finalizing consensus service actor.");
+            Sys.Stop(actorConsensus);
+            Console.WriteLine("Actor actorConsensus Stopped.");
         }
 
         /// <summary>
@@ -443,20 +471,20 @@ namespace Neo.UnitTests.Consensus
             Contract contractToSign = Contract.CreateSignatureContract(kp.PublicKey);
 
             ContractParametersContext sc;
-            Console.WriteLine($"\nTryContractParametersContext signatures...");
+            //Console.WriteLine($"\nTryContractParametersContext signatures...");
             try
             {
                 sc = new ContractParametersContext(payload);
                 byte[] signature = sc.Verifiable.Sign(kp);
-                Console.WriteLine($"signature{signature.ToScriptHash()}");
+                //Console.WriteLine($"signature{signature.ToScriptHash()}");
                 sc.AddSignature(contractToSign, kp.PublicKey, signature);
-                Console.WriteLine($"CheckSig IS: {Crypto.VerifySignature(payload.GetHashData(), signature, kp.PublicKey.EncodePoint(false))}");
+                //Console.WriteLine($"CheckSig IS: {Crypto.VerifySignature(payload.GetHashData(), signature, kp.PublicKey.EncodePoint(false))}");
             }
             catch (InvalidOperationException)
             {
                 return;
             }
-            Console.WriteLine($" sc.GetWitnesses()[0];..");
+            //Console.WriteLine($" sc.GetWitnesses()[0];..");
             payload.Witness = sc.GetWitnesses()[0];
         }
 
