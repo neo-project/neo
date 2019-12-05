@@ -450,23 +450,17 @@ namespace Neo.UnitTests.Consensus
 
         private void SignPayload(ConsensusPayload payload, KeyPair kp)
         {
-            Contract contractToSign = Contract.CreateSignatureContract(kp.PublicKey);
-
             ContractParametersContext sc;
-            //Console.WriteLine($"\nTryContractParametersContext signatures...");
             try
             {
                 sc = new ContractParametersContext(payload);
                 byte[] signature = sc.Verifiable.Sign(kp);
-                //Console.WriteLine($"signature{signature.ToScriptHash()}");
-                sc.AddSignature(contractToSign, kp.PublicKey, signature);
-                //Console.WriteLine($"CheckSig IS: {Crypto.VerifySignature(payload.GetHashData(), signature, kp.PublicKey.EncodePoint(false))}");
+                sc.AddSignature(Contract.CreateSignatureContract(kp.PublicKey), kp.PublicKey, signature);
             }
             catch (InvalidOperationException)
             {
                 return;
             }
-            //Console.WriteLine($" sc.GetWitnesses()[0];..");
             payload.Witness = sc.GetWitnesses()[0];
         }
 
