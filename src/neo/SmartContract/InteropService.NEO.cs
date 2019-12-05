@@ -77,29 +77,29 @@ namespace Neo.SmartContract
 
         private static bool Crypto_ECDsaVerify(ApplicationEngine engine)
         {
-            StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem item0 = engine.Pop();
             ReadOnlySpan<byte> message = item0 switch
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
                 Null _ => engine.ScriptContainer.GetHashData(),
                 _ => item0.GetSpan()
             };
-            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-            ReadOnlySpan<byte> signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
+            byte[] pubkey = engine.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> signature = engine.Pop().GetSpan();
             try
             {
-                engine.CurrentContext.EvaluationStack.Push(Crypto.VerifySignature(message, signature, pubkey));
+                engine.Push(Crypto.VerifySignature(message, signature, pubkey));
             }
             catch (ArgumentException)
             {
-                engine.CurrentContext.EvaluationStack.Push(false);
+                engine.Push(false);
             }
             return true;
         }
 
         private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine)
         {
-            StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem item0 = engine.Pop();
             ReadOnlySpan<byte> message = item0 switch
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
@@ -108,7 +108,7 @@ namespace Neo.SmartContract
             };
             int n;
             byte[][] pubkeys;
-            StackItem item = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem item = engine.Pop();
             if (item is VMArray array1)
             {
                 pubkeys = array1.Select(p => p.GetSpan().ToArray()).ToArray();
@@ -121,11 +121,11 @@ namespace Neo.SmartContract
                 if (n < 1 || n > engine.CurrentContext.EvaluationStack.Count) return false;
                 pubkeys = new byte[n][];
                 for (int i = 0; i < n; i++)
-                    pubkeys[i] = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+                    pubkeys[i] = engine.Pop().GetSpan().ToArray();
             }
             int m;
             byte[][] signatures;
-            item = engine.CurrentContext.EvaluationStack.Pop();
+            item = engine.Pop();
             if (item is VMArray array2)
             {
                 signatures = array2.Select(p => p.GetSpan().ToArray()).ToArray();
@@ -138,7 +138,7 @@ namespace Neo.SmartContract
                 if (m < 1 || m > n || m > engine.CurrentContext.EvaluationStack.Count) return false;
                 signatures = new byte[m][];
                 for (int i = 0; i < m; i++)
-                    signatures[i] = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+                    signatures[i] = engine.Pop().GetSpan().ToArray();
             }
             bool fSuccess = true;
             try
@@ -156,25 +156,25 @@ namespace Neo.SmartContract
             {
                 fSuccess = false;
             }
-            engine.CurrentContext.EvaluationStack.Push(fSuccess);
+            engine.Push(fSuccess);
             return true;
         }
 
         private static bool Account_IsStandard(ApplicationEngine engine)
         {
-            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray());
+            UInt160 hash = new UInt160(engine.Pop().GetSpan().ToArray());
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             bool isStandard = contract is null || contract.Script.IsStandardContract();
-            engine.CurrentContext.EvaluationStack.Push(isStandard);
+            engine.Push(isStandard);
             return true;
         }
 
         private static bool Contract_Create(ApplicationEngine engine)
         {
-            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] script = engine.Pop().GetSpan().ToArray();
             if (script.Length > 1024 * 1024) return false;
 
-            var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var manifest = engine.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
 
             UInt160 hash = script.ToScriptHash();
@@ -189,15 +189,15 @@ namespace Neo.SmartContract
             if (!contract.Manifest.IsValid(hash)) return false;
 
             engine.Snapshot.Contracts.Add(hash, contract);
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
+            engine.Push(StackItem.FromInterface(contract));
             return true;
         }
 
         private static bool Contract_Update(ApplicationEngine engine)
         {
-            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] script = engine.Pop().GetSpan().ToArray();
             if (script.Length > 1024 * 1024) return false;
-            var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var manifest = engine.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
 
             var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
@@ -245,14 +245,14 @@ namespace Neo.SmartContract
 
         private static bool Storage_Find(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(engine, context)) return false;
-                byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+                byte[] prefix = engine.Pop().GetSpan().ToArray();
                 byte[] prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
                 StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator()));
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
+                engine.Push(StackItem.FromInterface(iterator));
                 return true;
             }
             return false;
@@ -261,7 +261,7 @@ namespace Neo.SmartContract
         private static bool Enumerator_Create(ApplicationEngine engine)
         {
             IEnumerator enumerator;
-            switch (engine.CurrentContext.EvaluationStack.Pop())
+            switch (engine.Pop())
             {
                 case VMArray array:
                     enumerator = new ArrayWrapper(array);
@@ -272,16 +272,16 @@ namespace Neo.SmartContract
                 default:
                     return false;
             }
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
+            engine.Push(StackItem.FromInterface(enumerator));
             return true;
         }
 
         private static bool Enumerator_Next(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 IEnumerator enumerator = _interface.GetInterface<IEnumerator>();
-                engine.CurrentContext.EvaluationStack.Push(enumerator.Next());
+                engine.Push(enumerator.Next());
                 return true;
             }
             return false;
@@ -289,10 +289,10 @@ namespace Neo.SmartContract
 
         private static bool Enumerator_Value(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 IEnumerator enumerator = _interface.GetInterface<IEnumerator>();
-                engine.CurrentContext.EvaluationStack.Push(enumerator.Value());
+                engine.Push(enumerator.Value());
                 return true;
             }
             return false;
@@ -300,19 +300,19 @@ namespace Neo.SmartContract
 
         private static bool Enumerator_Concat(ApplicationEngine engine)
         {
-            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
-            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
+            if (!(engine.Pop() is InteropInterface _interface1)) return false;
+            if (!(engine.Pop() is InteropInterface _interface2)) return false;
             IEnumerator first = _interface1.GetInterface<IEnumerator>();
             IEnumerator second = _interface2.GetInterface<IEnumerator>();
             IEnumerator result = new ConcatenatedEnumerator(first, second);
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(result));
+            engine.Push(StackItem.FromInterface(result));
             return true;
         }
 
         private static bool Iterator_Create(ApplicationEngine engine)
         {
             IIterator iterator;
-            switch (engine.CurrentContext.EvaluationStack.Pop())
+            switch (engine.Pop())
             {
                 case VMArray array:
                     iterator = new ArrayWrapper(array);
@@ -326,16 +326,16 @@ namespace Neo.SmartContract
                 default:
                     return false;
             }
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
+            engine.Push(StackItem.FromInterface(iterator));
             return true;
         }
 
         private static bool Iterator_Key(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 IIterator iterator = _interface.GetInterface<IIterator>();
-                engine.CurrentContext.EvaluationStack.Push(iterator.Key());
+                engine.Push(iterator.Key());
                 return true;
             }
             return false;
@@ -343,10 +343,10 @@ namespace Neo.SmartContract
 
         private static bool Iterator_Keys(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 IIterator iterator = _interface.GetInterface<IIterator>();
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new IteratorKeysWrapper(iterator)));
+                engine.Push(StackItem.FromInterface(new IteratorKeysWrapper(iterator)));
                 return true;
             }
             return false;
@@ -354,10 +354,10 @@ namespace Neo.SmartContract
 
         private static bool Iterator_Values(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 IIterator iterator = _interface.GetInterface<IIterator>();
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new IteratorValuesWrapper(iterator)));
+                engine.Push(StackItem.FromInterface(new IteratorValuesWrapper(iterator)));
                 return true;
             }
             return false;
@@ -365,31 +365,31 @@ namespace Neo.SmartContract
 
         private static bool Iterator_Concat(ApplicationEngine engine)
         {
-            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
-            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
+            if (!(engine.Pop() is InteropInterface _interface1)) return false;
+            if (!(engine.Pop() is InteropInterface _interface2)) return false;
             IIterator first = _interface1.GetInterface<IIterator>();
             IIterator second = _interface2.GetInterface<IIterator>();
             IIterator result = new ConcatenatedIterator(first, second);
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(result));
+            engine.Push(StackItem.FromInterface(result));
             return true;
         }
 
         private static bool Json_Deserialize(ApplicationEngine engine)
         {
-            var json = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            var json = engine.Pop().GetString();
             var obj = JObject.Parse(json, 10);
             var item = JsonSerializer.Deserialize(obj, engine.ReferenceCounter);
 
-            engine.CurrentContext.EvaluationStack.Push(item);
+            engine.Push(item);
             return true;
         }
 
         private static bool Json_Serialize(ApplicationEngine engine)
         {
-            var item = engine.CurrentContext.EvaluationStack.Pop();
+            var item = engine.Pop();
             var json = JsonSerializer.Serialize(item);
 
-            engine.CurrentContext.EvaluationStack.Push(json.ToString());
+            engine.Push(json.ToString());
             return true;
         }
     }

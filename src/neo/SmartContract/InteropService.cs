@@ -152,7 +152,7 @@ namespace Neo.SmartContract
 
         private static bool ExecutionEngine_GetScriptContainer(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(
+            engine.Push(
                 engine.ScriptContainer is IInteroperable value ? value.ToStackItem(engine.ReferenceCounter) :
                 StackItem.FromInterface(engine.ScriptContainer));
             return true;
@@ -160,31 +160,31 @@ namespace Neo.SmartContract
 
         private static bool ExecutionEngine_GetExecutingScriptHash(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.CurrentScriptHash.ToArray());
+            engine.Push(engine.CurrentScriptHash.ToArray());
             return true;
         }
 
         private static bool ExecutionEngine_GetCallingScriptHash(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.CallingScriptHash?.ToArray() ?? StackItem.Null);
+            engine.Push(engine.CallingScriptHash?.ToArray() ?? StackItem.Null);
             return true;
         }
 
         private static bool ExecutionEngine_GetEntryScriptHash(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.EntryScriptHash.ToArray());
+            engine.Push(engine.EntryScriptHash.ToArray());
             return true;
         }
 
         private static bool Runtime_Platform(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(Encoding.ASCII.GetBytes("NEO"));
+            engine.Push(Encoding.ASCII.GetBytes("NEO"));
             return true;
         }
 
         private static bool Runtime_GetTrigger(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push((int)engine.Trigger);
+            engine.Push((int)engine.Trigger);
             return true;
         }
 
@@ -228,7 +228,7 @@ namespace Neo.SmartContract
 
         private static bool Runtime_CheckWitness(ApplicationEngine engine)
         {
-            ReadOnlySpan<byte> hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
+            ReadOnlySpan<byte> hashOrPubkey = engine.Pop().GetSpan();
             bool result;
             if (hashOrPubkey.Length == 20)
                 result = CheckWitness(engine, new UInt160(hashOrPubkey.ToArray()));
@@ -236,13 +236,13 @@ namespace Neo.SmartContract
                 result = CheckWitness(engine, ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
             else
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(result);
+            engine.Push(result);
             return true;
         }
 
         private static bool Runtime_Notify(ApplicationEngine engine)
         {
-            StackItem state = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem state = engine.Pop();
             if (!CheckItemForNotification(state)) return false;
             engine.SendNotification(engine.CurrentScriptHash, state);
             return true;
@@ -250,7 +250,7 @@ namespace Neo.SmartContract
 
         private static bool Runtime_Log(ApplicationEngine engine)
         {
-            byte[] state = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] state = engine.Pop().GetSpan().ToArray();
             if (state.Length > MaxNotificationSize) return false;
             string message = Encoding.UTF8.GetString(state);
             engine.SendLog(engine.CurrentScriptHash, message);
@@ -259,7 +259,7 @@ namespace Neo.SmartContract
 
         private static bool Runtime_GetTime(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.Snapshot.PersistingBlock.Timestamp);
+            engine.Push(engine.Snapshot.PersistingBlock.Timestamp);
             return true;
         }
 
@@ -268,7 +268,7 @@ namespace Neo.SmartContract
             byte[] serialized;
             try
             {
-                serialized = StackItemSerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop());
+                serialized = StackItemSerializer.Serialize(engine.Pop());
             }
             catch (NotSupportedException)
             {
@@ -276,13 +276,13 @@ namespace Neo.SmartContract
             }
             if (serialized.Length > engine.MaxItemSize)
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(serialized);
+            engine.Push(serialized);
             return true;
         }
 
         private static bool Runtime_GetNotifications(ApplicationEngine engine)
         {
-            StackItem item = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem item = engine.Pop();
 
             IEnumerable<NotifyEventArgs> notifications = engine.Notifications;
             if (!item.IsNull) // must filter by scriptHash
@@ -303,7 +303,7 @@ namespace Neo.SmartContract
                 return false;
             }
 
-            engine.CurrentContext.EvaluationStack.Push(counter);
+            engine.Push(counter);
             return true;
         }
 
@@ -312,7 +312,7 @@ namespace Neo.SmartContract
             StackItem item;
             try
             {
-                item = StackItemSerializer.Deserialize(engine.CurrentContext.EvaluationStack.Pop().GetSpan(), engine.MaxItemSize, engine.ReferenceCounter);
+                item = StackItemSerializer.Deserialize(engine.Pop().GetSpan(), engine.MaxItemSize, engine.ReferenceCounter);
             }
             catch (FormatException)
             {
@@ -322,19 +322,19 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            engine.CurrentContext.EvaluationStack.Push(item);
+            engine.Push(item);
             return true;
         }
 
         private static bool Blockchain_GetHeight(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.Snapshot.Height);
+            engine.Push(engine.Snapshot.Height);
             return true;
         }
 
         private static bool Blockchain_GetBlock(ApplicationEngine engine)
         {
-            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] data = engine.Pop().GetSpan().ToArray();
             UInt256 hash;
             if (data.Length <= 5)
                 hash = Blockchain.Singleton.GetBlockHash((uint)new BigInteger(data));
@@ -345,34 +345,34 @@ namespace Neo.SmartContract
 
             Block block = hash != null ? engine.Snapshot.GetBlock(hash) : null;
             if (block == null)
-                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+                engine.Push(StackItem.Null);
             else
-                engine.CurrentContext.EvaluationStack.Push(block.ToStackItem(engine.ReferenceCounter));
+                engine.Push(block.ToStackItem(engine.ReferenceCounter));
             return true;
         }
 
         private static bool Blockchain_GetTransaction(ApplicationEngine engine)
         {
-            byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] hash = engine.Pop().GetSpan().ToArray();
             Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
             if (tx == null)
-                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+                engine.Push(StackItem.Null);
             else
-                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem(engine.ReferenceCounter));
+                engine.Push(tx.ToStackItem(engine.ReferenceCounter));
             return true;
         }
 
         private static bool Blockchain_GetTransactionHeight(ApplicationEngine engine)
         {
-            byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] hash = engine.Pop().GetSpan().ToArray();
             var tx = engine.Snapshot.Transactions.TryGet(new UInt256(hash));
-            engine.CurrentContext.EvaluationStack.Push(tx != null ? new BigInteger(tx.BlockIndex) : BigInteger.MinusOne);
+            engine.Push(tx != null ? new BigInteger(tx.BlockIndex) : BigInteger.MinusOne);
             return true;
         }
 
         private static bool Blockchain_GetTransactionFromBlock(ApplicationEngine engine)
         {
-            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] data = engine.Pop().GetSpan().ToArray();
             UInt256 hash;
             if (data.Length <= 5)
                 hash = Blockchain.Singleton.GetBlockHash((uint)new BigInteger(data));
@@ -384,36 +384,36 @@ namespace Neo.SmartContract
             TrimmedBlock block = hash != null ? engine.Snapshot.Blocks.TryGet(hash) : null;
             if (block == null)
             {
-                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+                engine.Push(StackItem.Null);
             }
             else
             {
-                int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+                int index = (int)engine.Pop().GetBigInteger();
                 if (index < 0 || index >= block.Hashes.Length - 1) return false;
 
                 Transaction tx = engine.Snapshot.GetTransaction(block.Hashes[index + 1]);
                 if (tx == null)
-                    engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+                    engine.Push(StackItem.Null);
                 else
-                    engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem(engine.ReferenceCounter));
+                    engine.Push(tx.ToStackItem(engine.ReferenceCounter));
             }
             return true;
         }
 
         private static bool Blockchain_GetContract(ApplicationEngine engine)
         {
-            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray());
+            UInt160 hash = new UInt160(engine.Pop().GetSpan().ToArray());
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null)
-                engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+                engine.Push(StackItem.Null);
             else
-                engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem(engine.ReferenceCounter));
+                engine.Push(contract.ToStackItem(engine.ReferenceCounter));
             return true;
         }
 
         private static bool Storage_GetContext(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            engine.Push(StackItem.FromInterface(new StorageContext
             {
                 ScriptHash = engine.CurrentScriptHash,
                 IsReadOnly = false
@@ -423,7 +423,7 @@ namespace Neo.SmartContract
 
         private static bool Storage_GetReadOnlyContext(ApplicationEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            engine.Push(StackItem.FromInterface(new StorageContext
             {
                 ScriptHash = engine.CurrentScriptHash,
                 IsReadOnly = true
@@ -433,17 +433,17 @@ namespace Neo.SmartContract
 
         private static bool Storage_Get(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(engine, context)) return false;
-                byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+                byte[] key = engine.Pop().GetSpan().ToArray();
                 StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
                     Key = key
                 });
-                engine.CurrentContext.EvaluationStack.Push(item?.Value ?? StackItem.Null);
+                engine.Push(item?.Value ?? StackItem.Null);
                 return true;
             }
             return false;
@@ -451,7 +451,7 @@ namespace Neo.SmartContract
 
         private static bool StorageContext_AsReadOnly(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!context.IsReadOnly)
@@ -460,7 +460,7 @@ namespace Neo.SmartContract
                         ScriptHash = context.ScriptHash,
                         IsReadOnly = true
                     };
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(context));
+                engine.Push(StackItem.FromInterface(context));
                 return true;
             }
             return false;
@@ -468,13 +468,13 @@ namespace Neo.SmartContract
 
         private static bool Contract_Call(ApplicationEngine engine)
         {
-            StackItem contractHash = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem contractHash = engine.Pop();
 
             ContractState contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractHash.GetSpan().ToArray()));
             if (contract is null) return false;
 
-            StackItem method = engine.CurrentContext.EvaluationStack.Pop();
-            StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem method = engine.Pop();
+            StackItem args = engine.Pop();
             ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
@@ -538,28 +538,28 @@ namespace Neo.SmartContract
 
         private static bool Storage_Put(ApplicationEngine engine)
         {
-            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
+            if (!(engine.Pop() is InteropInterface _interface))
                 return false;
             StorageContext context = _interface.GetInterface<StorageContext>();
-            byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-            byte[] value = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            byte[] key = engine.Pop().GetSpan().ToArray();
+            byte[] value = engine.Pop().GetSpan().ToArray();
             return PutEx(engine, context, key, value, StorageFlags.None);
         }
 
         private static bool Storage_PutEx(ApplicationEngine engine)
         {
-            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
+            if (!(engine.Pop() is InteropInterface _interface))
                 return false;
             StorageContext context = _interface.GetInterface<StorageContext>();
-            byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-            byte[] value = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-            StorageFlags flags = (StorageFlags)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+            byte[] key = engine.Pop().GetSpan().ToArray();
+            byte[] value = engine.Pop().GetSpan().ToArray();
+            StorageFlags flags = (StorageFlags)(byte)engine.Pop().GetBigInteger();
             return PutEx(engine, context, key, value, flags);
         }
 
         private static bool Storage_Delete(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (context.IsReadOnly) return false;
@@ -567,7 +567,7 @@ namespace Neo.SmartContract
                 StorageKey key = new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
-                    Key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray()
+                    Key = engine.Pop().GetSpan().ToArray()
                 };
                 if (engine.Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                 engine.Snapshot.Storages.Delete(key);
