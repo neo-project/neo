@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -48,11 +49,9 @@ namespace Neo.Network.P2P.Payloads
             + ConsensusData.Size                            //ConsensusData
             + Transactions.Sum(p => p.Size);                //Transactions
 
-        public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, params UInt256[] transactionHashes)
+        public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, IEnumerable<UInt256> transactionHashes)
         {
-            List<UInt256> hashes = new List<UInt256>(transactionHashes.Length + 1) { consensusDataHash };
-            hashes.AddRange(transactionHashes);
-            return MerkleTree.ComputeRoot(hashes);
+            return MerkleTree.ComputeRoot(transactionHashes.Prepend(consensusDataHash).ToArray());
         }
 
         public override void Deserialize(BinaryReader reader)
@@ -66,7 +65,7 @@ namespace Neo.Network.P2P.Payloads
                 Transactions[i] = reader.ReadSerializable<Transaction>();
             if (Transactions.Distinct().Count() != Transactions.Length)
                 throw new FormatException();
-            if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+            if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash)) != MerkleRoot)
                 throw new FormatException();
         }
 
@@ -89,7 +88,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void RebuildMerkleRoot()
         {
-            MerkleRoot = CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash).ToArray());
+            MerkleRoot = CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash));
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -130,35 +129,29 @@ namespace Neo.Network.P2P.Payloads
                 Index = Index,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Hashes = new[] { ConsensusData.Hash }.Concat(Transactions.Select(p => p.Hash)).ToArray(),
+                Hashes = Transactions.Select(p => p.Hash).Prepend(ConsensusData.Hash).ToArray(),
                 ConsensusData = ConsensusData
             };
         }
 
-        public StackItem ToStackItem()
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array
-            (
-                new StackItem[]
-                {
-                    // Computed properties
-                    new ByteArray(Hash.ToArray()),
+            return new Array(referenceCounter, new StackItem[]
+            {
+                // Computed properties
+                Hash.ToArray(),
 
-                    // BlockBase properties
-                    new Integer(Version),
-                    new ByteArray(PrevHash.ToArray()),
-                    new ByteArray(MerkleRoot.ToArray()),
-                    new Integer(Timestamp),
-                    new Integer(Index),
-                    new ByteArray(NextConsensus.ToArray()),
-                    // Witness
+                // BlockBase properties
+                Version,
+                PrevHash.ToArray(),
+                MerkleRoot.ToArray(),
+                Timestamp,
+                Index,
+                NextConsensus.ToArray(),
 
-                    // Block properties
-                    // Count
-                    // ConsensusData
-                    new Integer(Transactions.Length)
-                }
-            );
+                // Block properties
+                Transactions.Length
+            });
         }
     }
 }

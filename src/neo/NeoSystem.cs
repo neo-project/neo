@@ -26,18 +26,21 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        private readonly Store store;
+        private readonly IStore store;
         private ChannelsConfig start_message = null;
         private bool suspend = false;
 
-        public NeoSystem(Store store)
+        public NeoSystem(string storageEngine = null)
         {
-            this.store = store;
             Plugin.LoadPlugins(this);
+            this.store = string.IsNullOrEmpty(storageEngine) || storageEngine == nameof(MemoryStore)
+                ? new MemoryStore()
+                : Plugin.Storages[storageEngine].GetStore();
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Plugin.NotifyPluginsLoadedAfterSystemConstructed();
+            foreach (var plugin in Plugin.Plugins)
+                plugin.OnPluginsLoaded();
         }
 
         public void Dispose()
@@ -49,11 +52,12 @@ namespace Neo
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
+            store.Dispose();
         }
 
         public void EnsureStoped(IActorRef actor)
         {
-            Inbox inbox = Inbox.Create(ActorSystem);
+            using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromMinutes(5));
@@ -69,7 +73,7 @@ namespace Neo
             }
         }
 
-        public void StartConsensus(Wallet wallet, Store consensus_store = null, bool ignoreRecoveryLogs = false)
+        public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
         {
             Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);

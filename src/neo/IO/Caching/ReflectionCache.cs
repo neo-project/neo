@@ -12,8 +12,7 @@ namespace Neo.IO.Caching
 
         static ReflectionCache()
         {
-            Type enumType = typeof(T);
-            foreach (FieldInfo field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
+            foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
                 // Get attribute
                 ReflectionCacheAttribute attribute = field.GetCustomAttribute<ReflectionCacheAttribute>();

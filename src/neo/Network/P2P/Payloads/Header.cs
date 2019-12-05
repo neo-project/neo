@@ -1,9 +1,7 @@
 using Neo.IO.Json;
 using Neo.Ledger;
-using Neo.Wallets;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {

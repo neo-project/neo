@@ -13,7 +13,7 @@ jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
-    - name: Chectout
+    - name: Checkout
       uses: actions/checkout@v1
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
@@ -37,7 +37,7 @@ jobs:
     needs: Test
     runs-on: ubuntu-latest
     steps:
-    - name: Chectout
+    - name: Checkout
       uses: actions/checkout@v1
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
@@ -59,7 +59,7 @@ jobs:
     needs: Test
     runs-on: ubuntu-latest
     steps:
-    - name: Chectout
+    - name: Checkout
       uses: actions/checkout@v1
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1

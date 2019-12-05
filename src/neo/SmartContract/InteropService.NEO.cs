@@ -1,4 +1,5 @@
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -42,7 +43,7 @@ namespace Neo.SmartContract
                 Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application);
         }
 
-        private static long GetECDsaCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
+        private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack)
         {
             if (stack.Count < 2) return 0;
             var item = stack.Peek(1);
@@ -53,7 +54,7 @@ namespace Neo.SmartContract
             return GetPrice(Neo_Crypto_ECDsaVerify, stack) * n;
         }
 
-        private static long GetDeploymentPrice(RandomAccessStack<StackItem> stack)
+        private static long GetDeploymentPrice(EvaluationStack stack)
         {
             int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
             return GasPerByte * size;
@@ -77,17 +78,17 @@ namespace Neo.SmartContract
         private static bool Crypto_ECDsaVerify(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
-            byte[] message = item0 switch
+            ReadOnlySpan<byte> message = item0 switch
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
                 Null _ => engine.ScriptContainer.GetHashData(),
-                _ => item0.GetSpan().ToArray()
+                _ => item0.GetSpan()
             };
             byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             try
             {
-                engine.CurrentContext.EvaluationStack.Push(Crypto.Default.VerifySignature(message, signature, pubkey));
+                engine.CurrentContext.EvaluationStack.Push(Crypto.VerifySignature(message, signature, pubkey));
             }
             catch (ArgumentException)
             {
@@ -99,11 +100,11 @@ namespace Neo.SmartContract
         private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
-            byte[] message = item0 switch
+            ReadOnlySpan<byte> message = item0 switch
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
                 Null _ => engine.ScriptContainer.GetHashData(),
-                _ => item0.GetSpan().ToArray()
+                _ => item0.GetSpan()
             };
             int n;
             byte[][] pubkeys;
@@ -144,7 +145,7 @@ namespace Neo.SmartContract
             {
                 for (int i = 0, j = 0; fSuccess && i < m && j < n;)
                 {
-                    if (Crypto.Default.VerifySignature(message, signatures[i], pubkeys[j]))
+                    if (Crypto.VerifySignature(message, signatures[i], pubkeys[j]))
                         i++;
                     j++;
                     if (m - i > n - j)
@@ -216,15 +217,15 @@ namespace Neo.SmartContract
                 engine.Snapshot.Contracts.Add(hash_new, contract);
                 if (contract.HasStorage)
                 {
-                    foreach (var pair in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
+                    foreach (var (key, value) in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
                     {
                         engine.Snapshot.Storages.Add(new StorageKey
                         {
                             ScriptHash = hash_new,
-                            Key = pair.Key.Key
+                            Key = key.Key
                         }, new StorageItem
                         {
-                            Value = pair.Value.Value,
+                            Value = value.Value,
                             IsConstant = false
                         });
                     }
@@ -250,7 +251,7 @@ namespace Neo.SmartContract
                 if (!CheckStorageContext(engine, context)) return false;
                 byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                 byte[] prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
-                StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.Take(prefix.Length).SequenceEqual(prefix)).GetEnumerator()));
+                StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator()));
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
                 return true;
             }
@@ -259,13 +260,20 @@ namespace Neo.SmartContract
 
         private static bool Enumerator_Create(ApplicationEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is VMArray array)
+            IEnumerator enumerator;
+            switch (engine.CurrentContext.EvaluationStack.Pop())
             {
-                IEnumerator enumerator = new ArrayWrapper(array);
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
-                return true;
+                case VMArray array:
+                    enumerator = new ArrayWrapper(array);
+                    break;
+                case PrimitiveType primitive:
+                    enumerator = new ByteArrayWrapper(primitive);
+                    break;
+                default:
+                    return false;
             }
-            return false;
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
+            return true;
         }
 
         private static bool Enumerator_Next(ApplicationEngine engine)
@@ -311,6 +319,9 @@ namespace Neo.SmartContract
                     break;
                 case Map map:
                     iterator = new MapWrapper(map);
+                    break;
+                case PrimitiveType primitive:
+                    iterator = new ByteArrayWrapper(primitive);
                     break;
                 default:
                     return false;
@@ -367,7 +378,7 @@ namespace Neo.SmartContract
         {
             var json = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var obj = JObject.Parse(json, 10);
-            var item = JsonSerializer.Deserialize(obj);
+            var item = JsonSerializer.Deserialize(obj, engine.ReferenceCounter);
 
             engine.CurrentContext.EvaluationStack.Push(item);
             return true;

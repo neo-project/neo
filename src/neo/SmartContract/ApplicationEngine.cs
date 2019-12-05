@@ -5,6 +5,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using Array = System.Array;
 
 namespace Neo.SmartContract
 {
@@ -21,7 +22,7 @@ namespace Neo.SmartContract
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
-        public Snapshot Snapshot { get; }
+        public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => InvocationStack.Count > 1 ? InvocationStack.Peek(1).GetState<ExecutionContextState>().ScriptHash : null;
@@ -29,7 +30,7 @@ namespace Neo.SmartContract
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
         {
             this.gas_amount = GasFree + gas;
             this.testMode = testMode;
@@ -84,7 +85,7 @@ namespace Neo.SmartContract
             return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
-        private static Block CreateDummyBlock(Snapshot snapshot)
+        private static Block CreateDummyBlock(StoreView snapshot)
         {
             var currentBlock = snapshot.Blocks[snapshot.CurrentBlockHash];
             return new Block
@@ -97,15 +98,15 @@ namespace Neo.SmartContract
                 NextConsensus = currentBlock.NextConsensus,
                 Witness = new Witness
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
                 },
                 ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]
             };
         }
 
-        public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
+        public static ApplicationEngine Run(byte[] script, StoreView snapshot,
             IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
@@ -117,7 +118,7 @@ namespace Neo.SmartContract
 
         public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
-            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 return Run(script, snapshot, container, persistingBlock, testMode, extraGAS);
             }

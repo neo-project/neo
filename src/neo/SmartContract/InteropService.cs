@@ -3,7 +3,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -113,7 +112,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        public static long GetPrice(uint hash, RandomAccessStack<StackItem> stack)
+        public static long GetPrice(uint hash, EvaluationStack stack)
         {
             return methods[hash].GetPrice(stack);
         }
@@ -123,7 +122,7 @@ namespace Neo.SmartContract
             return methods.ToDictionary(p => p.Key, p => p.Value.Method);
         }
 
-        private static long GetStoragePrice(RandomAccessStack<StackItem> stack)
+        private static long GetStoragePrice(EvaluationStack stack)
         {
             return (stack.Peek(1).GetByteLength() + stack.Peek(2).GetByteLength()) * GasPerByte;
         }
@@ -144,7 +143,7 @@ namespace Neo.SmartContract
             return descriptor.Hash;
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<RandomAccessStack<StackItem>, long> priceCalculator, TriggerType allowedTriggers)
+        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers)
         {
             InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers);
             methods.Add(descriptor.Hash, descriptor);
@@ -154,7 +153,7 @@ namespace Neo.SmartContract
         private static bool ExecutionEngine_GetScriptContainer(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(
-                engine.ScriptContainer is IInteroperable value ? value.ToStackItem() :
+                engine.ScriptContainer is IInteroperable value ? value.ToStackItem(engine.ReferenceCounter) :
                 StackItem.FromInterface(engine.ScriptContainer));
             return true;
         }
@@ -229,10 +228,10 @@ namespace Neo.SmartContract
 
         private static bool Runtime_CheckWitness(ApplicationEngine engine)
         {
-            byte[] hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             bool result;
             if (hashOrPubkey.Length == 20)
-                result = CheckWitness(engine, new UInt160(hashOrPubkey));
+                result = CheckWitness(engine, new UInt160(hashOrPubkey.ToArray()));
             else if (hashOrPubkey.Length == 33)
                 result = CheckWitness(engine, ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
             else
@@ -269,7 +268,7 @@ namespace Neo.SmartContract
             byte[] serialized;
             try
             {
-                serialized = engine.CurrentContext.EvaluationStack.Pop().Serialize();
+                serialized = StackItemSerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop());
             }
             catch (NotSupportedException)
             {
@@ -292,8 +291,8 @@ namespace Neo.SmartContract
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             }
 
-            if (!engine.CheckArraySize(notifications.Count())) return false;
-            engine.CurrentContext.EvaluationStack.Push(notifications.Select(u => new VM.Types.Array(new StackItem[] { u.ScriptHash.ToArray(), u.State })).ToArray());
+            if (notifications.Count() > engine.MaxStackSize) return false;
+            engine.Push(new Array(engine.ReferenceCounter, notifications.Select(u => new Array(engine.ReferenceCounter, new[] { u.ScriptHash.ToArray(), u.State }))));
             return true;
         }
 
@@ -313,7 +312,7 @@ namespace Neo.SmartContract
             StackItem item;
             try
             {
-                item = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().DeserializeStackItem(engine.MaxArraySize, engine.MaxItemSize);
+                item = StackItemSerializer.Deserialize(engine.CurrentContext.EvaluationStack.Pop().GetSpan(), engine.MaxItemSize, engine.ReferenceCounter);
             }
             catch (FormatException)
             {
@@ -348,7 +347,7 @@ namespace Neo.SmartContract
             if (block == null)
                 engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             else
-                engine.CurrentContext.EvaluationStack.Push(block.ToStackItem());
+                engine.CurrentContext.EvaluationStack.Push(block.ToStackItem(engine.ReferenceCounter));
             return true;
         }
 
@@ -359,7 +358,7 @@ namespace Neo.SmartContract
             if (tx == null)
                 engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             else
-                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
+                engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem(engine.ReferenceCounter));
             return true;
         }
 
@@ -396,7 +395,7 @@ namespace Neo.SmartContract
                 if (tx == null)
                     engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
                 else
-                    engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem());
+                    engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem(engine.ReferenceCounter));
             }
             return true;
         }
@@ -408,7 +407,7 @@ namespace Neo.SmartContract
             if (contract == null)
                 engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             else
-                engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem());
+                engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem(engine.ReferenceCounter));
             return true;
         }
 

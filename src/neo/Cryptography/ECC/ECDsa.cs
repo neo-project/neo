@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 
@@ -23,10 +22,10 @@ namespace Neo.Cryptography.ECC
             this.curve = publicKey.Curve;
         }
 
-        private BigInteger CalculateE(BigInteger n, byte[] message)
+        private BigInteger CalculateE(BigInteger n, ReadOnlySpan<byte> message)
         {
             int messageBitLength = message.Length * 8;
-            BigInteger trunc = new BigInteger(message.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger trunc = new BigInteger(message, isUnsigned: true, isBigEndian: true);
             if (n.GetBitLength() < messageBitLength)
             {
                 trunc >>= messageBitLength - n.GetBitLength();
@@ -34,11 +33,11 @@ namespace Neo.Cryptography.ECC
             return trunc;
         }
 
-        public BigInteger[] GenerateSignature(byte[] message)
+        public BigInteger[] GenerateSignature(ReadOnlySpan<byte> message)
         {
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
-            BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger d = new BigInteger(privateKey, isUnsigned: true, isBigEndian: true);
             BigInteger r, s;
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
@@ -92,7 +91,7 @@ namespace Neo.Cryptography.ECC
             return R;
         }
 
-        public bool VerifySignature(byte[] message, BigInteger r, BigInteger s)
+        public bool VerifySignature(ReadOnlySpan<byte> message, BigInteger r, BigInteger s)
         {
             if (r.Sign < 1 || s.Sign < 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
                 return false;

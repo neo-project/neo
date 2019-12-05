@@ -11,7 +11,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VMArray = Neo.VM.Types.Array;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        internal bool CheckPolicy(Transaction tx, Snapshot snapshot)
+        internal bool CheckPolicy(Transaction tx, StoreView snapshot)
         {
             UInt160[] blockedAccounts = GetBlockedAccounts(snapshot);
             if (blockedAccounts.Intersect(tx.GetScriptHashesForVerifying(snapshot)).Any())
@@ -67,51 +67,51 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
-        private StackItem GetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
+        private StackItem GetMaxTransactionsPerBlock(ApplicationEngine engine, Array args)
         {
             return GetMaxTransactionsPerBlock(engine.Snapshot);
         }
 
-        public uint GetMaxTransactionsPerBlock(Snapshot snapshot)
+        public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
-        private StackItem GetMaxBlockSize(ApplicationEngine engine, VMArray args)
+        private StackItem GetMaxBlockSize(ApplicationEngine engine, Array args)
         {
             return GetMaxBlockSize(engine.Snapshot);
         }
 
-        public uint GetMaxBlockSize(Snapshot snapshot)
+        public uint GetMaxBlockSize(StoreView snapshot)
         {
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)].Value, 0);
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
-        private StackItem GetFeePerByte(ApplicationEngine engine, VMArray args)
+        private StackItem GetFeePerByte(ApplicationEngine engine, Array args)
         {
             return GetFeePerByte(engine.Snapshot);
         }
 
-        public long GetFeePerByte(Snapshot snapshot)
+        public long GetFeePerByte(StoreView snapshot)
         {
             return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Array, SafeMethod = true)]
-        private StackItem GetBlockedAccounts(ApplicationEngine engine, VMArray args)
+        private StackItem GetBlockedAccounts(ApplicationEngine engine, Array args)
         {
-            return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
+            return new Array(engine.ReferenceCounter, GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
         }
 
-        public UInt160[] GetBlockedAccounts(Snapshot snapshot)
+        public UInt160[] GetBlockedAccounts(StoreView snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
-        private StackItem SetMaxBlockSize(ApplicationEngine engine, VMArray args)
+        private StackItem SetMaxBlockSize(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
@@ -122,7 +122,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
-        private StackItem SetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
+        private StackItem SetMaxTransactionsPerBlock(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
-        private StackItem SetFeePerByte(ApplicationEngine engine, VMArray args)
+        private StackItem SetFeePerByte(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             long value = (long)args[0].GetBigInteger();
@@ -142,30 +142,30 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
-        private StackItem BlockAccount(ApplicationEngine engine, VMArray args)
+        private StackItem BlockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
-            HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
+            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Add(account)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToArray().ToByteArray();
+            storage.Value = accounts.ToByteArray();
             return true;
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
-        private StackItem UnblockAccount(ApplicationEngine engine, VMArray args)
+        private StackItem UnblockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
             UInt160 account = new UInt160(args[0].GetSpan().ToArray());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
-            HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
+            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Remove(account)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToArray().ToByteArray();
+            storage.Value = accounts.ToByteArray();
             return true;
         }
     }

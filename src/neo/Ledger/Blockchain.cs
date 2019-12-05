@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -26,6 +27,7 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
+        private class ParallelVerified { public Transaction Transaction; public bool ShouldRelay; public RelayResultReason VerifyResult; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
@@ -42,7 +44,7 @@ namespace Neo.Ledger
             NextConsensus = GetConsensusAddress(StandbyValidators),
             Witness = new Witness
             {
-                InvocationScript = new byte[0],
+                InvocationScript = Array.Empty<byte>(),
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             },
             ConsensusData = new ConsensusData
@@ -53,7 +55,7 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private readonly static byte[] onPersistNativeContractScript;
+        private readonly static Script onPersistNativeContractScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -62,9 +64,10 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
-        private Snapshot currentSnapshot;
+        private SnapshotView currentSnapshot;
 
-        public Store Store { get; }
+        public IStore Store { get; }
+        public ReadOnlyView View { get; }
         public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
@@ -95,27 +98,28 @@ namespace Neo.Ledger
             }
         }
 
-        public Blockchain(NeoSystem system, Store store)
+        public Blockchain(NeoSystem system, IStore store)
         {
             this.system = system;
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
+            this.View = new ReadOnlyView(store);
             lock (lockObj)
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                header_index.AddRange(store.GetHeaderHashList().Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
+                header_index.AddRange(View.HeaderHashList.Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
                 stored_header_count += (uint)header_index.Count;
                 if (stored_header_count == 0)
                 {
-                    header_index.AddRange(store.GetBlocks().Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
+                    header_index.AddRange(View.Blocks.Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
                 }
                 else
                 {
-                    HashIndexState hashIndex = store.GetHeaderHashIndex().Get();
+                    HashIndexState hashIndex = View.HeaderHashIndex.Get();
                     if (hashIndex.Index >= stored_header_count)
                     {
-                        DataCache<UInt256, TrimmedBlock> cache = store.GetBlocks();
+                        DataCache<UInt256, TrimmedBlock> cache = View.Blocks;
                         for (UInt256 hash = hashIndex.Hash; hash != header_index[(int)stored_header_count - 1];)
                         {
                             header_index.Insert((int)stored_header_count, hash);
@@ -139,13 +143,13 @@ namespace Neo.Ledger
         public bool ContainsBlock(UInt256 hash)
         {
             if (block_cache.ContainsKey(hash)) return true;
-            return Store.ContainsBlock(hash);
+            return View.ContainsBlock(hash);
         }
 
         public bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;
-            return Store.ContainsTransaction(hash);
+            return View.ContainsTransaction(hash);
         }
 
         private static Transaction DeployNativeContracts()
@@ -168,18 +172,26 @@ namespace Neo.Ledger
                 {
                     new Witness
                     {
-                        InvocationScript = new byte[0],
+                        InvocationScript = Array.Empty<byte>(),
                         VerificationScript = new[] { (byte)OpCode.PUSHT }
                     }
                 }
             };
         }
 
+        public Block GetBlock(uint index)
+        {
+            if (index == 0) return GenesisBlock;
+            UInt256 hash = GetBlockHash(index);
+            if (hash == null) return null;
+            return GetBlock(hash);
+        }
+
         public Block GetBlock(UInt256 hash)
         {
             if (block_cache.TryGetValue(hash, out Block block))
                 return block;
-            return Store.GetBlock(hash);
+            return View.GetBlock(hash);
         }
 
         public UInt256 GetBlockHash(uint index)
@@ -193,16 +205,38 @@ namespace Neo.Ledger
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
-        public Snapshot GetSnapshot()
+        public Header GetHeader(uint index)
         {
-            return Store.GetSnapshot();
+            if (index == 0) return GenesisBlock.Header;
+            UInt256 hash = GetBlockHash(index);
+            if (hash == null) return null;
+            return GetHeader(hash);
+        }
+
+        public Header GetHeader(UInt256 hash)
+        {
+            if (block_cache.TryGetValue(hash, out Block block))
+                return block.Header;
+            return View.GetHeader(hash);
+        }
+
+        public UInt256 GetNextBlockHash(UInt256 hash)
+        {
+            Header header = GetHeader(hash);
+            if (header == null) return null;
+            return GetBlockHash(header.Index + 1);
+        }
+
+        public SnapshotView GetSnapshot()
+        {
+            return new SnapshotView(Store);
         }
 
         public Transaction GetTransaction(UInt256 hash)
         {
             if (MemPool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
-            return Store.GetTransaction(hash);
+            return View.GetTransaction(hash);
         }
 
         private void OnImport(IEnumerable<Block> blocks)
@@ -237,14 +271,14 @@ namespace Neo.Ledger
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
-                if (Store.ContainsTransaction(tx.Hash))
+                if (View.ContainsTransaction(tx.Hash))
                     continue;
                 if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Verify the the transaction
-                if (!tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)))
+                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != RelayResultReason.Succeed)
                     continue;
                 // Add to the memory pool
                 MemPool.TryAdd(tx.Hash, tx);
@@ -320,11 +354,10 @@ namespace Neo.Ledger
                 if (block.Index == header_index.Count)
                 {
                     header_index.Add(block.Hash);
-                    using (Snapshot snapshot = GetSnapshot())
+                    using (SnapshotView snapshot = GetSnapshot())
                     {
                         snapshot.Blocks.Add(block.Hash, block.Header.Trim());
-                        snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
-                        snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
+                        snapshot.HeaderHashIndex.GetAndChange().Set(block);
                         SaveHeaderHashList(snapshot);
                         snapshot.Commit();
                     }
@@ -345,7 +378,7 @@ namespace Neo.Ledger
 
         private void OnNewHeaders(Header[] headers)
         {
-            using (Snapshot snapshot = GetSnapshot())
+            using (SnapshotView snapshot = GetSnapshot())
             {
                 foreach (Header header in headers)
                 {
@@ -364,22 +397,46 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private RelayResultReason OnNewTransaction(Transaction transaction, bool relay)
+        private void OnNewTransaction(Transaction transaction, bool relay)
         {
+            RelayResultReason reason;
             if (ContainsTransaction(transaction.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (!MemPool.CanTransactionFitInPool(transaction))
-                return RelayResultReason.OutOfMemory;
-            if (!transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender)))
-                return RelayResultReason.Invalid;
-            if (!NativeContract.Policy.CheckPolicy(transaction, currentSnapshot))
-                return RelayResultReason.PolicyFail;
+                reason = RelayResultReason.AlreadyExists;
+            else if (!MemPool.CanTransactionFitInPool(transaction))
+                reason = RelayResultReason.OutOfMemory;
+            else
+                reason = transaction.VerifyForEachBlock(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
+            if (reason == RelayResultReason.Succeed)
+            {
+                Task.Run(() =>
+                {
+                    return new ParallelVerified
+                    {
+                        Transaction = transaction,
+                        ShouldRelay = relay,
+                        VerifyResult = transaction.VerifyParallelParts(currentSnapshot)
+                    };
+                }).PipeTo(Self, Sender);
+            }
+            else
+            {
+                Sender.Tell(reason);
+            }
+        }
 
-            if (!MemPool.TryAdd(transaction.Hash, transaction))
-                return RelayResultReason.OutOfMemory;
-            if (relay)
-                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
-            return RelayResultReason.Succeed;
+        private void OnParallelVerified(ParallelVerified parallelVerified)
+        {
+            RelayResultReason reason = parallelVerified.VerifyResult;
+            if (reason == RelayResultReason.Succeed)
+            {
+                if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
+                    reason = RelayResultReason.OutOfMemory;
+                else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
+                    reason = RelayResultReason.OutOfMemory;
+                else if (parallelVerified.ShouldRelay)
+                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });
+            }
+            Sender.Tell(reason);
         }
 
         private void OnPersistCompleted(Block block)
@@ -412,7 +469,10 @@ namespace Neo.Ledger
                         break;
                     }
                 case Transaction transaction:
-                    Sender.Tell(OnNewTransaction(transaction, true));
+                    OnNewTransaction(transaction, true);
+                    break;
+                case ParallelVerified parallelVerified:
+                    OnParallelVerified(parallelVerified);
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -426,7 +486,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (Snapshot snapshot = GetSnapshot())
+            using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
@@ -504,12 +564,12 @@ namespace Neo.Ledger
             currentSnapshot?.Dispose();
         }
 
-        public static Props Props(NeoSystem system, Store store)
+        public static Props Props(NeoSystem system, IStore store)
         {
             return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
         }
 
-        private void SaveHeaderHashList(Snapshot snapshot = null)
+        private void SaveHeaderHashList(SnapshotView snapshot = null)
         {
             if ((header_index.Count - stored_header_count < 2000))
                 return;

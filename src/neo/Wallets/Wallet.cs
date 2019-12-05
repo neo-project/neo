@@ -13,6 +13,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
@@ -151,8 +152,8 @@ namespace Neo.Wallets
             byte[] datapassphrase = Encoding.UTF8.GetBytes(passphrase);
             byte[] derivedkey = SCrypt.DeriveKey(datapassphrase, addresshash, N, r, p, 64);
             Array.Clear(datapassphrase, 0, datapassphrase.Length);
-            byte[] derivedhalf1 = derivedkey.Take(32).ToArray();
-            byte[] derivedhalf2 = derivedkey.Skip(32).ToArray();
+            byte[] derivedhalf1 = derivedkey[..32];
+            byte[] derivedhalf2 = derivedkey[32..];
             Array.Clear(derivedkey, 0, derivedkey.Length);
             byte[] encryptedkey = new byte[32];
             Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
@@ -163,7 +164,7 @@ namespace Neo.Wallets
             ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             string address = script_hash.ToAddress();
-            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).SequenceEqual(addresshash))
+            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
                 throw new FormatException();
             return prikey;
         }
@@ -221,7 +222,7 @@ namespace Neo.Wallets
                     throw new ArgumentException($"The address {from.ToString()} was not found in the wallet");
                 accounts = new[] { from };
             }
-            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 HashSet<UInt160> cosignerList = new HashSet<UInt160>();
                 byte[] script;
@@ -290,14 +291,14 @@ namespace Neo.Wallets
                     throw new ArgumentException($"The address {sender.ToString()} was not found in the wallet");
                 accounts = new[] { sender };
             }
-            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
                 return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas);
             }
         }
 
-        private Transaction MakeTransaction(Snapshot snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(StoreView snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
@@ -390,11 +391,5 @@ namespace Neo.Wallets
         }
 
         public abstract bool VerifyPassword(string password);
-
-        private static byte[] XOR(byte[] x, byte[] y)
-        {
-            if (x.Length != y.Length) throw new ArgumentException();
-            return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
-        }
     }
 }
