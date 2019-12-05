@@ -373,8 +373,6 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("\nCN4 simulation time - Final needed signatures");
             actorConsensus.Tell(GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], mockContext.Object.Block.GetHashData()));
-            Console.WriteLine("\nAsserting CountCommitted is 5...");
-            mockContext.Object.CountCommitted.Should().Be(5);
 
             Console.WriteLine("\nWait for subscriber Local.Node Relay");
             var onBlockRelay = subscriber.ExpectMsg<LocalNode.Relay>();
@@ -422,7 +420,7 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("Finalizing consensus service actor.");
             Sys.Stop(actorConsensus);
-            Console.WriteLine("Actor actorConsensus Stopped.");
+            Console.WriteLine("Actor actorConsensus Stopped.\n\n");
         }
 
         /// <summary>
