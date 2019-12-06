@@ -17,4 +17,3 @@
 **Checklist**
 - [ ] Did you add tests covering your changes?
 - [ ] Did you run `dotnet format`?
-- [ ] Did you update `CHANGELOG.md` with your changes?
