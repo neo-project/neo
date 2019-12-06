@@ -15,6 +15,15 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
 
+        public ContractEventDescriptor Clone()
+        {
+            return new ContractEventDescriptor
+            {
+                Name = Name,
+                Parameters = Parameters.Select(p => p.Clone()).ToArray()
+            };
+        }
+
         /// <summary>
         /// Parse ContractMethodDescription from json
         /// </summary>
