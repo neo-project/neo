@@ -136,7 +136,18 @@ namespace Neo.SmartContract.Manifest
         /// Clone
         /// </summary>
         /// <returns>Return a copy of this object</returns>
-        public ContractManifest Clone() => FromJson(ToJson());
+        public ContractManifest Clone()
+        {
+            return new ContractManifest
+            {
+                Groups = Groups.Select(p => p.Clone()).ToArray(),
+                Features = Features,
+                Abi = Abi.Clone(),
+                Permissions = Permissions.Select(p => p.Clone()).ToArray(),
+                Trusts = Trusts,
+                SafeMethods = SafeMethods
+            };
+        }
 
         /// <summary>
         /// String representation
