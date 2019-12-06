@@ -162,6 +162,7 @@ namespace Neo.SmartContract
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
             engine.LoadScript(script);
             engine.Execute();
+            engine.Dispose();
             return engine;
         }
 
