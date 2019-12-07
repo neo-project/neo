@@ -210,7 +210,7 @@ namespace Neo.Consensus
                     }
                     else if (payload.PrevHash == context.Block.PrevHash && payload.BlockIndex == context.Block.Index)
                     {
-                        OnConsensusPayload(payload, true);
+                        ReverifyAndProcessPayload(payload);
                         payloadsArray[p] = null;
                     }
                     context.CounterFuturePayloads = context.CounterFuturePayloads - 1;
