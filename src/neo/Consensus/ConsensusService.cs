@@ -330,6 +330,10 @@ namespace Neo.Consensus
                 lastViewNumber = (byte)payloadsArray[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber;
                 lastHeight = (byte)payloadsArray[payload.ValidatorIndex].BlockIndex;
             }
+            // Update counter of future payloads if no future payload was known for this ValidatorIndex
+            if (lastViewNumber == 0 && lastHeight == 0)
+                context.CounterFuturePayloads = context.CounterFuturePayloads + 1;
+
             if (payload.BlockIndex < lastHeight)
             {
                 Log($"Trying to save validator {payload.ValidatorIndex} payload from height {payload.BlockIndex} but payload of {lastHeight} is already known", LogLevel.Warning);

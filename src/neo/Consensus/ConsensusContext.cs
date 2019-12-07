@@ -46,7 +46,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] FutureCommitPayloads;
         public ConsensusPayload[] FutureChangeViewPayloads;
         public ConsensusPayload[] FutureRecoveryPayloads;
-
+        public uint CounterFuturePayloads = 0;
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
         /// </summary>
@@ -434,27 +434,12 @@ namespace Neo.Consensus
             FuturePreparationPayloads = new ConsensusPayload[Validators.Length];
             FutureChangeViewPayloads = new ConsensusPayload[Validators.Length];
             FutureRecoveryPayloads = new ConsensusPayload[Validators.Length];
+            CounterFuturePayloads = 0;
         }
 
         public bool HasFuturePayloads()
         {
-            if (FuturePreparationPayloads != null)
-                foreach (var payload in FuturePreparationPayloads)
-                    if (payload != null)
-                        return true;
-            if (FutureChangeViewPayloads != null)
-                foreach (var payload in FutureChangeViewPayloads)
-                    if (payload != null)
-                        return true;
-            if (FutureCommitPayloads != null)
-                foreach (var payload in FutureCommitPayloads)
-                    if (payload != null)
-                        return true;
-            if (FutureRecoveryPayloads != null)
-                foreach (var payload in FutureRecoveryPayloads)
-                    if (payload != null)
-                        return true;
-            return false;
+            return CounterFuturePayloads > 0;
         }
 
         public void Save()
@@ -482,7 +467,6 @@ namespace Neo.Consensus
             writer.WriteNullableArray(FutureCommitPayloads);
             writer.WriteNullableArray(FutureChangeViewPayloads);
             writer.WriteNullableArray(FutureRecoveryPayloads);
-
         }
     }
 }
