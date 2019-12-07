@@ -2,12 +2,10 @@ using Akka.Actor;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
-using Neo.Network.RPC;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
 using System;
-using System.Net;
 
 namespace Neo
 {
@@ -24,7 +22,6 @@ namespace Neo
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
-        public RpcServer RpcServer { get; private set; }
 
         private readonly IStore store;
         private ChannelsConfig start_message = null;
@@ -47,7 +44,6 @@ namespace Neo
         {
             foreach (var p in Plugin.Plugins)
                 p.Dispose();
-            RpcServer?.Dispose();
             EnsureStoped(LocalNode);
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
@@ -88,13 +84,6 @@ namespace Neo
                 LocalNode.Tell(start_message);
                 start_message = null;
             }
-        }
-
-        public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
-            string[] trustedAuthorities = null, long maxGasInvoke = default)
-        {
-            RpcServer = new RpcServer(this, wallet, maxGasInvoke);
-            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
         }
 
         internal void SuspendNodeStartup()
