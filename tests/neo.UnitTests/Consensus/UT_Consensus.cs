@@ -403,10 +403,24 @@ namespace Neo.UnitTests.Consensus
             // ============================================================================
             //                      Tests with future payload
             // ============================================================================
-            mockContext.Object.FutureRecoveryPayloads[rmPayload.ValidatorIndex] = rmPayload;
+            rmPayload.BlockIndex++;
+            // Forcing trying save
+            actorConsensus.Tell(rmPayload);
+            Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
+            onRecoveryRequestAfterRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            rrPayload = (ConsensusPayload)onRecoveryRequestAfterRecovery.Inventory;
+            rrMessage = (RecoveryRequest)rrPayload.ConsensusMessage;
+            rrMessage.Timestamp.Should().Be(defaultTimestamp);
+            Console.WriteLine("Assert that payload was correctly saved. CounterFuturePayloads is 1");
+            mockContext.Object.CounterFuturePayloads.Should().Be(1);
+            Console.WriteLine("\nAsserting rmPayload was correctly storage into future...");
+            mockContext.Object.FutureRecoveryPayloads[rmPayload.ValidatorIndex].Should().Be(rmPayload);
+
+            // Returning BlockIndex to current one to try to load
+            mockContext.Object.FutureRecoveryPayloads[rmPayload.ValidatorIndex].BlockIndex--;
             // Signing recovery accordingly
             SignPayload(mockContext.Object.FutureRecoveryPayloads[rmPayload.ValidatorIndex], kp_array[rmPayload.ValidatorIndex]);
-            mockContext.Object.CounterFuturePayloads = 1;
+
             Console.WriteLine("will trigger OnPersistCompleted again with OnStart flag!");
             actorConsensus.Tell(testPersistCompleted);
             Console.WriteLine("\n==========================");
