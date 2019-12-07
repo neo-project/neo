@@ -30,6 +30,8 @@ namespace Neo.Consensus
         private DateTime block_received_time;
         private bool started = false;
 
+        private static uint furtherPayloadToSave = 10;
+
         /// <summary>
         /// This will record the information from last scheduled timer
         /// </summary>
@@ -208,6 +210,7 @@ namespace Neo.Consensus
                 {
                     if (payload.BlockIndex < context.Block.Index)
                     {
+                        // This future payload is not future anymore, discard it
                         payloadsArray[p] = null;
                     }
                     else if (payload.PrevHash == context.Block.PrevHash && payload.BlockIndex == context.Block.Index)
@@ -288,7 +291,6 @@ namespace Neo.Consensus
         {
             // Limit the maximum future payload to be saved, 
             // avoiding caching payload when node is lagged behind by more than furtherPayloadToSave locks
-            uint furtherPayloadToSave = 10;
             if ((payload.BlockIndex >= context.Block.Index + 1) && (payload.BlockIndex <= context.Block.Index + furtherPayloadToSave))
             {
                 ConsensusMessage futureMessage;

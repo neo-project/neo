@@ -400,6 +400,29 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountCommitted.Should().Be(3);
             // =============================================
 
+            // ============================================================================
+            //                      Tests with future payload
+            // ============================================================================
+            mockContext.Object.FutureRecoveryPayloads[rmPayload.ValidatorIndex] = rmPayload;
+            // Signing recovery accordingly
+            SignPayload(mockContext.Object.FutureRecoveryPayloads[rmPayload.ValidatorIndex], kp_array[rmPayload.ValidatorIndex]);
+            mockContext.Object.CounterFuturePayloads = 1;
+            Console.WriteLine("will trigger OnPersistCompleted again with OnStart flag!");
+            actorConsensus.Tell(testPersistCompleted);
+            Console.WriteLine("\n==========================");
+            Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
+            var recoveryRequestResponseAfterInitialize = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            var recoveryRequestPayload = (ConsensusPayload)recoveryRequestResponseAfterInitialize.Inventory;
+            var rrm2 = (RecoveryRequest)recoveryRequestPayload.ConsensusMessage;
+            rrm2.Timestamp.Should().Be(defaultTimestamp);
+            Console.WriteLine("\nAsserting CounterFuturePayloads was consumed to 0...");
+            mockContext.Object.CounterFuturePayloads.Should().Be(0);
+            Console.WriteLine("\nAsserting CountCommitted is 3 (after recovery)...");
+            mockContext.Object.CountCommitted.Should().Be(3);
+            // ============================================================================
+            //                      Finish tests with future payload
+            // ============================================================================
+
             // =============================================
             // ============================================================================
             //                      finalize ConsensusService actor
