@@ -161,8 +161,7 @@ namespace Neo.Consensus
 
         private void InitializeConsensus(byte viewNumber)
         {
-            bool hasFuturePayload = context.HasFuturePayloads();
-            context.Reset(viewNumber, !hasFuturePayload);
+            context.Reset(viewNumber, !context.HasFuturePayloads());
             if (viewNumber > 0)
                 Log($"changeview: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
@@ -188,12 +187,15 @@ namespace Neo.Consensus
             }
 
             // Try to speed up consensus if cached future payloads exists
-            if (hasFuturePayload)
+            if (context.HasFuturePayloads())
             {
                 TryToConsumeFuturePayload(context.FuturePreparationPayloads);
-                TryToConsumeFuturePayload(context.FutureCommitPayloads);
-                TryToConsumeFuturePayload(context.FutureChangeViewPayloads);
-                TryToConsumeFuturePayload(context.FutureRecoveryPayloads);
+                if (context.HasFuturePayloads())
+                    TryToConsumeFuturePayload(context.FutureCommitPayloads);
+                if (context.HasFuturePayloads())
+                    TryToConsumeFuturePayload(context.FutureChangeViewPayloads);
+                if (context.HasFuturePayloads())
+                    TryToConsumeFuturePayload(context.FutureRecoveryPayloads);
             }
         }
 
