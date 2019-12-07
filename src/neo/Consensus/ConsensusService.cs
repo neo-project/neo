@@ -213,6 +213,7 @@ namespace Neo.Consensus
                         OnConsensusPayload(payload, true);
                         payloadsArray[p] = null;
                     }
+                    context.CounterFuturePayloads = context.CounterFuturePayloads - 1;
                 }
             }
         }
