@@ -88,7 +88,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
-        public void ParseFromJson_Contacts()
+        public void ParseFromJson_Extra()
         {
             var json = @"{""groups"":[],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Any""},""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""safeMethods"":[],""extra"":{""key"":""value""}}";
             var manifest = ContractManifest.Parse(json);
