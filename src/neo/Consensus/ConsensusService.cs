@@ -218,7 +218,7 @@ namespace Neo.Consensus
                         ReverifyAndProcessPayload(payload);
                         payloadsArray[p] = null;
                     }
-                    context.CounterFuturePayloads = context.CounterFuturePayloads - 1;
+                    context.CountFuturePayloads = context.CountFuturePayloads - 1;
                 }
             }
         }
@@ -337,7 +337,7 @@ namespace Neo.Consensus
             }
             // Update counter of future payloads if no future payload was known for this ValidatorIndex
             if (lastViewNumber == 0 && lastHeight == 0)
-                context.CounterFuturePayloads = context.CounterFuturePayloads + 1;
+                context.CountFuturePayloads = context.CountFuturePayloads + 1;
 
             if (payload.BlockIndex < lastHeight)
             {

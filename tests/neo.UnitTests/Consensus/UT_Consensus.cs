@@ -412,7 +412,7 @@ namespace Neo.UnitTests.Consensus
             rrMessage = (RecoveryRequest)rrPayload.ConsensusMessage;
             rrMessage.Timestamp.Should().Be(defaultTimestamp);
             Console.WriteLine("Assert that payload was correctly saved. CounterFuturePayloads is 1");
-            mockContext.Object.CounterFuturePayloads.Should().Be(1);
+            mockContext.Object.CountFuturePayloads.Should().Be(1);
             Console.WriteLine("\nAsserting rmPayload was correctly storage into future...");
             mockContext.Object.FutureRecoveryPayloads[rmPayload.ValidatorIndex].Should().Be(rmPayload);
 
@@ -430,7 +430,7 @@ namespace Neo.UnitTests.Consensus
             var rrm2 = (RecoveryRequest)recoveryRequestPayload.ConsensusMessage;
             rrm2.Timestamp.Should().Be(defaultTimestamp);
             Console.WriteLine("\nAsserting CounterFuturePayloads was consumed to 0...");
-            mockContext.Object.CounterFuturePayloads.Should().Be(0);
+            mockContext.Object.CountFuturePayloads.Should().Be(0);
             Console.WriteLine("\nAsserting CountCommitted is 3 (after recovery)...");
             mockContext.Object.CountCommitted.Should().Be(3);
             // ============================================================================

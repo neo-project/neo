@@ -46,7 +46,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] FutureCommitPayloads;
         public ConsensusPayload[] FutureChangeViewPayloads;
         public ConsensusPayload[] FutureRecoveryPayloads;
-        public uint CounterFuturePayloads = 0;
+        public uint CountFuturePayloads = 0;
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
         /// </summary>
@@ -434,12 +434,12 @@ namespace Neo.Consensus
             FuturePreparationPayloads = new ConsensusPayload[Validators.Length];
             FutureChangeViewPayloads = new ConsensusPayload[Validators.Length];
             FutureRecoveryPayloads = new ConsensusPayload[Validators.Length];
-            CounterFuturePayloads = 0;
+            CountFuturePayloads = 0;
         }
 
         public bool HasFuturePayloads()
         {
-            return CounterFuturePayloads > 0;
+            return CountFuturePayloads > 0;
         }
 
         public void Save()
