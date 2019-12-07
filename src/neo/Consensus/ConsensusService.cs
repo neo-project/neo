@@ -345,7 +345,8 @@ namespace Neo.Consensus
             }
             else if (payload.BlockIndex == lastHeight)
             {
-                payloadsArray[payload.ValidatorIndex] = (lastViewNumber != 0 && pViewNumber > lastViewNumber) ? payload : payloadsArray[payload.ValidatorIndex];
+                if (lastViewNumber != 0 && pViewNumber > lastViewNumber)
+                    payloadsArray[payload.ValidatorIndex] = payload;
             }
             else
             {
