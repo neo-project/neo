@@ -7,7 +7,7 @@ Read this document to understand how issues are organized and how you can start 
 *This document covers this repository only and does not include community repositories or repositories managed by NGD Shanghai and NGD Seattle.*
 
 ### Questions and Support
-The issue list is reserved exclusively for bug reports and features discussions. If you have questions or need support, please visit us in our [Discord](https://discord.io/neo) server.  
+The issue list is open for any kind of discussions, questions and interaction with the collaborators of the project. In addition, it is also a good place for bug reports, possible features and optimizations. Do not hesitate to initiate any discussion. However, please, kindly take a look at possible similar keywords in order to try to find a possible connection with your idea.  
 
 ### dApp Development
 This document does not relate to dApp development. If you are looking to build a dApp using Neo, please [start here](https://neo.org/dev).
