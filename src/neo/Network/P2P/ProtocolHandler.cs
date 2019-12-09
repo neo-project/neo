@@ -197,7 +197,7 @@ namespace Neo.Network.P2P
         /// Tell the specified number of blocks' hashes starting with the requested HashStart until payload.Count or MaxHashesCount
         /// Responses are sent to RemoteNode actor as MessageCommand.Inv Message.
         /// </summary>
-        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested</param>
+        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested.</param>
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
             UInt256 hash = payload.HashStart;
@@ -242,9 +242,9 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Will be triggered when a MessageCommand.GetData message is received.
         /// The payload includes an array of hash values.
-        /// For different payload.Type (Tx, Block, Consensus), get the corresponding (Tx, Block, Consensus) and tell it to RemoteNode actor.
+        /// For different payload.Type (Tx, Block, Consensus), get the corresponding (Txs, Blocks, Consensus) and tell them to RemoteNode actor.
         /// </summary>
-        /// <param name="payload">The payload containing the requested information</param>
+        /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
@@ -285,7 +285,7 @@ namespace Neo.Network.P2P
         /// Tell the specified number of blocks' headers starting with the requested HashStart to RemoteNode actor.
         /// A limit set by HeadersPayload.MaxHeadersCount is also applied to the number of requested Headers, namely payload.Count.
         /// </summary>
-        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks' headers requested</param>
+        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks' headers requested.</param>
         private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
         {
             UInt256 hash = payload.HashStart;
