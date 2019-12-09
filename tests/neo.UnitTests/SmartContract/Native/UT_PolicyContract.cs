@@ -10,6 +10,10 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System.Linq;
 
+
+using Neo.Cryptography;
+using System;
+
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
@@ -231,21 +235,6 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             Transaction tx = Blockchain.GenesisBlock.Transactions[0];
             var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            StorageKey storageKey = new StorageKey
-            {
-                ScriptHash = NativeContract.Policy.Hash,
-                Key = new byte[sizeof(byte)]
-            };
-            storageKey.Key[0] = 15;
-            snapshot.Storages.Add(storageKey, new StorageItem
-            {
-                Value = new UInt160[] { tx.Sender }.ToByteArray(),
-            });
-
-            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeFalse();
-
-            snapshot = Blockchain.Singleton.GetSnapshot();
             NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeTrue();
         }
     }
