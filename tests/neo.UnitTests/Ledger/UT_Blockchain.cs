@@ -113,6 +113,7 @@ namespace Neo.UnitTests.Ledger
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                var oldBalance = snapshot.Storages.TryGet(key);
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
                 {
                     Value = new Nep5AccountState().ToByteArray()
@@ -139,6 +140,14 @@ namespace Neo.UnitTests.Ledger
 
                 senderProbe.Send(system.Blockchain, tx);
                 senderProbe.ExpectMsg(RelayResultReason.AlreadyExists);
+
+                // Returning Storages key of the account to original value
+                snapshot = Blockchain.Singleton.GetSnapshot();
+                snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = oldBalance.Value
+                });
+                snapshot.Commit();                
             }
         }
 
