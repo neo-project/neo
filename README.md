@@ -145,7 +145,7 @@ Code references are provided for all platform building blocks. That includes the
 ## Opening a new issue
 Please feel free to create new issues to suggest features or ask questions.
 
-- [Feature request](https://github.com/neo-project/neo/issues/new?assignees=&labels=&template=bug_report.md&title=)
+- [Feature request](https://github.com/neo-project/neo/issues/new?assignees=&labels=discussion&template=feature-or-enhancement-request.md&title=)
 - [Bug report](https://github.com/neo-project/neo/issues/new?assignees=&labels=&template=bug_report.md&title=)
 - [Questions](https://github.com/neo-project/neo/issues/new?assignees=&labels=question&template=questions.md&title=)
 
