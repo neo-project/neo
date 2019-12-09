@@ -137,7 +137,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var expected = ContractManifest.CreateDefault(UInt160.Zero);
             expected.SafeMethods = WildCardContainer<string>.Create(new string[] { "AAA" });
             var actual = expected.Clone();
-            Assert.AreEqual(actual.SafeMethods.ToString(), expected.SafeMethods.ToString());
+            Assert.AreEqual(actual.ToString(), expected.ToString());
         }
     }
 }

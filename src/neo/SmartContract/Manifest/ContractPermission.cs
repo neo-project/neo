@@ -27,6 +27,15 @@ namespace Neo.SmartContract.Manifest
             Methods = WildCardContainer<string>.CreateWildcard()
         };
 
+        public ContractPermission Clone()
+        {
+            return new ContractPermission
+            {
+                Contract = Contract,
+                Methods = Methods
+            };
+        }
+
         /// <summary>
         /// Parse ContractPermission from json
         /// </summary>
