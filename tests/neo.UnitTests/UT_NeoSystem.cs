@@ -25,8 +25,5 @@ namespace Neo.UnitTests
 
         [TestMethod]
         public void TestGetConsensus() => neoSystem.Consensus.Should().BeNull();
-
-        [TestMethod]
-        public void TestGetRpcServer() => neoSystem.RpcServer.Should().BeNull();
     }
 }

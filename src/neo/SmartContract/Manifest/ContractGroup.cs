@@ -22,6 +22,15 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public byte[] Signature { get; set; }
 
+        public ContractGroup Clone()
+        {
+            return new ContractGroup
+            {
+                PubKey = PubKey,
+                Signature = Signature
+            };
+        }
+
         /// <summary>
         /// Parse ContractManifestGroup from json
         /// </summary>
