@@ -355,14 +355,12 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnConsensusPayload(ConsensusPayload payload, bool avoidSaving = false)
+        private void OnConsensusPayload(ConsensusPayload payload)
         {
             if (payload.Version != context.Block.Version) return;
             if (payload.ValidatorIndex >= context.Validators.Length) return;
 
-            // Avoiding saving payload when it is being consumed or processed due to a recover payload
-            if (!avoidSaving)
-                TryToSaveFuturePayloads(payload);
+            TryToSaveFuturePayloads(payload);
 
             if (context.BlockSent) return;
             if (payload.PrevHash != context.Block.PrevHash || payload.BlockIndex != context.Block.Index)
@@ -737,7 +735,8 @@ namespace Neo.Consensus
         private bool ReverifyAndProcessPayload(ConsensusPayload payload)
         {
             if (!payload.Verify(context.Snapshot)) return false;
-            OnConsensusPayload(payload, true);
+            if (payload.BlockIndex == context.Block.Index)
+                OnConsensusPayload(payload);
             return true;
         }
 
