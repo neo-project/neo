@@ -75,9 +75,9 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Tries to add a set of peers to the immutable ImmutableHashSet of UnconnectedPeers
+        /// Tries to add a set of peers to the immutable ImmutableHashSet of UnconnectedPeers.
         /// </summary>
-        /// <param name="peers">Peers that the method will try to add (union) to (with) UnconnectedPeers</param>
+        /// <param name="peers">Peers that the method will try to add (union) to (with) UnconnectedPeers.</param>
         protected void AddPeers(IEnumerable<IPEndPoint> peers)
         {
             if (UnconnectedPeers.Count < UnconnectedMax)
@@ -116,10 +116,9 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Abstract method for asking for more peers
-        /// Currently triggered when UnconnectedPeers is empty
+        /// Abstract method for asking for more peers. Currently triggered when UnconnectedPeers is empty.
         /// </summary>
-        /// <param name="count">Number of peers that are being requested</param>
+        /// <param name="count">Number of peers that are being requested.</param>
         protected abstract void NeedMorePeers(int count);
 
         protected override void OnReceive(object message)
@@ -204,8 +203,8 @@ namespace Neo.Network.P2P
         /// If the conditions are met, the remote endpoint will be added to ConnectedPeers.
         /// Increase the connection number with the remote endpoint by one.
         /// </summary>
-        /// <param name="remote">The remote endpoint of TCP connection</param>
-        /// <param name="local">The local endpoint of TCP connection</param>
+        /// <param name="remote">The remote endpoint of TCP connection.</param>
+        /// <param name="local">The local endpoint of TCP connection.</param>
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
@@ -234,7 +233,7 @@ namespace Neo.Network.P2P
         /// Will be triggered when a Tcp.CommandFailed message is received.
         /// If it's a Tcp.Connect command, remove the related endpoint from ConnectingPeers.
         /// </summary>
-        /// <param name="cmd"></param>
+        /// <param name="cmd">Tcp.Command message/event.</param>
         private void OnTcpCommandFailed(Tcp.Command cmd)
         {
             switch (cmd)
@@ -263,7 +262,7 @@ namespace Neo.Network.P2P
             // Check if the number of desired connections is already enough
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
 
-            // If there are not available UnconnectedPeers triggers abstract implementation of NeedMorePeers 
+            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers 
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
             IPEndPoint[] endpoints = UnconnectedPeers.Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
