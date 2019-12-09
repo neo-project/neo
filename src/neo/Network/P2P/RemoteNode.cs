@@ -76,7 +76,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Add message to high priority queue or low priority queue depending on the message type.
         /// </summary>
-        /// <param name="message">The message to be added</param>
+        /// <param name="message">The message to be added.</param>
         private void EnqueueMessage(Message message)
         {
             bool is_single = false;
