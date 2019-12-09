@@ -147,7 +147,7 @@ namespace Neo.UnitTests.Ledger
                 {
                     Value = oldBalance.Value
                 });
-                snapshot.Commit();                
+                snapshot.Commit();
             }
         }
 
