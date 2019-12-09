@@ -30,7 +30,7 @@ namespace Neo.Consensus
         private DateTime block_received_time;
         private bool started = false;
 
-        private static uint furtherPayloadToSave = 10;
+        private static uint furtherPayloadToSave = 3;
 
         /// <summary>
         /// This will record the information from last scheduled timer
@@ -219,7 +219,7 @@ namespace Neo.Consensus
                         ReverifyAndProcessPayload(payload);
                         payloadsArray[p] = null;
                         context.CountFuturePayloads = context.CountFuturePayloads - 1;
-                    }                    
+                    }
                 }
             }
         }
