@@ -102,7 +102,7 @@
 1. [Overview](#overview)
 2. [Project structure](#project-structure)
 3. [Related projects](#related-projects)
-4. [Opening an issue](#opening-a-new-issue)  
+4. [Opening a new issue](#opening-a-new-issue)  
 5. [Bounty program](#bounty-program)
 6. [License](#license)
 
