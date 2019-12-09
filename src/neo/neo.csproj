@@ -6,7 +6,7 @@
     <VersionPrefix>3.0.0</VersionPrefix>
     <VersionSuffix>preview1</VersionSuffix>
     <Authors>The Neo Project</Authors>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
