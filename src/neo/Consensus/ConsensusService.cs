@@ -212,13 +212,14 @@ namespace Neo.Consensus
                     {
                         // This future payload is not future anymore, discard it
                         payloadsArray[p] = null;
+                        context.CountFuturePayloads = context.CountFuturePayloads - 1;
                     }
                     else if (payload.PrevHash == context.Block.PrevHash && payload.BlockIndex == context.Block.Index)
                     {
                         ReverifyAndProcessPayload(payload);
                         payloadsArray[p] = null;
-                    }
-                    context.CountFuturePayloads = context.CountFuturePayloads - 1;
+                        context.CountFuturePayloads = context.CountFuturePayloads - 1;
+                    }                    
                 }
             }
         }

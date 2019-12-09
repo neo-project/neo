@@ -424,7 +424,7 @@ namespace Neo.Consensus
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)Block.Index;
 
-            if (resetFutures)
+            if (resetFutures || (FutureCommitPayloads.Count() != Validators.Length))
                 ResetFuturePayloads();
         }
 

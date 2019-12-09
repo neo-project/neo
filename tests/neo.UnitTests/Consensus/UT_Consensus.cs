@@ -448,12 +448,12 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
             mockContext.Object.Snapshot.Commit();
 
-            Console.WriteLine("mockContext Reset.");
+            Console.WriteLine("mockContext mockContext.Object.Reset(0)...");
             mockContext.Object.Reset(0);
-            Console.WriteLine("TimeProvider Reset.");
+            Console.WriteLine("TimeProvider ResetToDefault...");
             TimeProvider.ResetToDefault();
 
-            Console.WriteLine("Finalizing consensus service actor.");
+            Console.WriteLine("Finalizing consensus service actor...");
             Sys.Stop(actorConsensus);
             Console.WriteLine("Actor actorConsensus Stopped.\n");
         }
