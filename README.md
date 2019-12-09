@@ -80,28 +80,7 @@
       width="28px">
   </a>
 </p>
-
-
-## Table of Contents
-1. [Overview](#overview)
-2. [Status](#status)
-3. [Project structure](#project-structure)
-4. [Related projects](#related-projects)
-5. [Opening an issue](#opening-a-new-issue)  
-6. [Bounty program](#bounty-program)
-7. [License](#license)
-
-## Overview
-This repository contain main classes of the 
-[Neo](https://www.neo.org) blockchain.   
-Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get started.
-
-
-*Note: This is Neo 3 branch, currently under development. For the current stable version, please [click here](https://github.com/neo-project/neo/tree/master-2.x)*
-
-
-## Status
-<p>
+<p align="center">
   <a href="https://travis-ci.org/neo-project/neo">
     <img src="https://travis-ci.org/neo-project/neo.svg?branch=master" alt="Current TravisCI build status.">
   </a>
@@ -117,38 +96,42 @@ Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get sta
 </p>
 
 
+
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Project structure](#project-structure)
+3. [Related projects](#related-projects)
+4. [Opening an issue](#opening-a-new-issue)  
+5. [Bounty program](#bounty-program)
+6. [License](#license)
+
+## Overview
+This repository contain main classes of the 
+[Neo](https://www.neo.org) blockchain.   
+Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get started.
+
+
+*Note: This is Neo 3 branch, currently under development. For the current stable version, please [click here](https://github.com/neo-project/neo/tree/master-2.x)*
+
+
+
 ## Project structure
 An overview of the project folders can be seen below.
 
-**Consensus**  
-Classes used in the dBFT consensus algorithm, including the `ConsensusService` actor.
+|Folder|Content|
+|---|---|
+|Consensus| Classes used in the dBFT consensus algorithm, including the `ConsensusService` actor.|
+|Cryptography|General cryptography classes including ECC implementation.|
+|IO|Data structures used for caching and collection interaction.|
+|Ledger|Classes responsible for the state control, including the `MemoryPool` and `Blockchain` classes.|
+|Network|Peer-to-peer protocol implementation classes.|
+|Persistence|Classes used to allow other classes to access application state.|
+|Plugins|Interfaces used to extend Neo, including the storage interface.|
+|SmartContract|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
+|VM|Helper methods used to interact with the VM.|
+|Wallet|Wallet and account implementation. |
 
-**Cryptography**  
-General cryptography classes including ECC implementation.
-
-**IO**	  
-Data structures used for caching and collection interaction.
-
-**Ledger**  
-Classes responsible for the state control, including the `MemoryPool` and `Blockchain` classes.
-
-**Network**  
-Peer-to-peer protocol implementation classes.
-
-**Persistence**
-Classes used to allow other classes to access application state.
-
-**Plugins**  
-Interfaces used to extend Neo, including the storage interface.
-
-**SmartContract**  
-Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.
-
-**VM**  
-Helper methods used to interact with the VM.
-
-**Wallets**  
-Wallet and account implementation. 
 
 ## Related projects
 Code references are provided for all platform building blocks. Tha includes the base library, the VM, a command line application and the compiler. Plugins are also included to easily extend Neo functinalities.
