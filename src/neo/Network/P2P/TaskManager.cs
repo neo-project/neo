@@ -28,10 +28,10 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
 
-        /// <summary>
-        /// A set of known hashes for inventories or payloads already received
-        /// </summary>
         private const int PingCoolingOffPeriod = 60; // in secconds.
+        /// <summary>
+        /// A set of known hashes, of inventories or payloads, already received.
+        /// </summary>        
         private readonly FIFOSet<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
@@ -59,7 +59,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            // Do not accept payload of type InventoryType.TX if not synced on best known top HeaderHeight
+            // Do not accept payload of type InventoryType.TX if not synced on best known HeaderHeight
             if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
             {
                 RequestTasks(session);
