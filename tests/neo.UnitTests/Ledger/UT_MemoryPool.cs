@@ -487,8 +487,14 @@ namespace Neo.UnitTests.Ledger
             var key2 = CreateStorageKey(Prefix_FeePerByte);
             key1.ScriptHash = NativeContract.Policy.Hash;
             key2.ScriptHash = NativeContract.Policy.Hash;
-            snapshot.Storages.Add(key1, item1);
-            snapshot.Storages.Add(key2, item2);
+            snapshot.Storages.GetAndChange(key1, () => new StorageItem
+            {
+                Value = item1.Value
+            });
+            snapshot.Storages.GetAndChange(key2, () => new StorageItem
+            {
+                Value = item2.Value
+            });
 
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
