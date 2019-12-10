@@ -94,9 +94,9 @@ namespace Neo.Plugins
 
             string filename = an.Name + ".dll";
             string path = filename;
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, path);
-            if (!File.Exists(path)) path = Combine(args.RequestingAssembly.Location, filename);
-            if (!File.Exists(path)) path = Combine(args.RequestingAssembly.Location, args.RequestingAssembly.GetName().Name, filename);
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), filename);
+            if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
+            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
             if (!File.Exists(path)) return null;
 
             try
