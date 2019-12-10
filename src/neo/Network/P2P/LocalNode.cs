@@ -59,11 +59,21 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// Packs a MessageCommand to a full Message with an optional ISerializable payload.
+        /// Forwards it to <see cref="BroadcastMessage(Message message)"/>.
+        /// </summary>
+        /// <param name="command">The message command to be packed.</param>
+        /// <param name="payload">Optional payload to be Serialized along the message.</param>
         private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
         {
             BroadcastMessage(Message.Create(command, payload));
         }
 
+        /// <summary>
+        /// Broadcast a message to all connected nodes, namely <see cref="Connections"/>.
+        /// </summary>
+        /// <param name="message">The message to be broadcasted.</param>
         private void BroadcastMessage(Message message)
         {
             Connections.Tell(message);
@@ -87,6 +97,10 @@ namespace Neo.Network.P2P
             return new IPEndPoint(ipAddress, port);
         }
 
+        /// <summary>
+        /// Return an amount of random seeds nodes from the default SeedList file defined on <see cref="ProtocolSettings"/>.
+        /// </summary>
+        /// <param name="seedsToTake">Limit of random seed nodes to be obtained, also limited by the available seeds from file.</param>
         private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
         {
             if (seedsToTake > 0)
@@ -122,6 +136,12 @@ namespace Neo.Network.P2P
             return UnconnectedPeers;
         }
 
+        /// <summary>
+        /// Override of abstract class that is triggered when <see cref="UnconnectedPeers"/> is empty.
+        /// Performs a BroadcastMessage with the command `MessageCommand.GetAddr`, which, eventually, tells all known connections.
+        /// If there are no connected peers it will try with the default, respecting MaxCountFromSeedList limit.
+        /// </summary>
+        /// <param name="count">The count of peers required</param>
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, MaxCountFromSeedList);
@@ -131,6 +151,8 @@ namespace Neo.Network.P2P
             }
             else
             {
+                // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
+                // It will try to add those, sequentially, to the list of currently uncconected ones.
                 AddPeers(GetIPEndPointsFromSeedList(count));
             }
         }
@@ -157,6 +179,12 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// For Transaction type of IInventory, it will tell Transaction to the actor of Consensus.
+        /// Otherwise, tell the inventory to the actor of Blockchain.
+        /// There are, currently, three implementations of IInventory: TX, Block and ConsensusPayload.
+        /// </summary>
+        /// <param name="inventory">The inventory to be relayed.</param>
         private void OnRelay(IInventory inventory)
         {
             if (inventory is Transaction transaction)
