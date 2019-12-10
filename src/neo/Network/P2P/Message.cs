@@ -14,6 +14,10 @@ namespace Neo.Network.P2P
         private const int CompressionMinSize = 128;
         private const int CompressionThreshold = 64;
 
+        /// <summary>
+        /// Flags that represents whether a message is compressed.
+        /// 0 for None, 1 for Compressed.
+        /// </summary>
         public MessageFlags Flags;
         public MessageCommand Command;
         public ISerializable Payload;

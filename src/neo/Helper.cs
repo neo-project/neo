@@ -237,6 +237,10 @@ namespace Neo
             return (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
         }
 
+        /// <summary>
+        /// Checks if address is IPv4 Maped to IPv6 format, if so, Map to IPv4.
+        /// Otherwise, return current address.
+        /// </summary>
         internal static IPAddress Unmap(this IPAddress address)
         {
             if (address.IsIPv4MappedToIPv6)
@@ -244,6 +248,10 @@ namespace Neo
             return address;
         }
 
+        /// <summary>
+        /// Checks if IPEndPoint is IPv4 Maped to IPv6 format, if so, unmap to IPv4.
+        /// Otherwise, return current endpoint.
+        /// </summary>
         internal static IPEndPoint Unmap(this IPEndPoint endPoint)
         {
             if (!endPoint.Address.IsIPv4MappedToIPv6)
