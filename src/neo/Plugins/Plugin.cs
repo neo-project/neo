@@ -28,6 +28,8 @@ namespace Neo.Plugins
         protected static NeoSystem System { get; private set; }
         public virtual Version Version => GetType().Assembly.GetName().Version;
 
+        public virtual string[] Dependencies { get; }
+
         static Plugin()
         {
             if (Directory.Exists(PluginsDirectory))
@@ -73,7 +75,7 @@ namespace Neo.Plugins
                     if (GetDirectoryName(e.FullPath) != PluginsDirectory) return;
                     try
                     {
-                        LoadPlugin(Assembly.Load(File.ReadAllBytes(e.FullPath)));
+                        LoadPlugin(e.FullPath);
                     }
                     catch { }
                     break;
@@ -112,17 +114,28 @@ namespace Neo.Plugins
             return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
         }
 
-        private static void LoadPlugin(Assembly assembly)
+        private static void LoadPlugin(string filename)
         {
+            // Load file without lock it
+
+            Assembly assembly = Assembly.Load(File.ReadAllBytes(filename));
+
             foreach (Type type in assembly.ExportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
 
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
                 try
                 {
-                    constructor?.Invoke(null);
+                    var plugin = (Plugin)Activator.CreateInstance(type);
+                    var folder = GetDirectoryName(filename);
+
+                    // Load plugin dependencies
+
+                    foreach (var dependency in plugin.Dependencies)
+                    {
+                        try { Assembly.Load(File.ReadAllBytes(Combine(folder, dependency))); } catch { }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -135,18 +148,10 @@ namespace Neo.Plugins
         {
             System = system;
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = new List<Assembly>();
             foreach (string filename in Directory.EnumerateFiles(PluginsDirectory, "*.dll", SearchOption.TopDirectoryOnly))
             {
-                try
-                {
-                    assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
-                }
+                try { LoadPlugin(filename); }
                 catch { }
-            }
-            foreach (Assembly assembly in assemblies)
-            {
-                LoadPlugin(assembly);
             }
         }
 
