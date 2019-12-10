@@ -92,8 +92,11 @@ namespace Neo.Plugins
                 assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
-            string path = an.Name + ".dll";
+            string filename = an.Name + ".dll";
+            string path = filename;
             if (!File.Exists(path)) path = Combine(PluginsDirectory, path);
+            if (!File.Exists(path)) path = Combine(args.RequestingAssembly.Location, filename);
+            if (!File.Exists(path)) path = Combine(args.RequestingAssembly.Location, args.RequestingAssembly.GetName().Name, filename);
             if (!File.Exists(path)) return null;
 
             try
