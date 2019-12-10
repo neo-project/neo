@@ -28,11 +28,7 @@ namespace Neo.Wallets.NEP6
             this.path = path;
             if (File.Exists(path))
             {
-                JObject wallet;
-                using (StreamReader reader = new StreamReader(path))
-                {
-                    wallet = JObject.Parse(reader);
-                }
+                JObject wallet = JObject.Parse(File.ReadAllBytes(path));
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else
