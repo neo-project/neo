@@ -85,16 +85,20 @@ namespace Neo.Plugins
             if (args.Name.Contains(".resources"))
                 return null;
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name);
-            if (assembly != null)
-                return assembly;
-
             AssemblyName an = new AssemblyName(args.Name);
-            string filename = an.Name + ".dll";
+
+            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name);
+            if (assembly is null)
+                assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
+            if (assembly != null) return assembly;
+
+            string path = an.Name + ".dll";
+            if (!File.Exists(path)) path = Combine(PluginsDirectory, path);
+            if (!File.Exists(path)) return null;
 
             try
             {
-                return Assembly.Load(File.ReadAllBytes(filename));
+                return Assembly.Load(File.ReadAllBytes(path));
             }
             catch (Exception ex)
             {
