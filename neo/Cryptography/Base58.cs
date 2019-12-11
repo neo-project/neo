@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -11,44 +11,44 @@ namespace Neo.Cryptography
 
         public static byte[] Decode(string input)
         {
-            BigInteger bi = BigInteger.Zero;
-            for (int i = input.Length - 1; i >= 0; i--)
+            // Decode Base58 string to BigInteger 
+            var bi = BigInteger.Zero;
+            for (int i = 0; i < input.Length; i++)
             {
-                int index = Alphabet.IndexOf(input[i]);
-                if (index == -1)
-                    throw new FormatException();
-                bi += index * BigInteger.Pow(58, input.Length - 1 - i);
+                int digit = Alphabet.IndexOf(input[i]);
+                if (digit < 0)
+                    throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
+                bi = bi * Alphabet.Length + digit;
             }
-            byte[] bytes = bi.ToByteArray();
-            Array.Reverse(bytes);
-            bool stripSignByte = bytes.Length > 1 && bytes[0] == 0 && bytes[1] >= 0x80;
-            int leadingZeros = 0;
-            for (int i = 0; i < input.Length && input[i] == Alphabet[0]; i++)
-            {
-                leadingZeros++;
-            }
-            byte[] tmp = new byte[bytes.Length - (stripSignByte ? 1 : 0) + leadingZeros];
-            Array.Copy(bytes, stripSignByte ? 1 : 0, tmp, leadingZeros, tmp.Length - leadingZeros);
-            return tmp;
+
+            // Encode BigInteger to byte[]
+            // Leading zero bytes get encoded as leading `1` characters
+            int leadingZeroCount = input.TakeWhile(c => c == Alphabet[0]).Count();
+            var leadingZeros = new byte[leadingZeroCount];
+            var bytesWithoutLeadingZeros = bi.ToByteArray()
+                .Reverse()// to big endian
+                .SkipWhile(b => b == 0);//strip sign byte
+            return leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
         }
 
         public static string Encode(byte[] input)
         {
+            // Decode byte[] to BigInteger
             BigInteger value = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
-            StringBuilder sb = new StringBuilder();
-            while (value >= 58)
+
+            // Encode BigInteger to Base58 string
+            var sb = new StringBuilder();
+
+            while (value > 0)
             {
-                BigInteger mod = value % 58;
-                sb.Insert(0, Alphabet[(int)mod]);
-                value /= 58;
+                value = BigInteger.DivRem(value, Alphabet.Length, out var remainder);
+                sb.Insert(0, Alphabet[(int)remainder]);
             }
-            sb.Insert(0, Alphabet[(int)value]);
-            foreach (byte b in input)
+
+            // Append `1` for each leading 0 byte
+            for (int i = 0; i < input.Length && input[i] == 0; i++)
             {
-                if (b == 0)
-                    sb.Insert(0, Alphabet[0]);
-                else
-                    break;
+                sb.Insert(0, Alphabet[0]);
             }
             return sb.ToString();
         }
