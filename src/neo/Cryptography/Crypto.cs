@@ -32,13 +32,13 @@ namespace Neo.Cryptography
             }
         }
 
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, byte[] pubkey)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey)
         {
             if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
             {
                 try
                 {
-                    pubkey = ECC.ECPoint.DecodePoint(pubkey, ECC.ECCurve.Secp256r1).EncodePoint(false)[1..];
+                    pubkey = ECC.ECPoint.DecodePoint(pubkey, ECC.ECCurve.Secp256r1).EncodePoint(false).AsSpan(1);
                 }
                 catch
                 {
@@ -58,8 +58,8 @@ namespace Neo.Cryptography
                 Curve = ECCurve.NamedCurves.nistP256,
                 Q = new ECPoint
                 {
-                    X = pubkey[..32],
-                    Y = pubkey[32..]
+                    X = pubkey[..32].ToArray(),
+                    Y = pubkey[32..].ToArray()
                 }
             }))
             {
