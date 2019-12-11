@@ -32,7 +32,6 @@ namespace Neo.Network.P2P
         private IActorRef tcp_listener;
         private IWebHost ws_host;
         private ICancelable timer;
-        protected ActorSelection Connections => Context.ActorSelection("connection_*");
 
         private static readonly HashSet<IPAddress> localAddresses = new HashSet<IPAddress>();
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
