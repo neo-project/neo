@@ -174,6 +174,11 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(new SetFilter { Filter = bloom_filter });
         }
 
+        /// <summary>
+        /// Will be triggered when a MessageCommand.GetAddr message is received.
+        /// Randomly select nodes from the local RemoteNodes and tells to RemoteNode actors a MessageCommand.Addr message.
+        /// The message contains a list of networkAddresses from those selected random peers.
+        /// </summary>
         private void OnGetAddrMessageReceived()
         {
             Random rand = new Random();
@@ -187,9 +192,16 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
 
+        /// <summary>
+        /// Will be triggered when a MessageCommand.GetBlocks message is received.
+        /// Tell the specified number of blocks' hashes starting with the requested HashStart until payload.Count or MaxHashesCount
+        /// Responses are sent to RemoteNode actor as MessageCommand.Inv Message.
+        /// </summary>
+        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested.</param>
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
             UInt256 hash = payload.HashStart;
+            // The default value of payload.Count is -1
             int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
             TrimmedBlock state = Blockchain.Singleton.View.Blocks.TryGet(hash);
             if (state == null) return;
@@ -227,6 +239,12 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// Will be triggered when a MessageCommand.GetData message is received.
+        /// The payload includes an array of hash values.
+        /// For different payload.Type (Tx, Block, Consensus), get the corresponding (Txs, Blocks, Consensus) and tell them to RemoteNode actor.
+        /// </summary>
+        /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
@@ -262,6 +280,12 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// Will be triggered when a MessageCommand.GetHeaders message is received.
+        /// Tell the specified number of blocks' headers starting with the requested HashStart to RemoteNode actor.
+        /// A limit set by HeadersPayload.MaxHeadersCount is also applied to the number of requested Headers, namely payload.Count.
+        /// </summary>
+        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks' headers requested.</param>
         private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
         {
             UInt256 hash = payload.HashStart;
