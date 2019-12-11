@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using System;
-using System.IO;
 
 namespace Neo.UnitTests.IO.Json
 {
@@ -53,35 +52,28 @@ namespace Neo.UnitTests.IO.Json
         [TestMethod]
         public void TestParse()
         {
-            Action action = () => JObject.Parse(new StringReader(""), -1);
-            action.Should().Throw<FormatException>();
-        }
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => JObject.Parse("", -1));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("aaa"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("hello world"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("100.a"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("100.+"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"\\s\""));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"a"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\",\"k1\"}"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\":\"v1\""));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
+            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"\\uDBFF\\u0DFFF\""));
 
-        [TestMethod]
-        public void TestParseNull()
-        {
-            Action action = () => JObject.Parse(new StringReader("naaa"));
-            action.Should().Throw<FormatException>();
-
-            JObject.Parse(new StringReader("null")).Should().BeNull();
-        }
-
-        [TestMethod]
-        public void TestParseObject()
-        {
-            Action action1 = () => JObject.Parse(new StringReader("{\"k1\":\"v1\",\"k1\":\"v2\"}"), 100);
-            action1.Should().Throw<FormatException>();
-
-            Action action2 = () => JObject.Parse(new StringReader("{\"k1\",\"k1\"}"), 100);
-            action2.Should().Throw<FormatException>();
-
-            Action action3 = () => JObject.Parse(new StringReader("{\"k1\":\"v1\""), 100);
-            action3.Should().Throw<FormatException>();
-
-            Action action4 = () => JObject.Parse(new StringReader("aaa"), 100);
-            action4.Should().Throw<FormatException>();
-
-            JObject.Parse(new StringReader("{\"k1\":\"v1\"}"), 100).ToString().Should().Be("{\"k1\":\"v1\"}");
+            JObject.Parse("null").Should().BeNull();
+            JObject.Parse("true").AsBoolean().Should().BeTrue();
+            JObject.Parse("false").AsBoolean().Should().BeFalse();
+            JObject.Parse("\"hello world\"").AsString().Should().Be("hello world");
+            JObject.Parse("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"").AsString().Should().Be("\"\\/\b\f\n\r\t");
+            JObject.Parse("\"\\u0030\"").AsString().Should().Be("0");
+            JObject.Parse("{\"k1\":\"v1\"}", 100).ToString().Should().Be("{\"k1\":\"v1\"}");
         }
 
         [TestMethod]
