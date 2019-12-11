@@ -74,7 +74,9 @@ namespace Neo.Network.P2P
         /// Broadcast a message to all connected nodes, namely <see cref="Connections"/>.
         /// </summary>
         /// <param name="message">The message to be broadcasted.</param>
-        private void BroadcastMessage(Message message)
+        private void BroadcastMessage(Message message) => SendToRemoteNode(message);
+
+        private void SendToRemoteNode(object message)
         {
             foreach (var connection in RemoteNodes.Keys)
             {
@@ -195,21 +197,9 @@ namespace Neo.Network.P2P
             system.Blockchain.Tell(inventory);
         }
 
-        private void OnRelayDirectly(IInventory inventory)
-        {
-            foreach (var connection in RemoteNodes.Keys)
-            {
-                connection.Tell(new RemoteNode.Relay { Inventory = inventory });
-            }
-        }
+        private void OnRelayDirectly(IInventory inventory) => SendToRemoteNode(new RemoteNode.Relay { Inventory = inventory });
 
-        private void OnSendDirectly(IInventory inventory)
-        {
-            foreach (var connection in RemoteNodes.Keys)
-            {
-                connection.Tell(inventory);
-            }
-        }
+        private void OnSendDirectly(IInventory inventory) => SendToRemoteNode(inventory);
 
         public static Props Props(NeoSystem system)
         {
