@@ -2,6 +2,7 @@ using Neo.IO.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -18,12 +19,31 @@ namespace Neo.SmartContract
         /// <returns>Json</returns>
         public static JObject Serialize(StackItem item, int maxSize = -1)
         {
-            JObject returnValue = JObject.Null;
+            int preExistingSize = 0;
+            int consumedBytes;
+            return Serialize(item, out consumedBytes, preExistingSize, maxSize);
+        }
+
+        /// <summary>
+        /// Convert stack item in json
+        /// </summary>
+        /// <param name="item">Item</param>
+        /// <returns>Json</returns>
+        public static JObject Serialize(StackItem item, out int consumedBytes, int preExistingSize = 0, int maxSize = -1)
+        {
+            JObject returnValue;
             switch (item)
             {
                 case Array array:
                     {
-                        returnValue = array.Select(p => Serialize(p, maxSize)).ToArray();
+                        var list = new List<JObject>();
+                        foreach (var arrayItem in array)
+                        {
+                            int usedBytes = 0;
+                            list.Add(Serialize(arrayItem, out usedBytes, preExistingSize, maxSize));
+                            preExistingSize += usedBytes;
+                        }
+                        returnValue = list.ToArray();
                         break;
                     }
                 case ByteArray buffer:
@@ -35,8 +55,13 @@ namespace Neo.SmartContract
                     {
                         var integer = num.GetBigInteger();
                         if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
+                        {
                             returnValue = integer.ToString();
-                        returnValue = (double)num.GetBigInteger();
+                        }
+                        else
+                        {
+                            returnValue = (double)num.GetBigInteger();
+                        }
                         break;
                     }
                 case Boolean boolean:
@@ -47,13 +72,13 @@ namespace Neo.SmartContract
                 case Map map:
                     {
                         var ret = new JObject();
-
                         foreach (var entry in map)
                         {
+                            int usedBytes = 0;
                             var key = entry.Key.GetString();
-                            var value = Serialize(entry.Value, maxSize);
-
+                            var value = Serialize(entry.Value, out usedBytes, preExistingSize, maxSize);
                             ret[key] = value;
+                            preExistingSize += usedBytes;
                         }
 
                         returnValue = ret;
@@ -67,7 +92,9 @@ namespace Neo.SmartContract
                 default: throw new FormatException();
             }
 
-            if(maxSize != -1 && returnValue.ToByteArray(false).Length > maxSize)
+            consumedBytes = returnValue.ToByteArray(false).Length;
+
+            if (maxSize != -1 && preExistingSize + consumedBytes > maxSize)
             {
                 throw new FormatException();
             }
