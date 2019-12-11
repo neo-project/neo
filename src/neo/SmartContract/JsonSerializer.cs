@@ -16,28 +16,33 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="item">Item</param>
         /// <returns>Json</returns>
-        public static JObject Serialize(StackItem item)
+        public static JObject Serialize(StackItem item, int maxSize = -1)
         {
+            JObject returnValue = JObject.Null;
             switch (item)
             {
                 case Array array:
                     {
-                        return array.Select(p => Serialize(p)).ToArray();
+                        returnValue = array.Select(p => Serialize(p, maxSize)).ToArray();
+                        break;
                     }
                 case ByteArray buffer:
                     {
-                        return Convert.ToBase64String(buffer.GetSpan());
+                        returnValue = Convert.ToBase64String(buffer.GetSpan());
+                        break;
                     }
                 case Integer num:
                     {
                         var integer = num.GetBigInteger();
                         if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
-                            return integer.ToString();
-                        return (double)num.GetBigInteger();
+                            returnValue = integer.ToString();
+                        returnValue = (double)num.GetBigInteger();
+                        break;
                     }
                 case Boolean boolean:
                     {
-                        return boolean.ToBoolean();
+                        returnValue = boolean.ToBoolean();
+                        break;
                     }
                 case Map map:
                     {
@@ -46,19 +51,28 @@ namespace Neo.SmartContract
                         foreach (var entry in map)
                         {
                             var key = entry.Key.GetString();
-                            var value = Serialize(entry.Value);
+                            var value = Serialize(entry.Value, maxSize);
 
                             ret[key] = value;
                         }
 
-                        return ret;
+                        returnValue = ret;
+                        break;
                     }
                 case Null _:
                     {
-                        return JObject.Null;
+                        returnValue = JObject.Null;
+                        break;
                     }
                 default: throw new FormatException();
             }
+
+            if(maxSize != -1 && returnValue.ToByteArray(false).Length > maxSize)
+            {
+                throw new FormatException();
+            }
+
+            return returnValue;
         }
 
         /// <summary>

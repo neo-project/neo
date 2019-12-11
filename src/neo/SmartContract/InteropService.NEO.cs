@@ -387,7 +387,7 @@ namespace Neo.SmartContract
         private static bool Json_Serialize(ApplicationEngine engine)
         {
             var item = engine.CurrentContext.EvaluationStack.Pop();
-            var json = JsonSerializer.Serialize(item).ToByteArray(false);
+            var json = JsonSerializer.Serialize(item, (int)engine.MaxItemSize).ToByteArray(false);
             if (json.Length > engine.MaxItemSize) return false;
             engine.CurrentContext.EvaluationStack.Push(json);
             return true;
