@@ -22,7 +22,7 @@ namespace Neo.Wallets
                     sb.EmitAppCall(asset_id_160, "name");
                     script = sb.ToArray();
                 }
-                ApplicationEngine engine = ApplicationEngine.Run(script);
+                using ApplicationEngine engine = ApplicationEngine.Run(script);
                 if (engine.State.HasFlag(VMState.FAULT)) throw new ArgumentException();
                 this.AssetId = asset_id;
                 this.AssetName = engine.ResultStack.Pop().GetString();
