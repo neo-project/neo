@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
         private StackItem BlockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
-            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
+            UInt160 account = new UInt160(args[0].GetSpan());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
@@ -159,7 +159,7 @@ namespace Neo.SmartContract.Native
         private StackItem UnblockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
-            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
+            UInt160 account = new UInt160(args[0].GetSpan());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
