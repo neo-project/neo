@@ -13,7 +13,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Array = Neo.VM.Types.Array;
-using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
@@ -77,10 +76,8 @@ namespace Neo.SmartContract
                                 items_unchecked.Enqueue(item);
                         }
                         break;
-                    case Boolean _:
-                    case ByteArray _:
-                    case Integer _:
-                        size += state.GetByteLength();
+                    case PrimitiveType primitive:
+                        size += primitive.GetByteLength();
                         break;
                     case Null _:
                         break;
@@ -231,7 +228,7 @@ namespace Neo.SmartContract
             ReadOnlySpan<byte> hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             bool result;
             if (hashOrPubkey.Length == 20)
-                result = CheckWitness(engine, new UInt160(hashOrPubkey.ToArray()));
+                result = CheckWitness(engine, new UInt160(hashOrPubkey));
             else if (hashOrPubkey.Length == 33)
                 result = CheckWitness(engine, ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
             else
@@ -250,7 +247,7 @@ namespace Neo.SmartContract
 
         private static bool Runtime_Log(ApplicationEngine engine)
         {
-            byte[] state = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> state = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             if (state.Length > MaxNotificationSize) return false;
             string message = Encoding.UTF8.GetString(state);
             engine.SendLog(engine.CurrentScriptHash, message);
@@ -287,7 +284,7 @@ namespace Neo.SmartContract
             IEnumerable<NotifyEventArgs> notifications = engine.Notifications;
             if (!item.IsNull) // must filter by scriptHash
             {
-                var hash = new UInt160(item.GetSpan().ToArray());
+                var hash = new UInt160(item.GetSpan());
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             }
 
@@ -334,7 +331,7 @@ namespace Neo.SmartContract
 
         private static bool Blockchain_GetBlock(ApplicationEngine engine)
         {
-            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> data = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             UInt256 hash;
             if (data.Length <= 5)
                 hash = Blockchain.Singleton.GetBlockHash((uint)new BigInteger(data));
@@ -353,7 +350,7 @@ namespace Neo.SmartContract
 
         private static bool Blockchain_GetTransaction(ApplicationEngine engine)
         {
-            byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
             if (tx == null)
                 engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
@@ -364,7 +361,7 @@ namespace Neo.SmartContract
 
         private static bool Blockchain_GetTransactionHeight(ApplicationEngine engine)
         {
-            byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             var tx = engine.Snapshot.Transactions.TryGet(new UInt256(hash));
             engine.CurrentContext.EvaluationStack.Push(tx != null ? new BigInteger(tx.BlockIndex) : BigInteger.MinusOne);
             return true;
@@ -372,7 +369,7 @@ namespace Neo.SmartContract
 
         private static bool Blockchain_GetTransactionFromBlock(ApplicationEngine engine)
         {
-            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> data = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             UInt256 hash;
             if (data.Length <= 5)
                 hash = Blockchain.Singleton.GetBlockHash((uint)new BigInteger(data));
@@ -402,7 +399,7 @@ namespace Neo.SmartContract
 
         private static bool Blockchain_GetContract(ApplicationEngine engine)
         {
-            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray());
+            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetSpan());
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null)
                 engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
@@ -470,7 +467,7 @@ namespace Neo.SmartContract
         {
             StackItem contractHash = engine.CurrentContext.EvaluationStack.Pop();
 
-            ContractState contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractHash.GetSpan().ToArray()));
+            ContractState contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractHash.GetSpan()));
             if (contract is null) return false;
 
             StackItem method = engine.CurrentContext.EvaluationStack.Pop();
