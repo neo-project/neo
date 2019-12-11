@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public byte[] ToByteArray()
         {
-            return StackItemSerializer.Serialize(ToStruct());
+            return StackItemSerializer.Serialize(ToStruct(), 4096);
         }
 
         protected virtual Struct ToStruct()
