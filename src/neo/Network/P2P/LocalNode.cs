@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -40,6 +41,8 @@ namespace Neo.Network.P2P
                 return singleton;
             }
         }
+
+        private Task _addPeersTask = null;
 
         static LocalNode()
         {
@@ -153,7 +156,13 @@ namespace Neo.Network.P2P
             {
                 // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
                 // It will try to add those, sequentially, to the list of currently uncconected ones.
-                AddPeers(GetIPEndPointsFromSeedList(count));
+
+                if (_addPeersTask == null || _addPeersTask.IsCompleted)
+                {
+                    _addPeersTask?.Dispose();
+                    _addPeersTask = new Task(() => AddPeers(GetIPEndPointsFromSeedList(count)));
+                    _addPeersTask.Start();
+                }
             }
         }
 
