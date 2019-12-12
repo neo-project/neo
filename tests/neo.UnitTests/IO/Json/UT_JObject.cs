@@ -113,7 +113,7 @@ namespace Neo.UnitTests.IO.Json
         {
             var bobClone = bob.Clone();
             bobClone.Should().NotBeSameAs(bob);
-            foreach(var key in bobClone.Properties.Keys)
+            foreach (var key in bobClone.Properties.Keys)
             {
                 bobClone[key].Should().BeEquivalentTo(bob[key]);
                 bobClone[key].Should().NotBeSameAs(bob[key]);

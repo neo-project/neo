@@ -118,7 +118,7 @@ namespace Neo.IO.Json
         {
             var cloned = new JArray();
 
-            foreach(JObject item in items)
+            foreach (JObject item in items)
             {
                 cloned.Add(item.Clone());
             }
