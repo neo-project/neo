@@ -101,7 +101,7 @@ namespace Neo.UnitTests.SmartContract
             context.Add(contract, 0, new byte[] { 0x01 });
             Witness[] witnesses = context.GetWitnesses();
             witnesses.Length.Should().Be(1);
-            witnesses[0].InvocationScript.ToHexString().Should().Be(new byte[] {(byte)OpCode.PUSHDATA1, 0x01, 0x01 }.ToHexString());
+            witnesses[0].InvocationScript.ToHexString().Should().Be(new byte[] { (byte)OpCode.PUSHDATA1, 0x01, 0x01 }.ToHexString());
             witnesses[0].VerificationScript.ToHexString().Should().Be(contract.Script.ToHexString());
         }
 
