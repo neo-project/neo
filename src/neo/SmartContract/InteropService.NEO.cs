@@ -84,7 +84,7 @@ namespace Neo.SmartContract
                 Null _ => engine.ScriptContainer.GetHashData(),
                 _ => item0.GetSpan()
             };
-            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
+            ReadOnlySpan<byte> pubkey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             ReadOnlySpan<byte> signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
             try
             {
@@ -162,7 +162,7 @@ namespace Neo.SmartContract
 
         private static bool Account_IsStandard(ApplicationEngine engine)
         {
-            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray());
+            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetSpan());
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             bool isStandard = contract is null || contract.Script.IsStandardContract();
             engine.CurrentContext.EvaluationStack.Push(isStandard);
