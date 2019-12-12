@@ -138,12 +138,7 @@ namespace Neo.IO.Json
             throw new FormatException();
         }
 
-        public override string ToString()
-        {
-            return ToString(false);
-        }
-
-        public string ToString(bool indented)
+        public byte[] ToByteArray(bool indented)
         {
             using MemoryStream ms = new MemoryStream();
             using Utf8JsonWriter writer = new Utf8JsonWriter(ms, new JsonWriterOptions
@@ -153,7 +148,17 @@ namespace Neo.IO.Json
             });
             Write(writer);
             writer.Flush();
-            return Encoding.UTF8.GetString(ms.ToArray());
+            return ms.ToArray();
+        }
+
+        public override string ToString()
+        {
+            return ToString(false);
+        }
+
+        public string ToString(bool indented)
+        {
+            return Encoding.UTF8.GetString(ToByteArray(indented));
         }
 
         public virtual T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false) where T : Enum
