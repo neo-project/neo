@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Manifest
                 Groups = new ContractGroup[0],
                 SafeMethods = WildcardContainer<string>.Create(),
                 Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = new JObject(),
+                Extra = null,
             };
         }
 
