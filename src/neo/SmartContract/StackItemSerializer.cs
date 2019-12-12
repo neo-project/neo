@@ -116,16 +116,16 @@ namespace Neo.SmartContract
             return stack_temp.Peek();
         }
 
-        public static byte[] Serialize(StackItem item)
+        public static byte[] Serialize(StackItem item, uint maxSize)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
-            Serialize(item, writer);
+            Serialize(item, writer, maxSize);
             writer.Flush();
             return ms.ToArray();
         }
 
-        private static void Serialize(StackItem item, BinaryWriter writer)
+        private static void Serialize(StackItem item, BinaryWriter writer, uint maxSize)
         {
             List<StackItem> serialized = new List<StackItem>();
             Stack<StackItem> unserialized = new Stack<StackItem>();
@@ -177,6 +177,8 @@ namespace Neo.SmartContract
                         writer.Write((byte)StackItemType.Null);
                         break;
                 }
+                if (writer.BaseStream.Position > maxSize)
+                    throw new InvalidOperationException();
             }
         }
     }
