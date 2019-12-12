@@ -12,6 +12,12 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_Syscalls
     {
+        [TestInitialize]
+        public void TestSetup()
+        {
+            TestBlockchain.InitializeMockNeoSystem();
+        }
+
         [TestMethod]
         public void System_Blockchain_GetBlock()
         {

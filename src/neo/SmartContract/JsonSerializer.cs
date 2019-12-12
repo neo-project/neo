@@ -88,7 +88,7 @@ namespace Neo.SmartContract
                         writer.WriteEndArray();
                         break;
                     case ByteArray buffer:
-                        writer.WriteBase64StringValue(buffer.GetSpan());
+                        writer.WriteStringValue(Convert.ToBase64String(buffer.GetSpan()));
                         break;
                     case Integer num:
                         {
