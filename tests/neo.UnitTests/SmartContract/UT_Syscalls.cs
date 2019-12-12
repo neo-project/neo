@@ -93,6 +93,111 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void Json_Deserialize()
+        {
+            // Good
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitPush("123");
+                script.EmitSysCall(InteropService.Neo_Json_Deserialize);
+                script.EmitPush("null");
+                script.EmitSysCall(InteropService.Neo_Json_Deserialize);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(2, engine.ResultStack.Count);
+
+                    Assert.IsTrue(engine.ResultStack.TryPop<Null>(out _));
+                    Assert.IsTrue(engine.ResultStack.TryPop<Integer>(out var i) && i.GetBigInteger() == 123);
+                }
+            }
+
+            // Error 1 - Wrong Json
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitPush("***");
+                script.EmitSysCall(InteropService.Neo_Json_Deserialize);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                    Assert.AreEqual(0, engine.ResultStack.Count);
+                }
+            }
+
+            // Error 2 - No decimals
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitPush("123.45");
+                script.EmitSysCall(InteropService.Neo_Json_Deserialize);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                    Assert.AreEqual(0, engine.ResultStack.Count);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Json_Serialize()
+        {
+            // Good
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitPush(5);
+                script.EmitSysCall(InteropService.Neo_Json_Serialize);
+                script.Emit(OpCode.PUSH0);
+                script.Emit(OpCode.NOT);
+                script.EmitSysCall(InteropService.Neo_Json_Serialize);
+                script.EmitPush("test");
+                script.EmitSysCall(InteropService.Neo_Json_Serialize);
+                script.Emit(OpCode.PUSHNULL);
+                script.EmitSysCall(InteropService.Neo_Json_Serialize);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(4, engine.ResultStack.Count);
+
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var n) && n.GetString() == "null");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var s) && s.GetString() == "\"dGVzdA==\"");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var b) && b.GetString() == "true");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var i) && i.GetString() == "5");
+                }
+            }
+
+            // Error
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitSysCall(InteropService.System_Storage_GetContext);
+                script.EmitSysCall(InteropService.Neo_Json_Serialize);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                    Assert.AreEqual(0, engine.ResultStack.Count);
+                }
+            }
+        }
+
+        [TestMethod]
         public void System_ExecutionEngine_GetScriptContainer()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
