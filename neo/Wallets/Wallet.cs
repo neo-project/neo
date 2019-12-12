@@ -109,12 +109,14 @@ namespace Neo.Wallets
                     sb.EmitAppCall(asset_id_160, "decimals");
                     script = sb.ToArray();
                 }
-                using ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: Fixed8.FromDecimal(0.2m) * accounts.Length);
-                if (engine.State.HasFlag(VMState.FAULT))
-                    return new BigDecimal(0, 0);
-                byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
-                BigInteger amount = engine.ResultStack.Pop().GetBigInteger();
-                return new BigDecimal(amount, decimals);
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: Fixed8.FromDecimal(0.2m) * accounts.Length))
+                {
+                    if (engine.State.HasFlag(VMState.FAULT))
+                        return new BigDecimal(0, 0);
+                    byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
+                    BigInteger amount = engine.ResultStack.Pop().GetBigInteger();
+                    return new BigDecimal(amount, decimals);
+                }
             }
             else
             {
