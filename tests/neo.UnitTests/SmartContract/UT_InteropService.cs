@@ -226,12 +226,6 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(true);
             InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetCallingScriptHash).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(StackItem.Null);
-
-            engine = GetEngine(true);
-            engine.LoadScript(new byte[] { 0x01 });
-            InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetCallingScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString()
-                .Should().Be(engine.CallingScriptHash.ToArray().ToHexString());
         }
 
         [TestMethod]
