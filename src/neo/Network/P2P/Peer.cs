@@ -15,6 +15,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -175,7 +176,29 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected abstract void OnTcpConnected(IPEndPoint remote, IPEndPoint local);
+        private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
+        {
+            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
+            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
+            {
+                SendTcpDisconnectReason(DisconnectReason.MaxConnectionReached);
+                return;
+            }
+
+            ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            if (count >= MaxConnectionsPerAddress)
+            {
+                SendTcpDisconnectReason(DisconnectReason.MaxConnectionPerAddressReached);
+            }
+            else
+            {
+                ConnectedAddresses[remote.Address] = count + 1;
+                IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
+                Context.Watch(connection);
+                Sender.Tell(new Tcp.Register(connection));
+                ConnectedPeers.TryAdd(connection, remote);
+            }
+        }
 
 
         private void OnTcpCommandFailed(Tcp.Command cmd)
@@ -214,7 +237,24 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected abstract void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local);
+        private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
+        {
+            ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            if (count >= MaxConnectionsPerAddress)
+            {
+                var disconnectMessage = CreateDisconnectMessage(DisconnectReason.MaxConnectionPerAddressReached);
+                ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
+
+                ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    failure: ex => new Tcp.ErrorClosed(ex.Message));
+                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+            }
+            else
+            {
+                ConnectedAddresses[remote.Address] = count + 1;
+                Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
+            }
+        }
 
         protected override void PostStop()
         {
