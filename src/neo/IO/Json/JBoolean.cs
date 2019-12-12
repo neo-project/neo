@@ -38,7 +38,7 @@ namespace Neo.IO.Json
 
         public override JObject Clone()
         {
-            return new JBoolean(Value);
+            return Value;
         }
 
         public static implicit operator JBoolean(bool value)

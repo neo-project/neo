@@ -60,7 +60,7 @@ namespace Neo.IO.Json
 
         public override JObject Clone()
         {
-            return new JNumber(Value);
+            return Value;
         }
 
         public static implicit operator JNumber(double value)

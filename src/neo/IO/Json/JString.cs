@@ -48,7 +48,7 @@ namespace Neo.IO.Json
 
         public override JObject Clone()
         {
-            return new JString(Value);
+            return Value;
         }
 
         public static implicit operator JString(Enum value)
