@@ -182,7 +182,7 @@ namespace Neo.SmartContract.Manifest
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildcardContainer<string>.FromJson(json["safeMethods"], u => u.AsString());
-            Extra = JObject.Parse(json["extra"].AsString());
+            Extra = json["extra"];
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
         }
