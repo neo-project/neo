@@ -46,6 +46,11 @@ namespace Neo.IO.Json
             writer.WriteStringValue(Value);
         }
 
+        public override JObject Clone()
+        {
+            return new JString(Value);
+        }
+
         public static implicit operator JString(Enum value)
         {
             return new JString(value.ToString());

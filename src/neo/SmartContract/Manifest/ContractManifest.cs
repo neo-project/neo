@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Manifest
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
                 SafeMethods = SafeMethods,
-                Extra = Extra
+                Extra = Extra.Clone()
             };
         }
 

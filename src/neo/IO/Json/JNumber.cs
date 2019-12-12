@@ -58,6 +58,11 @@ namespace Neo.IO.Json
             writer.WriteNumberValue(Value);
         }
 
+        public override JObject Clone()
+        {
+            return new JNumber(Value);
+        }
+
         public static implicit operator JNumber(double value)
         {
             return new JNumber(value);
