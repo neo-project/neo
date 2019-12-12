@@ -13,25 +13,25 @@ namespace Neo.SmartContract
 {
     internal static class StackItemSerializer
     {
-        public static StackItem Deserialize(byte[] data, uint maxArraySize, uint maxItemSize)
+        public static StackItem Deserialize(byte[] data, uint maxItemSize, ReferenceCounter referenceCounter = null)
         {
             using MemoryStream ms = new MemoryStream(data, false);
             using BinaryReader reader = new BinaryReader(ms);
-            return Deserialize(reader, maxArraySize, maxItemSize);
+            return Deserialize(reader, maxItemSize, referenceCounter);
         }
 
-        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, uint maxItemSize)
+        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxItemSize, ReferenceCounter referenceCounter = null)
         {
             if (data.IsEmpty) throw new FormatException();
             fixed (byte* pointer = data)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, data.Length);
                 using BinaryReader reader = new BinaryReader(ms);
-                return Deserialize(reader, maxArraySize, maxItemSize);
+                return Deserialize(reader, maxItemSize, referenceCounter);
             }
         }
 
-        private static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize)
+        private static StackItem Deserialize(BinaryReader reader, uint maxItemSize, ReferenceCounter referenceCounter)
         {
             Stack<StackItem> deserialized = new Stack<StackItem>();
             int undeserialized = 1;
@@ -52,7 +52,7 @@ namespace Neo.SmartContract
                     case StackItemType.Array:
                     case StackItemType.Struct:
                         {
-                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            int count = (int)reader.ReadVarInt(maxItemSize);
                             deserialized.Push(new ContainerPlaceholder
                             {
                                 Type = type,
@@ -63,7 +63,7 @@ namespace Neo.SmartContract
                         break;
                     case StackItemType.Map:
                         {
-                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            int count = (int)reader.ReadVarInt(maxItemSize);
                             deserialized.Push(new ContainerPlaceholder
                             {
                                 Type = type,
@@ -88,24 +88,24 @@ namespace Neo.SmartContract
                     switch (placeholder.Type)
                     {
                         case StackItemType.Array:
-                            Array array = new Array();
+                            Array array = new Array(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 array.Add(stack_temp.Pop());
                             item = array;
                             break;
                         case StackItemType.Struct:
-                            Struct @struct = new Struct();
+                            Struct @struct = new Struct(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 @struct.Add(stack_temp.Pop());
                             item = @struct;
                             break;
                         case StackItemType.Map:
-                            Map map = new Map();
+                            Map map = new Map(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
                             {
                                 StackItem key = stack_temp.Pop();
                                 StackItem value = stack_temp.Pop();
-                                map.Add((PrimitiveType)key, value);
+                                map[(PrimitiveType)key] = value;
                             }
                             item = map;
                             break;

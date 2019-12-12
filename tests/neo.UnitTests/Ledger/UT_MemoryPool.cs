@@ -19,7 +19,7 @@ namespace Neo.UnitTests.Ledger
 {
     internal class TestIMemoryPoolTxObserverPlugin : Plugin, IMemoryPoolTxObserverPlugin
     {
-        public override void Configure() { }
+        protected override void Configure() { }
         public void TransactionAdded(Transaction tx) { }
         public void TransactionsRemoved(MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions) { }
     }
