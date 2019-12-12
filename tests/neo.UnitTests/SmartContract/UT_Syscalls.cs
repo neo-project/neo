@@ -165,14 +165,21 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitSysCall(InteropService.Neo_Json_Serialize);
                 script.Emit(OpCode.PUSHNULL);
                 script.EmitSysCall(InteropService.Neo_Json_Serialize);
+                script.Emit(OpCode.NEWMAP);
+                script.Emit(OpCode.DUP);
+                script.EmitPush("key");
+                script.EmitPush("value");
+                script.Emit(OpCode.SETITEM);
+                script.EmitSysCall(InteropService.Neo_Json_Serialize);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(4, engine.ResultStack.Count);
+                    Assert.AreEqual(5, engine.ResultStack.Count);
 
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var m) && m.GetString() == "{\"key\":\"dmFsdWU=\"}");
                     Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var n) && n.GetString() == "null");
                     Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var s) && s.GetString() == "\"dGVzdA==\"");
                     Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var b) && b.GetString() == "true");
