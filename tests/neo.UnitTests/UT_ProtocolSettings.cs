@@ -116,15 +116,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetSeedList()
         {
-            ProtocolSettings.Default.SeedList.Should().BeEquivalentTo(
-                new[]
-                {
-                    "seed1.neo.org:10333",
-                    "seed2.neo.org:10333",
-                    "seed3.neo.org:10333",
-                    "seed4.neo.org:10333",
-                    "seed5.neo.org:10333",
-                });
+            ProtocolSettings.Default.SeedList.Should().BeEquivalentTo(new string[] { "seed1.neo.org:10333", "seed2.neo.org:10333", "seed3.neo.org:10333", "seed4.neo.org:10333", "seed5.neo.org:10333", });
         }
     }
 }
