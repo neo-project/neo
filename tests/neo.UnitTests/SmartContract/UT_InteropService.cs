@@ -748,12 +748,12 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(method.ToHexString());
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(args.ToHexString());
 
-            state.Manifest.Permissions[0].Methods = WildCardContainer<string>.Create("a");
+            state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
             engine.CurrentContext.EvaluationStack.Push(args);
             engine.CurrentContext.EvaluationStack.Push(method);
             engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
             InteropService.Invoke(engine, InteropService.System_Contract_Call).Should().BeFalse();
-            state.Manifest.Permissions[0].Methods = WildCardContainer<string>.CreateWildcard();
+            state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
 
             engine.CurrentContext.EvaluationStack.Push(args);
             engine.CurrentContext.EvaluationStack.Push(method);
