@@ -61,14 +61,8 @@ namespace Neo
                 };
             IConfigurationSection section_sl = section.GetSection("SeedList");
             if (section_sl.Exists())
-            {
-                this.SeedList = section_sl.GetChildren()
-                      .Select(p => p.Get<string>())
-                      .Where(u => !string.IsNullOrEmpty(u))
-                      .ToArray();
-            }
+                this.SeedList = section_sl.GetChildren().Select(p => p.Get<string>()).ToArray();
             else
-            {
                 this.SeedList = new[]
                 {
                     "seed1.neo.org:10333",
@@ -77,8 +71,6 @@ namespace Neo
                     "seed4.neo.org:10333",
                     "seed5.neo.org:10333"
                 };
-            }
-
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
         }
