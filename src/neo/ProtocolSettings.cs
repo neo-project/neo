@@ -99,7 +99,7 @@ namespace Neo
             return new IPEndPoint(ipAddress, port);
         }
 
-        private IPEndPoint GetIpEndPoint(string hostAndPort)
+        internal static IPEndPoint GetIpEndPoint(string hostAndPort)
         {
             if (string.IsNullOrEmpty(hostAndPort)) return null;
 
