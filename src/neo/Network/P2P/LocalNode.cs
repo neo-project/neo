@@ -16,18 +16,13 @@ namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
-        public class Seed
-        {
-            public string HostAndPort;
-            public IPEndPoint EndPoint;
-        }
         public class Relay { public IInventory Inventory; }
         internal class RelayDirectly { public IInventory Inventory; }
         internal class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
-        private readonly Seed[] SeedList;
+        private readonly IPEndPoint[] SeedList = new IPEndPoint[ProtocolSettings.Default.SeedList.Length];
 
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -64,14 +59,10 @@ namespace Neo.Network.P2P
                 this.system = system;
                 singleton = this;
 
-                SeedList = ProtocolSettings.Default.SeedList
-                    .Select(u => new Seed() { HostAndPort = u })
-                    .ToArray();
-
                 // Start dns resolution in parallel
 
-                foreach (var s in SeedList)
-                    Task.Run(() => s.EndPoint = GetIpEndPoint(s.HostAndPort));
+                for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
+                    Task.Run(() => SeedList[i] = GetIpEndPoint(ProtocolSettings.Default.SeedList[i]));
             }
         }
 
@@ -156,7 +147,7 @@ namespace Neo.Network.P2P
                 // It will try to add those, sequentially, to the list of currently uncconected ones.
 
                 Random rand = new Random();
-                AddPeers(SeedList.Where(u => u.EndPoint != null).OrderBy(p => rand.Next()).Select(u => u.EndPoint).Take(count));
+                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
             }
         }
 
