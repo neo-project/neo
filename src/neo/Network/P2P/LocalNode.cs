@@ -78,24 +78,6 @@ namespace Neo.Network.P2P
             Connections.Tell(message);
         }
 
-        /// <summary>
-        /// Return an amount of random seeds nodes from the default SeedList file defined on <see cref="ProtocolSettings"/>.
-        /// </summary>
-        /// <param name="seedsToTake">Limit of random seed nodes to be obtained, also limited by the available seeds from file.</param>
-        private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
-        {
-            if (seedsToTake > 0)
-            {
-                Random rand = new Random();
-                foreach (IPEndPoint seed in ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()))
-                {
-                    if (seedsToTake == 0) break;
-                    seedsToTake--;
-                    yield return seed;
-                }
-            }
-        }
-
         public IEnumerable<RemoteNode> GetRemoteNodes()
         {
             return RemoteNodes.Values;
@@ -123,7 +105,9 @@ namespace Neo.Network.P2P
             {
                 // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
                 // It will try to add those, sequentially, to the list of currently uncconected ones.
-                AddPeers(GetIPEndPointsFromSeedList(count));
+
+                Random rand = new Random();
+                AddPeers(ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()).Take(count));
             }
         }
 
