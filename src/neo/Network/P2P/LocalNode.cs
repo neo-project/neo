@@ -67,6 +67,8 @@ namespace Neo.Network.P2P
                 SeedList = ProtocolSettings.Default.SeedList
                     .Select(u => new Seed() { HostAndPort = u })
                     .ToArray();
+                    
+                // Start dns resolution in parallel
 
                 foreach (var seed in SeedList)
                 {
