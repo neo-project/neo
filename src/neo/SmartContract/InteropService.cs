@@ -265,14 +265,12 @@ namespace Neo.SmartContract
             byte[] serialized;
             try
             {
-                serialized = StackItemSerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop());
+                serialized = StackItemSerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop(), engine.MaxItemSize);
             }
-            catch (NotSupportedException)
+            catch
             {
                 return false;
             }
-            if (serialized.Length > engine.MaxItemSize)
-                return false;
             engine.CurrentContext.EvaluationStack.Push(serialized);
             return true;
         }
