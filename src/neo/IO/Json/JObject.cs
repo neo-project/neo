@@ -204,5 +204,17 @@ namespace Neo.IO.Json
         {
             return (JString)value;
         }
+
+        public virtual JObject Clone()
+        {
+            var cloned = new JObject();
+
+            foreach (KeyValuePair<string, JObject> pair in Properties)
+            {
+                cloned[pair.Key] = pair.Value != null ? pair.Value.Clone() : Null;
+            }
+
+            return cloned;
+        }
     }
 }
