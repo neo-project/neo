@@ -67,12 +67,17 @@ namespace Neo.Network.P2P
                 SeedList = ProtocolSettings.Default.SeedList
                     .Select(u => new Seed() { HostAndPort = u })
                     .ToArray();
-                    
+
                 // Start dns resolution in parallel
 
                 foreach (var seed in SeedList)
                 {
-                    Task.Run(() => seed).PipeTo(Self, Sender);
+                    Task.Run(() =>
+                    {
+                        seed.EndPoint = GetIpEndPoint(seed.HostAndPort);
+                        return seed;
+                    })
+                    .PipeTo(Self);
                 }
             }
         }
@@ -169,9 +174,6 @@ namespace Neo.Network.P2P
             {
                 case Message msg:
                     BroadcastMessage(msg);
-                    break;
-                case Seed seed:
-                    if (seed.EndPoint == null) seed.EndPoint = GetIpEndPoint(seed.HostAndPort);
                     break;
                 case Relay relay:
                     OnRelay(relay.Inventory);
