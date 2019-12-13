@@ -70,7 +70,8 @@ namespace Neo.Network.P2P
 
                 // Start dns resolution in parallel
 
-                Task.WhenAll(SeedList.Select(s => Task.Run(() => s.EndPoint = GetIpEndPoint(s.HostAndPort)))).PipeTo(Self);
+                foreach (var s in SeedList)
+                    Task.Run(() => s.EndPoint = GetIpEndPoint(s.HostAndPort));
             }
         }
 
