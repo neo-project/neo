@@ -171,7 +171,7 @@ namespace Neo.Network.P2P
                     BroadcastMessage(msg);
                     break;
                 case Seed seed:
-                    if (seed.EndPoint != null) seed.EndPoint = GetIpEndPoint(seed.HostAndPort);
+                    if (seed.EndPoint == null) seed.EndPoint = GetIpEndPoint(seed.HostAndPort);
                     break;
                 case Relay relay:
                     OnRelay(relay.Inventory);
