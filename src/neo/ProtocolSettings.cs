@@ -63,20 +63,29 @@ namespace Neo
                 };
             IConfigurationSection section_sl = section.GetSection("SeedList");
             if (section_sl.Exists())
+            {
                 this.SeedList = section_sl.GetChildren()
-                    .AsParallel()
-                    .Select(p => GetIpEndPoint(p.Get<string>()))
-                    .Where(u => u != null)
-                    .ToArray();
+                      .AsParallel()
+                      .Select(p => GetIpEndPoint(p.Get<string>()))
+                      .Where(u => u != null)
+                      .ToArray();
+            }
             else
+            {
                 this.SeedList = new[]
                 {
-                    GetIpEndPoint("seed1.neo.org:10333"),
-                    GetIpEndPoint("seed2.neo.org:10333"),
-                    GetIpEndPoint("seed3.neo.org:10333"),
-                    GetIpEndPoint("seed4.neo.org:10333"),
-                    GetIpEndPoint("seed5.neo.org:10333")
-                };
+                    "seed1.neo.org:10333",
+                    "seed2.neo.org:10333",
+                    "seed3.neo.org:10333",
+                    "seed4.neo.org:10333",
+                    "seed5.neo.org:10333"
+                }
+                .AsParallel()
+                .Select(p => GetIpEndPoint(p))
+                .Where(u => u != null)
+                .ToArray();
+            }
+
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
         }
