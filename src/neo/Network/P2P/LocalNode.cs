@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -21,6 +22,7 @@ namespace Neo.Network.P2P
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
+        private readonly IPEndPoint[] SeedList = new IPEndPoint[ProtocolSettings.Default.SeedList.Length];
 
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -56,6 +58,11 @@ namespace Neo.Network.P2P
                     throw new InvalidOperationException();
                 this.system = system;
                 singleton = this;
+
+                // Start dns resolution in parallel
+
+                for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
+                    Task.Run(() => SeedList[i] = GetIpEndPoint(ProtocolSettings.Default.SeedList[i]));
             }
         }
 
@@ -97,33 +104,18 @@ namespace Neo.Network.P2P
             return new IPEndPoint(ipAddress, port);
         }
 
-        /// <summary>
-        /// Return an amount of random seeds nodes from the default SeedList file defined on <see cref="ProtocolSettings"/>.
-        /// </summary>
-        /// <param name="seedsToTake">Limit of random seed nodes to be obtained, also limited by the available seeds from file.</param>
-        private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
+        internal static IPEndPoint GetIpEndPoint(string hostAndPort)
         {
-            if (seedsToTake > 0)
+            if (string.IsNullOrEmpty(hostAndPort)) return null;
+
+            try
             {
-                Random rand = new Random();
-                foreach (string hostAndPort in ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()))
-                {
-                    if (seedsToTake == 0) break;
-                    string[] p = hostAndPort.Split(':');
-                    IPEndPoint seed;
-                    try
-                    {
-                        seed = GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
-                    }
-                    catch (AggregateException)
-                    {
-                        continue;
-                    }
-                    if (seed == null) continue;
-                    seedsToTake--;
-                    yield return seed;
-                }
+                string[] p = hostAndPort.Split(':');
+                return GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
             }
+            catch { }
+
+            return null;
         }
 
         public IEnumerable<RemoteNode> GetRemoteNodes()
@@ -153,7 +145,9 @@ namespace Neo.Network.P2P
             {
                 // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
                 // It will try to add those, sequentially, to the list of currently uncconected ones.
-                AddPeers(GetIPEndPointsFromSeedList(count));
+
+                Random rand = new Random();
+                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
             }
         }
 
