@@ -7,19 +7,27 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
+        public class Seed
+        {
+            public string HostAndPort;
+            public IPEndPoint EndPoint;
+        }
         public class Relay { public IInventory Inventory; }
         internal class RelayDirectly { public IInventory Inventory; }
         internal class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
+        private readonly Seed[] SeedList;
 
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -55,6 +63,15 @@ namespace Neo.Network.P2P
                     throw new InvalidOperationException();
                 this.system = system;
                 singleton = this;
+
+                SeedList = ProtocolSettings.Default.SeedList
+                    .Select(u => new Seed() { HostAndPort = u })
+                    .ToArray();
+
+                foreach (var seed in SeedList)
+                {
+                    Task.Run(() => seed).PipeTo(Self, Sender);
+                }
             }
         }
 
@@ -76,6 +93,38 @@ namespace Neo.Network.P2P
         private void BroadcastMessage(Message message)
         {
             Connections.Tell(message);
+        }
+
+        private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
+        {
+            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
+                return new IPEndPoint(ipAddress, port);
+            IPHostEntry entry;
+            try
+            {
+                entry = Dns.GetHostEntry(hostNameOrAddress);
+            }
+            catch (SocketException)
+            {
+                return null;
+            }
+            ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
+            if (ipAddress == null) return null;
+            return new IPEndPoint(ipAddress, port);
+        }
+
+        internal static IPEndPoint GetIpEndPoint(string hostAndPort)
+        {
+            if (string.IsNullOrEmpty(hostAndPort)) return null;
+
+            try
+            {
+                string[] p = hostAndPort.Split(':');
+                return GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
+            }
+            catch { }
+
+            return null;
         }
 
         public IEnumerable<RemoteNode> GetRemoteNodes()
@@ -107,7 +156,7 @@ namespace Neo.Network.P2P
                 // It will try to add those, sequentially, to the list of currently uncconected ones.
 
                 Random rand = new Random();
-                AddPeers(ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()).Take(count));
+                AddPeers(SeedList.Where(u => u.EndPoint != null).OrderBy(p => rand.Next()).Select(u => u.EndPoint).Take(count));
             }
         }
 
@@ -118,6 +167,9 @@ namespace Neo.Network.P2P
             {
                 case Message msg:
                     BroadcastMessage(msg);
+                    break;
+                case Seed seed:
+                    if (seed.EndPoint != null) seed.EndPoint = GetIpEndPoint(seed.HostAndPort);
                     break;
                 case Relay relay:
                     OnRelay(relay.Inventory);
