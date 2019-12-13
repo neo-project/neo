@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 namespace Neo
@@ -10,7 +12,7 @@ namespace Neo
         public uint Magic { get; }
         public byte AddressVersion { get; }
         public string[] StandbyValidators { get; }
-        public string[] SeedList { get; }
+        public IPEndPoint[] SeedList { get; }
         public uint MillisecondsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
 
@@ -61,18 +63,54 @@ namespace Neo
                 };
             IConfigurationSection section_sl = section.GetSection("SeedList");
             if (section_sl.Exists())
-                this.SeedList = section_sl.GetChildren().Select(p => p.Get<string>()).ToArray();
+                this.SeedList = section_sl.GetChildren()
+                    .AsParallel()
+                    .Select(p => GetIpEndPoint(p.Get<string>()))
+                    .Where(u => u != null)
+                    .ToArray();
             else
                 this.SeedList = new[]
                 {
-                    "seed1.neo.org:10333",
-                    "seed2.neo.org:10333",
-                    "seed3.neo.org:10333",
-                    "seed4.neo.org:10333",
-                    "seed5.neo.org:10333"
+                    GetIpEndPoint("seed1.neo.org:10333"),
+                    GetIpEndPoint("seed2.neo.org:10333"),
+                    GetIpEndPoint("seed3.neo.org:10333"),
+                    GetIpEndPoint("seed4.neo.org:10333"),
+                    GetIpEndPoint("seed5.neo.org:10333")
                 };
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
+        }
+
+        private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
+        {
+            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
+                return new IPEndPoint(ipAddress, port);
+            IPHostEntry entry;
+            try
+            {
+                entry = Dns.GetHostEntry(hostNameOrAddress);
+            }
+            catch (SocketException)
+            {
+                return null;
+            }
+            ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo);
+            if (ipAddress == null) return null;
+            return new IPEndPoint(ipAddress, port);
+        }
+
+        private IPEndPoint GetIpEndPoint(string hostAndPort)
+        {
+            if (string.IsNullOrEmpty(hostAndPort)) return null;
+
+            try
+            {
+                string[] p = hostAndPort.Split(':');
+                return GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
+            }
+            catch { }
+
+            return null;
         }
     }
 }
