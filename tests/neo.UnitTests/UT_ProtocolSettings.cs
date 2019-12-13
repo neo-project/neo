@@ -116,7 +116,8 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetSeedList()
         {
-            ProtocolSettings.Default.SeedList.Should().BeEquivalentTo(new []
+            ProtocolSettings.Default.SeedList.Should().BeEquivalentTo(
+                new[]
                 {
                     ProtocolSettings.GetIpEndPoint("seed1.neo.org:10333"),
                     ProtocolSettings.GetIpEndPoint("seed2.neo.org:10333"),
