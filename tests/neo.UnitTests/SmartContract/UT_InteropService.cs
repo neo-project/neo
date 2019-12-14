@@ -223,15 +223,35 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestExecutionEngine_GetCallingScriptHash()
         {
+            // Test without
+
             var engine = GetEngine(true);
             InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetCallingScriptHash).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(StackItem.Null);
 
-            engine = GetEngine(true);
-            engine.LoadScript(new byte[] { 0x01 });
-            InteropService.Invoke(engine, InteropService.System_ExecutionEngine_GetCallingScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString()
-                .Should().Be(engine.CallingScriptHash.ToArray().ToHexString());
+            // Test real
+
+            using ScriptBuilder scriptA = new ScriptBuilder();
+            scriptA.Emit(OpCode.DROP); // Drop arguments
+            scriptA.Emit(OpCode.DROP); // Drop method
+            scriptA.EmitSysCall(InteropService.System_ExecutionEngine_GetCallingScriptHash);
+
+            var contract = new ContractState()
+            {
+                Manifest = ContractManifest.CreateDefault(scriptA.ToArray().ToScriptHash()),
+                Script = scriptA.ToArray()
+            };
+
+            engine = GetEngine(true, true, false);
+            engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
+
+            using ScriptBuilder scriptB = new ScriptBuilder();
+            scriptB.EmitAppCall(contract.ScriptHash, "");
+            engine.LoadScript(scriptB.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            engine.ResultStack.Pop().GetSpan().ToHexString().Should().Be(scriptB.ToArray().ToScriptHash().ToArray().ToHexString());
         }
 
         [TestMethod]
@@ -808,28 +828,31 @@ namespace Neo.UnitTests.SmartContract
             tx.Script = new byte[] { 0x01, 0x02, 0x03 };
         }
 
-        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false)
+        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool addScript = true)
         {
             var tx = TestUtils.GetTransaction();
             var snapshot = Blockchain.Singleton.GetSnapshot();
             ApplicationEngine engine;
             if (hasContainer && hasSnapshot)
             {
-                engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0);
+                engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
             }
             else if (hasContainer && !hasSnapshot)
             {
-                engine = new ApplicationEngine(TriggerType.Application, tx, null, 0);
+                engine = new ApplicationEngine(TriggerType.Application, tx, null, 0, true);
             }
             else if (!hasContainer && hasSnapshot)
             {
-                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             }
             else
             {
-                engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+                engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true);
             }
-            engine.LoadScript(new byte[] { 0x01 });
+            if (addScript)
+            {
+                engine.LoadScript(new byte[] { 0x01 });
+            }
             return engine;
         }
     }

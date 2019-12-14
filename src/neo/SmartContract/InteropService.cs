@@ -484,7 +484,9 @@ namespace Neo.SmartContract
                 engine.InvocationCounter[contract.ScriptHash] = 1;
             }
 
+            UInt160 callingScriptHash = engine.CurrentScriptHash;
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+            context_new.GetState<ExecutionContextState>().CallingScriptHash = callingScriptHash;
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
             return true;

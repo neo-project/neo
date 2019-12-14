@@ -15,44 +15,49 @@ namespace Neo.SmartContract
         {
             m = 0; n = 0;
             int i = 0;
-            if (script.Length < 42) return false;
-            if (script[i] > (byte)OpCode.PUSH16) return false;
-            if (script[i] < (byte)OpCode.PUSH1 && script[i] != 1 && script[i] != 2) return false;
+            if (script.Length < 43) return false;
             switch (script[i])
             {
-                case 1:
+                case (byte)OpCode.PUSHINT8:
                     m = script[++i];
                     ++i;
                     break;
-                case 2:
+                case (byte)OpCode.PUSHINT16:
                     m = BinaryPrimitives.ReadUInt16LittleEndian(script.AsSpan(++i));
                     i += 2;
                     break;
-                default:
-                    m = script[i++] - 80;
+                case byte b when b >= (byte)OpCode.PUSH1 && b <= (byte)OpCode.PUSH16:
+                    m = b - (byte)OpCode.PUSH0;
+                    ++i;
                     break;
+                default:
+                    return false;
             }
             if (m < 1 || m > 1024) return false;
-            while (script[i] == 33)
+            while (script[i] == (byte)OpCode.PUSHDATA1)
             {
+                if (script.Length <= i + 35) return false;
+                if (script[++i] != 33) return false;
                 i += 34;
-                if (script.Length <= i) return false;
                 ++n;
             }
             if (n < m || n > 1024) return false;
             switch (script[i])
             {
-                case 1:
+                case (byte)OpCode.PUSHINT8:
                     if (n != script[++i]) return false;
                     ++i;
                     break;
-                case 2:
+                case (byte)OpCode.PUSHINT16:
                     if (script.Length < i + 3 || n != BinaryPrimitives.ReadUInt16LittleEndian(script.AsSpan(++i))) return false;
                     i += 2;
                     break;
-                default:
-                    if (n != script[i++] - 80) return false;
+                case byte b when b >= (byte)OpCode.PUSH1 && b <= (byte)OpCode.PUSH16:
+                    if (n != b - (byte)OpCode.PUSH0) return false;
+                    ++i;
                     break;
+                default:
+                    return false;
             }
             if (script[i++] != (byte)OpCode.PUSHNULL) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
@@ -64,11 +69,12 @@ namespace Neo.SmartContract
 
         public static bool IsSignatureContract(this byte[] script)
         {
-            if (script.Length != 40) return false;
-            if (script[0] != (byte)OpCode.PUSHBYTES33
-                || script[34] != (byte)OpCode.PUSHNULL
-                || script[35] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 36) != InteropService.Neo_Crypto_ECDsaVerify)
+            if (script.Length != 41) return false;
+            if (script[0] != (byte)OpCode.PUSHDATA1
+                || script[1] != 33
+                || script[35] != (byte)OpCode.PUSHNULL
+                || script[36] != (byte)OpCode.SYSCALL
+                || BitConverter.ToUInt32(script, 37) != InteropService.Neo_Crypto_ECDsaVerify)
                 return false;
             return true;
         }
