@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Native
                 });
             }
             this.Manifest.Abi.Methods = descriptors.ToArray();
-            this.Manifest.SafeMethods = WildCardContainer<string>.Create(safeMethods.ToArray());
+            this.Manifest.SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray());
             contracts.Add(this);
         }
 
