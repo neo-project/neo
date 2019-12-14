@@ -73,18 +73,20 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke);
-            JObject json = new JObject();
-            json["script"] = script.ToHexString();
-            json["state"] = engine.State;
-            json["gas_consumed"] = engine.GasConsumed.ToString();
-            try
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke))
             {
-                json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
-            }
-            catch (InvalidOperationException)
-            {
-                json["stack"] = "error: recursive reference";
+                JObject json = new JObject();
+                json["script"] = script.ToHexString();
+                json["state"] = engine.State;
+                json["gas_consumed"] = engine.GasConsumed.ToString();
+                try
+                {
+                    json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+                }
+                catch (InvalidOperationException)
+                {
+                    json["stack"] = "error: recursive reference";
+                }
             }
             return json;
         }
