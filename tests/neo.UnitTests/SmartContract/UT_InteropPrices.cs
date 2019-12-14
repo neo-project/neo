@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(SyscallContractCreateHash00);
                 debugger.StepInto(); // PUSHDATA1
                 debugger.StepInto(); // PUSHDATA1
-                InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
+                InteropService.GetPrice(InteropService.System_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
