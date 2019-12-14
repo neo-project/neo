@@ -144,16 +144,16 @@ namespace Neo.SmartContract
                     int i = 0;
                     switch (contract.Script[i++])
                     {
-                        case 1:
+                        case (byte)OpCode.PUSHINT8:
                             ++i;
                             break;
-                        case 2:
+                        case (byte)OpCode.PUSHINT16:
                             i += 2;
                             break;
                     }
-                    while (contract.Script[i++] == 33)
+                    while (contract.Script[i++] == (byte)OpCode.PUSHDATA1)
                     {
-                        points.Add(ECPoint.DecodePoint(contract.Script.AsSpan(i, 33), ECCurve.Secp256r1));
+                        points.Add(ECPoint.DecodePoint(contract.Script.AsSpan(++i, 33), ECCurve.Secp256r1));
                         i += 33;
                     }
                 }
