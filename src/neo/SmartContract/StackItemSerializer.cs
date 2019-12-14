@@ -47,7 +47,7 @@ namespace Neo.SmartContract
                         deserialized.Push(new Boolean(reader.ReadBoolean()));
                         break;
                     case StackItemType.Integer:
-                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes(ExecutionEngine.MaxSizeForBigInteger))));
+                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes(Integer.MaxSize))));
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:

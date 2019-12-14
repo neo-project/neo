@@ -4,6 +4,7 @@ using Neo.SmartContract;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Neo.UnitTests.SmartContract
@@ -61,8 +62,7 @@ namespace Neo.UnitTests.SmartContract
                     };
             Assert.AreEqual(Encoding.Default.GetString(expectedArray7), Encoding.Default.GetString(result7));
 
-            Dictionary<PrimitiveType, StackItem> list8 = new Dictionary<PrimitiveType, StackItem> { [2] = 1 };
-            StackItem stackItem82 = new Map(list8);
+            StackItem stackItem82 = new Map { [2] = 1 };
             byte[] result8 = StackItemSerializer.Serialize(stackItem82, MaxItemSize);
             byte[] expectedArray8 = new byte[] {
                         0x82,0x01,0x02,0x01,0x02,0x02,0x01,0x01
@@ -117,13 +117,12 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(((Struct)stackItem62).Count, ((Struct)result6).Count);
             Assert.AreEqual(((Struct)stackItem62).GetEnumerator().Current, ((Struct)result6).GetEnumerator().Current);
 
-            Dictionary<PrimitiveType, StackItem> list7 = new Dictionary<PrimitiveType, StackItem> { [2] = 1 };
-            StackItem stackItem72 = new Map(list7);
+            StackItem stackItem72 = new Map { [2] = 1 };
             byte[] byteArray7 = StackItemSerializer.Serialize(stackItem72, MaxItemSize);
             StackItem result7 = StackItemSerializer.Deserialize(byteArray7, (uint)byteArray7.Length);
             Assert.AreEqual(((Map)stackItem72).Count, ((Map)result7).Count);
-            Assert.AreEqual(((Map)stackItem72).Keys.GetEnumerator().Current, ((Map)result7).Keys.GetEnumerator().Current);
-            Assert.AreEqual(((Map)stackItem72).Values.GetEnumerator().Current, ((Map)result7).Values.GetEnumerator().Current);
+            CollectionAssert.AreEqual(((Map)stackItem72).Keys.ToArray(), ((Map)result7).Keys.ToArray());
+            CollectionAssert.AreEqual(((Map)stackItem72).Values.ToArray(), ((Map)result7).Values.ToArray());
         }
     }
 }

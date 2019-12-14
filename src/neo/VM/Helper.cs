@@ -312,7 +312,10 @@ namespace Neo.VM
                         (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
                     if (stackItem is null)
                     {
-                        stackItem = new Map(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).ToDictionary(p => (PrimitiveType)ToStackItem(p.Key, context), p => ToStackItem(p.Value, context)));
+                        Map map = new Map();
+                        foreach (var pair in (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value)
+                            map[(PrimitiveType)ToStackItem(pair.Key, context)] = ToStackItem(pair.Value, context);
+                        stackItem = map;
                         context.Add((stackItem, parameter));
                     }
                     break;
