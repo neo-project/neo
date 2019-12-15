@@ -155,7 +155,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             UInt160 account = new UInt160(args[0].GetSpan());
             ECPoint[] pubkeys = ((Array)args[1]).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToArray();
-            if (!InteropService.CheckWitness(engine, account)) return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             StorageKey key_account = CreateAccountKey(account);
             if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = engine.Snapshot.Storages.GetAndChange(key_account);

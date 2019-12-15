@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public void FromByteArray(byte[] data)
         {
-            FromStruct((Struct)StackItemSerializer.Deserialize(data, 34));
+            FromStruct((Struct)BinarySerializer.Deserialize(data, 34));
         }
 
         protected virtual void FromStruct(Struct @struct)
@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public byte[] ToByteArray()
         {
-            return StackItemSerializer.Serialize(ToStruct(), 4096);
+            return BinarySerializer.Serialize(ToStruct(), 4096);
         }
 
         protected virtual Struct ToStruct()

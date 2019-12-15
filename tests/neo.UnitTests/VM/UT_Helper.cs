@@ -41,7 +41,7 @@ namespace Neo.UnitTests.VMT
             tempArray[9] = (byte)OpCode.PUSHDATA1;
             tempArray[10] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 11, 20);//operation.data
-            uint api = InteropService.System_Contract_Call;
+            uint api = InteropService.Contract.Call;
             tempArray[31] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 32, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.VMT
             tempArray[10] = (byte)OpCode.PUSHDATA1;
             tempArray[11] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
-            uint api = InteropService.System_Contract_Call;
+            uint api = InteropService.Contract.Call;
             tempArray[32] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -85,7 +85,7 @@ namespace Neo.UnitTests.VMT
             tempArray[10] = (byte)OpCode.PUSHDATA1;
             tempArray[11] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
-            uint api = InteropService.System_Contract_Call;
+            uint api = InteropService.Contract.Call;
             tempArray[32] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
