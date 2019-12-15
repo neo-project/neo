@@ -11,7 +11,7 @@ using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
-    internal static class StackItemSerializer
+    internal static class BinarySerializer
     {
         public static StackItem Deserialize(byte[] data, uint maxItemSize, ReferenceCounter referenceCounter = null)
         {

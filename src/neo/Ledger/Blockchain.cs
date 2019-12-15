@@ -157,7 +157,7 @@ namespace Neo.Ledger
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(InteropService.Neo_Native_Deploy);
+                sb.EmitSysCall(InteropService.Native.Deploy);
                 script = sb.ToArray();
             }
             return new Transaction
