@@ -40,18 +40,18 @@ namespace Neo.UnitTests.SmartContract
         public void ApplicationEngineVariablePrices()
         {
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash00 = new byte[] { 0x01, 0x00, 0x02, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
+            byte[] SyscallContractCreateHash00 = new byte[] { (byte)OpCode.PUSHDATA1, 0x01, 0x00, (byte)OpCode.PUSHDATA1, 0x02, 0x00, 0x00, (byte)OpCode.SYSCALL, 0xf6, 0x6c, 0xa5, 0x6e };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash00);
-                debugger.StepInto(); // PUSHBYTES1
-                debugger.StepInto(); // PUSHBYTES2
+                debugger.StepInto(); // PUSHDATA1
+                debugger.StepInto(); // PUSHDATA1
                 InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
-            byte[] SyscallStoragePutHash = new byte[] { 0x53, 0x53, 0x00, 0x68, 0xe6, 0x3f, 0x18, 0x84 };
+            byte[] SyscallStoragePutHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0xe6, 0x3f, 0x18, 0x84 };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.SmartContract
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
-            byte[] SyscallStoragePutExHash = new byte[] { 0x53, 0x53, 0x00, 0x68, 0x73, 0xe1, 0x9b, 0x3a };
+            byte[] SyscallStoragePutExHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0x73, 0xe1, 0x9b, 0x3a };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);

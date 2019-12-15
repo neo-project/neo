@@ -376,21 +376,33 @@ namespace Neo.SmartContract
 
         private static bool Json_Deserialize(ApplicationEngine engine)
         {
-            var json = engine.CurrentContext.EvaluationStack.Pop().GetString();
-            var obj = JObject.Parse(json, 10);
-            var item = JsonSerializer.Deserialize(obj, engine.ReferenceCounter);
-
-            engine.CurrentContext.EvaluationStack.Push(item);
-            return true;
+            var json = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
+            try
+            {
+                var obj = JObject.Parse(json, 10);
+                var item = JsonSerializer.Deserialize(obj, engine.ReferenceCounter);
+                engine.CurrentContext.EvaluationStack.Push(item);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static bool Json_Serialize(ApplicationEngine engine)
         {
             var item = engine.CurrentContext.EvaluationStack.Pop();
-            var json = JsonSerializer.Serialize(item);
-
-            engine.CurrentContext.EvaluationStack.Push(json.ToString());
-            return true;
+            try
+            {
+                var json = JsonSerializer.SerializeToByteArray(item, engine.MaxItemSize);
+                engine.CurrentContext.EvaluationStack.Push(json);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

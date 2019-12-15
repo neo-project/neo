@@ -265,14 +265,12 @@ namespace Neo.SmartContract
             byte[] serialized;
             try
             {
-                serialized = StackItemSerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop());
+                serialized = StackItemSerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop(), engine.MaxItemSize);
             }
-            catch (NotSupportedException)
+            catch
             {
                 return false;
             }
-            if (serialized.Length > engine.MaxItemSize)
-                return false;
             engine.CurrentContext.EvaluationStack.Push(serialized);
             return true;
         }
@@ -486,7 +484,9 @@ namespace Neo.SmartContract
                 engine.InvocationCounter[contract.ScriptHash] = 1;
             }
 
+            UInt160 callingScriptHash = engine.CurrentScriptHash;
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+            context_new.GetState<ExecutionContextState>().CallingScriptHash = callingScriptHash;
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
             return true;
