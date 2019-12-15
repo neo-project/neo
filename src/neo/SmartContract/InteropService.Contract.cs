@@ -20,7 +20,7 @@ namespace Neo.SmartContract
             private static long GetDeploymentPrice(EvaluationStack stack)
             {
                 int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
-                return GasPerByte * size;
+                return Storage.GasPerByte * size;
             }
 
             private static bool Contract_Create(ApplicationEngine engine)

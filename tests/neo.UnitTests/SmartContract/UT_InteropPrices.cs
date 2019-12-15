@@ -24,7 +24,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                InteropService.GetPrice(InteropService.System_Storage_GetContext, ae.CurrentContext.EvaluationStack).Should().Be(0_00000400L);
+                InteropService.GetPrice(InteropService.Storage.GetContext, ae.CurrentContext.EvaluationStack).Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                InteropService.GetPrice(InteropService.System_Storage_Get, ae.CurrentContext.EvaluationStack).Should().Be(0_01000000L);
+                InteropService.GetPrice(InteropService.Storage.Get, ae.CurrentContext.EvaluationStack).Should().Be(0_01000000L);
             }
         }
 
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                InteropService.GetPrice(InteropService.System_Storage_Put, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
+                InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                InteropService.GetPrice(InteropService.System_Storage_PutEx, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
+                InteropService.GetPrice(InteropService.Storage.PutEx, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
             }
         }
     }

@@ -483,7 +483,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestStorage_GetContext()
         {
             var engine = GetEngine();
-            InteropService.Invoke(engine, InteropService.System_Storage_GetContext).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.GetContext).Should().BeTrue();
             var ret = (InteropInterface<StorageContext>)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
             ret.GetInterface<StorageContext>().IsReadOnly.Should().BeFalse();
@@ -493,7 +493,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestStorage_GetReadOnlyContext()
         {
             var engine = GetEngine();
-            InteropService.Invoke(engine, InteropService.System_Storage_GetReadOnlyContext).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.GetReadOnlyContext).Should().BeTrue();
             var ret = (InteropInterface<StorageContext>)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
             ret.GetInterface<StorageContext>().IsReadOnly.Should().BeTrue();
@@ -528,7 +528,7 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = state.ScriptHash,
                 IsReadOnly = false
             }));
-            InteropService.Invoke(engine, InteropService.System_Storage_Get).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
 
             snapshot.Contracts.Delete(state.ScriptHash);
@@ -540,10 +540,10 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = state.ScriptHash,
                 IsReadOnly = false
             }));
-            InteropService.Invoke(engine, InteropService.System_Storage_Get).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
 
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.System_Storage_Get).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
         }
 
         [TestMethod]
@@ -551,7 +551,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(false, true);
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //CheckStorageContext fail
             var key = new byte[] { 0x01 };
@@ -565,15 +565,15 @@ namespace Neo.UnitTests.SmartContract
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //key.Length > MaxStorageKeySize
-            key = new byte[InteropService.MaxStorageKeySize + 1];
+            key = new byte[InteropService.Storage.MaxKeySize + 1];
             value = new byte[] { 0x02 };
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //value.Length > MaxStorageValueSize
             key = new byte[] { 0x01 };
@@ -581,7 +581,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //context.IsReadOnly
             key = new byte[] { 0x01 };
@@ -590,7 +590,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //storage value is constant
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -616,14 +616,14 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //success
             storageItem.IsConstant = false;
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
 
             //value length == 0
             key = new byte[] { 0x01 };
@@ -631,7 +631,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Put).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
         }
 
         [TestMethod]
@@ -639,7 +639,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(false, true);
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.System_Storage_PutEx).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.PutEx).Should().BeFalse();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
@@ -669,7 +669,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_PutEx).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.PutEx).Should().BeTrue();
         }
 
         [TestMethod]
@@ -677,7 +677,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(false, true);
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.System_Storage_Delete).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
 
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -706,20 +706,20 @@ namespace Neo.UnitTests.SmartContract
             };
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Delete).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeTrue();
 
             //context is readonly
             storageContext.IsReadOnly = true;
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Delete).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
 
             //CheckStorageContext fail
             storageContext.IsReadOnly = false;
             state.Manifest.Features = ContractFeatures.NoProperty;
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_Delete).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
         }
 
         [TestMethod]
@@ -727,7 +727,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine();
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.System_Storage_AsReadOnly).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeFalse();
 
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
@@ -736,7 +736,7 @@ namespace Neo.UnitTests.SmartContract
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.System_Storage_AsReadOnly).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeTrue();
             var ret = (InteropInterface<StorageContext>)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().IsReadOnly.Should().Be(true);
         }
@@ -746,7 +746,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = new ApplicationEngine(TriggerType.Verification, null, null, 0);
             InteropService.Invoke(engine, 10000).Should().BeFalse();
-            InteropService.Invoke(engine, InteropService.System_Storage_AsReadOnly).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeFalse();
         }
 
         [TestMethod]

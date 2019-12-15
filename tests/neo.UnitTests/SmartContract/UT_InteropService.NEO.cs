@@ -281,14 +281,14 @@ namespace Neo.UnitTests.SmartContract
                 ScriptHash = state.ScriptHash,
                 IsReadOnly = false
             }));
-            InteropService.Invoke(engine, InteropService.System_Storage_Find).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Storage.Find).Should().BeTrue();
             var iterator = ((InteropInterface<StorageIterator>)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<StorageIterator>();
             iterator.Next();
             var ele = iterator.Value();
             ele.GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.System_Storage_Find).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Find).Should().BeFalse();
         }
 
         [TestMethod]

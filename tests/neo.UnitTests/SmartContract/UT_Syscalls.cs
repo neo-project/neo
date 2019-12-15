@@ -191,7 +191,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.System_Storage_GetContext);
+                script.EmitSysCall(InteropService.Storage.GetContext);
                 script.EmitSysCall(InteropService.Json.Serialize);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
