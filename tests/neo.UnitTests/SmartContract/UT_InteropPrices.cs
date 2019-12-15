@@ -16,7 +16,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                InteropService.GetPrice(InteropService.System_Runtime_CheckWitness, ae.CurrentContext.EvaluationStack).Should().Be(0_00030000L);
+                InteropService.GetPrice(InteropService.Runtime.CheckWitness, ae.CurrentContext.EvaluationStack).Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(SyscallContractCreateHash00);
                 debugger.StepInto(); // PUSHDATA1
                 debugger.StepInto(); // PUSHDATA1
-                InteropService.GetPrice(InteropService.System_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
+                InteropService.GetPrice(InteropService.Contract.Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)

@@ -1,7 +1,6 @@
 using Neo.VM;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.SmartContract
 {
@@ -14,9 +13,9 @@ namespace Neo.SmartContract
             return methods[hash].GetPrice(stack);
         }
 
-        public static Dictionary<uint, string> SupportedMethods()
+        public static IEnumerable<InteropDescriptor> SupportedMethods()
         {
-            return methods.ToDictionary(p => p.Key, p => p.Value.Method);
+            return methods.Values;
         }
 
         internal static bool Invoke(ApplicationEngine engine, uint method)
@@ -28,18 +27,18 @@ namespace Neo.SmartContract
             return descriptor.Handler(engine);
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers)
         {
             InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers);
             methods.Add(descriptor.Hash, descriptor);
-            return descriptor.Hash;
+            return descriptor;
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers)
         {
             InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers);
             methods.Add(descriptor.Hash, descriptor);
-            return descriptor.Hash;
+            return descriptor;
         }
     }
 }
