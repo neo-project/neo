@@ -27,6 +27,9 @@ namespace Neo.SmartContract
 
             private static bool Contract_Create(ApplicationEngine engine)
             {
+                ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.AllowModifyStates) return false;
+
                 byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                 if (script.Length > 1024 * 1024) return false;
 
@@ -51,6 +54,9 @@ namespace Neo.SmartContract
 
             private static bool Contract_Update(ApplicationEngine engine)
             {
+                ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.AllowModifyStates) return false;
+
                 byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                 if (script.Length > 1024 * 1024) return false;
                 var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
@@ -101,6 +107,9 @@ namespace Neo.SmartContract
 
             private static bool Contract_Destroy(ApplicationEngine engine)
             {
+                ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.AllowModifyStates) return false;
+
                 UInt160 hash = engine.CurrentScriptHash;
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
                 if (contract == null) return true;
@@ -164,8 +173,7 @@ namespace Neo.SmartContract
 
                 state = context_new.GetState<ExecutionContextState>();
                 state.CallingScriptHash = callingScriptHash;
-                state.AllowModifyStates = flags.HasFlag(CallFlags.AllowModifyStates);
-                state.AllowCall = flags.HasFlag(CallFlags.AllowCall);
+                state.Rights = flags;
 
                 context_new.EvaluationStack.Push(args);
                 context_new.EvaluationStack.Push(method);

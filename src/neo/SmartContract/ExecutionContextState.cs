@@ -13,13 +13,18 @@ namespace Neo.SmartContract
         public UInt160 CallingScriptHash { get; set; }
 
         /// <summary>
+        /// Execution context rights
+        /// </summary>
+        public CallFlags Rights { get; set; }
+
+        /// <summary>
         /// Allow call another contract
         /// </summary>
-        public bool AllowCall { get; set; } = true;
+        public bool AllowCall => Rights.HasFlag(CallFlags.AllowCall);
 
         /// <summary>
         /// Allow to modify the state, False is the same as ReadOnly mode
         /// </summary>
-        public bool AllowModifyStates { get; set; } = true;
+        public bool AllowModifyStates => Rights.HasFlag(CallFlags.AllowModifyStates);
     }
 }
