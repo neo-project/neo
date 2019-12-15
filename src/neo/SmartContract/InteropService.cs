@@ -1,12 +1,19 @@
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Neo.SmartContract
 {
     public static partial class InteropService
     {
         private static readonly Dictionary<uint, InteropDescriptor> methods = new Dictionary<uint, InteropDescriptor>();
+
+        static InteropService()
+        {
+            foreach (Type t in typeof(InteropService).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                t.GetFields()[0].GetValue(null);
+        }
 
         public static long GetPrice(uint hash, EvaluationStack stack)
         {
