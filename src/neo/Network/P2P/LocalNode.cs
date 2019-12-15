@@ -62,7 +62,10 @@ namespace Neo.Network.P2P
                 // Start dns resolution in parallel
 
                 for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
-                    Task.Run(() => SeedList[i] = GetIpEndPoint(ProtocolSettings.Default.SeedList[i]));
+                {
+                    int index = i;
+                    Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
+                }
             }
         }
 
