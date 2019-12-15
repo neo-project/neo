@@ -68,6 +68,9 @@ namespace Neo.SmartContract
 
             private static bool Storage_GetContext(ApplicationEngine engine)
             {
+                ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.AllowModifyStates) return false;
+
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
                     ScriptHash = engine.CurrentScriptHash,

@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -15,6 +16,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Update = Register("System.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application);
             public static readonly InteropDescriptor Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
             public static readonly InteropDescriptor Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application);
+            public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application);
             public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All);
 
             private static long GetDeploymentPrice(EvaluationStack stack)
@@ -112,12 +114,37 @@ namespace Neo.SmartContract
             private static bool Contract_Call(ApplicationEngine engine)
             {
                 StackItem contractHash = engine.CurrentContext.EvaluationStack.Pop();
-
-                ContractState contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractHash.GetSpan()));
-                if (contract is null) return false;
-
                 StackItem method = engine.CurrentContext.EvaluationStack.Pop();
                 StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+
+                return Contract_CallEx(engine, new UInt160(contractHash.GetSpan()), method, args, CallFlags.All);
+            }
+
+            private static bool Contract_CallEx(ApplicationEngine engine)
+            {
+                StackItem contractHash = engine.CurrentContext.EvaluationStack.Pop();
+                StackItem method = engine.CurrentContext.EvaluationStack.Pop();
+                StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+
+                if (!engine.CurrentContext.EvaluationStack.TryPop<PrimitiveType>(out var flagItem))
+                {
+                    return false;
+                }
+
+                CallFlags flags = (CallFlags)(int)flagItem.ToBigInteger();
+                if (!Enum.IsDefined(typeof(CallFlags), flags)) return false;
+
+                return Contract_CallEx(engine, new UInt160(contractHash.GetSpan()), method, args, flags);
+            }
+
+            private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, StackItem method, StackItem args, CallFlags flags)
+            {
+                ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.AllowCall) return false;
+
+                ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
+                if (contract is null) return false;
+
                 ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
                 if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
@@ -134,7 +161,12 @@ namespace Neo.SmartContract
 
                 UInt160 callingScriptHash = engine.CurrentScriptHash;
                 ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
-                context_new.GetState<ExecutionContextState>().CallingScriptHash = callingScriptHash;
+
+                state = context_new.GetState<ExecutionContextState>();
+                state.CallingScriptHash = callingScriptHash;
+                state.AllowModifyStates = flags.HasFlag(CallFlags.AllowModifyStates);
+                state.AllowCall = flags.HasFlag(CallFlags.AllowCall);
+
                 context_new.EvaluationStack.Push(args);
                 context_new.EvaluationStack.Push(method);
                 return true;
