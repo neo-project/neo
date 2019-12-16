@@ -15,6 +15,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -35,16 +36,12 @@ namespace Neo.Network.P2P
         private ICancelable timer;
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
 
-<<<<<<< HEAD
         protected static readonly HashSet<IPAddress> LocalAddresses = new HashSet<IPAddress>();
         protected readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
-=======
-        private static readonly HashSet<IPAddress> localAddresses = new HashSet<IPAddress>();
-        private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
         /// <summary>
         /// A dictionary that stores the connected nodes.
         /// </summary>
->>>>>>> upstream/master
+
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
         /// <summary>
         /// An ImmutableHashSet that stores the Peers received: 1) from other nodes or 2) from default file.
@@ -205,9 +202,6 @@ namespace Neo.Network.P2P
             }
         }
 
-<<<<<<< HEAD
-        protected abstract void OnTcpConnected(IPEndPoint remote, IPEndPoint local);
-=======
         /// <summary>
         /// Will be triggered when a Tcp.Connected message is received.
         /// If the conditions are met, the remote endpoint will be added to ConnectedPeers.
@@ -218,12 +212,22 @@ namespace Neo.Network.P2P
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
-            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
+            if (!PreTcpConnectedCheck(remote, local, out Tcp.Message errorMsg))
             {
-                Sender.Tell(Tcp.Abort.Instance);
+                Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
+                Sender.Ask(errorMsg).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
                 return;
             }
->>>>>>> upstream/master
+
+            ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            ConnectedAddresses[remote.Address] = count + 1;
+            IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
+            Context.Watch(connection);
+            Sender.Tell(new Tcp.Register(connection));
+            ConnectedPeers.TryAdd(connection, remote);
+        }
+
+        protected abstract bool PreTcpConnectedCheck(IPEndPoint remote, IPEndPoint local, out Tcp.Message errorMsg);
 
 
         /// <summary>
@@ -270,7 +274,22 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected abstract void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local);
+        private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
+        {
+            if (!PreWsConnectedCheck(remote, local, out ArraySegment<byte> errorMsg))
+            {
+                ws.SendAsync(errorMsg, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    failure: ex => new Tcp.ErrorClosed(ex.Message));
+                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+                return;
+            }
+
+            ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            ConnectedAddresses[remote.Address] = count + 1;
+            Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
+        }
+
+        protected abstract bool PreWsConnectedCheck(IPEndPoint remote, IPEndPoint local, out ArraySegment<byte> errorMsg);
 
         protected override void PostStop()
         {

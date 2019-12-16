@@ -6,11 +6,9 @@ using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Net.WebSockets;
 using System.Reflection;
 using System.Threading;
 
@@ -249,56 +247,37 @@ namespace Neo.Network.P2P
             Connections.Tell(inventory);
         }
 
-        protected override void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
+        protected override bool PreTcpConnectedCheck(IPEndPoint remote, IPEndPoint local, out Tcp.Message errorMsg)
         {
-            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
-                SendTcpDisconnectReason(DisconnectReason.MaxConnectionReached);
-                return;
+                Message reason = CreateDisconnectMessage(DisconnectReason.MaxConnectionReached);
+                errorMsg = Tcp.Write.Create(ByteString.FromBytes(reason.ToArray()));
+                return false;
             }
 
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
-                SendTcpDisconnectReason(DisconnectReason.MaxConnectionPerAddressReached);
+                Message reason = CreateDisconnectMessage(DisconnectReason.MaxConnectionPerAddressReached);
+                errorMsg = Tcp.Write.Create(ByteString.FromBytes(reason.ToArray()));
+                return false;
             }
-            else
-            {
-                ConnectedAddresses[remote.Address] = count + 1;
-                IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
-                Context.Watch(connection);
-                Sender.Tell(new Tcp.Register(connection));
-                ConnectedPeers.TryAdd(connection, remote);
-            }
+            errorMsg = null;
+            return true;
         }
 
-        protected override void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
+        protected override bool PreWsConnectedCheck(IPEndPoint remote, IPEndPoint local, out ArraySegment<byte> errorMsg)
         {
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
                 var disconnectMessage = CreateDisconnectMessage(DisconnectReason.MaxConnectionPerAddressReached);
-                ArraySegment<byte> segment = new ArraySegment<byte>(disconnectMessage.ToArray());
-
-                ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
-                    failure: ex => new Tcp.ErrorClosed(ex.Message));
-                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+                errorMsg = new ArraySegment<byte>(disconnectMessage.ToArray());
+                return false;
             }
-            else
-            {
-                ConnectedAddresses[remote.Address] = count + 1;
-                Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
-            }
-        }
-
-        protected void SendTcpDisconnectReason(DisconnectReason reason)
-        {
-            var disconnectMessage = CreateDisconnectMessage(reason);
-            var command = Tcp.Write.Create(ByteString.FromBytes(disconnectMessage.ToArray()));
-
-            Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
-            Sender.Ask(command).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
+            errorMsg = null;
+            return true;
         }
 
         private Message CreateDisconnectMessage(DisconnectReason reason)
@@ -315,7 +294,8 @@ namespace Neo.Network.P2P
                     break;
             }
             var payload = DisconnectPayload.Create(reason, data);
-            return Message.Create(MessageCommand.Disconnect, payload);
+            var message = Message.Create(MessageCommand.Disconnect, payload);
+            return message;
         }
 
         public static Props Props(NeoSystem system)
