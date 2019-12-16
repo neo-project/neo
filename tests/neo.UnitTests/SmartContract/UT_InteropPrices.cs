@@ -1,6 +1,10 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 
 namespace Neo.UnitTests.SmartContract
@@ -8,6 +12,12 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_InteropPrices
     {
+        [TestInitialize]
+        public void Initialize()
+        {
+            TestBlockchain.InitializeMockNeoSystem();
+        }
+
         [TestMethod]
         public void ApplicationEngineFixedPrices()
         {
@@ -50,29 +60,232 @@ namespace Neo.UnitTests.SmartContract
                 InteropService.GetPrice(InteropService.Contract.Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
-            // System.Storage.Put: e63f1884 (requires push key and value)
-            byte[] SyscallStoragePutHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0xe6, 0x3f, 0x18, 0x84 };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
+            var mockedStoreView = new Mock<StoreView>();
+
+            var manifest = ContractManifest.CreateDefault(UInt160.Zero);
+            manifest.Features = ContractFeatures.HasStorage;
+
+            var scriptBuilder = new ScriptBuilder();
+            var key = new byte[] { (byte)OpCode.PUSH3 };
+            var value = new byte[] { (byte)OpCode.PUSH3 };
+            scriptBuilder.EmitPush(value);
+            scriptBuilder.EmitPush(key);
+            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+            byte[] script = scriptBuilder.ToArray();
+
+            ContractState contractState = new ContractState
+            {
+                Script = script,
+                Manifest = manifest
+            };
+
+            StorageKey skey = new StorageKey
+            {
+                ScriptHash = script.ToScriptHash(),
+                Key = key
+            };
+
+            StorageItem sItem = null;
+
+            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
+            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+
+            byte[] scriptPut = script;
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallStoragePutHash);
+                ae.LoadScript(scriptPut);
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
+                InteropService.GetPrice(InteropService.Storage.Put, ae).Should().Be(200000L);
             }
 
-            // System.Storage.PutEx: 73e19b3a (requires push key and value)
-            byte[] SyscallStoragePutExHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0x73, 0xe1, 0x9b, 0x3a };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
+            scriptBuilder = new ScriptBuilder();
+            key = new byte[] { (byte)OpCode.PUSH3 };
+            value = new byte[] { (byte)OpCode.PUSH3 };
+            scriptBuilder.EmitPush(value);
+            scriptBuilder.EmitPush(key);
+            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+            scriptBuilder.EmitSysCall(InteropService.Storage.PutEx);
+            script = scriptBuilder.ToArray();
+
+            byte[] scriptPutEx = script;
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallStoragePutExHash);
+                ae.LoadScript(scriptPut);
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                InteropService.GetPrice(InteropService.Storage.PutEx, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
+                InteropService.GetPrice(InteropService.Storage.PutEx, ae).Should().Be(200000L);
+            }
+        }
+
+        [TestMethod]
+        public void ApplicationEngineRegularPut()
+        {
+            var scriptBuilder = new ScriptBuilder();
+
+            var key = new byte[] { (byte)OpCode.PUSH1 };
+            var value = new byte[] { (byte)OpCode.PUSH1 };
+
+            scriptBuilder.EmitPush(value);
+            scriptBuilder.EmitPush(key);
+            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+
+            var mockedStoreView = new Mock<StoreView>();
+
+            byte[] script = scriptBuilder.ToArray();
+
+            var manifest = ContractManifest.CreateDefault(UInt160.Zero);
+            manifest.Features = ContractFeatures.HasStorage;
+
+            ContractState contractState = new ContractState
+            {
+                Script = script,
+                Manifest = manifest
+            };
+
+            StorageKey skey = new StorageKey
+            {
+                ScriptHash = script.ToScriptHash(),
+                Key = key
+            };
+
+            StorageItem sItem = null;
+
+            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
+            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            {
+                Debugger debugger = new Debugger(ae);
+                ae.LoadScript(script);
+                debugger.StepInto();
+                debugger.StepInto();
+                debugger.StepInto();
+                var setupPrice = ae.GasConsumed;
+                var defaultDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                defaultDataPrice.Should().Be(InteropService.Storage.GasPerByte * (key.Length + value.Length));
+                debugger.StepInto();
+                var expectedCost = defaultDataPrice + setupPrice;
+                debugger.StepInto();
+                ae.GasConsumed.Should().Be(expectedCost);
+            }
+        }
+
+        [TestMethod]
+        public void ApplicationEngineReusedStorage_FullReuse()
+        {
+            var scriptBuilder = new ScriptBuilder();
+
+            var key = new byte[] { (byte)OpCode.PUSH1 };
+            var value = new byte[] { (byte)OpCode.PUSH1 };
+
+            scriptBuilder.EmitPush(value);
+            scriptBuilder.EmitPush(key);
+            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+
+            var mockedStoreView = new Mock<StoreView>();
+
+            byte[] script = scriptBuilder.ToArray();
+
+            var manifest = ContractManifest.CreateDefault(UInt160.Zero);
+            manifest.Features = ContractFeatures.HasStorage;
+
+            ContractState contractState = new ContractState
+            {
+                Script = script,
+                Manifest = manifest
+            };
+
+            StorageKey skey = new StorageKey
+            {
+                ScriptHash = script.ToScriptHash(),
+                Key = key
+            };
+
+            StorageItem sItem = new StorageItem
+            {
+                Value = value
+            };
+
+            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
+            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+
+            using (ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            {
+                Debugger debugger = new Debugger(applicationEngine);
+                applicationEngine.LoadScript(script);
+                debugger.StepInto();
+                debugger.StepInto();
+                debugger.StepInto();
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, applicationEngine);
+                reusedDataPrice.Should().Be(0);
+            }
+        }
+
+        [TestMethod]
+        public void ApplicationEngineReusedStorage_PartialReuse()
+        {
+            var scriptBuilder = new ScriptBuilder();
+
+            var key = new byte[] { (byte)OpCode.PUSH1 };
+            var oldValue = new byte[] { (byte)OpCode.PUSH1 };
+            var value = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH1 };
+
+            scriptBuilder.EmitPush(value);
+            scriptBuilder.EmitPush(key);
+            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+
+            var mockedStoreView = new Mock<StoreView>();
+
+            byte[] script = scriptBuilder.ToArray();
+
+            var manifest = ContractManifest.CreateDefault(UInt160.Zero);
+            manifest.Features = ContractFeatures.HasStorage;
+
+            ContractState contractState = new ContractState
+            {
+                Script = script,
+                Manifest = manifest
+            };
+
+            StorageKey skey = new StorageKey
+            {
+                ScriptHash = script.ToScriptHash(),
+                Key = key
+            };
+
+            StorageItem sItem = new StorageItem
+            {
+                Value = oldValue
+            };
+
+            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
+            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            {
+                Debugger debugger = new Debugger(ae);
+                ae.LoadScript(script);
+                debugger.StepInto();
+                debugger.StepInto();
+                debugger.StepInto();
+                var setupPrice = ae.GasConsumed;
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
+                debugger.StepInto();
+                var expectedCost = reusedDataPrice + setupPrice;
+                debugger.StepInto();
+                ae.GasConsumed.Should().Be(expectedCost);
             }
         }
     }
+
 }

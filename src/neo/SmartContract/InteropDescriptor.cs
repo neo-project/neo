@@ -10,6 +10,8 @@ namespace Neo.SmartContract
         internal Func<ApplicationEngine, bool> Handler { get; }
         public long Price { get; }
         public Func<EvaluationStack, long> PriceCalculator { get; }
+        public Func<ApplicationEngine, long> StoragePriceCalculator { get; }
+        public bool IsStateful { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
 
@@ -34,8 +36,24 @@ namespace Neo.SmartContract
             this.RequiredCallFlags = requiredCallFlags;
         }
 
+        public long GetPrice()
+        {
+            return Price;
+        }
+
+        public long GetPrice(ApplicationEngine applicationEngine)
+        {
+            return StoragePriceCalculator is null ? Price : StoragePriceCalculator(applicationEngine);
+        }
+
         public long GetPrice(EvaluationStack stack)
         {
+#if DEBUG
+            if (IsStateful)
+            {
+                throw new InvalidOperationException();
+            }
+#endif
             return PriceCalculator is null ? Price : PriceCalculator(stack);
         }
 
