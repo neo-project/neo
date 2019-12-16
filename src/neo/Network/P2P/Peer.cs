@@ -229,7 +229,6 @@ namespace Neo.Network.P2P
 
         protected abstract bool PreTcpConnectedCheck(IPEndPoint remote, IPEndPoint local, out Tcp.Message errorMsg);
 
-
         /// <summary>
         /// Will be triggered when a Tcp.CommandFailed message is received.
         /// If it's a Tcp.Connect command, remove the related endpoint from ConnectingPeers.
