@@ -283,7 +283,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private StackItem DeserializeStackItem(BinaryReader reader, ExecutionEngine engine)
+        private StackItem DeserializeStackItem(BinaryReader reader, ExecutionEngine engine, uint maxItemSize)
         {
             Stack<StackItem> deserialized = new Stack<StackItem>();
             int undeserialized = 1;
@@ -293,13 +293,13 @@ namespace Neo.SmartContract
                 switch (type)
                 {
                     case StackItemType.ByteArray:
-                        deserialized.Push(new ByteArray(reader.ReadVarBytes()));
+                        deserialized.Push(new ByteArray(reader.ReadVarBytes((int)maxItemSize)));
                         break;
                     case StackItemType.Boolean:
                         deserialized.Push(new VMBoolean(reader.ReadBoolean()));
                         break;
                     case StackItemType.Integer:
-                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes())));
+                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes(ExecutionEngine.MaxSizeForBigInteger))));
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:
@@ -374,7 +374,7 @@ namespace Neo.SmartContract
                 StackItem item;
                 try
                 {
-                    item = DeserializeStackItem(reader, engine);
+                    item = DeserializeStackItem(reader, engine, engine.MaxItemSize);
                 }
                 catch (FormatException)
                 {
