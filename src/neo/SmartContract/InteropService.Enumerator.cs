@@ -9,10 +9,10 @@ namespace Neo.SmartContract
     {
         public static class Enumerator
         {
-            public static readonly InteropDescriptor Create = Register("System.Enumerator.Create", Enumerator_Create, 0_00000400, TriggerType.All);
-            public static readonly InteropDescriptor Next = Register("System.Enumerator.Next", Enumerator_Next, 0_01000000, TriggerType.All);
-            public static readonly InteropDescriptor Value = Register("System.Enumerator.Value", Enumerator_Value, 0_00000400, TriggerType.All);
-            public static readonly InteropDescriptor Concat = Register("System.Enumerator.Concat", Enumerator_Concat, 0_00000400, TriggerType.All);
+            public static readonly InteropDescriptor Create = Register("System.Enumerator.Create", Enumerator_Create, 0_00000400, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Next = Register("System.Enumerator.Next", Enumerator_Next, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Value = Register("System.Enumerator.Value", Enumerator_Value, 0_00000400, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Concat = Register("System.Enumerator.Concat", Enumerator_Concat, 0_00000400, TriggerType.All, CallFlags.None);
 
             private static bool Enumerator_Create(ApplicationEngine engine)
             {

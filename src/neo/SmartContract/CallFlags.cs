@@ -6,9 +6,11 @@ namespace Neo.SmartContract
     public enum CallFlags : byte
     {
         None = 0,
-        AllowModifyStates = 1 << 0,
-        AllowCall = 1 << 1,
 
-        All = AllowModifyStates | AllowCall
+        AllowModifyStates = 0b00000001,
+        AllowCall = 0b00000010,
+        AllowNotify = 0b00000100,
+
+        All = AllowModifyStates | AllowCall | AllowNotify
     }
 }
