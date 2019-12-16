@@ -166,9 +166,9 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAccount1()
         {
             MyWallet wallet = new MyWallet();
-            wallet.CreateAccount(UInt160.Parse("0xc43d04da83afcf7df3b2908c169cfbfbf7512d7f"));
+            wallet.CreateAccount(UInt160.Parse("0x7e471cf52f27edc291e29ec8f2d1ea2d210d6725"));
             WalletAccount account = wallet.GetAccount(ECCurve.Secp256r1.G);
-            account.ScriptHash.Should().Be(UInt160.Parse("0xc43d04da83afcf7df3b2908c169cfbfbf7512d7f"));
+            account.ScriptHash.Should().Be(UInt160.Parse("0x7e471cf52f27edc291e29ec8f2d1ea2d210d6725"));
         }
 
         [TestMethod]
