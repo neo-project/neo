@@ -136,7 +136,7 @@ An overview of the project folders can be seen below.
 ## Related projects
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler. 
 
-* [**neo:**](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, p2p and IO modules.
+* [neo:](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, p2p and IO modules.
 * [neo-vm:](https://github.com/neo-project/neo-vm/) Neo Virtual Machine is a decoupled VM that Neo uses to execute its scripts. It also uses the `InteropService` layer to extend its functionalities.
 * [neo-node:](https://github.com/neo-project/neo-node/) Executable version of the Neo library, exposing features using a command line application or GUI.
 * [neo-modules:](https://github.com/neo-project/neo-modules/) Neo modules include additional tools and plugins to be used with Neo.
