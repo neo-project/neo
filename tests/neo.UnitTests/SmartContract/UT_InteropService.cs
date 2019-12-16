@@ -831,14 +831,6 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check rights
 
-                InteropService.Invoke(engine, InteropService.Storage.GetContext).Should().Be(flags.HasFlag(CallFlags.AllowModifyStates));
-
-                if (flags.HasFlag(CallFlags.AllowModifyStates))
-                {
-                    // Drop context
-                    engine.CurrentContext.EvaluationStack.Pop();
-                }
-
                 engine.CurrentContext.EvaluationStack.Push((int)CallFlags.All);
                 engine.CurrentContext.EvaluationStack.Push(args);
                 engine.CurrentContext.EvaluationStack.Push(method);
