@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
         protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
-            return BalanceOf(engine.Snapshot, new UInt160(args[0].GetSpan().ToArray()));
+            return BalanceOf(engine.Snapshot, new UInt160(args[0].GetSpan()));
         }
 
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account)
@@ -163,8 +163,8 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
         protected StackItem Transfer(ApplicationEngine engine, Array args)
         {
-            UInt160 from = new UInt160(args[0].GetSpan().ToArray());
-            UInt160 to = new UInt160(args[1].GetSpan().ToArray());
+            UInt160 from = new UInt160(args[0].GetSpan());
+            UInt160 to = new UInt160(args[1].GetSpan());
             BigInteger amount = args[2].GetBigInteger();
             return Transfer(engine, from, to, amount);
         }
@@ -172,7 +172,7 @@ namespace Neo.SmartContract.Native.Tokens
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (!from.Equals(engine.CallingScriptHash) && !InteropService.CheckWitness(engine, from))
+            if (!from.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
                 return false;
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;

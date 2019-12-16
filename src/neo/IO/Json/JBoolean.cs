@@ -36,6 +36,11 @@ namespace Neo.IO.Json
             writer.WriteBooleanValue(Value);
         }
 
+        public override JObject Clone()
+        {
+            return this;
+        }
+
         public static implicit operator JBoolean(bool value)
         {
             return new JBoolean(value);

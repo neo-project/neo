@@ -28,7 +28,7 @@ namespace Neo.Wallets
                 throw new FormatException();
             if (data[0] != ProtocolSettings.Default.AddressVersion)
                 throw new FormatException();
-            return new UInt160(data[1..]);
+            return new UInt160(data.AsSpan(1));
         }
 
         internal static byte[] XOR(byte[] x, byte[] y)

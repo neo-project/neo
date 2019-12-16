@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
+using Neo.SmartContract.Manifest;
 using System;
 
 namespace Neo.UnitTests.IO.Json
@@ -105,6 +106,17 @@ namespace Neo.UnitTests.IO.Json
         public void TestGetNull()
         {
             JObject.Null.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var bobClone = bob.Clone();
+            bobClone.Should().NotBeSameAs(bob);
+            foreach (var key in bobClone.Properties.Keys)
+            {
+                bobClone[key].Should().BeEquivalentTo(bob[key]);
+            }
         }
     }
 }
