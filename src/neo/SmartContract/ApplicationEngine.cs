@@ -1,6 +1,7 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -19,6 +20,8 @@ namespace Neo.SmartContract
         private readonly bool testMode;
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
+        private readonly List<byte[]> updatedKeys = new List<byte[]>();
+        private long maxConsumedGas = 0;
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
@@ -45,10 +48,32 @@ namespace Neo.SmartContract
             return disposable;
         }
 
+        internal bool TryAddUpdatedKey(byte[] key)
+        {
+            bool keyAdded = false;
+            if (!updatedKeys.Contains(key))
+            {
+                updatedKeys.Add(key);
+                keyAdded = true;
+            }
+            return keyAdded;
+        }
+
         private bool AddGas(long gas)
         {
+            if (gas < 0 && GasConsumed > maxConsumedGas)
+                maxConsumedGas = GasConsumed;
             GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
+        }
+
+        /// <summary>
+        /// Recalculate the property GasConsumed to use the gas required to run the whole transaction.
+        /// </summary>
+        private void RecalculateConsumedGas()
+        {
+            if (maxConsumedGas > GasConsumed)
+                GasConsumed = maxConsumedGas;
         }
 
         protected override void LoadContext(ExecutionContext context)
@@ -70,7 +95,7 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack)))
+            if (!AddGas(InteropService.GetPrice(method, this)))
                 return false;
             return InteropService.Invoke(this, method);
         }
@@ -102,6 +127,14 @@ namespace Neo.SmartContract
                 Transactions = new Transaction[0]
             };
         }
+
+        public override VMState Execute()
+        {
+            var resultingState = base.Execute();
+            RecalculateConsumedGas();
+            return resultingState;
+        }
+
 
         public static ApplicationEngine Run(byte[] script, StoreView snapshot,
             IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
