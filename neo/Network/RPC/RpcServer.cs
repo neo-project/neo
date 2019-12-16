@@ -87,8 +87,8 @@ namespace Neo.Network.RPC
                 {
                     json["stack"] = "error: recursive reference";
                 }
+                return json;
             }
-            return json;
         }
 
         private static JObject GetRelayResult(RelayResultReason reason)
