@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using System.Collections.Generic;
 using System.IO;
@@ -22,6 +23,23 @@ namespace Neo.UnitTests
         public void TransactionHash_Get()
         {
             uut.TransactionHash.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestFromReplica()
+        {
+            uut.Items = new Dictionary<ushort, uint>();
+            uut.Items.Add(1, 2);
+
+            var n = ((ICloneable<SpentCoinState>)uut).Clone();
+
+            CollectionAssert.AreEqual(n.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreEqual(n.Items.Values, uut.Items.Values);
+
+            n.Items.Clear();
+
+            CollectionAssert.AreNotEqual(n.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreNotEqual(n.Items.Values, uut.Items.Values);
         }
 
         [TestMethod]
@@ -99,7 +117,7 @@ namespace Neo.UnitTests
         public void DeserializeSCS()
         {
             byte[] dataArray = new byte[] { 0, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 42, 3, 44, 45, 1, 42, 0, 0, 0, 0, 0 };
-                                          
+
             using (Stream stream = new MemoryStream(dataArray))
             {
                 using (BinaryReader reader = new BinaryReader(stream))
