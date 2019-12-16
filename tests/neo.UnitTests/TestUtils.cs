@@ -8,6 +8,7 @@ using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.UnitTests
 {
@@ -83,12 +84,13 @@ namespace Neo.UnitTests
 
             block.ConsensusData = new ConsensusData();
             block.Transactions = transactionsVal;
+            block.MerkleRoot = merkRootVal = Block.CalculateMerkleRoot(block.ConsensusData.Hash, block.Transactions.Select(p => p.Hash));
         }
 
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = UInt256.Parse("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
+            merkRootVal = UInt256.Parse("0x6226416a0e5aca42b5566f5a19ab467692688ba9d47986f6981a7f747bba2772");
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc).ToTimestampMS(); // GMT: Sunday, June 1, 1980 12:00:01.001 AM
             bb.Timestamp = timestampVal;
@@ -99,7 +101,7 @@ namespace Neo.UnitTests
             scriptVal = new Witness
             {
                 InvocationScript = new byte[0],
-                VerificationScript = new[] { (byte)OpCode.PUSHT }
+                VerificationScript = new[] { (byte)OpCode.PUSH1 }
             };
             bb.Witness = scriptVal;
         }
