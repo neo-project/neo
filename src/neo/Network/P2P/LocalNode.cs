@@ -86,6 +86,9 @@ namespace Neo.Network.P2P
         /// <param name="message">The message to be broadcasted.</param>
         private void BroadcastMessage(Message message) => SendToRemoteNodes(message);
 
+        /// <summary>
+        /// Send message to all the RemoteNodes connected to other nodes, faster than ActorSelection.
+        /// </summary>
         private void SendToRemoteNodes(object message)
         {
             foreach (var connection in RemoteNodes.Keys)
