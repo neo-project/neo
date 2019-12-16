@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class WildCardContainer<T> : IReadOnlyList<T>
+    public class WildcardContainer<T> : IReadOnlyList<T>
     {
         private readonly T[] _data;
 
@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Manifest
         /// Constructor
         /// </summary>
         /// <param name="data">Data</param>
-        private WildCardContainer(T[] data)
+        private WildcardContainer(T[] data)
         {
             _data = data;
         }
@@ -36,15 +36,15 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="data">Data</param>
         /// <returns>WildCardContainer</returns>
-        public static WildCardContainer<T> Create(params T[] data) => new WildCardContainer<T>(data);
+        public static WildcardContainer<T> Create(params T[] data) => new WildcardContainer<T>(data);
 
         /// <summary>
         /// Create a wildcard
         /// </summary>
         /// <returns>WildCardContainer</returns>
-        public static WildCardContainer<T> CreateWildcard() => new WildCardContainer<T>(null);
+        public static WildcardContainer<T> CreateWildcard() => new WildcardContainer<T>(null);
 
-        public static WildCardContainer<T> FromJson(JObject json, Func<JObject, T> elementSelector)
+        public static WildcardContainer<T> FromJson(JObject json, Func<JObject, T> elementSelector)
         {
             switch (json)
             {

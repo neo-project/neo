@@ -45,7 +45,7 @@ namespace Neo.Ledger
             Witness = new Witness
             {
                 InvocationScript = Array.Empty<byte>(),
-                VerificationScript = new[] { (byte)OpCode.PUSHT }
+                VerificationScript = new[] { (byte)OpCode.PUSH1 }
             },
             ConsensusData = new ConsensusData
             {
@@ -157,14 +157,14 @@ namespace Neo.Ledger
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(InteropService.Neo_Native_Deploy);
+                sb.EmitSysCall(InteropService.Native.Deploy);
                 script = sb.ToArray();
             }
             return new Transaction
             {
                 Version = 0,
                 Script = script,
-                Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
+                Sender = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
                 SystemFee = 0,
                 Attributes = new TransactionAttribute[0],
                 Cosigners = new Cosigner[0],
@@ -173,7 +173,7 @@ namespace Neo.Ledger
                     new Witness
                     {
                         InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = new[] { (byte)OpCode.PUSHT }
+                        VerificationScript = new[] { (byte)OpCode.PUSH1 }
                     }
                 }
             };

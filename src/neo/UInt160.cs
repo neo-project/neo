@@ -22,7 +22,7 @@ namespace Neo
         {
         }
 
-        public unsafe UInt160(byte[] value)
+        public unsafe UInt160(ReadOnlySpan<byte> value)
         {
             fixed (ulong* p = &value1)
             {
