@@ -257,10 +257,17 @@ namespace Neo.Ledger
             if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
             {
                 blocks = new LinkedList<Block>();
+                blocks.AddLast(block);
                 block_cache_unverified.Add(block.Index, blocks);
             }
-
-            blocks.AddLast(block);
+            else
+            {
+                foreach (var unverifiedBlock in blocks)
+                {
+                    if (block.Hash != unverifiedBlock.Hash)
+                        blocks.AddLast(block);
+                }
+            }
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -290,78 +297,32 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewBlock(Block block)
         {
+            //Console.WriteLine("blockIndex:" + block.Index);
+            //高度低于当前高度的区块，返回已存在
             if (block.Index <= Height)
                 return RelayResultReason.AlreadyExists;
-            if (block_cache.ContainsKey(block.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (block.Index - 1 >= header_index.Count)
+            //高度超过当前高度加一的区块，加入cache
+            if (block.Index - 1 > Height)
             {
                 AddUnverifiedBlockToCache(block);
                 return RelayResultReason.UnableToVerify;
             }
-            if (block.Index == header_index.Count)
+            //正好为下一区块
+            if (block.Index == Height + 1)
             {
                 if (!block.Verify(currentSnapshot))
                     return RelayResultReason.Invalid;
-            }
-            else
-            {
-                if (!block.Hash.Equals(header_index[(int)block.Index]))
-                    return RelayResultReason.Invalid;
-            }
-            if (block.Index == Height + 1)
-            {
-                Block block_persist = block;
-                List<Block> blocksToPersistList = new List<Block>();
-                while (true)
-                {
-                    blocksToPersistList.Add(block_persist);
-                    if (block_persist.Index + 1 >= header_index.Count) break;
-                    UInt256 hash = header_index[(int)block_persist.Index + 1];
-                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
-                }
-
-                int blocksPersisted = 0;
-                foreach (Block blockToPersist in blocksToPersistList)
-                {
-                    block_cache_unverified.Remove(blockToPersist.Index);
-                    Persist(blockToPersist);
-
-                    // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                    uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
-
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
-                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
-                    // Increase in the rate of 1 block per second in configurations with faster blocks
-
-                    if (blockToPersist.Index + 100 >= header_index.Count)
-                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
-                }
+                block_cache_unverified.Remove(block.Index);
+                Persist(block);
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                system.SyncManager.Tell(new SyncManager.BlockIndex { blockIndex = block.Index });
                 SaveHeaderHashList();
-
+                // 此时Height为最新高度
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
-                }
-            }
-            else
-            {
-                block_cache.Add(block.Hash, block);
-                if (block.Index + 100 >= header_index.Count)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
-                if (block.Index == header_index.Count)
-                {
-                    header_index.Add(block.Hash);
-                    using (SnapshotView snapshot = GetSnapshot())
-                    {
-                        snapshot.Blocks.Add(block.Hash, block.Header.Trim());
-                        snapshot.HeaderHashIndex.GetAndChange().Set(block);
-                        SaveHeaderHashList(snapshot);
-                        snapshot.Commit();
-                    }
-                    UpdateCurrentSnapshot();
                 }
             }
             return RelayResultReason.Succeed;

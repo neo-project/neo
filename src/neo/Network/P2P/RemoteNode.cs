@@ -152,6 +152,7 @@ namespace Neo.Network.P2P
             {
                 LastBlockIndex = payload.LastBlockIndex;
                 system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                system.SyncManager.Tell(new SyncManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
 
@@ -186,6 +187,7 @@ namespace Neo.Network.P2P
         {
             verack = true;
             system.TaskManager.Tell(new TaskManager.Register { Version = Version });
+            system.SyncManager.Tell(new SyncManager.Register { Version = Version });
             CheckMessageQueue();
         }
 

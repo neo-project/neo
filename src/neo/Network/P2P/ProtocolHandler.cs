@@ -91,6 +91,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.Block:
                     OnInventoryReceived((Block)msg.Payload);
                     break;
+                case MessageCommand.BlockData:
+                    OnBlockDataReceived((Block)msg.Payload);
+                    break;
                 case MessageCommand.Consensus:
                     OnInventoryReceived((ConsensusPayload)msg.Payload);
                     break;
@@ -142,10 +145,17 @@ namespace Neo.Network.P2P
                     throw new ProtocolViolationException();
                 case MessageCommand.Alert:
                 case MessageCommand.MerkleBlock:
+                case MessageCommand.MerkleBlockData:
                 case MessageCommand.NotFound:
                 case MessageCommand.Reject:
                 default: break;
             }
+        }
+
+        private void OnBlockDataReceived(Block payload)
+        {
+            if (payload != null)
+                system.SyncManager.Tell(payload);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
@@ -217,12 +227,12 @@ namespace Neo.Network.P2P
 
                 if (bloom_filter == null)
                 {
-                    Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
+                    Context.Parent.Tell(Message.Create(MessageCommand.BlockData, block));
                 }
                 else
                 {
                     BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlockData, MerkleBlockPayload.Create(block, flags)));
                 }
             }
         }

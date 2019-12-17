@@ -40,6 +40,8 @@ namespace Neo.Network.P2P
         Block = 0x2c,
         [ReflectionCache(typeof(ConsensusPayload))]
         Consensus = 0x2d,
+        [ReflectionCache(typeof(Block))]
+        BlockData = 0x2e,
         Reject = 0x2f,
 
         //SPV protocol
@@ -50,6 +52,8 @@ namespace Neo.Network.P2P
         FilterClear = 0x32,
         [ReflectionCache(typeof(MerkleBlockPayload))]
         MerkleBlock = 0x38,
+        [ReflectionCache(typeof(MerkleBlockPayload))]
+        MerkleBlockData = 0x39,
 
         //others
         Alert = 0x40,

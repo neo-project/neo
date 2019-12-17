@@ -19,10 +19,12 @@ namespace Neo
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
             $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}" +
+            $"sync-manager-mailbox {{ mailbox-type: \"{typeof(SyncManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }
+        internal IActorRef SyncManager { get; }
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
@@ -39,6 +41,7 @@ namespace Neo
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            this.SyncManager = ActorSystem.ActorOf(Network.P2P.SyncManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnPluginsLoaded();
         }
