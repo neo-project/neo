@@ -20,8 +20,7 @@ namespace Neo.SmartContract
         private readonly bool testMode;
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
-        private readonly List<byte[]> updatedKeys = new List<byte[]>();
-        private long maxConsumedGas = 0;
+        private readonly List<StorageKey> updatedKeys = new List<StorageKey>();
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
@@ -48,7 +47,7 @@ namespace Neo.SmartContract
             return disposable;
         }
 
-        internal bool TryAddUpdatedKey(byte[] key)
+        internal bool TryAddUpdatedKey(StorageKey key)
         {
             bool keyAdded = false;
             if (!updatedKeys.Contains(key))
@@ -61,19 +60,8 @@ namespace Neo.SmartContract
 
         private bool AddGas(long gas)
         {
-            if (gas < 0 && GasConsumed > maxConsumedGas)
-                maxConsumedGas = GasConsumed;
             GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
-        }
-
-        /// <summary>
-        /// Recalculate the property GasConsumed to use the gas required to run the whole transaction.
-        /// </summary>
-        private void RecalculateConsumedGas()
-        {
-            if (maxConsumedGas > GasConsumed)
-                GasConsumed = maxConsumedGas;
         }
 
         protected override void LoadContext(ExecutionContext context)

@@ -353,6 +353,7 @@ namespace Neo.Wallets
 
             if (witness_script.IsSignatureContract())
             {
+                //TODO Document this value
                 size += 67 + witness_script.GetVarSize();
                 networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.ECDsaVerify);
             }
