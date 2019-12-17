@@ -11,6 +11,7 @@ namespace Neo.SmartContract
         AllowCall = 0b00000010,
         AllowNotify = 0b00000100,
 
+        ReadOnly = AllowCall | AllowNotify,
         All = AllowModifyStates | AllowCall | AllowNotify
     }
 }

@@ -156,12 +156,14 @@ namespace Neo.SmartContract
                     engine.InvocationCounter[contract.ScriptHash] = 1;
                 }
 
-                UInt160 callingScriptHash = engine.CurrentScriptHash;
-                ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+                ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+                UInt160 callingScriptHash = state.ScriptHash;
+                CallFlags callingFlags = state.CallFlags;
 
-                ExecutionContextState state = context_new.GetState<ExecutionContextState>();
+                ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+                state = context_new.GetState<ExecutionContextState>();
                 state.CallingScriptHash = callingScriptHash;
-                state.CallFlags = flags;
+                state.CallFlags = flags & callingFlags;
 
                 context_new.EvaluationStack.Push(args);
                 context_new.EvaluationStack.Push(method);
