@@ -15,6 +15,11 @@ namespace Neo.SmartContract
                 t.GetFields()[0].GetValue(null);
         }
 
+        public static IEnumerable<InteropDescriptor> SupportedMethods()
+        {
+            return methods.Values;
+        }
+
         public static long GetPrice(uint hash)
         {
             return methods[hash].GetPrice();
