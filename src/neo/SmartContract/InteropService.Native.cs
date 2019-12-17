@@ -12,7 +12,7 @@ namespace Neo.SmartContract
             static Native()
             {
                 foreach (NativeContract contract in NativeContract.Contracts)
-                    Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application, CallFlags.AllowCall | CallFlags.AllowModifyStates);
+                    Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application, CallFlags.None);
             }
 
             private static bool Native_Deploy(ApplicationEngine engine)
