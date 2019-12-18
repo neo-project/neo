@@ -11,7 +11,7 @@ using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
-    internal static class StackItemSerializer
+    internal static class BinarySerializer
     {
         public static StackItem Deserialize(byte[] data, uint maxItemSize, ReferenceCounter referenceCounter = null)
         {
@@ -47,7 +47,7 @@ namespace Neo.SmartContract
                         deserialized.Push(new Boolean(reader.ReadBoolean()));
                         break;
                     case StackItemType.Integer:
-                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes(ExecutionEngine.MaxSizeForBigInteger))));
+                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes(Integer.MaxSize))));
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:
@@ -116,16 +116,16 @@ namespace Neo.SmartContract
             return stack_temp.Peek();
         }
 
-        public static byte[] Serialize(StackItem item)
+        public static byte[] Serialize(StackItem item, uint maxSize)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
-            Serialize(item, writer);
+            Serialize(item, writer, maxSize);
             writer.Flush();
             return ms.ToArray();
         }
 
-        private static void Serialize(StackItem item, BinaryWriter writer)
+        private static void Serialize(StackItem item, BinaryWriter writer, uint maxSize)
         {
             List<StackItem> serialized = new List<StackItem>();
             Stack<StackItem> unserialized = new Stack<StackItem>();
@@ -177,6 +177,8 @@ namespace Neo.SmartContract
                         writer.Write((byte)StackItemType.Null);
                         break;
                 }
+                if (writer.BaseStream.Position > maxSize)
+                    throw new InvalidOperationException();
             }
         }
     }
