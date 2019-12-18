@@ -153,8 +153,8 @@ namespace Neo.UnitTests.Consensus
             Contract originalContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             Console.WriteLine($"\nORIGINAL Contract is: {originalContract.ScriptHash}");
             Console.WriteLine($"ORIGINAL NextConsensus: {mockContext.Object.Block.NextConsensus}\nENSURING values...");
-            originalContract.ScriptHash.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
-            mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
+            originalContract.ScriptHash.Should().Be(UInt160.Parse("0x9412c3107a59fa732ccd94866976f7bbb3d9c372"));
+            mockContext.Object.Block.NextConsensus.Should().Be(UInt160.Parse("0x9412c3107a59fa732ccd94866976f7bbb3d9c372"));
 
             Console.WriteLine("\n==========================");
             Console.WriteLine("will trigger OnPersistCompleted again with OnStart flag!");
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("will create template MakePrepareRequest...");
             mockContext.Object.PrevHeader.Timestamp = defaultTimestamp;
-            mockContext.Object.PrevHeader.NextConsensus.Should().Be(UInt160.Parse("0xbdbe3ca30e9d74df12ce57ebc95a302dfaa0828c"));
+            mockContext.Object.PrevHeader.NextConsensus.Should().Be(UInt160.Parse("0x9412c3107a59fa732ccd94866976f7bbb3d9c372"));
             var prepReq = mockContext.Object.MakePrepareRequest();
             var ppToSend = (PrepareRequest)prepReq.ConsensusMessage;
             // Forcing hashes to 0 because mempool is currently shared

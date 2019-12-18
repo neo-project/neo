@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, SafeMethod = true)]
         private StackItem UnclaimedGas(ApplicationEngine engine, Array args)
         {
-            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
+            UInt160 account = new UInt160(args[0].GetSpan());
             uint end = (uint)args[1].GetBigInteger();
             return UnclaimedGas(engine.Snapshot, account, end);
         }
@@ -153,9 +153,9 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
         private StackItem Vote(ApplicationEngine engine, Array args)
         {
-            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
+            UInt160 account = new UInt160(args[0].GetSpan());
             ECPoint[] pubkeys = ((Array)args[1]).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToArray();
-            if (!InteropService.CheckWitness(engine, account)) return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             StorageKey key_account = CreateAccountKey(account);
             if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = engine.Snapshot.Storages.GetAndChange(key_account);

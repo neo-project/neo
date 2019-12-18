@@ -25,7 +25,7 @@ namespace Neo.UnitTests.Ledger
                 Witness = new Witness
                 {
                     InvocationScript = new byte[0],
-                    VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 },
                 Hashes = new UInt256[0]
             };

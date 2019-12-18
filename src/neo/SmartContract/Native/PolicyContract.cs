@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Native
         {
             UInt256 prev_hash = engine.Snapshot.PersistingBlock.PrevHash;
             TrimmedBlock prev_block = engine.Snapshot.Blocks[prev_hash];
-            return InteropService.CheckWitness(engine, prev_block.NextConsensus);
+            return InteropService.Runtime.CheckWitnessInternal(engine, prev_block.NextConsensus);
         }
 
         internal override bool Initialize(ApplicationEngine engine)
@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
         private StackItem BlockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
-            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
+            UInt160 account = new UInt160(args[0].GetSpan());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
@@ -159,7 +159,7 @@ namespace Neo.SmartContract.Native
         private StackItem UnblockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
-            UInt160 account = new UInt160(args[0].GetSpan().ToArray());
+            UInt160 account = new UInt160(args[0].GetSpan());
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
