@@ -330,11 +330,11 @@ namespace Neo.Consensus
         private void TryToSavePayloadIntoArray(ConsensusPayload[] payloadsArray, ConsensusPayload payload, byte pViewNumber)
         {
             byte lastViewNumber = 0;
-            byte lastHeight = 0;
+            uint lastHeight = 0;
             if (payloadsArray[payload.ValidatorIndex] != null)
             {
-                lastViewNumber = (byte)payloadsArray[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber;
-                lastHeight = (byte)payloadsArray[payload.ValidatorIndex].BlockIndex;
+                lastViewNumber = payloadsArray[payload.ValidatorIndex].ConsensusMessage.ViewNumber;
+                lastHeight = payloadsArray[payload.ValidatorIndex].BlockIndex;
             }
             // Update counter of future payloads if no future payload was known for this ValidatorIndex
             if (lastViewNumber == 0 && lastHeight == 0)
