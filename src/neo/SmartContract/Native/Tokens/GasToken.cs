@@ -42,29 +42,27 @@ namespace Neo.SmartContract.Native.Tokens
         /// <returns></returns>
         private long CalculateSystemFeeWithPayback(Transaction tx)
         {
-            long factor = (long)GAS.Factor;
+            long gasUnit = (long)GAS.Factor;
             long finalFee = Math.Max(tx.SystemFee + tx.SysFeeCredit, 0);
-            long remainder = finalFee % factor;
-            if (remainder > 0)
-                finalFee += factor - remainder;
-
+            long remainder = finalFee % gasUnit;
+            finalFee += gasUnit - remainder;
             return finalFee;
         }
 
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;
-            long userPaidFees = 0;
+            long sysFeeWithStorageDiscount = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
                 var sysFee = CalculateSystemFeeWithPayback(tx);
-                Burn(engine, tx.Sender, userPaidFees + tx.NetworkFee);
-                userPaidFees += userPaidFees;
+                Burn(engine, tx.Sender, sysFeeWithStorageDiscount + tx.NetworkFee);
+                sysFeeWithStorageDiscount += sysFeeWithStorageDiscount;
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + userPaidFees;
+            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + sysFeeWithStorageDiscount;
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
             engine.Snapshot.Storages.Add(key, new StorageItem
             {

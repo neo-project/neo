@@ -355,12 +355,14 @@ namespace Neo.UnitTests.SmartContract
 
             long finalConsumedGas = 0;
             long gasCredit = 0;
+            long minimumRequiredToRun = 0;
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
             {
                 ae.LoadScript(script);
                 ae.Execute();
                 finalConsumedGas = ae.GasConsumed;
                 gasCredit = ae.GasCredit;
+                minimumRequiredToRun = ae.MinimumGasRequired;
             }
 
             //Negative Gas caused by released space.
@@ -381,6 +383,22 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(script);
                 ae.Execute();
                 ae.State.Should().Be(VMState.HALT);
+           
+            }
+
+            //The application engine already calculates the value you need to send to get this tx approved.
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, minimumRequiredToRun, testMode: false))
+            {
+                ae.LoadScript(script);
+                ae.Execute();
+                ae.State.Should().Be(VMState.HALT);
+            }
+
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, minimumRequiredToRun - 1, testMode: false))
+            {
+                ae.LoadScript(script);
+                ae.Execute();
+                ae.State.Should().Be(VMState.FAULT);
             }
         }
 
