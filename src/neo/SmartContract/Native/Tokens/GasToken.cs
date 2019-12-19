@@ -56,8 +56,8 @@ namespace Neo.SmartContract.Native.Tokens
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
                 var sysFee = CalculateSystemFeeWithPayback(tx);
-                Burn(engine, tx.Sender, sysFeeWithStorageDiscount + tx.NetworkFee);
-                sysFeeWithStorageDiscount += sysFeeWithStorageDiscount;
+                Burn(engine, tx.Sender, sysFee + tx.NetworkFee);
+                sysFeeWithStorageDiscount += sysFee;
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
