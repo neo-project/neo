@@ -96,7 +96,7 @@ namespace Neo.UnitTests.VMT
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
-            Assert.AreEqual("0c14000000000000000000000000000000000000000011c10c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+            Assert.AreEqual("0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
                             testScript.ToHexString());
         }
 
@@ -107,12 +107,12 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(30000000000000L, (long)new BigInteger(byteItem.ToParameter().Value as byte[]));
 
             StackItem boolItem = false;
-            Assert.AreEqual(false, (bool)boolItem.ToParameter().Value);
+            Assert.AreEqual(BigInteger.Zero, (BigInteger)boolItem.ToParameter().Value);
 
             StackItem intItem = new BigInteger(1000);
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
 
-            StackItem interopItem = new VM.Types.InteropInterface<string>("test");
+            StackItem interopItem = new VM.Types.InteropInterface("test");
             Assert.AreEqual(null, interopItem.ToParameter().Value);
 
             StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
@@ -482,7 +482,6 @@ namespace Neo.UnitTests.VMT
         {
             TestToParaMeter2VMArray();
             TestToParameter2Map();
-            TestToParameter2VMBoolean();
             TestToParameter2ByteArray();
             TestToParameter2Integer();
             TestToParameter2InteropInterface();
@@ -493,7 +492,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParameter2InteropInterface()
         {
-            StackItem item = new VM.Types.InteropInterface<VM.Types.Boolean>(new VM.Types.Boolean(true));
+            StackItem item = new InteropInterface(new object());
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.InteropInterface, parameter.Type);
         }
@@ -512,14 +511,6 @@ namespace Neo.UnitTests.VMT
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.ByteArray, parameter.Type);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00 }), Encoding.Default.GetString((byte[])parameter.Value));
-        }
-
-        private void TestToParameter2VMBoolean()
-        {
-            StackItem item = new VM.Types.Boolean(true);
-            ContractParameter parameter = VM.Helper.ToParameter(item);
-            Assert.AreEqual(ContractParameterType.Boolean, parameter.Type);
-            Assert.AreEqual(true, parameter.Value);
         }
 
         private void TestToParameter2Map()

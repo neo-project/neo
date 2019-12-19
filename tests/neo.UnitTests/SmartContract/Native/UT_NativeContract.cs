@@ -69,12 +69,10 @@ namespace Neo.UnitTests.SmartContract.Native
             TestNativeContract testNativeContract = new TestNativeContract();
             VMArray args = new VMArray();
 
-            VM.Types.Boolean result1 = new VM.Types.Boolean(false);
-            testNativeContract.TestOnPersist(engine1, args).Should().Be(result1);
+            testNativeContract.TestOnPersist(engine1, args).Should().Be(StackItem.False);
 
             ApplicationEngine engine2 = new ApplicationEngine(TriggerType.System, null, Blockchain.Singleton.GetSnapshot(), 0);
-            VM.Types.Boolean result2 = new VM.Types.Boolean(true);
-            testNativeContract.TestOnPersist(engine2, args).Should().Be(result2);
+            testNativeContract.TestOnPersist(engine2, args).Should().Be(StackItem.True);
         }
 
         [TestMethod]

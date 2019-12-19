@@ -182,7 +182,7 @@ namespace Neo.UnitTests.SmartContract
                     Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var m) && m.GetString() == "{\"key\":\"dmFsdWU=\"}");
                     Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var n) && n.GetString() == "null");
                     Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var s) && s.GetString() == "\"dGVzdA==\"");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var b) && b.GetString() == "true");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var b) && b.GetString() == "1");
                     Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var i) && i.GetString() == "5");
                 }
             }

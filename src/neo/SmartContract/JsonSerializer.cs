@@ -8,7 +8,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text.Json;
 using Array = Neo.VM.Types.Array;
-using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
@@ -37,10 +36,6 @@ namespace Neo.SmartContract
                         if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
                             return integer.ToString();
                         return (double)num.GetBigInteger();
-                    }
-                case Boolean boolean:
-                    {
-                        return boolean.ToBoolean();
                     }
                 case Map map:
                     {
@@ -98,9 +93,6 @@ namespace Neo.SmartContract
                             writer.WriteNumberValue((double)num.GetBigInteger());
                             break;
                         }
-                    case Boolean boolean:
-                        writer.WriteBooleanValue(boolean.ToBoolean());
-                        break;
                     case Map map:
                         writer.WriteStartObject();
                         stack.Push(JsonTokenType.EndObject);
@@ -159,7 +151,7 @@ namespace Neo.SmartContract
                     }
                 case JBoolean boolean:
                     {
-                        return new Boolean(boolean.Value);
+                        return boolean.Value ? 1 : 0;
                     }
                 case JObject obj:
                     {

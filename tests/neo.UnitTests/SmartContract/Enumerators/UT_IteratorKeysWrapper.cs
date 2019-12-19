@@ -23,9 +23,7 @@ namespace Neo.UnitTests.SmartContract.Enumerators
         [TestMethod]
         public void TestNextAndValue()
         {
-            StackItem stackItem = new VM.Types.Boolean(true);
-            List<StackItem> list = new List<StackItem>();
-            list.Add(stackItem);
+            List<StackItem> list = new List<StackItem> { StackItem.True };
             ArrayWrapper wrapper = new ArrayWrapper(list);
             IteratorKeysWrapper iteratorKeysWrapper = new IteratorKeysWrapper(wrapper);
             Action action = () => iteratorKeysWrapper.Next();

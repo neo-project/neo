@@ -3,11 +3,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using Neo.VM.Types;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
                 "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = 1024 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                  "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = Neo.Network.P2P.Message.PayloadMaxSize });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = 1024 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
@@ -113,7 +113,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "setMaxTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
@@ -124,7 +124,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "setMaxTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
@@ -148,7 +148,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
@@ -159,7 +159,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
@@ -183,7 +183,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
@@ -194,7 +194,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
@@ -206,7 +206,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeFalse();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
-            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.Should().BeOfType<Integer>();
             ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
