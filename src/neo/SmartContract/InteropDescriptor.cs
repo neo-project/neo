@@ -21,6 +21,13 @@ namespace Neo.SmartContract
             this.Price = price;
         }
 
+        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<ApplicationEngine, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+            : this(method, handler, allowedTriggers, requiredCallFlags)
+        {
+            this.StoragePriceCalculator = priceCalculator;
+            this.IsStateful = true;
+        }
+
         internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
             : this(method, handler, allowedTriggers, requiredCallFlags)
         {
@@ -35,6 +42,7 @@ namespace Neo.SmartContract
             this.AllowedTriggers = allowedTriggers;
             this.RequiredCallFlags = requiredCallFlags;
         }
+
 
         public long GetPrice()
         {
