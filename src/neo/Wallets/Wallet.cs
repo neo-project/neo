@@ -320,15 +320,12 @@ namespace Neo.Wallets
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
-                    tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
+                    tx.SystemFee = Math.Max(engine.MinimumGasRequired - ApplicationEngine.GasFree, 0);
                     if (tx.SystemFee > 0)
                     {
-                        long d = (long)NativeContract.GAS.Factor;
-                        long remainder = tx.SystemFee % d;
-                        if (remainder > 0)
-                            tx.SystemFee += d - remainder;
-                        else if (remainder < 0)
-                            tx.SystemFee -= remainder;
+                        long gasUnit = (long)NativeContract.GAS.Factor;
+                        long remainder = tx.SystemFee % gasUnit;
+                        tx.SystemFee += gasUnit - remainder;
                     }
                 }
 

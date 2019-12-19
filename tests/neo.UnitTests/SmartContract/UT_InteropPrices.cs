@@ -11,7 +11,9 @@ using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -74,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { (byte)OpCode.PUSH3 };
             var value = new byte[] { (byte)OpCode.PUSH3 };
 
-            byte[] script = CreateDummyPutScript(key, value);
+            byte[] script = CreatePutScript(key, value);
             ContractState contractState = TestUtils.GetContract(script);
 
             StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
@@ -96,7 +98,7 @@ namespace Neo.UnitTests.SmartContract
 
             key = new byte[] { (byte)OpCode.PUSH3 };
             value = new byte[] { (byte)OpCode.PUSH3 };
-            script = CreateDummyPutExScript(key, value);
+            script = CreatePutExScript(key, value);
 
             byte[] scriptPutEx = script;
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
@@ -119,7 +121,7 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1 };
 
-            byte[] script = CreateDummyPutScript(key, value);
+            byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
@@ -158,7 +160,7 @@ namespace Neo.UnitTests.SmartContract
 
             var mockedStoreView = new Mock<StoreView>();
 
-            byte[] script = CreateDummyPutScript(key, value);
+            byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
@@ -196,7 +198,7 @@ namespace Neo.UnitTests.SmartContract
             var oldValue = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH1 };
 
-            byte[] script = CreateDummyPutScript(key, value);
+            byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
@@ -236,7 +238,7 @@ namespace Neo.UnitTests.SmartContract
             var oldValue = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH1 };
 
-            byte[] script = CreatePutTwiceScript(key, value);
+            byte[] script = CreateMultiplePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
@@ -434,20 +436,40 @@ namespace Neo.UnitTests.SmartContract
 
                 //Regular transfer transaction
                 var transaction = wallet.MakeTransaction(new TransferOutput[] { transferOutput }, account.ScriptHash, mockedStoreView.Object);
-                transaction.SystemFee.Should().BeGreaterThan(0);
+                //Minimum fee
+                transaction.SystemFee.Should().Be(1 * (long)NativeContract.GAS.Factor);
 
-                //Calling a script that releases storage
-                var key = new byte[] { (byte)OpCode.PUSH1 };
-                var oldValue = new byte[] { (byte)OpCode.PUSH1 };
-                byte[] script = CreateExplicitDeleteScript(key);
+                //fill the storage with data that will be released and builds the delete script
+                var random = new Random();
+                var scriptBuilder = new ScriptBuilder();
+                for (BigInteger i = 1; i < 10; i++)
+                {
+                    var key = i.ToByteArray();
+                    scriptBuilder.EmitPush(key);
+                    scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+                    scriptBuilder.EmitSysCall(InteropService.Storage.Delete);
+                }
+
+                var script = scriptBuilder.ToArray();
+                for (BigInteger i = 1; i < 10; i++)
+                {
+                    var key = i.ToByteArray();
+                    var value = new byte[2048];
+                    random.NextBytes(value);
+                    StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+                    StorageItem sItem = TestUtils.GetStorageItem(value);
+                    mockedStoreView.Object.Storages.Add(skey, sItem);
+                }
+
                 ContractState contractState = TestUtils.GetContract(script);
                 contractState.Manifest.Features = ContractFeatures.HasStorage;
-                StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
-                StorageItem sItem = TestUtils.GetStorageItem(oldValue);
-                mockedStoreView.Object.Storages.Add(skey, sItem);
-                mockedStoreView.Object.Contracts.Add(contractState.ScriptHash, contractState);
-                var storageReleaseTransaction = wallet.MakeTransaction(script, account.ScriptHash, snapshot: mockedStoreView.Object);
-                transaction.SystemFee.Should().Be(0);
+                mockedStoreView.Object.Contracts.Add(script.ToScriptHash(), contractState);
+
+                var storageReleaseTransaction = wallet.MakeTransaction(script.ToArray(), account.ScriptHash, snapshot: mockedStoreView.Object);
+                storageReleaseTransaction.SystemFee.Should().NotBe(0);
+
+                //Calling expensive script with large payback
+
             }
 
         }
@@ -472,13 +494,24 @@ namespace Neo.UnitTests.SmartContract
             return scriptBuilder.ToArray();
         }
 
-        private byte[] CreatePutTwiceScript(byte[] key, byte[] value)
+        private byte[] CreateMultiplePutScript(byte[] key, byte[] value, int times = 2)
         {
             var scriptBuilder = new ScriptBuilder();
-            scriptBuilder.EmitPush(value);
-            scriptBuilder.EmitPush(key);
-            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+
+            for (int i = 0; i < times; i++)
+            {
+                scriptBuilder.EmitPush(value);
+                scriptBuilder.EmitPush(key);
+                scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+                scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+            }
+
+            return scriptBuilder.ToArray();
+        }
+
+        private byte[] CreatePutScript(byte[] key, byte[] value)
+        {
+            var scriptBuilder = new ScriptBuilder();
             scriptBuilder.EmitPush(value);
             scriptBuilder.EmitPush(key);
             scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
@@ -486,17 +519,7 @@ namespace Neo.UnitTests.SmartContract
             return scriptBuilder.ToArray();
         }
 
-        private byte[] CreateDummyPutScript(byte[] key, byte[] value)
-        {
-            var scriptBuilder = new ScriptBuilder();
-            scriptBuilder.EmitPush(value);
-            scriptBuilder.EmitPush(key);
-            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
-            return scriptBuilder.ToArray();
-        }
-
-        private byte[] CreateDummyPutExScript(byte[] key, byte[] value)
+        private byte[] CreatePutExScript(byte[] key, byte[] value)
         {
             var scriptBuilder = new ScriptBuilder();
             scriptBuilder.EmitPush(value);

@@ -518,6 +518,7 @@ namespace Neo.Ledger
                         state.VMState = engine.Execute();
                         if (state.VMState == VMState.HALT)
                         {
+                            tx.SysFeeCredit = engine.GasCredit;
                             engine.Snapshot.Commit();
                         }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);

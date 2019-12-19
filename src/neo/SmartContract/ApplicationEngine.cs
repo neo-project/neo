@@ -21,12 +21,14 @@ namespace Neo.SmartContract
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
         private readonly List<StorageKey> updatedKeys = new List<StorageKey>();
+        private long maxConsumedGas = 0;
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasCredit { get; private set; } = 0;
+        public long MinimumGasRequired { get { return Math.Max(GasConsumed, maxConsumedGas); } }
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
@@ -69,6 +71,10 @@ namespace Neo.SmartContract
             if (gas < 0)
             {
                 GasCredit = checked(GasCredit + gas);
+                if (GasConsumed > maxConsumedGas)
+                {
+                    maxConsumedGas = GasConsumed;
+                }
             }
 
             GasConsumed = checked(GasConsumed + gas);

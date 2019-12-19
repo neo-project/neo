@@ -35,15 +35,36 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
+        /// <summary>
+        /// The paid final paid amount is calculated based based on the sysfee and sysfeeCredit
+        /// </summary>
+        /// <param name="tx"></param>
+        /// <returns></returns>
+        private long CalculateSystemFeeWithPayback(Transaction tx)
+        {
+            long factor = (long)GAS.Factor;
+            long finalFee = Math.Max(tx.SystemFee + tx.SysFeeCredit, 0);
+            long remainder = finalFee % factor;
+            if (remainder > 0)
+                finalFee += factor - remainder;
+
+            return finalFee;
+        }
+
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;
+            long userPaidFees = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
-                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+            {
+                var sysFee = CalculateSystemFeeWithPayback(tx);
+                Burn(engine, tx.Sender, userPaidFees + tx.NetworkFee);
+                userPaidFees += userPaidFees;
+            }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.SystemFee);
+            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + userPaidFees;
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
             engine.Snapshot.Storages.Add(key, new StorageItem
             {

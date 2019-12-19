@@ -67,6 +67,12 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public long FeePerByte => NetworkFee / Size;
 
+        /// <summary>
+        /// Credit for releasing storage.
+        /// Calculated after running the TX. 
+        /// </summary>
+        public long SysFeeCredit { get; set; }
+
         private UInt256 _hash = null;
         public UInt256 Hash
         {
