@@ -787,6 +787,59 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestContract_CallEx()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            var state = TestUtils.GetContract();
+            state.Manifest.Features = ContractFeatures.HasStorage;
+            snapshot.Contracts.Add(state.ScriptHash, state);
+
+            byte[] method = Encoding.UTF8.GetBytes("method");
+            byte[] args = new byte[0];
+
+            foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
+            {
+                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+                engine.LoadScript(new byte[] { 0x01 });
+
+                engine.CurrentContext.EvaluationStack.Push((int)CallFlags.All);
+                engine.CurrentContext.EvaluationStack.Push(args);
+                engine.CurrentContext.EvaluationStack.Push(method);
+                engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
+                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeTrue();
+                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(method.ToHexString());
+                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(args.ToHexString());
+
+                // Contract doesn't exists
+
+                engine.CurrentContext.EvaluationStack.Push((int)CallFlags.All);
+                engine.CurrentContext.EvaluationStack.Push(args);
+                engine.CurrentContext.EvaluationStack.Push(method);
+                engine.CurrentContext.EvaluationStack.Push(UInt160.Zero.ToArray());
+                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeFalse();
+
+                // Call with rights
+
+                engine.CurrentContext.EvaluationStack.Push((int)flags);
+                engine.CurrentContext.EvaluationStack.Push(args);
+                engine.CurrentContext.EvaluationStack.Push(method);
+                engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
+                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeTrue();
+                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(method.ToHexString());
+                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(args.ToHexString());
+
+                // Check rights
+
+                engine.CurrentContext.EvaluationStack.Push((int)CallFlags.All);
+                engine.CurrentContext.EvaluationStack.Push(args);
+                engine.CurrentContext.EvaluationStack.Push(method);
+                engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
+                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().Be(flags.HasFlag(CallFlags.AllowCall));
+            }
+        }
+
+        [TestMethod]
         public void TestContract_Destroy()
         {
             var engine = GetEngine(false, true);
