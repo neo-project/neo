@@ -383,7 +383,7 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(script);
                 ae.Execute();
                 ae.State.Should().Be(VMState.HALT);
-           
+
             }
 
             //The application engine already calculates the value you need to send to get this tx approved.
@@ -457,7 +457,6 @@ namespace Neo.UnitTests.SmartContract
                 //Minimum fee
                 transaction.SystemFee.Should().Be(1 * (long)NativeContract.GAS.Factor);
 
-                //fill the storage with data that will be released and builds the delete script
                 var random = new Random();
                 var scriptBuilder = new ScriptBuilder();
                 for (BigInteger i = 1; i < 10; i++)
@@ -468,6 +467,7 @@ namespace Neo.UnitTests.SmartContract
                     scriptBuilder.EmitSysCall(InteropService.Storage.Delete);
                 }
 
+                //fill the storage with data that will be released and builds the delete script
                 var script = scriptBuilder.ToArray();
                 for (BigInteger i = 1; i < 10; i++)
                 {
@@ -485,9 +485,6 @@ namespace Neo.UnitTests.SmartContract
 
                 var storageReleaseTransaction = wallet.MakeTransaction(script.ToArray(), account.ScriptHash, snapshot: mockedStoreView.Object);
                 storageReleaseTransaction.SystemFee.Should().NotBe(0);
-
-                //Calling expensive script with large payback
-
             }
 
         }

@@ -38,18 +38,14 @@ namespace Neo.SmartContract
             {
                 var stack = engine.CurrentContext.EvaluationStack;
                 var key = stack.Peek(1);
-
                 StorageKey skey = new StorageKey
                 {
                     ScriptHash = engine.CurrentScriptHash,
                     Key = key.GetSpan().ToArray()
                 };
-
                 var skeyValue = engine.Snapshot.Storages.TryGet(skey);
-
                 if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || engine.HasUpdatedKey(skey))
                     return 0_01000000;
-
                 return (skeyValue.Value.Length + key.GetByteLength()) * GasPerReleasedByte;
             }
 
@@ -64,14 +60,10 @@ namespace Neo.SmartContract
                     ScriptHash = engine.CurrentScriptHash,
                     Key = key.GetSpan().ToArray()
                 };
-
                 var skeyValue = engine.Snapshot.Storages.TryGet(skey);
-
                 if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || engine.HasUpdatedKey(skey))
                     return (key.GetByteLength() + newDataSize) * GasPerByte;
-
                 var currentOccupiedBytes = skeyValue.Value.Length;
-
                 if (newDataSize <= currentOccupiedBytes)
                 {
                     var releasedBytes = currentOccupiedBytes - newDataSize;
@@ -90,15 +82,12 @@ namespace Neo.SmartContract
                 if (value.Length > MaxValueSize) return false;
                 if (context.IsReadOnly) return false;
                 if (!CheckStorageContext(engine, context)) return false;
-
                 StorageKey skey = new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
                     Key = key
                 };
-
                 if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
-
                 if (value.Length == 0 && !flags.HasFlag(StorageFlags.Constant))
                 {
                     // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)
@@ -110,9 +99,7 @@ namespace Neo.SmartContract
                     item.Value = value;
                     item.IsConstant = flags.HasFlag(StorageFlags.Constant);
                 }
-
                 engine.TryAddUpdatedKey(skey);
-
                 return true;
             }
 

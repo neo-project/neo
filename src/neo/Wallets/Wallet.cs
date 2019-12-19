@@ -212,7 +212,6 @@ namespace Neo.Wallets
         public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, StoreView snapshot = null)
         {
             snapshot ??= Blockchain.Singleton.GetSnapshot();
-
             UInt160[] accounts;
             if (from is null)
             {
@@ -263,7 +262,6 @@ namespace Neo.Wallets
                         balances_gas = balances;
                 }
                 script = sb.ToArray();
-
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
