@@ -47,7 +47,7 @@ namespace Neo.SmartContract
 
                 var skeyValue = engine.Snapshot.Storages.TryGet(skey);
 
-                if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || !engine.TryAddUpdatedKey(skey))
+                if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || engine.HasUpdatedKey(skey))
                     return 0_01000000;
 
                 return (skeyValue.Value.Length + key.GetByteLength()) * GasPerReleasedByte;
@@ -67,7 +67,7 @@ namespace Neo.SmartContract
 
                 var skeyValue = engine.Snapshot.Storages.TryGet(skey);
 
-                if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || !engine.TryAddUpdatedKey(skey))
+                if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || engine.HasUpdatedKey(skey))
                     return (key.GetByteLength() + newDataSize) * GasPerByte;
 
                 var currentOccupiedBytes = skeyValue.Value.Length;
@@ -110,6 +110,9 @@ namespace Neo.SmartContract
                     item.Value = value;
                     item.IsConstant = flags.HasFlag(StorageFlags.Constant);
                 }
+
+                engine.TryAddUpdatedKey(skey);
+
                 return true;
             }
 
@@ -218,6 +221,7 @@ namespace Neo.SmartContract
                     };
                     if (engine.Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                     engine.Snapshot.Storages.Delete(key);
+                    engine.TryAddUpdatedKey(key);
                     return true;
                 }
                 return false;

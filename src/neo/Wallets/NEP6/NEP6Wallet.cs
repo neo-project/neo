@@ -23,6 +23,14 @@ namespace Neo.Wallets.NEP6
         public override string Name => name;
         public override Version Version => version;
 
+        public NEP6Wallet()
+        {
+            this.version = Version.Parse("3.0");
+            this.Scrypt = ScryptParameters.Default;
+            this.accounts = new Dictionary<UInt160, NEP6Account>();
+            this.extra = JObject.Null;
+        }
+
         public NEP6Wallet(string path, string name = null)
         {
             this.path = path;

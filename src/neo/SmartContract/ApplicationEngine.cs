@@ -26,6 +26,7 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
+        public long GasCredit { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
@@ -47,6 +48,11 @@ namespace Neo.SmartContract
             return disposable;
         }
 
+        internal bool HasUpdatedKey(StorageKey key)
+        {
+            return updatedKeys.Contains(key);
+        }
+
         internal bool TryAddUpdatedKey(StorageKey key)
         {
             bool keyAdded = false;
@@ -60,6 +66,11 @@ namespace Neo.SmartContract
 
         private bool AddGas(long gas)
         {
+            if (gas < 0)
+            {
+                GasCredit = checked(GasCredit + gas);
+            }
+
             GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
         }

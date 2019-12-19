@@ -32,8 +32,7 @@ namespace Neo.SmartContract
 
         public static long GetPrice(uint hash, ApplicationEngine applicationEngine)
         {
-            var interopDescriptor = methods[hash];
-            return interopDescriptor.IsStateful ? interopDescriptor.GetPrice(applicationEngine) : interopDescriptor.GetPrice(applicationEngine.CurrentContext.EvaluationStack);
+            return methods[hash].GetPrice(applicationEngine);
         }
 
         internal static bool Invoke(ApplicationEngine engine, uint method)

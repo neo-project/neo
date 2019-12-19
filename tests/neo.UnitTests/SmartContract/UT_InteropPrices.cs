@@ -5,8 +5,12 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
@@ -232,7 +236,7 @@ namespace Neo.UnitTests.SmartContract
             var oldValue = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH1 };
 
-            byte[] script = CreateDummyPutTwiceScript(key, value);
+            byte[] script = CreatePutTwiceScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
@@ -263,7 +267,7 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { (byte)OpCode.PUSH1 };
             var oldValue = new byte[] { (byte)OpCode.PUSH1 };
 
-            byte[] script = CreateDummyImplicitDeleteScript(key);
+            byte[] script = CreateImplicitDeleteScript(key);
 
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
@@ -291,6 +295,8 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
+
+
         /// <summary>
         /// Releases 1 byte from the storage receiving Gas credit using explicit delete
         /// </summary>
@@ -300,7 +306,7 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { (byte)OpCode.PUSH1 };
             var oldValue = new byte[] { (byte)OpCode.PUSH1 };
 
-            byte[] script = CreateDummyExplicitDeleteScript(key);
+            byte[] script = CreateExplicitDeleteScript(key);
 
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
@@ -327,8 +333,126 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
+        [TestMethod]
+        public void TestCalculateMinimumRequiredToRun()
+        {
+            var key = new byte[] { (byte)OpCode.PUSH1 };
+            var oldValue = new byte[] { (byte)OpCode.PUSH1 };
 
-        private byte[] CreateDummyExplicitDeleteScript(byte[] key)
+            byte[] script = CreateExplicitDeleteScript(key);
+
+            ContractState contractState = TestUtils.GetContract(script);
+            contractState.Manifest.Features = ContractFeatures.HasStorage;
+
+            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageItem sItem = TestUtils.GetStorageItem(oldValue);
+
+            var mockedStoreView = new Mock<StoreView>();
+            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
+            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+
+            long finalConsumedGas = 0;
+            long gasCredit = 0;
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            {
+                ae.LoadScript(script);
+                ae.Execute();
+                finalConsumedGas = ae.GasConsumed;
+                gasCredit = ae.GasCredit;
+            }
+
+            //Negative Gas caused by released space.
+            finalConsumedGas.Should().BeLessOrEqualTo(0);
+
+            //If you send GasConsumed, it should fail due to lack of GAS.
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, finalConsumedGas, testMode: false))
+            {
+                ae.LoadScript(script);
+                ae.Execute();
+                ae.State.Should().Be(VMState.FAULT);
+            }
+
+            //To work properly, you have to send ConsumedGas + GasCredit.
+            //GasCredit is a negative value.
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, finalConsumedGas - gasCredit, testMode: false))
+            {
+                ae.LoadScript(script);
+                ae.Execute();
+                ae.State.Should().Be(VMState.HALT);
+            }
+        }
+
+        [TestMethod]
+        public void TestPaybackExceedingSysFee()
+        {
+            var mock = new Mock<NEP6Wallet>()
+            {
+                CallBase = true
+            };
+
+            var mockedStoreView = new Mock<StoreView>()
+            {
+                CallBase = true,
+            };
+
+            var dummyBlock = Blockchain.Singleton.GetBlock(0);
+            var trimmedBlock = new TrimmedBlock();
+            var testSnapshot = Blockchain.Singleton.GetSnapshot();
+
+            mockedStoreView.Setup(s => s.Storages).Returns(testSnapshot.Storages);
+            mockedStoreView.Setup(s => s.Contracts).Returns(testSnapshot.Contracts);
+            mockedStoreView.Setup(s => s.Height).Returns(0);
+            mockedStoreView.Setup(s => s.CurrentBlockHash).Returns(dummyBlock.Hash);
+            mockedStoreView.Setup(s => s.Blocks[dummyBlock.Hash]).Returns(trimmedBlock);
+            mockedStoreView.Setup(s => s.Clone()).Returns(mockedStoreView.Object);
+
+            var wallet = mock.Object;
+
+            using (wallet.Unlock(""))
+            {
+                var startingGas = 1000000;
+                var account = wallet.CreateAccount();
+                var account2 = wallet.CreateAccount();
+                var userKey = NativeContract.GAS.CreateAccountKey(account.ScriptHash);
+                var nep5Balance = new Nep5AccountState()
+                {
+                    Balance = startingGas * NativeContract.GAS.Factor
+                };
+
+                var userBalance = TestUtils.GetStorageItem(nep5Balance.ToByteArray());
+                mockedStoreView.Object.Storages.Add(userKey, userBalance);
+
+                var balance = NativeContract.GAS.BalanceOf(mockedStoreView.Object, account.ScriptHash);
+                balance.Should().Be(startingGas * NativeContract.GAS.Factor);
+
+                var transferOutput = new TransferOutput()
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = account2.ScriptHash,
+                    Value = new BigDecimal(1, 0)
+                };
+
+                //Regular transfer transaction
+                var transaction = wallet.MakeTransaction(new TransferOutput[] { transferOutput }, account.ScriptHash, mockedStoreView.Object);
+                transaction.SystemFee.Should().BeGreaterThan(0);
+
+                //Calling a script that releases storage
+                var key = new byte[] { (byte)OpCode.PUSH1 };
+                var oldValue = new byte[] { (byte)OpCode.PUSH1 };
+                byte[] script = CreateExplicitDeleteScript(key);
+                ContractState contractState = TestUtils.GetContract(script);
+                contractState.Manifest.Features = ContractFeatures.HasStorage;
+                StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+                StorageItem sItem = TestUtils.GetStorageItem(oldValue);
+                mockedStoreView.Object.Storages.Add(skey, sItem);
+                mockedStoreView.Object.Contracts.Add(contractState.ScriptHash, contractState);
+                var storageReleaseTransaction = wallet.MakeTransaction(script, account.ScriptHash, snapshot: mockedStoreView.Object);
+                transaction.SystemFee.Should().Be(0);
+            }
+
+        }
+
+        private byte[] CreateExplicitDeleteScript(byte[] key)
         {
             var scriptBuilder = new ScriptBuilder();
             scriptBuilder.EmitPush(key);
@@ -337,7 +461,7 @@ namespace Neo.UnitTests.SmartContract
             return scriptBuilder.ToArray();
         }
 
-        private byte[] CreateDummyImplicitDeleteScript(byte[] key)
+        private byte[] CreateImplicitDeleteScript(byte[] key)
         {
             var emptyArray = new byte[0];
             var scriptBuilder = new ScriptBuilder();
@@ -348,7 +472,7 @@ namespace Neo.UnitTests.SmartContract
             return scriptBuilder.ToArray();
         }
 
-        private byte[] CreateDummyPutTwiceScript(byte[] key, byte[] value)
+        private byte[] CreatePutTwiceScript(byte[] key, byte[] value)
         {
             var scriptBuilder = new ScriptBuilder();
             scriptBuilder.EmitPush(value);
