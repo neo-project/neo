@@ -122,8 +122,8 @@ namespace Neo.SmartContract
                 }
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
                 {
-                    engine.LoadScript(verification);
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
+                    engine.LoadScript(verification, CallFlags.ReadOnly);
+                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
                 }

@@ -60,6 +60,13 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
+        {
+            ExecutionContext context = LoadScript(script, rvcount);
+            context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            return context;
+        }
+
         public override void Dispose()
         {
             foreach (IDisposable disposable in disposables)

@@ -58,7 +58,8 @@ namespace Neo.SmartContract.Native
                 methods.Add(name, new ContractMethodMetadata
                 {
                     Delegate = (Func<ApplicationEngine, Array, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, Array, StackItem>), this),
-                    Price = attribute.Price
+                    Price = attribute.Price,
+                    RequiredCallFlags = attribute.SafeMethod ? CallFlags.None : CallFlags.AllowModifyStates
                 });
             }
             this.Manifest.Abi.Methods = descriptors.ToArray();
@@ -91,6 +92,9 @@ namespace Neo.SmartContract.Native
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             Array args = (Array)engine.CurrentContext.EvaluationStack.Pop();
             if (!methods.TryGetValue(operation, out ContractMethodMetadata method))
+                return false;
+            ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+            if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 return false;
             StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
