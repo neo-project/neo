@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads
             base.Deserialize(reader);
             ContentCount = (int)reader.ReadVarInt(Block.MaxTransactionsPerBlock);
             Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
-            Flags = reader.ReadVarBytes(Block.MaxTransactionsPerBlock);
+            Flags = reader.ReadVarBytes(Block.MaxTransactionsPerBlock / 8);
         }
 
         public override void Serialize(BinaryWriter writer)
