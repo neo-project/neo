@@ -61,7 +61,7 @@ namespace Neo.SmartContract
             [OpCode.THROW] = 30,
             [OpCode.THROWIF] = 30,
             [OpCode.THROWIFNOT] = 30,
-            [OpCode.RET] = 40,
+            [OpCode.RET] = 0,
             [OpCode.SYSCALL] = 0,
             [OpCode.DEPTH] = 60,
             [OpCode.DROP] = 60,
