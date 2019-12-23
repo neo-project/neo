@@ -79,7 +79,8 @@ namespace Neo.IO
 
         public static byte[] DecompressLz4(this byte[] data, int maxOutput)
         {
-            maxOutput = Math.Min(maxOutput, data.Length * 255);
+            var maxDecompressDataLength = data.Length * 255;
+            if (maxDecompressDataLength > 0) maxOutput = Math.Min(maxOutput, maxDecompressDataLength);
             using var buffer = MemoryPool<byte>.Shared.Rent(maxOutput);
             int length = LZ4Codec.Decode(data, buffer.Memory.Span);
             if (length < 0 || length > maxOutput) throw new FormatException();
