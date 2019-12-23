@@ -11,5 +11,10 @@ namespace Neo.SmartContract
         /// Calling script hash
         /// </summary>
         public UInt160 CallingScriptHash { get; set; }
+
+        /// <summary>
+        /// Execution context rights
+        /// </summary>
+        public CallFlags CallFlags { get; set; } = CallFlags.All;
     }
 }

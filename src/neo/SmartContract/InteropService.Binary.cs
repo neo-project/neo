@@ -9,8 +9,8 @@ namespace Neo.SmartContract
     {
         public static class Binary
         {
-            public static readonly InteropDescriptor Serialize = Register("System.Binary.Serialize", Binary_Serialize, 0_00100000, TriggerType.All);
-            public static readonly InteropDescriptor Deserialize = Register("System.Binary.Deserialize", Binary_Deserialize, 0_00500000, TriggerType.All);
+            public static readonly InteropDescriptor Serialize = Register("System.Binary.Serialize", Binary_Serialize, 0_00100000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Deserialize = Register("System.Binary.Deserialize", Binary_Deserialize, 0_00500000, TriggerType.All, CallFlags.None);
 
             private static bool Binary_Serialize(ApplicationEngine engine)
             {

@@ -7,12 +7,12 @@ namespace Neo.SmartContract
     {
         internal static class Native
         {
-            public static readonly InteropDescriptor Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application);
+            public static readonly InteropDescriptor Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application, CallFlags.AllowModifyStates);
 
             static Native()
             {
                 foreach (NativeContract contract in NativeContract.Contracts)
-                    Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application);
+                    Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application, CallFlags.None);
             }
 
             private static bool Native_Deploy(ApplicationEngine engine)

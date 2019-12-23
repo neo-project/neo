@@ -61,7 +61,7 @@
       width="25px">
   </a>
   &nbsp;
-  <a href="https://www.youtube.com/channel/UCl1AwEDN0w5lTmfJEMsY5Vw/videos">
+  <a href="https://www.youtube.com/neosmarteconomy">
       <img
       src=".github/images/youtube-logo.png"
       width="32px">
@@ -112,7 +112,7 @@ This repository contain main classes of the
 Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get started.
 
 
-*Note: This is Neo 3 branch, currently under development. For the current stable version, please [click here](https://github.com/neo-project/neo/tree/master-2.x)*
+*Note: This is Neo 3 branch, currently under development. For the current stable version, please [click here.](https://github.com/neo-project/neo/tree/master-2.x)*
 
 
 
@@ -136,7 +136,7 @@ An overview of the project folders can be seen below.
 ## Related projects
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler. 
 
-* [**neo:**](https://github.com/neo-project/neo/tree/) Neo core library, contains base classes, including ledger, p2p and IO modules.
+* [neo:](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, p2p and IO modules.
 * [neo-vm:](https://github.com/neo-project/neo-vm/) Neo Virtual Machine is a decoupled VM that Neo uses to execute its scripts. It also uses the `InteropService` layer to extend its functionalities.
 * [neo-node:](https://github.com/neo-project/neo-node/) Executable version of the Neo library, exposing features using a command line application or GUI.
 * [neo-modules:](https://github.com/neo-project/neo-modules/) Neo modules include additional tools and plugins to be used with Neo.
