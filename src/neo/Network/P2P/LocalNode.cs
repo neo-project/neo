@@ -200,9 +200,8 @@ namespace Neo.Network.P2P
         private void OnRelayDirectly(IInventory inventory)
         {
             var message = new RemoteNode.Relay { Inventory = inventory };
-
-            // When relaying a block, if the block's index is higher than 'LastBlockIndex' of the RemoteNode, send the block;
-            // otherwise, don't send.
+            // When relaying a block, if the block's index is higher than 'LastBlockIndex' of the RemoteNode, relay the block;
+            // otherwise, don't relay.
             if (inventory is Block block)
             {
                 foreach (KeyValuePair<IActorRef, RemoteNode> kvp in RemoteNodes)
