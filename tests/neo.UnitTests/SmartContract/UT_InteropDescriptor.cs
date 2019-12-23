@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
-using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -14,7 +13,7 @@ namespace Neo.UnitTests.SmartContract
             string method = @"System.ExecutionEngine.GetScriptContainer";
             long price = 0_00000250;
             TriggerType allowedTriggers = TriggerType.All;
-            InteropDescriptor descriptor = new InteropDescriptor(method, TestHandler, price, allowedTriggers);
+            InteropDescriptor descriptor = new InteropDescriptor(method, TestHandler, price, allowedTriggers, CallFlags.None);
             descriptor.Method.Should().Be(method);
             descriptor.Price.Should().Be(price);
         }
