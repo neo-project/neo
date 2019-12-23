@@ -9,11 +9,11 @@ namespace Neo.SmartContract
     {
         public static class Iterator
         {
-            public static readonly InteropDescriptor Create = Register("System.Iterator.Create", Iterator_Create, 0_00000400, TriggerType.All);
-            public static readonly InteropDescriptor Key = Register("System.Iterator.Key", Iterator_Key, 0_00000400, TriggerType.All);
-            public static readonly InteropDescriptor Keys = Register("System.Iterator.Keys", Iterator_Keys, 0_00000400, TriggerType.All);
-            public static readonly InteropDescriptor Values = Register("System.Iterator.Values", Iterator_Values, 0_00000400, TriggerType.All);
-            public static readonly InteropDescriptor Concat = Register("System.Iterator.Concat", Iterator_Concat, 0_00000400, TriggerType.All);
+            public static readonly InteropDescriptor Create = Register("System.Iterator.Create", Iterator_Create, 0_00000400, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Key = Register("System.Iterator.Key", Iterator_Key, 0_00000400, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Keys = Register("System.Iterator.Keys", Iterator_Keys, 0_00000400, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Values = Register("System.Iterator.Values", Iterator_Values, 0_00000400, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Concat = Register("System.Iterator.Concat", Iterator_Concat, 0_00000400, TriggerType.All, CallFlags.None);
 
             private static bool Iterator_Create(ApplicationEngine engine)
             {
