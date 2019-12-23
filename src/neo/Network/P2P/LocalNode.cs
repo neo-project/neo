@@ -214,7 +214,6 @@ namespace Neo.Network.P2P
                 SendToRemoteNodes(message);
         }
            
-
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
         public static Props Props(NeoSystem system)
