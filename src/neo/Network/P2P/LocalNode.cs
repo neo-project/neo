@@ -84,9 +84,17 @@ namespace Neo.Network.P2P
         /// Broadcast a message to all connected nodes, namely <see cref="Connections"/>.
         /// </summary>
         /// <param name="message">The message to be broadcasted.</param>
-        private void BroadcastMessage(Message message)
+        private void BroadcastMessage(Message message) => SendToRemoteNodes(message);
+
+        /// <summary>
+        /// Send message to all the RemoteNodes connected to other nodes, faster than ActorSelection.
+        /// </summary>
+        private void SendToRemoteNodes(object message)
         {
-            Connections.Tell(message);
+            foreach (var connection in RemoteNodes.Keys)
+            {
+                connection.Tell(message);
+            }
         }
 
         private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
@@ -189,15 +197,9 @@ namespace Neo.Network.P2P
             system.Blockchain.Tell(inventory);
         }
 
-        private void OnRelayDirectly(IInventory inventory)
-        {
-            Connections.Tell(new RemoteNode.Relay { Inventory = inventory });
-        }
+        private void OnRelayDirectly(IInventory inventory) => SendToRemoteNodes(new RemoteNode.Relay { Inventory = inventory });
 
-        private void OnSendDirectly(IInventory inventory)
-        {
-            Connections.Tell(inventory);
-        }
+        private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
         public static Props Props(NeoSystem system)
         {
