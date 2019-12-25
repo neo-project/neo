@@ -25,13 +25,13 @@ namespace Neo.UnitTests.SmartContract
 
             byte[] result2 = BinarySerializer.Serialize(true, MaxItemSize);
             byte[] expectedArray2 = new byte[] {
-                        0x20, 0x01, 0x01
+                        0x20, 0x01
                     };
             Assert.AreEqual(Encoding.Default.GetString(expectedArray2), Encoding.Default.GetString(result2));
 
             byte[] result3 = BinarySerializer.Serialize(1, MaxItemSize);
             byte[] expectedArray3 = new byte[] {
-                        0x20, 0x01, 0x01
+                        0x21, 0x01, 0x01
                     };
             Assert.AreEqual(Encoding.Default.GetString(expectedArray3), Encoding.Default.GetString(result3));
 
@@ -43,7 +43,7 @@ namespace Neo.UnitTests.SmartContract
             StackItem stackItem62 = new VM.Types.Array(list6);
             byte[] result6 = BinarySerializer.Serialize(stackItem62, MaxItemSize);
             byte[] expectedArray6 = new byte[] {
-                        0x40,0x01,0x20,0x01,0x01
+                        0x40,0x01,0x21,0x01,0x01
                     };
             Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString(result6));
 
@@ -51,14 +51,14 @@ namespace Neo.UnitTests.SmartContract
             StackItem stackItem72 = new Struct(list7);
             byte[] result7 = BinarySerializer.Serialize(stackItem72, MaxItemSize);
             byte[] expectedArray7 = new byte[] {
-                        0x41,0x01,0x20,0x01,0x01
+                        0x41,0x01,0x21,0x01,0x01
                     };
             Assert.AreEqual(Encoding.Default.GetString(expectedArray7), Encoding.Default.GetString(result7));
 
             StackItem stackItem82 = new Map { [2] = 1 };
             byte[] result8 = BinarySerializer.Serialize(stackItem82, MaxItemSize);
             byte[] expectedArray8 = new byte[] {
-                        0x48,0x01,0x20,0x01,0x02,0x20,0x01,0x01
+                        0x48,0x01,0x21,0x01,0x02,0x21,0x01,0x01
                     };
             Assert.AreEqual(Encoding.Default.GetString(expectedArray8), Encoding.Default.GetString(result8));
 
@@ -80,6 +80,11 @@ namespace Neo.UnitTests.SmartContract
             byte[] byteArray1 = BinarySerializer.Serialize(stackItem1, MaxItemSize);
             StackItem result1 = BinarySerializer.Deserialize(byteArray1, 2048, (uint)byteArray1.Length);
             Assert.AreEqual(stackItem1, result1);
+
+            StackItem stackItem2 = new VM.Types.Boolean(true);
+            byte[] byteArray2 = BinarySerializer.Serialize(stackItem2, MaxItemSize);
+            StackItem result2 = BinarySerializer.Deserialize(byteArray2, 2048, (uint)byteArray2.Length);
+            Assert.AreEqual(stackItem2, result2);
 
             StackItem stackItem3 = new Integer(1);
             byte[] byteArray3 = BinarySerializer.Serialize(stackItem3, MaxItemSize);

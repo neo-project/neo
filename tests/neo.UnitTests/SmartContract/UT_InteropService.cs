@@ -292,12 +292,12 @@ namespace Neo.UnitTests.SmartContract
 
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(true));
             InteropService.Invoke(engine, InteropService.Runtime.CheckWitness).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Peek().GetType().Should().Be(typeof(Integer));
+            engine.CurrentContext.EvaluationStack.Peek().GetType().Should().Be(typeof(Neo.VM.Types.Boolean));
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().Be(false);
 
             engine.CurrentContext.EvaluationStack.Push(((Transaction)engine.ScriptContainer).Sender.ToArray());
             InteropService.Invoke(engine, InteropService.Runtime.CheckWitness).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Peek().GetType().Should().Be(typeof(Integer));
+            engine.CurrentContext.EvaluationStack.Peek().GetType().Should().Be(typeof(Neo.VM.Types.Boolean));
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().Be(false);
 
             engine.CurrentContext.EvaluationStack.Push(new byte[0]);
@@ -335,7 +335,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(100);
             InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString()
-                .Should().Be(new byte[] { 0x20, 0x01, 0x64 }.ToHexString());
+                .Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(new byte[1024 * 1024 * 2]); //Larger than MaxItemSize
             InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeFalse();

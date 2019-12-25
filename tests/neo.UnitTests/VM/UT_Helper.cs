@@ -107,7 +107,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(30000000000000L, (long)new BigInteger(byteItem.ToParameter().Value as byte[]));
 
             StackItem boolItem = false;
-            Assert.AreEqual(BigInteger.Zero, (BigInteger)boolItem.ToParameter().Value);
+            Assert.AreEqual(false, (bool)boolItem.ToParameter().Value);
 
             StackItem intItem = new BigInteger(1000);
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
@@ -482,6 +482,7 @@ namespace Neo.UnitTests.VMT
         {
             TestToParaMeter2VMArray();
             TestToParameter2Map();
+            TestToParameter2VMBoolean();
             TestToParameter2ByteArray();
             TestToParameter2Integer();
             TestToParameter2InteropInterface();
@@ -511,6 +512,14 @@ namespace Neo.UnitTests.VMT
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.ByteArray, parameter.Type);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00 }), Encoding.Default.GetString((byte[])parameter.Value));
+        }
+
+        private void TestToParameter2VMBoolean()
+        {
+            StackItem item = new VM.Types.Boolean(true);
+            ContractParameter parameter = VM.Helper.ToParameter(item);
+            Assert.AreEqual(ContractParameterType.Boolean, parameter.Type);
+            Assert.AreEqual(true, parameter.Value);
         }
 
         private void TestToParameter2Map()

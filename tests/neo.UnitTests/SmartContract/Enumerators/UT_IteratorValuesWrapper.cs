@@ -24,12 +24,14 @@ namespace Neo.UnitTests.SmartContract.Enumerators
         [TestMethod]
         public void TestNextAndValue()
         {
-            List<StackItem> list = new List<StackItem> { StackItem.True };
+            StackItem stackItem = new VM.Types.Boolean(true);
+            List<StackItem> list = new List<StackItem>();
+            list.Add(stackItem);
             ArrayWrapper wrapper = new ArrayWrapper(list);
             IteratorValuesWrapper iteratorValuesWrapper = new IteratorValuesWrapper(wrapper);
             Action action = () => iteratorValuesWrapper.Next();
             action.Should().NotThrow<Exception>();
-            Assert.AreEqual(StackItem.True, iteratorValuesWrapper.Value());
+            Assert.AreEqual(stackItem, iteratorValuesWrapper.Value());
         }
     }
 }

@@ -265,7 +265,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[1,\"dGVzdA==\",123]");
+            Assert.AreEqual(json, "[true,\"dGVzdA==\",123]");
         }
 
         [TestMethod]
@@ -294,7 +294,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[[1,\"dGVzdDE=\",123],[1,\"dGVzdDI=\",321]]");
+            Assert.AreEqual(json, "[[true,\"dGVzdDE=\",123],[true,\"dGVzdDI=\",321]]");
         }
 
         [TestMethod]

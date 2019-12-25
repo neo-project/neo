@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM
@@ -250,6 +251,13 @@ namespace Neo.VM
                         context.Add((item, parameter));
                         parameter.Value = map.Select(p => new KeyValuePair<ContractParameter, ContractParameter>(ToParameter(p.Key, context), ToParameter(p.Value, context))).ToList();
                     }
+                    break;
+                case Boolean _:
+                    parameter = new ContractParameter
+                    {
+                        Type = ContractParameterType.Boolean,
+                        Value = item.ToBoolean()
+                    };
                     break;
                 case ByteArray array:
                     parameter = new ContractParameter

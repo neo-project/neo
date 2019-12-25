@@ -11,7 +11,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -574,7 +573,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             engine.LoadScript(sb.ToArray());
             engine.Execute();
             var result = engine.ResultStack.Peek();
-            result.GetType().Should().Be(typeof(Integer));
+            result.GetType().Should().Be(typeof(VM.Types.Boolean));
             return (true, result.ToBoolean());
         }
 
@@ -603,7 +602,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(Integer));
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
 
             return (true, result.ToBoolean());
         }
@@ -627,7 +626,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(Integer));
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
 
             return (true, result.ToBoolean());
         }

@@ -4,7 +4,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
@@ -64,7 +63,7 @@ namespace Neo.UnitTests.Extensions
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(Integer));
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
 
             return result.ToBoolean();
         }

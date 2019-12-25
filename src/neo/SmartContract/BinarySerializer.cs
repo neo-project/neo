@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
@@ -42,6 +43,9 @@ namespace Neo.SmartContract
                 {
                     case StackItemType.Any:
                         deserialized.Push(StackItem.Null);
+                        break;
+                    case StackItemType.Boolean:
+                        deserialized.Push(reader.ReadBoolean());
                         break;
                     case StackItemType.Integer:
                         deserialized.Push(new BigInteger(reader.ReadVarBytes(Integer.MaxSize)));
@@ -131,6 +135,9 @@ namespace Neo.SmartContract
                 switch (item)
                 {
                     case Null _:
+                        break;
+                    case Boolean _:
+                        writer.Write(item.ToBoolean());
                         break;
                     case Integer integer:
                         writer.WriteVarBytes(integer.Span);
