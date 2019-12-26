@@ -28,7 +28,6 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
         private const int PingCoolingOffPeriod = 60; // in secconds.
-        private const ushort MaxGetBlockDataCount = 100;
         private readonly FIFOSet<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();

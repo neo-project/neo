@@ -311,7 +311,10 @@ namespace Neo.Ledger
             if (block.Index == Height + 1)
             {
                 if (!block.Verify(currentSnapshot))
+                {
+                    system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { invalidBlockIndex = block.Index });
                     return RelayResultReason.Invalid;
+                } 
                 block_cache_unverified.Remove(block.Index);
                 Persist(block);
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });

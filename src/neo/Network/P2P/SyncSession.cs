@@ -1,7 +1,6 @@
 using Akka.Actor;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Neo.Network.P2P.SyncManager;
@@ -13,10 +12,11 @@ namespace Neo.Network.P2P
         
         public readonly IActorRef RemoteNode;
         public readonly VersionPayload Version;
-        public Task Task;
+        public List<Task> Tasks;
         public uint timeoutTimes = 0;
+        public bool isBadNode = false;
 
-        public bool HasTask => Task != null;
+        public bool HasTask => Tasks != null;
         public uint StartHeight { get; }
         public uint LastBlockIndex { get; set; }
 
@@ -28,6 +28,7 @@ namespace Neo.Network.P2P
                 .OfType<FullNodeCapability>()
                 .FirstOrDefault()?.StartHeight ?? 0;
             this.LastBlockIndex = this.StartHeight;
+            this.Tasks = new List<Task>();
         }
     }
 }

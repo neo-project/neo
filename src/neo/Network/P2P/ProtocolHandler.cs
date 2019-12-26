@@ -155,7 +155,7 @@ namespace Neo.Network.P2P
         private void OnBlockDataReceived(Block payload)
         {
             if (payload != null)
-                system.SyncManager.Tell(payload);
+                system.SyncManager.Tell(payload, Context.Parent);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
