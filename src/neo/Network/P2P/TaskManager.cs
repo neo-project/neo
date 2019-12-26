@@ -234,30 +234,6 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            //if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.LastBlockIndex)
-            //{
-            //    session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
-            //    IncrementGlobalTask(HeaderTaskHash);
-            //    session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
-            //}
-            //else
-            //if (Blockchain.Singleton.Height < session.LastBlockIndex)
-            //{
-            //    uint IndexStart = Blockchain.Singleton.Height + 1;
-            //    ushort Count = (ushort)(session.LastBlockIndex - Blockchain.Singleton.Height);
-            //    session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(IndexStart, Math.Min(Count, MaxGetBlockDataCount))));
-                //UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
-                //for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
-                //{
-                //    hash = Blockchain.Singleton.GetBlockHash(i);
-                //    if (!globalTasks.ContainsKey(hash))
-                //    {
-                //        hash = Blockchain.Singleton.GetBlockHash(i - 1);
-                //        break;
-                //    }
-                //}
-                //session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
-            //}else
             if (Blockchain.Singleton.Height >= session.LastBlockIndex
                     && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
             {

@@ -29,9 +29,9 @@ namespace Neo.Network.P2P
 
         private const uint blocksPerTask = 50;
         private const int maxTasksCount = 10;
-        private uint hightestBlockIndex = 0;
-        private int totalTasksCount = 0;
         private readonly int maxTasksPerSession = 3;
+        private int totalTasksCount = 0;
+        private uint hightestBlockIndex = 0;
         private uint taskIndex = 0;
         private uint persistIndex = 0;
 

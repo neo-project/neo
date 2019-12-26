@@ -297,17 +297,13 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewBlock(Block block)
         {
-            //Console.WriteLine("blockIndex:" + block.Index);
-            //高度低于当前高度的区块，返回已存在
             if (block.Index <= Height)
                 return RelayResultReason.AlreadyExists;
-            //高度超过当前高度加一的区块，加入cache
             if (block.Index - 1 > Height)
             {
                 AddUnverifiedBlockToCache(block);
                 return RelayResultReason.UnableToVerify;
             }
-            //正好为下一区块
             if (block.Index == Height + 1)
             {
                 if (!block.Verify(currentSnapshot))
@@ -320,7 +316,6 @@ namespace Neo.Ledger
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 system.SyncManager.Tell(new SyncManager.BlockIndex { blockIndex = block.Index });
                 SaveHeaderHashList();
-                // 此时Height为最新高度
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
