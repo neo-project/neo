@@ -19,13 +19,22 @@ namespace Neo.SmartContract.Manifest
         /// The methods field is an array containing a set of methods to be called. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that any method can be called.
         /// If a contract invokes a contract or method that is not declared in the manifest at runtime, the invocation will fail.
         /// </summary>
-        public WildCardContainer<string> Methods { get; set; }
+        public WildcardContainer<string> Methods { get; set; }
 
         public static readonly ContractPermission DefaultPermission = new ContractPermission
         {
             Contract = ContractPermissionDescriptor.CreateWildcard(),
-            Methods = WildCardContainer<string>.CreateWildcard()
+            Methods = WildcardContainer<string>.CreateWildcard()
         };
+
+        public ContractPermission Clone()
+        {
+            return new ContractPermission
+            {
+                Contract = Contract,
+                Methods = Methods
+            };
+        }
 
         /// <summary>
         /// Parse ContractPermission from json
@@ -37,7 +46,7 @@ namespace Neo.SmartContract.Manifest
             return new ContractPermission
             {
                 Contract = ContractPermissionDescriptor.FromJson(json["contract"]),
-                Methods = WildCardContainer<string>.FromJson(json["methods"], u => u.AsString()),
+                Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.AsString()),
             };
         }
 

@@ -3,23 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 
 namespace Neo.IO.Json
 {
     public class JObject
     {
-        protected const char BEGIN_ARRAY = '[';
-        protected const char BEGIN_OBJECT = '{';
-        protected const char END_ARRAY = ']';
-        protected const char END_OBJECT = '}';
-        protected const char NAME_SEPARATOR = ':';
-        protected const char VALUE_SEPARATOR = ',';
-        protected const char QUOTATION_MARK = '"';
-        protected const string WS = " \t\n\r";
-        protected const string LITERAL_FALSE = "false";
-        protected const string LITERAL_NULL = "null";
-        protected const string LITERAL_TRUE = "true";
-
         public static readonly JObject Null = null;
         public IDictionary<string, JObject> Properties { get; } = new OrderedDictionary<string, JObject>();
 
@@ -27,8 +16,9 @@ namespace Neo.IO.Json
         {
             get
             {
-                Properties.TryGetValue(name, out JObject value);
-                return value;
+                if (Properties.TryGetValue(name, out JObject value))
+                    return value;
+                return null;
             }
             set
             {
@@ -56,112 +46,119 @@ namespace Neo.IO.Json
             return Properties.ContainsKey(key);
         }
 
-        public static JObject Parse(TextReader reader, int max_nest = 100)
+        private static string GetString(ref Utf8JsonReader reader)
         {
-            if (max_nest < 0) throw new FormatException();
-            SkipSpace(reader);
-            char firstChar = (char)reader.Peek();
-            if (firstChar == LITERAL_FALSE[0])
-                return JBoolean.ParseFalse(reader);
-            if (firstChar == LITERAL_NULL[0])
-                return ParseNull(reader);
-            if (firstChar == LITERAL_TRUE[0])
-                return JBoolean.ParseTrue(reader);
-            if (firstChar == BEGIN_OBJECT)
-                return ParseObject(reader, max_nest);
-            if (firstChar == BEGIN_ARRAY)
-                return JArray.Parse(reader, max_nest);
-            if ((firstChar >= '0' && firstChar <= '9') || firstChar == '-')
-                return JNumber.Parse(reader);
-            if (firstChar == QUOTATION_MARK)
-                return JString.Parse(reader);
-            throw new FormatException();
+            try
+            {
+                return reader.GetString();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new FormatException(ex.Message, ex);
+            }
+        }
+
+        public static JObject Parse(ReadOnlySpan<byte> value, int max_nest = 100)
+        {
+            Utf8JsonReader reader = new Utf8JsonReader(value, new JsonReaderOptions
+            {
+                AllowTrailingCommas = false,
+                CommentHandling = JsonCommentHandling.Skip,
+                MaxDepth = max_nest
+            });
+            try
+            {
+                JObject json = Read(ref reader);
+                if (reader.Read()) throw new FormatException();
+                return json;
+            }
+            catch (JsonException ex)
+            {
+                throw new FormatException(ex.Message, ex);
+            }
         }
 
         public static JObject Parse(string value, int max_nest = 100)
         {
-            using (StringReader reader = new StringReader(value))
-            {
-                JObject json = Parse(reader, max_nest);
-                SkipSpace(reader);
-                if (reader.Read() != -1) throw new FormatException();
-                return json;
-            }
+            return Parse(Encoding.UTF8.GetBytes(value), max_nest);
         }
 
-        private static JObject ParseNull(TextReader reader)
+        private static JObject Read(ref Utf8JsonReader reader, bool skipReading = false)
         {
-            for (int i = 0; i < LITERAL_NULL.Length; i++)
-                if ((char)reader.Read() != LITERAL_NULL[i])
-                    throw new FormatException();
-            return null;
+            if (!skipReading && !reader.Read()) throw new FormatException();
+            return reader.TokenType switch
+            {
+                JsonTokenType.False => false,
+                JsonTokenType.Null => Null,
+                JsonTokenType.Number => reader.GetDouble(),
+                JsonTokenType.StartArray => ReadArray(ref reader),
+                JsonTokenType.StartObject => ReadObject(ref reader),
+                JsonTokenType.String => GetString(ref reader),
+                JsonTokenType.True => true,
+                _ => throw new FormatException(),
+            };
         }
 
-        private static JObject ParseObject(TextReader reader, int max_nest)
+        private static JArray ReadArray(ref Utf8JsonReader reader)
         {
-            SkipSpace(reader);
-            if (reader.Read() != BEGIN_OBJECT) throw new FormatException();
-            JObject obj = new JObject();
-            SkipSpace(reader);
-            if (reader.Peek() != END_OBJECT)
+            JArray array = new JArray();
+            while (reader.Read())
             {
-                while (true)
+                switch (reader.TokenType)
                 {
-                    string name = JString.Parse(reader).Value;
-                    if (obj.Properties.ContainsKey(name)) throw new FormatException();
-                    SkipSpace(reader);
-                    if (reader.Read() != NAME_SEPARATOR) throw new FormatException();
-                    JObject value = Parse(reader, max_nest - 1);
-                    obj.Properties.Add(name, value);
-                    SkipSpace(reader);
-                    char nextchar = (char)reader.Read();
-                    if (nextchar == VALUE_SEPARATOR) continue;
-                    if (nextchar == END_OBJECT) break;
-                    throw new FormatException();
+                    case JsonTokenType.EndArray:
+                        return array;
+                    default:
+                        array.Add(Read(ref reader, skipReading: true));
+                        break;
                 }
             }
-            else
-            {
-                reader.Read();
-            }
-            return obj;
+            throw new FormatException();
         }
 
-        protected static void SkipSpace(TextReader reader)
+        private static JObject ReadObject(ref Utf8JsonReader reader)
         {
-            while (WS.IndexOf((char)reader.Peek()) >= 0)
+            JObject obj = new JObject();
+            while (reader.Read())
             {
-                reader.Read();
+                switch (reader.TokenType)
+                {
+                    case JsonTokenType.EndObject:
+                        return obj;
+                    case JsonTokenType.PropertyName:
+                        string name = GetString(ref reader);
+                        if (obj.Properties.ContainsKey(name)) throw new FormatException();
+                        JObject value = Read(ref reader);
+                        obj.Properties.Add(name, value);
+                        break;
+                    default:
+                        throw new FormatException();
+                }
             }
+            throw new FormatException();
+        }
+
+        public byte[] ToByteArray(bool indented)
+        {
+            using MemoryStream ms = new MemoryStream();
+            using Utf8JsonWriter writer = new Utf8JsonWriter(ms, new JsonWriterOptions
+            {
+                Indented = indented,
+                SkipValidation = true
+            });
+            Write(writer);
+            writer.Flush();
+            return ms.ToArray();
         }
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append(BEGIN_OBJECT);
-            foreach (KeyValuePair<string, JObject> pair in Properties)
-            {
-                sb.Append((JObject)pair.Key);
-                sb.Append(NAME_SEPARATOR);
-                if (pair.Value == null)
-                {
-                    sb.Append(LITERAL_NULL);
-                }
-                else
-                {
-                    sb.Append(pair.Value);
-                }
-                sb.Append(VALUE_SEPARATOR);
-            }
-            if (Properties.Count == 0)
-            {
-                sb.Append(END_OBJECT);
-            }
-            else
-            {
-                sb[sb.Length - 1] = END_OBJECT;
-            }
-            return sb.ToString();
+            return ToString(false);
+        }
+
+        public string ToString(bool indented)
+        {
+            return Encoding.UTF8.GetString(ToByteArray(indented));
         }
 
         public virtual T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false) where T : Enum
@@ -169,29 +166,55 @@ namespace Neo.IO.Json
             return defaultValue;
         }
 
+        internal virtual void Write(Utf8JsonWriter writer)
+        {
+            writer.WriteStartObject();
+            foreach (KeyValuePair<string, JObject> pair in Properties)
+            {
+                writer.WritePropertyName(pair.Key);
+                if (pair.Value is null)
+                    writer.WriteNullValue();
+                else
+                    pair.Value.Write(writer);
+            }
+            writer.WriteEndObject();
+        }
+
         public static implicit operator JObject(Enum value)
         {
-            return new JString(value.ToString());
+            return (JString)value;
         }
 
         public static implicit operator JObject(JObject[] value)
         {
-            return new JArray(value);
+            return (JArray)value;
         }
 
         public static implicit operator JObject(bool value)
         {
-            return new JBoolean(value);
+            return (JBoolean)value;
         }
 
         public static implicit operator JObject(double value)
         {
-            return new JNumber(value);
+            return (JNumber)value;
         }
 
         public static implicit operator JObject(string value)
         {
-            return value == null ? null : new JString(value);
+            return (JString)value;
+        }
+
+        public virtual JObject Clone()
+        {
+            var cloned = new JObject();
+
+            foreach (KeyValuePair<string, JObject> pair in Properties)
+            {
+                cloned[pair.Key] = pair.Value != null ? pair.Value.Clone() : Null;
+            }
+
+            return cloned;
         }
     }
 }

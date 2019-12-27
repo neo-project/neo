@@ -14,7 +14,6 @@ namespace Neo.Plugins
         public static readonly List<Plugin> Plugins = new List<Plugin>();
         internal static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
         internal static readonly Dictionary<string, IStoragePlugin> Storages = new Dictionary<string, IStoragePlugin>();
-        internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
         internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
@@ -52,7 +51,6 @@ namespace Neo.Plugins
             if (this is ILogPlugin logger) Loggers.Add(logger);
             if (this is IStoragePlugin storage) Storages.Add(Name, storage);
             if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
-            if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
             if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
 
@@ -87,16 +85,23 @@ namespace Neo.Plugins
             if (args.Name.Contains(".resources"))
                 return null;
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name);
-            if (assembly != null)
-                return assembly;
-
             AssemblyName an = new AssemblyName(args.Name);
+
+            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name);
+            if (assembly is null)
+                assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
+            if (assembly != null) return assembly;
+
             string filename = an.Name + ".dll";
+            string path = filename;
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), filename);
+            if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
+            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
+            if (!File.Exists(path)) return null;
 
             try
             {
-                return Assembly.Load(File.ReadAllBytes(filename));
+                return Assembly.Load(File.ReadAllBytes(path));
             }
             catch (Exception ex)
             {

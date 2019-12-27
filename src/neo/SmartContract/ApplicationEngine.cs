@@ -25,7 +25,7 @@ namespace Neo.SmartContract
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
-        public UInt160 CallingScriptHash => InvocationStack.Count > 1 ? InvocationStack.Peek(1).GetState<ExecutionContextState>().ScriptHash : null;
+        public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
@@ -55,12 +55,16 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
 
-            context.SetState(new ExecutionContextState()
-            {
-                ScriptHash = ((byte[])context.Script).ToScriptHash()
-            });
+            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
 
             base.LoadContext(context);
+        }
+
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
+        {
+            ExecutionContext context = LoadScript(script, rvcount);
+            context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            return context;
         }
 
         public override void Dispose()

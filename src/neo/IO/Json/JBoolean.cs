@@ -1,5 +1,4 @@
-using System;
-using System.IO;
+using System.Text.Json;
 
 namespace Neo.IO.Json
 {
@@ -27,38 +26,24 @@ namespace Neo.IO.Json
             return Value.ToString().ToLowerInvariant();
         }
 
-        internal static JBoolean Parse(TextReader reader)
-        {
-            SkipSpace(reader);
-            char firstChar = (char)reader.Peek();
-            if (firstChar == LITERAL_FALSE[0])
-                return ParseFalse(reader);
-            else if (firstChar == LITERAL_TRUE[0])
-                return ParseTrue(reader);
-            throw new FormatException();
-        }
-
-        internal static JBoolean ParseFalse(TextReader reader)
-        {
-            SkipSpace(reader);
-            for (int i = 0; i < LITERAL_FALSE.Length; i++)
-                if ((char)reader.Read() != LITERAL_FALSE[i])
-                    throw new FormatException();
-            return new JBoolean(false);
-        }
-
-        internal static JBoolean ParseTrue(TextReader reader)
-        {
-            SkipSpace(reader);
-            for (int i = 0; i < LITERAL_TRUE.Length; i++)
-                if ((char)reader.Read() != LITERAL_TRUE[i])
-                    throw new FormatException();
-            return new JBoolean(true);
-        }
-
         public override string ToString()
         {
             return AsString();
+        }
+
+        internal override void Write(Utf8JsonWriter writer)
+        {
+            writer.WriteBooleanValue(Value);
+        }
+
+        public override JObject Clone()
+        {
+            return this;
+        }
+
+        public static implicit operator JBoolean(bool value)
+        {
+            return new JBoolean(value);
         }
     }
 }

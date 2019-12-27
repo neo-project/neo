@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
-using System.IO;
-using System.Text;
+using System.Text.Json;
 
 namespace Neo.IO.Json
 {
@@ -14,12 +13,13 @@ namespace Neo.IO.Json
 
         public JNumber(double value = 0)
         {
+            if (!double.IsFinite(value)) throw new FormatException();
             this.Value = value;
         }
 
         public override bool AsBoolean()
         {
-            return Value != 0 && !double.IsNaN(Value);
+            return Value != 0;
         }
 
         public override double AsNumber()
@@ -29,71 +29,7 @@ namespace Neo.IO.Json
 
         public override string AsString()
         {
-            if (double.IsPositiveInfinity(Value)) throw new FormatException("Positive infinity number");
-            if (double.IsNegativeInfinity(Value)) throw new FormatException("Negative infinity number");
             return Value.ToString(CultureInfo.InvariantCulture);
-        }
-
-        internal static JNumber Parse(TextReader reader)
-        {
-            SkipSpace(reader);
-            StringBuilder sb = new StringBuilder();
-            char nextchar = (char)reader.Read();
-            if (nextchar == '-')
-            {
-                sb.Append(nextchar);
-                nextchar = (char)reader.Read();
-            }
-            if (nextchar < '0' || nextchar > '9') throw new FormatException();
-            sb.Append(nextchar);
-            if (nextchar > '0')
-            {
-                while (true)
-                {
-                    char c = (char)reader.Peek();
-                    if (c < '0' || c > '9') break;
-                    sb.Append((char)reader.Read());
-                }
-            }
-            nextchar = (char)reader.Peek();
-            if (nextchar == '.')
-            {
-                sb.Append((char)reader.Read());
-                nextchar = (char)reader.Read();
-                if (nextchar < '0' || nextchar > '9') throw new FormatException();
-                sb.Append(nextchar);
-                while (true)
-                {
-                    nextchar = (char)reader.Peek();
-                    if (nextchar < '0' || nextchar > '9') break;
-                    sb.Append((char)reader.Read());
-                }
-            }
-            if (nextchar == 'e' || nextchar == 'E')
-            {
-                sb.Append((char)reader.Read());
-                nextchar = (char)reader.Read();
-                if (nextchar == '-' || nextchar == '+')
-                {
-                    sb.Append(nextchar);
-                    nextchar = (char)reader.Read();
-                }
-                if (nextchar < '0' || nextchar > '9') throw new FormatException();
-                sb.Append(nextchar);
-                while (true)
-                {
-                    nextchar = (char)reader.Peek();
-                    if (nextchar < '0' || nextchar > '9') break;
-                    sb.Append((char)reader.Read());
-                }
-            }
-
-            var value = double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture);
-
-            if (value > MAX_SAFE_INTEGER || value < MIN_SAFE_INTEGER)
-                throw new FormatException();
-
-            return new JNumber(value);
         }
 
         public override string ToString()
@@ -115,6 +51,21 @@ namespace Neo.IO.Json
             }
             object result = Enum.ToObject(enumType, value);
             return Enum.IsDefined(enumType, result) ? (T)result : defaultValue;
+        }
+
+        internal override void Write(Utf8JsonWriter writer)
+        {
+            writer.WriteNumberValue(Value);
+        }
+
+        public override JObject Clone()
+        {
+            return this;
+        }
+
+        public static implicit operator JNumber(double value)
+        {
+            return new JNumber(value);
         }
     }
 }

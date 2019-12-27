@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -21,6 +22,7 @@ namespace Neo.Network.P2P
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
+        private readonly IPEndPoint[] SeedList = new IPEndPoint[ProtocolSettings.Default.SeedList.Length];
 
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -56,17 +58,43 @@ namespace Neo.Network.P2P
                     throw new InvalidOperationException();
                 this.system = system;
                 singleton = this;
+
+                // Start dns resolution in parallel
+
+                for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
+                {
+                    int index = i;
+                    Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
+                }
             }
         }
 
+        /// <summary>
+        /// Packs a MessageCommand to a full Message with an optional ISerializable payload.
+        /// Forwards it to <see cref="BroadcastMessage(Message message)"/>.
+        /// </summary>
+        /// <param name="command">The message command to be packed.</param>
+        /// <param name="payload">Optional payload to be Serialized along the message.</param>
         private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
         {
             BroadcastMessage(Message.Create(command, payload));
         }
 
-        private void BroadcastMessage(Message message)
+        /// <summary>
+        /// Broadcast a message to all connected nodes, namely <see cref="Connections"/>.
+        /// </summary>
+        /// <param name="message">The message to be broadcasted.</param>
+        private void BroadcastMessage(Message message) => SendToRemoteNodes(message);
+
+        /// <summary>
+        /// Send message to all the RemoteNodes connected to other nodes, faster than ActorSelection.
+        /// </summary>
+        private void SendToRemoteNodes(object message)
         {
-            Connections.Tell(message);
+            foreach (var connection in RemoteNodes.Keys)
+            {
+                connection.Tell(message);
+            }
         }
 
         private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
@@ -87,29 +115,18 @@ namespace Neo.Network.P2P
             return new IPEndPoint(ipAddress, port);
         }
 
-        private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
+        internal static IPEndPoint GetIpEndPoint(string hostAndPort)
         {
-            if (seedsToTake > 0)
+            if (string.IsNullOrEmpty(hostAndPort)) return null;
+
+            try
             {
-                Random rand = new Random();
-                foreach (string hostAndPort in ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()))
-                {
-                    if (seedsToTake == 0) break;
-                    string[] p = hostAndPort.Split(':');
-                    IPEndPoint seed;
-                    try
-                    {
-                        seed = GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
-                    }
-                    catch (AggregateException)
-                    {
-                        continue;
-                    }
-                    if (seed == null) continue;
-                    seedsToTake--;
-                    yield return seed;
-                }
+                string[] p = hostAndPort.Split(':');
+                return GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
             }
+            catch { }
+
+            return null;
         }
 
         public IEnumerable<RemoteNode> GetRemoteNodes()
@@ -122,6 +139,12 @@ namespace Neo.Network.P2P
             return UnconnectedPeers;
         }
 
+        /// <summary>
+        /// Override of abstract class that is triggered when <see cref="UnconnectedPeers"/> is empty.
+        /// Performs a BroadcastMessage with the command `MessageCommand.GetAddr`, which, eventually, tells all known connections.
+        /// If there are no connected peers it will try with the default, respecting MaxCountFromSeedList limit.
+        /// </summary>
+        /// <param name="count">The count of peers required</param>
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, MaxCountFromSeedList);
@@ -131,7 +154,11 @@ namespace Neo.Network.P2P
             }
             else
             {
-                AddPeers(GetIPEndPointsFromSeedList(count));
+                // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
+                // It will try to add those, sequentially, to the list of currently uncconected ones.
+
+                Random rand = new Random();
+                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
             }
         }
 
@@ -157,6 +184,12 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// For Transaction type of IInventory, it will tell Transaction to the actor of Consensus.
+        /// Otherwise, tell the inventory to the actor of Blockchain.
+        /// There are, currently, three implementations of IInventory: TX, Block and ConsensusPayload.
+        /// </summary>
+        /// <param name="inventory">The inventory to be relayed.</param>
         private void OnRelay(IInventory inventory)
         {
             if (inventory is Transaction transaction)
@@ -164,15 +197,9 @@ namespace Neo.Network.P2P
             system.Blockchain.Tell(inventory);
         }
 
-        private void OnRelayDirectly(IInventory inventory)
-        {
-            Connections.Tell(new RemoteNode.Relay { Inventory = inventory });
-        }
+        private void OnRelayDirectly(IInventory inventory) => SendToRemoteNodes(new RemoteNode.Relay { Inventory = inventory });
 
-        private void OnSendDirectly(IInventory inventory)
-        {
-            Connections.Tell(inventory);
-        }
+        private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
         public static Props Props(NeoSystem system)
         {
