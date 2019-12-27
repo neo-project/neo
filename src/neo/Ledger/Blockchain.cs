@@ -61,7 +61,6 @@ namespace Neo.Ledger
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
-        private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
@@ -142,7 +141,6 @@ namespace Neo.Ledger
 
         public bool ContainsBlock(UInt256 hash)
         {
-            if (block_cache.ContainsKey(hash)) return true;
             return View.ContainsBlock(hash);
         }
 
@@ -189,8 +187,6 @@ namespace Neo.Ledger
 
         public Block GetBlock(UInt256 hash)
         {
-            if (block_cache.TryGetValue(hash, out Block block))
-                return block;
             return View.GetBlock(hash);
         }
 
@@ -215,8 +211,6 @@ namespace Neo.Ledger
 
         public Header GetHeader(UInt256 hash)
         {
-            if (block_cache.TryGetValue(hash, out Block block))
-                return block.Header;
             return View.GetHeader(hash);
         }
 
@@ -265,7 +259,10 @@ namespace Neo.Ledger
                 foreach (var unverifiedBlock in blocks)
                 {
                     if (block.Hash != unverifiedBlock.Hash)
+                    {
                         blocks.AddLast(block);
+                        return;
+                    }
                 }
             }
         }
@@ -308,13 +305,13 @@ namespace Neo.Ledger
             {
                 if (!block.Verify(currentSnapshot))
                 {
-                    system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { invalidBlockIndex = block.Index });
+                    system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { InvalidIndex = block.Index });
                     return RelayResultReason.Invalid;
                 } 
                 block_cache_unverified.Remove(block.Index);
                 Persist(block);
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
-                system.SyncManager.Tell(new SyncManager.BlockIndex { blockIndex = block.Index });
+                system.SyncManager.Tell(new SyncManager.PersistedBlockIndex { PersistedIndex = block.Index });
                 SaveHeaderHashList();
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
@@ -400,7 +397,6 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }

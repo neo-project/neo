@@ -13,9 +13,9 @@ namespace Neo.Network.P2P
     internal class SyncManager : UntypedActor
     {
         public class Register { public VersionPayload Version; }
-        public class Task { public uint startIndex; public uint endIndex; public BitArray indexArray; public DateTime time; }
-        public class BlockIndex { public uint blockIndex; }
-        public class InvalidBlockIndex { public uint invalidBlockIndex; }
+        public class Task { public uint StartIndex; public uint EndIndex; public BitArray IndexArray; public DateTime Time; }
+        public class PersistedBlockIndex { public uint PersistedIndex; }
+        public class InvalidBlockIndex { public uint InvalidIndex; }
         public class Update { public uint LastBlockIndex; }
         private class Timer { }
 
@@ -32,7 +32,7 @@ namespace Neo.Network.P2P
         private readonly int maxTasksPerSession = 3;
         private int totalTasksCount = 0;
         private uint hightestBlockIndex = 0;
-        private uint taskIndex = 0;
+        private uint lastTaskIndex = 0;
         private uint persistIndex = 0;
 
         public SyncManager(NeoSystem system)
@@ -50,7 +50,7 @@ namespace Neo.Network.P2P
                 case Block block:
                     OnReceiveBlock(block);
                     break;
-                case BlockIndex blockIndex:
+                case PersistedBlockIndex blockIndex:
                     OnReceiveBlockIndex(blockIndex);
                     break;
                 case InvalidBlockIndex invalidBlockIndex:
@@ -74,37 +74,35 @@ namespace Neo.Network.P2P
             {
                 for (int i = 0; i < session.Tasks.Count(); i++)
                 {
-                    if (session.Tasks[i].startIndex <= invalidBlockIndex.invalidBlockIndex && session.Tasks[i].endIndex >= invalidBlockIndex.invalidBlockIndex)
+                    if (session.Tasks[i].StartIndex <= invalidBlockIndex.InvalidIndex && session.Tasks[i].EndIndex >= invalidBlockIndex.InvalidIndex)
                     {
                         session.isBadNode = true;
                         session.Tasks.Remove(session.Tasks[i]);
-                        if (!ReSync(session, session.Tasks[i].startIndex, session.Tasks[i].endIndex))
-                        {
-                            uncompletedTasks.Add(session.Tasks[i]);
-                            totalTasksCount--;
-                        }
+                        ReSync(session, session.Tasks[i]);
+                        break;
                     }
                 }
             }
         }
 
-        private void OnReceiveBlockIndex(BlockIndex blockIndex)
+        private void OnReceiveBlockIndex(PersistedBlockIndex persistedIndex)
         {
-            if (blockIndex.blockIndex <= persistIndex) return;
-            persistIndex = blockIndex.blockIndex;
-            if (persistIndex > taskIndex)
-                taskIndex = persistIndex;
+            if (persistedIndex.PersistedIndex <= persistIndex) return;
+            persistIndex = persistedIndex.PersistedIndex;
+            if (persistIndex > lastTaskIndex)
+                lastTaskIndex = persistIndex;
             if (persistIndex % blocksPerTask == 0 || persistIndex == hightestBlockIndex)
             {
                 foreach (SyncSession session in sessions.Values.Where(p => p.HasTask))
                 {
                     for (int i = 0; i < session.Tasks.Count(); i++)
                     {
-                        if (session.Tasks[i].endIndex == persistIndex)
+                        if (session.Tasks[i].EndIndex <= persistIndex)
                         {
                             session.Tasks.Remove(session.Tasks[i]);
                             totalTasksCount--;
                             RequestSync();
+                            break;
                         }
                     }
                 } 
@@ -118,17 +116,13 @@ namespace Neo.Network.P2P
             {
                 for (int i = 0; i < session.Tasks.Count(); i++)
                 {
-                    if (DateTime.UtcNow - session.Tasks[i].time > SyncTimeout)
+                    if (DateTime.UtcNow - session.Tasks[i].Time > SyncTimeout)
                     {
                         session.Tasks.Remove(session.Tasks[i]);
                         session.timeoutTimes++;
-                        if (!ReSync(session, session.Tasks[i].startIndex, session.Tasks[i].endIndex))
-                        {
-                            uncompletedTasks.Add(session.Tasks[i]);
-                            totalTasksCount--;
-                        }       
+                        ReSync(session, session.Tasks[i]); 
                     }
-                    if (session.Tasks[i].indexArray.Cast<bool>().All(p => p == true))
+                    if (session.Tasks[i].IndexArray.Cast<bool>().All(p => p == true))
                     {
                         totalTasksCount--;
                     }
@@ -144,18 +138,20 @@ namespace Neo.Network.P2P
             session.LastBlockIndex = lastBlockIndex;
         }
 
-        private bool ReSync(SyncSession oldSession, uint startIndex, uint endIndex)
+        private void ReSync(SyncSession oldSession, Task task)
         {
             Random rand = new Random();
-            SyncSession session = sessions.Values.Where(p => p != oldSession && p.Tasks.Count <= maxTasksPerSession && p.LastBlockIndex >= endIndex).OrderBy(s => rand.Next()).FirstOrDefault();
+            SyncSession session = sessions.Values.Where(p => p != oldSession && p.Tasks.Count <= maxTasksPerSession && p.LastBlockIndex >= task.EndIndex).OrderBy(s => rand.Next()).FirstOrDefault();
             if (session == null)
             {
-                return false;
+                uncompletedTasks.Add(task);
+                totalTasksCount--;
             }
-            int count = (int)(endIndex - startIndex + 1);
-            session.Tasks.Add(new Task { startIndex = startIndex, endIndex = endIndex, indexArray = new BitArray(count), time = DateTime.UtcNow });
-            session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(startIndex, (ushort)count)));
-            return true;
+            int count = (int)(task.EndIndex - task.StartIndex + 1);
+            session.Tasks.Add(new Task { StartIndex = task.StartIndex, EndIndex = task.EndIndex, IndexArray = new BitArray(count), Time = DateTime.UtcNow });
+            session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(task.StartIndex, (ushort)count)));
+            uncompletedTasks.Remove(task);
+            totalTasksCount++;
         }
 
         private void OnReceiveBlock(Block block)
@@ -167,9 +163,9 @@ namespace Neo.Network.P2P
             {
                 for (int i = 0; i < session.Tasks.Count(); i++)
                 {
-                    if (session.Tasks[i].startIndex <= index && session.Tasks[i].endIndex >= index)
+                    if (session.Tasks[i].StartIndex <= index && session.Tasks[i].EndIndex >= index)
                     {
-                        session.Tasks[i].indexArray[(int)(index - session.Tasks[i].startIndex)] = true;
+                        session.Tasks[i].IndexArray[(int)(index - session.Tasks[i].StartIndex)] = true;
                         system.Blockchain.Tell(block);
                     }
                 }
@@ -188,8 +184,8 @@ namespace Neo.Network.P2P
         {
             if (totalTasksCount >= maxTasksCount || sessions.Count() == 0) return;
             hightestBlockIndex = sessions.Max(p => p.Value.LastBlockIndex);
-            if (taskIndex == 0)
-                taskIndex = Blockchain.Singleton.Height;
+            if (lastTaskIndex == 0)
+                lastTaskIndex = Blockchain.Singleton.Height;
             Random rand = new Random();
             while (maxTasksCount - totalTasksCount >= 0)
             {
@@ -197,22 +193,18 @@ namespace Neo.Network.P2P
                 {
                     for (int i = 0; i < uncompletedTasks.Count(); i++)
                     {
-                        if (ReSync(null, uncompletedTasks[i].startIndex, uncompletedTasks[i].endIndex))
-                        {
-                            uncompletedTasks.Remove(uncompletedTasks[i]);
-                            totalTasksCount++;
-                        }
+                        ReSync(null, uncompletedTasks[i]);
                     }
                 }
-                if (taskIndex + 5 > hightestBlockIndex) break;
-                uint startIndex = taskIndex + 1;
+                if (lastTaskIndex + 3 > hightestBlockIndex) break;
+                uint startIndex = lastTaskIndex + 1;
                 uint endIndex = Math.Min((startIndex / blocksPerTask + 1) * blocksPerTask, hightestBlockIndex);
-                SyncSession session = sessions.Values.Where(p => p.Tasks.Count < maxTasksPerSession && p.LastBlockIndex >= endIndex).OrderBy(s => rand.Next()).FirstOrDefault();
-                if (session == null) break;
                 int count = (int)(endIndex - startIndex + 1);
-                session.Tasks.Add(new Task { startIndex = startIndex, endIndex = endIndex, indexArray = new BitArray(count), time = DateTime.UtcNow });
+                SyncSession session = sessions.Values.Where(p => p.Tasks.Count < maxTasksPerSession && p.LastBlockIndex >= endIndex).OrderBy(p => p.Tasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
+                if (session == null) break;
+                session.Tasks.Add(new Task { StartIndex = startIndex, EndIndex = endIndex, IndexArray = new BitArray(count), Time = DateTime.UtcNow });
                 totalTasksCount++;
-                taskIndex = endIndex;
+                lastTaskIndex = endIndex;
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(startIndex, (ushort)count)));
             }
         }
@@ -225,16 +217,11 @@ namespace Neo.Network.P2P
             {
                 for (int i = 0; i < session.Tasks.Count(); i++)
                 {
-                    var result = ReSync(session, session.Tasks[i].startIndex, session.Tasks[i].endIndex);
-                    if (result == false)
-                    {
-                        uncompletedTasks.Add(session.Tasks[i]);
-                        totalTasksCount--;
-                    }
+                    ReSync(session, session.Tasks[i]);
                 }
             }   
             sessions.Remove(actor);
-            if (totalTasksCount == 0) taskIndex = 0;
+            if (totalTasksCount == 0) lastTaskIndex = 0;
         }
 
         protected override void PostStop()
