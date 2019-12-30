@@ -113,7 +113,6 @@ namespace Neo.Cryptography.ECC
             BigInteger Q = this.Value;
             BigInteger fourQ = (Q << 2).Mod(curve.Q);
             BigInteger U, V;
-
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 do
