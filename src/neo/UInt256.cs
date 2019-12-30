@@ -1,12 +1,14 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Neo
 {
     /// <summary>
     /// This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public class UInt256 : UIntBase, IComparable<UInt256>, IEquatable<UInt256>
     {
         public const int Length = 32;
@@ -25,11 +27,8 @@ namespace Neo
 
         public unsafe UInt256(ReadOnlySpan<byte> value)
         {
-            fixed (ulong* p = &value1)
-            {
-                Span<byte> dst = new Span<byte>(p, Length);
-                value[..Length].CopyTo(dst);
-            }
+            Span<byte> dst = MemoryMarshal.Create(ref value1, Length / sizeof(ulong));
+            value[..Length].CopyTo(dst);
         }
 
         /// <summary>
