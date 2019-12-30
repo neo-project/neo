@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.VM.Types;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -14,8 +13,7 @@ namespace Neo.UnitTests.SmartContract
         {
             IVerifiable container = new TestVerifiable();
             UInt160 script_hash = new byte[] { 0x00 }.ToScriptHash();
-            StackItem state = new ContainerPlaceholder();
-            NotifyEventArgs args = new NotifyEventArgs(container, script_hash, state);
+            NotifyEventArgs args = new NotifyEventArgs(container, script_hash, 0);
             args.ScriptContainer.Should().Be(container);
         }
     }

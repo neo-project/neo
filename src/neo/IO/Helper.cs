@@ -89,6 +89,16 @@ namespace Neo.IO
             return result;
         }
 
+        public static void FillBuffer(this BinaryReader reader, Span<byte> buffer)
+        {
+            while (!buffer.IsEmpty)
+            {
+                int count = reader.Read(buffer);
+                if (count == 0) throw new EndOfStreamException();
+                buffer = buffer[count..];
+            }
+        }
+
         public static int GetVarSize(int value)
         {
             if (value < 0xFD)
