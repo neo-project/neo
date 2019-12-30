@@ -1,7 +1,5 @@
-using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.IO;
 
 namespace Neo.SmartContract
 {
@@ -29,19 +27,8 @@ namespace Neo.SmartContract
 
             private static bool Binary_Deserialize(ApplicationEngine engine)
             {
-                StackItem item;
-                try
-                {
-                    item = BinarySerializer.Deserialize(engine.CurrentContext.EvaluationStack.Pop().GetSpan(), engine.MaxItemSize, engine.ReferenceCounter);
-                }
-                catch (FormatException)
-                {
-                    return false;
-                }
-                catch (IOException)
-                {
-                    return false;
-                }
+                if (!engine.TryPop(out ReadOnlySpan<byte> data)) return false;
+                StackItem item = BinarySerializer.Deserialize(data, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
                 engine.CurrentContext.EvaluationStack.Push(item);
                 return true;
             }

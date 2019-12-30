@@ -75,8 +75,7 @@ namespace Neo.SmartContract.Native
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
-            if (key != null)
-                Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
+            key?.CopyTo(storageKey.Key.AsSpan(1));
             return storageKey;
         }
 
