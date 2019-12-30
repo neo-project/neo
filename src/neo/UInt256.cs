@@ -27,7 +27,7 @@ namespace Neo
 
         public unsafe UInt256(ReadOnlySpan<byte> value)
         {
-            Span<byte> dst = MemoryMarshal.Create(ref value1, Length / sizeof(ulong));
+            Span<byte> dst = MemoryMarshal.AsBytes(MemoryMarshal.Create(ref value1, Length / sizeof(ulong)));
             value[..Length].CopyTo(dst);
         }
 
