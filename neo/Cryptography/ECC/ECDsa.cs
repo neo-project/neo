@@ -14,11 +14,20 @@ namespace Neo.Cryptography.ECC
         public ECDsa(byte[] privateKey, ECCurve curve)
             : this(curve.G * privateKey)
         {
+            if (privateKey == null)
+                throw new ArgumentNullException();
+            BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
+            if (d == 0 || d >= curve.N)
+                throw new ArgumentException();
+
             this.privateKey = privateKey;
         }
 
         public ECDsa(ECPoint publicKey)
         {
+            if (publicKey.IsInfinity)
+                throw new ArgumentException();
+
             this.publicKey = publicKey;
             this.curve = publicKey.Curve;
         }
@@ -36,7 +45,6 @@ namespace Neo.Cryptography.ECC
 
         public BigInteger[] GenerateSignature(byte[] message)
         {
-            if (privateKey == null || publicKey.IsInfinity) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
             BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
             BigInteger r, s;
