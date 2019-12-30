@@ -255,7 +255,7 @@ namespace Neo.Cryptography.ECC
             // The length of the precomputation array
             int preCompLen = 1;
 
-            ECPoint[] preComp = preComp = new ECPoint[] { p };
+            ECPoint[] preComp = new ECPoint[] { p };
             ECPoint twiceP = p.Twice();
 
             if (preCompLen < reqPreCompLen)
