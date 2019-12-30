@@ -140,7 +140,6 @@ namespace Neo.Cryptography.ECC
                 }
                 while (U.Equals(BigInteger.One) || U.Equals(qMinusOne));
             }
-                
             return null;
         }
 
