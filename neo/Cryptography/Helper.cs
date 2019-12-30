@@ -88,7 +88,9 @@ namespace Neo.Cryptography
             byte[] buffer = new byte[data.Length + 4];
             Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
             Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
-            return Base58.Encode(buffer);
+            var ret = Base58.Encode(buffer);
+            Array.Clear(buffer, 0, buffer.Length);
+            return ret;
         }
 
         public static byte[] RIPEMD160(this IEnumerable<byte> value)
