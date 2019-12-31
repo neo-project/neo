@@ -6,20 +6,19 @@ namespace Neo.IO.Caching
 {
     public class HashSetCache<T> : IEnumerable<T> where T : IEquatable<T>
     {
-
         private readonly int hashSetCapacity;
         private readonly List<HashSet<T>> sets = new List<HashSet<T>>();
 
-        public int Size
+        public int Count
         {
             get
             {
-                int size = 0;
+                int count = 0;
                 foreach (var set in sets)
                 {
-                    size += set.Count;
+                    count += set.Count;
                 }
-                return size;
+                return count;
             }
         }
 

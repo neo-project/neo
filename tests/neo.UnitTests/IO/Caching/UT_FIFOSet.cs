@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
 using System.Collections;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Neo.UnitTests.IO.Caching
@@ -163,85 +162,6 @@ namespace Neo.UnitTests.IO.Caching
             };
             set.ExceptWith(new UInt256[] { c });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, b });
-        }
-
-        [TestMethod]
-        public void TestFIFOSet()
-        {
-            Stopwatch stopwatch = new Stopwatch();
-            var bucket = new FIFOSet<int>(150_000);
-            stopwatch.Start();
-            for (int i = 1; i <= 550_000; i++)
-            {
-                bucket.Add(i);
-            }
-            stopwatch.Stop();
-            Console.WriteLine($"Add timespan: {stopwatch.Elapsed.TotalSeconds}s");
-            stopwatch.Reset();
-            var items = new int[10000];
-            var value = 550_000;
-            for (int i = 0; i <= 9999; i++)
-            {
-                items[i] = value;
-                value -= 50;
-            }
-            stopwatch.Start();
-            bucket.ExceptWith(items);
-            stopwatch.Stop();
-            Console.WriteLine($"except with timespan: {stopwatch.Elapsed.TotalSeconds}s");
-            stopwatch.Reset();
-
-            stopwatch.Start();
-            var ret = bucket.Contains(140_000);
-            stopwatch.Stop();
-            Console.WriteLine($"contains with timespan: {stopwatch.Elapsed.TotalSeconds}s result: {ret}");
-            stopwatch.Reset();
-
-            stopwatch.Start();
-            ret = bucket.Contains(545_001);
-            stopwatch.Stop();
-            Console.WriteLine($"contains with timespan: {stopwatch.Elapsed.TotalSeconds}s result: {ret}");
-            stopwatch.Reset();
-        }
-
-        [TestMethod]
-        public void TestHashSetCache()
-        {
-            Stopwatch stopwatch = new Stopwatch();
-            var bucket = new HashSetCache<int>(15_000);
-            stopwatch.Start();
-            for (int i = 1; i <= 550_000; i++)
-            {
-                bucket.Add(i);
-            }
-            stopwatch.Stop();
-            Console.WriteLine($"Add timespan: {stopwatch.Elapsed.TotalSeconds}s");
-            stopwatch.Reset();
-            var items = new int[10000];
-            var value = 1;
-            for (int i = 0; i <= 9999; i++)
-            {
-                items[i] = value;
-                value -= 50;
-            }
-
-            stopwatch.Start();
-            bucket.ExceptWith(items);
-            stopwatch.Stop();
-            Console.WriteLine($"except with timespan: {stopwatch.Elapsed.TotalSeconds}s");
-            stopwatch.Reset();
-
-            stopwatch.Start();
-            var ret = bucket.Contains(140_000);
-            stopwatch.Stop();
-            Console.WriteLine($"contains with timespan: {stopwatch.Elapsed.TotalSeconds}s result: {ret}");
-            stopwatch.Reset();
-
-            stopwatch.Start();
-            ret = bucket.Contains(545_001);
-            stopwatch.Stop();
-            Console.WriteLine($"contains with timespan: {stopwatch.Elapsed.TotalSeconds}s result: {ret}");
-            stopwatch.Reset();
         }
     }
 }

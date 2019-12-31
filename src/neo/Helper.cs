@@ -96,6 +96,19 @@ namespace Neo
             }
         }
 
+        internal static void Remove<T>(this HashSet<T> set, HashSetCache<T> other)
+            where T : IEquatable<T>
+        {
+            if (set.Count > other.Count)
+            {
+                set.ExceptWith(other);
+            }
+            else
+            {
+                set.RemoveWhere(u => other.Contains(u));
+            }
+        }
+
         internal static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
         {
             if (set.Count > other.Count)
