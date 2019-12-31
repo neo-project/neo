@@ -12,14 +12,14 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGenerator()
         {
-            ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
+            ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder(StackItemType.Any, 0);
             Assert.IsNotNull(containerPlaceholder);
         }
 
         [TestMethod]
         public void TestEquals()
         {
-            ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
+            ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder(StackItemType.Any, 0);
             Action action = () => containerPlaceholder.Equals(new Integer(0));
             action.Should().Throw<NotSupportedException>();
         }
@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetBoolean()
         {
-            ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder();
+            ContainerPlaceholder containerPlaceholder = new ContainerPlaceholder(StackItemType.Any, 0);
             Action action = () => containerPlaceholder.ToBoolean();
             action.Should().Throw<NotSupportedException>();
         }
