@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Text;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM
 {
@@ -175,16 +176,22 @@ namespace Neo.VM
 
         public static int GetByteLength(this StackItem item)
         {
-            if (!(item is PrimitiveType primitive))
-                throw new ArgumentException();
-            return primitive.GetByteLength();
+            return item switch
+            {
+                PrimitiveType p => p.Size,
+                Buffer b => b.Size,
+                _ => throw new ArgumentException(),
+            };
         }
 
         public static ReadOnlySpan<byte> GetSpan(this StackItem item)
         {
-            if (!(item is PrimitiveType primitive))
-                throw new ArgumentException();
-            return primitive.ToByteArray();
+            return item switch
+            {
+                PrimitiveType p => p.Span,
+                Buffer b => b.InnerBuffer,
+                _ => throw new ArgumentException(),
+            };
         }
 
         public static string GetString(this StackItem item)
@@ -252,18 +259,18 @@ namespace Neo.VM
                         Value = item.ToBoolean()
                     };
                     break;
-                case ByteArray _:
+                case ByteArray array:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
-                        Value = item.GetSpan().ToArray()
+                        Value = array.Span.ToArray()
                     };
                     break;
-                case Integer _:
+                case Integer i:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Integer,
-                        Value = item.GetBigInteger()
+                        Value = i.ToBigInteger()
                     };
                     break;
                 case InteropInterface _:
@@ -278,7 +285,7 @@ namespace Neo.VM
                         Type = ContractParameterType.Any
                     };
                     break;
-                default: // Null included
+                default:
                     throw new ArgumentException();
             }
             return parameter;

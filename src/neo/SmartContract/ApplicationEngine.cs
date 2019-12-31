@@ -5,6 +5,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Array = System.Array;
 
 namespace Neo.SmartContract
@@ -139,6 +140,20 @@ namespace Neo.SmartContract
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, script_hash, state);
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
+        }
+
+        public bool TryPop(out string s)
+        {
+            if (TryPop(out ReadOnlySpan<byte> b))
+            {
+                s = Encoding.UTF8.GetString(b);
+                return true;
+            }
+            else
+            {
+                s = default;
+                return false;
+            }
         }
     }
 }
