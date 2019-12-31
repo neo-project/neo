@@ -70,13 +70,14 @@ namespace Neo.Network.P2P
 
         private void OnReceiveInvalidBlockIndex(InvalidBlockIndex invalidBlockIndex)
         {
+            if (sessions.Count() == 0 || sessions.Values.Where(p => p.HasTask).Count() == 0) return;
             foreach (SyncSession session in sessions.Values.Where(p => p.HasTask))
             {
                 for (int i = 0; i < session.Tasks.Count(); i++)
                 {
                     if (session.Tasks[i].StartIndex <= invalidBlockIndex.InvalidIndex && session.Tasks[i].EndIndex >= invalidBlockIndex.InvalidIndex)
                     {
-                        session.isBadNode = true;
+                        session.InvalidBlockCount++;
                         session.Tasks.Remove(session.Tasks[i]);
                         ReSync(session, session.Tasks[i]);
                         break;
@@ -119,7 +120,7 @@ namespace Neo.Network.P2P
                     if (DateTime.UtcNow - session.Tasks[i].Time > SyncTimeout)
                     {
                         session.Tasks.Remove(session.Tasks[i]);
-                        session.timeoutTimes++;
+                        session.TimeoutTimes++;
                         ReSync(session, session.Tasks[i]); 
                     }
                     if (session.Tasks[i].IndexArray.Cast<bool>().All(p => p == true))

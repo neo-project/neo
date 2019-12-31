@@ -13,8 +13,8 @@ namespace Neo.Network.P2P
         public readonly IActorRef RemoteNode;
         public readonly VersionPayload Version;
         public List<Task> Tasks;
-        public uint timeoutTimes = 0;
-        public bool isBadNode = false;
+        public uint TimeoutTimes = 0;
+        public uint InvalidBlockCount = 0;
 
         public bool HasTask => Tasks != null;
         public uint StartHeight { get; }

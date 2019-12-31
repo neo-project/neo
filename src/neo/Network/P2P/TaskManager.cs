@@ -36,9 +36,7 @@ namespace Neo.Network.P2P
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
-
         private readonly UInt256 HeaderTaskHash = UInt256.Zero;
-        private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
 
         public TaskManager(NeoSystem system)
         {
