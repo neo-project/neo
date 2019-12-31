@@ -142,11 +142,12 @@ namespace Neo.Network.P2P
         private void ReSync(SyncSession oldSession, Task task)
         {
             Random rand = new Random();
-            SyncSession session = sessions.Values.Where(p => p != oldSession && p.Tasks.Count <= maxTasksPerSession && p.LastBlockIndex >= task.EndIndex).OrderBy(s => rand.Next()).FirstOrDefault();
+            SyncSession session = sessions.Values.Where(p => p != oldSession && p.Tasks.Count <= maxTasksPerSession && p.LastBlockIndex >= task.EndIndex).OrderBy(p => p.Tasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
             if (session == null)
             {
                 uncompletedTasks.Add(task);
                 totalTasksCount--;
+                return;
             }
             int count = (int)(task.EndIndex - task.StartIndex + 1);
             session.Tasks.Add(new Task { StartIndex = task.StartIndex, EndIndex = task.EndIndex, IndexArray = new BitArray(count), Time = DateTime.UtcNow });
