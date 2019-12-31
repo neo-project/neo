@@ -82,7 +82,7 @@ namespace Neo.Ledger
                 return singleton;
             }
         }
-
+        
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
@@ -251,18 +251,14 @@ namespace Neo.Ledger
             if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
             {
                 blocks = new LinkedList<Block>();
-                blocks.AddLast(block);
                 block_cache_unverified.Add(block.Index, blocks);
             }
-            else
+            foreach (var unverifiedBlock in blocks)
             {
-                foreach (var unverifiedBlock in blocks)
-                {
-                    if (block.Hash == unverifiedBlock.Hash)
-                        return;
-                }
-                blocks.AddLast(block);
+                if (block.Hash == unverifiedBlock.Hash)
+                    return;
             }
+            blocks.AddLast(block);
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -305,7 +301,7 @@ namespace Neo.Ledger
                 {
                     system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { InvalidIndex = block.Index });
                     return RelayResultReason.Invalid;
-                } 
+                }
                 block_cache_unverified.Remove(block.Index);
                 Persist(block);
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });

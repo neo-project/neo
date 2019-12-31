@@ -121,7 +121,7 @@ namespace Neo.Network.P2P
                     {
                         session.Tasks.Remove(session.Tasks[i]);
                         session.TimeoutTimes++;
-                        ReSync(session, session.Tasks[i]); 
+                        ReSync(session, session.Tasks[i]);
                     }
                     if (session.Tasks[i].IndexArray.Cast<bool>().All(p => p == true))
                     {
