@@ -258,12 +258,10 @@ namespace Neo.Ledger
             {
                 foreach (var unverifiedBlock in blocks)
                 {
-                    if (block.Hash != unverifiedBlock.Hash)
-                    {
-                        blocks.AddLast(block);
+                    if (block.Hash == unverifiedBlock.Hash)
                         return;
-                    }
                 }
+                blocks.AddLast(block);
             }
         }
 

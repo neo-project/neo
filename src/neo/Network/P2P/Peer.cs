@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
         private class Timer { }
         private class WsConnected { public WebSocket Socket; public IPEndPoint Remote; public IPEndPoint Local; }
 
-        public const int DefaultMinDesiredConnections = 3;
+        public const int DefaultMinDesiredConnections = 10;
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
@@ -54,7 +54,7 @@ namespace Neo.Network.P2P
 
         public int ListenerTcpPort { get; private set; }
         public int ListenerWsPort { get; private set; }
-        public int MaxConnectionsPerAddress { get; private set; } = 10;
+        public int MaxConnectionsPerAddress { get; private set; } = 3;
         public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
         public int MaxConnections { get; private set; } = DefaultMaxConnections;
         protected int UnconnectedMax { get; } = 1000;
