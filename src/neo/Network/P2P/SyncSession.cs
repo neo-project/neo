@@ -9,7 +9,6 @@ namespace Neo.Network.P2P
 {
     internal class SyncSession
     {
-        
         public readonly IActorRef RemoteNode;
         public readonly VersionPayload Version;
         public List<Task> Tasks;

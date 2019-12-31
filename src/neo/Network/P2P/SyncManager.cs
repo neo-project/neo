@@ -220,7 +220,7 @@ namespace Neo.Network.P2P
                 {
                     ReSync(session, session.Tasks[i]);
                 }
-            }   
+            }
             sessions.Remove(actor);
             if (totalTasksCount == 0) lastTaskIndex = 0;
         }
@@ -234,7 +234,7 @@ namespace Neo.Network.P2P
         public static Props Props(NeoSystem system)
         {
             return Akka.Actor.Props.Create(() => new SyncManager(system)).WithMailbox("sync-manager-mailbox");
-        }  
+        }
     }
 
     internal class SyncManagerMailbox : PriorityMailbox
@@ -243,6 +243,5 @@ namespace Neo.Network.P2P
             : base(settings, config)
         {
         }
-
     }
 }
