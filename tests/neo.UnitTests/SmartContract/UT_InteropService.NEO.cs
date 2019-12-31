@@ -218,6 +218,7 @@ namespace Neo.UnitTests.SmartContract
                     Signature = signature
                 }
             };
+            manifest.Features = ContractFeatures.HasStorage;
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
@@ -243,8 +244,6 @@ namespace Neo.UnitTests.SmartContract
             // Remove Storage flag with something stored
 
             state.Manifest.Features = ContractFeatures.NoProperty;
-            snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
 
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(state.Script);
