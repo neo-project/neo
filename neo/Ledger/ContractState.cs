@@ -29,14 +29,45 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
+        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize() + sizeof(bool) + RedirectionHash.ToArray().GetVarSize();
+
+        private UInt160 _redirectionHash = UInt160.Zero;
+        public virtual UInt160 RedirectionHash
+        {
+            get
+            {
+                return _redirectionHash;
+            }
+
+            set
+            {
+                _redirectionHash = value;
+            }
+        }
+
+        private bool isDeleted = false;
+
+        public virtual bool IsDeleted
+        {
+            get
+            {
+                return isDeleted;
+            }
+
+            set
+            {
+                isDeleted = value;
+            }
+        }
 
         ContractState ICloneable<ContractState>.Clone()
         {
             return new ContractState
             {
                 Script = Script,
-                Manifest = Manifest.Clone()
+                Manifest = Manifest.Clone(),
+                RedirectionHash = RedirectionHash,
+                IsDeleted = IsDeleted
             };
         }
 
@@ -44,18 +75,24 @@ namespace Neo.Ledger
         {
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
+            RedirectionHash = reader.ReadSerializable<UInt160>();
+            IsDeleted = reader.ReadBoolean();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
+            RedirectionHash = replica.RedirectionHash;
+            IsDeleted = replica.IsDeleted;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
+            writer.Write(RedirectionHash);
+            writer.Write(IsDeleted);
         }
 
         public JObject ToJson()
@@ -64,6 +101,8 @@ namespace Neo.Ledger
             json["hash"] = ScriptHash.ToString();
             json["script"] = Script.ToHexString();
             json["manifest"] = Manifest.ToJson();
+            json["redirectionHash"] = RedirectionHash.ToString();
+            json["isDeleted"] = IsDeleted;
             return json;
         }
 
@@ -72,6 +111,8 @@ namespace Neo.Ledger
             ContractState contractState = new ContractState();
             contractState.Script = json["script"].AsString().HexToBytes();
             contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
+            contractState.RedirectionHash = UInt160.Parse(json["RedirectionHash"].AsString());
+            contractState.IsDeleted = json["isDeleted"].AsBoolean();
             return contractState;
         }
 
