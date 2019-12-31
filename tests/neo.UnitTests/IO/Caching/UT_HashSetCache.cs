@@ -18,7 +18,7 @@ namespace Neo.UnitTests.IO.Caching
             bucket.Count.Should().Be(100);
 
             int sum = 0;
-            foreach(var ele in bucket)
+            foreach (var ele in bucket)
             {
                 sum += ele;
             }
@@ -29,7 +29,7 @@ namespace Neo.UnitTests.IO.Caching
 
             var items = new int[10];
             var value = 11;
-            for (int i = 0; i <10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 items[i] = value;
                 value += 2;
