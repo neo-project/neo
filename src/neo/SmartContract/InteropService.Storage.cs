@@ -44,11 +44,25 @@ namespace Neo.SmartContract
                 if (context.IsReadOnly) return false;
                 if (!CheckStorageContext(engine, context)) return false;
 
-                StorageKey skey = new StorageKey
+                ContractState contract = engine.Snapshot.Contracts.TryGet(context.ScriptHash);
+                if (contract == null) return false;
+                StorageKey skey;
+                if (!contract.RedirectionHash.Equals(UInt160.Zero))
                 {
-                    ScriptHash = context.ScriptHash,
-                    Key = key
-                };
+                    skey = new StorageKey
+                    {
+                        ScriptHash = contract.RedirectionHash,
+                        Key = key
+                    };
+                }
+                else
+                {
+                    skey = new StorageKey
+                    {
+                        ScriptHash = context.ScriptHash,
+                        Key = key
+                    };
+                }
 
                 if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
 
@@ -110,11 +124,26 @@ namespace Neo.SmartContract
                     StorageContext context = _interface.GetInterface<StorageContext>();
                     if (!CheckStorageContext(engine, context)) return false;
                     byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-                    StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
+
+                    ContractState contract = engine.Snapshot.Contracts.TryGet(context.ScriptHash);
+                    if (contract == null) return false;
+                    StorageItem item = null;
+                    if (!contract.RedirectionHash.Equals(UInt160.Zero))
                     {
-                        ScriptHash = context.ScriptHash,
-                        Key = key
-                    });
+                        item = engine.Snapshot.Storages.TryGet(new StorageKey
+                        {
+                            ScriptHash = contract.RedirectionHash,
+                            Key = key
+                        });
+                    }
+                    else
+                    {
+                        item = engine.Snapshot.Storages.TryGet(new StorageKey
+                        {
+                            ScriptHash = context.ScriptHash,
+                            Key = key
+                        });
+                    }
                     engine.CurrentContext.EvaluationStack.Push(item?.Value ?? StackItem.Null);
                     return true;
                 }
@@ -128,7 +157,17 @@ namespace Neo.SmartContract
                     StorageContext context = _interface.GetInterface<StorageContext>();
                     if (!CheckStorageContext(engine, context)) return false;
                     byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-                    byte[] prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
+                    ContractState contract = engine.Snapshot.Contracts.TryGet(context.ScriptHash);
+                    if (contract == null) return false;
+                    byte[] prefix_key;
+                    if (!contract.RedirectionHash.Equals(UInt160.Zero))
+                    {
+                        prefix_key = StorageKey.CreateSearchPrefix(contract.RedirectionHash, prefix);
+                    }
+                    else
+                    {
+                        prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
+                    }
                     StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator()));
                     engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
                     return true;
@@ -164,11 +203,25 @@ namespace Neo.SmartContract
                     StorageContext context = _interface.GetInterface<StorageContext>();
                     if (context.IsReadOnly) return false;
                     if (!CheckStorageContext(engine, context)) return false;
-                    StorageKey key = new StorageKey
+                    ContractState contract = engine.Snapshot.Contracts.TryGet(context.ScriptHash);
+                    if (contract == null) return false;
+                    StorageKey key = null;
+                    if (!contract.RedirectionHash.Equals(UInt160.Zero))
                     {
-                        ScriptHash = context.ScriptHash,
-                        Key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray()
-                    };
+                        key = new StorageKey
+                        {
+                            ScriptHash = contract.RedirectionHash,
+                            Key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray()
+                        };
+                    }
+                    else
+                    {
+                        key = new StorageKey
+                        {
+                            ScriptHash = context.ScriptHash,
+                            Key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray()
+                        };
+                    }
                     if (engine.Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                     engine.Snapshot.Storages.Delete(key);
                     return true;

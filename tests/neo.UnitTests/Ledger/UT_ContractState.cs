@@ -78,13 +78,15 @@ namespace Neo.UnitTests.Ledger
             }
             ((ContractState)newContract).Manifest.ToJson().ToString().Should().Be(contract.Manifest.ToJson().ToString());
             ((ContractState)newContract).Script.Should().BeEquivalentTo(contract.Script);
+            ((ContractState)newContract).RedirectionHash.Should().BeEquivalentTo(contract.RedirectionHash);
+            ((ContractState)newContract).IsDeleted.Should().Be(contract.IsDeleted);
         }
 
         [TestMethod]
         public void TestGetSize()
         {
             ISerializable newContract = contract;
-            newContract.Size.Should().Be(368);
+            newContract.Size.Should().Be(390);
         }
 
         [TestMethod]
@@ -94,6 +96,8 @@ namespace Neo.UnitTests.Ledger
             json["hash"].AsString().Should().Be("0x820944cfdc70976602d71b0091445eedbc661bc5");
             json["script"].AsString().Should().Be("AQ==");
             json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
+            json["redirectionHash"].AsString().Should().Be(UInt160.Zero.ToString());
+            json["isDeleted"].AsBoolean().Should().Be(false);
         }
     }
 }

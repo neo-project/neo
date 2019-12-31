@@ -41,6 +41,8 @@ namespace Neo.SmartContract
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };
+                contract.RedirectionHash = UInt160.Zero;
+                contract.IsDeleted = false;
 
                 if (!contract.Manifest.IsValid(hash)) return false;
 
@@ -56,50 +58,76 @@ namespace Neo.SmartContract
                 var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
                 if (manifest.Length > ContractManifest.MaxLength) return false;
 
-                var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
-                if (contract is null) return false;
-
+                var oldcontract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
+                if (oldcontract is null) return false;
+                if (oldcontract.IsDeleted) return false;
+                ContractState newcontract = null;
                 if (script.Length > 0)
                 {
                     UInt160 hash_new = script.ToScriptHash();
                     if (hash_new.Equals(engine.CurrentScriptHash)) return false;
                     if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
-                    contract = new ContractState
+                    newcontract = new ContractState
                     {
                         Script = script,
-                        Manifest = contract.Manifest
+                        Manifest = oldcontract.Manifest
                     };
-                    contract.Manifest.Abi.Hash = hash_new;
-                    engine.Snapshot.Contracts.Add(hash_new, contract);
-                    if (contract.HasStorage)
+                    if (oldcontract.RedirectionHash.Equals(UInt160.Zero))
                     {
-                        foreach (var (key, value) in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
-                        {
-                            engine.Snapshot.Storages.Add(new StorageKey
-                            {
-                                ScriptHash = hash_new,
-                                Key = key.Key
-                            }, new StorageItem
-                            {
-                                Value = value.Value,
-                                IsConstant = false
-                            });
-                        }
+                        newcontract.RedirectionHash = oldcontract.ScriptHash;
                     }
-                    Contract_Destroy(engine);
+                    else
+                    {
+                        newcontract.RedirectionHash = oldcontract.RedirectionHash;
+                    }
+                    newcontract.IsDeleted = false;
+                    newcontract.Manifest.Abi.Hash = hash_new;
+                    engine.Snapshot.Contracts.Add(hash_new, newcontract);
+                    if (oldcontract.RedirectionHash.Equals(UInt160.Zero))
+                    {
+                        oldcontract = engine.Snapshot.Contracts.GetAndChange(oldcontract.ScriptHash);
+                        oldcontract.IsDeleted = true;
+                    }
+                    else
+                    {
+                        Contract_UnAppend_Destroy(engine);
+                    }
                 }
                 if (manifest.Length > 0)
                 {
-                    contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
-                    contract.Manifest = ContractManifest.Parse(manifest);
-                    if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
-                    if (!contract.HasStorage && engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).Any()) return false;
+                    newcontract = engine.Snapshot.Contracts.GetAndChange(newcontract.ScriptHash);
+                    newcontract.Manifest = ContractManifest.Parse(manifest);
+                    if (!newcontract.Manifest.IsValid(newcontract.ScriptHash)) return false;
+                    if (!newcontract.HasStorage && engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).Any()) return false;
                 }
 
                 return true;
             }
 
             private static bool Contract_Destroy(ApplicationEngine engine)
+            {
+                UInt160 hash = engine.CurrentScriptHash;
+                ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
+                if (contract == null) return true;
+                if (!contract.RedirectionHash.Equals(UInt160.Zero))
+                {
+                    ContractState initcontract = engine.Snapshot.Contracts.TryGet(contract.RedirectionHash);
+                    if (initcontract != null)
+                    {
+                        engine.Snapshot.Contracts.Delete(contract.RedirectionHash);
+                        if (initcontract.HasStorage)
+                            foreach (var (key, _) in engine.Snapshot.Storages.Find(contract.RedirectionHash.ToArray()))
+                                engine.Snapshot.Storages.Delete(key);
+                    }
+                }
+                engine.Snapshot.Contracts.Delete(hash);
+                if (contract.HasStorage)
+                    foreach (var (key, _) in engine.Snapshot.Storages.Find(hash.ToArray()))
+                        engine.Snapshot.Storages.Delete(key);
+                return true;
+            }
+
+            private static bool Contract_UnAppend_Destroy(ApplicationEngine engine)
             {
                 UInt160 hash = engine.CurrentScriptHash;
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
@@ -141,6 +169,8 @@ namespace Neo.SmartContract
             {
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
                 if (contract is null) return false;
+
+                if (contract.IsDeleted) return false;
 
                 ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
