@@ -51,8 +51,8 @@ namespace Neo.SmartContract
                 if (key.Length > MaxKeySize) return false;
                 if (value.Length > MaxValueSize) return false;
                 if (context.IsReadOnly) return false;
-                if (!CheckStorageContext(engine, context,out ContractState contract)) return false;
-                RedirectionStorageContext(context,contract);
+                if (!CheckStorageContext(engine, context, out ContractState contract)) return false;
+                RedirectionStorageContext(context, contract);
                 StorageKey skey = new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
@@ -117,7 +117,7 @@ namespace Neo.SmartContract
                 if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
-                    if (!CheckStorageContext(engine, context,out ContractState contract)) return false;
+                    if (!CheckStorageContext(engine, context, out ContractState contract)) return false;
                     RedirectionStorageContext(context, contract);
                     byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                     StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
