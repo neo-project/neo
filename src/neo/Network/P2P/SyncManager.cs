@@ -198,7 +198,7 @@ namespace Neo.Network.P2P
                         ReSync(null, uncompletedTasks[i]);
                     }
                 }
-                if (lastTaskIndex + 3 > hightestBlockIndex) break;
+                if (lastTaskIndex + 2 > hightestBlockIndex) break;
                 uint startIndex = lastTaskIndex + 1;
                 uint endIndex = Math.Min((startIndex / blocksPerTask + 1) * blocksPerTask, hightestBlockIndex);
                 int count = (int)(endIndex - startIndex + 1);
@@ -235,14 +235,6 @@ namespace Neo.Network.P2P
         public static Props Props(NeoSystem system)
         {
             return Akka.Actor.Props.Create(() => new SyncManager(system)).WithMailbox("sync-manager-mailbox");
-        }
-    }
-
-    internal class SyncManagerMailbox : PriorityMailbox
-    {
-        public SyncManagerMailbox(Akka.Actor.Settings settings, Config config)
-            : base(settings, config)
-        {
         }
     }
 }

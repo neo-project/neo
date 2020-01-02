@@ -82,7 +82,7 @@ namespace Neo.Ledger
                 return singleton;
             }
         }
-        
+
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();

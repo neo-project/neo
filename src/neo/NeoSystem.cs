@@ -17,7 +17,6 @@ namespace Neo
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
             $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}" +
-            $"sync-manager-mailbox {{ mailbox-type: \"{typeof(SyncManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
