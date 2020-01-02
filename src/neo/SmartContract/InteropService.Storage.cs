@@ -24,11 +24,16 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
 
-            private static bool CheckStorageContext(ApplicationEngine engine, StorageContext context)
+            private static bool CheckStorageContext(ApplicationEngine engine, StorageContext context, out ContractState contract)
             {
-                ContractState contract = engine.Snapshot.Contracts.TryGet(context.ScriptHash);
+                contract = engine.Snapshot.Contracts.TryGet(context.ScriptHash);
                 if (contract == null) return false;
                 if (!contract.HasStorage) return false;
+                return true;
+            }
+
+            private static bool RedirectionStorageContext(StorageContext context, ContractState contract)
+            {
                 if (!contract.RedirectionHash.Equals(UInt160.Zero))
                 {
                     context.ScriptHash = contract.RedirectionHash;
@@ -46,8 +51,8 @@ namespace Neo.SmartContract
                 if (key.Length > MaxKeySize) return false;
                 if (value.Length > MaxValueSize) return false;
                 if (context.IsReadOnly) return false;
-                if (!CheckStorageContext(engine, context)) return false;
-
+                if (!CheckStorageContext(engine, context,out ContractState contract)) return false;
+                RedirectionStorageContext(context,contract);
                 StorageKey skey = new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
@@ -112,7 +117,8 @@ namespace Neo.SmartContract
                 if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
-                    if (!CheckStorageContext(engine, context)) return false;
+                    if (!CheckStorageContext(engine, context,out ContractState contract)) return false;
+                    RedirectionStorageContext(context, contract);
                     byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                     StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
                     {
@@ -130,7 +136,8 @@ namespace Neo.SmartContract
                 if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
-                    if (!CheckStorageContext(engine, context)) return false;
+                    if (!CheckStorageContext(engine, context, out ContractState contract)) return false;
+                    RedirectionStorageContext(context, contract);
                     byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                     byte[] prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
                     StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator()));
@@ -167,7 +174,8 @@ namespace Neo.SmartContract
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
                     if (context.IsReadOnly) return false;
-                    if (!CheckStorageContext(engine, context)) return false;
+                    if (!CheckStorageContext(engine, context, out ContractState contract)) return false;
+                    RedirectionStorageContext(context, contract);
                     StorageKey key = new StorageKey
                     {
                         ScriptHash = context.ScriptHash,
