@@ -31,7 +31,7 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize() + sizeof(bool) + RedirectionHash.ToArray().GetVarSize();
+        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize() + sizeof(bool) + RedirectionHash.Size;
 
         private UInt160 _redirectionHash = UInt160.Zero;
         public virtual UInt160 RedirectionHash

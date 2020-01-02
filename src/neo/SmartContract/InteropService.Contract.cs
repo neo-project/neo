@@ -168,9 +168,7 @@ namespace Neo.SmartContract
             private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, StackItem method, StackItem args, CallFlags flags)
             {
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
-                if (contract is null) return false;
-
-                if (contract.IsDeleted) return false;
+                if (contract is null|| contract.IsDeleted) return false;
 
                 ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
