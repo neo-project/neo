@@ -56,7 +56,7 @@ namespace Neo.SmartContract
                 if (manifest.Length > ContractManifest.MaxLength) return false;
 
                 var oldcontract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
-                if (oldcontract is null|| oldcontract.IsUpdated) return false;
+                if (oldcontract is null || oldcontract.IsUpdated) return false;
                 ContractState newcontract = null;
                 if (script.Length > 0)
                 {
