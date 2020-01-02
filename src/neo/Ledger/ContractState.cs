@@ -33,34 +33,9 @@ namespace Neo.Ledger
 
         int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize() + sizeof(bool) + RedirectionHash.Size;
 
-        private UInt160 _redirectionHash = UInt160.Zero;
-        public virtual UInt160 RedirectionHash
-        {
-            get
-            {
-                return _redirectionHash;
-            }
+        public UInt160 RedirectionHash = UInt160.Zero;
 
-            set
-            {
-                _redirectionHash = value;
-            }
-        }
-
-        private bool isDeleted = false;
-
-        public virtual bool IsDeleted
-        {
-            get
-            {
-                return isDeleted;
-            }
-
-            set
-            {
-                isDeleted = value;
-            }
-        }
+        public bool IsDeleted = false;
 
         ContractState ICloneable<ContractState>.Clone()
         {

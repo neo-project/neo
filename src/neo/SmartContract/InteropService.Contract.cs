@@ -41,9 +41,6 @@ namespace Neo.SmartContract
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };
-                contract.RedirectionHash = UInt160.Zero;
-                contract.IsDeleted = false;
-
                 if (!contract.Manifest.IsValid(hash)) return false;
 
                 engine.Snapshot.Contracts.Add(hash, contract);
