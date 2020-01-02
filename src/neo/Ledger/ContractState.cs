@@ -35,7 +35,7 @@ namespace Neo.Ledger
 
         public UInt160 RedirectionHash = UInt160.Zero;
 
-        public bool IsDeleted = false;
+        public bool IsUpdated = false;
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -44,7 +44,7 @@ namespace Neo.Ledger
                 Script = Script,
                 Manifest = Manifest.Clone(),
                 RedirectionHash = RedirectionHash,
-                IsDeleted = IsDeleted
+                IsUpdated = IsUpdated
             };
         }
 
@@ -53,7 +53,7 @@ namespace Neo.Ledger
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
             RedirectionHash = reader.ReadSerializable<UInt160>();
-            IsDeleted = reader.ReadBoolean();
+            IsUpdated = reader.ReadBoolean();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
@@ -61,7 +61,7 @@ namespace Neo.Ledger
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
             RedirectionHash = replica.RedirectionHash;
-            IsDeleted = replica.IsDeleted;
+            IsUpdated = replica.IsUpdated;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -69,7 +69,7 @@ namespace Neo.Ledger
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
             writer.Write(RedirectionHash);
-            writer.Write(IsDeleted);
+            writer.Write(IsUpdated);
         }
 
         public JObject ToJson()
@@ -79,7 +79,7 @@ namespace Neo.Ledger
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
             json["redirectionHash"] = RedirectionHash.ToString();
-            json["isDeleted"] = IsDeleted;
+            json["isUpdated"] = IsUpdated;
             return json;
         }
 
@@ -89,7 +89,7 @@ namespace Neo.Ledger
             contractState.Script = Convert.FromBase64String(json["script"].AsString());
             contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
             contractState.RedirectionHash = UInt160.Parse(json["RedirectionHash"].AsString());
-            contractState.IsDeleted = json["isDeleted"].AsBoolean();
+            contractState.IsUpdated = json["isUpdated"].AsBoolean();
             return contractState;
         }
 

@@ -57,7 +57,7 @@ namespace Neo.SmartContract
 
                 var oldcontract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
                 if (oldcontract is null) return false;
-                if (oldcontract.IsDeleted) return false;
+                if (oldcontract.IsUpdated) return false;
                 ContractState newcontract = null;
                 if (script.Length > 0)
                 {
@@ -77,13 +77,13 @@ namespace Neo.SmartContract
                     {
                         newcontract.RedirectionHash = oldcontract.RedirectionHash;
                     }
-                    newcontract.IsDeleted = false;
+                    newcontract.IsUpdated = false;
                     newcontract.Manifest.Abi.Hash = hash_new;
                     engine.Snapshot.Contracts.Add(hash_new, newcontract);
                     if (oldcontract.RedirectionHash.Equals(UInt160.Zero))
                     {
                         oldcontract = engine.Snapshot.Contracts.GetAndChange(oldcontract.ScriptHash);
-                        oldcontract.IsDeleted = true;
+                        oldcontract.IsUpdated = true;
                     }
                     else
                     {
@@ -165,7 +165,7 @@ namespace Neo.SmartContract
             private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, StackItem method, StackItem args, CallFlags flags)
             {
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
-                if (contract is null || contract.IsDeleted) return false;
+                if (contract is null || contract.IsUpdated) return false;
 
                 ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
