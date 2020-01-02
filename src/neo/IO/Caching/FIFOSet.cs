@@ -1,16 +1,23 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
+using System.Collections.ObjectModel;
 
 namespace Neo.IO.Caching
 {
     internal class FIFOSet<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
+        private class Collection : KeyedCollection<T, T>
+        {
+            protected override T GetKeyForItem(T item)
+            {
+                return item;
+            }
+        }
+
         private readonly int maxCapacity;
         private readonly int removeCount;
-        private readonly OrderedDictionary dictionary;
+        private readonly Collection dictionary;
 
         public int Count => dictionary.Count;
 
@@ -21,7 +28,7 @@ namespace Neo.IO.Caching
 
             this.maxCapacity = maxCapacity;
             this.removeCount = Math.Max((int)(maxCapacity * batchSize), 1);
-            this.dictionary = new OrderedDictionary(maxCapacity);
+            this.dictionary = new Collection();
         }
 
         public bool Add(T item)
@@ -39,7 +46,7 @@ namespace Neo.IO.Caching
                         dictionary.RemoveAt(0);
                 }
             }
-            dictionary.Add(item, null);
+            dictionary.Add(item);
             return true;
         }
 
@@ -58,8 +65,7 @@ namespace Neo.IO.Caching
 
         public IEnumerator<T> GetEnumerator()
         {
-            var entries = dictionary.Keys.Cast<T>().ToArray();
-            foreach (var entry in entries) yield return entry;
+            return dictionary.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
