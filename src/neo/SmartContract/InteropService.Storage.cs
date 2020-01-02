@@ -32,13 +32,12 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            private static bool RedirectionStorageContext(StorageContext context, ContractState contract)
+            private static void RedirectionStorageContext(StorageContext context, ContractState contract)
             {
                 if (!contract.RedirectionHash.Equals(UInt160.Zero))
                 {
                     context.ScriptHash = contract.RedirectionHash;
                 }
-                return true;
             }
 
             private static long GetStoragePrice(EvaluationStack stack)
