@@ -480,7 +480,11 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_GetContext()
         {
-            var engine = GetEngine();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var state = TestUtils.GetContract();
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            engine.LoadScript(state.Script);
             InteropService.Invoke(engine, InteropService.Storage.GetContext).Should().BeTrue();
             var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
@@ -490,7 +494,11 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_GetReadOnlyContext()
         {
-            var engine = GetEngine();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var state = TestUtils.GetContract();
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            engine.LoadScript(state.Script);
             InteropService.Invoke(engine, InteropService.Storage.GetReadOnlyContext).Should().BeTrue();
             var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
@@ -524,7 +532,8 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
                 ScriptHash = state.ScriptHash,
-                IsReadOnly = false
+                IsReadOnly = false,
+                PreDataKey = state.ScriptHash
             }));
             InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
@@ -536,7 +545,8 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
                 ScriptHash = state.ScriptHash,
-                IsReadOnly = false
+                IsReadOnly = false,
+                PreDataKey = state.ScriptHash
             }));
             InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
 
@@ -560,7 +570,8 @@ namespace Neo.UnitTests.SmartContract
             var storageContext = new StorageContext
             {
                 ScriptHash = state.ScriptHash,
-                IsReadOnly = false
+                IsReadOnly = false,
+                PreDataKey = state.ScriptHash
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
@@ -661,7 +672,8 @@ namespace Neo.UnitTests.SmartContract
             var storageContext = new StorageContext
             {
                 ScriptHash = state.ScriptHash,
-                IsReadOnly = false
+                IsReadOnly = false,
+                PreDataKey = state.ScriptHash
             };
             engine.CurrentContext.EvaluationStack.Push((int)StorageFlags.None);
             engine.CurrentContext.EvaluationStack.Push(value);
@@ -700,7 +712,8 @@ namespace Neo.UnitTests.SmartContract
             var storageContext = new StorageContext
             {
                 ScriptHash = state.ScriptHash,
-                IsReadOnly = false
+                IsReadOnly = false,
+                PreDataKey = state.ScriptHash
             };
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
@@ -731,7 +744,8 @@ namespace Neo.UnitTests.SmartContract
             var storageContext = new StorageContext
             {
                 ScriptHash = state.ScriptHash,
-                IsReadOnly = false
+                IsReadOnly = false,
+                PreDataKey = state.ScriptHash
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeTrue();

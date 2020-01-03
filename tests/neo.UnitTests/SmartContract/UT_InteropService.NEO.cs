@@ -278,7 +278,8 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
                 ScriptHash = state.ScriptHash,
-                IsReadOnly = false
+                IsReadOnly = false,
+                PreDataKey = state.ScriptHash
             }));
             InteropService.Invoke(engine, InteropService.Storage.Find).Should().BeTrue();
             var iterator = ((InteropInterface)engine.CurrentContext.EvaluationStack.Pop()).GetInterface<StorageIterator>();

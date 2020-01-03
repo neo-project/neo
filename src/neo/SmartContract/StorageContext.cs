@@ -4,5 +4,6 @@ namespace Neo.SmartContract
     {
         public UInt160 ScriptHash;
         public bool IsReadOnly;
+        public UInt160 PreDataKey;
     }
 }
