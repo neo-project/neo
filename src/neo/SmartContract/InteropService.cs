@@ -31,19 +31,22 @@ namespace Neo.SmartContract
                 return false;
             if (!descriptor.AllowedTriggers.HasFlag(engine.Trigger))
                 return false;
+            ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+            if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
+                return false;
             return descriptor.Handler(engine);
         }
 
-        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
-            InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers);
+            InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers, requiredCallFlags);
             methods.Add(descriptor.Hash, descriptor);
             return descriptor;
         }
 
-        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
-            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers);
+            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers, requiredCallFlags);
             methods.Add(descriptor.Hash, descriptor);
             return descriptor;
         }

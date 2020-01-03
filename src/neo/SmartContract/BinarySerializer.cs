@@ -8,30 +8,31 @@ using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
 {
     internal static class BinarySerializer
     {
-        public static StackItem Deserialize(byte[] data, uint maxItemSize, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(byte[] data, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter = null)
         {
             using MemoryStream ms = new MemoryStream(data, false);
             using BinaryReader reader = new BinaryReader(ms);
-            return Deserialize(reader, maxItemSize, referenceCounter);
+            return Deserialize(reader, maxArraySize, maxItemSize, referenceCounter);
         }
 
-        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxItemSize, ReferenceCounter referenceCounter = null)
+        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter = null)
         {
             if (data.IsEmpty) throw new FormatException();
             fixed (byte* pointer = data)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, data.Length);
                 using BinaryReader reader = new BinaryReader(ms);
-                return Deserialize(reader, maxItemSize, referenceCounter);
+                return Deserialize(reader, maxArraySize, maxItemSize, referenceCounter);
             }
         }
 
-        private static StackItem Deserialize(BinaryReader reader, uint maxItemSize, ReferenceCounter referenceCounter)
+        private static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter)
         {
             Stack<StackItem> deserialized = new Stack<StackItem>();
             int undeserialized = 1;
@@ -40,40 +41,37 @@ namespace Neo.SmartContract
                 StackItemType type = (StackItemType)reader.ReadByte();
                 switch (type)
                 {
-                    case StackItemType.ByteArray:
-                        deserialized.Push(new ByteArray(reader.ReadVarBytes((int)maxItemSize)));
+                    case StackItemType.Any:
+                        deserialized.Push(StackItem.Null);
                         break;
                     case StackItemType.Boolean:
-                        deserialized.Push(new Boolean(reader.ReadBoolean()));
+                        deserialized.Push(reader.ReadBoolean());
                         break;
                     case StackItemType.Integer:
-                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes(Integer.MaxSize))));
+                        deserialized.Push(new BigInteger(reader.ReadVarBytes(Integer.MaxSize)));
+                        break;
+                    case StackItemType.ByteArray:
+                        deserialized.Push(reader.ReadVarBytes((int)maxItemSize));
+                        break;
+                    case StackItemType.Buffer:
+                        Buffer buffer = new Buffer((int)reader.ReadVarInt(maxItemSize));
+                        reader.FillBuffer(buffer.InnerBuffer);
+                        deserialized.Push(buffer);
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:
                         {
-                            int count = (int)reader.ReadVarInt(maxItemSize);
-                            deserialized.Push(new ContainerPlaceholder
-                            {
-                                Type = type,
-                                ElementCount = count
-                            });
+                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count;
                         }
                         break;
                     case StackItemType.Map:
                         {
-                            int count = (int)reader.ReadVarInt(maxItemSize);
-                            deserialized.Push(new ContainerPlaceholder
-                            {
-                                Type = type,
-                                ElementCount = count
-                            });
+                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count * 2;
                         }
-                        break;
-                    case StackItemType.Null:
-                        deserialized.Push(StackItem.Null);
                         break;
                     default:
                         throw new FormatException();
@@ -127,36 +125,33 @@ namespace Neo.SmartContract
 
         private static void Serialize(StackItem item, BinaryWriter writer, uint maxSize)
         {
-            List<StackItem> serialized = new List<StackItem>();
+            List<CompoundType> serialized = new List<CompoundType>();
             Stack<StackItem> unserialized = new Stack<StackItem>();
             unserialized.Push(item);
             while (unserialized.Count > 0)
             {
                 item = unserialized.Pop();
+                writer.Write((byte)item.Type);
                 switch (item)
                 {
-                    case ByteArray bytes:
-                        writer.Write((byte)StackItemType.ByteArray);
-                        writer.WriteVarBytes(bytes.ToByteArray());
+                    case Null _:
                         break;
                     case Boolean _:
-                        writer.Write((byte)StackItemType.Boolean);
                         writer.Write(item.ToBoolean());
                         break;
                     case Integer integer:
-                        writer.Write((byte)StackItemType.Integer);
-                        writer.WriteVarBytes(integer.ToByteArray());
+                        writer.WriteVarBytes(integer.Span);
                         break;
-                    case InteropInterface _:
-                        throw new NotSupportedException();
+                    case ByteArray bytes:
+                        writer.WriteVarBytes(bytes.Span);
+                        break;
+                    case Buffer buffer:
+                        writer.WriteVarBytes(buffer.InnerBuffer);
+                        break;
                     case Array array:
                         if (serialized.Any(p => ReferenceEquals(p, array)))
                             throw new NotSupportedException();
                         serialized.Add(array);
-                        if (array is Struct)
-                            writer.Write((byte)StackItemType.Struct);
-                        else
-                            writer.Write((byte)StackItemType.Array);
                         writer.WriteVarInt(array.Count);
                         for (int i = array.Count - 1; i >= 0; i--)
                             unserialized.Push(array[i]);
@@ -165,7 +160,6 @@ namespace Neo.SmartContract
                         if (serialized.Any(p => ReferenceEquals(p, map)))
                             throw new NotSupportedException();
                         serialized.Add(map);
-                        writer.Write((byte)StackItemType.Map);
                         writer.WriteVarInt(map.Count);
                         foreach (var pair in map.Reverse())
                         {
@@ -173,9 +167,8 @@ namespace Neo.SmartContract
                             unserialized.Push(pair.Key);
                         }
                         break;
-                    case Null _:
-                        writer.Write((byte)StackItemType.Null);
-                        break;
+                    default:
+                        throw new NotSupportedException();
                 }
                 if (writer.BaseStream.Position > maxSize)
                     throw new InvalidOperationException();
