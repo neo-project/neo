@@ -6,7 +6,8 @@ namespace Neo.IO.Caching
 {
     public class HashSetCache<T> : IEnumerable<T> where T : IEquatable<T>
     {
-        private readonly int hashSetCapacity;
+        private readonly int bucketCapacity;
+        private readonly int bucketCount;
         private readonly List<HashSet<T>> sets = new List<HashSet<T>>();
 
         public int Count
@@ -22,34 +23,26 @@ namespace Neo.IO.Caching
             }
         }
 
-        public HashSetCache(int hashSetCapacity, int hashSetCount = 10)
+        public HashSetCache(int bucketCapacity, int bucketCount = 10)
         {
-            if (hashSetCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(hashSetCapacity));
-            if (hashSetCount <= 0 || hashSetCount > 20) throw new ArgumentOutOfRangeException($"{nameof(hashSetCount)} should between 1 and 20");
+            if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(bucketCapacity));
+            if (bucketCount <= 0 || bucketCount > 20) throw new ArgumentOutOfRangeException($"{nameof(bucketCount)} should between 1 and 20");
 
-            this.hashSetCapacity = hashSetCapacity;
-            for (int i = 0; i < hashSetCount; i++)
-            {
-                sets.Add(new HashSet<T>());
-            }
+            this.bucketCapacity = bucketCapacity;
+            this.bucketCount = bucketCount;
+            sets.Add(new HashSet<T>());
         }
 
         public bool Add(T item)
         {
             if (Contains(item)) return false;
-            foreach (var set in sets)
-            {
-                if (set.Count < hashSetCapacity)
-                {
-                    return set.Add(item);
-                }
-            }
-            sets.RemoveAt(0);
+            if (sets[0].Count < bucketCapacity) return sets[0].Add(item);
             var newSet = new HashSet<T>
             {
                 item
             };
-            sets.Add(newSet);
+            sets.Insert(0, newSet);
+            if (sets.Count > bucketCount) sets.RemoveAt(bucketCount);
             return true;
         }
 
