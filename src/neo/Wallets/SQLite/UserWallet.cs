@@ -50,6 +50,9 @@ namespace Neo.Wallets.SQLite
                     rng.GetBytes(iv);
                     rng.GetBytes(masterKey);
                 }
+
+                passwordKey = iv.Concat(passwordKey).ToArray().Sha256(); // Add salt
+
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
@@ -59,10 +62,10 @@ namespace Neo.Wallets.SQLite
             }
             else
             {
-                byte[] passwordHash = LoadStoredData("PasswordHash");
-                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Sha256()))
-                    throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
+                byte[] passwordHash = LoadStoredData("PasswordHash");
+                if (passwordHash != null && !passwordHash.SequenceEqual(iv.Concat(passwordKey).ToArray().Sha256().Sha256()))
+                    throw new CryptographicException();
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
                 this.accounts = LoadAccounts();
             }
