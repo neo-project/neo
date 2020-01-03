@@ -50,9 +50,7 @@ namespace Neo.Wallets.SQLite
                     rng.GetBytes(iv);
                     rng.GetBytes(masterKey);
                 }
-
                 passwordKey = iv.Concat(passwordKey).ToArray().Sha256(); // Add salt
-
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
