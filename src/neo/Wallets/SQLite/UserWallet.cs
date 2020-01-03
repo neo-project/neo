@@ -353,7 +353,7 @@ namespace Neo.Wallets.SQLite
 
         public override bool VerifyPassword(string password)
         {
-            return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+            return LoadStoredData("IV").Concat(password.ToAesKey()).ToArray().Sha256().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
         }
     }
 }
