@@ -34,7 +34,7 @@ namespace Neo.SmartContract
 
             private static void RedirectionStorageContext(StorageContext context, ContractState contract)
             {
-                if (!contract.RedirectionHash.Equals(UInt160.Zero))
+                if (contract.HasRedirection)
                 {
                     context.ScriptHash = contract.RedirectionHash;
                 }

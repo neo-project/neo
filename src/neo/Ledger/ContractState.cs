@@ -35,6 +35,8 @@ namespace Neo.Ledger
 
         public UInt160 RedirectionHash = UInt160.Zero;
 
+        public bool HasRedirection => !RedirectionHash.Equals(UInt160.Zero);
+
         public bool IsUpdated = false;
 
         ContractState ICloneable<ContractState>.Clone()

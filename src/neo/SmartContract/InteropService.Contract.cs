@@ -68,26 +68,19 @@ namespace Neo.SmartContract
                         Script = script,
                         Manifest = oldcontract.Manifest
                     };
-                    if (oldcontract.RedirectionHash.Equals(UInt160.Zero))
+                    if (oldcontract.HasRedirection)
                     {
-                        newcontract.RedirectionHash = oldcontract.ScriptHash;
+                        newcontract.RedirectionHash = oldcontract.RedirectionHash;
+                        DeleteContractByHash(engine, oldcontract.ScriptHash, out _);
                     }
                     else
                     {
-                        newcontract.RedirectionHash = oldcontract.RedirectionHash;
-                    }
-                    newcontract.IsUpdated = false;
-                    newcontract.Manifest.Abi.Hash = hash_new;
-                    engine.Snapshot.Contracts.Add(hash_new, newcontract);
-                    if (oldcontract.RedirectionHash.Equals(UInt160.Zero))
-                    {
+                        newcontract.RedirectionHash = oldcontract.ScriptHash;
                         oldcontract = engine.Snapshot.Contracts.GetAndChange(oldcontract.ScriptHash);
                         oldcontract.IsUpdated = true;
                     }
-                    else
-                    {
-                        Contract_UnAppend_Destroy(engine);
-                    }
+                    newcontract.Manifest.Abi.Hash = hash_new;
+                    engine.Snapshot.Contracts.Add(hash_new, newcontract);
                 }
                 if (manifest.Length > 0)
                 {
@@ -103,30 +96,20 @@ namespace Neo.SmartContract
             private static bool Contract_Destroy(ApplicationEngine engine)
             {
                 UInt160 hash = engine.CurrentScriptHash;
-                ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-                if (contract == null) return true;
-                if (!contract.RedirectionHash.Equals(UInt160.Zero))
+                if (DeleteContractByHash(engine, hash, out ContractState contract))
                 {
-                    ContractState initcontract = engine.Snapshot.Contracts.TryGet(contract.RedirectionHash);
-                    if (initcontract != null)
+                    if (contract != null && contract.HasRedirection)
                     {
-                        engine.Snapshot.Contracts.Delete(contract.RedirectionHash);
-                        if (initcontract.HasStorage)
-                            foreach (var (key, _) in engine.Snapshot.Storages.Find(contract.RedirectionHash.ToArray()))
-                                engine.Snapshot.Storages.Delete(key);
+                        DeleteContractByHash(engine, contract.RedirectionHash, out _);
                     }
+                    return true;
                 }
-                engine.Snapshot.Contracts.Delete(hash);
-                if (contract.HasStorage)
-                    foreach (var (key, _) in engine.Snapshot.Storages.Find(hash.ToArray()))
-                        engine.Snapshot.Storages.Delete(key);
-                return true;
+                return false;
             }
 
-            private static bool Contract_UnAppend_Destroy(ApplicationEngine engine)
+            private static bool DeleteContractByHash(ApplicationEngine engine, UInt160 hash, out ContractState contract)
             {
-                UInt160 hash = engine.CurrentScriptHash;
-                ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
+                contract = engine.Snapshot.Contracts.TryGet(hash);
                 if (contract == null) return true;
                 engine.Snapshot.Contracts.Delete(hash);
                 if (contract.HasStorage)
