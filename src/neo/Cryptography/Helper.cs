@@ -116,11 +116,11 @@ namespace Neo.Cryptography
             return false;
         }
 
-        internal static byte[] ToAesKey(this string password)
+        internal static byte[] ToAesKey(this string password, byte[] salt)
         {
             using (SHA256 sha256 = SHA256.Create())
             {
-                byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+                byte[] passwordBytes = salt.Concat(Encoding.UTF8.GetBytes(password)).ToArray();
                 byte[] passwordHash = sha256.ComputeHash(passwordBytes);
                 byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
                 Array.Clear(passwordBytes, 0, passwordBytes.Length);
@@ -129,11 +129,11 @@ namespace Neo.Cryptography
             }
         }
 
-        internal static byte[] ToAesKey(this SecureString password)
+        internal static byte[] ToAesKey(this SecureString password, byte[] salt)
         {
             using (SHA256 sha256 = SHA256.Create())
             {
-                byte[] passwordBytes = password.ToArray();
+                byte[] passwordBytes = salt.Concat(password.ToArray()).ToArray();
                 byte[] passwordHash = sha256.ComputeHash(passwordBytes);
                 byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
                 Array.Clear(passwordBytes, 0, passwordBytes.Length);

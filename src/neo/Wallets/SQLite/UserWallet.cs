@@ -37,7 +37,7 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        private UserWallet(string path, byte[] passwordKey, bool create)
+        private UserWallet(string path, Func<byte[], byte[]> passwordWithSalt, bool create)
         {
             this.path = path;
             if (create)
@@ -50,7 +50,7 @@ namespace Neo.Wallets.SQLite
                     rng.GetBytes(iv);
                     rng.GetBytes(masterKey);
                 }
-                passwordKey = iv.Concat(passwordKey).ToArray().Sha256(); // Add salt
+                var passwordKey = passwordWithSalt(iv);
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
@@ -61,8 +61,9 @@ namespace Neo.Wallets.SQLite
             else
             {
                 this.iv = LoadStoredData("IV");
+                var passwordKey = passwordWithSalt(iv);
                 byte[] passwordHash = LoadStoredData("PasswordHash");
-                if (passwordHash != null && !passwordHash.SequenceEqual(iv.Concat(passwordKey).ToArray().Sha256().Sha256()))
+                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Sha256()))
                     throw new CryptographicException();
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
                 this.accounts = LoadAccounts();
@@ -150,7 +151,7 @@ namespace Neo.Wallets.SQLite
         public bool ChangePassword(string password_old, string password_new)
         {
             if (!VerifyPassword(password_old)) return false;
-            byte[] passwordKey = password_new.ToAesKey();
+            byte[] passwordKey = password_new.ToAesKey(LoadStoredData("IV"));
             try
             {
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
@@ -173,12 +174,12 @@ namespace Neo.Wallets.SQLite
 
         public static UserWallet Create(string path, string password)
         {
-            return new UserWallet(path, password.ToAesKey(), true);
+            return new UserWallet(path, salt => password.ToAesKey(salt), true);
         }
 
         public static UserWallet Create(string path, SecureString password)
         {
-            return new UserWallet(path, password.ToAesKey(), true);
+            return new UserWallet(path, salt => password.ToAesKey(salt), true);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -316,12 +317,12 @@ namespace Neo.Wallets.SQLite
 
         public static UserWallet Open(string path, string password)
         {
-            return new UserWallet(path, password.ToAesKey(), false);
+            return new UserWallet(path, salt => password.ToAesKey(salt), false);
         }
 
         public static UserWallet Open(string path, SecureString password)
         {
-            return new UserWallet(path, password.ToAesKey(), false);
+            return new UserWallet(path, salt => password.ToAesKey(salt), false);
         }
 
         private void SaveStoredData(string name, byte[] value)
@@ -353,7 +354,7 @@ namespace Neo.Wallets.SQLite
 
         public override bool VerifyPassword(string password)
         {
-            return LoadStoredData("IV").Concat(password.ToAesKey()).ToArray().Sha256().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+            return password.ToAesKey(LoadStoredData("IV")).Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
         }
     }
 }

@@ -172,7 +172,7 @@ namespace Neo.UnitTests.Cryptography
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
             byte[] byteArray = new byte[string1.Length / 2];
             byteArray = string1.HexToBytes();
-            password.ToAesKey().Should().Equal(byteArray);
+            password.ToAesKey(new byte[0]).Should().Equal(byteArray);
         }
 
         [TestMethod]
@@ -193,7 +193,7 @@ namespace Neo.UnitTests.Cryptography
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
             byte[] byteArray = new byte[string1.Length / 2];
             byteArray = string1.HexToBytes();
-            password.ToAesKey().Should().Equal(byteArray);
+            password.ToAesKey(new byte[0]).Should().Equal(byteArray);
         }
 
         [TestMethod]
