@@ -8,5 +8,6 @@ namespace Neo.SmartContract.Native
     {
         public Func<ApplicationEngine, VMArray, StackItem> Delegate;
         public long Price;
+        public CallFlags RequiredCallFlags;
     }
 }

@@ -5,6 +5,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Array = System.Array;
 
 namespace Neo.SmartContract
@@ -25,7 +26,7 @@ namespace Neo.SmartContract
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
-        public UInt160 CallingScriptHash => InvocationStack.Count > 1 ? InvocationStack.Peek(1).GetState<ExecutionContextState>().ScriptHash : null;
+        public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
@@ -55,12 +56,16 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
 
-            context.SetState(new ExecutionContextState()
-            {
-                ScriptHash = ((byte[])context.Script).ToScriptHash()
-            });
+            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
 
             base.LoadContext(context);
+        }
+
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
+        {
+            ExecutionContext context = LoadScript(script, rvcount);
+            context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            return context;
         }
 
         public override void Dispose()
@@ -135,6 +140,20 @@ namespace Neo.SmartContract
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, script_hash, state);
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
+        }
+
+        public bool TryPop(out string s)
+        {
+            if (TryPop(out ReadOnlySpan<byte> b))
+            {
+                s = Encoding.UTF8.GetString(b);
+                return true;
+            }
+            else
+            {
+                s = default;
+                return false;
+            }
         }
     }
 }

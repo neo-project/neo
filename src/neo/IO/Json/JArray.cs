@@ -114,6 +114,18 @@ namespace Neo.IO.Json
             writer.WriteEndArray();
         }
 
+        public override JObject Clone()
+        {
+            var cloned = new JArray();
+
+            foreach (JObject item in items)
+            {
+                cloned.Add(item.Clone());
+            }
+
+            return cloned;
+        }
+
         public static implicit operator JArray(JObject[] value)
         {
             return new JArray(value);

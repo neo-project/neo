@@ -3,38 +3,45 @@ using System;
 
 namespace Neo.SmartContract
 {
-    internal class InteropDescriptor
+    public class InteropDescriptor
     {
         public string Method { get; }
         public uint Hash { get; }
-        public Func<ApplicationEngine, bool> Handler { get; }
+        internal Func<ApplicationEngine, bool> Handler { get; }
         public long Price { get; }
         public Func<EvaluationStack, long> PriceCalculator { get; }
         public TriggerType AllowedTriggers { get; }
+        public CallFlags RequiredCallFlags { get; }
 
-        public InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers)
-            : this(method, handler, allowedTriggers)
+        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+            : this(method, handler, allowedTriggers, requiredCallFlags)
         {
             this.Price = price;
         }
 
-        public InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers)
-            : this(method, handler, allowedTriggers)
+        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+            : this(method, handler, allowedTriggers, requiredCallFlags)
         {
             this.PriceCalculator = priceCalculator;
         }
 
-        private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, TriggerType allowedTriggers)
+        private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             this.Method = method;
             this.Hash = method.ToInteropMethodHash();
             this.Handler = handler;
             this.AllowedTriggers = allowedTriggers;
+            this.RequiredCallFlags = requiredCallFlags;
         }
 
         public long GetPrice(EvaluationStack stack)
         {
             return PriceCalculator is null ? Price : PriceCalculator(stack);
+        }
+
+        public static implicit operator uint(InteropDescriptor descriptor)
+        {
+            return descriptor.Hash;
         }
     }
 }
