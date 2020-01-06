@@ -45,13 +45,14 @@ namespace Neo.IO.Caching
 
         /// <summary>
         /// Try to Add a specific key, with associated value, to the current cached dictionary.
-        /// It will not ready from Internal state.
+        /// It will not read from internal state.
         /// However, if previously cached into Dictionary, request may fail.
         /// </summary>
         /// <param name="key">Key to be possible added.
         /// Key will not be added if value exists cached and the modification was not a Deleted one.
         /// </param>
         /// <param name="value">Corresponding value to be added, in the case of sucess.</param>
+        /// <exception cref="ArgumentException">If cached on dictionary, with any state rather than `Deleted`, an Exception will be raised.</exception>
         public void Add(TKey key, TValue value)
         {
             lock (dictionary)
