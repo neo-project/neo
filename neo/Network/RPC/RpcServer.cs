@@ -361,7 +361,7 @@ namespace Neo.Network.RPC
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
-                options.Limits.MaxConcurrentConnections = 40;
+                options.Limits.MaxConcurrentConnections = Peer.DefaultMaxConnections;
                 options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(1);
                 options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
 
