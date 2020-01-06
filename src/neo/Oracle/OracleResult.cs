@@ -112,7 +112,7 @@ namespace Neo.Oracle
             writer.Write(TransactionHash);
             writer.Write(RequestHash);
             writer.Write((byte)Error);
-            if (Error != OracleResultError.None)
+            if (Error == OracleResultError.None)
                 writer.WriteVarBytes(Result);
         }
 
