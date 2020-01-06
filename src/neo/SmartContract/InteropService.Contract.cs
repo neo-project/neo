@@ -55,8 +55,8 @@ namespace Neo.SmartContract
                 var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
                 if (manifest.Length > ContractManifest.MaxLength) return false;
 
-                var oldcontract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
-                if (oldcontract is null || oldcontract.HasUpgraded) return false;
+                var oldContract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
+                if (oldContract is null || oldContract.HasUpgraded) return false;
                 ContractState newcontract = null;
                 if (script.Length > 0)
                 {
@@ -66,18 +66,18 @@ namespace Neo.SmartContract
                     newcontract = new ContractState
                     {
                         Script = script,
-                        Manifest = oldcontract.Manifest
+                        Manifest = oldContract.Manifest
                     };
-                    if (oldcontract.HasRedirection)
+                    if (oldContract.HasRedirection)
                     {
-                        newcontract.RedirectionHash = oldcontract.RedirectionHash;
-                        DeleteContractByHash(engine, oldcontract.ScriptHash, out _);
+                        newcontract.RedirectionHash = oldContract.RedirectionHash;
+                        DeleteContractByHash(engine, oldContract.ScriptHash, out _);
                     }
                     else
                     {
-                        newcontract.RedirectionHash = oldcontract.ScriptHash;
-                        oldcontract = engine.Snapshot.Contracts.GetAndChange(oldcontract.ScriptHash);
-                        oldcontract.HasUpgraded = true;
+                        newcontract.RedirectionHash = oldContract.ScriptHash;
+                        oldContract = engine.Snapshot.Contracts.GetAndChange(oldContract.ScriptHash);
+                        oldContract.HasUpgraded = true;
                     }
                     newcontract.Manifest.Abi.Hash = hash_new;
                     engine.Snapshot.Contracts.Add(hash_new, newcontract);
