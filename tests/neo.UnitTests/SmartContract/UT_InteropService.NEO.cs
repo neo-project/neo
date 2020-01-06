@@ -250,6 +250,33 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeFalse();
+
+            //Secondary upgrade
+            byte[] newContract = new byte[script.Length];
+            System.Array.Copy(script, newContract, script.Length);
+            newContract[newContract.Length - 1] = 0x03;
+
+            var manifest2 = ContractManifest.CreateDefault(newContract.ToScriptHash());
+            byte[] privkey2 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            KeyPair key2 = new KeyPair(privkey2);
+            ECPoint pubkey2 = key2.PublicKey;
+            byte[] signature2 = Crypto.Sign(newContract.ToScriptHash().ToArray(), privkey2, pubkey2.EncodePoint(false).Skip(1).ToArray());
+            manifest2.Groups = new ContractGroup[]
+            {
+                new ContractGroup()
+                {
+                    PubKey = pubkey2,
+                    Signature = signature2
+                }
+            };
+            manifest2.Features = ContractFeatures.HasStorage;
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            engine.LoadScript(script);
+            engine.CurrentContext.EvaluationStack.Push(manifest2.ToString());
+            engine.CurrentContext.EvaluationStack.Push(newContract);
+            InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeTrue();
         }
 
         [TestMethod]

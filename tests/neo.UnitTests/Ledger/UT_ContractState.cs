@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Ledger
             ((ContractState)newContract).Manifest.ToJson().ToString().Should().Be(contract.Manifest.ToJson().ToString());
             ((ContractState)newContract).Script.Should().BeEquivalentTo(contract.Script);
             ((ContractState)newContract).RedirectionHash.Should().BeEquivalentTo(contract.RedirectionHash);
-            ((ContractState)newContract).IsUpgraded.Should().Be(contract.IsUpgraded);
+            ((ContractState)newContract).HasUpgraded.Should().Be(contract.HasUpgraded);
         }
 
         [TestMethod]
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.Ledger
             json["script"].AsString().Should().Be("AQ==");
             json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
             json["redirectionHash"].AsString().Should().Be(UInt160.Zero.ToString());
-            json["isUpgraded"].AsBoolean().Should().Be(false);
+            json["hasUpgraded"].AsBoolean().Should().Be(false);
         }
     }
 }

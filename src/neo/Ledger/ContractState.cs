@@ -37,7 +37,7 @@ namespace Neo.Ledger
 
         public bool HasRedirection => !RedirectionHash.Equals(UInt160.Zero);
 
-        public bool IsUpgraded = false;
+        public bool HasUpgraded = false;
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -46,7 +46,7 @@ namespace Neo.Ledger
                 Script = Script,
                 Manifest = Manifest.Clone(),
                 RedirectionHash = RedirectionHash,
-                IsUpgraded = IsUpgraded
+                HasUpgraded = HasUpgraded
             };
         }
 
@@ -55,7 +55,7 @@ namespace Neo.Ledger
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
             RedirectionHash = reader.ReadSerializable<UInt160>();
-            IsUpgraded = reader.ReadBoolean();
+            HasUpgraded = reader.ReadBoolean();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
@@ -63,7 +63,7 @@ namespace Neo.Ledger
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
             RedirectionHash = replica.RedirectionHash;
-            IsUpgraded = replica.IsUpgraded;
+            HasUpgraded = replica.HasUpgraded;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -71,7 +71,7 @@ namespace Neo.Ledger
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
             writer.Write(RedirectionHash);
-            writer.Write(IsUpgraded);
+            writer.Write(HasUpgraded);
         }
 
         public JObject ToJson()
@@ -81,7 +81,7 @@ namespace Neo.Ledger
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
             json["redirectionHash"] = RedirectionHash.ToString();
-            json["isUpgraded"] = IsUpgraded;
+            json["hasUpgraded"] = HasUpgraded;
             return json;
         }
 
@@ -91,7 +91,7 @@ namespace Neo.Ledger
             contractState.Script = Convert.FromBase64String(json["script"].AsString());
             contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
             contractState.RedirectionHash = UInt160.Parse(json["redirectionHash"].AsString());
-            contractState.IsUpgraded = json["isUpgraded"].AsBoolean();
+            contractState.HasUpgraded = json["hasUpgraded"].AsBoolean();
             return contractState;
         }
 
