@@ -1,4 +1,4 @@
-using Neo.Oracle.Protocols.HTTP;
+using Neo.Oracle.Protocols.HTTPS;
 
 namespace Neo.SmartContract
 {
@@ -6,21 +6,21 @@ namespace Neo.SmartContract
     {
         public static class Oracle
         {
-            public static readonly uint Neo_Oracle_HTTP11_Get = Register("Oracle.HTTP11.Get", Oracle_HTTP11_Get, 0, TriggerType.Application, CallFlags.None);
+            public static readonly uint Neo_Oracle_HTTPS11_Get = Register("Oracle.HTTPS11.Get", Oracle_HTTPS11_Get, 0, TriggerType.Application, CallFlags.None);
 
-            private static bool Oracle_HTTP11_Get(ApplicationEngine engine)
+            private static bool Oracle_HTTPS11_Get(ApplicationEngine engine)
             {
                 if (engine.OracleCache == null) return false;
                 if (!engine.TryPop(out string url)) return false;
                 if (!engine.TryPop(out string filter)) return false;
 
-                var request = new OracleHTTPRequest()
+                var request = new OracleHTTPSRequest()
                 {
-                    Method = OracleHTTPRequest.HTTPMethod.GET,
+                    Method = OracleHTTPSRequest.HTTPMethod.GET,
                     URL = url,
                     Filter = filter,
                     Body = null,
-                    Version = OracleHTTPRequest.HTTPVersion.v1_1
+                    Version = OracleHTTPSRequest.HTTPVersion.v1_1
                 };
 
                 if (engine.OracleCache.TryGet(request, out var response))

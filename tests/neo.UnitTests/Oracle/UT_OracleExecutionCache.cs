@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Oracle;
-using Neo.Oracle.Protocols.HTTP;
+using Neo.Oracle.Protocols.HTTPS;
 using System;
 using System.Linq;
 
@@ -9,7 +9,7 @@ namespace Neo.UnitTests.Oracle
     [TestClass]
     public class UT_OracleExecutionCache
     {
-        class CounterRequest : OracleHTTPRequest
+        class CounterRequest : OracleHTTPSRequest
         {
             public int Counter = 0;
         }
@@ -41,7 +41,7 @@ namespace Neo.UnitTests.Oracle
                 Counter = 0,
                 URL = "URL",
                 Filter = "Filter",
-                Method = OracleHTTPRequest.HTTPMethod.GET,
+                Method = OracleHTTPSRequest.HTTPMethod.GET,
                 Body = new byte[] { 0x01 }
             };
             Assert.IsTrue(cache.TryGet(req, out var ret));
@@ -80,11 +80,11 @@ namespace Neo.UnitTests.Oracle
         [TestMethod]
         public void TestWithoutOracle()
         {
-            var initReq = new OracleHTTPRequest()
+            var initReq = new OracleHTTPSRequest()
             {
                 URL = "URL",
                 Filter = "Filter",
-                Method = OracleHTTPRequest.HTTPMethod.GET,
+                Method = OracleHTTPSRequest.HTTPMethod.GET,
                 Body = new byte[] { 0x01 }
             };
 
@@ -104,11 +104,11 @@ namespace Neo.UnitTests.Oracle
 
             // Test without cache
 
-            Assert.IsFalse(cache.TryGet(new OracleHTTPRequest()
+            Assert.IsFalse(cache.TryGet(new OracleHTTPSRequest()
             {
                 URL = "URL",
                 Filter = "Filter",
-                Method = OracleHTTPRequest.HTTPMethod.GET,
+                Method = OracleHTTPSRequest.HTTPMethod.GET,
                 Body = new byte[] { 0x01, 0x02 }
             }, out var ret));
 

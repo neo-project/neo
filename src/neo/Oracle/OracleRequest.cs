@@ -9,7 +9,7 @@ namespace Neo.Oracle
         /// </summary>
         public enum RequestType : byte
         {
-            HTTP = 0x01,
+            HTTPS = 0x01,
         }
 
         private UInt160 _hash;
