@@ -305,7 +305,6 @@ namespace Neo.Network.P2P
         /// <param name="remote"></param>
         /// <param name="local"></param>
         /// <param name="errorMsg"></param>
-        /// <returns></returns>
         protected override bool PreWsConnectedCheck(IPEndPoint remote, IPEndPoint local, out ArraySegment<byte> errorMsg)
         {
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
