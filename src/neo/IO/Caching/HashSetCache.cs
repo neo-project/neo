@@ -6,10 +6,19 @@ namespace Neo.IO.Caching
 {
     public class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
-        private readonly int bucketCapacity;
-        private readonly int bucketCount;
+        /// <summary>
+        /// Sets where the Hashes are stored
+        /// </summary>      
         private readonly LinkedList<HashSet<T>> sets = new LinkedList<HashSet<T>>();
-
+        /// <summary>
+        /// Maximum capacity of each bucket inside each HashSet of <see cref="sets"/>.
+        /// </summary>        
+        private readonly int bucketCapacity;
+        /// <summary>
+        /// Maximum number of buckets for the LinkedList, meaning its maximum cardinality.
+        /// </summary>
+        private readonly int bucketCount;
+        
         public int Count
         {
             get
