@@ -7,12 +7,12 @@ namespace Neo.Ledger
 {
     public class StorageKey : IEquatable<StorageKey>, ISerializable
     {
-        public UInt160 ScriptHash;
+        public Guid Guid;
         public byte[] Key;
 
-        int ISerializable.Size => ScriptHash.Size + (Key.Length / 16 + 1) * 17;
+        int ISerializable.Size => 16 + (Key.Length / 16 + 1) * 17;
 
-        internal static byte[] CreateSearchPrefix(UInt160 hash, byte[] prefix)
+        internal static byte[] CreateSearchPrefix(Guid guid, byte[] prefix)
         {
             using (MemoryStream ms = new MemoryStream())
             {
@@ -27,13 +27,13 @@ namespace Neo.Ledger
                 }
                 if (remain > 0)
                     ms.Write(prefix, index, remain);
-                return Helper.Concat(hash.ToArray(), ms.ToArray());
+                return Helper.Concat(guid.ToByteArray(), ms.ToArray());
             }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ScriptHash = reader.ReadSerializable<UInt160>();
+            Guid = new Guid(reader.ReadBytes(16));
             Key = reader.ReadBytesWithGrouping();
         }
 
@@ -43,7 +43,7 @@ namespace Neo.Ledger
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return ScriptHash.Equals(other.ScriptHash) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
+            return Guid.Equals(other.Guid) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
         }
 
         public override bool Equals(object obj)
@@ -54,12 +54,12 @@ namespace Neo.Ledger
 
         public override int GetHashCode()
         {
-            return ScriptHash.GetHashCode() + (int)Key.Murmur32(0);
+            return Guid.GetHashCode() + (int)Key.Murmur32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(ScriptHash);
+            writer.Write(Guid.ToByteArray());
             writer.WriteBytesWithGrouping(Key);
         }
     }

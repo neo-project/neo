@@ -30,6 +30,7 @@ namespace Neo.SmartContract.Native
         public UInt160 Hash { get; }
         public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
+        private protected Guid Guid { get; set; }
 
         protected NativeContract()
         {
@@ -69,9 +70,11 @@ namespace Neo.SmartContract.Native
 
         protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
+            if (Guid == Guid.Empty)
+                Guid = Blockchain.Singleton.View.Contracts[Hash].Guid;
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = Hash,
+                Guid = Guid,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;

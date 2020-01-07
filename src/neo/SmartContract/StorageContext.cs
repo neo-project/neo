@@ -1,8 +1,10 @@
+using System;
+
 namespace Neo.SmartContract
 {
     internal class StorageContext
     {
-        public UInt160 ScriptHash;
+        public Guid Guid;
         public bool IsReadOnly;
     }
 }
