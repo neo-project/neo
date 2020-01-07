@@ -7,7 +7,7 @@ namespace Neo.IO.Caching
     public class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
         private readonly int bucketCapacity;
-        private readonly int bucketCount;
+        private readonly int maxBucketCount;
         private readonly LinkedList<HashSet<T>> sets = new LinkedList<HashSet<T>>();
 
         public int Count
@@ -23,13 +23,13 @@ namespace Neo.IO.Caching
             }
         }
 
-        public HashSetCache(int bucketCapacity, int bucketCount = 10)
+        public HashSetCache(int bucketCapacity, int maxBucketCount = 10)
         {
             if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCapacity)} should be greater than 0");
-            if (bucketCount <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCount)} should be greater than 0");
+            if (maxBucketCount <= 0) throw new ArgumentOutOfRangeException($"{nameof(maxBucketCount)} should be greater than 0");
 
             this.bucketCapacity = bucketCapacity;
-            this.bucketCount = bucketCount;
+            this.maxBucketCount = maxBucketCount;
             sets.AddFirst(new HashSet<T>());
         }
 
@@ -42,7 +42,7 @@ namespace Neo.IO.Caching
                 item
             };
             sets.AddFirst(newSet);
-            if (sets.Count > bucketCount) sets.RemoveLast();
+            if (sets.Count > maxBucketCount) sets.RemoveLast();
             return true;
         }
 
