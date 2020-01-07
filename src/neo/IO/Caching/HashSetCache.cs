@@ -24,7 +24,7 @@ namespace Neo.IO.Caching
         /// <summary>
         /// Entry count
         /// </summary>
-        public int Count { get; }
+        public int Count { get; private set; }
 
         public HashSetCache(int bucketCapacity, int maxBucketCount = 10)
         {
