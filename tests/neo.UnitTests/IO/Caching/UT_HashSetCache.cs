@@ -52,9 +52,6 @@ namespace Neo.UnitTests.IO.Caching
 
             Action action2 = () => new HashSetCache<UInt256>(1, -1);
             action2.Should().Throw<ArgumentOutOfRangeException>();
-
-            Action action3 = () => new HashSetCache<UInt256>(1, 21);
-            action3.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]
