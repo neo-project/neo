@@ -122,6 +122,13 @@ namespace Neo.Network.P2P
             return null;
         }
 
+        /// <summary>
+        /// Check duplicated duplicated Nonce. Usually it occurs when a new remote connection is established, which checks its counterpart's Nonce value. <br/>
+        /// If Nonce is the same we check if the Remote can be added to the known LocalAddresses.<br/>
+        /// If it is equal to the Nonce of other RemoteNode, we just return true, else we'll return false and update the Listener address of the connected remote node.
+        /// </summary>
+        /// <param name="remoteActor">Remote node actor</param>
+        /// <param name="remoteNode">Remote node</param>
         public bool CheckDuplicateNonce(IActorRef remoteActor, RemoteNode remoteNode)
         {
             var version = remoteNode.Version;
@@ -189,6 +196,11 @@ namespace Neo.Network.P2P
             }
         }
 
+        /// <summary>
+        /// Get a maximum number of count random peer currently connected with the node.
+        /// </summary>
+        /// <param name="count"></param>
+        /// <returns></returns>
         public NetworkAddressWithTime[] GetRandomConnectedPeers(int count)
         {
             Random rand = new Random();
@@ -244,6 +256,12 @@ namespace Neo.Network.P2P
             Connections.Tell(inventory);
         }
 
+        /// <summary>
+        /// TCP connection establishment pre-check includes MaxConnections, MaxConnectionsPerAddress. If the check fails, it'll return false and error messages.
+        /// </summary>
+        /// <param name="remote"></param>
+        /// <param name="local"></param>
+        /// <param name="errorMsg"></param>
         protected override bool PreTcpConnectedCheck(IPEndPoint remote, IPEndPoint local, out Tcp.Message errorMsg)
         {
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
@@ -264,6 +282,13 @@ namespace Neo.Network.P2P
             return true;
         }
 
+        /// <summary>
+        /// Websocket connection establishment pre-check includes MaxConnectionsPerAddress. If the check fails, it'll return false and error messages.
+        /// </summary>
+        /// <param name="remote"></param>
+        /// <param name="local"></param>
+        /// <param name="errorMsg"></param>
+        /// <returns></returns>
         protected override bool PreWsConnectedCheck(IPEndPoint remote, IPEndPoint local, out ArraySegment<byte> errorMsg)
         {
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
@@ -277,6 +302,10 @@ namespace Neo.Network.P2P
             return true;
         }
 
+        /// <summary>
+        /// Create disconnect message with reason
+        /// </summary>
+        /// <param name="reason">Disconnect reason</param>
         private Message CreateDisconnectMessage(DisconnectReason reason)
         {
             byte[] data;

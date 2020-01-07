@@ -277,6 +277,11 @@ namespace Neo.Network.P2P
             return msg;
         }
 
+        /// <summary>
+        /// Send a disconnect message and empty the message queue, waiting for the ack message to arrive and close the connection
+        /// </summary>
+        /// <param name="reason">Disconnet reason</param>
+        /// <param name="data">Additional data</param>
         private void DisconnectWithReason(DisconnectReason reason, byte[] data = null)
         {
             message_queue_high.Clear();

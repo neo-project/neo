@@ -371,6 +371,10 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(payload);
         }
 
+        /// <summary>
+        /// Processe received disconnect messages and close the connection
+        /// </summary>
+        /// <param name="payload">Disconnect message</param>
         private void OnDisconnectMessageReceived(DisconnectPayload payload)
         {
             switch (payload.Reason)
