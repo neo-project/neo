@@ -18,7 +18,7 @@ namespace Neo.IO.Caching
         /// Maximum number of buckets for the LinkedList, meaning its maximum cardinality.
         /// </summary>
         private readonly int bucketCount;
-        
+
         public int Count
         {
             get
