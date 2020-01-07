@@ -8,7 +8,7 @@ namespace Neo.IO.Caching
     {
         private readonly int bucketCapacity;
         private readonly int bucketCount;
-        private readonly List<HashSet<T>> sets = new List<HashSet<T>>();
+        private readonly LinkedList<HashSet<T>> sets = new LinkedList<HashSet<T>>();
 
         public int Count
         {
@@ -30,19 +30,19 @@ namespace Neo.IO.Caching
 
             this.bucketCapacity = bucketCapacity;
             this.bucketCount = bucketCount;
-            sets.Add(new HashSet<T>());
+            sets.AddFirst(new HashSet<T>());
         }
 
         public bool Add(T item)
         {
             if (Contains(item)) return false;
-            if (sets[0].Count < bucketCapacity) return sets[0].Add(item);
+            if (sets.First.Value.Count < bucketCapacity) return sets.First.Value.Add(item);
             var newSet = new HashSet<T>
             {
                 item
             };
-            sets.Insert(0, newSet);
-            if (sets.Count > bucketCount) sets.RemoveAt(bucketCount);
+            sets.AddFirst(newSet);
+            if (sets.Count > bucketCount) sets.RemoveLast();
             return true;
         }
 
