@@ -56,7 +56,7 @@ namespace Neo.SmartContract
                 if (manifest.Length > ContractManifest.MaxLength) return false;
 
                 var oldContract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
-                if (oldContract is null || oldContract.HasUpgraded) return false;
+                if (oldContract is null || oldContract.WasUpgraded) return false;
                 ContractState newcontract = null;
                 if (script.Length > 0)
                 {
@@ -77,7 +77,7 @@ namespace Neo.SmartContract
                     {
                         newcontract.RedirectionHash = oldContract.ScriptHash;
                         oldContract = engine.Snapshot.Contracts.GetAndChange(oldContract.ScriptHash);
-                        oldContract.HasUpgraded = true;
+                        oldContract.WasUpgraded = true;
                     }
                     newcontract.Manifest.Abi.Hash = hash_new;
                     engine.Snapshot.Contracts.Add(hash_new, newcontract);
@@ -147,7 +147,7 @@ namespace Neo.SmartContract
             private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, StackItem method, StackItem args, CallFlags flags)
             {
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
-                if (contract is null || contract.HasUpgraded) return false;
+                if (contract is null || contract.WasUpgraded) return false;
 
                 ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
