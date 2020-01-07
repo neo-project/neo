@@ -25,7 +25,7 @@ namespace Neo.IO.Caching
         /// Entry count
         /// </summary>
         public int Count { get; }
-        
+
         public HashSetCache(int bucketCapacity, int maxBucketCount = 10)
         {
             if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCapacity)} should be greater than 0");
