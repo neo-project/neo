@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    public class HashSetCache<T> : IEnumerable<T> where T : IEquatable<T>
+    public class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
         private readonly int bucketCapacity;
         private readonly int bucketCount;
