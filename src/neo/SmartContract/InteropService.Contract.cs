@@ -1,10 +1,13 @@
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using static Neo.Helper;
 
 namespace Neo.SmartContract
 {
@@ -25,6 +28,11 @@ namespace Neo.SmartContract
                 return Storage.GasPerByte * size;
             }
 
+            internal static Guid GetDeterministicGuid(Transaction tx, uint nonce)
+            {
+                return new Guid(Concat(tx.Hash.ToArray(), BitConverter.GetBytes(nonce)).Sha256().AsSpan(0, 16));
+            }
+
             private static bool Contract_Create(ApplicationEngine engine)
             {
                 byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
@@ -38,7 +46,7 @@ namespace Neo.SmartContract
                 if (contract != null) return false;
                 contract = new ContractState
                 {
-                    Guid = Guid.NewGuid(),
+                    Guid = GetDeterministicGuid((Transaction)engine.ScriptContainer, engine.SyscallCounter),
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };

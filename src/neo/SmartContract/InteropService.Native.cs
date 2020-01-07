@@ -1,6 +1,5 @@
 using Neo.Ledger;
 using Neo.SmartContract.Native;
-using System;
 
 namespace Neo.SmartContract
 {
@@ -23,7 +22,7 @@ namespace Neo.SmartContract
                 {
                     engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
                     {
-                        Guid = Guid.NewGuid(),
+                        Guid = contract.Guid,
                         Script = contract.Script,
                         Manifest = contract.Manifest
                     });
