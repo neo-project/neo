@@ -85,9 +85,17 @@ namespace Neo.Network.P2P
         /// Broadcast a message to all connected nodes, namely <see cref="Connections"/>.
         /// </summary>
         /// <param name="message">The message to be broadcasted.</param>
-        private void BroadcastMessage(Message message)
+        private void BroadcastMessage(Message message) => SendToRemoteNodes(message);
+
+        /// <summary>
+        /// Send message to all the RemoteNodes connected to other nodes, faster than ActorSelection.
+        /// </summary>
+        private void SendToRemoteNodes(object message)
         {
-            Connections.Tell(message);
+            foreach (var connection in RemoteNodes.Keys)
+            {
+                connection.Tell(message);
+            }
         }
 
         private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
@@ -189,7 +197,7 @@ namespace Neo.Network.P2P
             else
             {
                 // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
-                // It will try to add those, sequentially, to the list of currently uncconected ones.
+                // It will try to add those, sequentially, to the list of currently unconnected ones.
 
                 Random rand = new Random();
                 AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
@@ -248,13 +256,22 @@ namespace Neo.Network.P2P
 
         private void OnRelayDirectly(IInventory inventory)
         {
-            Connections.Tell(new RemoteNode.Relay { Inventory = inventory });
+            var message = new RemoteNode.Relay { Inventory = inventory };
+            // When relaying a block, if the block's index is greater than 'LastBlockIndex' of the RemoteNode, relay the block;
+            // otherwise, don't relay.
+            if (inventory is Block block)
+            {
+                foreach (KeyValuePair<IActorRef, RemoteNode> kvp in RemoteNodes)
+                {
+                    if (block.Index > kvp.Value.LastBlockIndex)
+                        kvp.Key.Tell(message);
+                }
+            }
+            else
+                SendToRemoteNodes(message);
         }
 
-        private void OnSendDirectly(IInventory inventory)
-        {
-            Connections.Tell(inventory);
-        }
+        private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
         /// <summary>
         /// TCP connection establishment pre-check includes MaxConnections, MaxConnectionsPerAddress. If the check fails, it'll return false and error messages.
