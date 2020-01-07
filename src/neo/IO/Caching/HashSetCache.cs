@@ -7,6 +7,11 @@ namespace Neo.IO.Caching
     public class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
         /// <summary>
+        /// Cached count
+        /// </summary>      
+        private int _count = -1;
+    
+        /// <summary>
         /// Sets where the Hashes are stored
         /// </summary>      
         private readonly LinkedList<HashSet<T>> sets = new LinkedList<HashSet<T>>();
@@ -25,12 +30,13 @@ namespace Neo.IO.Caching
         {
             get
             {
-                int count = 0;
+                if (_count != -1) return _count;
+                _count = 0;
                 foreach (var set in sets)
                 {
-                    count += set.Count;
+                    _count += set.Count;
                 }
-                return count;
+                return _count;
             }
         }
 
@@ -47,6 +53,7 @@ namespace Neo.IO.Caching
         public bool Add(T item)
         {
             if (Contains(item)) return false;
+            _count = -1;
             if (sets.First.Value.Count < bucketCapacity) return sets.First.Value.Add(item);
             var newSet = new HashSet<T>
             {
@@ -72,7 +79,11 @@ namespace Neo.IO.Caching
             {
                 foreach (var set in sets)
                 {
-                    if (set.Remove(item)) break;
+                    if (set.Remove(item))
+                    {
+                        _count = -1;
+                        break;
+                    }
                 }
             }
         }
