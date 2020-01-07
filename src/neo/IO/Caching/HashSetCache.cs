@@ -9,7 +9,7 @@ namespace Neo.IO.Caching
         /// <summary>
         /// Cached count
         /// </summary>      
-        private int _count = -1;
+        private int _count = 0;
     
         /// <summary>
         /// Sets where the Hashes are stored
@@ -26,20 +26,8 @@ namespace Neo.IO.Caching
         /// </summary>
         private readonly int maxBucketCount;
 
-        public int Count
-        {
-            get
-            {
-                if (_count != -1) return _count;
-                _count = 0;
-                foreach (var set in sets)
-                {
-                    _count += set.Count;
-                }
-                return _count;
-            }
-        }
-
+        public int Count => _count;
+        
         public HashSetCache(int bucketCapacity, int maxBucketCount = 10)
         {
             if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCapacity)} should be greater than 0");
@@ -53,7 +41,7 @@ namespace Neo.IO.Caching
         public bool Add(T item)
         {
             if (Contains(item)) return false;
-            _count = -1;
+            _count++;
             if (sets.First.Value.Count < bucketCapacity) return sets.First.Value.Add(item);
             var newSet = new HashSet<T>
             {
@@ -81,7 +69,7 @@ namespace Neo.IO.Caching
                 {
                     if (set.Remove(item))
                     {
-                        _count = -1;
+                        _count--;
                         break;
                     }
                 }
