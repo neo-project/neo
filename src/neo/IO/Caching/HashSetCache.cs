@@ -10,10 +10,12 @@ namespace Neo.IO.Caching
         /// Sets where the Hashes are stored
         /// </summary>      
         private readonly LinkedList<HashSet<T>> sets = new LinkedList<HashSet<T>>();
+
         /// <summary>
         /// Maximum capacity of each bucket inside each HashSet of <see cref="sets"/>.
         /// </summary>        
         private readonly int bucketCapacity;
+
         /// <summary>
         /// Maximum number of buckets for the LinkedList, meaning its maximum cardinality.
         /// </summary>
