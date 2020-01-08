@@ -30,7 +30,7 @@ namespace Neo.Network.P2P
 
         private readonly int maxTasksPerSession = 3;
         private int totalTasksCount = 0;
-        private uint hightestBlockIndex = 0;
+        private uint highestBlockIndex = 0;
         private uint lastTaskIndex = 0;
         private uint persistIndex = 0;
 
@@ -92,7 +92,7 @@ namespace Neo.Network.P2P
             persistIndex = persistedIndex.PersistedIndex;
             if (persistIndex > lastTaskIndex)
                 lastTaskIndex = persistIndex;
-            if (persistIndex % BlocksPerTask == 0 || persistIndex == hightestBlockIndex)
+            if (persistIndex % BlocksPerTask == 0 || persistIndex == highestBlockIndex)
             {
                 foreach (SyncSession session in sessions.Values.Where(p => p.HasTask))
                 {
@@ -194,16 +194,16 @@ namespace Neo.Network.P2P
         private void RequestSync()
         {
             if (totalTasksCount >= MaxTasksCount || sessions.Count() == 0) return;
-            hightestBlockIndex = sessions.Max(p => p.Value.LastBlockIndex);
+            highestBlockIndex = sessions.Max(p => p.Value.LastBlockIndex);
             if (lastTaskIndex == 0)
                 lastTaskIndex = Blockchain.Singleton.Height;
             Random rand = new Random();
             while (totalTasksCount <= MaxTasksCount)
             {
                 if (!StartUncompletedTasks()) break;
-                if (lastTaskIndex + 2 > hightestBlockIndex) break;
+                if (lastTaskIndex + 2 > highestBlockIndex) break;
                 uint startIndex = lastTaskIndex + 1;
-                uint endIndex = Math.Min((startIndex / BlocksPerTask + 1) * BlocksPerTask, hightestBlockIndex);
+                uint endIndex = Math.Min((startIndex / BlocksPerTask + 1) * BlocksPerTask, highestBlockIndex);
                 int count = (int)(endIndex - startIndex + 1);
                 SyncSession session = sessions.Values.Where(p => p.Tasks.Count < maxTasksPerSession && p.LastBlockIndex >= endIndex).OrderBy(p => p.Tasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
                 if (session == null) break;
