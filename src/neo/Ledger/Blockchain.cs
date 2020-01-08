@@ -306,7 +306,7 @@ namespace Neo.Ledger
                     system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { InvalidIndex = block.Index });
                     return RelayResultReason.Invalid;
                 }
-                block_unverified_candidates.Remove(block.Index);
+                unverified_blocks_candidates.Remove(block.Index);
                 Persist(block);
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 system.SyncManager.Tell(new SyncManager.PersistedBlockIndex { PersistedIndex = block.Index });
