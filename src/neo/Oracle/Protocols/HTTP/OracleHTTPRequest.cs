@@ -1,10 +1,11 @@
 using Neo.IO;
+using System;
 using System.IO;
 using System.Text;
 
-namespace Neo.Oracle.Protocols.HTTPS
+namespace Neo.Oracle.Protocols.HTTP
 {
-    public class OracleHTTPSRequest : OracleRequest
+    public class OracleHTTPRequest : OracleRequest
     {
         public enum HTTPMethod : byte
         {
@@ -19,7 +20,7 @@ namespace Neo.Oracle.Protocols.HTTPS
         /// <summary>
         /// URL
         /// </summary>
-        public string URL { get; set; }
+        public Uri URL { get; set; }
 
         /// <summary>
         /// Filter
@@ -34,7 +35,7 @@ namespace Neo.Oracle.Protocols.HTTPS
         /// <summary>
         /// Constructor
         /// </summary>
-        public OracleHTTPSRequest() : base(RequestType.HTTPS) { }
+        public OracleHTTPRequest() : base(RequestType.HTTPS) { }
 
         /// <summary>
         /// Get hash data
@@ -47,7 +48,7 @@ namespace Neo.Oracle.Protocols.HTTPS
             {
                 writer.Write((byte)Type);
                 writer.Write((byte)Method);
-                writer.WriteVarString(URL);
+                writer.WriteVarString(URL.ToString());
                 writer.WriteVarString(Filter);
                 if (Body != null) writer.WriteVarBytes(Body);
                 writer.Flush();

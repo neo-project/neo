@@ -3,7 +3,6 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
-using Neo.Oracle.Protocols.HTTPS;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -96,7 +95,7 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Oracle_HTTPS11_Get()
+        public void System_Oracle_Get()
         {
             // Good
 
@@ -104,7 +103,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitPush("MyFilter");
                 script.EmitPush("https://google.es");
-                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_HTTPS11_Get);
+                script.EmitSysCall(InteropService.Oracle.System_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
                 {
@@ -129,7 +128,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitPush("WrongFilter");
                 script.EmitPush("https://google.es");
-                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_HTTPS11_Get);
+                script.EmitSysCall(InteropService.Oracle.System_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
                 {
@@ -154,7 +153,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitPush("MyFilter");
                 script.EmitPush("http://google.es");
-                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_HTTPS11_Get);
+                script.EmitSysCall(InteropService.Oracle.System_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
                 {
@@ -176,14 +175,14 @@ namespace Neo.UnitTests.SmartContract
 
         private OracleResult Oracle(OracleRequest arg)
         {
-            if (arg is OracleHTTPSRequest https)
+            if (arg is Neo.Oracle.Protocols.HTTP.OracleHTTPRequest https)
             {
                 if (https.Filter != "MyFilter")
                 {
                     return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError);
                 }
 
-                if (https.URL == "https://google.es" && https.Method == OracleHTTPSRequest.HTTPMethod.GET)
+                if (https.URL.ToString() == "https://google.es/" && https.Method == Neo.Oracle.Protocols.HTTP.OracleHTTPRequest.HTTPMethod.GET)
                 {
                     return OracleResult.CreateResult(UInt256.Zero, UInt160.Zero, "MyResponse");
                 }
