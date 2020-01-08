@@ -47,7 +47,11 @@ namespace Neo.IO.Caching
                 item
             };
             sets.AddFirst(newSet);
-            if (sets.Count > maxBucketCount) sets.RemoveLast();
+            if (sets.Count > maxBucketCount)
+            {
+                Count -= sets.Last.Value.Count;
+                sets.RemoveLast();
+            }
             return true;
         }
 
