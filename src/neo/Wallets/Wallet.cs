@@ -339,7 +339,7 @@ namespace Neo.Wallets
                 {
                     byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
                     if (witness_script is null) continue;
-                    tx.NetworkFee += CalculateNetWorkFee(witness_script, ref size);
+                    tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
                 }
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
@@ -347,7 +347,7 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public static long CalculateNetWorkFee(byte[] witness_script, ref int size)
+        public static long CalculateNetworkFee(byte[] witness_script, ref int size)
         {
             long networkFee = 0;
 
