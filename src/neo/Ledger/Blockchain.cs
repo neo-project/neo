@@ -248,8 +248,10 @@ namespace Neo.Ledger
 
         private void AddUnverifiedBlockToCache(Block block)
         {
+            // Checks if any block proposal for height `block.Index` exists
             if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
             {
+                // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
                 blocks = new LinkedList<Block>();
                 block_cache_unverified.Add(block.Index, blocks);
                 return;
