@@ -249,11 +249,11 @@ namespace Neo.Ledger
         private void AddUnverifiedBlockToCache(Block block)
         {
             // Check if any block proposal for height `block.Index` exists
-            if (!block_unverified_candidates.TryGetValue(block.Index, out LinkedList<Block> blocks))
+            if (!unverified_blocks_candidates.TryGetValue(block.Index, out LinkedList<Block> blocks))
             {
                 // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
                 blocks = new LinkedList<Block>();
-                block_unverified_candidates.Add(block.Index, blocks);
+                unverified_blocks_candidates.Add(block.Index, blocks);
                 return;
             }
             // Check if any block with the hash being added already exists on possible candidates to be processed
