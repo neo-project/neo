@@ -66,6 +66,7 @@ namespace Neo.IO.Caching
 
         public void ExceptWith(IEnumerable<T> items)
         {
+            HashSet<HashSet<T>> removeSet = null;
             foreach (var item in items)
             {
                 foreach (var set in sets)
@@ -73,10 +74,19 @@ namespace Neo.IO.Caching
                     if (set.Remove(item))
                     {
                         Count--;
-                        if (set.Count == 0) sets.Remove(set);
+                        if (set.Count == 0)
+                        {
+                            removeSet ??= new HashSet<HashSet<T>>();
+                            removeSet.Add(set);
+                        }
                         break;
                     }
                 }
+            }
+            if (removeSet == null) return;
+            foreach (var set in removeSet)
+            {
+                sets.Remove(set);
             }
         }
 
