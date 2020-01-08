@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using System.Security.Cryptography;
 
 namespace Neo.Cryptography.ECC
 {
@@ -113,32 +112,29 @@ namespace Neo.Cryptography.ECC
             BigInteger Q = this.Value;
             BigInteger fourQ = (Q << 2).Mod(curve.Q);
             BigInteger U, V;
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            do
             {
+                Random rand = new Random();
+                BigInteger P;
                 do
                 {
-                    BigInteger P;
-                    do
-                    {
-                        P = rng.NextBigInteger(curve.Q.GetBitLength());
-                    }
-                    while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
-                    BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);
-                    U = result[0];
-                    V = result[1];
-                    if ((V * V).Mod(curve.Q) == fourQ)
-                    {
-                        if (V.TestBit(0))
-                        {
-                            V += curve.Q;
-                        }
-                        V >>= 1;
-                        Debug.Assert((V * V).Mod(curve.Q) == Value);
-                        return new ECFieldElement(V, curve);
-                    }
+                    P = rand.NextBigInteger(curve.Q.GetBitLength());
                 }
-                while (U.Equals(BigInteger.One) || U.Equals(qMinusOne));
+                while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
+                BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);
+                U = result[0];
+                V = result[1];
+                if ((V * V).Mod(curve.Q) == fourQ)
+                {
+                    if (V.TestBit(0))
+                    {
+                        V += curve.Q;
+                    }
+                    V >>= 1;
+                    return new ECFieldElement(V, curve);
+                }
             }
+            while (U.Equals(BigInteger.One) || U.Equals(qMinusOne));
             return null;
         }
 
