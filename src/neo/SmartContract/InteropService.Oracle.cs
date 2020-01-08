@@ -6,9 +6,9 @@ namespace Neo.SmartContract
     {
         public static class Oracle
         {
-            public static readonly uint Neo_Oracle_HTTPS11_Get = Register("Oracle.HTTPS11.Get", Oracle_HTTPS11_Get, 0, TriggerType.Application, CallFlags.None);
+            public static readonly uint Neo_Oracle_HTTPS11_Get = Register("Oracle.HTTPS.Get", Oracle_HTTPS_Get, 0, TriggerType.Application, CallFlags.None);
 
-            private static bool Oracle_HTTPS11_Get(ApplicationEngine engine)
+            private static bool Oracle_HTTPS_Get(ApplicationEngine engine)
             {
                 if (engine.OracleCache == null) return false;
                 if (!engine.TryPop(out string url)) return false;
@@ -19,8 +19,7 @@ namespace Neo.SmartContract
                     Method = OracleHTTPSRequest.HTTPMethod.GET,
                     URL = url,
                     Filter = filter,
-                    Body = null,
-                    Version = OracleHTTPSRequest.HTTPVersion.v1_1
+                    Body = null
                 };
 
                 if (engine.OracleCache.TryGet(request, out var response))

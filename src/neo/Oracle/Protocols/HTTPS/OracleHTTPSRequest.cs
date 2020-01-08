@@ -11,16 +11,6 @@ namespace Neo.Oracle.Protocols.HTTPS
             GET = 0x00
         }
 
-        public enum HTTPVersion : byte
-        {
-            v1_1 = 0x11
-        }
-
-        /// <summary>
-        /// Version
-        /// </summary>
-        public HTTPVersion Version { get; set; } = HTTPVersion.v1_1;
-
         /// <summary>
         /// HTTP Methods
         /// </summary>
@@ -56,7 +46,6 @@ namespace Neo.Oracle.Protocols.HTTPS
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
                 writer.Write((byte)Type);
-                writer.Write((byte)Version);
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL);
                 writer.WriteVarString(Filter);
