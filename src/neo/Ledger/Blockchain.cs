@@ -252,6 +252,7 @@ namespace Neo.Ledger
             {
                 blocks = new LinkedList<Block>();
                 block_cache_unverified.Add(block.Index, blocks);
+                return;
             }
             foreach (var unverifiedBlock in blocks)
             {
