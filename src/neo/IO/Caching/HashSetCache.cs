@@ -73,6 +73,7 @@ namespace Neo.IO.Caching
                     if (set.Remove(item))
                     {
                         Count--;
+                        if (set.Count == 0) sets.Remove(set);
                         break;
                     }
                 }

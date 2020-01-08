@@ -47,8 +47,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.pendingKnownHashes = new PendingKnownHashesCollection();
-            this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 10);
-            this.sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 10);
+            this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+            this.sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
         }
 
         protected override void OnReceive(object message)
