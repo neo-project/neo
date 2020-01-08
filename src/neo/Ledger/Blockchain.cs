@@ -61,7 +61,7 @@ namespace Neo.Ledger
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
-        private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
+        private readonly Dictionary<uint, LinkedList<Block>> unverified_blocks_candidates = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
@@ -248,14 +248,15 @@ namespace Neo.Ledger
 
         private void AddUnverifiedBlockToCache(Block block)
         {
-            // Checks if any block proposal for height `block.Index` exists
-            if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
+            // Check if any block proposal for height `block.Index` exists
+            if (!block_unverified_candidates.TryGetValue(block.Index, out LinkedList<Block> blocks))
             {
                 // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
                 blocks = new LinkedList<Block>();
-                block_cache_unverified.Add(block.Index, blocks);
+                block_unverified_candidates.Add(block.Index, blocks);
                 return;
             }
+            // Check if any block with the hash being added already exists on possible candidates to be processed
             foreach (var unverifiedBlock in blocks)
             {
                 if (block.Hash == unverifiedBlock.Hash)
@@ -305,16 +306,16 @@ namespace Neo.Ledger
                     system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { InvalidIndex = block.Index });
                     return RelayResultReason.Invalid;
                 }
-                block_cache_unverified.Remove(block.Index);
+                block_unverified_candidates.Remove(block.Index);
                 Persist(block);
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 system.SyncManager.Tell(new SyncManager.PersistedBlockIndex { PersistedIndex = block.Index });
                 SaveHeaderHashList();
-                if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
+                if (unverified_blocks_candidates.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    block_cache_unverified.Remove(Height + 1);
+                    unverified_blocks_candidates.Remove(Height + 1);
                 }
             }
             return RelayResultReason.Succeed;
