@@ -52,8 +52,6 @@ namespace Neo.Network.P2P
         FilterClear = 0x32,
         [ReflectionCache(typeof(MerkleBlockPayload))]
         MerkleBlock = 0x38,
-        [ReflectionCache(typeof(MerkleBlockPayload))]
-        MerkleBlockData = 0x39,
 
         //others
         Alert = 0x40,

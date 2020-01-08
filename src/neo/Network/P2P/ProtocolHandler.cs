@@ -145,7 +145,6 @@ namespace Neo.Network.P2P
                     throw new ProtocolViolationException();
                 case MessageCommand.Alert:
                 case MessageCommand.MerkleBlock:
-                case MessageCommand.MerkleBlockData:
                 case MessageCommand.NotFound:
                 case MessageCommand.Reject:
                 default: break;
@@ -244,7 +243,7 @@ namespace Neo.Network.P2P
                 else
                 {
                     BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlockData, MerkleBlockPayload.Create(block, flags)));
+                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                 }
             }
         }
