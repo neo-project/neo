@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 script = sb.ToArray();
             }
             var Hash = script.ToScriptHash();
-            key.ScriptHash = Hash;
+            key.Id = 0x10000005;
 
             snapshot.Storages.Add(key, item);
             TestNep5Token test = new TestNep5Token();
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 script = sb.ToArray();
             }
             var Hash = script.ToScriptHash();
-            key.ScriptHash = Hash;
+            key.Id = test.Id;
 
             snapshot.Storages.Add(key, item);
 
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = null,
+                Id = 0,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
@@ -96,6 +96,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override byte Decimals => 8;
 
         public override string ServiceName => "test";
+
+        public override uint Id => 0x10000005;
 
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {

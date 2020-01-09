@@ -4,7 +4,7 @@ namespace Neo.SmartContract
 {
     internal class StorageContext
     {
-        public Guid Guid;
+        public uint Id;
         public bool IsReadOnly;
     }
 }

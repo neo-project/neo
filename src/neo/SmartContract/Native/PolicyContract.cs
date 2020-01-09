@@ -23,6 +23,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
         private const byte Prefix_MaxBlockSize = 16;
+        public override uint Id => 0x10000000;
 
         public PolicyContract()
         {

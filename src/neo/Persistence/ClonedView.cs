@@ -13,6 +13,8 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public override MetaDataCache<GlobalCounterState> GlobalCounter { get; }
+
 
         public ClonedView(StoreView view)
         {
@@ -24,6 +26,7 @@ namespace Neo.Persistence
             this.HeaderHashList = view.HeaderHashList.CreateSnapshot();
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
+            this.GlobalCounter = view.GlobalCounter.CreateSnapshot();
         }
     }
 }

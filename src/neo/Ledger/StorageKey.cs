@@ -7,12 +7,12 @@ namespace Neo.Ledger
 {
     public class StorageKey : IEquatable<StorageKey>, ISerializable
     {
-        public Guid Guid;
+        public uint Id;
         public byte[] Key;
 
-        int ISerializable.Size => 16 + (Key.Length / 16 + 1) * 17;
+        int ISerializable.Size => 4 + (Key.Length / 16 + 1) * 17;
 
-        internal static byte[] CreateSearchPrefix(Guid guid, byte[] prefix)
+        internal static byte[] CreateSearchPrefix(uint id, byte[] prefix)
         {
             using (MemoryStream ms = new MemoryStream())
             {
@@ -27,13 +27,13 @@ namespace Neo.Ledger
                 }
                 if (remain > 0)
                     ms.Write(prefix, index, remain);
-                return Helper.Concat(guid.ToByteArray(), ms.ToArray());
+                return Helper.Concat(BitConverter.GetBytes(id), ms.ToArray());
             }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Guid = new Guid(reader.ReadBytes(16));
+            Id = reader.ReadUInt32();
             Key = reader.ReadBytesWithGrouping();
         }
 
@@ -43,7 +43,7 @@ namespace Neo.Ledger
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return Guid.Equals(other.Guid) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
+            return Id.Equals(other.Id) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
         }
 
         public override bool Equals(object obj)
@@ -54,12 +54,12 @@ namespace Neo.Ledger
 
         public override int GetHashCode()
         {
-            return Guid.GetHashCode() + (int)Key.Murmur32(0);
+            return Id.GetHashCode() + (int)Key.Murmur32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Guid.ToByteArray());
+            writer.Write(Id);
             writer.WriteBytesWithGrouping(Key);
         }
     }

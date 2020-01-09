@@ -28,11 +28,6 @@ namespace Neo.SmartContract
                 return Storage.GasPerByte * size;
             }
 
-            internal static Guid GetDeterministicGuid(Transaction tx, uint nonce)
-            {
-                return new Guid(Concat(tx.Hash.ToArray(), BitConverter.GetBytes(nonce)).Sha256().AsSpan(0, 16));
-            }
-
             private static bool Contract_Create(ApplicationEngine engine)
             {
                 byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
@@ -46,7 +41,7 @@ namespace Neo.SmartContract
                 if (contract != null) return false;
                 contract = new ContractState
                 {
-                    Guid = GetDeterministicGuid((Transaction)engine.ScriptContainer, engine.SyscallCounter),
+                    Id = engine.Snapshot.CurrentContractID+1,
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };
@@ -55,6 +50,8 @@ namespace Neo.SmartContract
 
                 engine.Snapshot.Contracts.Add(hash, contract);
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
+                GlobalCounterState globalCounter=engine.Snapshot.GlobalCounter.GetAndChange();
+                globalCounter.Value = contract.Id;
                 return true;
             }
 
@@ -75,7 +72,7 @@ namespace Neo.SmartContract
                     if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
                     contract = new ContractState
                     {
-                        Guid = contract.Guid,
+                        Id = contract.Id,
                         Script = script,
                         Manifest = contract.Manifest
                     };

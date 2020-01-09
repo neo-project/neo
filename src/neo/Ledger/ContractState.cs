@@ -12,7 +12,7 @@ namespace Neo.Ledger
 {
     public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
-        public Guid Guid;
+        public uint Id;
         public byte[] Script;
         public ContractManifest Manifest;
 
@@ -32,13 +32,13 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => 16 + Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
+        int ISerializable.Size => 4 + Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
 
         ContractState ICloneable<ContractState>.Clone()
         {
             return new ContractState
             {
-                Guid = Guid,
+                Id = Id,
                 Script = Script,
                 Manifest = Manifest.Clone()
             };
@@ -46,21 +46,21 @@ namespace Neo.Ledger
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Guid = new Guid(reader.ReadBytes(16));
+            Id = reader.ReadUInt32();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
-            Guid = replica.Guid;
+            Id = replica.Id;
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Guid.ToByteArray());
+            writer.Write(Id);
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
         }
@@ -68,6 +68,7 @@ namespace Neo.Ledger
         public JObject ToJson()
         {
             JObject json = new JObject();
+            json["Id"] = Id.ToString();
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
