@@ -18,6 +18,8 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
+        public ECPoint() : this(null, null, ECCurve.Secp256r1) { }
+
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
             if ((x != null && y == null) || (x == null && y != null) || (x == null && y == null && curve == null))
