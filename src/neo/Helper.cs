@@ -83,7 +83,7 @@ namespace Neo
             }
         }
 
-        internal static void Remove<T>(this HashSet<T> set, FIFOSet<T> other)
+        internal static void Remove<T>(this HashSet<T> set, HashSetCache<T> other)
             where T : IEquatable<T>
         {
             if (set.Count > other.Count)
