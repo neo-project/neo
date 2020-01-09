@@ -18,13 +18,13 @@ namespace Neo.Persistence
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public abstract MetaDataCache<GlobalCounterState> GlobalCounter { get; }
+        public abstract MetaDataCache<GlobalVariableState> GlobalCounter { get; }
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
-        public uint CurrentContractID => GlobalCounter.Get().Value;
+        public uint CurrentContractID => GlobalCounter.Get().GlobalCounter;
 
         public StoreView Clone()
         {

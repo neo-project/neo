@@ -30,7 +30,6 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
-        internal uint SyscallCounter { get; private set; }
 
         public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
         {
@@ -81,7 +80,6 @@ namespace Neo.SmartContract
         {
             if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack)))
                 return false;
-            SyscallCounter++;
             return InteropService.Invoke(this, method);
         }
 
