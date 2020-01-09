@@ -28,6 +28,7 @@ namespace Neo.Cryptography
 
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
+            if (ibStart >= cbSize) throw new ArgumentException();
             length += cbSize;
             int remainder = cbSize & 3;
             int alignedLength = ibStart + (cbSize - remainder);

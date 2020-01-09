@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Security.Cryptography;
 
 namespace Neo.Cryptography.ECC
 {
@@ -10,6 +11,8 @@ namespace Neo.Cryptography.ECC
 
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
+            if(value == null || curve ==null)
+                throw new ArgumentException("The field element is null");
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
             this.Value = value;
@@ -19,6 +22,7 @@ namespace Neo.Cryptography.ECC
         public int CompareTo(ECFieldElement other)
         {
             if (ReferenceEquals(this, other)) return 0;
+            if(!curve.Equals(other.curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             return Value.CompareTo(other.Value);
         }
 
@@ -35,7 +39,7 @@ namespace Neo.Cryptography.ECC
 
         public bool Equals(ECFieldElement other)
         {
-            return Value.Equals(other.Value);
+            return Value.Equals(other.Value) && curve.Equals(other.curve);
         }
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
@@ -108,11 +112,11 @@ namespace Neo.Cryptography.ECC
             BigInteger U, V;
             do
             {
-                Random rand = new Random();
+                RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
                 BigInteger P;
                 do
                 {
-                    P = rand.NextBigInteger(curve.Q.GetBitLength());
+                    P = rngCsp.NextBigInteger(curve.Q.GetBitLength());
                 }
                 while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
                 BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);

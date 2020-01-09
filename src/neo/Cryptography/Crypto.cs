@@ -17,11 +17,13 @@ namespace Neo.Cryptography
 
         public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
         {
+            if (message == null || prikey == null || pubkey == null) throw new ArgumentNullException();
             using (var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = prikey,
                 Q = new ECPoint
+
                 {
                     X = pubkey[..32],
                     Y = pubkey[32..]

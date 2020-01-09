@@ -18,12 +18,10 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        public ECPoint() : this(null, null, ECCurve.Secp256r1) { }
-
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
-            if ((x != null && y == null) || (x == null && y != null))
-                throw new ArgumentException("Exactly one of the field elements is null");
+            if ((x != null && y == null) || (x == null && y != null) || (x == null && y == null && curve == null))
+                throw new ArgumentException("The field element is null");
             this.X = x;
             this.Y = y;
             this.Curve = curve;
@@ -32,6 +30,7 @@ namespace Neo.Cryptography.ECC
         public int CompareTo(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return 0;
+            if (!Curve.Equals(other.Curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             int result = X.CompareTo(other.X);
             if (result != 0) return result;
             return Y.CompareTo(other.Y);
