@@ -18,6 +18,7 @@ namespace Neo.Cryptography
         public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
         {
             if (message == null || prikey == null || pubkey == null) throw new ArgumentNullException();
+            if (prikey.Length != 32 || pubkey.Length != 64) throw new ArgumentException();
             using (var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
