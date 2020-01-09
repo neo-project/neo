@@ -8,63 +8,50 @@ using System.Linq;
 namespace Neo.UnitTests.IO.Caching
 {
     [TestClass]
-    public class UT_FIFOSet
+    public class UT_HashSetCache
     {
         [TestMethod]
-        public void FIFOSetTest()
+        public void TestHashSetCache()
         {
-            var a = UInt256.Zero;
-            var b = new UInt256();
-            var c = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01
-            });
+            var bucket = new HashSetCache<int>(10);
+            for (int i = 1; i <= 100; i++)
+            {
+                bucket.Add(i);
+            }
+            bucket.Count.Should().Be(100);
 
-            var set = new FIFOSet<UInt256>(3);
+            int sum = 0;
+            foreach (var ele in bucket)
+            {
+                sum += ele;
+            }
+            sum.Should().Be(5050);
 
-            Assert.IsTrue(set.Add(a));
-            Assert.IsFalse(set.Add(a));
-            Assert.IsFalse(set.Add(b));
-            Assert.IsTrue(set.Add(c));
+            bucket.Add(101);
+            bucket.Count.Should().Be(91);
 
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, c });
+            var items = new int[10];
+            var value = 11;
+            for (int i = 0; i < 10; i++)
+            {
+                items[i] = value;
+                value += 2;
+            }
+            bucket.ExceptWith(items);
+            bucket.Count.Should().Be(81);
 
-            var d = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-
-            // Testing Fifo max size
-            Assert.IsTrue(set.Add(d));
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, c, d });
-
-            var e = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x03
-            });
-
-            Assert.IsTrue(set.Add(e));
-            Assert.IsFalse(set.Add(e));
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, d, e });
+            bucket.Contains(13).Should().BeFalse();
+            bucket.Contains(50).Should().BeTrue();
         }
 
         [TestMethod]
         public void TestConstructor()
         {
-            Action action1 = () => new FIFOSet<UInt256>(-1);
+            Action action1 = () => new HashSetCache<UInt256>(-1);
             action1.Should().Throw<ArgumentOutOfRangeException>();
 
-            Action action2 = () => new FIFOSet<UInt256>(1, -1);
+            Action action2 = () => new HashSetCache<UInt256>(1, -1);
             action2.Should().Throw<ArgumentOutOfRangeException>();
-
-            Action action3 = () => new FIFOSet<UInt256>(1, 2);
-            action3.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]
@@ -82,7 +69,7 @@ namespace Neo.UnitTests.IO.Caching
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x02
             });
-            var set = new FIFOSet<UInt256>(1, 1)
+            var set = new HashSetCache<UInt256>(1, 1)
             {
                 a,
                 b
@@ -105,7 +92,7 @@ namespace Neo.UnitTests.IO.Caching
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x02
             });
-            var set = new FIFOSet<UInt256>(1, 1)
+            var set = new HashSetCache<UInt256>(1, 1)
             {
                 a,
                 b
@@ -136,7 +123,7 @@ namespace Neo.UnitTests.IO.Caching
                 0x01, 0x03
             });
 
-            var set = new FIFOSet<UInt256>(10)
+            var set = new HashSetCache<UInt256>(10)
             {
                 a,
                 b,
@@ -145,7 +132,7 @@ namespace Neo.UnitTests.IO.Caching
             set.ExceptWith(new UInt256[] { b, c });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a });
 
-            set = new FIFOSet<UInt256>(10)
+            set = new HashSetCache<UInt256>(10)
             {
                 a,
                 b,
@@ -154,7 +141,7 @@ namespace Neo.UnitTests.IO.Caching
             set.ExceptWith(new UInt256[] { a });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, c });
 
-            set = new FIFOSet<UInt256>(10)
+            set = new HashSetCache<UInt256>(10)
             {
                 a,
                 b,
