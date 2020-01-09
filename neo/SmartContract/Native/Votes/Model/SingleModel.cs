@@ -17,13 +17,13 @@ namespace Neo.SmartContract.Native.Votes.Model
             Dictionary<int, BigInteger> tempSet = new Dictionary<int, BigInteger>();
             foreach (CalculatedSingleVote unit in voteList)
             {
-                if (tempSet.ContainsKey(unit.vote))
+                if (tempSet.ContainsKey(unit.Vote))
                 {
-                    tempSet[unit.vote] += unit.balance;
+                    tempSet[unit.Vote] += unit.Balance;
                 }
                 else
                 {
-                    tempSet.Add(unit.vote, unit.balance);
+                    tempSet.Add(unit.Vote, unit.Balance);
                 }
             }
             int[] result = tempSet.OrderByDescending(p => p.Value).Select(p => p.Key).ToList().ToArray();

@@ -6,11 +6,16 @@ namespace Neo.SmartContract.Native.Votes.Interface
 {
     internal class MultiCandidate : ISerializable
     {
-        public MultiCandidate() => this.candidateList = new List<int>();
-        public MultiCandidate(List<int> lists) => this.candidateList = lists;
-        private List<int> candidateList = null;
-
+        private List<int> candidateList;
         public int Size => candidateList.ToArray().Length;
+
+        public MultiCandidate() => this.candidateList = new List<int>();
+        public MultiCandidate(List<int> lists) => this.candidateList = lists;        
+
+        public List<int> GetCandidate()
+        {
+            return candidateList;
+        }
 
         public void Serialize(BinaryWriter write)
         {
@@ -33,11 +38,6 @@ namespace Neo.SmartContract.Native.Votes.Interface
                     break;
                 }
             }
-        }
-
-        public List<int> GetCandidate()
-        {
-            return candidateList;
         }
     }
     internal class SingleCandidate : ISerializable
@@ -64,4 +64,5 @@ namespace Neo.SmartContract.Native.Votes.Interface
             return candidate;
         }
     }
+
 }

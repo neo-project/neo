@@ -8,28 +8,28 @@ namespace Neo.SmartContract.Native.Votes.Model
     {
         public int[,] CalculateVote(List<CalculatedMultiVote> voteList)
         {
-            if (voteList == null || voteList.Count == 0)
+            if (voteList is null || voteList.Count == 0)
             {
                 throw new FormatException();
             }
-            int[,] dArray = new int[voteList[0].vote.Count, voteList[0].vote.Count];
+            int[,] dArray = new int[voteList[0].Vote.Count, voteList[0].Vote.Count];
             for (int i = 0; i < dArray.GetLength(0); i++)
             {
                 for (int j = 0; j < dArray.GetLength(1); j++)
                 {
                     foreach (CalculatedMultiVote e in voteList)
                     {
-                        List<int> key = e.vote;
+                        List<int> key = e.Vote;
                         if (key[i] < key[j])
                         {
-                            dArray[i, j] += e.balance;
+                            dArray[i, j] += e.Balance;
                         }
                     }
                 }
             }
             Dictionary<String, int> vGraphic = ConvertDArrayToVGraphic(dArray);
             List<int> nodesList = new List<int>();
-            for (int i = 0; i < voteList[0].vote.Count; i++)
+            for (int i = 0; i < voteList[0].Vote.Count; i++)
             {
                 nodesList.Add(i);
             }
@@ -130,13 +130,13 @@ namespace Neo.SmartContract.Native.Votes.Model
 
     public class SchulzeVoteUnit
     {
-        public int balance;
-        public List<int> vote;
+        public int Balance;
+        public List<int> Vote;
 
         public SchulzeVoteUnit(int balance, List<int> vote)
         {
-            this.balance = balance;
-            this.vote = vote;
+            this.Balance = balance;
+            this.Vote = vote;
         }
     }
 }

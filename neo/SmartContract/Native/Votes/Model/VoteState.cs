@@ -10,40 +10,40 @@ namespace Neo.SmartContract.Native.Votes.Model
 {
     internal class VoteState : ISerializable
     {
-        private UInt160 Voter;
-        private ISerializable Records;
+        private UInt160 voter;
+        private ISerializable records;
 
-        public int Size => Records.Size + 20;//Records size + Uint160 size
+        public int Size => records.Size + UInt160.Length;//Records size + Uint160 size
 
         public VoteState() { }
         public VoteState(UInt160 voter, ISerializable candidate)
         {
-            Voter = voter;
-            Records = candidate;
+            this.voter = voter;
+            records = candidate;
         }
-        public UInt160 GetVoter() => this.Voter;
-        public ISerializable GetCandidate() => this.Records;
+        public UInt160 GetVoter() => this.voter;
+        public ISerializable GetCandidate() => this.records;
 
         public void Serialize(BinaryWriter write)
         {
-            write.Write(Voter);
-            Records.Serialize(write);
+            write.Write(voter);
+            records.Serialize(write);
         }
 
         public void Deserialize(BinaryReader reader)
         {
-            Voter = new UInt160(reader.ReadBytes(20));
+            voter = new UInt160(reader.ReadBytes(20));
             if (reader.BaseStream.Length - UInt160.Length <= 4)
             {
                 SingleCandidate candidate = new SingleCandidate();
                 candidate.Deserialize(reader);
-                Records = candidate;
+                records = candidate;
             }
             else
             {
                 MultiCandidate candidate = new MultiCandidate();
                 candidate.Deserialize(reader);
-                Records = candidate;
+                records = candidate;
             }
         }
     }

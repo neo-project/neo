@@ -22,10 +22,12 @@ namespace Neo.SmartContract.Native
     public sealed class VoteContract : NativeContract
     {
         public override string ServiceName => "Neo.Native.VoteContract";
+
         private const byte Prefix_CreateVote = 100;
         private const byte Prefix_Vote = 101;
         private const byte Prefix_AccessControl = 102;
         private const byte Prefix_Result = 103;
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem CreateMultiVote(ApplicationEngine engine, VMArray args)
         {
@@ -49,6 +51,7 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem CreateSingleVote(ApplicationEngine engine, VMArray args)
         {
@@ -73,10 +76,11 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem MultiVote(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] == null || args[1] == null || args[2] == null) return false;
+            if (args[0] is null || args[1] is null || args[2] is null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
             var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             UInt160 voter = new UInt160(args[1].GetByteArray());
@@ -93,15 +97,6 @@ namespace Neo.SmartContract.Native
             }
             StorageKey InfoKey = CreateStorageKey(Prefix_CreateVote, id);
             StorageItem info_state = engine.Snapshot.Storages.TryGet(InfoKey);
-            //UInt32 voteLength = 0;
-            //if (info_state is null) return false;
-            //using (MemoryStream memoryStream = new MemoryStream(info_state.Value, false))
-            //using (BinaryReader binaryReader = new BinaryReader(memoryStream))
-            //{
-            //    VoteCreateState createState = new VoteCreateState();
-            //    createState.Deserialize(binaryReader);
-            //    voteLength = createState.CandidateNumber;
-            //}
             MultiCandidate candidate = Neo.IO.Helper.AsSerializable<MultiCandidate>(args[2].GetByteArray());
             VoteState voteState = new VoteState(voter, candidate);
             if (AddVote(engine.Snapshot, voteState, id))
@@ -113,10 +108,11 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem SingleVote(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] == null || args[1] == null || args[2] == null) return false;
+            if (args[0] is null || args[1] is null || args[2] is null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
             var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             UInt160 voter = new UInt160(args[1].GetByteArray());
@@ -150,6 +146,7 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem GetVoteDetails(ApplicationEngine engine, VMArray args)
         {
@@ -159,10 +156,11 @@ namespace Neo.SmartContract.Native
             StorageItem create_state = engine.Snapshot.Storages.TryGet(create_key);
             return create_state.Value;
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
         private StackItem GetMultiStatistic(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] == null) return false;
+            if (args[0] is null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
             var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
 
@@ -200,10 +198,11 @@ namespace Neo.SmartContract.Native
             }
             return resultMatrix;
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem GetSingleStatistic(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] == null) return false;
+            if (args[0] is null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
             var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
 
@@ -240,10 +239,11 @@ namespace Neo.SmartContract.Native
             }
             return resultMatrix;
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem AccessControl(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] == null || args[1] == null || args[2] == null || args[1].GetByteArray().Length % 20 != 0) return false;
+            if (args[0] is null || args[1] is null || args[2] is null || args[1].GetByteArray().Length % 20 != 0) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
             var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
 
@@ -312,20 +312,20 @@ namespace Neo.SmartContract.Native
                 }
             }
         }
+
         [ContractMethod(0_01000000, ContractParameterType.ByteArray, SafeMethod = true)]
         private StackItem GetResult(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] == null) return false;
+            if (args[0] is null) return false;
             UInt256 TxHash = new UInt256(args[0].GetByteArray());
             var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
 
             StorageKey key = CreateStorageKey(Prefix_Result, id);
             StorageItem result = engine.Snapshot.Storages.TryGet(key);
-            if (result == null) return false;
+            if (result is null) return false;
 
             return result.Value;
         }
-
 
         private bool RegisterVote(Snapshot snapshot, VoteCreateState createState)
         {
@@ -346,6 +346,7 @@ namespace Neo.SmartContract.Native
                 return false;
             }
         }
+
         private bool AddAccess(Snapshot snapshot, StorageKey key, HashSet<UInt160> whiteList)
         {
             try
@@ -370,6 +371,7 @@ namespace Neo.SmartContract.Native
             }
 
         }
+
         private bool AddVote(Snapshot snapshot, VoteState voteState, byte[] id)
         {
             StorageKey key = CreateStorageKey(Prefix_Vote, GetVoteKey(snapshot, id));
@@ -379,6 +381,7 @@ namespace Neo.SmartContract.Native
             });
             return true;
         }
+
         private bool AddResult(Snapshot snapshot, byte[] Result, byte[] id)
         {
             StorageKey key = CreateStorageKey(Prefix_Result, id);
@@ -389,6 +392,7 @@ namespace Neo.SmartContract.Native
             });
             return true;
         }
+
         private byte[] GetVoteKey(Snapshot snapshot, byte[] id)
         {
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id);
@@ -400,6 +404,7 @@ namespace Neo.SmartContract.Native
                 return VoteCreateState.ConcatByte(id.ToArray(), memoryStream.ToArray());
             }
         }
+
         public int GetVoteCount(Snapshot snapshot, StorageKey index_key)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
@@ -407,7 +412,7 @@ namespace Neo.SmartContract.Native
         }
         static byte[] ConvertUserArrayToBytes(HashSet<UInt160> users)
         {
-            if (users == null) return new byte[0];
+            if (users is null) return new byte[0];
             using (MemoryStream memoryStream = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(memoryStream))
             {
@@ -420,7 +425,7 @@ namespace Neo.SmartContract.Native
         }
         static HashSet<UInt160> ConvertBytesToUserArray(byte[] data)
         {
-            if (data == null) return null;
+            if (data is null) return null;
             HashSet<UInt160> result = new HashSet<UInt160>();
             using (var br = new BinaryReader(new MemoryStream(data)))
             {

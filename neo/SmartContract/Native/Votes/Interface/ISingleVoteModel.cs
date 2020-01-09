@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,12 +10,12 @@ namespace Neo.SmartContract.Native.Votes.Interface
     }
     public class CalculatedSingleVote
     {
-        public int balance;
-        public int vote;
+        public int Balance;
+        public int Vote;
         public CalculatedSingleVote(int Balance, int Vote)
         {
-            balance = Balance;
-            vote = Vote;
+            this.Balance = Balance;
+            this.Vote = Vote;
         }
     }
 }

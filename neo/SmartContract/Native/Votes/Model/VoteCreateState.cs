@@ -8,8 +8,8 @@ namespace Neo.SmartContract.Native.Votes.Model
 {
     internal class VoteCreateState : ISerializable
     {
-        private UInt256 TransactionHash;
-        private UInt160 CallingScriptHash;
+        private UInt256 transactionHash;
+        private UInt160 callingScriptHash;
         public UInt160 Originator;
         public string Title;
         public string Description;
@@ -31,15 +31,15 @@ namespace Neo.SmartContract.Native.Votes.Model
 
         public VoteCreateState(UInt256 transactionHash, UInt160 callingScriptHash, UInt160 originator, string title, string description, UInt32 candidate, bool IsSeq)
         {
-            TransactionHash = transactionHash;
-            CallingScriptHash = callingScriptHash;
+            this.transactionHash = transactionHash;
+            this.callingScriptHash = callingScriptHash;
             Originator = originator;
             Title = title;
             Description = description;
             CandidateNumber = candidate;
             IsSequence = IsSeq;
         }
-        public byte[] GetId() => new Crypto().Hash160(ConcatByte(TransactionHash.ToArray(), CallingScriptHash.ToArray()));
+        public byte[] GetId() => new Crypto().Hash160(ConcatByte(transactionHash.ToArray(), callingScriptHash.ToArray()));
         public static byte[] ConcatByte(byte[] byteSource, byte[] newData)
         {
             List<byte> result = new List<byte>(byteSource);
@@ -49,8 +49,8 @@ namespace Neo.SmartContract.Native.Votes.Model
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(TransactionHash);
-            writer.Write(CallingScriptHash);
+            writer.Write(transactionHash);
+            writer.Write(callingScriptHash);
             writer.Write(Originator);
             writer.Write(Title);
             writer.Write(Description);
@@ -60,8 +60,8 @@ namespace Neo.SmartContract.Native.Votes.Model
 
         public void Deserialize(BinaryReader reader)
         {
-            TransactionHash = new UInt256(reader.ReadBytes(32));
-            CallingScriptHash = new UInt160(reader.ReadBytes(20));
+            transactionHash = new UInt256(reader.ReadBytes(32));
+            callingScriptHash = new UInt160(reader.ReadBytes(20));
             Originator = new UInt160(reader.ReadBytes(20));
             Title = reader.ReadString();
             Description = reader.ReadString();
