@@ -8,10 +8,7 @@ namespace Neo.SmartContract.Native.Votes.Model
     {
         public int[,] CalculateVote(List<CalculatedMultiVote> voteList)
         {
-            if (voteList is null || voteList.Count == 0)
-            {
-                throw new FormatException();
-            }
+            if (voteList is null || voteList.Count == 0) throw new FormatException();
             int[,] dArray = new int[voteList[0].Vote.Count, voteList[0].Vote.Count];
             for (int i = 0; i < dArray.GetLength(0); i++)
             {

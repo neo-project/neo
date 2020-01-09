@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using System.IO;
 using Neo.IO;
+using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native.Votes.Interface
 {
-    internal class MultiCandidate : ISerializable
+    internal class MultiCandidate : ISerializable, IInteroperable
     {
         private List<int> candidateList;
         public int Size => candidateList.ToArray().Length;
@@ -19,6 +21,7 @@ namespace Neo.SmartContract.Native.Votes.Interface
 
         public void Serialize(BinaryWriter write)
         {
+            write.Write(Size);
             foreach (var candidate in candidateList)
             {
                 write.Write(candidate);
@@ -26,21 +29,26 @@ namespace Neo.SmartContract.Native.Votes.Interface
         }
         public void Deserialize(BinaryReader reader)
         {
+            int size = reader.ReadInt32();
             candidateList = new List<int>();
-            while (true)
+            for (int i = 0; i < size; i++)
             {
-                try
-                {
-                    candidateList.Add(reader.ReadInt32());
-                }
-                catch
-                {
-                    break;
-                }
+                candidateList.Add(reader.ReadInt32());
             }
         }
+
+        public StackItem ToStackItem()
+        {
+            List<StackItem> stackLists = new List<StackItem>();
+            foreach (int i in candidateList)
+            {
+                stackLists.Add(new Integer(i));
+            }
+            stackLists.Add(new Integer(Size));
+            return new Array(stackLists.ToArray());
+        }
     }
-    internal class SingleCandidate : ISerializable
+    internal class SingleCandidate : ISerializable , IInteroperable
     {
         public SingleCandidate() { }
         public SingleCandidate(int candidate) => this.candidate = candidate;
@@ -62,6 +70,15 @@ namespace Neo.SmartContract.Native.Votes.Interface
         public int GetCandidate()
         {
             return candidate;
+        }
+
+        public StackItem ToStackItem()
+        {
+            return new Array(new StackItem[]
+            {
+                new Integer(candidate),
+                new Integer(Size)
+            });
         }
     }
 

@@ -33,13 +33,13 @@ namespace Neo.SmartContract.Native.Votes.Model
 
     public class SingleVoteUnit
     {
-        public BigInteger balance;
-        public int vote;
+        public BigInteger Balance;
+        public int Vote;
 
         public SingleVoteUnit(BigInteger balance, int vote)
         {
-            this.balance = balance;
-            this.vote = vote;
+            this.Balance = balance;
+            this.Vote = vote;
         }
     }
 }

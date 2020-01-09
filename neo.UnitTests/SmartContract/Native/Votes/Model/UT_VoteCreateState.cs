@@ -10,12 +10,6 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
     {
         VoteCreateState createState;
 
-        [TestInitialize]
-        public void TestSetup()
-        {
-            createState = new VoteCreateState();
-        }
-
         [TestMethod]
         public void Check_VoteCreateState()
         {

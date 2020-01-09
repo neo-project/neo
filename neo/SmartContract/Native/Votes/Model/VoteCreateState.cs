@@ -15,6 +15,7 @@ namespace Neo.SmartContract.Native.Votes.Model
         public string Description;
         public UInt32 CandidateNumber;
         public bool IsSequence;
+
         public int Size => GetSize();
 
         internal int GetSize()
@@ -39,7 +40,9 @@ namespace Neo.SmartContract.Native.Votes.Model
             CandidateNumber = candidate;
             IsSequence = IsSeq;
         }
+
         public byte[] GetId() => new Crypto().Hash160(ConcatByte(transactionHash.ToArray(), callingScriptHash.ToArray()));
+
         public static byte[] ConcatByte(byte[] byteSource, byte[] newData)
         {
             List<byte> result = new List<byte>(byteSource);

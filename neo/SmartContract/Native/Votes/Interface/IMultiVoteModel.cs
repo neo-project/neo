@@ -6,7 +6,6 @@ namespace Neo.SmartContract.Native.Votes.Interface
 {
     interface IMultiVoteModel
     {
-        //TODO: details for interface
         int[,] CalculateVote(List<CalculatedMultiVote> votes);
     }
 
