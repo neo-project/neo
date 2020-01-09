@@ -11,7 +11,7 @@ namespace Neo.Cryptography.ECC
 
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
-            if(value == null || curve ==null)
+            if(value == null || curve == null)
                 throw new ArgumentException("The field element is null");
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
@@ -112,11 +112,11 @@ namespace Neo.Cryptography.ECC
             BigInteger U, V;
             do
             {
-                RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
+                Random rand = new Random();
                 BigInteger P;
                 do
                 {
-                    P = rngCsp.NextBigInteger(curve.Q.GetBitLength());
+                    P = rand.NextBigInteger(curve.Q.GetBitLength());
                 }
                 while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
                 BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);

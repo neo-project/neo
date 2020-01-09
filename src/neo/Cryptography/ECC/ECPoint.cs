@@ -22,7 +22,7 @@ namespace Neo.Cryptography.ECC
 
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
-            if ((x != null && y == null) || (x == null && y != null) || (x == null && y == null && curve == null))
+            if ((x != null && y is null) || (x is null && y != null) || (x is null && y is null && curve is null))
                 throw new ArgumentException("The field element is null");
             this.X = x;
             this.Y = y;
