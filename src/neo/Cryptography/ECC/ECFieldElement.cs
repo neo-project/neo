@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using System.Security.Cryptography;
 
 namespace Neo.Cryptography.ECC
 {
@@ -11,7 +10,7 @@ namespace Neo.Cryptography.ECC
 
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
-            if(value == null || curve == null)
+            if(curve == null)
                 throw new ArgumentException("The field element is null");
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");

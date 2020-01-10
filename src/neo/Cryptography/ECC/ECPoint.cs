@@ -31,8 +31,8 @@ namespace Neo.Cryptography.ECC
 
         public int CompareTo(ECPoint other)
         {
-            if (ReferenceEquals(this, other)) return 0;
             if (!Curve.Equals(other.Curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
+            if (ReferenceEquals(this, other)) return 0;
             int result = X.CompareTo(other.X);
             if (result != 0) return result;
             return Y.CompareTo(other.Y);
