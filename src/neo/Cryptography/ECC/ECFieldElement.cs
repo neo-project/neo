@@ -10,7 +10,7 @@ namespace Neo.Cryptography.ECC
 
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
-            if(curve == null)
+            if (curve == null)
                 throw new ArgumentException("The field element is null");
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
@@ -21,7 +21,7 @@ namespace Neo.Cryptography.ECC
         public int CompareTo(ECFieldElement other)
         {
             if (ReferenceEquals(this, other)) return 0;
-            if(!curve.Equals(other.curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
+            if (!curve.Equals(other.curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             return Value.CompareTo(other.Value);
         }
 
