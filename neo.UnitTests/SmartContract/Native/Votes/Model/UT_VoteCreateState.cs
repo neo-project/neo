@@ -13,17 +13,16 @@ namespace Neo.UnitTests.SmartContract.Native.Votes.Model
         [TestMethod]
         public void Check_VoteCreateState()
         {
-            createState = new VoteCreateState
-                (
-                    UInt256.Zero,
-                    UInt160.Zero,
-                    UInt160.Zero,
-                    "Title",
-                    "Descritpion",
-                    2,
-                    true
-                );
-
+            var createState = new VoteCreateState()
+            {
+                TransactionHash = UInt256.Zero,
+                CallingScriptHash = UInt160.Zero,
+                Originator = UInt160.Zero,
+                Title = "Title",
+                Description = "Descritpion",
+                CandidateNumber = 2,
+                IsSequence = true
+            };
             byte[] temp = createState.ToArray();
             var createState1 = temp.AsSerializable<VoteCreateState>();
 
