@@ -8,7 +8,7 @@ namespace Neo
     /// <summary>
     /// This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 0)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     public class UInt160 : UIntBase, IComparable<UInt160>, IEquatable<UInt160>
     {
         public const int Length = 20;
