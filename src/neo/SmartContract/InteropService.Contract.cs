@@ -41,7 +41,7 @@ namespace Neo.SmartContract
                 if (contract != null) return false;
                 contract = new ContractState
                 {
-                    Id = engine.Snapshot.CurrentContractID+1,
+                    Id = engine.Snapshot.CurrentContractID + 1,
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };
@@ -50,7 +50,7 @@ namespace Neo.SmartContract
 
                 engine.Snapshot.Contracts.Add(hash, contract);
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
-                GlobalVariableState globalCounter=engine.Snapshot.GlobalCounter.GetAndChange();
+                GlobalVariableState globalCounter = engine.Snapshot.GlobalCounter.GetAndChange();
                 globalCounter.GlobalCounter = contract.Id;
                 return true;
             }
