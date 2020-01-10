@@ -10,8 +10,8 @@ namespace Neo.Cryptography.ECC
 
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
-            if (curve == null)
-                throw new ArgumentException("The field element is null");
+            if (curve is null)
+                throw new ArgumentNullException(nameof(curve));
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
             this.Value = value;
