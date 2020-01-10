@@ -170,12 +170,21 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Create).Should().BeFalse();
 
-            manifest.Abi.Hash = script.ToScriptHash();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var txState = new TransactionState
+            {
+                BlockIndex = 0,
+                Transaction = TestUtils.GetTransaction(),
+                TransactionIndex = 1
+            };
+            engine = new ApplicationEngine(TriggerType.Application, TestUtils.GetTransaction(), snapshot, 0);
+            engine.LoadScript(new byte[] { 0x01 });
+            engine.Snapshot.Transactions.Add(txState.Transaction.Hash, txState);
+            manifest.Abi.Hash = txState.Transaction.Script.ToScriptHash();
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
-            engine.CurrentContext.EvaluationStack.Push(script);
+            engine.CurrentContext.EvaluationStack.Push(txState.Transaction.Script);
             InteropService.Invoke(engine, InteropService.Contract.Create).Should().BeTrue();
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.Contracts.Add(state.ScriptHash, state);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
@@ -239,18 +248,6 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeTrue();
-
-            // Remove Storage flag with something stored
-
-            state.Manifest.Features = ContractFeatures.NoProperty;
-            snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
-
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            engine.LoadScript(state.Script);
-            engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
-            engine.CurrentContext.EvaluationStack.Push(script);
-            InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeFalse();
         }
 
         [TestMethod]

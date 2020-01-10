@@ -496,6 +496,7 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(false, true);
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
+            state.Guid = new Guid(TestUtils.GetByteArray(16, 0x42));
             engine.Snapshot.Contracts.Add(state.ScriptHash, state);
             engine.LoadScript(state.Script);
             InteropService.Invoke(engine, InteropService.Storage.GetReadOnlyContext).Should().BeTrue();
@@ -509,7 +510,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
-
+            state.Guid = new Guid(TestUtils.GetByteArray(16, 0x42));
             var storageKey = new StorageKey
             {
                 Guid = state.Guid,
@@ -544,7 +545,7 @@ namespace Neo.UnitTests.SmartContract
                 Guid = state.Guid,
                 IsReadOnly = false
             }));
-            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeTrue();
 
             engine.CurrentContext.EvaluationStack.Push(1);
             InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
@@ -569,7 +570,7 @@ namespace Neo.UnitTests.SmartContract
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
 
             //key.Length > MaxStorageKeySize
             key = new byte[InteropService.Storage.MaxKeySize + 1];
@@ -650,7 +651,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
-                Guid = new Guid(TestUtils.GetByteArray(20, 0x42)),
+                Guid = new Guid(TestUtils.GetByteArray(16, 0x42)),
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -689,7 +690,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
-                Guid = new Guid(TestUtils.GetByteArray(20, 0x42)),
+                Guid = new Guid(TestUtils.GetByteArray(16, 0x42)),
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -714,13 +715,6 @@ namespace Neo.UnitTests.SmartContract
 
             //context is readonly
             storageContext.IsReadOnly = true;
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
-
-            //CheckStorageContext fail
-            storageContext.IsReadOnly = false;
-            state.Manifest.Features = ContractFeatures.NoProperty;
             engine.CurrentContext.EvaluationStack.Push(key);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
@@ -852,7 +846,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
-            state.Guid=new Guid(TestUtils.GetByteArray(20, 0x42));
+            state.Guid=new Guid(TestUtils.GetByteArray(16, 0x42));
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
             {

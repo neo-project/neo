@@ -40,7 +40,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Guid_Set()
         {
-            Guid val = new Guid(TestUtils.GetByteArray(20, 0x42));
+            Guid val = new Guid(TestUtils.GetByteArray(16, 0x42));
             uut.Guid = val;
             uut.Guid.Should().Be(val);
         }
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_SameKey()
         {
-            Guid val = new Guid(TestUtils.GetByteArray(20, 0x42));
+            Guid val = new Guid(TestUtils.GetByteArray(16, 0x42));
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
@@ -92,14 +92,14 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_DiffHash_SameKey()
         {
-            Guid val = new Guid(TestUtils.GetByteArray(20, 0x42));
+            Guid val = new Guid(TestUtils.GetByteArray(16, 0x42));
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
                 Guid = val,
                 Key = keyVal
             };
-            uut.Guid = new Guid(TestUtils.GetByteArray(20, 0x88));
+            uut.Guid = new Guid(TestUtils.GetByteArray(16, 0x88));
             uut.Key = keyVal;
 
             uut.Equals(newSk).Should().BeFalse();
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_DiffKey()
         {
-            Guid val = new Guid(TestUtils.GetByteArray(20, 0x42));
+            Guid val = new Guid(TestUtils.GetByteArray(16, 0x42));
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
@@ -125,9 +125,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void GetHashCode_Get()
         {
-            uut.Guid = new Guid(TestUtils.GetByteArray(20, 0x42));
+            uut.Guid = new Guid(TestUtils.GetByteArray(16, 0x42));
             uut.Key = TestUtils.GetByteArray(10, 0x42);
-            uut.GetHashCode().Should().Be(806209853);
+            uut.GetHashCode().Should().Be(267233629);
         }
 
         [TestMethod]
@@ -144,7 +144,7 @@ namespace Neo.UnitTests.Ledger
             using (BinaryWriter writer = new BinaryWriter(ms))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                uut.Guid = new Guid(TestUtils.GetByteArray(20, 0x42));
+                uut.Guid = new Guid(TestUtils.GetByteArray(16, 0x42));
                 uut.Key = TestUtils.GetByteArray(10, 0x42);
                 ((ISerializable)uut).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);

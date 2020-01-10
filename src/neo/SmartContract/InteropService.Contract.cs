@@ -30,6 +30,7 @@ namespace Neo.SmartContract
 
             internal static Guid GetDeterministicGuid(ApplicationEngine engine)
             {
+                if(engine.ScriptContainer is null) return Guid.Empty;
                 Transaction tx = (Transaction)engine.ScriptContainer;
                 TransactionState transactionState = engine.Snapshot.Transactions.TryGet(tx.Hash);
                 if (transactionState != null)
@@ -37,14 +38,14 @@ namespace Neo.SmartContract
                     uint blockIndex = transactionState.BlockIndex;
                     uint txIndex = transactionState.TransactionIndex;
                     uint nonce = engine.SyscallCounter;
-                    return new Guid(Concat(BitConverter.GetBytes(blockIndex), BitConverter.GetBytes(txIndex), BitConverter.GetBytes(nonce)));
+                    return new Guid(Concat(BitConverter.GetBytes(blockIndex), BitConverter.GetBytes(txIndex), BitConverter.GetBytes(nonce), BitConverter.GetBytes(0)));
                 }
                 return Guid.Empty;
             }
 
             internal static Guid GetDeterministicGuid(uint blockIndex,uint txIndex,uint nonce)
             {
-               return new Guid(Concat(BitConverter.GetBytes(blockIndex), BitConverter.GetBytes(txIndex), BitConverter.GetBytes(nonce)));
+               return new Guid(Concat(BitConverter.GetBytes(blockIndex), BitConverter.GetBytes(txIndex), BitConverter.GetBytes(nonce), BitConverter.GetBytes(0)));
             }
 
             private static bool Contract_Create(ApplicationEngine engine)

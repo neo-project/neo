@@ -51,7 +51,7 @@ namespace Neo.UnitTests
                 );
 
             CollectionAssert.AreEqual(
-                cache.Find(new byte[21]).Select(u => u.Key.Key[1]).ToArray(),
+                cache.Find(new byte[17]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x01, 0x02, 0x03 }
                 );
 
@@ -89,7 +89,7 @@ namespace Neo.UnitTests
                 );
 
             CollectionAssert.AreEqual(
-                cache.Find(new byte[21]).Select(u => u.Key.Key[1]).ToArray(),
+                cache.Find(new byte[17]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x01, 0x02 }
                 );
 
@@ -117,7 +117,7 @@ namespace Neo.UnitTests
                 );
 
             CollectionAssert.AreEqual(
-                cache.Find(new byte[21]).Select(u => u.Key.Key[1]).ToArray(),
+                cache.Find(new byte[17]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x02 }
                 );
 
