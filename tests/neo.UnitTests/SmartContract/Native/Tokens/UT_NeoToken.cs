@@ -704,7 +704,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = NativeContract.NEO.Hash,
+                Guid = NativeContract.NEO.Guid,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;

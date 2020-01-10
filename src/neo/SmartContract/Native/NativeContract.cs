@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native
         public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
-        public Guid Guid { get; }
+        public abstract Guid Guid { get; }
         public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
@@ -41,7 +41,6 @@ namespace Neo.SmartContract.Native
                 this.Script = sb.ToArray();
             }
             this.Hash = Script.ToScriptHash();
-            this.Guid = InteropService.Contract.GetDeterministicGuid(Blockchain.GenesisBlock.Transactions[0], ServiceHash);
             this.Manifest = ContractManifest.CreateDefault(this.Hash);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             List<string> safeMethods = new List<string>();

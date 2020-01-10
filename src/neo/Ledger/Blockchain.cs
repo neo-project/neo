@@ -502,12 +502,15 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
+                uint tempIndex = 0;
                 foreach (Transaction tx in block.Transactions)
                 {
+                    tempIndex++;
                     var state = new TransactionState
                     {
                         BlockIndex = block.Index,
-                        Transaction = tx
+                        Transaction = tx,
+                        TransactionIndex=tempIndex
                     };
 
                     snapshot.Transactions.Add(tx.Hash, state);

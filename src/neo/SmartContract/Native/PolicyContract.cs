@@ -19,6 +19,7 @@ namespace Neo.SmartContract.Native
     {
         public override string ServiceName => "Neo.Native.Policy";
 
+        public override Guid Guid => InteropService.Contract.GetDeterministicGuid(0, 0, 1);
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;

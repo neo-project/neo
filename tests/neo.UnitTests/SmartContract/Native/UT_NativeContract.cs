@@ -89,6 +89,9 @@ namespace Neo.UnitTests.SmartContract.Native
     public class TestNativeContract : NativeContract
     {
         public override string ServiceName => "test";
+
+        public override Guid Guid => InteropService.Contract.GetDeterministicGuid(0, 0, 4);
+
         public StackItem TestOnPersist(ApplicationEngine engine, VMArray args)
         {
             return OnPersist(engine, args);

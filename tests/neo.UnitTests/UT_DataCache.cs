@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using System;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -21,31 +22,31 @@ namespace Neo.UnitTests
             var storages = snapshot.Storages;
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Guid.Equals(Guid.Empty));
 
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x03 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x03 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
 
@@ -54,7 +55,7 @@ namespace Neo.UnitTests
                 new byte[] { 0x01, 0x02, 0x03 }
                 );
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Guid.Equals(Guid.Empty));
         }
 
         [TestMethod]
@@ -64,26 +65,26 @@ namespace Neo.UnitTests
             var storages = snapshot.Storages;
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Guid.Equals(Guid.Empty));
 
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
 
@@ -92,7 +93,7 @@ namespace Neo.UnitTests
                 new byte[] { 0x01, 0x02 }
                 );
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Guid.Equals(Guid.Empty));
         }
 
         [TestMethod]
@@ -102,16 +103,16 @@ namespace Neo.UnitTests
             var storages = snapshot.Storages;
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Guid.Equals(Guid.Empty));
 
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Guid = Guid.Empty },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
 
@@ -120,7 +121,7 @@ namespace Neo.UnitTests
                 new byte[] { 0x02 }
                 );
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Guid.Equals(Guid.Empty));
         }
     }
 }

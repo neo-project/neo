@@ -28,9 +28,23 @@ namespace Neo.SmartContract
                 return Storage.GasPerByte * size;
             }
 
-            internal static Guid GetDeterministicGuid(Transaction tx, uint nonce)
+            internal static Guid GetDeterministicGuid(ApplicationEngine engine)
             {
-                return new Guid(Concat(tx.Hash.ToArray(), BitConverter.GetBytes(nonce)).Sha256().AsSpan(0, 16));
+                Transaction tx = (Transaction)engine.ScriptContainer;
+                TransactionState transactionState = engine.Snapshot.Transactions.TryGet(tx.Hash);
+                if (transactionState != null)
+                {
+                    uint blockIndex = transactionState.BlockIndex;
+                    uint txIndex = transactionState.TransactionIndex;
+                    uint nonce = engine.SyscallCounter;
+                    return new Guid(Concat(BitConverter.GetBytes(blockIndex), BitConverter.GetBytes(txIndex), BitConverter.GetBytes(nonce)));
+                }
+                return Guid.Empty;
+            }
+
+            internal static Guid GetDeterministicGuid(uint blockIndex,uint txIndex,uint nonce)
+            {
+               return new Guid(Concat(BitConverter.GetBytes(blockIndex), BitConverter.GetBytes(txIndex), BitConverter.GetBytes(nonce)));
             }
 
             private static bool Contract_Create(ApplicationEngine engine)
@@ -44,9 +58,11 @@ namespace Neo.SmartContract
                 UInt160 hash = script.ToScriptHash();
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
                 if (contract != null) return false;
+                Guid newGuid = GetDeterministicGuid(engine);
+                if (newGuid.Equals(Guid.Empty)) return false;
                 contract = new ContractState
                 {
-                    Guid = GetDeterministicGuid((Transaction)engine.ScriptContainer, engine.SyscallCounter),
+                    Guid = newGuid,
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };

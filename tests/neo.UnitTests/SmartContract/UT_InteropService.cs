@@ -480,20 +480,26 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_GetContext()
         {
-            var engine = GetEngine();
+            var engine = GetEngine(false, true);
+            var state = TestUtils.GetContract();
+            state.Manifest.Features = ContractFeatures.HasStorage;
+            engine.Snapshot.Contracts.Add(state.ScriptHash, state);
+            engine.LoadScript(state.Script);
             InteropService.Invoke(engine, InteropService.Storage.GetContext).Should().BeTrue();
             var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
-            ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
             ret.GetInterface<StorageContext>().IsReadOnly.Should().BeFalse();
         }
 
         [TestMethod]
         public void TestStorage_GetReadOnlyContext()
         {
-            var engine = GetEngine();
+            var engine = GetEngine(false, true);
+            var state = TestUtils.GetContract();
+            state.Manifest.Features = ContractFeatures.HasStorage;
+            engine.Snapshot.Contracts.Add(state.ScriptHash, state);
+            engine.LoadScript(state.Script);
             InteropService.Invoke(engine, InteropService.Storage.GetReadOnlyContext).Should().BeTrue();
             var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
-            ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
             ret.GetInterface<StorageContext>().IsReadOnly.Should().BeTrue();
         }
 
@@ -506,7 +512,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 Key = new byte[] { 0x01 }
             };
 
@@ -523,7 +529,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 IsReadOnly = false
             }));
             InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeTrue();
@@ -535,7 +541,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 IsReadOnly = false
             }));
             InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
@@ -559,7 +565,7 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
@@ -596,7 +602,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -644,7 +650,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
-                ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x42)),
+                Guid = new Guid(TestUtils.GetByteArray(20, 0x42)),
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -660,7 +666,7 @@ namespace Neo.UnitTests.SmartContract
             var value = new byte[] { 0x02 };
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push((int)StorageFlags.None);
@@ -683,7 +689,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
-                ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x42)),
+                Guid = new Guid(TestUtils.GetByteArray(20, 0x42)),
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -699,7 +705,7 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { 0x01 };
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(key);
@@ -730,7 +736,7 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Guid = state.Guid,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
@@ -846,6 +852,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
+            state.Guid=new Guid(TestUtils.GetByteArray(20, 0x42));
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
             {
@@ -855,7 +862,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = scriptHash,
+                Guid = state.Guid,
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(scriptHash, state);

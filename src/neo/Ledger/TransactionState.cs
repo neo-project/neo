@@ -10,6 +10,7 @@ namespace Neo.Ledger
         public uint BlockIndex;
         public VMState VMState;
         public Transaction Transaction;
+        public uint TransactionIndex;
 
         int ISerializable.Size =>
             sizeof(uint) +      // BlockIndex
