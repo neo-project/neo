@@ -914,10 +914,6 @@ namespace Neo.UnitTests.Consensus
         private StorageKey CreateStorageKeyForNativeNeo(byte prefix)
         {
             StorageKey storageKey = new StorageKey
-
-
-
-
             {
                 Id = NativeContract.NEO.Id,
                 Key = new byte[sizeof(byte)]
