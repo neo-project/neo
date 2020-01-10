@@ -846,7 +846,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
-            state.Guid=new Guid(TestUtils.GetByteArray(16, 0x42));
+            state.Guid = new Guid(TestUtils.GetByteArray(16, 0x42));
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
             {
