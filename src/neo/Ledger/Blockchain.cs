@@ -510,7 +510,7 @@ namespace Neo.Ledger
                     {
                         BlockIndex = block.Index,
                         Transaction = tx,
-                        TransactionIndex=tempIndex
+                        TransactionIndex = tempIndex
                     };
 
                     snapshot.Transactions.Add(tx.Hash, state);
