@@ -14,6 +14,7 @@ namespace Neo.SmartContract
                 if (engine.OracleCache == null) return false;
                 if (!engine.TryPop(out string urlItem) || !Uri.TryCreate(urlItem, UriKind.Absolute, out var url)) return false;
                 if (!engine.TryPop(out string filter)) return false;
+                if (url.Scheme != "https") return false;
 
                 var request = new OracleHTTPRequest()
                 {

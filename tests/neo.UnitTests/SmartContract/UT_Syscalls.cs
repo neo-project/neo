@@ -147,7 +147,7 @@ namespace Neo.UnitTests.SmartContract
                 }
             }
 
-            // Wrong policy
+            // Wrong schema
 
             using (var script = new ScriptBuilder())
             {
@@ -159,16 +159,8 @@ namespace Neo.UnitTests.SmartContract
                 {
                     engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(1, engine.ResultStack.Count);
-
-                    Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
-
-                    PrimitiveType type = array[0] as PrimitiveType;
-                    ByteArray response = array[1] as ByteArray;
-
-                    Assert.AreEqual((int)OracleResultError.PolicyError, type.GetBigInteger());
-                    Assert.AreEqual("", response.GetString());
+                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                    Assert.AreEqual(0, engine.ResultStack.Count);
                 }
             }
         }
