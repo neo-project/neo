@@ -8,16 +8,16 @@ namespace Neo
     /// <summary>
     /// This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public class UInt256 : UIntBase, IComparable<UInt256>, IEquatable<UInt256>
     {
         public const int Length = 32;
         public static readonly UInt256 Zero = new UInt256();
 
-        private ulong value1;
-        private ulong value2;
-        private ulong value3;
-        private ulong value4;
+        [FieldOffset(0)] private ulong value1;
+        [FieldOffset(8)] private ulong value2;
+        [FieldOffset(16)] private ulong value3;
+        [FieldOffset(24)] private ulong value4;
 
         public override int Size => Length;
 
