@@ -143,51 +143,6 @@ namespace Neo.UnitTests.Ledger
             }
         }
 
-        [TestMethod]
-        public void TestOnParallelVerified()
-        {
-            var senderProbe = CreateTestProbe();
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var walletA = TestUtils.GenerateTestWallet();
-
-            using (var unlockA = walletA.Unlock("123"))
-            {
-                var acc = walletA.CreateAccount();
-
-                // Fake balance
-
-                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
-
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 100_000_000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
-
-                snapshot.Commit();
-
-                typeof(Blockchain)
-                    .GetMethod("UpdateCurrentSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
-                    .Invoke(Blockchain.Singleton, null);
-
-                // Make parallelVerified transaction
-
-                var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
-                var parallelVerified = new ParallelVerified
-                {
-                    Transaction = tx,
-                    ShouldRelay = true,
-                    VerifyResult = tx.VerifyParallelParts(snapshot)
-                };
-                senderProbe.Send(system.Blockchain, parallelVerified);
-                senderProbe.ExpectMsg(RelayResultReason.Succeed);
-            }
-        }
-
         private Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
         {
             var tx = wallet.MakeTransaction(new TransferOutput[]
