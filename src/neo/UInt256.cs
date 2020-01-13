@@ -28,8 +28,11 @@ namespace Neo
 
         public UInt256(ReadOnlySpan<byte> value)
         {
-            Span<byte> dst = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value1, Length / sizeof(ulong)));
-            value[..Length].CopyTo(dst);
+            fixed (ulong* p = &value1)
+            {
+                Span<byte> dst = new Span<byte>(p, Length);
+                value[..Length].CopyTo(dst);
+            }
         }
 
         /// <summary>
