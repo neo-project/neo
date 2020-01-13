@@ -12,7 +12,6 @@ using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System.Linq;
 using System.Reflection;
-using static Neo.Ledger.Blockchain;
 
 namespace Neo.UnitTests.Ledger
 {
