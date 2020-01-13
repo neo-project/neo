@@ -26,7 +26,7 @@ namespace Neo
         {
         }
 
-        public UInt256(ReadOnlySpan<byte> value)
+        public unsafe UInt256(ReadOnlySpan<byte> value)
         {
             fixed (ulong* p = &value1)
             {
