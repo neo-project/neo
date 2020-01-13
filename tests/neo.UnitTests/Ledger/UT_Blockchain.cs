@@ -185,9 +185,6 @@ namespace Neo.UnitTests.Ledger
                 };
                 senderProbe.Send(system.Blockchain, parallelVerified);
                 senderProbe.ExpectMsg(RelayResultReason.Succeed);
-
-                senderProbe.Send(system.Blockchain, parallelVerified);
-                senderProbe.ExpectMsg(RelayResultReason.AlreadyExists);
             }
         }
 
