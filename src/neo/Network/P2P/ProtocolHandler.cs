@@ -32,8 +32,8 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private readonly PendingKnownHashesCollection pendingKnownHashes;
-        private readonly FIFOSet<UInt256> knownHashes;
-        private readonly FIFOSet<UInt256> sentHashes;
+        private readonly HashSetCache<UInt256> knownHashes;
+        private readonly HashSetCache<UInt256> sentHashes;
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
@@ -47,8 +47,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.pendingKnownHashes = new PendingKnownHashesCollection();
-            this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
-            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+            this.sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
         }
 
         protected override void OnReceive(object message)
