@@ -22,7 +22,7 @@ namespace Neo.Cryptography.ECC
 
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
-            if ((x != null && y == null) || (x == null && y != null))
+            if ((x is null ^ y is null) || (curve is null))
                 throw new ArgumentException("Exactly one of the field elements is null");
             this.X = x;
             this.Y = y;
@@ -31,6 +31,7 @@ namespace Neo.Cryptography.ECC
 
         public int CompareTo(ECPoint other)
         {
+            if (!Curve.Equals(other.Curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             if (ReferenceEquals(this, other)) return 0;
             int result = X.CompareTo(other.X);
             if (result != 0) return result;
