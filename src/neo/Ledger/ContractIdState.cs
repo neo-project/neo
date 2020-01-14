@@ -6,7 +6,7 @@ namespace Neo.Ledger
 {
     public class ContractIdState : ICloneable<ContractIdState>, ISerializable
     {
-        public uint Id = 0x00000000;
+        public uint Id;
 
         int ISerializable.Size => sizeof(uint);
 
