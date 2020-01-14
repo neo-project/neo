@@ -10,7 +10,7 @@ namespace Neo.Ledger
         public uint Id;
         public byte[] Key;
 
-        int ISerializable.Size => 4 + (Key.Length / 16 + 1) * 17;
+        int ISerializable.Size => sizeof(uint) + (Key.Length / 16 + 1) * 17;
 
         internal static byte[] CreateSearchPrefix(uint id, byte[] prefix)
         {
