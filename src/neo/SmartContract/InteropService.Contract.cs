@@ -50,8 +50,8 @@ namespace Neo.SmartContract
 
                 engine.Snapshot.Contracts.Add(hash, contract);
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
-                ContractIdState globalCounter = engine.Snapshot.ContractId.GetAndChange();
-                globalCounter.Id = contract.Id;
+                ContractIdState contractIdState = engine.Snapshot.ContractId.GetAndChange();
+                contractIdState.Id = contract.Id;
                 return true;
             }
 
