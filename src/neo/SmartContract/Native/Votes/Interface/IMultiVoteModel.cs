@@ -13,6 +13,7 @@ namespace Neo.SmartContract.Native.Votes.Interface
     {
         public int Balance;
         public List<int> Vote;
+
         public CalculatedMultiVote(int Balance, List<int> Vote)
         {
             this.Balance = Balance;

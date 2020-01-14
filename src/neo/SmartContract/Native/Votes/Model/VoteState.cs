@@ -12,8 +12,7 @@ namespace Neo.SmartContract.Native.Votes.Model
     {
         private UInt160 voter;
         private ISerializable records;
-
-        public int Size => records.Size + UInt160.Length;//Records size + Uint160 size
+        public int Size => records.Size + UInt160.Length;
 
         public UInt160 GetVoter() => this.voter;
 

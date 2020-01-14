@@ -50,12 +50,12 @@ namespace Neo.SmartContract.Native.Votes.Interface
     }
     internal class SingleCandidate : ISerializable , IInteroperable
     {
-        public SingleCandidate() { }
-        public SingleCandidate(int candidate) => this.candidate = candidate;
-
         private int candidate = 0;
-
         public int Size => 4;
+
+        public SingleCandidate() { }
+
+        public SingleCandidate(int candidate) => this.candidate = candidate;
 
         public void Serialize(BinaryWriter write)
         {

@@ -23,7 +23,6 @@ namespace Neo.SmartContract.Native
     public sealed class VoteContract : NativeContract
     {
         public override string ServiceName => "Neo.Native.VoteContract";
-
         private const byte Prefix_CreateVote = 100;
         private const byte Prefix_Vote = 101;
         private const byte Prefix_AccessControl = 102;
