@@ -32,7 +32,7 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => 4 + Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
+        int ISerializable.Size => sizeof(uint) + Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
 
         ContractState ICloneable<ContractState>.Clone()
         {
