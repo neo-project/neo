@@ -22,7 +22,7 @@ namespace Neo.SmartContract
                 {
                     engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
                     {
-                        Id = contract.Id,
+                        ContractId = contract.Id,
                         Script = contract.Script,
                         Manifest = contract.Manifest
                     });

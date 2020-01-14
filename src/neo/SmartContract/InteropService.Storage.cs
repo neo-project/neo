@@ -64,7 +64,7 @@ namespace Neo.SmartContract
                 if (!contract.HasStorage) return false;
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
-                    Id = contract.Id,
+                    Id = contract.ContractId,
                     IsReadOnly = false
                 }));
                 return true;
@@ -77,7 +77,7 @@ namespace Neo.SmartContract
                 if (!contract.HasStorage) return false;
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
-                    Id = contract.Id,
+                    Id = contract.ContractId,
                     IsReadOnly = true
                 }));
                 return true;

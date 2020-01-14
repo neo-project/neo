@@ -43,7 +43,7 @@ namespace Neo.Ledger
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return Id.Equals(other.Id) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
+            return Id==other.Id && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
         }
 
         public override bool Equals(object obj)

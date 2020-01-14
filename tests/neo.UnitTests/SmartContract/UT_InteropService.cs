@@ -512,7 +512,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                Id = state.Id,
+                Id = state.ContractId,
                 Key = new byte[] { 0x01 }
             };
 
@@ -529,7 +529,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
-                Id = state.Id,
+                Id = state.ContractId,
                 IsReadOnly = false
             }));
             InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeTrue();
@@ -551,7 +551,7 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
-                Id = state.Id,
+                Id = state.ContractId,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
@@ -588,7 +588,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                Id = state.Id,
+                Id = state.ContractId,
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -652,7 +652,7 @@ namespace Neo.UnitTests.SmartContract
             var value = new byte[] { 0x02 };
             var storageContext = new StorageContext
             {
-                Id = state.Id,
+                Id = state.ContractId,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push((int)StorageFlags.None);
@@ -691,7 +691,7 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { 0x01 };
             var storageContext = new StorageContext
             {
-                Id = state.Id,
+                Id = state.ContractId,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(key);
@@ -715,7 +715,7 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
-                Id = state.Id,
+                Id = state.ContractId,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));

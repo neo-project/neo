@@ -18,13 +18,13 @@ namespace Neo.Persistence
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public abstract MetaDataCache<GlobalVariableState> GlobalCounter { get; }
+        public abstract MetaDataCache<ContractIdState> ContractId { get; }
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
-        public uint CurrentContractID => GlobalCounter.Get().GlobalCounter;
+        public uint CurrentContractID => ContractId.Get().ContractId;
 
         public StoreView Clone()
         {
@@ -40,7 +40,7 @@ namespace Neo.Persistence
             HeaderHashList.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
-            GlobalCounter.Commit();
+            ContractId.Commit();
         }
 
         public bool ContainsBlock(UInt256 hash)
