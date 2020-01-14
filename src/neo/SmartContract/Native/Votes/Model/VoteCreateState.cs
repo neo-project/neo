@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Native.Votes.Model
 
         public VoteCreateState() { }
 
-        public byte[] GetId() => new Crypto().Hash160(ConcatByte(TransactionHash.ToArray(), CallingScriptHash.ToArray()));
+        public byte[] GetId() => Crypto.Hash160(ConcatByte(TransactionHash.ToArray(), CallingScriptHash.ToArray()));
 
         public static byte[] ConcatByte(byte[] byteSource, byte[] newData)
         {

@@ -37,7 +37,7 @@ namespace Neo.SmartContract.Native.Votes.Interface
             }
         }
 
-        public StackItem ToStackItem()
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             List<StackItem> stackLists = new List<StackItem>();
             foreach (int i in candidateList)
@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Native.Votes.Interface
                 stackLists.Add(new Integer(i));
             }
             stackLists.Add(new Integer(Size));
-            return new Array(stackLists.ToArray());
+            return new Array(referenceCounter ,stackLists.ToArray());
         }
     }
     internal class SingleCandidate : ISerializable , IInteroperable
@@ -72,12 +72,12 @@ namespace Neo.SmartContract.Native.Votes.Interface
             return candidate;
         }
 
-        public StackItem ToStackItem()
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(new StackItem[]
+            return new Array(referenceCounter, new StackItem[]
             {
-                new Integer(candidate),
-                new Integer(Size)
+                candidate,
+                Size
             });
         }
     }

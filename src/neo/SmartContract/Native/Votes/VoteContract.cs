@@ -16,6 +16,7 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using Neo.SmartContract.Native.Votes.Interface;
 using VMArray = Neo.VM.Types.Array;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {
@@ -31,8 +32,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem CreateMultiVote(ApplicationEngine engine, VMArray args)
         {
-            UInt160 originator = new UInt160(args[0].GetByteArray());
-            if (!InteropService.CheckWitness(engine, originator)) return false;
+            UInt160 originator = new UInt160(args[0].GetSpan());
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, originator)) return false;
             var tx = engine.ScriptContainer as Transaction;
             var createState = new VoteCreateState()
             {
@@ -57,8 +58,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem CreateSingleVote(ApplicationEngine engine, VMArray args)
         {
-            UInt160 originator = new UInt160(args[0].GetByteArray());
-            if (!InteropService.CheckWitness(engine, originator)) return false;
+            UInt160 originator = new UInt160(args[0].GetSpan());
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, originator)) return false;
             var tx = engine.ScriptContainer as Transaction;
             var createState = new VoteCreateState()
             {
@@ -84,10 +85,10 @@ namespace Neo.SmartContract.Native
         private StackItem MultiVote(ApplicationEngine engine, VMArray args)
         {
             if (args[0] is null || args[1] is null || args[2] is null) return false;
-            UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
-            UInt160 voter = new UInt160(args[1].GetByteArray());
-            if (!InteropService.CheckWitness(engine, voter)) return false;
+            UInt256 TxHash = new UInt256(args[0].GetSpan());
+            var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+            UInt160 voter = new UInt160(args[1].GetSpan());
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, voter)) return false;
             StorageKey AccessKey = CreateStorageKey(Prefix_AccessControl, id);
             StorageItem access_state = engine.Snapshot.Storages.TryGet(AccessKey);
             if (!(access_state is null))
@@ -100,7 +101,7 @@ namespace Neo.SmartContract.Native
             }
             StorageKey InfoKey = CreateStorageKey(Prefix_CreateVote, id);
             StorageItem info_state = engine.Snapshot.Storages.TryGet(InfoKey);
-            MultiCandidate candidate = Neo.IO.Helper.AsSerializable<MultiCandidate>(args[2].GetByteArray());
+            MultiCandidate candidate = Neo.IO.Helper.AsSerializable<MultiCandidate>(args[2].GetSpan());
             VoteState voteState = new VoteState(voter, candidate);
             return (AddVote(engine.Snapshot, voteState, id));
         }
@@ -109,10 +110,10 @@ namespace Neo.SmartContract.Native
         private StackItem SingleVote(ApplicationEngine engine, VMArray args)
         {
             if (args[0] is null || args[1] is null || args[2] is null) return false;
-            UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
-            UInt160 voter = new UInt160(args[1].GetByteArray());
-            if (!InteropService.CheckWitness(engine, voter)) return false;
+            UInt256 TxHash = new UInt256(args[0].GetSpan());
+            var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+            UInt160 voter = new UInt160(args[1].GetSpan());
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, voter)) return false;
             StorageKey AccessKey = CreateStorageKey(Prefix_AccessControl, id);
             StorageItem access_state = engine.Snapshot.Storages.TryGet(AccessKey);
             if (!(access_state is null))
@@ -129,7 +130,7 @@ namespace Neo.SmartContract.Native
             if (info_state is null) return false;
             VoteCreateState createState = Neo.IO.Helper.AsSerializable<VoteCreateState>(info_state.Value);
             voteLength = createState.CandidateNumber;
-            SingleCandidate candidate = Neo.IO.Helper.AsSerializable<SingleCandidate>(args[2].GetByteArray());
+            SingleCandidate candidate = Neo.IO.Helper.AsSerializable<SingleCandidate>(args[2].GetSpan());
             if (candidate.GetCandidate() == 0 || candidate.GetCandidate() > voteLength) return false;
             VoteState voteState = new VoteState(voter, candidate);
             return (AddVote(engine.Snapshot, voteState, id));
@@ -138,8 +139,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem GetVoteDetails(ApplicationEngine engine, VMArray args)
         {
-            UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+            UInt256 TxHash = new UInt256(args[0].GetSpan());
+            var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_state = engine.Snapshot.Storages.TryGet(create_key);
             return create_state.Value;
@@ -149,22 +150,22 @@ namespace Neo.SmartContract.Native
         private StackItem GetMultiStatistic(ApplicationEngine engine, VMArray args)
         {
             if (args[0] is null) return false;
-            UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+            UInt256 TxHash = new UInt256(args[0].GetSpan());
+            //Get Vote id
+            var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
             VoteCreateState createState = Neo.IO.Helper.AsSerializable<VoteCreateState>(create_byte.Value);
-            if (!createState.IsSequence) return false;
-            if (!InteropService.CheckWitness(engine, createState.Originator)) return false;
+            if (!createState.IsSequence || !InteropService.Runtime.CheckWitnessInternal(engine, createState.Originator)) return false;
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
-            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(prefix_key).OrderByDescending(p => p.Key);
+            byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, new[] { Prefix_Vote });
+            IEnumerable<(StorageKey, StorageItem)> pairs = engine.Snapshot.Storages.Find(prefix_key).OrderByDescending(p => p.Key);
             if (pairs.Count() == 0) return false;
             MultiStatistic result = new MultiStatistic();
             List<UInt160> voteList = new List<UInt160>();
-            foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
+            foreach (var pair in pairs)
             {
-                VoteState vote_state = Neo.IO.Helper.AsSerializable<VoteState>(pair.Value.Value);
+                VoteState vote_state = Neo.IO.Helper.AsSerializable<VoteState>(pair.Item2.Value);
                 UInt160 voter = vote_state.GetVoter();
                 if (voteList.Contains(voter)) continue;
                 voteList.Add(voter);
@@ -185,22 +186,22 @@ namespace Neo.SmartContract.Native
         private StackItem GetSingleStatistic(ApplicationEngine engine, VMArray args)
         {
             if (args[0] is null) return false;
-            UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+            UInt256 TxHash = new UInt256(args[0].GetSpan());
+            var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             StorageKey create_key = CreateStorageKey(Prefix_CreateVote, id.ToArray());
             StorageItem create_byte = engine.Snapshot.Storages.TryGet(create_key);
             VoteCreateState createState = Neo.IO.Helper.AsSerializable<VoteCreateState>(create_byte.Value);
             if (createState.IsSequence) return false;
-            if (!InteropService.CheckWitness(engine, createState.Originator)) return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, createState.Originator)) return false;
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id.ToArray());
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
-            IEnumerable<KeyValuePair<StorageKey, StorageItem>> pairs = engine.Snapshot.Storages.Find(prefix_key).OrderByDescending(p => p.Key);
+            IEnumerable<(StorageKey, StorageItem)> pairs = engine.Snapshot.Storages.Find(prefix_key).OrderByDescending(p => p.Key);
             if (pairs.Count() == 0) return false;
             SingleStatistic result = new SingleStatistic();
             List<UInt160> voterList = new List<UInt160>();
-            foreach (KeyValuePair<StorageKey, StorageItem> pair in pairs)
+            foreach (var pair in pairs)
             {
-                VoteState vote_state = Neo.IO.Helper.AsSerializable<VoteState>(pair.Value.Value);
+                VoteState vote_state = Neo.IO.Helper.AsSerializable<VoteState>(pair.Item2.Value);
                 UInt160 voter = vote_state.GetVoter();
                 if (voterList.Contains(voter)) continue;
                 voterList.Add(vote_state.GetVoter());
@@ -220,11 +221,11 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem AccessControl(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] is null || args[1] is null || args[2] is null || args[1].GetByteArray().Length % 20 != 0) return false;
-            UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+            if (args[0] is null || args[1] is null || args[2] is null || args[1].GetSpan().Length % 20 != 0) return false;
+            UInt256 TxHash = new UInt256(args[0].GetSpan());
+            var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             HashSet<UInt160> newVoter = new HashSet<UInt160>();
-            using (MemoryStream memoryStream = new MemoryStream(args[1].GetByteArray(), false))
+            using (MemoryStream memoryStream = new MemoryStream(args[1].GetSpan().ToArray(), false))
             using (BinaryReader binaryReader = new BinaryReader(memoryStream))
             {
                 int length = binaryReader.ReadInt32();
@@ -233,7 +234,7 @@ namespace Neo.SmartContract.Native
                     newVoter.Add(new UInt160(binaryReader.ReadBytes(20)));
                 }
             }
-            bool IsAdd = args[2].GetBoolean();
+            bool IsAdd = args[2].ToBoolean();
             if (IsAdd)
             {
                 StorageKey key = CreateStorageKey(Prefix_AccessControl, id);
@@ -272,8 +273,8 @@ namespace Neo.SmartContract.Native
         private StackItem GetResult(ApplicationEngine engine, VMArray args)
         {
             if (args[0] is null) return false;
-            UInt256 TxHash = new UInt256(args[0].GetByteArray());
-            var id = new Crypto().Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
+            UInt256 TxHash = new UInt256(args[0].GetSpan());
+            var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             StorageKey key = CreateStorageKey(Prefix_Result, id);
             StorageItem result = engine.Snapshot.Storages.TryGet(key);
             if (result is null) return false;
@@ -281,7 +282,7 @@ namespace Neo.SmartContract.Native
             return result.Value;
         }
 
-        private bool RegisterVote(Snapshot snapshot, VoteCreateState createState)
+        private bool RegisterVote(StoreView snapshot, VoteCreateState createState)
         {
             StorageKey key = CreateStorageKey(Prefix_CreateVote, createState.GetId());
             if (snapshot.Storages.TryGet(key) != null) return false;
@@ -292,7 +293,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        private bool AddAccess(Snapshot snapshot, StorageKey key, HashSet<UInt160> whiteList)
+        private bool AddAccess(StoreView snapshot, StorageKey key, HashSet<UInt160> whiteList)
         {
             using (MemoryStream memoryStream = new MemoryStream())
             using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
@@ -309,7 +310,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        private bool AddVote(Snapshot snapshot, VoteState voteState, byte[] id)
+        private bool AddVote(StoreView snapshot, VoteState voteState, byte[] id)
         {
             StorageKey key = CreateStorageKey(Prefix_Vote, GetVoteKey(snapshot, id));
             snapshot.Storages.Add(key, new StorageItem
@@ -319,7 +320,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        private bool AddResult(Snapshot snapshot, byte[] Result, byte[] id)
+        private bool AddResult(StoreView snapshot, byte[] Result, byte[] id)
         {
             StorageKey key = CreateStorageKey(Prefix_Result, id);
             if (snapshot.Storages.TryGet(key) != null) return false;
@@ -330,7 +331,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        private byte[] GetVoteKey(Snapshot snapshot, byte[] id)
+        private byte[] GetVoteKey(StoreView snapshot, byte[] id)
         {
             StorageKey index_key = CreateStorageKey(Prefix_Vote, id);
             int count = GetVoteCount(snapshot, index_key);
@@ -340,7 +341,7 @@ namespace Neo.SmartContract.Native
             return VoteCreateState.ConcatByte(id.ToArray(), memoryStream.ToArray());
         }
 
-        public int GetVoteCount(Snapshot snapshot, StorageKey index_key)
+        public int GetVoteCount(StoreView snapshot, StorageKey index_key)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Hash, index_key.Key);
             return snapshot.Storages.Find(prefix_key).Count();
