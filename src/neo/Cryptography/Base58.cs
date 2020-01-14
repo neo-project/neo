@@ -12,6 +12,7 @@ namespace Neo.Cryptography
 
         public static byte[] Base58CheckDecode(this string input)
         {
+            if (input is null) throw new ArgumentNullException(nameof(input));
             byte[] buffer = Decode(input);
             if (buffer.Length < 4) throw new FormatException();
             byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
