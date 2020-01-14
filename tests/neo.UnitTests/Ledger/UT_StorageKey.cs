@@ -93,7 +93,6 @@ namespace Neo.UnitTests.Ledger
         {
             uint val = 0x42000000;
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
-
             StorageKey newSk = new StorageKey
             {
                 Id = val,
