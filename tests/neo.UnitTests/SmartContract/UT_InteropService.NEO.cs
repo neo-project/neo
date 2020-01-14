@@ -229,7 +229,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                Id = state.ContractId,
+                Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
@@ -255,7 +255,7 @@ namespace Neo.UnitTests.SmartContract
             };
             var storageKey = new StorageKey
             {
-                Id = state.ContractId,
+                Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
@@ -266,7 +266,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
-                Id = state.ContractId,
+                Id = state.Id,
                 IsReadOnly = false
             }));
             InteropService.Invoke(engine, InteropService.Storage.Find).Should().BeTrue();

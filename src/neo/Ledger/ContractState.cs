@@ -12,7 +12,7 @@ namespace Neo.Ledger
 {
     public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
-        public uint ContractId;
+        public uint Id;
         public byte[] Script;
         public ContractManifest Manifest;
 
@@ -38,7 +38,7 @@ namespace Neo.Ledger
         {
             return new ContractState
             {
-                ContractId = ContractId,
+                Id = Id,
                 Script = Script,
                 Manifest = Manifest.Clone()
             };
@@ -46,21 +46,21 @@ namespace Neo.Ledger
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ContractId = reader.ReadUInt32();
+            Id = reader.ReadUInt32();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
-            ContractId = replica.ContractId;
+            Id = replica.Id;
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(ContractId);
+            writer.Write(Id);
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
         }
@@ -68,7 +68,7 @@ namespace Neo.Ledger
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["contractId"] = ContractId;
+            json["Id"] = Id;
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
