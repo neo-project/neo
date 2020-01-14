@@ -26,6 +26,7 @@ namespace Neo.SmartContract.Native
         {
             this.nodesList = nodesList;
             this.vectorGraphic = vectorGraphic;
+
             CreateGraphMatrix();
         }
 
@@ -38,9 +39,7 @@ namespace Neo.SmartContract.Native
             nodesEdgesMatrix = new int[nodeCount, nodeCount];
             for (int i = 0; i < nodeCount; i++)
                 for (int j = 0; j < nodeCount; j++)
-                {
                     nodesEdgesMatrix[i, j] = -1;
-                }
             foreach (KeyValuePair<String, int> entry in vectorGraphic)
             {
                 String[] temp = entry.Key.Split(new char[] { ',' });
@@ -149,7 +148,6 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public void PrintEdgeArray()
         {
-            Console.WriteLine("EdgeArray:行代表from,列代表to");
             Console.WriteLine("From/to ");
             nodesList.ForEach(p => Console.Write(p + "   "));
             Console.Write("\n");
