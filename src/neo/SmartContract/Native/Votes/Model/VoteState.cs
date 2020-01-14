@@ -23,7 +23,7 @@ namespace Neo.SmartContract.Native.Votes.Model
             this.voter = voter;
             records = candidate;
         }
-        
+
         public ISerializable GetCandidate() => this.records;
 
         public void Serialize(BinaryWriter write)

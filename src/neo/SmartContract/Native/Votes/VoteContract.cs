@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native
                 Title = args[1].GetString(),
                 Description = args[2].GetString(),
                 CandidateNumber = (UInt32)args[3].GetBigInteger(),
-                IsSequence = true
+                IsSequence = false
             };
             if (RegisterVote(engine.Snapshot, createState))
             {
@@ -220,7 +220,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem AccessControl(ApplicationEngine engine, VMArray args)
         {
-            if (args[0] is null || args[1] is null || args[2] is null || args[1].GetSpan().Length % 20 != 0) return false;
+            if (args[0] is null || args[1] is null || args[2] is null) return false;
             UInt256 TxHash = new UInt256(args[0].GetSpan());
             var id = Crypto.Hash160(VoteCreateState.ConcatByte(TxHash.ToArray(), (engine.CallingScriptHash ?? this.Hash).ToArray()));
             HashSet<UInt160> newVoter = new HashSet<UInt160>();
@@ -288,7 +288,7 @@ namespace Neo.SmartContract.Native
             snapshot.Storages.Add(key, new StorageItem
             {
                 Value = createState.ToArray()
-             });
+            });
             return true;
         }
 

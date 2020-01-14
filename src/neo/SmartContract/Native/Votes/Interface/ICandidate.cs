@@ -12,7 +12,7 @@ namespace Neo.SmartContract.Native.Votes.Interface
         public int Size => candidateList.ToArray().Length;
 
         public MultiCandidate() => this.candidateList = new List<int>();
-        public MultiCandidate(List<int> lists) => this.candidateList = lists;        
+        public MultiCandidate(List<int> lists) => this.candidateList = lists;
 
         public List<int> GetCandidate()
         {
@@ -45,10 +45,10 @@ namespace Neo.SmartContract.Native.Votes.Interface
                 stackLists.Add(new Integer(i));
             }
             stackLists.Add(new Integer(Size));
-            return new Array(referenceCounter ,stackLists.ToArray());
+            return new Array(referenceCounter, stackLists.ToArray());
         }
     }
-    internal class SingleCandidate : ISerializable , IInteroperable
+    internal class SingleCandidate : ISerializable, IInteroperable
     {
         private int candidate = 0;
         public int Size => 4;
