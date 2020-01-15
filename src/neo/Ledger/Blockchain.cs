@@ -281,7 +281,7 @@ namespace Neo.Ledger
                 if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != RelayResultReason.Succeed)
                     continue;
                 // Add to the memory pool
-                MemPool.TryAdd(tx.Hash, tx);
+                MemPool.TryAdd(currentSnapshot, tx.Hash, tx);
             }
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
@@ -433,7 +433,7 @@ namespace Neo.Ledger
                     reason = RelayResultReason.AlreadyExists;
                 else if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
                     reason = RelayResultReason.OutOfMemory;
-                else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
+                else if (!MemPool.TryAdd(currentSnapshot, parallelVerified.Transaction.Hash, parallelVerified.Transaction))
                     reason = RelayResultReason.OutOfMemory;
                 else if (parallelVerified.ShouldRelay)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });

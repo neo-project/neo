@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -42,7 +43,7 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = new Dictionary<UInt256, PoolItem>();
         /// <summary>
-        /// Stores the verified sorted transactins currently in the pool.
+        /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedTransactions = new SortedSet<PoolItem>();
 
@@ -258,21 +259,28 @@ namespace Neo.Ledger
         /// Note: This must only be called from a single thread (the Blockchain actor). To add a transaction to the pool
         ///       tell the Blockchain actor about the transaction.
         /// </summary>
+        /// <param name="snapshot">Snapshot</param>
         /// <param name="hash"></param>
         /// <param name="tx"></param>
         /// <returns></returns>
-        internal bool TryAdd(UInt256 hash, Transaction tx)
+        internal bool TryAdd(SnapshotView snapshot, UInt256 hash, Transaction tx)
         {
             var poolItem = new PoolItem(tx);
 
+            _txRwLock.EnterWriteLock();
             if (_unsortedTransactions.ContainsKey(hash)) return false;
 
             List<Transaction> removedTransactions = null;
-            _txRwLock.EnterWriteLock();
             try
             {
+                // Check balance
+                BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
                 _unsortedTransactions.Add(hash, poolItem);
-                SendersFeeMonitor.AddSenderFee(tx);
+                if (balance < SendersFeeMonitor.AddSenderFee(tx))
+                {
+                    _unsortedTransactions.Remove(hash);
+                    return false;
+                }
                 _sortedTransactions.Add(poolItem);
 
                 if (Count > Capacity)
@@ -413,6 +421,8 @@ namespace Neo.Ledger
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
 
+            _txRwLock.EnterWriteLock();
+
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
@@ -427,7 +437,6 @@ namespace Neo.Ledger
                 if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
             }
 
-            _txRwLock.EnterWriteLock();
             try
             {
                 int blocksTillRebroadcast = BlocksTillRebroadcast;

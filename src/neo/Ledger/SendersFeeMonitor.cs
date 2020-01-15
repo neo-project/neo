@@ -23,14 +23,16 @@ namespace Neo.Ledger
             return value;
         }
 
-        public void AddSenderFee(Transaction tx)
+        public BigInteger AddSenderFee(Transaction tx)
         {
+            BigInteger ret = tx.SystemFee + tx.NetworkFee;
             _senderFeeRwLock.EnterWriteLock();
             if (_senderFee.TryGetValue(tx.Sender, out var value))
-                _senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
+                _senderFee[tx.Sender] = ret += value;
             else
-                _senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+                _senderFee.Add(tx.Sender, ret);
             _senderFeeRwLock.ExitWriteLock();
+            return ret;
         }
 
         public void RemoveSenderFee(Transaction tx)
