@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.SmartContract.Native.Votes.Interface;
+using Neo.SmartContract.Native.Votes.Model;
 using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Native.Votes.Model
