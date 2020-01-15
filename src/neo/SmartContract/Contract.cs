@@ -82,7 +82,7 @@ namespace Neo.SmartContract
                 }
                 sb.EmitPush(publicKeys.Length);
                 sb.Emit(OpCode.PUSHNULL);
-                sb.EmitSysCall(InteropService.Crypto.ECDsaCheckMultiSig);
+                sb.EmitSysCall(InteropService.Crypto.ECDsaSecp256r1CheckMultiSig);
                 return sb.ToArray();
             }
         }
@@ -102,7 +102,7 @@ namespace Neo.SmartContract
             {
                 sb.EmitPush(publicKey.EncodePoint(true));
                 sb.Emit(OpCode.PUSHNULL);
-                sb.EmitSysCall(InteropService.Crypto.ECDsaVerify);
+                sb.EmitSysCall(InteropService.Crypto.ECDsaSecp256r1Verify);
                 return sb.ToArray();
             }
         }

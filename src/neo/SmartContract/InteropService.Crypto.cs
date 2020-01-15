@@ -13,8 +13,10 @@ namespace Neo.SmartContract
     {
         public static class Crypto
         {
-            public static readonly InteropDescriptor ECDsaVerify = Register("Neo.Crypto.ECDsaVerify", Crypto_ECDsaVerify, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor ECDsaCheckMultiSig = Register("Neo.Crypto.ECDsaCheckMultiSig", Crypto_ECDsaCheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor ECDsaSecp256r1Verify = Register("Neo.Crypto.ECDsa.Secp256r1.Verify", Crypto_ECDsaSecp256r1Verify, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor ECDsaSecp256k1Verify = Register("Neo.Crypto.ECDsa.Secp256k1.Verify", Crypto_ECDsaSecp256k1Verify, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor ECDsaSecp256r1CheckMultiSig = Register("Neo.Crypto.ECDsa.Secp256r1.CheckMultiSig", Crypto_ECDsaSecp256r1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor ECDsaSecp256k1CheckMultiSig = Register("Neo.Crypto.ECDsa.Secp256k1.CheckMultiSig", Crypto_ECDsaSecp256k1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
 
             private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack)
             {
@@ -24,10 +26,20 @@ namespace Neo.SmartContract
                 if (item is Array array) n = array.Count;
                 else n = (int)item.GetBigInteger();
                 if (n < 1) return 0;
-                return ECDsaVerify.Price * n;
+                return ECDsaSecp256r1Verify.Price * n;
             }
 
-            private static bool Crypto_ECDsaVerify(ApplicationEngine engine)
+            private static bool Crypto_ECDsaSecp256r1Verify(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Curve.Secp256r1);
+            }
+
+            private static bool Crypto_ECDsaSecp256k1Verify(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Curve.Secp256k1);
+            }
+
+            private static bool Crypto_ECDsaVerify(ApplicationEngine engine, Cryptography.ECC.ECCurve.Curve curve)
             {
                 StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
                 ReadOnlySpan<byte> message = item0 switch
@@ -40,7 +52,7 @@ namespace Neo.SmartContract
                 ReadOnlySpan<byte> signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
                 try
                 {
-                    engine.CurrentContext.EvaluationStack.Push(Cryptography.Crypto.VerifySignature(message, signature, pubkey));
+                    engine.CurrentContext.EvaluationStack.Push(Cryptography.Crypto.VerifySignature(message, signature, pubkey, curve));
                 }
                 catch (ArgumentException)
                 {
@@ -49,7 +61,17 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine)
+            private static bool Crypto_ECDsaSecp256r1CheckMultiSig(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Curve.Secp256r1);
+            }
+
+            private static bool Crypto_ECDsaSecp256k1CheckMultiSig(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Curve.Secp256k1);
+            }
+
+            private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine, Cryptography.ECC.ECCurve.Curve curve)
             {
                 StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
                 ReadOnlySpan<byte> message = item0 switch
@@ -97,7 +119,7 @@ namespace Neo.SmartContract
                 {
                     for (int i = 0, j = 0; fSuccess && i < m && j < n;)
                     {
-                        if (Cryptography.Crypto.VerifySignature(message, signatures[i], pubkeys[j]))
+                        if (Cryptography.Crypto.VerifySignature(message, signatures[i], pubkeys[j], curve))
                             i++;
                         j++;
                         if (m - i > n - j)
