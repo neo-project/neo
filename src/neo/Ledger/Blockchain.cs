@@ -23,7 +23,7 @@ namespace Neo.Ledger
     {
         public partial class ApplicationExecuted { }
         public class PersistCompleted { public Block Block; }
-        public class Import { public IEnumerable<Block> Blocks; public bool Verify; }
+        public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
