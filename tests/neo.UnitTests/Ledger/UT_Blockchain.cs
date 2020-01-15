@@ -51,7 +51,7 @@ namespace Neo.UnitTests.Ledger
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-            Blockchain.Singleton.MemPool.TryAdd(txSample.Hash, txSample);
+            Blockchain.Singleton.MemPool.TryAdd(Blockchain.Singleton.GetSnapshot(), txSample.Hash, txSample);
         }
 
         [TestMethod]

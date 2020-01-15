@@ -129,7 +129,7 @@ namespace Neo.UnitTests.Ledger
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransaction();
-                _unit.TryAdd(txToAdd.Hash, txToAdd);
+                _unit.TryAdd(Blockchain.Singleton.GetSnapshot(), txToAdd.Hash, txToAdd);
             }
 
             Console.WriteLine($"created {count} tx");
@@ -137,7 +137,7 @@ namespace Neo.UnitTests.Ledger
 
         private void AddTransaction(Transaction txToAdd)
         {
-            _unit.TryAdd(txToAdd.Hash, txToAdd);
+            _unit.TryAdd(Blockchain.Singleton.GetSnapshot(), txToAdd.Hash, txToAdd);
         }
 
         private void AddTransactionsWithBalanceVerify(int count, long fee)
@@ -145,7 +145,7 @@ namespace Neo.UnitTests.Ledger
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransactionWithFeeAndBalanceVerify(fee);
-                _unit.TryAdd(txToAdd.Hash, txToAdd);
+                _unit.TryAdd(Blockchain.Singleton.GetSnapshot(), txToAdd.Hash, txToAdd);
             }
 
             Console.WriteLine($"created {count} tx");
@@ -359,8 +359,9 @@ namespace Neo.UnitTests.Ledger
         {
             AddTransactions(10);
 
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var txToAdd = CreateTransaction();
-            _unit.TryAdd(txToAdd.Hash, txToAdd);
+            _unit.TryAdd(snapshot, txToAdd.Hash, txToAdd);
             _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
             _unit.InvalidateVerifiedTransactions();
             _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
@@ -396,11 +397,12 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetVerifiedTransactions()
         {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
-            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.TryAdd(snapshot, tx1.Hash, tx1);
             _unit.InvalidateVerifiedTransactions();
-            _unit.TryAdd(tx2.Hash, tx2);
+            _unit.TryAdd(snapshot, tx2.Hash, tx2);
             IEnumerable<Transaction> enumerable = _unit.GetVerifiedTransactions();
             enumerable.Count().Should().Be(1);
             var enumerator = enumerable.GetEnumerator();
@@ -448,16 +450,18 @@ namespace Neo.UnitTests.Ledger
         public void TestTryAdd()
         {
             var tx1 = CreateTransaction();
-            _unit.TryAdd(tx1.Hash, tx1).Should().BeTrue();
-            _unit.TryAdd(tx1.Hash, tx1).Should().BeFalse();
-            _unit2.TryAdd(tx1.Hash, tx1).Should().BeFalse();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            _unit.TryAdd(snapshot, tx1.Hash, tx1).Should().BeTrue();
+            _unit.TryAdd(snapshot, tx1.Hash, tx1).Should().BeFalse();
+            _unit2.TryAdd(snapshot, tx1.Hash, tx1).Should().BeFalse();
         }
 
         [TestMethod]
         public void TestTryGetValue()
         {
             var tx1 = CreateTransaction();
-            _unit.TryAdd(tx1.Hash, tx1);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            _unit.TryAdd(snapshot, tx1.Hash, tx1);
             _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
             tx.Should().BeEquivalentTo(tx1);
 
@@ -493,7 +497,7 @@ namespace Neo.UnitTests.Ledger
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
             Transaction[] transactions = { tx1, tx2 };
-            _unit.TryAdd(tx1.Hash, tx1);
+            _unit.TryAdd(snapshot, tx1.Hash, tx1);
 
             var block = new Block { Transactions = transactions };
 
