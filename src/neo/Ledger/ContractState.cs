@@ -12,7 +12,7 @@ namespace Neo.Ledger
 {
     public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
-        public uint Id;
+        public int Id;
         public byte[] Script;
         public ContractManifest Manifest;
 
@@ -46,7 +46,7 @@ namespace Neo.Ledger
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Id = reader.ReadUInt32();
+            Id = reader.ReadInt32();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
         }

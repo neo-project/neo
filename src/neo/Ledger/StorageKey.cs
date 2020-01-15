@@ -7,12 +7,12 @@ namespace Neo.Ledger
 {
     public class StorageKey : IEquatable<StorageKey>, ISerializable
     {
-        public uint Id;
+        public int Id;
         public byte[] Key;
 
-        int ISerializable.Size => sizeof(uint) + (Key.Length / 16 + 1) * 17;
+        int ISerializable.Size => sizeof(int) + (Key.Length / 16 + 1) * 17;
 
-        internal static byte[] CreateSearchPrefix(uint id, byte[] prefix)
+        internal static byte[] CreateSearchPrefix(int id, byte[] prefix)
         {
             using (MemoryStream ms = new MemoryStream())
             {
@@ -33,7 +33,7 @@ namespace Neo.Ledger
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Id = reader.ReadUInt32();
+            Id = reader.ReadInt32();
             Key = reader.ReadBytesWithGrouping();
         }
 

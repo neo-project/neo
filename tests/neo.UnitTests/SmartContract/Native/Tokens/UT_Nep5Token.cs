@@ -97,7 +97,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         public override string ServiceName => "test";
 
-        public override uint Id => 0x10000005;
+        public override int Id => 0x10000005;
 
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {

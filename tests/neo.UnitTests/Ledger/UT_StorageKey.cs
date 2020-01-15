@@ -39,7 +39,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Id_Set()
         {
-            uint val = 1;
+            int val = 1;
             uut.Id = val;
             uut.Id.Should().Be(val);
         }
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_SameKey()
         {
-            uint val = 0x42000000;
+            int val = 0x42000000;
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
@@ -91,14 +91,14 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_DiffHash_SameKey()
         {
-            uint val = 0x42000000;
+            int val = 0x42000000;
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
                 Id = val,
                 Key = keyVal
             };
-            uut.Id = 0x88000000;
+            uut.Id = 0x78000000;
             uut.Key = keyVal;
 
             uut.Equals(newSk).Should().BeFalse();
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_DiffKey()
         {
-            uint val = 0x42000000;
+            int val = 0x42000000;
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
