@@ -1,4 +1,6 @@
 
+using System.Collections.Generic;
+
 namespace Neo.Trie
 {
     public interface ITrie
@@ -11,8 +13,6 @@ namespace Neo.Trie
 
         byte[] GetRoot();
 
-        bool Prove(byte[] key, byte[] proof);
-
-        byte[] GetProof(byte[] Key, byte [] value);
+        Dictionary<byte[], byte[]> GetProof(byte[] Key);
     }
 }

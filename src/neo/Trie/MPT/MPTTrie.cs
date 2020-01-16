@@ -1,4 +1,5 @@
 using Neo.IO.Json;
+using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
 {
@@ -225,7 +226,6 @@ namespace Neo.Trie.MPT
                         {
                             node = HashNode.EmptyNode();
                             result = true;
-                            break;
                         }
                         break;
                     }
@@ -319,14 +319,57 @@ namespace Neo.Trie.MPT
             return this.root.GetHash();
         }
 
-        public bool Prove(byte[] key, byte[] proof)
+        public Dictionary<byte[], byte[]> GetProof(byte[] path)
         {
-            return true;
+            var dict = new Dictionary<byte[], byte[]> { };
+            getProof(ref root, path, dict);
+            return dict;
         }
 
-        public byte[] GetProof(byte[] key, byte[] value)
+        private void getProof(ref MPTNode node, byte[] path, Dictionary<byte[], byte[]> dict)
         {
-            return new byte[0];
+            switch (node)
+            {
+                case ValueNode valueNode:
+                    {
+                        if (path.Length == 0)
+                        {
+                            dict.Add(valueNode.GetHash(), valueNode.Encode());
+                        }
+                        break;
+                    }
+                case HashNode hashNode:
+                    {
+                        if (hashNode.IsEmptyNode) break;
+                        node = Resolve(hashNode.Hash);
+                        dict.Add(node.GetHash(), node.Encode());
+                        getProof(ref node, path, dict);
+                        break;
+                    }
+                case FullNode fullNode:
+                    {
+                        dict.Add(fullNode.GetHash(), fullNode.Encode());
+                        if (path.Length == 0)
+                        {
+                            getProof(ref fullNode.Children[16], path, dict);
+                        }
+                        else
+                        {
+                            getProof(ref fullNode.Children[path[0]], path.Skip(1), dict);
+                        }
+                        break;
+                    }
+                case ShortNode shortNode:
+                    {
+                        var prefix = shortNode.Key.CommonPrefix(path);
+                        if (prefix.Length == shortNode.Key.Length)
+                        {
+                            dict.Add(shortNode.GetHash(), shortNode.Encode());
+                            getProof(ref shortNode.Next, path.Skip(prefix.Length), dict);
+                        }
+                        break;
+                    }
+            }
         }
 
         public JObject ToJson()

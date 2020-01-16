@@ -39,9 +39,8 @@ namespace Neo.Trie.MPT
 
         public override void Deserialize(BinaryReader reader)
         {
-            var hashNode = new HashNode();
             Key = reader.ReadVarBytes();
-            hashNode.Deserialize(reader);
+            var hashNode = new HashNode(reader.ReadVarBytes());
             Next = hashNode;
         }
 

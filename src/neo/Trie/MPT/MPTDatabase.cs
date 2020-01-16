@@ -1,5 +1,6 @@
 
 using Neo.Persistence;
+using System.Text;
 
 namespace Neo.Trie.MPT
 {
@@ -9,9 +10,11 @@ namespace Neo.Trie.MPT
 
         public static readonly byte TABLE = 0x4D;
 
+        public static readonly byte[] Prefix = Encoding.ASCII.GetBytes("MPT");
+
         private byte[] StoreKey(byte[] hash)
         {
-            return hash;
+            return Prefix.Concat(hash);
         }
 
         public MPTDatabase(IStore store)
