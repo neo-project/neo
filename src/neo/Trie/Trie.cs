@@ -1,8 +1,8 @@
 
 namespace Neo.Trie
 {
-    public abstract class Trie
+    public interface ITrie
     {
-
+        
     }
 }

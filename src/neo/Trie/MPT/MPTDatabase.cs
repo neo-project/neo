@@ -1,15 +1,17 @@
 
 using Neo.Persistence;
+using System.Threading;
+using System;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTDatabase: Database
+    public class MPTDatabase: ITrieDatabase
     {
         private IStore store;
 
-        private byte TABLE = 0x54;
+        public static readonly byte TABLE = 0x4D;
 
-        private byte[] GetStoreKey(byte[] hash)
+        private byte[] StoreKey(byte[] hash)
         {
             return hash;
         }
@@ -21,9 +23,19 @@ namespace Neo.Trie.MPT
 
         public MPTNode Node(byte[] hash)
         {
-            var data = store.TryGet(TABLE, GetStoreKey(hash));
+            var data = store.TryGet(TABLE, StoreKey(hash));
             var n = MPTNode.Decode(data);
             return n;
+        }
+
+        public void Delete(byte[] hash)
+        {
+            store.Delete(TABLE, StoreKey(hash));
+        }
+
+        public void Put(MPTNode node)
+        {   
+            store.Put(TABLE, StoreKey(node.GetHash()), node.Encode());
         }
     }
 }

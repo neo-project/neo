@@ -1,82 +1,186 @@
 using System.IO;
+using System.Text;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Cryptography;
 
 namespace Neo.Trie.MPT
 {
-    enum NodeType
+    public enum NodeType
     {
-        BranchNode,
-        ExtensionNode,
-        LeafNode,
+        FullNode,
+        ShortNode,
         HashNode,
-        ValueNode
+        ValueNode,
+        NullNode = 0xFF
     }
+
     public class NodeFlag
     {
         public byte[] Hash;
-        public bool dirty;
+        public bool Dirty;
+
+        public NodeFlag()
+        {
+            Dirty = true;
+        }
     }
+    
     public abstract class MPTNode: ISerializable
     {
+        public NodeFlag Flag;
+        protected NodeType nType;
 
-        public NodeFlag Flag { get; }
+        protected abstract byte[] calHash();
+        
+        public virtual byte[] GetHash() {
+            if (!Flag.Dirty) return Flag.Hash;
+            Flag.Hash = calHash();
+            Flag.Dirty = false;
+            return (byte[])Flag.Hash.Clone();
+        }
+
+        public void ResetFlag()
+        {
+            Flag = new NodeFlag();
+        }
 
         public int Size { get; }
+        
+        public MPTNode()
+        {
+            Flag = new NodeFlag();
+        }
+
+         public virtual void Serialize(BinaryWriter writer)
+        {
+            writer.Write((byte)nType);
+        }
+
+        public virtual void Deserialize(BinaryReader reader)
+        {
+
+        }
+        
+        public byte[] Encode()
+        {
+            return this.ToArray();
+        }
 
         public static MPTNode Decode(byte[] data)
         {
             var nodeType = (NodeType)data[0];
             data = data.Skip(1);
-            switch (nodeType)
+
+            using (MemoryStream ms = new MemoryStream(data, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                case NodeType.BranchNode:
-                    return BranchNode.Decode(data);
-                case NodeType.ExtensionNode:
-                    return ExtensionNode.Decode(data);
-                case NodeType.LeafNode:
-                    return LeafNode.Decode(data);
-                case NodeType.ValueNode:
-                    return ValueNode.Decode(data);
-                default:
-                    throw new System.Exception();
+                switch (nodeType)
+                {
+                    case NodeType.FullNode:
+                    {
+                        var n = new FullNode();
+                        n.Deserialize(reader);
+                        return n;
+                    }
+                    case NodeType.ShortNode:
+                    {
+                        var n = new ShortNode();
+                        n.Deserialize(reader);
+                        return n;
+                    }
+                    case NodeType.ValueNode:
+                    {
+                        var n = new ValueNode();
+                        n.Deserialize(reader);
+                        return n;
+                    }
+                    default:
+                        throw new System.Exception();
+                }
             }
         }
 
+        public abstract JObject ToJson();
     }
 
-    public class ExtensionNode : MPTNode
+    public class ShortNode : MPTNode
     {
         public byte[] Key;
+
         public MPTNode Next;
 
-        public ExtensionNode Clone()
+        public new int Size => Key.Length + Next.Size;
+
+        protected override byte[] calHash(){
+            return Key.Concat(Next.GetHash()).Sha256();
+        }
+        public ShortNode()
         {
-            var cloned = new ExtensionNode();
-            cloned.Key = (byte[])Key.Clone();
-            cloned.Next = Next;
+            nType = NodeType.ShortNode;
+        }
+
+        public ShortNode Clone()
+        {
+            var cloned = new ShortNode() {
+                Key = (byte[])Key.Clone(),
+                Next = Next,
+            };
             return cloned;
         }
 
-        public byte[] Encode()
+        public override void Serialize(BinaryWriter writer)
         {
-            return new byte[]{};
+            base.Serialize(writer);
+            writer.WriteVarBytes(Key);
+            writer.WriteVarBytes(Next.GetHash());
         }
 
-        public new static ExtensionNode Decode(byte[] data)
+        public override void Deserialize(BinaryReader reader)
         {
-            var n = new ExtensionNode();
-            return n;
+            var hashNode = new HashNode();
+            Key = reader.ReadVarBytes();
+            hashNode.Deserialize(reader);
+            Next = hashNode;
+        }
+
+        public override JObject ToJson()
+        {
+            var json = new JObject();
+            json["key"] = Key.ToHexString();
+            json["next"] = Next.ToJson();
+            return json;
         }
     }
 
-    public class BranchNode : MPTNode
+    public class FullNode : MPTNode
     {
         public MPTNode[] Children = new MPTNode[17];
 
-        public BranchNode Clone()
+        public new int Size;
+
+        public FullNode()
         {
-            var cloned = new BranchNode();
+            nType = NodeType.FullNode;
+            for (int i = 0; i < Children.Length; i++)
+            {
+                Children[i] = HashNode.EmptyNode();
+            }
+        }
+
+        protected override byte[] calHash()
+        {
+            var bytes = new byte[0];
+            for (int i = 0; i < Children.Length; i++)
+            {
+                bytes = bytes.Concat(Children[i].GetHash());
+            }
+            return bytes.Sha256();
+        }
+
+        public FullNode Clone()
+        {
+            var cloned = new FullNode();
             for (int i = 0; i < Children.Length; i++)
             {
                 cloned.Children[i] = Children[i];
@@ -86,28 +190,32 @@ namespace Neo.Trie.MPT
 
         public override void Serialize(BinaryWriter writer)
         {
-            writer.WriteNullableArray<MPTNode>(Children);
+            base.Serialize(writer);
+            for (int i = 0; i < Children.Length; i++)
+            {
+                writer.WriteVarBytes(Children[i].GetHash());
+            }
         }
 
         public override void Deserialize(BinaryReader reader)
         {
-
-        }
-    }
-
-    public class LeafNode : MPTNode
-    {
-        public byte[] Key;
-        public MPTNode Value;
-
-        public override void Serialize(BinaryWriter writer)
-        {
-            
+            for (int i = 0; i < Children.Length; i++)
+            {
+                var hashNode = new HashNode(reader.ReadVarBytes());
+                Children[i] = hashNode;
+            }
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public override JObject ToJson()
         {
-            Value = new HashNode(reader.ReadVarBytes());
+            var json = new JObject();
+            var jchildren = new JArray();
+            for (int i = 0; i < Children.Length; i++)
+            {
+                jchildren.Add(Children[i].ToJson());
+            }
+            json["children"] = jchildren;
+            return json;
         }
     }
 
@@ -115,14 +223,32 @@ namespace Neo.Trie.MPT
     {
         public byte[] Hash;
 
+        public HashNode()
+        {
+            nType = NodeType.HashNode;
+        }   
+
         public HashNode(byte[] hash)
         {
-            Hash = new byte[hash.Length];
-            hash.CopyTo(Hash, 0);
+            nType = NodeType.HashNode;
+            Hash = (byte[])hash.Clone();
         }
+        
+        protected override byte[] calHash()
+        {
+            return (byte[])Hash.Clone();
+        }
+
+        public static HashNode EmptyNode()
+        {
+            return new HashNode(new byte[]{});
+        }
+
+        public bool IsEmptyNode => Hash.Length == 0;
 
         public override void Serialize(BinaryWriter writer)
         {
+            base.Serialize(writer);
             writer.WriteVarBytes(Hash);
         }
 
@@ -130,26 +256,54 @@ namespace Neo.Trie.MPT
         {
             Hash = reader.ReadVarBytes();
         }
+
+        public override JObject ToJson()
+        {
+            var json = new JObject();
+            if (!this.IsEmptyNode) 
+            {
+                json["hash"] = Hash.ToHexString();
+            }
+            return json;
+        }
     }
 
     public class ValueNode : MPTNode
     {
         public byte[] Value;
 
+        protected override byte[] calHash()
+        {
+            return Value.Length < 32 ? (byte[])Value.Clone() : Value.Sha256();
+        }
+
+        public ValueNode()
+        {
+            nType = NodeType.ValueNode;
+        }
+
         public ValueNode(byte[] val)
         {
-            Value = new byte[val.Length];
-            val.CopyTo(Value, 0);
+            nType = NodeType.ValueNode;
+            Value = (byte[])val.Clone();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
+            base.Serialize(writer);
             writer.WriteVarBytes(Value);
         }
 
         public override void Deserialize(BinaryReader reader)
         {
             Value = reader.ReadVarBytes();
+        }
+
+        public override JObject ToJson()
+        {
+            var json = new JObject();
+            json["value"] = Value.ToHexString();
+            return json;
         }
     }
 }

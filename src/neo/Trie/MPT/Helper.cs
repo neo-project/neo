@@ -17,12 +17,13 @@ namespace Neo.Trie.MPT
             var prefix = new byte[]{};
             var minLen = a.Length <= b.Length ? a.Length : b.Length;
 
-            if (a.Length == 0 || b.Length == 0 || a[0] != b[0]) return prefix;
-
-            for (int i = 0; i < minLen; i++)
+            if (a.Length != 0 && b.Length != 0)
             {
-                if (a[i] != b[i]) break;
-                prefix = prefix.Add(a[i]);
+                for (int i = 0; i < minLen; i++)
+                {
+                    if (a[i] != b[i]) break;
+                    prefix = prefix.Add(a[i]);
+                }
             }
             return prefix;
         }
