@@ -1,11 +1,9 @@
 
 using Neo.Persistence;
-using System.Threading;
-using System;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTDatabase: ITrieDatabase
+    public class MPTDatabase
     {
         private IStore store;
 
@@ -34,7 +32,7 @@ namespace Neo.Trie.MPT
         }
 
         public void Put(MPTNode node)
-        {   
+        {
             store.Put(TABLE, StoreKey(node.GetHash()), node.Encode());
         }
     }

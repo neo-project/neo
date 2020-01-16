@@ -1,5 +1,4 @@
 using Neo.IO.Json;
-using System;
 
 namespace Neo.Trie.MPT
 {
@@ -89,7 +88,7 @@ namespace Neo.Trie.MPT
             return false;
         }
 
-        public bool Put(byte[] path, byte[] value)
+        public bool TryPut(byte[] path, byte[] value)
         {
             var n = new ValueNode(value);
             path = (byte[])path.Clone();
@@ -320,9 +319,14 @@ namespace Neo.Trie.MPT
             return this.root.GetHash();
         }
 
-        public void Proof(byte[] path)
+        public bool Prove(byte[] key, byte[] proof)
         {
+            return true;
+        }
 
+        public byte[] GetProof(byte[] key, byte[] value)
+        {
+            return new byte[0];
         }
 
         public JObject ToJson()

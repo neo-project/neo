@@ -103,7 +103,6 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.AreEqual("{\"key\":\"0a0c\",\"next\":{\"children\":[{\"key\":\"01\",\"next\":{\"value\":\"abcd\"}},{},{},{},{},{},{},{},{},{\"key\":\"09\",\"next\":{\"value\":\"2222\"}},{},{},{},{},{},{},{}]}}", mpt.ToJson().ToString());
             mpt.Put("0a0c0a0e".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
             Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt.GetRoot().ToHexString());
-            Assert.AreEqual(8, store.Size(MPTDatabase.TABLE));
         }
 
         [TestMethod]
@@ -150,6 +149,14 @@ namespace Neo.UnitTests.Trie.MPT
             result = mpt.TryDelete("0a0c0a0e".HexToBytes());
             Assert.IsFalse(result);
             Assert.AreEqual("76248d1bf457f0b95c1f6d05d787dca152906f106bcbafacbf7a69c6ae1797c4", mpt.GetRoot().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestGetProof()
+        {
+            var store = new MemoryStore();
+            var mptdb = new MPTDatabase(store);
+            var mpt = new MPTTrie(mptdb, new byte[]{});
         }
     }
 }
