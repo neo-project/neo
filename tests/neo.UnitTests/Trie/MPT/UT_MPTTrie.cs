@@ -80,8 +80,8 @@ namespace Neo.UnitTests.Trie.MPT
             var n = new ValueNode();
             n.Value = Encoding.ASCII.GetBytes("hello");
             var store = new MemoryStore();
-            store.Put(MPTDatabase.TABLE, n.GetHash(), n.Encode());
             var mptdb = new MPTDatabase(store);
+            mptdb.Put(n);
             var mpt = new MPTTrie(mptdb, root);
             var result = mpt.TryGet("0a0c0a0e".HexToBytes(), out byte[] value);
 
@@ -183,7 +183,6 @@ namespace Neo.UnitTests.Trie.MPT
 
             Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt.GetRoot().ToHexString());
             var dict = mpt.GetProof("0a0c0001".HexToBytes());
-            Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt.GetRoot().ToHexString());
             Assert.AreEqual(4, dict.Count);
             Assert.IsTrue(dict.TryGetValue(mpt.GetRoot(), out byte[] value));
             Assert.IsTrue(dict.TryGetValue(b.GetHash(), out value));
