@@ -49,7 +49,6 @@ namespace Neo.UnitTests.Network.P2P
             //synchronization
             uut.IsHighPriority(Message.Create(MessageCommand.GetHeaders, s)).Should().Be(false);
             uut.IsHighPriority(Message.Create(MessageCommand.Headers, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.GetBlocks, s)).Should().Be(false);
             uut.IsHighPriority(Message.Create(MessageCommand.Mempool, s)).Should().Be(false);
             uut.IsHighPriority(Message.Create(MessageCommand.Inv, s)).Should().Be(false);
             uut.IsHighPriority(Message.Create(MessageCommand.GetData, s)).Should().Be(false);
@@ -124,10 +123,6 @@ namespace Neo.UnitTests.Network.P2P
             msg = Message.Create(MessageCommand.Headers, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
             uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
-            // GetBlocks (drop)
-            msg = Message.Create(MessageCommand.GetBlocks, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
             // Mempool (drop)
             msg = Message.Create(MessageCommand.Mempool, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);

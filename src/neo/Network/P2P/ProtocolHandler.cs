@@ -89,10 +89,7 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
-                    break;
-                case MessageCommand.BlockData:
-                    OnBlockDataReceived((Block)msg.Payload);
+                    OnBlockReceived((Block)msg.Payload);
                     break;
                 case MessageCommand.Consensus:
                     OnInventoryReceived((ConsensusPayload)msg.Payload);
@@ -108,9 +105,6 @@ namespace Neo.Network.P2P
                     break;
                 case MessageCommand.GetAddr:
                     OnGetAddrMessageReceived();
-                    break;
-                case MessageCommand.GetBlocks:
-                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
                 case MessageCommand.GetBlockData:
                     OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
@@ -151,7 +145,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnBlockDataReceived(Block payload)
+        private void OnBlockReceived(Block payload)
         {
             if (payload != null)
                 system.SyncManager.Tell(payload, Context.Parent);
@@ -201,33 +195,6 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
 
-        /// <summary>
-        /// Will be triggered when a MessageCommand.GetBlocks message is received.
-        /// Tell the specified number of blocks' hashes starting with the requested HashStart until payload.Count or MaxHashesCount
-        /// Responses are sent to RemoteNode actor as MessageCommand.Inv Message.
-        /// </summary>
-        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested.</param>
-        private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
-        {
-            UInt256 hash = payload.HashStart;
-            // The default value of payload.Count is -1
-            int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
-            TrimmedBlock state = Blockchain.Singleton.View.Blocks.TryGet(hash);
-            if (state == null) return;
-            List<UInt256> hashes = new List<UInt256>();
-            for (uint i = 1; i <= count; i++)
-            {
-                uint index = state.Index + i;
-                if (index > Blockchain.Singleton.Height)
-                    break;
-                hash = Blockchain.Singleton.GetBlockHash(index);
-                if (hash == null) break;
-                hashes.Add(hash);
-            }
-            if (hashes.Count == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
-        }
-
         private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
         {
             for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
@@ -238,7 +205,7 @@ namespace Neo.Network.P2P
 
                 if (bloom_filter == null)
                 {
-                    Context.Parent.Tell(Message.Create(MessageCommand.BlockData, block));
+                    Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
                 }
                 else
                 {
@@ -440,7 +407,6 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case MessageCommand.GetAddr:
-                case MessageCommand.GetBlocks:
                 case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
                     return queue.OfType<Message>().Any(p => p.Command == msg.Command);

@@ -330,27 +330,6 @@ namespace Neo.Ledger
             return RelayResultReason.Succeed;
         }
 
-        private void OnNewHeaders(Header[] headers)
-        {
-            using (SnapshotView snapshot = GetSnapshot())
-            {
-                foreach (Header header in headers)
-                {
-                    if (header.Index - 1 >= header_index.Count) break;
-                    if (header.Index < header_index.Count) continue;
-                    if (!header.Verify(snapshot)) break;
-                    header_index.Add(header.Hash);
-                    snapshot.Blocks.Add(header.Hash, header.Trim());
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = header.Index;
-                }
-                SaveHeaderHashList(snapshot);
-                snapshot.Commit();
-            }
-            UpdateCurrentSnapshot();
-            system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
-        }
-
         private void OnNewTransaction(Transaction transaction, bool relay)
         {
             RelayResultReason reason;
@@ -408,9 +387,6 @@ namespace Neo.Ledger
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
-                    break;
-                case Header[] headers:
-                    OnNewHeaders(headers);
                     break;
                 case Block block:
                     Sender.Tell(OnNewBlock(block));
@@ -563,7 +539,6 @@ namespace Neo.Ledger
         {
             switch (message)
             {
-                case Header[] _:
                 case Block _:
                 case ConsensusPayload _:
                 case Terminated _:

@@ -16,6 +16,7 @@ namespace Neo.Network.P2P
     public class RemoteNode : Connection
     {
         internal class Relay { public IInventory Inventory; }
+        internal NodeSession session = new NodeSession();
 
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
@@ -84,7 +85,6 @@ namespace Neo.Network.P2P
             {
                 case MessageCommand.Addr:
                 case MessageCommand.GetAddr:
-                case MessageCommand.GetBlocks:
                 case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
                 case MessageCommand.Ping:
@@ -161,8 +161,7 @@ namespace Neo.Network.P2P
             if (payload.LastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
-                system.SyncManager.Tell(new SyncManager.Update { LastBlockIndex = LastBlockIndex });
+                system.SyncManager.Tell(new SyncManager.StartSync { });
             }
         }
 
@@ -173,6 +172,11 @@ namespace Neo.Network.P2P
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
+            }
+            if (inventory.InventoryType == InventoryType.Block)
+            {
+                EnqueueMessage(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height));
+                return;
             }
             EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }
@@ -196,8 +200,8 @@ namespace Neo.Network.P2P
         private void OnVerack()
         {
             verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Version = Version });
-            system.SyncManager.Tell(new SyncManager.Register { Version = Version });
+            system.TaskManager.Tell(new TaskManager.Register { Node = this });
+            system.SyncManager.Tell(new SyncManager.Register { Node = this });
             CheckMessageQueue();
         }
 
