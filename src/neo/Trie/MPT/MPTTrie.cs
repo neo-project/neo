@@ -93,7 +93,7 @@ namespace Neo.Trie.MPT
         {
             var n = new ValueNode(value);
             path = (byte[])path.Clone();
-            if (0 == value.Length)
+            if (value.Length == 0)
             {
                 return tryDelete(ref root, path);
             }
