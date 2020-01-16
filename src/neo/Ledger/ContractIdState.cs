@@ -1,4 +1,5 @@
 using Neo.IO;
+using System;
 using System.IO;
 
 namespace Neo.Ledger
@@ -20,6 +21,7 @@ namespace Neo.Ledger
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Id = reader.ReadInt32();
+            if (Id < 0) throw new FormatException();
         }
 
         void ICloneable<ContractIdState>.FromReplica(ContractIdState replica)
