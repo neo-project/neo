@@ -25,15 +25,16 @@ namespace Neo.Trie.MPT
             Dirty = true;
         }
     }
-    
-    public abstract class MPTNode: ISerializable
+
+    public abstract class MPTNode : ISerializable
     {
         public NodeFlag Flag;
         protected NodeType nType;
 
         protected abstract byte[] calHash();
-        
-        public virtual byte[] GetHash() {
+
+        public virtual byte[] GetHash()
+        {
             if (!Flag.Dirty) return Flag.Hash;
             Flag.Hash = calHash();
             Flag.Dirty = false;
@@ -46,22 +47,22 @@ namespace Neo.Trie.MPT
         }
 
         public int Size { get; }
-        
+
         public MPTNode()
         {
             Flag = new NodeFlag();
         }
 
-         public virtual void Serialize(BinaryWriter writer)
+        public virtual void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)nType);
         }
 
         public virtual void Deserialize(BinaryReader reader)
         {
-
+            
         }
-        
+
         public byte[] Encode()
         {
             return this.ToArray();
@@ -78,23 +79,23 @@ namespace Neo.Trie.MPT
                 switch (nodeType)
                 {
                     case NodeType.FullNode:
-                    {
-                        var n = new FullNode();
-                        n.Deserialize(reader);
-                        return n;
-                    }
+                        {
+                            var n = new FullNode();
+                            n.Deserialize(reader);
+                            return n;
+                        }
                     case NodeType.ShortNode:
-                    {
-                        var n = new ShortNode();
-                        n.Deserialize(reader);
-                        return n;
-                    }
+                        {
+                            var n = new ShortNode();
+                            n.Deserialize(reader);
+                            return n;
+                        }
                     case NodeType.ValueNode:
-                    {
-                        var n = new ValueNode();
-                        n.Deserialize(reader);
-                        return n;
-                    }
+                        {
+                            var n = new ValueNode();
+                            n.Deserialize(reader);
+                            return n;
+                        }
                     default:
                         throw new System.Exception();
                 }

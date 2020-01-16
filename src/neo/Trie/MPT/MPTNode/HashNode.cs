@@ -31,17 +31,6 @@ namespace Neo.Trie.MPT
 
         public bool IsEmptyNode => Hash.Length == 0;
 
-        public override void Serialize(BinaryWriter writer)
-        {
-            base.Serialize(writer);
-            writer.WriteVarBytes(Hash);
-        }
-
-        public override void Deserialize(BinaryReader reader)
-        {
-            Hash = reader.ReadVarBytes();
-        }
-
         public override JObject ToJson()
         {
             var json = new JObject();
