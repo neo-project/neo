@@ -1,7 +1,7 @@
 
 namespace Neo.Trie
 {
-    public abstract class Database
+    public interface ITrieDatabase
     {
         
     }
