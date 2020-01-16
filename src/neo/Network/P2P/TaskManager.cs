@@ -18,7 +18,6 @@ namespace Neo.Network.P2P
         public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
-        public class HeaderTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
 
@@ -28,7 +27,6 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
 
-        private const int PingCoolingOffPeriod = 60; // in secconds.
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>        
@@ -36,22 +34,11 @@ namespace Neo.Network.P2P
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, RemoteNode> nodes = new Dictionary<IActorRef, RemoteNode>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
-        private readonly UInt256 HeaderTaskHash = UInt256.Zero;
 
         public TaskManager(NeoSystem system)
         {
             this.system = system;
             this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
-        }
-
-        private void OnHeaderTaskCompleted()
-        {
-            if (!nodes.TryGetValue(Sender, out RemoteNode remoteNode))
-                return;
-            NodeSession session = remoteNode.session;
-            session.InvTasks.Remove(HeaderTaskHash);
-            DecrementGlobalTask(HeaderTaskHash);
-            RequestTasks(remoteNode);
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -60,10 +47,7 @@ namespace Neo.Network.P2P
                 return;
             // Do not accept payload of type InventoryType.TX if not synced on best known HeaderHeight
             if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < nodes.Values.Max(p => p.LastBlockIndex))
-            {
-                RequestTasks(remoteNode);
                 return;
-            }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(knownHashes);
@@ -71,10 +55,7 @@ namespace Neo.Network.P2P
             // Remove those that are already in process by other sessions
             hashes.Remove(globalTasks);
             if (hashes.Count == 0)
-            {
-                RequestTasks(remoteNode);
                 return;
-            }
 
             // Update globalTasks with the ones that will be requested within this current session
             foreach (UInt256 hash in hashes)
@@ -100,9 +81,6 @@ namespace Neo.Network.P2P
                 case TaskCompleted completed:
                     OnTaskCompleted(completed.Hash);
                     break;
-                case HeaderTaskCompleted _:
-                    OnHeaderTaskCompleted();
-                    break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
                     break;
@@ -119,7 +97,6 @@ namespace Neo.Network.P2P
         {
             Context.Watch(Sender);
             nodes.Add(Sender, node);
-            RequestTasks(node);
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -136,10 +113,7 @@ namespace Neo.Network.P2P
             knownHashes.Add(hash);
             globalTasks.Remove(hash);
             if (nodes.TryGetValue(Sender, out RemoteNode remoteNode))
-            {
                 remoteNode.session.InvTasks.Remove(hash);
-                RequestTasks(remoteNode);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -191,8 +165,6 @@ namespace Neo.Network.P2P
                             DecrementGlobalTask(task.Key);
                     }
             }
-            foreach (RemoteNode node in nodes.Values)
-                RequestTasks(node);
         }
 
         protected override void PostStop()
@@ -204,16 +176,6 @@ namespace Neo.Network.P2P
         public static Props Props(NeoSystem system)
         {
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
-        }
-
-        private void RequestTasks(RemoteNode remoteNode)
-        {
-            if (remoteNode.session.HasInvTask) return;
-            if (Blockchain.Singleton.Height >= remoteNode.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
-            {
-                nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
-            }
         }
     }
 

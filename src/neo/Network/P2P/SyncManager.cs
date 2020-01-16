@@ -29,6 +29,7 @@ namespace Neo.Network.P2P
 
         private const uint BlocksPerTask = 50;
         private const int MaxTasksCount = 10;
+        private const int PingCoolingOffPeriod = 60; // in secconds.
 
         private readonly int maxTasksPerSession = 3;
         private int totalTasksCount = 0;
@@ -222,6 +223,11 @@ namespace Neo.Network.P2P
                 totalTasksCount++;
                 lastTaskIndex = endIndex;
                 nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(startIndex, (ushort)count)));
+                if (Blockchain.Singleton.Height >= remoteNode.LastBlockIndex
+                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
+                {
+                    nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
+                }
             }
         }
 
