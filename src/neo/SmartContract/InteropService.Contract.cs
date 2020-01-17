@@ -1,4 +1,3 @@
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract.Manifest;
