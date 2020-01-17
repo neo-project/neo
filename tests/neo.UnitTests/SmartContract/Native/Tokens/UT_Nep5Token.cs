@@ -19,6 +19,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestTotalSupply()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            TestNep5Token test = new TestNep5Token();
             StorageItem item = new StorageItem
             {
                 Value = new byte[] { 0x01 }
@@ -33,10 +35,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 script = sb.ToArray();
             }
             var Hash = script.ToScriptHash();
-            key.Id = 0x10000005;
+            key.Id = test.Id;
 
             snapshot.Storages.Add(key, item);
-            TestNep5Token test = new TestNep5Token();
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             StackItem stackItem = test.TotalSupply(ae, null);
             stackItem.GetBigInteger().Should().Be(1);
@@ -96,8 +97,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override byte Decimals => 8;
 
         public override string ServiceName => "test";
-
-        public override int Id => 0x10000005;
 
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {

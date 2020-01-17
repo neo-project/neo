@@ -90,8 +90,6 @@ namespace Neo.UnitTests.SmartContract.Native
     {
         public override string ServiceName => "test";
 
-        public override int Id => 0x10000006;
-
         public StackItem TestOnPersist(ApplicationEngine engine, VMArray args)
         {
             return OnPersist(engine, args);

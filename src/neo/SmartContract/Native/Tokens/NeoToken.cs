@@ -24,8 +24,6 @@ namespace Neo.SmartContract.Native.Tokens
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
 
-        public override int Id => -2;
-
         private const byte Prefix_Validator = 33;
         private const byte Prefix_ValidatorsCount = 15;
         private const byte Prefix_NextValidators = 14;

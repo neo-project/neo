@@ -18,6 +18,7 @@ namespace Neo.SmartContract.Native
     {
         private static readonly List<NativeContract> contracts = new List<NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
+        private static int nextId = -1;
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
         public static NeoToken NEO { get; } = new NeoToken();
@@ -28,7 +29,7 @@ namespace Neo.SmartContract.Native
         public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
-        public abstract int Id { get; }
+        public int Id { get; } = nextId--;
         public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
