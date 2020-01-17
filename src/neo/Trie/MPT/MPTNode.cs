@@ -11,7 +11,6 @@ namespace Neo.Trie.MPT
         ShortNode,
         HashNode,
         ValueNode,
-        NullNode = 0xFF
     }
 
     public class NodeFlag
