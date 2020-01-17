@@ -1,7 +1,6 @@
 using System.IO;
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Json;
 
 namespace Neo.Trie.MPT
 {
@@ -34,13 +33,6 @@ namespace Neo.Trie.MPT
         public override void Deserialize(BinaryReader reader)
         {
             Value = reader.ReadVarBytes();
-        }
-
-        public override JObject ToJson()
-        {
-            var json = new JObject();
-            json["value"] = Value.ToHexString();
-            return json;
         }
     }
 }

@@ -2,7 +2,6 @@ using System.IO;
 using System.Text;
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Json;
 
 namespace Neo.Trie.MPT
 {
@@ -60,7 +59,7 @@ namespace Neo.Trie.MPT
 
         public virtual void Deserialize(BinaryReader reader)
         {
-            
+
         }
 
         public byte[] Encode()
@@ -101,7 +100,5 @@ namespace Neo.Trie.MPT
                 }
             }
         }
-
-        public abstract JObject ToJson();
     }
 }
