@@ -28,7 +28,6 @@ namespace Neo.Ledger
 
         private readonly NeoSystem _system;
 
-        //
         /// <summary>
         /// Guarantees consistency of the pool data structures.
         ///
@@ -275,12 +274,9 @@ namespace Neo.Ledger
             {
                 // Check balance
                 BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+                if (!SendersFeeMonitor.TryAddSenderFee(tx, balance)) return false;
+
                 _unsortedTransactions.Add(hash, poolItem);
-                if (balance < SendersFeeMonitor.AddSenderFee(tx))
-                {
-                    _unsortedTransactions.Remove(hash);
-                    return false;
-                }
                 _sortedTransactions.Add(poolItem);
 
                 if (Count > Capacity)
