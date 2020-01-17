@@ -31,7 +31,7 @@ namespace Neo.Persistence
             HeaderHashList = new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(snapshot, Prefixes.IX_HeaderHashList);
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
-            ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_CurrentContractId);
+            ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
         }
 
         public override void Commit()
