@@ -1,7 +1,6 @@
 
 using Neo.Persistence;
 using System.Text;
-using System;
 
 namespace Neo.Trie.MPT
 {

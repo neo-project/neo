@@ -1,7 +1,6 @@
 using System.IO;
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Json;
 
 namespace Neo.Trie.MPT
 {
@@ -13,7 +12,8 @@ namespace Neo.Trie.MPT
 
         public new int Size => Key.Length + Next.Size;
 
-        protected override byte[] calHash(){
+        protected override byte[] calHash()
+        {
             return Key.Concat(Next.GetHash()).Sha256();
         }
         public ShortNode()
@@ -23,7 +23,8 @@ namespace Neo.Trie.MPT
 
         public ShortNode Clone()
         {
-            var cloned = new ShortNode() {
+            var cloned = new ShortNode()
+            {
                 Key = (byte[])Key.Clone(),
                 Next = Next,
             };
@@ -42,14 +43,6 @@ namespace Neo.Trie.MPT
             Key = reader.ReadVarBytes();
             var hashNode = new HashNode(reader.ReadVarBytes());
             Next = hashNode;
-        }
-
-        public override JObject ToJson()
-        {
-            var json = new JObject();
-            json["key"] = Key.ToHexString();
-            json["next"] = Next.ToJson();
-            return json;
         }
     }
 }

@@ -1,5 +1,3 @@
-using Neo.IO.Json;
-using Neo.Persistence;
 using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
@@ -275,7 +273,7 @@ namespace Neo.Trie.MPT
                         }
                         var childIndex = nonEmptyChildren[0];
                         var child = fullNode.Children[childIndex];
-                        if (child is HashNode hashNode) 
+                        if (child is HashNode hashNode)
                             child = Resolve(hashNode.Hash);
                         if (child is ShortNode shortNode)
                         {
@@ -372,11 +370,6 @@ namespace Neo.Trie.MPT
         {
             db.PutRoot(GetRoot());
             db.Commit();
-        }
-
-        public JObject ToJson()
-        {
-            return root.ToJson();
         }
     }
 }

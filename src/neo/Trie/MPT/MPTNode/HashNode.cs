@@ -1,6 +1,3 @@
-using System.IO;
-using Neo.IO;
-using Neo.IO.Json;
 
 namespace Neo.Trie.MPT
 {
@@ -11,14 +8,14 @@ namespace Neo.Trie.MPT
         public HashNode()
         {
             nType = NodeType.HashNode;
-        }   
+        }
 
         public HashNode(byte[] hash)
         {
             nType = NodeType.HashNode;
             Hash = (byte[])hash.Clone();
         }
-        
+
         protected override byte[] calHash()
         {
             return (byte[])Hash.Clone();
@@ -26,19 +23,9 @@ namespace Neo.Trie.MPT
 
         public static HashNode EmptyNode()
         {
-            return new HashNode(new byte[]{});
+            return new HashNode(new byte[] { });
         }
 
         public bool IsEmptyNode => Hash.Length == 0;
-
-        public override JObject ToJson()
-        {
-            var json = new JObject();
-            if (!this.IsEmptyNode) 
-            {
-                json["hash"] = Hash.ToHexString();
-            }
-            return json;
-        }
     }
 }
