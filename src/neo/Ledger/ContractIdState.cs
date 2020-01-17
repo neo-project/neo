@@ -33,10 +33,5 @@ namespace Neo.Ledger
         {
             writer.Write(Id);
         }
-
-        internal void Set(int value)
-        {
-            Id = value;
-        }
     }
 }
