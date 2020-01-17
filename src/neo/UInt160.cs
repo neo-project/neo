@@ -1,22 +1,26 @@
+using Neo.IO;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Neo
 {
     /// <summary>
     /// This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array
+    /// It is composed by ulong(64) + ulong(64) + uint(32) = UInt160(160)
     /// </summary>
-    public class UInt160 : UIntBase, IComparable<UInt160>, IEquatable<UInt160>
+    [StructLayout(LayoutKind.Explicit, Size = 20)]
+    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable
     {
         public const int Length = 20;
         public static readonly UInt160 Zero = new UInt160();
 
-        private ulong value1;
-        private ulong value2;
-        private uint value3;
+        [FieldOffset(0)] private ulong value1;
+        [FieldOffset(8)] private ulong value2;
+        [FieldOffset(16)] private uint value3;
 
-        public override int Size => Length;
+        public int Size => Length;
 
         public UInt160()
         {
@@ -44,7 +48,7 @@ namespace Neo
             return value1.CompareTo(other.value1);
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
             value1 = reader.ReadUInt64();
             value2 = reader.ReadUInt64();
@@ -80,7 +84,7 @@ namespace Neo
         /// Method Parse receives a big-endian hex string and stores as a UInt160 little-endian 20-bytes array
         /// Example: Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") should create UInt160 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
         /// </summary>
-        public static new UInt160 Parse(string value)
+        public static UInt160 Parse(string value)
         {
             if (value == null)
                 throw new ArgumentNullException();
@@ -93,11 +97,16 @@ namespace Neo
             return new UInt160(data);
         }
 
-        public override void Serialize(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
             writer.Write(value1);
             writer.Write(value2);
             writer.Write(value3);
+        }
+
+        public override string ToString()
+        {
+            return "0x" + this.ToArray().ToHexString(reverse: true);
         }
 
         /// <summary>
