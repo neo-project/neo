@@ -362,7 +362,9 @@ namespace Neo.Ledger
             RelayResultReason reason = parallelVerified.VerifyResult;
             if (reason == RelayResultReason.Succeed)
             {
-                if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
+                if (View.ContainsTransaction(parallelVerified.Transaction.Hash))
+                    reason = RelayResultReason.AlreadyExists;
+                else if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
                     reason = RelayResultReason.OutOfMemory;
                 else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
                     reason = RelayResultReason.OutOfMemory;
