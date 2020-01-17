@@ -90,6 +90,12 @@ namespace Neo.SmartContract
             return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
+        protected override bool PostExecuteInstruction(Instruction instruction)
+        {
+            if (Trigger == TriggerType.System) return true;
+            return base.PostExecuteInstruction(instruction);
+        }
+
         private static Block CreateDummyBlock(StoreView snapshot)
         {
             var currentBlock = snapshot.Blocks[snapshot.CurrentBlockHash];
