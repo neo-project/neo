@@ -14,5 +14,7 @@ namespace Neo.Trie
         byte[] GetRoot();
 
         Dictionary<byte[], byte[]> GetProof(byte[] Key);
+
+        void Commit();
     }
 }

@@ -68,5 +68,13 @@ namespace Neo.UnitTests.Trie.MPT
             prefix = a.CommonPrefix(b);
             Assert.IsTrue(prefix.Length == 0);
         }
+
+        [TestMethod]
+        public void TestToNibbles()
+        {
+            var a = "1234abcd".HexToBytes();
+            var n = a.ToNibbles();
+            Assert.AreEqual("010203040a0b0c0d", n.ToHexString());
+        }
     }
 }
