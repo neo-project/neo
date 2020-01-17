@@ -85,6 +85,7 @@ namespace Neo.Network.P2P
             {
                 case MessageCommand.Addr:
                 case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
                 case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
                 case MessageCommand.Ping:
@@ -172,11 +173,6 @@ namespace Neo.Network.P2P
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
-            }
-            if (inventory.InventoryType == InventoryType.Block)
-            {
-                EnqueueMessage(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height));
-                return;
             }
             EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }

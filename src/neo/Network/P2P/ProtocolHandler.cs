@@ -106,6 +106,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetAddr:
                     OnGetAddrMessageReceived();
                     break;
+                case MessageCommand.GetBlocks:
+                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
+                    break;
                 case MessageCommand.GetBlockData:
                     OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
                     break;
@@ -193,6 +196,33 @@ namespace Neo.Network.P2P
             NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
             if (networkAddresses.Length == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
+        }
+
+        /// <summary>
+        /// Will be triggered when a MessageCommand.GetBlocks message is received.
+        /// Tell the specified number of blocks' hashes starting with the requested HashStart until payload.Count or MaxHashesCount
+        /// Responses are sent to RemoteNode actor as MessageCommand.Inv Message.
+        /// </summary>
+        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested.</param>
+        private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
+        {
+            UInt256 hash = payload.HashStart;
+            // The default value of payload.Count is -1
+            int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
+            TrimmedBlock state = Blockchain.Singleton.View.Blocks.TryGet(hash);
+            if (state == null) return;
+            List<UInt256> hashes = new List<UInt256>();
+            for (uint i = 1; i <= count; i++)
+            {
+                uint index = state.Index + i;
+                if (index > Blockchain.Singleton.Height)
+                    break;
+                hash = Blockchain.Singleton.GetBlockHash(index);
+                if (hash == null) break;
+                hashes.Add(hash);
+            }
+            if (hashes.Count == 0) return;
+            Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
         private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
@@ -407,6 +437,7 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
                 case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
                     return queue.OfType<Message>().Any(p => p.Command == msg.Command);

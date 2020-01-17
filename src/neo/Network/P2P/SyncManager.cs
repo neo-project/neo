@@ -14,10 +14,8 @@ namespace Neo.Network.P2P
         public class IndexTask { public uint StartIndex; public uint EndIndex; public BitArray IndexArray; public DateTime Time; }
         public class PersistedBlockIndex { public uint PersistedIndex; }
         public class InvalidBlockIndex { public uint InvalidIndex; }
-        public class Update { public uint LastBlockIndex; }
         public class StartSync { }
         private class Timer { }
-        
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan SyncTimeout = TimeSpan.FromMinutes(1);
@@ -205,6 +203,7 @@ namespace Neo.Network.P2P
         {
             RemoteNode[] remoteNodes = nodes.Values.ToArray();
             if (totalTasksCount >= MaxTasksCount || remoteNodes.Count() == 0) return;
+            SendPingMessage();
             highestBlockIndex = remoteNodes.Max(p => p.LastBlockIndex);
             if (lastTaskIndex == 0)
                 lastTaskIndex = Blockchain.Singleton.Height;
@@ -212,7 +211,7 @@ namespace Neo.Network.P2P
             while (totalTasksCount <= MaxTasksCount)
             {
                 if (!StartUncompletedTasks()) break;
-                if (lastTaskIndex + 2 > highestBlockIndex) break;
+                if (lastTaskIndex >= highestBlockIndex) break;
                 uint startIndex = lastTaskIndex + 1;
                 uint endIndex = Math.Min((startIndex / BlocksPerTask + 1) * BlocksPerTask, highestBlockIndex);
                 int count = (int)(endIndex - startIndex + 1);
@@ -223,6 +222,13 @@ namespace Neo.Network.P2P
                 totalTasksCount++;
                 lastTaskIndex = endIndex;
                 nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(startIndex, (ushort)count)));
+            }
+        }
+
+        private void SendPingMessage()
+        {
+            foreach (RemoteNode remoteNode in nodes.Values)
+            {
                 if (Blockchain.Singleton.Height >= remoteNode.LastBlockIndex
                     && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
                 {

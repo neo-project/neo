@@ -308,7 +308,7 @@ namespace Neo.Ledger
                 }
                 unverified_blocks_candidates.Remove(block.Index);
                 Persist(block);
-                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
                 system.SyncManager.Tell(new SyncManager.PersistedBlockIndex { PersistedIndex = block.Index });
                 SaveHeaderHashList();
                 if (unverified_blocks_candidates.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
