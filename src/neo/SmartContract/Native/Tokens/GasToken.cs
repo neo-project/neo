@@ -20,6 +20,8 @@ namespace Neo.SmartContract.Native.Tokens
         public override string Symbol => "gas";
         public override byte Decimals => 8;
 
+        public override int Id => -3;
+
         private const byte Prefix_SystemFeeAmount = 15;
 
         internal GasToken()

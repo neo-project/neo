@@ -37,7 +37,7 @@ namespace Neo.SmartContract
 
                 StorageKey skey = new StorageKey
                 {
-                    Guid = context.Guid,
+                    Id = context.Id,
                     Key = key
                 };
 
@@ -64,7 +64,7 @@ namespace Neo.SmartContract
                 if (!contract.HasStorage) return false;
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
-                    Guid = contract.Guid,
+                    Id = contract.Id,
                     IsReadOnly = false
                 }));
                 return true;
@@ -77,7 +77,7 @@ namespace Neo.SmartContract
                 if (!contract.HasStorage) return false;
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
-                    Guid = contract.Guid,
+                    Id = contract.Id,
                     IsReadOnly = true
                 }));
                 return true;
@@ -91,7 +91,7 @@ namespace Neo.SmartContract
                     if (!context.IsReadOnly)
                         context = new StorageContext
                         {
-                            Guid = context.Guid,
+                            Id = context.Id,
                             IsReadOnly = true
                         };
                     engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(context));
@@ -108,7 +108,7 @@ namespace Neo.SmartContract
                     byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                     StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
                     {
-                        Guid = context.Guid,
+                        Id = context.Id,
                         Key = key
                     });
                     engine.CurrentContext.EvaluationStack.Push(item?.Value ?? StackItem.Null);
@@ -123,7 +123,7 @@ namespace Neo.SmartContract
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
                     byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-                    byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Guid, prefix);
+                    byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
                     StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator()));
                     engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
                     return true;
@@ -160,7 +160,7 @@ namespace Neo.SmartContract
                     if (context.IsReadOnly) return false;
                     StorageKey key = new StorageKey
                     {
-                        Guid = context.Guid,
+                        Id = context.Id,
                         Key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray()
                     };
                     if (engine.Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;

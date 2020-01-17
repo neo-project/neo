@@ -24,6 +24,8 @@ namespace Neo.SmartContract.Native.Tokens
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
 
+        public override int Id => -2;
+
         private const byte Prefix_Validator = 33;
         private const byte Prefix_ValidatorsCount = 15;
         private const byte Prefix_NextValidators = 14;
@@ -201,7 +203,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(StoreView snapshot)
         {
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(Guid, new[] { Prefix_Validator });
+            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
