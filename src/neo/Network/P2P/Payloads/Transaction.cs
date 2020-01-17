@@ -280,9 +280,7 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
                 return RelayResultReason.PolicyFail;
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return RelayResultReason.InsufficientFunds;
+            if (!VerifyBalance(snapshot, totalSenderFeeFromPool)) return RelayResultReason.InsufficientFunds;
             if (hashes.Length != Witnesses.Length) return RelayResultReason.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
