@@ -1,4 +1,5 @@
 using Neo.IO.Json;
+using Neo.Persistence;
 using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
@@ -8,33 +9,19 @@ namespace Neo.Trie.MPT
         private MPTDatabase db;
         private MPTNode root;
 
-        public MPTTrie(MPTDatabase db, byte[] root)
+        public MPTTrie(MPTDatabase db)
         {
             if (db is null)
                 throw new System.Exception();
             this.db = db;
-            if (root.Length == 0)
+            var rbytes = db.GetRoot();
+            if (rbytes.Length == 0)
             {
                 this.root = HashNode.EmptyNode();
             }
             else
             {
-                this.root = Resolve(root);
-            }
-        }
-
-        public MPTTrie(MPTDatabase db, MPTNode root)
-        {
-            if (db is null)
-                throw new System.Exception();
-            this.db = db;
-            if (root is null)
-            {
-                this.root = HashNode.EmptyNode();
-            }
-            else
-            {
-                this.root = root;
+                this.root = Resolve(rbytes);
             }
         }
 
@@ -45,6 +32,7 @@ namespace Neo.Trie.MPT
 
         public bool TryGet(byte[] path, out byte[] value)
         {
+            path = path.ToNibbles();
             return tryGet(ref root, path, out value);
         }
 
@@ -92,7 +80,7 @@ namespace Neo.Trie.MPT
         public bool TryPut(byte[] path, byte[] value)
         {
             var n = new ValueNode(value);
-            path = (byte[])path.Clone();
+            path = path.ToNibbles();
             if (value.Length == 0)
             {
                 return tryDelete(ref root, path);
@@ -212,6 +200,7 @@ namespace Neo.Trie.MPT
 
         public bool TryDelete(byte[] path)
         {
+            path = path.ToNibbles();
             return tryDelete(ref root, path);
         }
 
@@ -328,6 +317,7 @@ namespace Neo.Trie.MPT
         public Dictionary<byte[], byte[]> GetProof(byte[] path)
         {
             var dict = new Dictionary<byte[], byte[]> { };
+            path = path.ToNibbles();
             getProof(ref root, path, dict);
             return dict;
         }
@@ -376,6 +366,12 @@ namespace Neo.Trie.MPT
                         break;
                     }
             }
+        }
+
+        public void Commit()
+        {
+            db.PutRoot(GetRoot());
+            db.Commit();
         }
 
         public JObject ToJson()

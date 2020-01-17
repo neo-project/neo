@@ -1,12 +1,13 @@
 
 using Neo.Persistence;
 using System.Text;
+using System;
 
 namespace Neo.Trie.MPT
 {
     public class MPTDatabase
     {
-        private IStore store;
+        private ISnapshot store;
 
         public static readonly byte TABLE = 0x4D;
 
@@ -17,7 +18,7 @@ namespace Neo.Trie.MPT
             return Prefix.Concat(hash);
         }
 
-        public MPTDatabase(IStore store)
+        public MPTDatabase(ISnapshot store)
         {
             this.store = store;
         }
@@ -37,6 +38,21 @@ namespace Neo.Trie.MPT
         public void Put(MPTNode node)
         {
             store.Put(TABLE, StoreKey(node.GetHash()), node.Encode());
+        }
+
+        public void PutRoot(byte[] root)
+        {
+            store.Put(TABLE, StoreKey(Encoding.ASCII.GetBytes("mpt_root")), root);
+        }
+
+        public byte[] GetRoot()
+        {
+            return store.TryGet(TABLE, StoreKey(Encoding.ASCII.GetBytes("mpt_root")));
+        }
+
+        public void Commit()
+        {
+            store.Commit();
         }
     }
 }
