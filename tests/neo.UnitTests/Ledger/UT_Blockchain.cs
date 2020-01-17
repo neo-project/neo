@@ -45,13 +45,14 @@ namespace Neo.UnitTests.Ledger
     public class UT_Blockchain : TestKit
     {
         private NeoSystem system;
-        Transaction txSample = Blockchain.GenesisBlock.Transactions[0];
+        private Transaction txSample = Blockchain.GenesisBlock.Transactions[0];
+        private SnapshotView snapshot;
 
         [TestInitialize]
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-            Blockchain.Singleton.MemPool.TryAdd(Blockchain.Singleton.GetSnapshot(), txSample.Hash, txSample);
+            snapshot = Blockchain.Singleton.GetSnapshot();
         }
 
         [TestMethod]
@@ -103,7 +104,6 @@ namespace Neo.UnitTests.Ledger
         public void TestValidTransaction()
         {
             var senderProbe = CreateTestProbe();
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var walletA = TestUtils.GenerateTestWallet();
 
             using (var unlockA = walletA.Unlock("123"))
@@ -145,15 +145,15 @@ namespace Neo.UnitTests.Ledger
         private Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
         {
             var tx = wallet.MakeTransaction(new TransferOutput[]
+            {
+                new TransferOutput()
                 {
-                    new TransferOutput()
-                    {
-                            AssetId = NativeContract.GAS.Hash,
-                            ScriptHash = account,
-                            Value = new BigDecimal(1,8)
-                    }
-                },
-                account);
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = account,
+                    Value = new BigDecimal(1,8)
+                }
+            },
+            account);
 
             tx.Nonce = nonce;
 

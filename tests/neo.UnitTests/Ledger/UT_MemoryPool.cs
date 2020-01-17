@@ -9,6 +9,7 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -92,14 +93,14 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransactionWithFeeAndBalanceVerify(long fee)
+        private Transaction CreateTransactionWithFeeAndBalanceVerify(SnapshotView snapshot, long fee)
         {
             Random random = new Random();
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
             UInt160 sender = UInt160.Zero;
-            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns((StoreView snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee ? RelayResultReason.Succeed : RelayResultReason.InsufficientFunds);
+            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns((StoreView sn, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee ? RelayResultReason.Succeed : RelayResultReason.InsufficientFunds);
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(RelayResultReason.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = sender;
@@ -124,38 +125,57 @@ namespace Neo.UnitTests.Ledger
             return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
         }
 
-        private void AddTransactions(int count)
+        private void AddTransactions(SnapshotView snapshot, int count)
         {
+
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransaction();
-                _unit.TryAdd(Blockchain.Singleton.GetSnapshot(), txToAdd.Hash, txToAdd);
+
+                _unit.TryAdd(snapshot, txToAdd.Hash, txToAdd);
             }
 
             Console.WriteLine($"created {count} tx");
         }
 
-        private void AddTransaction(Transaction txToAdd)
+        private void AddTransaction(SnapshotView snapshot, Transaction txToAdd)
         {
-            _unit.TryAdd(Blockchain.Singleton.GetSnapshot(), txToAdd.Hash, txToAdd);
+            _unit.TryAdd(snapshot, txToAdd.Hash, txToAdd);
         }
 
-        private void AddTransactionsWithBalanceVerify(int count, long fee)
+        private void AddTransactionsWithBalanceVerify(SnapshotView snapshot, int count, long fee)
         {
             for (int i = 0; i < count; i++)
             {
-                var txToAdd = CreateTransactionWithFeeAndBalanceVerify(fee);
-                _unit.TryAdd(Blockchain.Singleton.GetSnapshot(), txToAdd.Hash, txToAdd);
+                var txToAdd = CreateTransactionWithFeeAndBalanceVerify(snapshot, fee);
+                _unit.TryAdd(snapshot, txToAdd.Hash, txToAdd);
             }
 
             Console.WriteLine($"created {count} tx");
+        }
+
+        void FakeBalance(SnapshotView snapshot, UInt160 address, BigInteger amount)
+        {
+            var key = NativeContract.GAS.CreateStorageKey(20, address);
+            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+            {
+                Value = new Nep5AccountState().ToByteArray()
+            });
+
+            entry.Value = new Nep5AccountState()
+            {
+                Balance = amount
+            }
+            .ToByteArray();
         }
 
         [TestMethod]
         public void CapacityTest()
         {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
             // Add over the capacity items, verify that the verified count increases each time
-            AddTransactions(101);
+            AddTransactions(snapshot, 101);
 
             Console.WriteLine($"VerifiedCount: {_unit.VerifiedCount} Count {_unit.SortedTxCount}");
 
@@ -168,7 +188,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void BlockPersistMovesTxToUnverifiedAndReverification()
         {
-            AddTransactions(70);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
+            AddTransactions(snapshot, 70);
 
             _unit.SortedTxCount.Should().Be(70);
 
@@ -211,7 +233,9 @@ namespace Neo.UnitTests.Ledger
         public void BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
         {
             long txFee = 1;
-            AddTransactionsWithBalanceVerify(70, txFee);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
+            AddTransactionsWithBalanceVerify(snapshot, 70, txFee);
 
             _unit.SortedTxCount.Should().Be(70);
 
@@ -222,7 +246,6 @@ namespace Neo.UnitTests.Ledger
 
             // Simulate the transfer process in tx by burning the balance
             UInt160 sender = block.Transactions[0].Sender;
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
 
             ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (long)balance);
@@ -265,7 +288,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void VerifySortOrderAndThatHighetFeeTransactionsAreReverifiedFirst()
         {
-            AddTransactions(100);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
+            AddTransactions(snapshot, 100);
 
             var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions().ToList();
             // verify all 100 transactions are returned in sorted order
@@ -316,36 +341,42 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void VerifyCanTransactionFitInPoolWorksAsIntended()
         {
-            AddTransactions(100);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
+            AddTransactions(snapshot, 100);
             VerifyCapacityThresholdForAttemptingToAddATransaction();
-            AddTransactions(50);
+            AddTransactions(snapshot, 50);
             VerifyCapacityThresholdForAttemptingToAddATransaction();
-            AddTransactions(50);
+            AddTransactions(snapshot, 50);
             VerifyCapacityThresholdForAttemptingToAddATransaction();
         }
 
         [TestMethod]
         public void CapacityTestWithUnverifiedHighProirtyTransactions()
         {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
             // Verify that unverified high priority transactions will not be pushed out of the queue by incoming
             // low priority transactions
 
             // Fill pool with high priority transactions
-            AddTransactions(99);
+            AddTransactions(snapshot, 99);
 
             // move all to unverified
             var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
 
             _unit.CanTransactionFitInPool(CreateTransaction()).Should().Be(true);
-            AddTransactions(1);
+            AddTransactions(snapshot, 1);
             _unit.CanTransactionFitInPool(CreateTransactionWithFee(0)).Should().Be(false);
         }
 
         [TestMethod]
         public void TestInvalidateAll()
         {
-            AddTransactions(30);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
+            AddTransactions(snapshot, 30);
 
             _unit.UnverifiedSortedTxCount.Should().Be(0);
             _unit.SortedTxCount.Should().Be(30);
@@ -357,9 +388,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestContainsKey()
         {
-            AddTransactions(10);
-
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
+            AddTransactions(snapshot, 10);
             var txToAdd = CreateTransaction();
             _unit.TryAdd(snapshot, txToAdd.Hash, txToAdd);
             _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
@@ -370,7 +401,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetEnumerator()
         {
-            AddTransactions(10);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
+            AddTransactions(snapshot, 10);
             _unit.InvalidateVerifiedTransactions();
             IEnumerator<Transaction> enumerator = _unit.GetEnumerator();
             foreach (Transaction tx in _unit)
@@ -383,7 +416,8 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestIEnumerableGetEnumerator()
         {
-            AddTransactions(10);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            AddTransactions(snapshot, 10);
             _unit.InvalidateVerifiedTransactions();
             IEnumerable enumerable = _unit;
             var enumerator = enumerable.GetEnumerator();
@@ -398,6 +432,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetVerifiedTransactions()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
             _unit.TryAdd(snapshot, tx1.Hash, tx1);
@@ -413,12 +448,14 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
         {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
             _unit = new MemoryPool(TestBlockchain.TheNeoSystem, 600);
             _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
-            AddTransaction(CreateTransaction(100000001));
-            AddTransaction(CreateTransaction(100000001));
-            AddTransaction(CreateTransaction(100000001));
-            AddTransaction(CreateTransaction(1));
+            AddTransaction(snapshot, CreateTransaction(100000001));
+            AddTransaction(snapshot, CreateTransaction(100000001));
+            AddTransaction(snapshot, CreateTransaction(100000001));
+            AddTransaction(snapshot, CreateTransaction(1));
             _unit.VerifiedCount.Should().Be(4);
             _unit.UnVerifiedCount.Should().Be(0);
 
@@ -426,7 +463,7 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(4);
 
-            AddTransactions(511); // Max per block currently is 512
+            AddTransactions(snapshot, 511); // Max per block currently is 512
             _unit.VerifiedCount.Should().Be(511);
             _unit.UnVerifiedCount.Should().Be(4);
 
@@ -451,6 +488,7 @@ namespace Neo.UnitTests.Ledger
         {
             var tx1 = CreateTransaction();
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
             _unit.TryAdd(snapshot, tx1.Hash, tx1).Should().BeTrue();
             _unit.TryAdd(snapshot, tx1.Hash, tx1).Should().BeFalse();
             _unit2.TryAdd(snapshot, tx1.Hash, tx1).Should().BeFalse();
@@ -461,6 +499,7 @@ namespace Neo.UnitTests.Ledger
         {
             var tx1 = CreateTransaction();
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
             _unit.TryAdd(snapshot, tx1.Hash, tx1);
             _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
             tx.Should().BeEquivalentTo(tx1);
@@ -477,6 +516,7 @@ namespace Neo.UnitTests.Ledger
         public void TestUpdatePoolForBlockPersisted()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            FakeBalance(snapshot, UInt160.Zero, 100_000_000 * NativeContract.GAS.Factor);
             byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 }; // 24
             byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }; // 1048576
             StorageItem item1 = new StorageItem
