@@ -41,7 +41,7 @@ namespace Neo.SmartContract
                 if (contract != null) return false;
                 contract = new ContractState
                 {
-                    Id = engine.Snapshot.ContractId.GetAndChange().Id++,
+                    Id = engine.Snapshot.ContractId.GetAndChange().NextId++,
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };

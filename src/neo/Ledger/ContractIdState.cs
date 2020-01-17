@@ -6,7 +6,7 @@ namespace Neo.Ledger
 {
     public class ContractIdState : ICloneable<ContractIdState>, ISerializable
     {
-        public int Id;
+        public int NextId;
 
         int ISerializable.Size => sizeof(int);
 
@@ -14,24 +14,24 @@ namespace Neo.Ledger
         {
             return new ContractIdState
             {
-                Id = Id
+                NextId = NextId
             };
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Id = reader.ReadInt32();
-            if (Id < 0) throw new FormatException();
+            NextId = reader.ReadInt32();
+            if (NextId < 0) throw new FormatException();
         }
 
         void ICloneable<ContractIdState>.FromReplica(ContractIdState replica)
         {
-            Id = replica.Id;
+            NextId = replica.NextId;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Id);
+            writer.Write(NextId);
         }
     }
 }
