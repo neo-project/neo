@@ -431,6 +431,8 @@ namespace Neo.Ledger
             {
                 if (View.ContainsTransaction(parallelVerified.Transaction.Hash))
                     reason = RelayResultReason.AlreadyExists;
+                else if (!parallelVerified.Transaction.VerifyBalance(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(parallelVerified.Transaction.Sender)))
+                    reason = RelayResultReason.InsufficientFunds;
                 else if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
                     reason = RelayResultReason.OutOfMemory;
                 else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))

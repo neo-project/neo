@@ -302,6 +302,14 @@ namespace Neo.Network.P2P.Payloads
             return RelayResultReason.Succeed;
         }
 
+        public bool VerifyBalance(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
+            if (balance < fee) return false;
+            return true;
+        }
+
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter, new StackItem[]
