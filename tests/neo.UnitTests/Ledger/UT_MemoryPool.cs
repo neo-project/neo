@@ -225,8 +225,10 @@ namespace Neo.UnitTests.Ledger
             SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
 
+            Transaction tx = CreateTransactionWithFee((long)balance);
+            tx.Sender = sender;
             ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (long)balance);
-            NativeContract.GAS.Burn(applicationEngine, sender, balance);
+            NativeContract.GAS.Burn(applicationEngine, tx);
             NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30); // Set the balance to meet 30 txs only
 
             // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
@@ -235,7 +237,9 @@ namespace Neo.UnitTests.Ledger
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
             // Revert the balance
-            NativeContract.GAS.Burn(applicationEngine, sender, txFee * 30);
+            tx = CreateTransactionWithFee((long)txFee * 30);
+            tx.Sender = sender;
+            NativeContract.GAS.Burn(applicationEngine, tx);
             NativeContract.GAS.Mint(applicationEngine, sender, balance);
         }
 

@@ -142,6 +142,13 @@ namespace Neo.SmartContract
             notifications.Add(notification);
         }
 
+        internal void SendNotification(Transaction tx, UInt160 script_hash, StackItem state)
+        {
+            NotifyEventArgs notification = new NotifyEventArgs(tx, script_hash, state);
+            Notify?.Invoke(this, notification);
+            notifications.Add(notification);
+        }
+
         public bool TryPop(out string s)
         {
             if (TryPop(out ReadOnlySpan<byte> b))

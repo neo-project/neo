@@ -2,6 +2,7 @@
 
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -89,8 +90,10 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount }));
         }
 
-        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal protected virtual void Burn(ApplicationEngine engine, Transaction tx)
         {
+            BigInteger amount = tx.NetworkFee + tx.SystemFee;
+            UInt160 account = tx.Sender;
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
             StorageKey key = CreateAccountKey(account);
@@ -112,7 +115,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount }));
+            engine.SendNotification(tx, Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount }));
         }
 
         [ContractMethod(0, ContractParameterType.String, Name = "name", SafeMethod = true)]

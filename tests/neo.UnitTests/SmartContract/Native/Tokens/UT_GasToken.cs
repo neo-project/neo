@@ -98,25 +98,31 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
+            Transaction tx = new Transaction
+            {
+                Sender = new UInt160(to),
+                NetworkFee = (long)BigInteger.MinusOne
+            };
+
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
-                NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
+                NativeContract.GAS.Burn(engine, tx));
 
             // Burn more than expected
-
+            tx.NetworkFee = (long)new BigInteger(3000600000000001);
             Assert.ThrowsException<InvalidOperationException>(() =>
-                NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000600000000001)));
+                NativeContract.GAS.Burn(engine, tx));
 
             // Real burn
-
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
+            tx.NetworkFee = 1;
+            NativeContract.GAS.Burn(engine, tx);
 
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000599999999999);
 
             keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             // Burn all
-
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000599999999999));
+            tx.NetworkFee = 3000599999999999;
+            NativeContract.GAS.Burn(engine, tx);
 
             (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
