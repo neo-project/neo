@@ -137,14 +137,12 @@ namespace Neo.SmartContract
 
         internal void SendNotification(UInt160 script_hash, StackItem state)
         {
-            NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, script_hash, state);
-            Notify?.Invoke(this, notification);
-            notifications.Add(notification);
+            SendNotification(ScriptContainer, script_hash, state);
         }
 
-        internal void SendNotification(Transaction tx, UInt160 script_hash, StackItem state)
+        internal void SendNotification(IVerifiable sender, UInt160 script_hash, StackItem state)
         {
-            NotifyEventArgs notification = new NotifyEventArgs(tx, script_hash, state);
+            NotifyEventArgs notification = new NotifyEventArgs(sender, script_hash, state);
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
         }
