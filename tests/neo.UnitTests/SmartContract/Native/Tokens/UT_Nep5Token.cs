@@ -90,6 +90,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
     public class TestNep5Token : Nep5Token<NeoToken.AccountState>
     {
+        public override int Id => 0x10000005;
+
         public override string Name => throw new NotImplementedException();
 
         public override string Symbol => throw new NotImplementedException();
