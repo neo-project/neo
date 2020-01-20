@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 using System.Threading;
+using Neo.IO.Json;
 
 namespace Neo
 {
@@ -33,10 +34,16 @@ namespace Neo
             {
                 if (_default == null)
                 {
-                    var configuration = Utility.LoadConfig("protocol");
+                    IConfigurationRoot configuration;
+                    try{
+                        configuration = Utility.LoadConfig("protocol");
+                    } catch(System.Exception)
+                    {
+                        Console.WriteLine("Failed parsing protocol.json. Using default settings");
+                        configuration = new ConfigurationBuilder().Build();
+                    }
                     UpdateDefault(configuration);
                 }
-
                 return _default;
             }
         }
