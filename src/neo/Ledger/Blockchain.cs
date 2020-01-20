@@ -23,7 +23,7 @@ namespace Neo.Ledger
     {
         public partial class ApplicationExecuted { }
         public class PersistCompleted { public Block Block; }
-        public class Import { public IEnumerable<Block> Blocks; }
+        public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
@@ -239,12 +239,14 @@ namespace Neo.Ledger
             return View.GetTransaction(hash);
         }
 
-        private void OnImport(IEnumerable<Block> blocks)
+        private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
             foreach (Block block in blocks)
             {
                 if (block.Index <= Height) continue;
                 if (block.Index != Height + 1)
+                    throw new InvalidOperationException();
+                if (verify && !block.Verify(currentSnapshot))
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
@@ -429,7 +431,9 @@ namespace Neo.Ledger
             RelayResultReason reason = parallelVerified.VerifyResult;
             if (reason == RelayResultReason.Succeed)
             {
-                if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
+                if (View.ContainsTransaction(parallelVerified.Transaction.Hash))
+                    reason = RelayResultReason.AlreadyExists;
+                else if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
                     reason = RelayResultReason.OutOfMemory;
                 else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
                     reason = RelayResultReason.OutOfMemory;
@@ -451,7 +455,7 @@ namespace Neo.Ledger
             switch (message)
             {
                 case Import import:
-                    OnImport(import.Blocks);
+                    OnImport(import.Blocks, import.Verify);
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
