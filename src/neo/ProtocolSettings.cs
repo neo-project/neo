@@ -35,9 +35,11 @@ namespace Neo
                 if (_default == null)
                 {
                     IConfigurationRoot configuration;
-                    try{
+                    try
+                    {
                         configuration = Utility.LoadConfig("protocol");
-                    } catch(System.Exception)
+                    }
+                    catch (System.Exception)
                     {
                         Console.WriteLine("Failed parsing protocol.json. Using default settings");
                         configuration = new ConfigurationBuilder().Build();
