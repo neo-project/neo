@@ -280,13 +280,14 @@ namespace Neo.VM
                     };
                     break;
                 case Null _:
+                case null:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Any
                     };
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException($"StackItemType({item.Type}) is not supported to ContractParameter.");
             }
             return parameter;
         }
@@ -298,6 +299,7 @@ namespace Neo.VM
 
         private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
         {
+            if (parameter is null) return StackItem.Null;
             StackItem stackItem = null;
             switch (parameter.Type)
             {
@@ -349,6 +351,9 @@ namespace Neo.VM
                     stackItem = (string)parameter.Value;
                     break;
                 case ContractParameterType.InteropInterface:
+                case ContractParameterType.Any:
+                case ContractParameterType.Void:
+                    stackItem = StackItem.Null;
                     break;
                 default:
                     throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");
