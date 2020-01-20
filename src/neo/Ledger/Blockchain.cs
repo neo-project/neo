@@ -254,7 +254,6 @@ namespace Neo.Ledger
                 // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
                 blocks = new LinkedList<Block>();
                 unverified_blocks_candidates.Add(block.Index, blocks);
-                return;
             }
             // Check if any block with the hash being added already exists on possible candidates to be processed
             foreach (var unverifiedBlock in blocks)

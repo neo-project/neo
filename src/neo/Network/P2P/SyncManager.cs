@@ -16,7 +16,6 @@ namespace Neo.Network.P2P
         public class InvalidBlockIndex { public uint InvalidIndex; }
         public class StartSync { }
         private class Timer { }
-        private class SessionWithIndexTask { public NodeSession Session; public IndexTask Task; }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan SyncTimeout = TimeSpan.FromMinutes(1);
@@ -81,14 +80,14 @@ namespace Neo.Network.P2P
         private void OnReceiveInvalidBlockIndex(InvalidBlockIndex invalidBlockIndex)
         {
             if (!CheckNodes()) return;
-            foreach (SessionWithIndexTask sessionWithIndexTask in GetIndexTask())
+            foreach (Tuple<NodeSession, IndexTask> sessionWithIndexTask in GetIndexTask())
             {
-                if (sessionWithIndexTask.Task.StartIndex <= invalidBlockIndex.InvalidIndex && sessionWithIndexTask.Task.EndIndex >= invalidBlockIndex.InvalidIndex)
+                if (sessionWithIndexTask.Item2.StartIndex <= invalidBlockIndex.InvalidIndex && sessionWithIndexTask.Item2.EndIndex >= invalidBlockIndex.InvalidIndex)
                 {
-                    sessionWithIndexTask.Session.InvalidBlockCount++;
-                    sessionWithIndexTask.Session.IndexTasks.Remove(sessionWithIndexTask.Task);
-                    if (!ReSync(sessionWithIndexTask.Session, sessionWithIndexTask.Task))
-                        IncrementUncompletedTasks(sessionWithIndexTask.Task);
+                    sessionWithIndexTask.Item1.InvalidBlockCount++;
+                    sessionWithIndexTask.Item1.IndexTasks.Remove(sessionWithIndexTask.Item2);
+                    if (!ReSync(sessionWithIndexTask.Item1, sessionWithIndexTask.Item2))
+                        IncrementUncompletedTasks(sessionWithIndexTask.Item2);
                     return;
                 }
             }
@@ -102,11 +101,11 @@ namespace Neo.Network.P2P
                 lastTaskIndex = persistIndex;
             if (persistIndex % BlocksPerTask == 0 || persistIndex == highestBlockIndex)
             {
-                foreach (SessionWithIndexTask sessionWithIndexTask in GetIndexTask())
+                foreach (Tuple<NodeSession, IndexTask> sessionWithIndexTask in GetIndexTask())
                 {
-                    if (sessionWithIndexTask.Task.EndIndex <= persistIndex)
+                    if (sessionWithIndexTask.Item2.EndIndex <= persistIndex)
                     {
-                        sessionWithIndexTask.Session.IndexTasks.Remove(sessionWithIndexTask.Task);
+                        sessionWithIndexTask.Item1.IndexTasks.Remove(sessionWithIndexTask.Item2);
                         totalTasksCount--;
                         RequestSync();
                         return;
@@ -115,30 +114,30 @@ namespace Neo.Network.P2P
             }
         }
 
-        private IEnumerable<SessionWithIndexTask> GetIndexTask()
+        private IEnumerable<Tuple<NodeSession, IndexTask>> GetIndexTask()
         {
             foreach (RemoteNode node in nodes.Values.Where(p => p.session.HasIndexTask))
             {
                 NodeSession session = node.session;
                 int count = session.IndexTasks.Count();
                 for (int i = 0; i < count; i++)
-                    yield return new SessionWithIndexTask { Session = session, Task = session.IndexTasks[i] };
+                    yield return new Tuple<NodeSession, IndexTask>(session, session.IndexTasks[i]);
             }
         }
 
         private void OnTimer()
         {
             if (!CheckNodes()) return;
-            foreach (SessionWithIndexTask sessionWithIndexTask in GetIndexTask())
+            foreach (Tuple<NodeSession, IndexTask> sessionWithIndexTask in GetIndexTask())
             {
-                if (DateTime.UtcNow - sessionWithIndexTask.Task.Time > SyncTimeout)
+                if (DateTime.UtcNow - sessionWithIndexTask.Item2.Time > SyncTimeout)
                 {
-                    sessionWithIndexTask.Session.IndexTasks.Remove(sessionWithIndexTask.Task);
-                    sessionWithIndexTask.Session.TimeoutTimes++;
-                    if (!ReSync(sessionWithIndexTask.Session, sessionWithIndexTask.Task))
-                        IncrementUncompletedTasks(sessionWithIndexTask.Task);
+                    sessionWithIndexTask.Item1.IndexTasks.Remove(sessionWithIndexTask.Item2);
+                    sessionWithIndexTask.Item1.TimeoutTimes++;
+                    if (!ReSync(sessionWithIndexTask.Item1, sessionWithIndexTask.Item2))
+                        IncrementUncompletedTasks(sessionWithIndexTask.Item2);
                 }
-                if (sessionWithIndexTask.Task.IndexArray.Cast<bool>().All(p => p == true))
+                if (sessionWithIndexTask.Item2.IndexArray.Cast<bool>().All(p => p == true))
                 {
                     totalTasksCount--;
                 }
