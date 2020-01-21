@@ -280,7 +280,9 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
                 return RelayResultReason.PolicyFail;
-            if (!VerifyBalance(snapshot, totalSenderFeeFromPool)) return RelayResultReason.InsufficientFunds;
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
+            if (balance < fee) return RelayResultReason.InsufficientFunds;
             if (hashes.Length != Witnesses.Length) return RelayResultReason.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -298,14 +300,6 @@ namespace Neo.Network.P2P.Payloads
             if (net_fee < 0) return RelayResultReason.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
             return RelayResultReason.Succeed;
-        }
-
-        public bool VerifyBalance(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return false;
-            return true;
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)

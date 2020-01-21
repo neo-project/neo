@@ -431,16 +431,19 @@ namespace Neo.Ledger
             RelayResultReason reason = parallelVerified.VerifyResult;
             if (reason == RelayResultReason.Succeed)
             {
-                if (View.ContainsTransaction(parallelVerified.Transaction.Hash))
-                    reason = RelayResultReason.AlreadyExists;
-                else if (!parallelVerified.Transaction.VerifyBalance(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(parallelVerified.Transaction.Sender)))
-                    reason = RelayResultReason.InsufficientFunds;
-                else if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
-                    reason = RelayResultReason.OutOfMemory;
-                else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
-                    reason = RelayResultReason.OutOfMemory;
-                else if (parallelVerified.ShouldRelay)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });
+                reason = parallelVerified.Transaction.VerifyForEachBlock(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(parallelVerified.Transaction.Sender));
+
+                if (reason == RelayResultReason.Succeed)
+                {
+                    if (View.ContainsTransaction(parallelVerified.Transaction.Hash))
+                        reason = RelayResultReason.AlreadyExists;
+                    else if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
+                        reason = RelayResultReason.OutOfMemory;
+                    else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
+                        reason = RelayResultReason.OutOfMemory;
+                    else if (parallelVerified.ShouldRelay)
+                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });
+                }
             }
             Sender.Tell(reason);
         }
