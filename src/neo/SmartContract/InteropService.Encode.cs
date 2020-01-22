@@ -19,8 +19,8 @@ namespace Neo.SmartContract
             private static bool Crypto_PubKey2Address(ApplicationEngine engine)
             {
                 ReadOnlySpan<byte> pubKey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
-                byte[] scriptHash = Cryptography.ECC.ECPoint.FromBytes(pubKey.ToArray(), Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(true).ToScriptHash().ToAddress().HexToBytes(); ;
-                engine.CurrentContext.EvaluationStack.Push(scriptHash);
+                string address = Cryptography.ECC.ECPoint.FromBytes(pubKey.ToArray(), Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(true).ToScriptHash().ToAddress();
+                engine.CurrentContext.EvaluationStack.Push(address);
                 return true;
             }
 
@@ -34,8 +34,8 @@ namespace Neo.SmartContract
 
             private static bool Crypto_Address2ScriptHash(ApplicationEngine engine)
             {
-                ReadOnlySpan<byte> address = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
-                byte[] scriptHash = address.ToHexString().ToScriptHash().ToArray();
+                string address = engine.CurrentContext.EvaluationStack.Pop().GetString();
+                byte[] scriptHash = address.ToScriptHash().ToArray();
                 engine.CurrentContext.EvaluationStack.Push(scriptHash);
                 return true;
             }
@@ -43,7 +43,7 @@ namespace Neo.SmartContract
             private static bool Crypto_ScriptHash2Address(ApplicationEngine engine)
             {
                 ReadOnlySpan<byte> hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
-                byte[] address = new UInt160(hash).ToAddress().HexToBytes();
+                string address = new UInt160(hash).ToAddress();
                 engine.CurrentContext.EvaluationStack.Push(address);
                 return true;
             }

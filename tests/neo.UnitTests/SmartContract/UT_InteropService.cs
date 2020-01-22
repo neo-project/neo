@@ -873,6 +873,46 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
         }
 
+        [TestMethod]
+        public void TestEncode_PubKey2Address()
+        {
+            var engine = GetEngine(true, true);
+            byte[] data = "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            InteropService.Invoke(engine, InteropService.Encode.PubKey2Address).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("Ng7aXNP1wfsQfcqHU9A12gPFJLdZUvvfpZ");
+        }
+
+        [TestMethod]
+        public void TestEncode_PubKey2ScriptHash()
+        {
+            var engine = GetEngine(true, true);
+            byte[] data = "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            InteropService.Invoke(engine, InteropService.Encode.PubKey2ScriptHash).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().ToHexString().Should().BeEquivalentTo("dd94970ebb347304bc5e52583b2cbf49c4ce5af7");
+        }
+
+        [TestMethod]
+        public void TestEncode_Address2ScriptHash()
+        {
+            var engine = GetEngine(true, true);
+            string data = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
+            engine.CurrentContext.EvaluationStack.Push(data);
+            InteropService.Invoke(engine, InteropService.Encode.Address2ScriptHash).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(Crypto.Hash160(new byte[] { 0x01 }));
+        }
+
+        [TestMethod]
+        public void TestEncode_ScriptHash2Address()
+        {
+            var engine = GetEngine(true, true);
+            byte[] data = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash().ToArray();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            InteropService.Invoke(engine, InteropService.Encode.ScriptHash2Address).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf");
+        }
+
         public static void LogEvent(object sender, LogEventArgs args)
         {
             Transaction tx = (Transaction)args.ScriptContainer;
