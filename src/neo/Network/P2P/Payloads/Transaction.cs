@@ -127,7 +127,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Distributed to NEO holders.
+        /// Fee to be burned.
         /// </summary>
         public long SystemFee
         {
