@@ -45,8 +45,25 @@ namespace Neo.SmartContract
 
             private static bool Blockchain_GetTransaction(ApplicationEngine engine)
             {
-                ReadOnlySpan<byte> hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
-                Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
+                Transaction tx;
+                StackItem item = engine.CurrentContext.EvaluationStack.Pop();
+
+                if (item.IsNull)
+                {
+                    if (engine.ScriptContainer is Transaction senderTx)
+                    {
+                        tx = senderTx;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    tx = engine.Snapshot.GetTransaction(new UInt256(item.GetSpan()));
+                }
+
                 if (tx == null)
                     engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
                 else
