@@ -14,6 +14,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000, TriggerType.Application, CallFlags.None);
+            public static readonly InteropDescriptor GetCurrentTransaction = Register("System.Blockchain.GetCurrentTransaction", Blockchain_GetCurrentTransaction, 0_01000000, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", Blockchain_GetTransactionFromBlock, 0_01000000, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 0_01000000, TriggerType.Application, CallFlags.None);
@@ -43,27 +44,21 @@ namespace Neo.SmartContract
                 return true;
             }
 
+            private static bool Blockchain_GetCurrentTransaction(ApplicationEngine engine)
+            {
+                Transaction tx = !(engine.ScriptContainer is Transaction) ? null : (Transaction)engine.ScriptContainer;
+
+                if (tx == null)
+                    engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+                else
+                    engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem(engine.ReferenceCounter));
+                return true;
+            }
+
             private static bool Blockchain_GetTransaction(ApplicationEngine engine)
             {
-                Transaction tx;
-                StackItem item = engine.CurrentContext.EvaluationStack.Pop();
-
-                if (item.IsNull)
-                {
-                    if (engine.ScriptContainer is Transaction senderTx)
-                    {
-                        tx = senderTx;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    tx = engine.Snapshot.GetTransaction(new UInt256(item.GetSpan()));
-                }
-
+                ReadOnlySpan<byte> hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
+                Transaction tx = engine.Snapshot.GetTransaction(new UInt256(hash));
                 if (tx == null)
                     engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
                 else
