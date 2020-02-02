@@ -46,12 +46,10 @@ namespace Neo.SmartContract
 
             private static bool Blockchain_GetCurrentTransaction(ApplicationEngine engine)
             {
-                Transaction tx = !(engine.ScriptContainer is Transaction) ? null : (Transaction)engine.ScriptContainer;
-
-                if (tx == null)
-                    engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-                else
+                if (engine.ScriptContainer is Transaction tx)
                     engine.CurrentContext.EvaluationStack.Push(tx.ToStackItem(engine.ReferenceCounter));
+                else
+                    engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
                 return true;
             }
 
