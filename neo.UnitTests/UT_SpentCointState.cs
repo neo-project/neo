@@ -31,15 +31,23 @@ namespace Neo.UnitTests
             uut.Items = new Dictionary<ushort, uint>();
             uut.Items.Add(1, 2);
 
-            var n = ((ICloneable<SpentCoinState>)uut).Clone();
+            var a = ((ICloneable<SpentCoinState>)uut).Clone();
+            var b = new SpentCoinState();
 
-            CollectionAssert.AreEqual(n.Items.Keys, uut.Items.Keys);
-            CollectionAssert.AreEqual(n.Items.Values, uut.Items.Values);
+            ((ICloneable<SpentCoinState>)b).FromReplica(uut);
 
-            n.Items.Clear();
+            CollectionAssert.AreEqual(a.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreEqual(a.Items.Values, uut.Items.Values);
+            CollectionAssert.AreEqual(b.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreEqual(b.Items.Values, uut.Items.Values);
 
-            CollectionAssert.AreNotEqual(n.Items.Keys, uut.Items.Keys);
-            CollectionAssert.AreNotEqual(n.Items.Values, uut.Items.Values);
+            a.Items.Clear();
+            b.Items.Clear();
+
+            CollectionAssert.AreNotEqual(a.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreNotEqual(b.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreNotEqual(a.Items.Values, uut.Items.Values);
+            CollectionAssert.AreNotEqual(b.Items.Values, uut.Items.Values);
         }
 
         [TestMethod]
