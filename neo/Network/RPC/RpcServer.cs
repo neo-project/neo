@@ -32,15 +32,17 @@ namespace Neo.Network.RPC
     {
         public Wallet Wallet { get; set; }
         public Fixed8 MaxGasInvoke { get; }
+        public int MaxConcurrentConnections { get; }
 
         private IWebHost host;
         private readonly NeoSystem system;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
+        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8), int maxConcurrentConnections = Peer.DefaultMaxConnections)
         {
             this.system = system;
             this.Wallet = wallet;
             this.MaxGasInvoke = maxGasInvoke;
+            this.MaxConcurrentConnections = maxConcurrentConnections;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -361,6 +363,13 @@ namespace Neo.Network.RPC
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
+                // Default value is unlimited
+                options.Limits.MaxConcurrentConnections = MaxConcurrentConnections;
+                // Default value is 2 minutes
+                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(1);
+                // Default value is 30 seconds
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
+
                 if (string.IsNullOrEmpty(sslCert)) return;
                 listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
                 {
