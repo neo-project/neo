@@ -93,6 +93,53 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void System_Blockchain_GetCurrentTransaction()
+        {
+            var tx = new Transaction()
+            {
+                Script = new byte[] { 0x01 },
+                Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
+                NetworkFee = 0x02,
+                SystemFee = 0x03,
+                Nonce = 0x04,
+                ValidUntilBlock = 0x05,
+                Version = 0x06,
+                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+                Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+            };
+
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitSysCall(InteropService.Blockchain.GetCurrentTransaction);
+
+                // Without tx
+
+                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+
+                // With tx
+
+                script.EmitSysCall(InteropService.Json.Serialize);
+                engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
+                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
+                    "5b225c75303032426b53415959527a4c4b69685a676464414b50596f754655737a63544d7867445a6572584a3172784c37303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
+                Assert.AreEqual(0, engine.ResultStack.Count);
+            }
+        }
+
+        [TestMethod]
         public void Json_Deserialize()
         {
             // Good
