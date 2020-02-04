@@ -29,6 +29,7 @@ namespace Neo.SmartContract.Native
         public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
+        public abstract int Id { get; }
         public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
@@ -72,7 +73,7 @@ namespace Neo.SmartContract.Native
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = Hash,
+                Id = Id,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
