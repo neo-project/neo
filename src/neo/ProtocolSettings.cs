@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
-using Neo.IO.Json;
 
 namespace Neo
 {
@@ -39,10 +39,10 @@ namespace Neo
                     {
                         configuration = Utility.LoadConfig("protocol");
                     }
-                    catch (System.Exception e)
+                    catch (Exception e)
                     {
-                        Console.WriteLine("Failed parsing protocol.json. Using default settings");
-                        Console.WriteLine(e.ToString());
+                        Utility.Log(nameof(ProtocolSettings), LogLevel.Warning, "Failed parsing protocol.json. Using default settings");
+                        Utility.Log(nameof(ProtocolSettings), LogLevel.Error, e.Message);
                         configuration = new ConfigurationBuilder().Build();
                     }
                     UpdateDefault(configuration);
