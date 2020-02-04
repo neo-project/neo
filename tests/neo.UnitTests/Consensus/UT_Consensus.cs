@@ -915,7 +915,7 @@ namespace Neo.UnitTests.Consensus
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = NativeContract.NEO.Hash,
+                Id = NativeContract.NEO.Id,
                 Key = new byte[sizeof(byte)]
             };
             storageKey.Key[0] = prefix;
