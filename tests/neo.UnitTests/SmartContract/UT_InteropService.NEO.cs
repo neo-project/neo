@@ -229,7 +229,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
@@ -239,18 +239,6 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeTrue();
-
-            // Remove Storage flag with something stored
-
-            state.Manifest.Features = ContractFeatures.NoProperty;
-            snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
-
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            engine.LoadScript(state.Script);
-            engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
-            engine.CurrentContext.EvaluationStack.Push(script);
-            InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeFalse();
         }
 
         [TestMethod]
@@ -267,7 +255,7 @@ namespace Neo.UnitTests.SmartContract
             };
             var storageKey = new StorageKey
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
@@ -278,7 +266,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 IsReadOnly = false
             }));
             InteropService.Invoke(engine, InteropService.Storage.Find).Should().BeTrue();
