@@ -40,8 +40,7 @@ namespace Neo
                     }
                     catch (Exception e)
                     {
-                        Utility.Log(nameof(ProtocolSettings), LogLevel.Warning, "Failed parsing protocol.json. Using default settings");
-                        Utility.Log(nameof(ProtocolSettings), LogLevel.Error, e.Message);
+                        Utility.Log(nameof(ProtocolSettings), LogLevel.Error, "Failed parsing protocol.json. Using default settings. Error: " + e.Message);
                         configuration = new ConfigurationBuilder().Build();
                     }
                     UpdateDefault(configuration);
