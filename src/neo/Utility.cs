@@ -15,9 +15,19 @@ namespace Neo
         {
             var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
             var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
-            return new ConfigurationBuilder()
+            try
+            {
+                return new ConfigurationBuilder()
                 .AddJsonFile(configFile, true)
                 .Build();
+            }
+            catch (Exception e)
+            {
+                Log(nameof(Utility), LogLevel.Error, $"Failed parsing {configFile}, Error: " + e.Message);
+                return new ConfigurationBuilder()
+                .Build();
+            }
+            
         }
 
         public static void Log(string source, LogLevel level, string message)
