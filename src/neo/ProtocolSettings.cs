@@ -36,6 +36,7 @@ namespace Neo
                     var configuration = Utility.LoadConfig("protocol");
                     UpdateDefault(configuration);
                 }
+
                 return _default;
             }
         }

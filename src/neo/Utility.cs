@@ -27,7 +27,6 @@ namespace Neo
                 return new ConfigurationBuilder()
                 .Build();
             }
-            
         }
 
         public static void Log(string source, LogLevel level, string message)
