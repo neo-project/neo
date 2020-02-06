@@ -27,6 +27,10 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
+
+        /*
+        GasCredit is a negative number, which shows how many gas should be paybacked in systemfee
+        */
         public long GasCredit { get; private set; } = 0;
         public long MinimumGasRequired { get { return Math.Max(GasConsumed, maxConsumedGas); } }
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
@@ -71,6 +75,7 @@ namespace Neo.SmartContract
             if (gas < 0)
             {
                 GasCredit = checked(GasCredit + gas);
+                //if gas is negative，GasConsumed will be reduced，so keep the max GasConsumed
                 if (GasConsumed > maxConsumedGas)
                 {
                     maxConsumedGas = GasConsumed;
