@@ -68,20 +68,17 @@ namespace Neo.UnitTests.SmartContract
                 InteropService.GetPrice(InteropService.Contract.Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
-            var mockedStoreView = new Mock<StoreView>();
-
-            var manifest = ContractManifest.CreateDefault(UInt160.Zero);
-            manifest.Features = ContractFeatures.HasStorage;
-
             var key = new byte[] { (byte)OpCode.PUSH3 };
             var value = new byte[] { (byte)OpCode.PUSH3 };
-
             byte[] script = CreatePutScript(key, value);
+
             ContractState contractState = TestUtils.GetContract(script);
+            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
-            StorageItem sItem = null;
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
+            StorageItem sItem = TestUtils.GetStorageItem(null);
 
+            var mockedStoreView = new Mock<StoreView>();
             mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
             mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
 
@@ -104,7 +101,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(scriptPut);
+                ae.LoadScript(scriptPutEx);
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
@@ -126,7 +123,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(null);
 
             var mockedStoreView = new Mock<StoreView>();
@@ -165,7 +162,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(value);
 
             mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
@@ -203,7 +200,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
             var mockedStoreView = new Mock<StoreView>();
@@ -243,7 +240,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
             var mockedStoreView = new Mock<StoreView>();
@@ -274,7 +271,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
             var mockedStoreView = new Mock<StoreView>();
@@ -313,7 +310,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
             var mockedStoreView = new Mock<StoreView>();
@@ -346,7 +343,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
-            StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
             var mockedStoreView = new Mock<StoreView>();
@@ -469,17 +466,17 @@ namespace Neo.UnitTests.SmartContract
 
                 //fill the storage with data that will be released and builds the delete script
                 var script = scriptBuilder.ToArray();
+                ContractState contractState = TestUtils.GetContract(script);
                 for (BigInteger i = 1; i < 10; i++)
                 {
                     var key = i.ToByteArray();
                     var value = new byte[2048];
                     random.NextBytes(value);
-                    StorageKey skey = TestUtils.GetStorageKey(script.ToScriptHash(), key);
+                    StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
                     StorageItem sItem = TestUtils.GetStorageItem(value);
                     mockedStoreView.Object.Storages.Add(skey, sItem);
                 }
-
-                ContractState contractState = TestUtils.GetContract(script);
+                
                 contractState.Manifest.Features = ContractFeatures.HasStorage;
                 mockedStoreView.Object.Contracts.Add(script.ToScriptHash(), contractState);
 

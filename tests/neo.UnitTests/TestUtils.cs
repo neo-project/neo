@@ -69,6 +69,7 @@ namespace Neo.UnitTests
         {
             return new ContractState
             {
+                Id = 1,
                 Script = script,
                 Manifest = ContractManifest.CreateDefault(script.ToScriptHash())
             };
@@ -82,11 +83,11 @@ namespace Neo.UnitTests
             };
         }
 
-        internal static StorageKey GetStorageKey(UInt160 scriptHash, byte[] keyValue)
+        internal static StorageKey GetStorageKey(int id, byte[] keyValue)
         {
             return new StorageKey
             {
-                ScriptHash = scriptHash,
+                Id = id,
                 Key = keyValue
             };
         }
