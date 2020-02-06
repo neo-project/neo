@@ -19,6 +19,7 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public override MetaDataCache<ContractIdState> ContractId { get; }
 
         public SnapshotView(IStore store)
         {
@@ -30,6 +31,7 @@ namespace Neo.Persistence
             HeaderHashList = new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(snapshot, Prefixes.IX_HeaderHashList);
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
+            ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
         }
 
         public override void Commit()

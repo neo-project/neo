@@ -36,9 +36,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 // Drop arguments
 
-                script.Emit(VM.OpCode.TOALTSTACK);
-                script.Emit(VM.OpCode.DROP);
-                script.Emit(VM.OpCode.FROMALTSTACK);
+                script.Emit(OpCode.NIP);
 
                 // Notify method
 
@@ -337,12 +335,12 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(100);
             InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString()
-                .Should().Be(new byte[] { 0x02, 0x01, 0x64 }.ToHexString());
+                .Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(new byte[1024 * 1024 * 2]); //Larger than MaxItemSize
             InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeFalse();
 
-            engine.CurrentContext.EvaluationStack.Push(new TestInteropInterface());  //NotSupportedException
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new object()));  //NotSupportedException
             InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeFalse();
         }
 
@@ -356,7 +354,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(100);
 
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0xfa, 0x01 }); //FormatException
-            InteropService.Invoke(engine, InteropService.Binary.Deserialize).Should().BeFalse();
+            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Binary.Deserialize));
         }
 
         [TestMethod]
@@ -391,7 +389,7 @@ namespace Neo.UnitTests.SmartContract
             wrongkey[0] = 5;
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(wrongkey);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<IVerifiable>(engine.ScriptContainer));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(engine.ScriptContainer));
             InteropService.Invoke(engine, InteropService.Crypto.ECDsaVerify).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Peek().ToBoolean().Should().BeFalse();
         }
@@ -482,20 +480,26 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_GetContext()
         {
-            var engine = GetEngine();
+            var engine = GetEngine(false, true);
+            var state = TestUtils.GetContract();
+            state.Manifest.Features = ContractFeatures.HasStorage;
+            engine.Snapshot.Contracts.Add(state.ScriptHash, state);
+            engine.LoadScript(state.Script);
             InteropService.Invoke(engine, InteropService.Storage.GetContext).Should().BeTrue();
-            var ret = (InteropInterface<StorageContext>)engine.CurrentContext.EvaluationStack.Pop();
-            ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
+            var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().IsReadOnly.Should().BeFalse();
         }
 
         [TestMethod]
         public void TestStorage_GetReadOnlyContext()
         {
-            var engine = GetEngine();
+            var engine = GetEngine(false, true);
+            var state = TestUtils.GetContract();
+            state.Manifest.Features = ContractFeatures.HasStorage;
+            engine.Snapshot.Contracts.Add(state.ScriptHash, state);
+            engine.LoadScript(state.Script);
             InteropService.Invoke(engine, InteropService.Storage.GetReadOnlyContext).Should().BeTrue();
-            var ret = (InteropInterface<StorageContext>)engine.CurrentContext.EvaluationStack.Pop();
-            ret.GetInterface<StorageContext>().ScriptHash.Should().Be(engine.CurrentScriptHash);
+            var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().IsReadOnly.Should().BeTrue();
         }
 
@@ -508,7 +512,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
 
@@ -523,27 +527,13 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(new byte[] { 0x01 });
 
             engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(new StorageContext
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 IsReadOnly = false
             }));
             InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
-
-            snapshot.Contracts.Delete(state.ScriptHash);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            engine.LoadScript(new byte[] { 0x01 });
-            engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(new StorageContext
-            {
-                ScriptHash = state.ScriptHash,
-                IsReadOnly = false
-            }));
-            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
-
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeFalse();
         }
 
         [TestMethod]
@@ -561,18 +551,18 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 IsReadOnly = false
             };
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
+            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
 
             //key.Length > MaxStorageKeySize
             key = new byte[InteropService.Storage.MaxKeySize + 1];
             value = new byte[] { 0x02 };
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //value.Length > MaxStorageValueSize
@@ -580,7 +570,7 @@ namespace Neo.UnitTests.SmartContract
             value = new byte[ushort.MaxValue + 1];
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //context.IsReadOnly
@@ -589,7 +579,7 @@ namespace Neo.UnitTests.SmartContract
             storageContext.IsReadOnly = true;
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //storage value is constant
@@ -598,7 +588,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -615,14 +605,14 @@ namespace Neo.UnitTests.SmartContract
             storageContext.IsReadOnly = false;
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //success
             storageItem.IsConstant = false;
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
 
             //value length == 0
@@ -630,7 +620,7 @@ namespace Neo.UnitTests.SmartContract
             value = new byte[0];
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
         }
 
@@ -646,7 +636,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
-                ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x42)),
+                Id = 0x42000000,
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -662,13 +652,13 @@ namespace Neo.UnitTests.SmartContract
             var value = new byte[] { 0x02 };
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push((int)StorageFlags.None);
             engine.CurrentContext.EvaluationStack.Push(value);
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.PutEx).Should().BeTrue();
         }
 
@@ -685,7 +675,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
-                ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x42)),
+                Id = 0x42000000,
                 Key = new byte[] { 0x01 }
             };
             var storageItem = new StorageItem
@@ -701,24 +691,17 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { 0x01 };
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 IsReadOnly = false
             };
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeTrue();
 
             //context is readonly
             storageContext.IsReadOnly = true;
             engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
-
-            //CheckStorageContext fail
-            storageContext.IsReadOnly = false;
-            state.Manifest.Features = ContractFeatures.NoProperty;
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
         }
 
@@ -732,12 +715,12 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
-                ScriptHash = state.ScriptHash,
+                Id = state.Id,
                 IsReadOnly = false
             };
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface<StorageContext>(storageContext));
+            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
             InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeTrue();
-            var ret = (InteropInterface<StorageContext>)engine.CurrentContext.EvaluationStack.Pop();
+            var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
             ret.GetInterface<StorageContext>().IsReadOnly.Should().Be(true);
         }
 
@@ -857,7 +840,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageKey = new StorageKey
             {
-                ScriptHash = scriptHash,
+                Id = 0x43000000,
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(scriptHash, state);
@@ -908,12 +891,5 @@ namespace Neo.UnitTests.SmartContract
             }
             return engine;
         }
-    }
-
-    internal class TestInteropInterface : InteropInterface
-    {
-        public override bool Equals(StackItem other) => true;
-        public override bool ToBoolean() => true;
-        public override T GetInterface<T>() => throw new NotImplementedException();
     }
 }

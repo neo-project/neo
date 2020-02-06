@@ -43,6 +43,16 @@ namespace Neo.IO.Caching
             }
         }
 
+        /// <summary>
+        /// Try to Add a specific key, with associated value, to the current cached dictionary.
+        /// It will not read from internal state.
+        /// However, if previously cached into Dictionary, request may fail.
+        /// </summary>
+        /// <param name="key">Key to be possible added.
+        /// Key will not be added if value exists cached and the modification was not a Deleted one.
+        /// </param>
+        /// <param name="value">Corresponding value to be added, in the case of sucess.</param>
+        /// <exception cref="ArgumentException">If cached on dictionary, with any state rather than `Deleted`, an Exception will be raised.</exception>
         public void Add(TKey key, TValue value)
         {
             lock (dictionary)
@@ -60,6 +70,9 @@ namespace Neo.IO.Caching
 
         protected abstract void AddInternal(TKey key, TValue value);
 
+        /// <summary>
+        /// Update internals with all changes cached on Dictionary which are not None.
+        /// </summary>
         public void Commit()
         {
             foreach (Trackable trackable in GetChangeSet())
@@ -82,6 +95,10 @@ namespace Neo.IO.Caching
             return new CloneCache<TKey, TValue>(this);
         }
 
+        /// <summary>
+        /// Delete key from cached Dictionary or search in Internal.
+        /// </summary>
+        /// <param name="key">Key to be deleted.</param>
         public void Delete(TKey key)
         {
             lock (dictionary)
@@ -186,6 +203,14 @@ namespace Neo.IO.Caching
 
         protected abstract TValue GetInternal(TKey key);
 
+        /// <summary>
+        /// Try to Get a specific key from current cached dictionary.
+        /// Otherwise, tries to get from internal data with TryGetInternal.
+        /// </summary>
+        /// <param name="key">Key to be searched.</param>
+        /// <param name="factory">Function that may replace current object stored. 
+        /// If object already exists the factory passed as parameter will not be used.
+        /// </param>
         public TValue GetAndChange(TKey key, Func<TValue> factory = null)
         {
             lock (dictionary)

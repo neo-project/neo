@@ -164,11 +164,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             byte[] key = BitConverter.GetBytes(1);
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = NativeContract.GAS.Hash,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+                Id = NativeContract.GAS.Id,
+                Key = new byte[sizeof(byte) + key.Length]
             };
             storageKey.Key[0] = 15;
-            Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
+            key.CopyTo(storageKey.Key.AsSpan(1));
 
             BigInteger sys_fee = new BigInteger(10);
             snapshot.Storages.Add(storageKey, new StorageItem
