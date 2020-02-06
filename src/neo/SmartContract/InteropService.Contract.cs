@@ -38,6 +38,7 @@ namespace Neo.SmartContract
                 if (contract != null) return false;
                 contract = new ContractState
                 {
+                    Id = engine.Snapshot.ContractId.GetAndChange().NextId++,
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };
@@ -66,27 +67,13 @@ namespace Neo.SmartContract
                     if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
                     contract = new ContractState
                     {
+                        Id = contract.Id,
                         Script = script,
                         Manifest = contract.Manifest
                     };
                     contract.Manifest.Abi.Hash = hash_new;
                     engine.Snapshot.Contracts.Add(hash_new, contract);
-                    if (contract.HasStorage)
-                    {
-                        foreach (var (key, value) in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
-                        {
-                            engine.Snapshot.Storages.Add(new StorageKey
-                            {
-                                ScriptHash = hash_new,
-                                Key = key.Key
-                            }, new StorageItem
-                            {
-                                Value = value.Value,
-                                IsConstant = false
-                            });
-                        }
-                    }
-                    Contract_Destroy(engine);
+                    engine.Snapshot.Contracts.Delete(engine.CurrentScriptHash);
                 }
                 if (manifest.Length > 0)
                 {
