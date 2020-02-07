@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
@@ -178,6 +179,55 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             });
 
             NativeContract.GAS.GetSysFeeAmount(snapshot, 1).Should().Be(sys_fee);
+        }
+
+        [TestMethod]
+        public void TestOnRecycleRewardGas()
+        {
+            var wallet = TestUtils.GenerateTestWallet();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            using (var unlock = wallet.Unlock("123"))
+            {
+                var acc = wallet.CreateAccount();
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = new Nep5AccountState().ToByteArray()
+                });
+
+                entry.Value = new Nep5AccountState()
+                {
+                    Balance = 10000 * NativeContract.GAS.Factor
+                }
+                .ToByteArray();
+
+                snapshot.Commit();
+
+                NativeContract.GAS.BalanceOf(snapshot, acc.ScriptHash).Should().Be(10000 * NativeContract.GAS.Factor);
+
+                var tx = TestUtils.GetTransaction();
+                tx.Sender = acc.ScriptHash;
+                tx.RecycleRewardGas = (long)(1000 * NativeContract.GAS.Factor);
+
+                Script onRecycleRewardGasScript = null;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, tx.RecycleRewardGas);
+                    sb.Emit(OpCode.THROWIFNOT);
+                    onRecycleRewardGasScript = sb.ToArray();
+                }
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
+                {
+                    engine.LoadScript(onRecycleRewardGasScript);
+                    engine.Execute().Should().Be(VMState.HALT);
+                }
+                NativeContract.GAS.BalanceOf(snapshot, acc.ScriptHash).Should().Be(11000 * NativeContract.GAS.Factor);
+            }
         }
     }
 }
