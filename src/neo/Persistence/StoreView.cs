@@ -9,7 +9,7 @@ namespace Neo.Persistence
     /// <summary>
     /// It provides a set of properties and methods for reading formatted data from the underlying storage. Such as <see cref="Blocks"/> and <see cref="Transactions"/>.
     /// </summary>
-    public abstract class StoreView : IDisposable
+    public abstract class StoreView
     {
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, TrimmedBlock> Blocks { get; }
@@ -21,12 +21,12 @@ namespace Neo.Persistence
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public abstract MetaDataCache<ContractIdState> ContractId { get; }
 
-        public virtual uint Height => BlockHashIndex.Get().Index;
+        public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
-        public virtual UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
+        public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
-        public virtual StoreView Clone()
+        public StoreView Clone()
         {
             return new ClonedView(this);
         }
@@ -54,11 +54,6 @@ namespace Neo.Persistence
         {
             TransactionState state = Transactions.TryGet(hash);
             return state != null;
-        }
-
-        public virtual void Dispose()
-        {
-
         }
 
         public Block GetBlock(UInt256 hash)

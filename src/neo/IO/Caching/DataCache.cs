@@ -17,7 +17,7 @@ namespace Neo.IO.Caching
 
         private readonly Dictionary<TKey, Trackable> dictionary = new Dictionary<TKey, Trackable>();
 
-        public virtual TValue this[TKey key]
+        public TValue this[TKey key]
         {
             get
             {
@@ -285,7 +285,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        public virtual TValue TryGet(TKey key)
+        public TValue TryGet(TKey key)
         {
             lock (dictionary)
             {

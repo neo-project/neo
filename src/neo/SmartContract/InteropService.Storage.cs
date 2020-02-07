@@ -12,7 +12,6 @@ namespace Neo.SmartContract
         public static class Storage
         {
             public const long GasPerByte = 100000;
-            public const long GasPerReusedByte = -GasPerByte;
             public const long GasPerReleasedByte = -GasPerByte;
             public const int MaxKeySize = 64;
             public const int MaxValueSize = ushort.MaxValue;

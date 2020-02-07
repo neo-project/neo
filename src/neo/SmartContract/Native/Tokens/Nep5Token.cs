@@ -23,7 +23,7 @@ namespace Neo.SmartContract.Native.Tokens
         public BigInteger Factor { get; }
 
         protected const byte Prefix_TotalSupply = 11;
-        public const byte Prefix_Account = 20;
+        protected const byte Prefix_Account = 20;
 
         protected Nep5Token()
         {
@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Native.Tokens
             Manifest.Abi.Events = events.ToArray();
         }
 
-        internal StorageKey CreateAccountKey(UInt160 account)
+        protected StorageKey CreateAccountKey(UInt160 account)
         {
             return CreateStorageKey(Prefix_Account, account);
         }

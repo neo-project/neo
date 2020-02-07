@@ -8,7 +8,7 @@ namespace Neo.Persistence
     /// <summary>
     /// Provide a <see cref="StoreView"/> for accessing snapshots.
     /// </summary>
-    public class SnapshotView : StoreView
+    public class SnapshotView : StoreView, IDisposable
     {
         private readonly ISnapshot snapshot;
 
@@ -40,9 +40,8 @@ namespace Neo.Persistence
             snapshot.Commit();
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
-            base.Dispose();
             snapshot.Dispose();
         }
     }
