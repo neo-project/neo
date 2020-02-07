@@ -289,8 +289,10 @@ namespace Neo.UnitTests.SmartContract
                 var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
                 reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerReleasedByte);
                 debugger.StepInto();
-                var expectedCost = reusedDataPrice + setupPrice;
+                var expectedCost = setupPrice;
+                var expectedReward = -reusedDataPrice;
                 ae.GasConsumed.Should().Be(expectedCost);
+                ae.RecyclingRewardGas.Should().Be(expectedReward);
             }
         }
 
@@ -327,8 +329,10 @@ namespace Neo.UnitTests.SmartContract
                 var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Delete, ae);
                 reusedDataPrice.Should().Be((skey.Key.Length + sItem.Value.Length) * InteropService.Storage.GasPerReleasedByte);
                 debugger.StepInto();
-                var expectedCost = reusedDataPrice + setupPrice;
+                var expectedCost = setupPrice;
+                var expectedReward = -reusedDataPrice;
                 ae.GasConsumed.Should().Be(expectedCost);
+                ae.RecyclingRewardGas.Should().Be(expectedReward);
             }
         }
 
@@ -350,40 +354,20 @@ namespace Neo.UnitTests.SmartContract
             mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
             mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
 
-            long finalConsumedGas = 0;
-            long gasCredit = 0;
+            long ConsumedGas = 0;
+            long rewardGas = 0;
             long minimumRequiredToRun = 0;
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
             {
                 ae.LoadScript(script);
                 ae.Execute();
-                finalConsumedGas = ae.GasConsumed;
-                gasCredit = ae.RecyclingRewardGas;
-                minimumRequiredToRun = ae.MinimumGasRequired;
+                ConsumedGas = ae.GasConsumed;
+                rewardGas = ae.RecyclingRewardGas;
             }
+            rewardGas.Should().Be(2 * InteropService.Storage.GasPerByte);
 
-            //Negative Gas caused by released space.
-            finalConsumedGas.Should().BeLessOrEqualTo(0);
-
-            //If you send GasConsumed, it should fail due to lack of GAS.
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, finalConsumedGas, testMode: false))
-            {
-                ae.LoadScript(script);
-                ae.Execute();
-                ae.State.Should().Be(VMState.FAULT);
-            }
-
-            //To work properly, you have to send ConsumedGas + GasCredit.
-            //GasCredit is a negative value.
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, finalConsumedGas - gasCredit, testMode: false))
-            {
-                ae.LoadScript(script);
-                ae.Execute();
-                ae.State.Should().Be(VMState.HALT);
-
-            }
-
-            //The application engine already calculates the value you need to send to get this tx approved.
+            minimumRequiredToRun = ConsumedGas;
+            //If you send GasConsumed, it should HALT because GasConsumed is enough to cover the cost.
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, minimumRequiredToRun, testMode: false))
             {
                 ae.LoadScript(script);
@@ -391,99 +375,14 @@ namespace Neo.UnitTests.SmartContract
                 ae.State.Should().Be(VMState.HALT);
             }
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, minimumRequiredToRun - 1, testMode: false))
+            minimumRequiredToRun = ConsumedGas - 1;
+            //If you send GasConsumed-1, it should FAULT because it isn't enough to cover the cost.
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, minimumRequiredToRun, testMode: false))
             {
                 ae.LoadScript(script);
                 ae.Execute();
                 ae.State.Should().Be(VMState.FAULT);
             }
-        }
-
-        [TestMethod]
-        public void TestPaybackExceedingSysFee()
-        {
-            var mock = new Mock<NEP6Wallet>()
-            {
-                CallBase = true
-            };
-
-            var mockedStoreView = new Mock<StoreView>()
-            {
-                CallBase = true,
-            };
-
-            var dummyBlock = Blockchain.Singleton.GetBlock(0);
-            var trimmedBlock = new TrimmedBlock();
-            var testSnapshot = Blockchain.Singleton.GetSnapshot();
-
-            mockedStoreView.Setup(s => s.Storages).Returns(testSnapshot.Storages);
-            mockedStoreView.Setup(s => s.Contracts).Returns(testSnapshot.Contracts);
-            mockedStoreView.Setup(s => s.Height).Returns(0);
-            mockedStoreView.Setup(s => s.CurrentBlockHash).Returns(dummyBlock.Hash);
-            mockedStoreView.Setup(s => s.Blocks[dummyBlock.Hash]).Returns(trimmedBlock);
-            mockedStoreView.Setup(s => s.Clone()).Returns(mockedStoreView.Object);
-
-            var wallet = mock.Object;
-
-            using (wallet.Unlock(""))
-            {
-                var startingGas = 1000000;
-                var account = wallet.CreateAccount();
-                var account2 = wallet.CreateAccount();
-                var userKey = NativeContract.GAS.CreateAccountKey(account.ScriptHash);
-                var nep5Balance = new Nep5AccountState()
-                {
-                    Balance = startingGas * NativeContract.GAS.Factor
-                };
-
-                var userBalance = TestUtils.GetStorageItem(nep5Balance.ToByteArray());
-                mockedStoreView.Object.Storages.Add(userKey, userBalance);
-
-                var balance = NativeContract.GAS.BalanceOf(mockedStoreView.Object, account.ScriptHash);
-                balance.Should().Be(startingGas * NativeContract.GAS.Factor);
-
-                var transferOutput = new TransferOutput()
-                {
-                    AssetId = NativeContract.GAS.Hash,
-                    ScriptHash = account2.ScriptHash,
-                    Value = new BigDecimal(1, 0)
-                };
-
-                //Regular transfer transaction
-                var transaction = wallet.MakeTransaction(new TransferOutput[] { transferOutput }, account.ScriptHash, mockedStoreView.Object);
-                //Minimum fee
-                transaction.SystemFee.Should().Be(1 * (long)NativeContract.GAS.Factor);
-
-                var random = new Random();
-                var scriptBuilder = new ScriptBuilder();
-                for (BigInteger i = 1; i < 10; i++)
-                {
-                    var key = i.ToByteArray();
-                    scriptBuilder.EmitPush(key);
-                    scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-                    scriptBuilder.EmitSysCall(InteropService.Storage.Delete);
-                }
-
-                //fill the storage with data that will be released and builds the delete script
-                var script = scriptBuilder.ToArray();
-                ContractState contractState = TestUtils.GetContract(script);
-                for (BigInteger i = 1; i < 10; i++)
-                {
-                    var key = i.ToByteArray();
-                    var value = new byte[2048];
-                    random.NextBytes(value);
-                    StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-                    StorageItem sItem = TestUtils.GetStorageItem(value);
-                    mockedStoreView.Object.Storages.Add(skey, sItem);
-                }
-                
-                contractState.Manifest.Features = ContractFeatures.HasStorage;
-                mockedStoreView.Object.Contracts.Add(script.ToScriptHash(), contractState);
-
-                var storageReleaseTransaction = wallet.MakeTransaction(script.ToArray(), account.ScriptHash, snapshot: mockedStoreView.Object);
-                storageReleaseTransaction.SystemFee.Should().NotBe(0);
-            }
-
         }
 
         private byte[] CreateExplicitDeleteScript(byte[] key)
