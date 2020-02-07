@@ -2,7 +2,6 @@ using Akka.Actor;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,7 +10,6 @@ namespace Neo.Network.P2P
     internal class SyncManager : UntypedActor
     {
         public class Register { public RemoteNode Node; }
-        public class IndexTask { public uint Index; public DateTime Time; }
         public class PersistedBlockIndex { public uint PersistedIndex; }
         public class InvalidBlockIndex { public uint InvalidIndex; }
         public class StartSync { }
@@ -21,18 +19,17 @@ namespace Neo.Network.P2P
         private static readonly TimeSpan SyncTimeout = TimeSpan.FromMinutes(1);
 
         private readonly Dictionary<IActorRef, RemoteNode> nodes = new Dictionary<IActorRef, RemoteNode>();
+        private readonly Dictionary<uint, RemoteNode> receivedBlockIndex = new Dictionary<uint, RemoteNode>();
         private readonly NeoSystem system;
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
-        private readonly List<IndexTask> uncompletedTasks = new List<IndexTask>();
+        private readonly List<uint> failedTasks = new List<uint>();
 
-        private const int MaxTasksCount = 10;
+        private const int MaxTasksCount = 50;
+        private const int MaxTasksPerSession = 10;
         private const int PingCoolingOffPeriod = 60; // in secconds.
 
-        private readonly int maxTasksPerSession = 3;
-        private int totalTasksCount = 0;
         private uint highestBlockIndex = 0;
         private uint lastTaskIndex = 0;
-        private uint persistIndex = 0;
 
         public SyncManager(NeoSystem system)
         {
@@ -50,7 +47,7 @@ namespace Neo.Network.P2P
                     OnReceiveBlock(block);
                     break;
                 case PersistedBlockIndex blockIndex:
-                    OnReceiveBlockIndex(blockIndex);
+                    OnReceivePersistedBlockIndex(blockIndex);
                     break;
                 case InvalidBlockIndex invalidBlockIndex:
                     OnReceiveInvalidBlockIndex(invalidBlockIndex);
@@ -76,96 +73,75 @@ namespace Neo.Network.P2P
                 return true;
         }
 
+        private int GetTasksCount()
+        {
+            int count = 0;
+            foreach (var node in nodes.Values)
+                count += node.session.IndexTasks.Count;
+            return count;
+        }
+
         private void OnReceiveInvalidBlockIndex(InvalidBlockIndex invalidBlockIndex)
         {
-            foreach (Tuple<NodeSession, IndexTask> sessionWithIndexTask in GetIndexTask())
+            receivedBlockIndex.TryGetValue(invalidBlockIndex.InvalidIndex, out RemoteNode node);
+            if (node != null)
             {
-                if (sessionWithIndexTask.Item2.Index == invalidBlockIndex.InvalidIndex)
-                {
-                    sessionWithIndexTask.Item1.InvalidBlockCount++;
-                    sessionWithIndexTask.Item1.IndexTasks.Remove(sessionWithIndexTask.Item2);
-                    if (!ReSync(sessionWithIndexTask.Item2, sessionWithIndexTask.Item1))
-                        IncrementUncompletedTasks(sessionWithIndexTask.Item2);
-                    return;
-                }
+                node.session.InvalidBlockCount++;
+                node.session.IndexTasks.Remove(invalidBlockIndex.InvalidIndex);
+                receivedBlockIndex.Remove(invalidBlockIndex.InvalidIndex);
+                if (!AssignTask(invalidBlockIndex.InvalidIndex, node.session))
+                    failedTasks.Add(invalidBlockIndex.InvalidIndex);
+                return;
             }
         }
 
-        private void OnReceiveBlockIndex(PersistedBlockIndex persistedIndex)
+        private void OnReceivePersistedBlockIndex(PersistedBlockIndex blockIndex)
         {
-            if (persistedIndex.PersistedIndex <= persistIndex) return;
-            persistIndex = persistedIndex.PersistedIndex;
-            if (persistIndex > lastTaskIndex)
-                lastTaskIndex = persistIndex;
-            foreach (Tuple<NodeSession, IndexTask> sessionWithIndexTask in GetIndexTask())
-            {
-                if (sessionWithIndexTask.Item2.Index == persistIndex)
-                {
-                    sessionWithIndexTask.Item1.IndexTasks.Remove(sessionWithIndexTask.Item2);
-                    totalTasksCount--;
-                    RequestSync();
-                    return;
-                }
-            }
-        }
-
-        private IEnumerable<Tuple<NodeSession, IndexTask>> GetIndexTask()
-        {
-            foreach (RemoteNode node in nodes.Values.Where(p => p.session.HasIndexTask))
-            {
-                NodeSession session = node.session;
-                int count = session.IndexTasks.Count();
-                for (int i = 0; i < count; i++)
-                    yield return new Tuple<NodeSession, IndexTask>(session, session.IndexTasks[i]);
-            }
+            receivedBlockIndex.Remove(blockIndex.PersistedIndex);
         }
 
         private void OnTimer()
         {
             if (!NodesHaveTasks()) return;
-            foreach (Tuple<NodeSession, IndexTask> sessionWithIndexTask in GetIndexTask())
+            foreach (var node in nodes.Values)
             {
-                if (DateTime.UtcNow - sessionWithIndexTask.Item2.Time > SyncTimeout)
+                foreach (KeyValuePair<uint, DateTime> kvp in node.session.IndexTasks)
                 {
-                    sessionWithIndexTask.Item1.IndexTasks.Remove(sessionWithIndexTask.Item2);
-                    sessionWithIndexTask.Item1.TimeoutTimes++;
-                    if (!ReSync(sessionWithIndexTask.Item2, sessionWithIndexTask.Item1))
-                        IncrementUncompletedTasks(sessionWithIndexTask.Item2);
+                    if (DateTime.UtcNow - kvp.Value > SyncTimeout)
+                    {
+                        node.session.IndexTasks.Remove(kvp.Key);
+                        node.session.TimeoutTimes++;
+                        if(!AssignTask(kvp.Key, node.session))
+                            failedTasks.Add(kvp.Key);
+                    }
                 }
             }
             RequestSync();
         }
 
-        private bool ReSync(IndexTask task, NodeSession oldSession = null)
+        private bool AssignTask(uint index, NodeSession filterSession = null)
         {
             Random rand = new Random();
-            RemoteNode remoteNode = nodes.Values.Where(p => p.session != oldSession && p.session.IndexTasks.Count <= maxTasksPerSession && p.LastBlockIndex >= task.Index)
+            RemoteNode remoteNode = nodes.Values.Where(p => p.session != filterSession && p.session.IndexTasks.Count <= MaxTasksPerSession && p.LastBlockIndex >= index)
                 .OrderBy(p => p.session.IndexTasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
             if (remoteNode == null)
                 return false;
             NodeSession session = remoteNode.session;
-            session.IndexTasks.Add(new IndexTask { Index = task.Index, Time = DateTime.UtcNow });
-            nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(task.Index, 1)));
+            session.IndexTasks.Add(index, DateTime.UtcNow);
+            nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(index, 1)));
             return true;
-        }
-
-        private void IncrementUncompletedTasks(IndexTask task)
-        {
-            uncompletedTasks.Add(task);
-            totalTasksCount--;
-        }
-
-        private void DecrementUncompletedTasks(IndexTask task)
-        {
-            uncompletedTasks.Remove(task);
-            totalTasksCount++;
         }
 
         private void OnReceiveBlock(Block block)
         {
-            if (!nodes.TryGetValue(Sender, out _))
-                return;
-            system.Blockchain.Tell(block);
+            var node = nodes.Values.FirstOrDefault(p => p.session.IndexTasks.ContainsKey(block.Index));
+            if (node != null)
+            { 
+                node.session.IndexTasks.Remove(block.Index);
+                receivedBlockIndex.Add(block.Index, node);
+                system.Blockchain.Tell(block);
+                RequestSync();
+            }
         }
 
         private void OnRegister(RemoteNode node)
@@ -177,25 +153,20 @@ namespace Neo.Network.P2P
 
         private void RequestSync()
         {
-            RemoteNode[] remoteNodes = nodes.Values.ToArray();
-            if (totalTasksCount >= MaxTasksCount || remoteNodes.Count() == 0) return;
+            if (GetTasksCount() >= MaxTasksCount || nodes.Count() == 0) return;
             SendPingMessage();
-            highestBlockIndex = remoteNodes.Max(p => p.LastBlockIndex);
+            highestBlockIndex = nodes.Values.Max(p => p.LastBlockIndex);
             if (lastTaskIndex == 0)
                 lastTaskIndex = Blockchain.Singleton.Height;
             Random rand = new Random();
-            while (totalTasksCount <= MaxTasksCount)
+            while (GetTasksCount() <= MaxTasksCount)
             {
-                if (!StartUncompletedTasks()) break;
+                if (!StartFailedTasks()) return;
                 if (lastTaskIndex >= highestBlockIndex) break;
                 uint index = lastTaskIndex + 1;
-                var remoteNode = remoteNodes.Where(p => p.session.IndexTasks.Count < maxTasksPerSession && p.LastBlockIndex >= index)
-                    .OrderBy(p => p.session.IndexTasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
-                if (remoteNode == null) break;
-                remoteNode.session.IndexTasks.Add(new IndexTask { Index = index, Time = DateTime.UtcNow });
-                totalTasksCount++;
+                if (receivedBlockIndex.ContainsKey(index)) break;
+                if (!AssignTask(index)) break;
                 lastTaskIndex = index;
-                nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(index, 1)));
             }
         }
 
@@ -211,16 +182,21 @@ namespace Neo.Network.P2P
             }
         }
 
-        private bool StartUncompletedTasks()
+        private bool StartFailedTasks()
         {
-            if (uncompletedTasks.Count() > 0)
+            if (failedTasks.Count() > 0)
             {
-                for (int i = 0; i < uncompletedTasks.Count(); i++)
+                for (int i = 0; i < failedTasks.Count(); i++)
                 {
-                    if (totalTasksCount >= MaxTasksCount)
+                    if (failedTasks[i] <= Blockchain.Singleton.Height)
+                    {
+                        failedTasks.Remove(failedTasks[i]);
+                        break;
+                    }
+                    if (GetTasksCount() >= MaxTasksCount)
                         return false;
-                    if (ReSync(uncompletedTasks[i]))
-                        DecrementUncompletedTasks(uncompletedTasks[i]);
+                    if (AssignTask(failedTasks[i]))
+                        failedTasks.Remove(failedTasks[i]);
                     else
                         return false;
                 }
@@ -235,14 +211,12 @@ namespace Neo.Network.P2P
             NodeSession session = remoteNode.session;
             if (session.HasIndexTask)
             {
-                for (int i = 0; i < session.IndexTasks.Count(); i++)
-                {
-                    if (!ReSync(session.IndexTasks[i], session))
-                        IncrementUncompletedTasks(session.IndexTasks[i]);
-                }
+                foreach (uint index in session.IndexTasks.Keys)
+                    if(!AssignTask(index, session))
+                        failedTasks.Add(index);
             }
             nodes.Remove(actor);
-            if (totalTasksCount == 0) lastTaskIndex = 0;
+            if (GetTasksCount() == 0) lastTaskIndex = 0;
         }
 
         protected override void PostStop()
