@@ -14,7 +14,6 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -97,7 +96,6 @@ namespace Neo.Ledger
 
                 onPersistNativeContractScript = sb.ToArray();
             }
- 
         }
 
         public Blockchain(NeoSystem system, IStore store)
@@ -495,7 +493,7 @@ namespace Neo.Ledger
             using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
-                List<Transaction> recycleRewardGasTx = new List<Transaction>();
+                List<Transaction> recycleRewardGasTxs = new List<Transaction>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
@@ -528,7 +526,7 @@ namespace Neo.Ledger
                             if (engine.RecyclingRewardGas > 0)
                             {
                                 tx.RecycleRewardGas = engine.RecyclingRewardGas;
-                                recycleRewardGasTx.Add(tx);
+                                recycleRewardGasTxs.Add(tx);
                             }
                             engine.Snapshot.Commit();
                         }
@@ -537,7 +535,7 @@ namespace Neo.Ledger
                         all_application_executed.Add(application_executed);
                     }
                 }
-                foreach(Transaction tx in recycleRewardGasTx)
+                foreach(Transaction tx in recycleRewardGasTxs)
                 {
                     Script onRecycleRewardGasScript = null;
                     using (ScriptBuilder sb = new ScriptBuilder())

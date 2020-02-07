@@ -43,7 +43,6 @@ namespace Neo.SmartContract
             this.RequiredCallFlags = requiredCallFlags;
         }
 
-
         public long GetPrice()
         {
             return Price;
