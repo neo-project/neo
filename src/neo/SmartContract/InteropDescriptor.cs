@@ -11,7 +11,7 @@ namespace Neo.SmartContract
         public long Price { get; }
         public Func<EvaluationStack, long> PriceCalculator { get; }
         public Func<ApplicationEngine, long> StoragePriceCalculator { get; }
-        public bool IsStateful { get; }
+        public bool IsStateful { get; } = false;
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
 

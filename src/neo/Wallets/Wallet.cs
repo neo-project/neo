@@ -223,7 +223,7 @@ namespace Neo.Wallets
                 accounts = new[] { from };
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
-            { 
+            {
                 HashSet<UInt160> cosignerList = new HashSet<UInt160>();
                 byte[] script;
                 List<(UInt160 Account, BigInteger Value)> balances_gas = null;
@@ -291,7 +291,6 @@ namespace Neo.Wallets
                     throw new ArgumentException($"The address {sender.ToString()} was not found in the wallet");
                 accounts = new[] { sender };
             }
-
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
@@ -322,9 +321,9 @@ namespace Neo.Wallets
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
                     if (tx.SystemFee > 0)
                     {
-                        long d = (long)NativeContract.GAS.Factor; 
-                        long remainder = tx.SystemFee % d; 
-                        if (remainder > 0) 
+                        long d = (long)NativeContract.GAS.Factor;
+                        long remainder = tx.SystemFee % d;
+                        if (remainder > 0)
                             tx.SystemFee += d - remainder;
                         else if (remainder < 0)
                             tx.SystemFee -= remainder;

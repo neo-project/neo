@@ -84,7 +84,9 @@ namespace Neo.SmartContract
                     Id = context.Id,
                     Key = key
                 };
+
                 if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
+
                 if (value.Length == 0 && !flags.HasFlag(StorageFlags.Constant))
                 {
                     // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)

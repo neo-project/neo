@@ -15,14 +15,14 @@ namespace Neo.SmartContract
                 t.GetFields()[0].GetValue(null);
         }
 
-        public static IEnumerable<InteropDescriptor> SupportedMethods()
-        {
-            return methods.Values;
-        }
-
         public static long GetPrice(uint hash)
         {
             return methods[hash].GetPrice();
+        }
+
+        public static long GetPrice(uint hash, ApplicationEngine applicationEngine)
+        {
+            return methods[hash].GetPrice(applicationEngine);
         }
 
         public static long GetPrice(uint hash, EvaluationStack stack)
@@ -30,9 +30,9 @@ namespace Neo.SmartContract
             return methods[hash].GetPrice(stack);
         }
 
-        public static long GetPrice(uint hash, ApplicationEngine applicationEngine)
+        public static IEnumerable<InteropDescriptor> SupportedMethods()
         {
-            return methods[hash].GetPrice(applicationEngine);
+            return methods.Values;
         }
 
         internal static bool Invoke(ApplicationEngine engine, uint method)
