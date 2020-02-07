@@ -22,7 +22,6 @@ namespace Neo.SmartContract
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
         private readonly List<StorageKey> updatedKeys = new List<StorageKey>();
-        private long maxConsumedGas = 0;
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
@@ -30,10 +29,9 @@ namespace Neo.SmartContract
         public long GasConsumed { get; private set; } = 0;
 
         /*
-        GasCredit is a negative number, which shows how many gas should be paybacked in systemfee
+        RecyclingRewardGas shows how many gas should be recycled as a reward in systemfee
         */
-        public long GasCredit { get; private set; } = 0;
-        public long MinimumGasRequired { get { return Math.Max(GasConsumed, maxConsumedGas); } }
+        public long RecyclingRewardGas { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
@@ -75,15 +73,12 @@ namespace Neo.SmartContract
         {
             if (gas < 0)
             {
-                GasCredit = checked(GasCredit + gas);
-                //if gas is negative，GasConsumed will be reduced，so keep the max GasConsumed
-                if (GasConsumed > maxConsumedGas)
-                {
-                    maxConsumedGas = GasConsumed;
-                }
+                RecyclingRewardGas = checked(RecyclingRewardGas + (-gas));
             }
-
-            GasConsumed = checked(GasConsumed + gas);
+            else
+            {
+                GasConsumed = checked(GasConsumed + gas);
+            }
             return testMode || GasConsumed <= gas_amount;
         }
 

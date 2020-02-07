@@ -14,6 +14,7 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -96,6 +97,7 @@ namespace Neo.Ledger
 
                 onPersistNativeContractScript = sb.ToArray();
             }
+ 
         }
 
         public Blockchain(NeoSystem system, IStore store)
@@ -493,6 +495,7 @@ namespace Neo.Ledger
             using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
+                List<Transaction> recycleRewardGasTx = new List<Transaction>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
@@ -522,9 +525,31 @@ namespace Neo.Ledger
                         state.VMState = engine.Execute();
                         if (state.VMState == VMState.HALT)
                         {
-                            tx.SysFeeCredit = engine.GasCredit;
+                            if (engine.RecyclingRewardGas > 0)
+                            {
+                                tx.RecycleRewardGas = engine.RecyclingRewardGas;
+                                recycleRewardGasTx.Add(tx);
+                            }
                             engine.Snapshot.Commit();
                         }
+                        ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                        Context.System.EventStream.Publish(application_executed);
+                        all_application_executed.Add(application_executed);
+                    }
+                }
+                foreach(Transaction tx in recycleRewardGasTx)
+                {
+                    Script onRecycleRewardGasScript = null;
+                    using (ScriptBuilder sb = new ScriptBuilder())
+                    {
+                        sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, tx.RecycleRewardGas);
+                        sb.Emit(OpCode.THROWIFNOT);
+                        onRecycleRewardGasScript = sb.ToArray();
+                    }
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
+                    {
+                        engine.LoadScript(onRecycleRewardGasScript);
+                        if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);

@@ -36,40 +36,31 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        /// <summary>
-        /// The paid final paid amount is calculated based based on the sysfee and sysfeeCredit
-        /// </summary>
-        /// <param name="tx"></param>
-        /// <returns></returns>
-        private long CalculateSystemFeeWithPayback(Transaction tx)
-        {
-            long gasUnit = (long)GAS.Factor;
-            long finalFee = Math.Max(tx.SystemFee + tx.SysFeeCredit, 0);
-            long remainder = finalFee % gasUnit;
-            finalFee += gasUnit - remainder;
-            return finalFee;
-        }
-
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;
-            long sysFeeWithStorageDiscount = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
-            {
-                var sysFee = CalculateSystemFeeWithPayback(tx);
-                Burn(engine, tx.Sender, sysFee + tx.NetworkFee);
-                sysFeeWithStorageDiscount += sysFee;
-            }
+                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + sysFeeWithStorageDiscount;
+            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.SystemFee);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
             engine.Snapshot.Storages.Add(key, new StorageItem
             {
                 Value = sys_fee.ToByteArrayStandard(),
                 IsConstant = true
             });
+            return true;
+        }
+
+        [ContractMethod(0, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "amount" })]
+        private StackItem OnRecycleRewardGas(ApplicationEngine engine, VMArray args)
+        {
+            if (engine.Trigger != TriggerType.System) return false;
+            UInt160 acount = new UInt160(args[0].GetSpan());
+            BigInteger amount = args[1].GetBigInteger();
+            Mint(engine, acount, amount);
             return true;
         }
 

@@ -358,7 +358,7 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(script);
                 ae.Execute();
                 finalConsumedGas = ae.GasConsumed;
-                gasCredit = ae.GasCredit;
+                gasCredit = ae.RecyclingRewardGas;
                 minimumRequiredToRun = ae.MinimumGasRequired;
             }
 
