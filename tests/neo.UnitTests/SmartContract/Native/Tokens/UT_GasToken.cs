@@ -164,7 +164,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             byte[] key = BitConverter.GetBytes(1);
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = NativeContract.GAS.Hash,
+                Id = NativeContract.GAS.Id,
                 Key = new byte[sizeof(byte) + key.Length]
             };
             storageKey.Key[0] = 15;
