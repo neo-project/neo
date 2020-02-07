@@ -89,8 +89,7 @@ namespace Neo.Network.P2P
                 node.session.InvalidBlockCount++;
                 node.session.IndexTasks.Remove(invalidBlockIndex.InvalidIndex);
                 receivedBlockIndex.Remove(invalidBlockIndex.InvalidIndex);
-                if (!AssignTask(invalidBlockIndex.InvalidIndex, node.session))
-                    failedTasks.Add(invalidBlockIndex.InvalidIndex);
+                AssignTask(invalidBlockIndex.InvalidIndex, node.session);
                 return;
             }
         }
@@ -111,8 +110,7 @@ namespace Neo.Network.P2P
                     {
                         node.session.IndexTasks.Remove(kvp.Key);
                         node.session.TimeoutTimes++;
-                        if(!AssignTask(kvp.Key, node.session))
-                            failedTasks.Add(kvp.Key);
+                        AssignTask(kvp.Key, node.session);
                     }
                 }
             }
@@ -125,10 +123,14 @@ namespace Neo.Network.P2P
             RemoteNode remoteNode = nodes.Values.Where(p => p.session != filterSession && p.session.IndexTasks.Count <= MaxTasksPerSession && p.LastBlockIndex >= index)
                 .OrderBy(p => p.session.IndexTasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
             if (remoteNode == null)
+            {
+                failedTasks.Add(index);
                 return false;
+            }
             NodeSession session = remoteNode.session;
             session.IndexTasks.Add(index, DateTime.UtcNow);
             nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(index, 1)));
+            failedTasks.Remove(index);
             return true;
         }
 
@@ -158,7 +160,6 @@ namespace Neo.Network.P2P
             highestBlockIndex = nodes.Values.Max(p => p.LastBlockIndex);
             if (lastTaskIndex == 0)
                 lastTaskIndex = Blockchain.Singleton.Height;
-            Random rand = new Random();
             while (GetTasksCount() <= MaxTasksCount)
             {
                 if (!StartFailedTasks()) return;
@@ -191,13 +192,11 @@ namespace Neo.Network.P2P
                     if (failedTasks[i] <= Blockchain.Singleton.Height)
                     {
                         failedTasks.Remove(failedTasks[i]);
-                        break;
+                        continue;
                     }
                     if (GetTasksCount() >= MaxTasksCount)
                         return false;
-                    if (AssignTask(failedTasks[i]))
-                        failedTasks.Remove(failedTasks[i]);
-                    else
+                    if (!AssignTask(failedTasks[i]))
                         return false;
                 }
             }
