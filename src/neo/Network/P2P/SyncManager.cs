@@ -64,15 +64,6 @@ namespace Neo.Network.P2P
             }
         }
 
-        private bool NodesHaveTasks()
-        {
-            RemoteNode[] remoteNodes = nodes.Values.ToArray();
-            if (remoteNodes.Count() == 0 || remoteNodes.Any(p => p.session.HasIndexTask))
-                return false;
-            else
-                return true;
-        }
-
         private int GetTasksCount()
         {
             int count = 0;
@@ -101,8 +92,10 @@ namespace Neo.Network.P2P
 
         private void OnTimer()
         {
-            if (!NodesHaveTasks()) return;
-            foreach (var node in nodes.Values)
+            RemoteNode[] remoteNodes = nodes.Values.ToArray();
+            if (remoteNodes.Count() == 0 || !remoteNodes.Any(p => p.session.HasIndexTask))
+                return;
+            foreach (var node in remoteNodes)
             {
                 foreach (KeyValuePair<uint, DateTime> kvp in node.session.IndexTasks)
                 {
@@ -119,6 +112,8 @@ namespace Neo.Network.P2P
 
         private bool AssignTask(uint index, NodeSession filterSession = null)
         {
+            if (nodes.Values.Any(p => p.session.IndexTasks.ContainsKey(index)))
+                return true;
             Random rand = new Random();
             RemoteNode remoteNode = nodes.Values.Where(p => p.session != filterSession && p.session.IndexTasks.Count <= MaxTasksPerSession && p.LastBlockIndex >= index)
                 .OrderBy(p => p.session.IndexTasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
@@ -128,7 +123,7 @@ namespace Neo.Network.P2P
                 return false;
             }
             NodeSession session = remoteNode.session;
-            session.IndexTasks.Add(index, DateTime.UtcNow);
+            session.IndexTasks.TryAdd(index, DateTime.UtcNow);
             nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(index, 1)));
             failedTasks.Remove(index);
             return true;
@@ -140,7 +135,7 @@ namespace Neo.Network.P2P
             if (node != null)
             { 
                 node.session.IndexTasks.Remove(block.Index);
-                receivedBlockIndex.Add(block.Index, node);
+                receivedBlockIndex.TryAdd(block.Index, node);
                 system.Blockchain.Tell(block);
                 RequestSync();
             }
@@ -162,7 +157,7 @@ namespace Neo.Network.P2P
                 lastTaskIndex = Blockchain.Singleton.Height;
             while (GetTasksCount() <= MaxTasksCount)
             {
-                if (!StartFailedTasks()) return;
+                if (!StartFailedTasks()) break;
                 if (lastTaskIndex >= highestBlockIndex) break;
                 uint index = lastTaskIndex + 1;
                 if (receivedBlockIndex.ContainsKey(index)) break;
@@ -185,20 +180,17 @@ namespace Neo.Network.P2P
 
         private bool StartFailedTasks()
         {
-            if (failedTasks.Count() > 0)
+            for (int i = 0; i < failedTasks.Count(); i++)
             {
-                for (int i = 0; i < failedTasks.Count(); i++)
+                if (failedTasks[i] <= Blockchain.Singleton.Height)
                 {
-                    if (failedTasks[i] <= Blockchain.Singleton.Height)
-                    {
-                        failedTasks.Remove(failedTasks[i]);
-                        continue;
-                    }
-                    if (GetTasksCount() >= MaxTasksCount)
-                        return false;
-                    if (!AssignTask(failedTasks[i]))
-                        return false;
+                    failedTasks.Remove(failedTasks[i]);
+                    continue;
                 }
+                if (GetTasksCount() >= MaxTasksCount)
+                    return false;
+                if (!AssignTask(failedTasks[i]))
+                    return false;
             }
             return true;
         }
@@ -208,12 +200,8 @@ namespace Neo.Network.P2P
             if (!nodes.TryGetValue(Sender, out RemoteNode remoteNode))
                 return;
             NodeSession session = remoteNode.session;
-            if (session.HasIndexTask)
-            {
-                foreach (uint index in session.IndexTasks.Keys)
-                    if(!AssignTask(index, session))
-                        failedTasks.Add(index);
-            }
+            foreach (uint index in session.IndexTasks.Keys)
+                AssignTask(index, session);
             nodes.Remove(actor);
             if (GetTasksCount() == 0) lastTaskIndex = 0;
         }
