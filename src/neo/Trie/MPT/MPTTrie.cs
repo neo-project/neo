@@ -13,7 +13,7 @@ namespace Neo.Trie.MPT
                 throw new System.Exception();
             this.db = db;
             var rbytes = db.GetRoot();
-            if (rbytes.Length == 0)
+            if (rbytes is null || rbytes.Length == 0)
             {
                 this.root = HashNode.EmptyNode();
             }
@@ -369,7 +369,6 @@ namespace Neo.Trie.MPT
         public void Commit()
         {
             db.PutRoot(GetRoot());
-            db.Commit();
         }
     }
 }

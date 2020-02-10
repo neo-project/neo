@@ -48,10 +48,5 @@ namespace Neo.Trie.MPT
         {
             return store.TryGet(TABLE, StoreKey(Encoding.ASCII.GetBytes("mpt_root")));
         }
-
-        public void Commit()
-        {
-            store.Commit();
-        }
     }
 }
