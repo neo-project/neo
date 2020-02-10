@@ -7,12 +7,12 @@ namespace Neo.Ledger
 {
     public class StorageKey : IEquatable<StorageKey>, ISerializable
     {
-        public UInt160 ScriptHash;
+        public int Id;
         public byte[] Key;
 
-        int ISerializable.Size => ScriptHash.Size + (Key.Length / 16 + 1) * 17;
+        int ISerializable.Size => sizeof(int) + (Key.Length / 16 + 1) * 17;
 
-        internal static byte[] CreateSearchPrefix(UInt160 hash, byte[] prefix)
+        internal static byte[] CreateSearchPrefix(int id, byte[] prefix)
         {
             using (MemoryStream ms = new MemoryStream())
             {
@@ -27,13 +27,13 @@ namespace Neo.Ledger
                 }
                 if (remain > 0)
                     ms.Write(prefix, index, remain);
-                return Helper.Concat(hash.ToArray(), ms.ToArray());
+                return Helper.Concat(BitConverter.GetBytes(id), ms.ToArray());
             }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ScriptHash = reader.ReadSerializable<UInt160>();
+            Id = reader.ReadInt32();
             Key = reader.ReadBytesWithGrouping();
         }
 
@@ -43,7 +43,7 @@ namespace Neo.Ledger
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return ScriptHash.Equals(other.ScriptHash) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
+            return Id == other.Id && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
         }
 
         public override bool Equals(object obj)
@@ -54,12 +54,12 @@ namespace Neo.Ledger
 
         public override int GetHashCode()
         {
-            return ScriptHash.GetHashCode() + (int)Key.Murmur32(0);
+            return Id.GetHashCode() + (int)Key.Murmur32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(ScriptHash);
+            writer.Write(Id);
             writer.WriteBytesWithGrouping(Key);
         }
     }

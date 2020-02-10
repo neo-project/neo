@@ -18,30 +18,30 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void ScriptHash_Get()
+        public void Id_Get()
         {
-            uut.ScriptHash.Should().BeNull();
+            uut.Id.Should().Be(0);
         }
 
         [TestMethod]
         public void Size()
         {
-            var ut = new StorageKey() { Key = new byte[17], ScriptHash = UInt160.Zero };
+            var ut = new StorageKey() { Key = new byte[17], Id = 0 };
             ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
 
-            ut = new StorageKey() { Key = new byte[0], ScriptHash = UInt160.Zero };
+            ut = new StorageKey() { Key = new byte[0], Id = 0 };
             ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
 
-            ut = new StorageKey() { Key = new byte[16], ScriptHash = UInt160.Zero };
+            ut = new StorageKey() { Key = new byte[16], Id = 0 };
             ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
         }
 
         [TestMethod]
-        public void ScriptHash_Set()
+        public void Id_Set()
         {
-            UInt160 val = new UInt160(TestUtils.GetByteArray(20, 0x42));
-            uut.ScriptHash = val;
-            uut.ScriptHash.Should().Be(val);
+            int val = 1;
+            uut.Id = val;
+            uut.Id.Should().Be(val);
         }
 
         [TestMethod]
@@ -75,14 +75,14 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_SameKey()
         {
-            UInt160 val = new UInt160(TestUtils.GetByteArray(20, 0x42));
+            int val = 0x42000000;
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
-                ScriptHash = val,
+                Id = val,
                 Key = keyVal
             };
-            uut.ScriptHash = val;
+            uut.Id = val;
             uut.Key = keyVal;
 
             uut.Equals(newSk).Should().BeTrue();
@@ -91,14 +91,14 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_DiffHash_SameKey()
         {
-            UInt160 val = new UInt160(TestUtils.GetByteArray(20, 0x42));
+            int val = 0x42000000;
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
-                ScriptHash = val,
+                Id = val,
                 Key = keyVal
             };
-            uut.ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x88));
+            uut.Id = 0x78000000;
             uut.Key = keyVal;
 
             uut.Equals(newSk).Should().BeFalse();
@@ -108,14 +108,14 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_DiffKey()
         {
-            UInt160 val = new UInt160(TestUtils.GetByteArray(20, 0x42));
+            int val = 0x42000000;
             byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
             StorageKey newSk = new StorageKey
             {
-                ScriptHash = val,
+                Id = val,
                 Key = keyVal
             };
-            uut.ScriptHash = val;
+            uut.Id = val;
             uut.Key = TestUtils.GetByteArray(10, 0x88);
 
             uut.Equals(newSk).Should().BeFalse();
@@ -124,9 +124,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void GetHashCode_Get()
         {
-            uut.ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x42));
+            uut.Id = 0x42000000;
             uut.Key = TestUtils.GetByteArray(10, 0x42);
-            uut.GetHashCode().Should().Be(806209853);
+            uut.GetHashCode().Should().Be(1374529787);
         }
 
         [TestMethod]
@@ -143,13 +143,13 @@ namespace Neo.UnitTests.Ledger
             using (BinaryWriter writer = new BinaryWriter(ms))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                uut.ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x42));
+                uut.Id = 0x42000000;
                 uut.Key = TestUtils.GetByteArray(10, 0x42);
                 ((ISerializable)uut).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);
                 StorageKey dest = new StorageKey();
                 ((ISerializable)dest).Deserialize(reader);
-                dest.ScriptHash.Should().Be(uut.ScriptHash);
+                dest.Id.Should().Be(uut.Id);
                 dest.Key.Should().BeEquivalentTo(uut.Key);
             }
         }
