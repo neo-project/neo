@@ -8,8 +8,6 @@ namespace Neo.Trie.MPT
     {
         public MPTNode[] Children = new MPTNode[17];
 
-        public new int Size;
-
         public FullNode()
         {
             nType = NodeType.FullNode;
