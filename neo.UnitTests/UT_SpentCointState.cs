@@ -29,7 +29,7 @@ namespace Neo.UnitTests
         public void TestFromReplica()
         {
             uut.Items = new Dictionary<ushort, uint>();
-            uut.Items.Add(1, 2);
+            uut.Items.Add(1, 3);
 
             var a = ((ICloneable<SpentCoinState>)uut).Clone();
             var b = new SpentCoinState();
