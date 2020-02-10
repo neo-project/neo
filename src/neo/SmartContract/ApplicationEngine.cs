@@ -1,7 +1,6 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -72,13 +71,9 @@ namespace Neo.SmartContract
         private bool AddGas(long gas)
         {
             if (gas < 0)
-            {
                 RecyclingRewardGas = checked(RecyclingRewardGas + (-gas));
-            }
             else
-            {
                 GasConsumed = checked(GasConsumed + gas);
-            }
             return testMode || GasConsumed <= gas_amount;
         }
 

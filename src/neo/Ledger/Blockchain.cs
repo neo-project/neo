@@ -286,7 +286,6 @@ namespace Neo.Ledger
                 MemPool.TryAdd(tx.Hash, tx);
             }
             // Transactions originally in the pool will automatically be reverified based on their priority.
-
             Sender.Tell(new FillCompleted());
         }
 
@@ -535,24 +534,7 @@ namespace Neo.Ledger
                         all_application_executed.Add(application_executed);
                     }
                 }
-                foreach(Transaction tx in recycleRewardGasTxs)
-                {
-                    Script onRecycleRewardGasScript = null;
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                    {
-                        sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, tx.RecycleRewardGas);
-                        sb.Emit(OpCode.THROWIFNOT);
-                        onRecycleRewardGasScript = sb.ToArray();
-                    }
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
-                    {
-                        engine.LoadScript(onRecycleRewardGasScript);
-                        if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                        ApplicationExecuted application_executed = new ApplicationExecuted(engine);
-                        Context.System.EventStream.Publish(application_executed);
-                        all_application_executed.Add(application_executed);
-                    }
-                }
+                RecycleRewardGas(snapshot, all_application_executed, recycleRewardGasTxs);
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
                 if (block.Index == header_index.Count)
                 {
@@ -584,6 +566,28 @@ namespace Neo.Ledger
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
+        }
+
+        private static void RecycleRewardGas(SnapshotView snapshot, List<ApplicationExecuted> all_application_executed, List<Transaction> recycleRewardGasTxs)
+        {
+            foreach (Transaction tx in recycleRewardGasTxs)
+            {
+                Script onRecycleRewardGasScript = null;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, tx.RecycleRewardGas);
+                    sb.Emit(OpCode.THROWIFNOT);
+                    onRecycleRewardGasScript = sb.ToArray();
+                }
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
+                {
+                    engine.LoadScript(onRecycleRewardGasScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
+                }
+            }
         }
 
         protected override void PostStop()

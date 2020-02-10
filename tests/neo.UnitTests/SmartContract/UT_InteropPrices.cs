@@ -5,15 +5,8 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
-using Neo.VM.Types;
 using Neo.Wallets;
-using Neo.Wallets.NEP6;
-using System;
-using System.Linq;
-using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -296,8 +289,6 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
-
-
         /// <summary>
         /// Releases 1 byte from the storage receiving Gas credit using explicit delete
         /// </summary>
@@ -440,5 +431,4 @@ namespace Neo.UnitTests.SmartContract
             return scriptBuilder.ToArray();
         }
     }
-
 }

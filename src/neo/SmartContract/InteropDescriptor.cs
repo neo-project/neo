@@ -51,7 +51,6 @@ namespace Neo.SmartContract
         public long GetPrice(ApplicationEngine applicationEngine)
         {
             long price = Price;
-
             if (!IsStateful && PriceCalculator != null)
             {
                 price = PriceCalculator(applicationEngine.CurrentContext.EvaluationStack);
@@ -60,7 +59,6 @@ namespace Neo.SmartContract
             {
                 price = StoragePriceCalculator(applicationEngine);
             }
-
             return price;
         }
 

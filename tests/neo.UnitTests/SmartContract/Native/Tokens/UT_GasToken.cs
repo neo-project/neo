@@ -192,7 +192,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 var acc = wallet.CreateAccount();
 
                 // Fake balance
-
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
