@@ -27,12 +27,12 @@ namespace Neo.Network.P2P
         private const int MaxTasksCount = 50;
         private const int PingCoolingOffPeriod = 60; // in secconds.
 
-        private uint highestBlockIndex = 0;
         private uint lastTaskIndex = 0;
 
         public SyncManager(NeoSystem system)
         {
             this.system = system;
+            lastTaskIndex = Blockchain.Singleton.Height;
         }
 
         protected override void OnReceive(object message)
@@ -75,7 +75,7 @@ namespace Neo.Network.P2P
             var node = nodes.Values.FirstOrDefault(p => p.session.IndexTasks.ContainsKey(block.Index));
             if (node is null) return;
             node.session.IndexTasks.Remove(block.Index);
-            receivedBlockIndex.TryAdd(block.Index, node);
+            receivedBlockIndex.Add(block.Index, node);
             system.Blockchain.Tell(block);
             RequestSync();
         }
@@ -93,16 +93,13 @@ namespace Neo.Network.P2P
             node.session.IndexTasks.Remove(invalidBlockIndex.InvalidIndex);
             receivedBlockIndex.Remove(invalidBlockIndex.InvalidIndex);
             AssignTask(invalidBlockIndex.InvalidIndex, node.session);
-            return;
         }
 
         private void RequestSync()
         {
             if (GetTasksCount() >= MaxTasksCount || nodes.Count() == 0) return;
             SendPingMessage();
-            highestBlockIndex = nodes.Values.Max(p => p.LastBlockIndex);
-            if (lastTaskIndex == 0)
-                lastTaskIndex = Blockchain.Singleton.Height;
+            var highestBlockIndex = nodes.Values.Max(p => p.LastBlockIndex);
             for (int i = 0; i < failedTasks.Count(); i++)
             {
                 if (failedTasks[i] <= Blockchain.Singleton.Height)
@@ -116,9 +113,8 @@ namespace Neo.Network.P2P
             for (var count = GetTasksCount(); count < MaxTasksCount; count++)
             {
                 if (lastTaskIndex >= highestBlockIndex) break;
-                uint index = lastTaskIndex + 1;
-                if (!AssignTask(index)) break;
-                lastTaskIndex = index;
+                lastTaskIndex++;
+                if (!AssignTask(lastTaskIndex)) break;
             }
         }
 
@@ -148,7 +144,6 @@ namespace Neo.Network.P2P
             foreach (uint index in session.IndexTasks.Keys)
                 AssignTask(index, session);
             nodes.Remove(actor);
-            if (GetTasksCount() == 0) lastTaskIndex = 0;
         }
 
         private int GetTasksCount()
@@ -161,19 +156,21 @@ namespace Neo.Network.P2P
 
         private bool AssignTask(uint index, NodeSession filterSession = null)
         {
-            if (nodes.Values.Any(p => p.session.IndexTasks.ContainsKey(index)))
+            if (nodes.Values.Any(p => p.session != filterSession && p.session.IndexTasks.ContainsKey(index)))
                 return true;
             Random rand = new Random();
-            RemoteNode remoteNode = nodes.Values.Where(p => p.session != filterSession && p.LastBlockIndex >= index)
-                .OrderBy(p => p.session.IndexTasks.Count).ThenBy(s => rand.Next()).FirstOrDefault();
-            if (remoteNode == null)
+            KeyValuePair<IActorRef, RemoteNode> remoteNode = nodes.Where(p => p.Value.session != filterSession && p.Value.LastBlockIndex >= index)
+                .OrderBy(p => p.Value.session.IndexTasks.Count)
+                .ThenBy(s => rand.Next())
+                .FirstOrDefault();
+            if (remoteNode.Value == null)
             {
                 failedTasks.Add(index);
                 return false;
             }
-            NodeSession session = remoteNode.session;
-            session.IndexTasks.TryAdd(index, DateTime.UtcNow);
-            nodes.FirstOrDefault(p => p.Value == remoteNode).Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(index, 1)));
+            NodeSession session = remoteNode.Value.session;
+            session.IndexTasks.Add(index, DateTime.UtcNow);
+            remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(index, 1)));
             failedTasks.Remove(index);
             return true;
         }
