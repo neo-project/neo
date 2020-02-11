@@ -27,16 +27,6 @@ namespace Neo.Trie.MPT
             return bytes.Sha256();
         }
 
-        public FullNode Clone()
-        {
-            var cloned = new FullNode();
-            for (int i = 0; i < Children.Length; i++)
-            {
-                cloned.Children[i] = Children[i];
-            }
-            return cloned;
-        }
-
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);

@@ -21,16 +21,6 @@ namespace Neo.Trie.MPT
             nType = NodeType.ShortNode;
         }
 
-        public ShortNode Clone()
-        {
-            var cloned = new ShortNode()
-            {
-                Key = (byte[])Key.Clone(),
-                Next = Next,
-            };
-            return cloned;
-        }
-
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
