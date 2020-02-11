@@ -5,7 +5,6 @@ using Neo.SmartContract;
 using Neo.Wallets.NEP6;
 using System;
 using System.Buffers.Binary;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
