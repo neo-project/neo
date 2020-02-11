@@ -29,12 +29,12 @@ namespace Neo.Trie.MPT
         public NodeFlag Flag;
         protected NodeType nType;
 
-        protected abstract byte[] calHash();
+        protected abstract byte[] CalHash();
 
         public virtual byte[] GetHash()
         {
             if (!Flag.Dirty) return Flag.Hash;
-            Flag.Hash = calHash();
+            Flag.Hash = CalHash();
             Flag.Dirty = false;
             return (byte[])Flag.Hash.Clone();
         }

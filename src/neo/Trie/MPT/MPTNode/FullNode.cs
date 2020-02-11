@@ -17,7 +17,7 @@ namespace Neo.Trie.MPT
             }
         }
 
-        protected override byte[] calHash()
+        protected override byte[] CalHash()
         {
             var bytes = new byte[0];
             for (int i = 0; i < Children.Length; i++)

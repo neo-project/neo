@@ -12,7 +12,7 @@ namespace Neo.Trie.MPT
 
         public new int Size => Key.Length + Next.Size;
 
-        protected override byte[] calHash()
+        protected override byte[] CalHash()
         {
             return Key.Concat(Next.GetHash()).Sha256();
         }

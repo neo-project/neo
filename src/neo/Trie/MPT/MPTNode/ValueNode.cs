@@ -8,7 +8,7 @@ namespace Neo.Trie.MPT
     {
         public byte[] Value;
 
-        protected override byte[] calHash()
+        protected override byte[] CalHash()
         {
             return Value.Length < 32 ? (byte[])Value.Clone() : Value.Sha256();
         }
