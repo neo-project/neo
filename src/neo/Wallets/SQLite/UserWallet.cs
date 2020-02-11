@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.SmartContract;
+using Neo.Wallets.NEP6;
 using System;
 using System.Buffers.Binary;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,6 +21,7 @@ namespace Neo.Wallets.SQLite
         private readonly string path;
         private readonly byte[] iv;
         private readonly byte[] masterKey;
+        private string passphrase;
         private readonly Dictionary<UInt160, UserWalletAccount> accounts;
 
         public override string Name => Path.GetFileNameWithoutExtension(path);
@@ -40,6 +43,7 @@ namespace Neo.Wallets.SQLite
         private UserWallet(string path, byte[] passwordKey, bool create)
         {
             this.path = path;
+
             if (create)
             {
                 this.iv = new byte[16];
@@ -50,6 +54,7 @@ namespace Neo.Wallets.SQLite
                     rng.GetBytes(iv);
                     rng.GetBytes(masterKey);
                 }
+                this.passphrase = CreatePassphrase(passwordKey, iv);
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
@@ -63,13 +68,28 @@ namespace Neo.Wallets.SQLite
                 if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Sha256()))
                     throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
+                this.passphrase = CreatePassphrase(passwordKey, iv);
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
                 this.accounts = LoadAccounts();
             }
         }
 
-        private void AddAccount(UserWalletAccount account, bool is_import)
+        private string CreatePassphrase(byte[] passwordKey, byte[] key)
         {
+            byte[] xor = new byte[passwordKey.Length];
+
+            for (int i = 0; i < passwordKey.Length; i++)
+            {
+                xor[i] = (byte)(passwordKey[i] ^ key[i % key.Length]);
+            }
+
+            return xor.ToHexString();
+        }
+
+        private void AddAccount(UserWalletAccount account, ScryptParameters scrypt)
+        {
+            if (scrypt == null) scrypt = ScryptParameters.Default;
+
             lock (accounts)
             {
                 if (accounts.TryGetValue(account.ScriptHash, out UserWalletAccount account_old))
@@ -86,23 +106,24 @@ namespace Neo.Wallets.SQLite
                 {
                     if (account.HasKey)
                     {
-                        byte[] decryptedPrivateKey = new byte[96];
-                        Buffer.BlockCopy(account.Key.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
-                        Buffer.BlockCopy(account.Key.PrivateKey, 0, decryptedPrivateKey, 64, 32);
-                        byte[] encryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey);
-                        Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
                         Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
                         if (db_account == null)
                         {
                             db_account = ctx.Accounts.Add(new Account
                             {
-                                PrivateKeyEncrypted = encryptedPrivateKey,
+                                ScryptN = scrypt.N,
+                                ScryptR = scrypt.R,
+                                ScryptP = scrypt.P,
+                                Nep2key = account.Key.Export(passphrase, scrypt.N, scrypt.R, scrypt.P),
                                 PublicKeyHash = account.Key.PublicKeyHash.ToArray()
                             }).Entity;
                         }
                         else
                         {
-                            db_account.PrivateKeyEncrypted = encryptedPrivateKey;
+                            db_account.ScryptN = scrypt.N;
+                            db_account.ScryptR = scrypt.R;
+                            db_account.ScryptP = scrypt.P;
+                            db_account.Nep2key = account.Key.Export(passphrase, scrypt.N, scrypt.R, scrypt.P);
                         }
                     }
                     if (account.Contract != null)
@@ -152,8 +173,23 @@ namespace Neo.Wallets.SQLite
             byte[] passwordKey = password_new.ToAesKey();
             try
             {
+                var newpassphrase = CreatePassphrase(passwordKey, LoadStoredData("IV"));
+
+                lock (db_lock)
+                    using (WalletDataContext ctx = new WalletDataContext(path))
+                    {
+                        foreach (var account in ctx.Accounts)
+                        {
+                            var key = new KeyPair(GetPrivateKeyFromNEP2(account.Nep2key, passphrase, account.ScryptN, account.ScryptR, account.ScryptP));
+                            account.Nep2key = key.Export(newpassphrase, account.ScryptN, account.ScryptR, account.ScryptP);
+                        }
+                        ctx.SaveChanges();
+                    }
+
+                passphrase = newpassphrase;
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+
                 return true;
             }
             finally
@@ -193,7 +229,7 @@ namespace Neo.Wallets.SQLite
                 Key = key,
                 Contract = contract
             };
-            AddAccount(account, false);
+            AddAccount(account, ScryptParameters.Default);
             return account;
         }
 
@@ -213,22 +249,15 @@ namespace Neo.Wallets.SQLite
                 Key = key,
                 Contract = verification_contract
             };
-            AddAccount(account, false);
+            AddAccount(account, ScryptParameters.Default);
             return account;
         }
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
             UserWalletAccount account = new UserWalletAccount(scriptHash);
-            AddAccount(account, true);
+            AddAccount(account, ScryptParameters.Default);
             return account;
-        }
-
-        private byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
-        {
-            if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
-            if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
-            return encryptedPrivateKey.AesDecrypt(masterKey, iv);
         }
 
         public override bool DeleteAccount(UInt160 scriptHash)
@@ -266,11 +295,6 @@ namespace Neo.Wallets.SQLite
             return false;
         }
 
-        private byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
-        {
-            return decryptedPrivateKey.AesEncrypt(masterKey, iv);
-        }
-
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
             lock (accounts)
@@ -299,7 +323,8 @@ namespace Neo.Wallets.SQLite
                     VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
                     UserWalletAccount account = accounts[contract.ScriptHash];
                     account.Contract = contract;
-                    account.Key = new KeyPair(DecryptPrivateKey(db_contract.Account.PrivateKeyEncrypted));
+                    account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase,
+                        db_contract.Account.ScryptN, db_contract.Account.ScryptR, db_contract.Account.ScryptP));
                 }
                 return accounts;
             }
