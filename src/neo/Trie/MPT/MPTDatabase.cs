@@ -12,6 +12,8 @@ namespace Neo.Trie.MPT
 
         public static readonly byte[] Prefix = Encoding.ASCII.GetBytes("MPT");
 
+        public static readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("mpt_root");
+
         private byte[] StoreKey(byte[] hash)
         {
             return Prefix.Concat(hash);
@@ -41,12 +43,12 @@ namespace Neo.Trie.MPT
 
         public void PutRoot(byte[] root)
         {
-            store.Put(TABLE, StoreKey(Encoding.ASCII.GetBytes("mpt_root")), root);
+            store.Put(TABLE, StoreKey(ROOT_KEY), root);
         }
 
         public byte[] GetRoot()
         {
-            return store.TryGet(TABLE, StoreKey(Encoding.ASCII.GetBytes("mpt_root")));
+            return store.TryGet(TABLE, StoreKey(ROOT_KEY));
         }
     }
 }
