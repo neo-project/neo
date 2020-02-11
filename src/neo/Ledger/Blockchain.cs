@@ -523,10 +523,7 @@ namespace Neo.Ledger
                         if (state.VMState == VMState.HALT)
                         {
                             if (engine.RecyclingRewardGas > 0)
-                            {
-                                 
                                 recycleRewardGasTxs.Add(new Tuple<Transaction, long>(tx, engine.RecyclingRewardGas));
-                            }
                             engine.Snapshot.Commit();
                         }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
