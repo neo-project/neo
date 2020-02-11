@@ -211,12 +211,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
                 var tx = TestUtils.GetTransaction();
                 tx.Sender = acc.ScriptHash;
-                tx.RecycleRewardGas = (long)(1000 * NativeContract.GAS.Factor);
+                var recycleRewardGas = (long)(1000 * NativeContract.GAS.Factor);
 
                 Script onRecycleRewardGasScript = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, tx.RecycleRewardGas);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, recycleRewardGas);
                     sb.Emit(OpCode.THROWIFNOT);
                     onRecycleRewardGasScript = sb.ToArray();
                 }

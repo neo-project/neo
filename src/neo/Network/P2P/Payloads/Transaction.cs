@@ -67,12 +67,6 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public long FeePerByte => NetworkFee / Size;
 
-        /// <summary>
-        /// reward gas for releasing storage.
-        /// Calculated after running the TX. 
-        /// </summary>
-        public long RecycleRewardGas;
-
         private UInt256 _hash = null;
         public UInt256 Hash
         {

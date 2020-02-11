@@ -492,7 +492,7 @@ namespace Neo.Ledger
             using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
-                List<Transaction> recycleRewardGasTxs = new List<Transaction>();
+                List<Tuple<Transaction,long>> recycleRewardGasTxs = new List<Tuple<Transaction, long>>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
@@ -524,8 +524,8 @@ namespace Neo.Ledger
                         {
                             if (engine.RecyclingRewardGas > 0)
                             {
-                                tx.RecycleRewardGas = engine.RecyclingRewardGas;
-                                recycleRewardGasTxs.Add(tx);
+                                 
+                                recycleRewardGasTxs.Add(new Tuple<Transaction, long>(tx, engine.RecyclingRewardGas));
                             }
                             engine.Snapshot.Commit();
                         }
@@ -568,14 +568,16 @@ namespace Neo.Ledger
             OnPersistCompleted(block);
         }
 
-        private static void RecycleRewardGas(SnapshotView snapshot, List<ApplicationExecuted> all_application_executed, List<Transaction> recycleRewardGasTxs)
+        private static void RecycleRewardGas(SnapshotView snapshot, List<ApplicationExecuted> all_application_executed, List<Tuple<Transaction, long>> recycleRewardGasTxs)
         {
-            foreach (Transaction tx in recycleRewardGasTxs)
+            foreach (var tuple in recycleRewardGasTxs)
             {
+                var tx = tuple.Item1;
+                var recycleRewardGas = tuple.Item2;
                 Script onRecycleRewardGasScript = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, tx.RecycleRewardGas);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, recycleRewardGas);
                     sb.Emit(OpCode.THROWIFNOT);
                     onRecycleRewardGasScript = sb.ToArray();
                 }
