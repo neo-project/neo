@@ -21,9 +21,8 @@ namespace Neo
                     .AddJsonFile(configFile, true)
                     .Build();
             }
-            catch (Exception e)
+            catch
             {
-                Log(nameof(Utility), LogLevel.Error, $"Failed parsing {configFile}, Error: " + e.Message);
                 return new ConfigurationBuilder()
                     .Build();
             }
