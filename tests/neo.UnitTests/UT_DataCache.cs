@@ -21,40 +21,40 @@ namespace Neo.UnitTests
             var storages = snapshot.Storages;
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Id == 0);
 
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x03 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x03 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
 
             CollectionAssert.AreEqual(
-                cache.Find(new byte[21]).Select(u => u.Key.Key[1]).ToArray(),
+                cache.Find(new byte[5]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x01, 0x02, 0x03 }
                 );
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Id == 0);
         }
 
         [TestMethod]
@@ -64,35 +64,33 @@ namespace Neo.UnitTests
             var storages = snapshot.Storages;
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Id == 0);
 
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             storages.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
-
-            CollectionAssert.AreEqual(
-                cache.Find(new byte[21]).Select(u => u.Key.Key[1]).ToArray(),
+            CollectionAssert.AreEqual(cache.Find(new byte[5]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x01, 0x02 }
                 );
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Id == 0);
         }
 
         [TestMethod]
@@ -102,25 +100,25 @@ namespace Neo.UnitTests
             var storages = snapshot.Storages;
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Id == 0);
 
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
                 (
-                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
 
             CollectionAssert.AreEqual(
-                cache.Find(new byte[21]).Select(u => u.Key.Key[1]).ToArray(),
+                cache.Find(new byte[5]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x02 }
                 );
 
-            storages.DeleteWhere((k, v) => k.ScriptHash == UInt160.Zero);
+            storages.DeleteWhere((k, v) => k.Id == 0);
         }
     }
 }

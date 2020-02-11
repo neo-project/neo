@@ -485,8 +485,8 @@ namespace Neo.UnitTests.Ledger
             };
             var key1 = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
             var key2 = CreateStorageKey(Prefix_FeePerByte);
-            key1.ScriptHash = NativeContract.Policy.Hash;
-            key2.ScriptHash = NativeContract.Policy.Hash;
+            key1.Id = NativeContract.Policy.Id;
+            key2.Id = NativeContract.Policy.Id;
             snapshot.Storages.Add(key1, item1);
             snapshot.Storages.Add(key2, item2);
 
@@ -510,7 +510,7 @@ namespace Neo.UnitTests.Ledger
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = null,
+                Id = 0,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;

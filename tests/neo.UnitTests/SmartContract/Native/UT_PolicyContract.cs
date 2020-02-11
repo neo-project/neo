@@ -234,7 +234,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = NativeContract.Policy.Hash,
+                Id = NativeContract.Policy.Id,
                 Key = new byte[sizeof(byte)]
             };
             storageKey.Key[0] = 15;
