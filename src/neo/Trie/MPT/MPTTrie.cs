@@ -92,11 +92,11 @@ namespace Neo.Trie.MPT
             {
                 case ValueNode valueNode:
                     {
-                        if (path.Length == 0 && val is ValueNode vn)
+                        if (path.Length == 0 && val is ValueNode)
                         {
                             db.Delete(node.GetHash());
                             node = val;
-                            db.Put(node);
+                            db.Put(valueNode);
                             return true;
                         }
                         return false;
