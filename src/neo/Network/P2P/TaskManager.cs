@@ -15,7 +15,6 @@ namespace Neo.Network.P2P
     internal class TaskManager : UntypedActor
     {
         public class Register { public RemoteNode Node; }
-        public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
         public class RestartTasks { public InvPayload Payload; }
@@ -191,7 +190,6 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case TaskManager.Register _:
-                case TaskManager.Update _:
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:
