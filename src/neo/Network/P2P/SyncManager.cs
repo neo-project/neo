@@ -72,7 +72,6 @@ namespace Neo.Network.P2P
 
         private void OnReceiveBlock(Block block)
         {
-            if (block.Index <= Blockchain.Singleton.Height) return;
             var node = nodes.Values.FirstOrDefault(p => p.session.IndexTasks.ContainsKey(block.Index));
             if (node is null) return;
             node.session.IndexTasks.Remove(block.Index);
@@ -103,7 +102,14 @@ namespace Neo.Network.P2P
             SendPingMessage();
 
             while (failedTasks.Count() > 0)
+            {
+                if (failedTasks[0] <= Blockchain.Singleton.Height)
+                {
+                    failedTasks.Remove(failedTasks[0]);
+                    continue;
+                }
                 if (!AssignTask(failedTasks[0])) return;
+            }
 
             int taskCounts = nodes.Values.Sum(p => p.session.IndexTasks.Count);
             var highestBlockIndex = nodes.Values.Max(p => p.LastBlockIndex);
@@ -143,7 +149,7 @@ namespace Neo.Network.P2P
 
         private bool AssignTask(uint index, NodeSession filterSession = null)
         {
-            if (nodes.Values.Any(p => p.session != filterSession && p.session.IndexTasks.ContainsKey(index)))
+            if (index <= Blockchain.Singleton.Height || nodes.Values.Any(p => p.session != filterSession && p.session.IndexTasks.ContainsKey(index)))
                 return true;
             Random rand = new Random();
             KeyValuePair<IActorRef, RemoteNode> remoteNode = nodes.Where(p => p.Value.session != filterSession && p.Value.LastBlockIndex >= index)
