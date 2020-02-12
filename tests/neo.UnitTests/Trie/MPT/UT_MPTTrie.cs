@@ -1,9 +1,7 @@
-using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Trie.MPT;
 using Neo.Persistence;
-using Neo.IO;
-using System;
+using Neo.Trie.MPT;
+using System.Text;
 
 namespace Neo.UnitTests.Trie.MPT
 {

@@ -1,7 +1,7 @@
-using System.IO;
-using System.Text;
 using Neo.Cryptography;
 using Neo.IO;
+using System.IO;
+using System.Text;
 
 namespace Neo.Trie.MPT
 {
