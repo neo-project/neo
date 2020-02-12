@@ -12,7 +12,7 @@ namespace Neo.Trie.MPT
 
         public static readonly byte[] Prefix = Encoding.ASCII.GetBytes("MPT");
 
-        public static readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("mpt_root");
+        public static readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("MPT_ROOT");
 
         private byte[] StoreKey(byte[] hash)
         {

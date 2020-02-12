@@ -336,7 +336,6 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode) break;
                         node = Resolve(hashNode.Hash);
-                        dict.Add(node.GetHash(), node.Encode());
                         GetProof(ref node, path, dict);
                         break;
                     }

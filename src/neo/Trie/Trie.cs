@@ -7,7 +7,7 @@ namespace Neo.Trie
     {
         bool TryGet(byte[] path, out byte[] value);
 
-        bool TryPut(byte[] path, byte[] value);
+        bool Put(byte[] path, byte[] value);
 
         bool TryDelete(byte[] path);
 
