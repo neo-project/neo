@@ -28,7 +28,7 @@ namespace Neo.SmartContract
         public long GasConsumed { get; private set; } = 0;
 
         /// <summary>
-        /// RecyclingRewardGas shows how many gas should be recycled as a reward in systemfee
+        /// RecyclingRewardGas shows how many gas should be recycled as a reward
         /// </summary>
         public long RecyclingRewardGas { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
