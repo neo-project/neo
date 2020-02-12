@@ -39,6 +39,8 @@ namespace Neo.UnitTests.Trie.MPT
             var l3 = new ShortNode();
             l3.Next = h1;
             l3.Key = "0e".HexToBytes();
+            var v3 = new ValueNode();
+            v3.Value = Encoding.ASCII.GetBytes("hello");
 
             r.Next = b;
             b.Children[0] = l1;
@@ -48,7 +50,8 @@ namespace Neo.UnitTests.Trie.MPT
             b.Children[10] = l3;
             root = r;
             var store = new MemoryStore();
-            this.mptdb = new MPTDatabase(store.GetSnapshot());
+            var snapshot = store.GetSnapshot();
+            this.mptdb = new MPTDatabase(snapshot);
             mptdb.PutRoot(root.GetHash());
             mptdb.Put(r);
             mptdb.Put(b);
@@ -57,6 +60,9 @@ namespace Neo.UnitTests.Trie.MPT
             mptdb.Put(l3);
             mptdb.Put(v1);
             mptdb.Put(v2);
+            mptdb.Put(v3);
+            snapshot.Commit();
+            this.mptdb = new MPTDatabase(store.GetSnapshot());
         }
 
         [TestMethod]
@@ -64,38 +70,34 @@ namespace Neo.UnitTests.Trie.MPT
         {
             
             var mpt = new MPTTrie(mptdb);
-            var result = mpt.TryGet("0a0c0001".HexToBytes(), out byte[] value);
+            var result = mpt.TryGet("ac01".HexToBytes(), out byte[] value);
             Assert.IsTrue(result);
             Assert.AreEqual("abcd", value.ToHexString());
 
-            result = mpt.TryGet("0a0c0909".HexToBytes(), out value);
+            result = mpt.TryGet("ac99".HexToBytes(), out value);
             Assert.IsTrue(result);
             Assert.AreEqual("2222", value.ToHexString());
 
-            result = mpt.TryGet("0a0b0909".HexToBytes(), out value);
+            result = mpt.TryGet("ab99".HexToBytes(), out value);
             Assert.IsFalse(result);
 
-            result = mpt.TryGet("0a0c0309".HexToBytes(), out value);
+            result = mpt.TryGet("ac39".HexToBytes(), out value);
             Assert.IsFalse(result);
 
-            result = mpt.TryGet("0a0c0002".HexToBytes(), out value);
+            result = mpt.TryGet("ac02".HexToBytes(), out value);
             Assert.IsFalse(result);
 
-            result = mpt.TryGet("0a0c090901".HexToBytes(), out value);
+            result = mpt.TryGet("ac9910".HexToBytes(), out value);
             Assert.AreEqual(false, result);
         }
 
         [TestMethod]
         public void TestTryGetResolve()
         {
-            var n = new ValueNode();
-            n.Value = Encoding.ASCII.GetBytes("hello");
-            mptdb.Put(n);
             var mpt = new MPTTrie(mptdb);
-            var result = mpt.TryGet("0a0c0a0e".HexToBytes(), out byte[] value);
-
+            var result = mpt.TryGet("acae".HexToBytes(), out byte[] value);
             Assert.IsTrue(result);
-            Assert.IsTrue(value.Equal(n.Value));
+            Assert.IsTrue(Encoding.ASCII.GetBytes("hello").Equal(value));
         }
 
         [TestMethod]
@@ -106,9 +108,9 @@ namespace Neo.UnitTests.Trie.MPT
             var mpt1 = new MPTTrie(mptdb);
             Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt1.GetRoot().ToHexString());
             var mpt = new MPTTrie(db);
-            mpt.TryPut("0a0c0001".HexToBytes(), "abcd".HexToBytes());
-            mpt.TryPut("0a0c0909".HexToBytes(), "2222".HexToBytes());
-            mpt.TryPut("0a0c0a0e".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
+            mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
+            mpt.Put("ac99".HexToBytes(), "2222".HexToBytes());
+            mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
             Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt.GetRoot().ToHexString());
         }
 
@@ -118,7 +120,6 @@ namespace Neo.UnitTests.Trie.MPT
             var r1 = new ShortNode();
             r1.Key = "0a0c0001".HexToBytes();
             
-
             var r = new ShortNode();
             r.Key = "0a0c".HexToBytes();
 
@@ -146,12 +147,12 @@ namespace Neo.UnitTests.Trie.MPT
 
             var mpt = new MPTTrie(mptdb);
             var result = true;
-            result = mpt.TryGet("0a0c0909".HexToBytes(), out byte[] value);
+            result = mpt.TryGet("ac99".HexToBytes(), out byte[] value);
             Assert.IsTrue(result);
-            result = mpt.TryDelete("0a0c0909".HexToBytes());
+            result = mpt.TryDelete("ac99".HexToBytes());
             Assert.IsTrue(result);
-            result = mpt.TryDelete("0a0c0a0e".HexToBytes());
-            Assert.IsFalse(result);
+            result = mpt.TryDelete("acae".HexToBytes());
+            Assert.IsTrue(result);
             Assert.AreEqual("76248d1bf457f0b95c1f6d05d787dca152906f106bcbafacbf7a69c6ae1797c4", mpt.GetRoot().ToHexString());
         }
 
@@ -174,6 +175,8 @@ namespace Neo.UnitTests.Trie.MPT
             var l3 = new ShortNode();
             l3.Next = h1;
             l3.Key = "0e".HexToBytes();
+            var v3 = new ValueNode();
+            v3.Value = Encoding.ASCII.GetBytes("hello");
 
             r.Next = b;
             b.Children[0] = l1;
@@ -184,13 +187,10 @@ namespace Neo.UnitTests.Trie.MPT
 
             var mpt = new MPTTrie(mptdb);
 
-            Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt.GetRoot().ToHexString());
-            var dict = mpt.GetProof("0a0c0001".HexToBytes());
+            Assert.AreEqual(r.GetHash().ToHexString(), mpt.GetRoot().ToHexString());
+            var dict = mpt.GetProof("ac01".HexToBytes());
             Assert.AreEqual(4, dict.Count);
-            Assert.IsTrue(dict.TryGetValue(mpt.GetRoot(), out byte[] value));
-            Assert.IsTrue(dict.TryGetValue(b.GetHash(), out value));
-            Assert.IsTrue(dict.TryGetValue(l1.GetHash(), out value));
-            Assert.IsTrue(dict.TryGetValue(v1.GetHash(), out value));                                                                        
+            Assert.IsTrue(dict.TryGetValue(mpt.GetRoot(), out byte[] value));                                                           
         }
     }
 }
