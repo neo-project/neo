@@ -492,7 +492,7 @@ namespace Neo.Ledger
             using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
-                List<Tuple<Transaction,long>> recycleRewardGasTxs = new List<Tuple<Transaction, long>>();
+                List<Tuple<Transaction, long>> recycleRewardGasTxs = new List<Tuple<Transaction, long>>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
