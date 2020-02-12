@@ -31,10 +31,10 @@ namespace Neo.Trie.MPT
         public bool TryGet(byte[] path, out byte[] value)
         {
             path = path.ToNibbles();
-            return tryGet(ref root, path, out value);
+            return TryGet(ref root, path, out value);
         }
 
-        private bool tryGet(ref MPTNode node, byte[] path, out byte[] value)
+        private bool TryGet(ref MPTNode node, byte[] path, out byte[] value)
         {
             switch (node)
             {
@@ -51,22 +51,22 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode) break;
                         node = Resolve(hashNode.Hash);
-                        return tryGet(ref node, path, out value);
+                        return TryGet(ref node, path, out value);
                     }
                 case FullNode fullNode:
                     {
                         if (path.Length == 0)
                         {
-                            return tryGet(ref fullNode.Children[16], path, out value);
+                            return TryGet(ref fullNode.Children[16], path, out value);
                         }
-                        return tryGet(ref fullNode.Children[path[0]], path.Skip(1), out value);
+                        return TryGet(ref fullNode.Children[path[0]], path.Skip(1), out value);
                     }
                 case ShortNode shortNode:
                     {
                         var prefix = shortNode.Key.CommonPrefix(path);
                         if (prefix.Length == shortNode.Key.Length)
                         {
-                            return tryGet(ref shortNode.Next, path.Skip(prefix.Length), out value);
+                            return TryGet(ref shortNode.Next, path.Skip(prefix.Length), out value);
                         }
                         break;
                     }
@@ -75,18 +75,18 @@ namespace Neo.Trie.MPT
             return false;
         }
 
-        public bool TryPut(byte[] path, byte[] value)
+        public bool Put(byte[] path, byte[] value)
         {
             var n = new ValueNode(value);
             path = path.ToNibbles();
             if (value.Length == 0)
             {
-                return tryDelete(ref root, path);
+                return TryDelete(ref root, path);
             }
-            return put(ref root, path, n);
+            return Put(ref root, path, n);
         }
 
-        private bool put(ref MPTNode node, byte[] path, MPTNode val)
+        private bool Put(ref MPTNode node, byte[] path, MPTNode val)
         {
             switch (node)
             {
@@ -107,7 +107,7 @@ namespace Neo.Trie.MPT
                         var oldHash = shortNode.GetHash();
                         if (prefix.Length == shortNode.Key.Length)
                         {
-                            var result = put(ref shortNode.Next, path.Skip(prefix.Length), val);
+                            var result = Put(ref shortNode.Next, path.Skip(prefix.Length), val);
                             if (result)
                             {
                                 db.Delete(oldHash);
@@ -122,18 +122,18 @@ namespace Neo.Trie.MPT
                         var son = new FullNode();
                         MPTNode grandSon1 = HashNode.EmptyNode(), grandSon2 = HashNode.EmptyNode();
 
-                        put(ref grandSon1, keyRemain.Skip(1), shortNode.Next);
+                        Put(ref grandSon1, keyRemain.Skip(1), shortNode.Next);
                         db.Put(grandSon1);
                         son.Children[keyRemain[0]] = grandSon1;
 
                         if (pathRemain.Length == 0)
                         {
-                            put(ref grandSon2, pathRemain, val);
+                            Put(ref grandSon2, pathRemain, val);
                             son.Children[son.Children.Length] = grandSon2;
                         }
                         else
                         {
-                            put(ref grandSon2, pathRemain.Skip(1), val);
+                            Put(ref grandSon2, pathRemain.Skip(1), val);
                             son.Children[pathRemain[0]] = grandSon2;
                         }
                         db.Put(grandSon2);
@@ -161,11 +161,11 @@ namespace Neo.Trie.MPT
                         var oldHash = fullNode.GetHash();
                         if (path.Length == 0)
                         {
-                            result = put(ref fullNode.Children[fullNode.Children.Length], path, val);
+                            result = Put(ref fullNode.Children[fullNode.Children.Length], path, val);
                         }
                         else
                         {
-                            result = put(ref fullNode.Children[path[0]], path.Skip(1), val);
+                            result = Put(ref fullNode.Children[path[0]], path.Skip(1), val);
                         }
                         if (result)
                         {
@@ -189,7 +189,7 @@ namespace Neo.Trie.MPT
                             return true;
                         }
                         node = Resolve(hashNode.Hash);
-                        return put(ref node, path, val);
+                        return Put(ref node, path, val);
                     }
                 default:
                     throw new System.Exception();
@@ -199,10 +199,10 @@ namespace Neo.Trie.MPT
         public bool TryDelete(byte[] path)
         {
             path = path.ToNibbles();
-            return tryDelete(ref root, path);
+            return TryDelete(ref root, path);
         }
 
-        private bool tryDelete(ref MPTNode node, byte[] path)
+        private bool TryDelete(ref MPTNode node, byte[] path)
         {
             switch (node)
             {
@@ -222,7 +222,7 @@ namespace Neo.Trie.MPT
                         var oldHash = shortNode.GetHash();
                         if (prefix.Length == shortNode.Key.Length)
                         {
-                            var result = tryDelete(ref shortNode.Next, path.Skip(prefix.Length));
+                            var result = TryDelete(ref shortNode.Next, path.Skip(prefix.Length));
                             if (!result) return false;
                             db.Delete(oldHash);
                             if (shortNode.Next is HashNode hashNode && hashNode.IsEmptyNode)
@@ -251,11 +251,11 @@ namespace Neo.Trie.MPT
                         var oldHash = fullNode.GetHash();
                         if (path.Length == 0)
                         {
-                            result = tryDelete(ref fullNode.Children[fullNode.Children.Length], path);
+                            result = TryDelete(ref fullNode.Children[fullNode.Children.Length], path);
                         }
                         else
                         {
-                            result = tryDelete(ref fullNode.Children[path[0]], path.Skip(1));
+                            result = TryDelete(ref fullNode.Children[path[0]], path.Skip(1));
                         }
                         if (!result) return false;
                         db.Delete(oldHash);
@@ -300,7 +300,7 @@ namespace Neo.Trie.MPT
                             return true;
                         }
                         node = Resolve(hashNode.Hash);
-                        return tryDelete(ref node, path);
+                        return TryDelete(ref node, path);
                     }
                 default:
                     return false;
@@ -316,11 +316,11 @@ namespace Neo.Trie.MPT
         {
             var dict = new Dictionary<byte[], byte[]> { };
             path = path.ToNibbles();
-            getProof(ref root, path, dict);
+            GetProof(ref root, path, dict);
             return dict;
         }
 
-        private void getProof(ref MPTNode node, byte[] path, Dictionary<byte[], byte[]> dict)
+        private void GetProof(ref MPTNode node, byte[] path, Dictionary<byte[], byte[]> dict)
         {
             switch (node)
             {
@@ -337,7 +337,7 @@ namespace Neo.Trie.MPT
                         if (hashNode.IsEmptyNode) break;
                         node = Resolve(hashNode.Hash);
                         dict.Add(node.GetHash(), node.Encode());
-                        getProof(ref node, path, dict);
+                        GetProof(ref node, path, dict);
                         break;
                     }
                 case FullNode fullNode:
@@ -345,11 +345,11 @@ namespace Neo.Trie.MPT
                         dict.Add(fullNode.GetHash(), fullNode.Encode());
                         if (path.Length == 0)
                         {
-                            getProof(ref fullNode.Children[16], path, dict);
+                            GetProof(ref fullNode.Children[16], path, dict);
                         }
                         else
                         {
-                            getProof(ref fullNode.Children[path[0]], path.Skip(1), dict);
+                            GetProof(ref fullNode.Children[path[0]], path.Skip(1), dict);
                         }
                         break;
                     }
@@ -359,7 +359,7 @@ namespace Neo.Trie.MPT
                         if (prefix.Length == shortNode.Key.Length)
                         {
                             dict.Add(shortNode.GetHash(), shortNode.Encode());
-                            getProof(ref shortNode.Next, path.Skip(prefix.Length), dict);
+                            GetProof(ref shortNode.Next, path.Skip(prefix.Length), dict);
                         }
                         break;
                     }
