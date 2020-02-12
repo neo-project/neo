@@ -565,7 +565,7 @@ namespace Neo.Ledger
             OnPersistCompleted(block);
         }
 
-        private static void RecycleRewardGas(SnapshotView snapshot, List<ApplicationExecuted> all_application_executed, List<Tuple<Transaction, long>> recycleRewardGasTxs)
+        private void RecycleRewardGas(SnapshotView snapshot, List<ApplicationExecuted> all_application_executed, List<Tuple<Transaction, long>> recycleRewardGasTxs)
         {
             foreach (var tuple in recycleRewardGasTxs)
             {
