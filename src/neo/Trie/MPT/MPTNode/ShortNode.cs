@@ -10,7 +10,7 @@ namespace Neo.Trie.MPT
 
         public MPTNode Next;
 
-        public new int Size => Key.Length + Next.Size;
+        public override int Size => 1 + Key.Length + Next.GetHash().Length;
 
         protected override byte[] CalHash()
         {

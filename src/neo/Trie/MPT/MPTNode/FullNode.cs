@@ -10,6 +10,16 @@ namespace Neo.Trie.MPT
         
         public MPTNode[] Children = new MPTNode[CHILD_COUNT];
 
+        public override int Size {
+            get {
+                var size = 1;
+                for (int i = 0; i < Children.Length; i++)
+                {
+                    size += Children[i].GetHash().Length;
+                }
+                return size;
+            }
+        }
         public FullNode()
         {
             nType = NodeType.FullNode;

@@ -10,7 +10,7 @@ namespace Neo.Trie.MPT
         public MPTTrie(MPTDatabase db)
         {
             if (db is null)
-                throw new System.Exception();
+                throw new System.ArgumentNullException();
             this.db = db;
             var rbytes = db.GetRoot();
             if (rbytes is null || rbytes.Length == 0)
@@ -192,7 +192,7 @@ namespace Neo.Trie.MPT
                         return Put(ref node, path, val);
                     }
                 default:
-                    throw new System.Exception();
+                    throw new System.InvalidOperationException("Invalid node type.");
             }
         }
 

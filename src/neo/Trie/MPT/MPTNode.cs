@@ -44,7 +44,7 @@ namespace Neo.Trie.MPT
             Flag = new NodeFlag();
         }
 
-        public int Size { get; }
+        public virtual int Size { get; }
 
         public MPTNode()
         {
@@ -68,6 +68,9 @@ namespace Neo.Trie.MPT
 
         public static MPTNode Decode(byte[] data)
         {
+            if (data is null || data.Length == 0 )
+                throw new System.ArgumentException();
+            
             var nodeType = (NodeType)data[0];
             data = data.Skip(1);
 
@@ -95,7 +98,7 @@ namespace Neo.Trie.MPT
                             return n;
                         }
                     default:
-                        throw new System.Exception();
+                        throw new System.InvalidOperationException();
                 }
             }
         }
