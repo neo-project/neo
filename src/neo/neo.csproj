@@ -30,4 +30,8 @@
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00201" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Oracle\" />
+  </ItemGroup>
+
 </Project>
