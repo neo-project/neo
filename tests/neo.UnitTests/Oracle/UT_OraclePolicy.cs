@@ -78,10 +78,10 @@ namespace Neo.UnitTests.Oracle
             array.Add(StackItem.FromInterface(privateKey1));
             array.Add(StackItem.FromInterface(privateKey2));
 
-/*            var ret = NativeContract.OraclePolicy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
-                "DelegateOracleValidator", new ContractParameter(ContractParameterType.Hash160) { Value = 1 }, new ContractParameter(ContractParameterType.Array) { Value = array });
-            ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.ToBoolean().Should().BeFalse();*/
+            /*            var ret = NativeContract.OraclePolicy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
+                            "DelegateOracleValidator", new ContractParameter(ContractParameterType.Hash160) { Value = 1 }, new ContractParameter(ContractParameterType.Array) { Value = array });
+                        ret.Should().BeOfType<VM.Types.Boolean>();
+                        ret.ToBoolean().Should().BeFalse();*/
         }
         internal static (bool State, bool Result) Check_DelegateOracleValidator(StoreView snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
         {

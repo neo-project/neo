@@ -40,7 +40,8 @@ namespace Neo.Oracle
             if (pubkeys.Length != 2) return false;
             StoreView snapshot = engine.Snapshot;
             StorageKey key = CreateStorageKey(Prefix_Validator, pubkeys[0]);
-            if (snapshot.Storages.TryGet(key) != null) {
+            if (snapshot.Storages.TryGet(key) != null)
+            {
                 StorageItem value = snapshot.Storages.GetAndChange(key);
                 value.Value = pubkeys[1].ToArray();
             }
@@ -57,8 +58,9 @@ namespace Neo.Oracle
         public ECPoint[] GetOracleValidators(StoreView snapshot)
         {
             ECPoint[] consensusPublicKey = PolicyContract.NEO.GetValidators(snapshot);
-            IEnumerable<(ECPoint ConsensusPublicKey, ECPoint OraclePublicKey)> hasDelegateOracleValidators=GetDelegateOracleValidators(snapshot).Where(p => consensusPublicKey.Contains(p.ConsensusPublicKey));
-            hasDelegateOracleValidators.ToList().ForEach(p=>{
+            IEnumerable<(ECPoint ConsensusPublicKey, ECPoint OraclePublicKey)> hasDelegateOracleValidators = GetDelegateOracleValidators(snapshot).Where(p => consensusPublicKey.Contains(p.ConsensusPublicKey));
+            hasDelegateOracleValidators.ToList().ForEach(p =>
+            {
                 var index = System.Array.IndexOf(consensusPublicKey, p.ConsensusPublicKey);
                 if (index >= 0) consensusPublicKey[index] = p.OraclePublicKey;
             });
@@ -86,7 +88,7 @@ namespace Neo.Oracle
             StoreView snapshot = engine.Snapshot;
             Transaction tx = (Transaction)engine.ScriptContainer;
             Array signatures = new Array(tx.Witnesses.ToList().Select(p => StackItem.FromInterface(p.VerificationScript)));
-            Array pubkeys = new Array(GetOracleValidators(snapshot).ToList().Select(p=> StackItem.FromInterface(p)));
+            Array pubkeys = new Array(GetOracleValidators(snapshot).ToList().Select(p => StackItem.FromInterface(p)));
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
@@ -117,7 +119,8 @@ namespace Neo.Oracle
         public int GetTimeOutMilliSeconds(StoreView snapshot)
         {
             StorageKey key = CreateStorageKey(Prefix_TimeOutMilliSeconds);
-            if (snapshot.Storages.TryGet(key) != null) {
+            if (snapshot.Storages.TryGet(key) != null)
+            {
                 return BitConverter.ToInt32(snapshot.Storages.TryGet(key).Value, 0);
             }
             else
@@ -142,7 +145,8 @@ namespace Neo.Oracle
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int perRequestFee = BitConverter.ToInt32(args[0].GetSpan());
-            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine)) {
+            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine))
+            {
                 return false;
             }
             StorageKey key = CreateStorageKey(Prefix_PerRequestFee);
