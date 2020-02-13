@@ -7,11 +7,13 @@ namespace Neo.Trie.MPT
     public class FullNode : MPTNode
     {
         public const int CHILD_COUNT = 17;
-        
+
         public MPTNode[] Children = new MPTNode[CHILD_COUNT];
 
-        public override int Size {
-            get {
+        public override int Size
+        {
+            get
+            {
                 var size = 1;
                 for (int i = 0; i < Children.Length; i++)
                 {

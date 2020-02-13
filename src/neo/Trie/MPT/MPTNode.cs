@@ -68,9 +68,9 @@ namespace Neo.Trie.MPT
 
         public static MPTNode Decode(byte[] data)
         {
-            if (data is null || data.Length == 0 )
+            if (data is null || data.Length == 0)
                 throw new System.ArgumentException();
-            
+
             var nodeType = (NodeType)data[0];
             data = data.Skip(1);
 
