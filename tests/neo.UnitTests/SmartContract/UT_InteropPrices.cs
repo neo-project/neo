@@ -71,12 +71,12 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(null);
 
-            var mockedStoreView = new Mock<StoreView>();
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
             byte[] scriptPut = script;
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(scriptPut);
@@ -89,9 +89,9 @@ namespace Neo.UnitTests.SmartContract
             key = new byte[] { (byte)OpCode.PUSH3 };
             value = new byte[] { (byte)OpCode.PUSH3 };
             script = CreatePutExScript(key, value);
-
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
             byte[] scriptPutEx = script;
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(scriptPutEx);
@@ -119,11 +119,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(null);
 
-            var mockedStoreView = new Mock<StoreView>();
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -158,10 +158,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(value);
 
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(applicationEngine);
                 applicationEngine.LoadScript(script);
@@ -196,11 +197,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var mockedStoreView = new Mock<StoreView>();
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -236,11 +237,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var mockedStoreView = new Mock<StoreView>();
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -267,11 +268,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var mockedStoreView = new Mock<StoreView>();
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -306,11 +307,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var mockedStoreView = new Mock<StoreView>();
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -341,25 +342,27 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var mockedStoreView = new Mock<StoreView>();
-            mockedStoreView.Setup(p => p.Storages.TryGet(skey)).Returns(sItem);
-            mockedStoreView.Setup(p => p.Contracts.TryGet(script.ToScriptHash())).Returns(contractState);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Storages.Add(skey, sItem);
+            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
             long ConsumedGas = 0;
             long rewardGas = 0;
             long minimumRequiredToRun = 0;
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, 0, testMode: true))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 ae.LoadScript(script);
                 ae.Execute();
+                ae.State.Should().Be(VMState.HALT);
                 ConsumedGas = ae.GasConsumed;
                 rewardGas = ae.RecyclingRewardGas;
             }
             rewardGas.Should().Be(2 * InteropService.Storage.GasPerByte);
 
             minimumRequiredToRun = ConsumedGas;
+            snapshot.Storages.Add(skey, sItem);
             //If you send GasConsumed, it should HALT because GasConsumed is enough to cover the cost.
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, minimumRequiredToRun, testMode: false))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, minimumRequiredToRun, testMode: false))
             {
                 ae.LoadScript(script);
                 ae.Execute();
@@ -368,7 +371,7 @@ namespace Neo.UnitTests.SmartContract
 
             minimumRequiredToRun = ConsumedGas - 1;
             //If you send GasConsumed-1, it should FAULT because it isn't enough to cover the cost.
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, mockedStoreView.Object, minimumRequiredToRun, testMode: false))
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, minimumRequiredToRun, testMode: false))
             {
                 ae.LoadScript(script);
                 ae.Execute();

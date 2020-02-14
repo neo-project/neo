@@ -285,7 +285,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        public virtual TValue TryGet(TKey key)
+        public TValue TryGet(TKey key)
         {
             lock (dictionary)
             {
