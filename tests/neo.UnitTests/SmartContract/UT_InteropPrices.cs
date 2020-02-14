@@ -90,6 +90,7 @@ namespace Neo.UnitTests.SmartContract
             value = new byte[] { (byte)OpCode.PUSH3 };
             script = CreatePutExScript(key, value);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
+
             byte[] scriptPutEx = script;
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
