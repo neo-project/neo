@@ -7,7 +7,6 @@ namespace Neo.Trie.MPT
     public class ShortNode : MPTNode
     {
         public byte[] Key;
-
         public MPTNode Next;
 
         protected override byte[] CalHash()

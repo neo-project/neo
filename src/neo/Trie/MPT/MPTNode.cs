@@ -28,7 +28,6 @@ namespace Neo.Trie.MPT
     {
         public NodeFlag Flag;
         protected NodeType nType;
-
         protected abstract byte[] CalHash();
 
         public virtual byte[] GetHash()

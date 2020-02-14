@@ -7,7 +7,6 @@ namespace Neo.Trie.MPT
     public class FullNode : MPTNode
     {
         public const int CHILD_COUNT = 17;
-
         public MPTNode[] Children = new MPTNode[CHILD_COUNT];
 
 
