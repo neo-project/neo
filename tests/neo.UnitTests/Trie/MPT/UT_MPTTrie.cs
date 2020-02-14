@@ -9,14 +9,7 @@ namespace Neo.UnitTests.Trie.MPT
     public class UT_MPTTrie
     {
         private MPTNode root;
-
         private MPTDatabase mptdb;
-        
-         [ClassInitialize]
-        public static void ClassInit(TestContext context)
-        {
-             
-        }
 
         [TestInitialize]
         public void TestInit()
@@ -66,7 +59,7 @@ namespace Neo.UnitTests.Trie.MPT
         [TestMethod]
         public void TestTryGet()
         {
-            
+
             var mpt = new MPTTrie(mptdb);
             var result = mpt.TryGet("ac01".HexToBytes(), out byte[] value);
             Assert.IsTrue(result);
@@ -117,7 +110,7 @@ namespace Neo.UnitTests.Trie.MPT
         {
             var r1 = new ShortNode();
             r1.Key = "0a0c0001".HexToBytes();
-            
+
             var r = new ShortNode();
             r.Key = "0a0c".HexToBytes();
 
@@ -138,7 +131,7 @@ namespace Neo.UnitTests.Trie.MPT
             v2.Value = "2222".HexToBytes();
             l2.Next = v2;
             b.Children[9] = l2;
-            
+
             r1.Next = v1;
             Assert.AreEqual("76248d1bf457f0b95c1f6d05d787dca152906f106bcbafacbf7a69c6ae1797c4", r1.GetHash().ToHexString());
             Assert.AreEqual("f3ad94e8fb6e1e85a8b573b2343845e3b0e0b96b61fcd0e20b6df159fde137a7", r.GetHash().ToHexString());
@@ -188,7 +181,7 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.AreEqual(r.GetHash().ToHexString(), mpt.GetRoot().ToHexString());
             var dict = mpt.GetProof("ac01".HexToBytes());
             Assert.AreEqual(4, dict.Count);
-            Assert.IsTrue(dict.TryGetValue(mpt.GetRoot(), out byte[] value));                                                           
+            Assert.IsTrue(dict.TryGetValue(mpt.GetRoot(), out byte[] value));
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Neo.Trie.MPT
 
         protected override byte[] CalHash()
         {
-            if (IsEmptyNode) return new byte[]{};
+            if (IsEmptyNode) return new byte[] { };
             return (byte[])Hash.Clone();
         }
 
