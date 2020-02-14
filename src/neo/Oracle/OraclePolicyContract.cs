@@ -69,16 +69,28 @@ namespace Neo.Oracle
             return true;
         }
 
+        [ContractMethod(0_03000000, ContractParameterType.Array)]
+        private StackItem GetOracleValidators(ApplicationEngine engine, Array args)
+        {
+            return new Array(engine.ReferenceCounter, GetOracleValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
+        }
+
         public ECPoint[] GetOracleValidators(StoreView snapshot)
         {
             ECPoint[] consensusPublicKey = PolicyContract.NEO.GetValidators(snapshot);
             IEnumerable<(ECPoint ConsensusPublicKey, ECPoint OraclePublicKey)> hasDelegateOracleValidators = GetDelegateOracleValidators(snapshot).Where(p => consensusPublicKey.Contains(p.ConsensusPublicKey));
-            hasDelegateOracleValidators.ToList().ForEach(p =>
+            foreach (var item in hasDelegateOracleValidators)
             {
-                var index = System.Array.IndexOf(consensusPublicKey, p.ConsensusPublicKey);
-                if (index >= 0) consensusPublicKey[index] = p.OraclePublicKey;
-            });
+                var index = System.Array.IndexOf(consensusPublicKey, item.ConsensusPublicKey);
+                if (index >= 0) consensusPublicKey[index] = item.OraclePublicKey;
+            }
             return consensusPublicKey;
+        }
+
+        [ContractMethod(0_03000000, ContractParameterType.Integer)]
+        private StackItem GetOracleValidatorsCount(ApplicationEngine engine, Array args)
+        {
+            return GetOracleValidatorsCount(engine.Snapshot);
         }
 
         public BigInteger GetOracleValidatorsCount(StoreView snapshot)
@@ -115,7 +127,7 @@ namespace Neo.Oracle
             return true;
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Integer)]
         private StackItem GetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
         {
             return new Integer(GetTimeOutMilliSeconds(engine.Snapshot));
@@ -144,7 +156,7 @@ namespace Neo.Oracle
             return true;
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetPerRequestFee(ApplicationEngine engine, Array args)
         {
             return new Integer(GetPerRequestFee(engine.Snapshot));

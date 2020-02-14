@@ -8,10 +8,13 @@ using Neo.Oracle;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
+using Neo.UnitTests.Wallets;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
+using System;
 using System.Linq;
 using System.Numerics;
 
@@ -27,43 +30,91 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void Check_GetPerRequestFee()
+        public void TestInitialize()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            // Fake blockchain
-            OraclePolicyContract contract = NativeContract.OraclePolicy;
-            Assert.AreEqual(contract.GetPerRequestFee(snapshot), 1000);
+            var engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true);
+
+            snapshot.Storages.Delete(CreateStorageKey(11));
+            snapshot.PersistingBlock = Blockchain.GenesisBlock;
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            NativeContract.OraclePolicy.Initialize(engine).Should().BeTrue();
+        }
+        internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                Id = NativeContract.OraclePolicy.Id,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            key?.CopyTo(storageKey.Key.AsSpan(1));
+            return storageKey;
         }
 
         [TestMethod]
-        public void Check_GetTimeOutMilliSeconds()
+        public void Test_GetPerRequestFee()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            // Fake blockchain
-            OraclePolicyContract contract = NativeContract.OraclePolicy;
-            Assert.AreEqual(contract.GetPerRequestFee(snapshot), 1000);
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getPerRequestFee");
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.AreEqual(result, 1000);
         }
 
         [TestMethod]
-        public void Check_GetOracleValidators()
+        public void Test_GetTimeOutMilliSeconds()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            // Fake blockchain
-            OraclePolicyContract contract = NativeContract.OraclePolicy;
-            ECPoint[] obj = contract.GetOracleValidators(snapshot);
-            Assert.AreEqual(obj.Length, 7);
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getTimeOutMilliSeconds");
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.AreEqual(result, 1000);
+        }
+
+        [TestMethod]
+        public void Test_GetOracleValidators()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getOracleValidators");
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Array));
+            Assert.AreEqual(((VM.Types.Array)result).Count, 7);
+        }
+
+        [TestMethod]
+        public void Test_GetOracleValidatorsCount()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getOracleValidatorsCount");
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.AreEqual(result, 7);
         }
 
         [TestMethod]
         public void Test_DelegateOracleValidator()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            // Fake blockchain
-            OraclePolicyContract contract = NativeContract.OraclePolicy;
-            ECPoint[] obj = contract.GetOracleValidators(snapshot);
-            Assert.AreEqual(obj.Length, 7);
-
-            // Without signature
             byte[] privateKey1 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair1 = new KeyPair(privateKey1);
@@ -74,43 +125,50 @@ namespace Neo.UnitTests.Oracle
             KeyPair keyPair2 = new KeyPair(privateKey2);
             ECPoint pubkey2 = keyPair2.PublicKey;
 
-            Array array = new Array();
-            array.Add(StackItem.FromInterface(privateKey1));
-            array.Add(StackItem.FromInterface(privateKey2));
+            ECPoint[] pubkeys = new ECPoint[2];
+            pubkeys[0] = pubkey1;
+            pubkeys[1] = pubkey2;
 
-            /*            var ret = NativeContract.OraclePolicy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
-                            "DelegateOracleValidator", new ContractParameter(ContractParameterType.Hash160) { Value = 1 }, new ContractParameter(ContractParameterType.Array) { Value = array });
-                        ret.Should().BeOfType<VM.Types.Boolean>();
-                        ret.ToBoolean().Should().BeFalse();*/
-        }
-        internal static (bool State, bool Result) Check_DelegateOracleValidator(StoreView snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-    new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, 0, true);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            engine.LoadScript(NativeContract.OraclePolicy.Script);
-
-            var script = new ScriptBuilder();
-
-            foreach (var ec in pubkeys) script.EmitPush(ec);
-            script.EmitPush(pubkeys.Length);
-            script.Emit(OpCode.PACK);
-
-            script.EmitPush(account.ToArray());
-            script.EmitPush(2);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("DelegateOracleValidator");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
+            using ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitAppCall(NativeContract.OraclePolicy.Hash, "delegateOracleValidator", new ContractParameter
             {
-                return (false, false);
+                Type = ContractParameterType.Hash160,
+                Value = Contract.CreateSignatureRedeemScript(pubkey1).ToScriptHash()
+            }, new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = pubkeys.Select(p => new ContractParameter
+                {
+                    Type = ContractParameterType.PublicKey,
+                    Value = p
+                }).ToArray()
+            });
+
+            MyWallet wallet = new MyWallet();
+            WalletAccount account = wallet.CreateAccount(privateKey1);
+
+            // Fake balance
+            var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
+            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+            {
+                Value = new Nep5AccountState().ToByteArray()
+            });
+            entry.Value = new Nep5AccountState()
+            {
+                Balance = 1000000 * NativeContract.GAS.Factor
             }
+            .ToByteArray();
+            snapshot.Commit();
 
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            var tx = wallet.MakeTransaction(sb.ToArray(), account.ScriptHash, new TransactionAttribute[] { });
+            ContractParametersContext context = new ContractParametersContext(tx);
+            wallet.Sign(context);
+            tx.Witnesses = context.GetWitnesses();
 
-            return (true, result.ToBoolean());
+            var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
+            engine.Execute().Should().Be(VMState.HALT);
         }
     }
 }
