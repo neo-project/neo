@@ -9,8 +9,8 @@ namespace Neo.UnitTests.Trie.MPT
         [TestMethod]
         public void TestConcat()
         {
-            var a = new byte[]{0x01};
-            var b = new byte[]{0x02};
+            var a = new byte[] { 0x01 };
+            var b = new byte[] { 0x02 };
             a = a.Concat(b);
             Assert.AreEqual(2, a.Length);
         }
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Trie.MPT
             s = s.Skip(2);
             Assert.AreEqual("01", s.ToHexString());
 
-            s = new byte[]{0x01};
+            s = new byte[] { 0x01 };
             s = s.Skip(1);
             Assert.AreEqual(0, s.Length);
             s = s.Skip(2);

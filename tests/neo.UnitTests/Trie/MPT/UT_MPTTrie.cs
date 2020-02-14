@@ -25,9 +25,9 @@ namespace Neo.UnitTests.Trie.MPT
             r.Key = "0a0c".HexToBytes();
             var b = new FullNode();
             var l1 = new ShortNode();
-            l1.Key = new byte[]{0x01};
+            l1.Key = new byte[] { 0x01 };
             var l2 = new ShortNode();
-            l2.Key = new byte[]{0x09};
+            l2.Key = new byte[] { 0x09 };
             var v1 = new ValueNode();
             v1.Value = "abcd".HexToBytes();
             var v2 = new ValueNode();
@@ -126,14 +126,14 @@ namespace Neo.UnitTests.Trie.MPT
             r.Next = b;
 
             var l1 = new ShortNode();
-            l1.Key = new byte[]{0x01};
+            l1.Key = new byte[] { 0x01 };
             var v1 = new ValueNode();
             v1.Value = "abcd".HexToBytes();
             l1.Next = v1;
             b.Children[0] = l1;
 
             var l2 = new ShortNode();
-            l2.Key = new byte[]{0x09};
+            l2.Key = new byte[] { 0x09 };
             var v2 = new ValueNode();
             v2.Value = "2222".HexToBytes();
             l2.Next = v2;
@@ -161,9 +161,9 @@ namespace Neo.UnitTests.Trie.MPT
             r.Key = "0a0c".HexToBytes();
             var b = new FullNode();
             var l1 = new ShortNode();
-            l1.Key = new byte[]{0x01};
+            l1.Key = new byte[] { 0x01 };
             var l2 = new ShortNode();
-            l2.Key = new byte[]{0x09};
+            l2.Key = new byte[] { 0x09 };
             var v1 = new ValueNode();
             v1.Value = "abcd".HexToBytes();
             var v2 = new ValueNode();
