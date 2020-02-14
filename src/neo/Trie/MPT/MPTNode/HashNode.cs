@@ -1,3 +1,5 @@
+using Neo.IO;
+using System.IO;
 
 namespace Neo.Trie.MPT
 {
@@ -5,8 +7,6 @@ namespace Neo.Trie.MPT
     {
         public byte[] Hash;
 
-        public override int Size => 1 + Hash.Length;
-        
         public HashNode()
         {
             nType = NodeType.HashNode;
@@ -20,6 +20,7 @@ namespace Neo.Trie.MPT
 
         protected override byte[] CalHash()
         {
+            if (IsEmptyNode) return new byte[]{};
             return (byte[])Hash.Clone();
         }
 
@@ -28,6 +29,16 @@ namespace Neo.Trie.MPT
             return new HashNode(new byte[] { });
         }
 
-        public bool IsEmptyNode => Hash.Length == 0;
+        public bool IsEmptyNode => Hash is null || Hash.Length == 0;
+
+        public override void EncodeSpecific(BinaryWriter writer)
+        {
+            writer.WriteVarBytes(Hash);
+        }
+
+        public override void DecodeSpecific(BinaryReader reader)
+        {
+            Hash = reader.ReadVarBytes();
+        }
     }
 }

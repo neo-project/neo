@@ -24,7 +24,7 @@ namespace Neo.Trie.MPT
         }
     }
 
-    public abstract class MPTNode : ISerializable
+    public abstract class MPTNode
     {
         public NodeFlag Flag;
         protected NodeType nType;
@@ -44,57 +44,52 @@ namespace Neo.Trie.MPT
             Flag = new NodeFlag();
         }
 
-        public virtual int Size { get; }
-
         public MPTNode()
         {
             Flag = new NodeFlag();
         }
 
-        public virtual void Serialize(BinaryWriter writer)
-        {
-            writer.Write((byte)nType);
-        }
-
-        public virtual void Deserialize(BinaryReader reader)
-        {
-
-        }
-
         public byte[] Encode()
         {
-            return this.ToArray();
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                writer.Write((byte)nType);
+                EncodeSpecific(writer);
+                writer.Flush();
+                return ms.ToArray();
+            }
         }
+
+        public abstract void EncodeSpecific(BinaryWriter writer);
 
         public static MPTNode Decode(byte[] data)
         {
             if (data is null || data.Length == 0)
                 throw new System.ArgumentException();
 
-            var nodeType = (NodeType)data[0];
-            data = data.Skip(1);
-
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
+                var nodeType = (NodeType)reader.ReadByte();
                 switch (nodeType)
                 {
                     case NodeType.FullNode:
                         {
                             var n = new FullNode();
-                            n.Deserialize(reader);
+                            n.DecodeSpecific(reader);
                             return n;
                         }
                     case NodeType.ShortNode:
                         {
                             var n = new ShortNode();
-                            n.Deserialize(reader);
+                            n.DecodeSpecific(reader);
                             return n;
                         }
                     case NodeType.ValueNode:
                         {
                             var n = new ValueNode();
-                            n.Deserialize(reader);
+                            n.DecodeSpecific(reader);
                             return n;
                         }
                     default:
@@ -102,5 +97,7 @@ namespace Neo.Trie.MPT
                 }
             }
         }
+
+        public abstract void DecodeSpecific(BinaryReader reader);
     }
 }

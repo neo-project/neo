@@ -10,19 +10,7 @@ namespace Neo.Trie.MPT
 
         public MPTNode[] Children = new MPTNode[CHILD_COUNT];
 
-        public override int Size
-        {
-            get
-            {
-                var size = 1;
-                for (int i = 0; i < Children.Length; i++)
-                {
-                    size += Children[i].GetHash().Length;
-                }
-                return size;
-            }
-        }
-        
+
         public FullNode()
         {
             nType = NodeType.FullNode;
@@ -42,20 +30,21 @@ namespace Neo.Trie.MPT
             return bytes.Sha256();
         }
 
-        public override void Serialize(BinaryWriter writer)
+        public override void EncodeSpecific(BinaryWriter writer)
         {
-            base.Serialize(writer);
             for (int i = 0; i < Children.Length; i++)
             {
-                writer.WriteVarBytes(Children[i].GetHash());
+                var hashNode = new HashNode(Children[i].GetHash());
+                hashNode.EncodeSpecific(writer);
             }
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public override void DecodeSpecific(BinaryReader reader)
         {
             for (int i = 0; i < Children.Length; i++)
             {
-                var hashNode = new HashNode(reader.ReadVarBytes());
+                var hashNode = new HashNode();
+                hashNode.DecodeSpecific(reader);
                 Children[i] = hashNode;
             }
         }
