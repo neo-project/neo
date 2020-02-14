@@ -11,11 +11,14 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Neo.Wallets.SQLite
 {
     public class UserWallet : Wallet
     {
+        private static readonly byte[] Salt = Encoding.ASCII.GetBytes("NEO");
+
         private readonly object db_lock = new object();
         private readonly string path;
         private readonly byte[] iv;
@@ -41,7 +44,6 @@ namespace Neo.Wallets.SQLite
         private UserWallet(string path, byte[] passwordKey, bool create)
         {
             this.path = path;
-
             if (create)
             {
                 this.iv = new byte[16];
@@ -52,10 +54,9 @@ namespace Neo.Wallets.SQLite
                     rng.GetBytes(iv);
                     rng.GetBytes(masterKey);
                 }
-
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
-                SaveStoredData("PasswordHash", passwordKey.Sha256());
+                SaveStoredData("PasswordHash", passwordKey.Concat(Salt).ToArray().Sha256());
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
@@ -63,7 +64,7 @@ namespace Neo.Wallets.SQLite
             else
             {
                 byte[] passwordHash = LoadStoredData("PasswordHash");
-                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Sha256()))
+                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(Salt).ToArray().Sha256()))
                     throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
@@ -91,7 +92,7 @@ namespace Neo.Wallets.SQLite
                 {
                     if (account.HasKey)
                     {
-                        string passphrase = masterKey.ToHexString();
+                        string passphrase = Encoding.UTF8.GetString(masterKey);
                         Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
                         if (db_account == null)
                         {
@@ -288,7 +289,7 @@ namespace Neo.Wallets.SQLite
         {
             using (WalletDataContext ctx = new WalletDataContext(path))
             {
-                string passphrase = masterKey.ToHexString();
+                string passphrase = Encoding.UTF8.GetString(masterKey);
                 Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p))).ToDictionary(p => p.ScriptHash);
                 foreach (Contract db_contract in ctx.Contracts.Include(p => p.Account))
                 {
