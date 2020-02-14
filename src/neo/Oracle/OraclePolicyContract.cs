@@ -31,6 +31,20 @@ namespace Neo.Oracle
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
+        internal override bool Initialize(ApplicationEngine engine)
+        {
+            if (!base.Initialize(engine)) return false;
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_TimeOutMilliSeconds), new StorageItem
+            {
+                Value = BitConverter.GetBytes(1000)
+            });
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
+            {
+                Value = BitConverter.GetBytes(1000)
+            });
+            return true;
+        }
+
         [ContractMethod(0_01000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
         private StackItem DelegateOracleValidator(ApplicationEngine engine, Array args)
         {
@@ -95,42 +109,21 @@ namespace Neo.Oracle
 
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int timeOutMilliSeconds = BitConverter.ToInt32(args[0].GetSpan());
-            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine))
-            {
-                return false;
-            }
-            StorageKey key = CreateStorageKey(Prefix_TimeOutMilliSeconds);
-            if (snapshot.Storages.TryGet(key) != null)
-            {
-                StorageItem value = snapshot.Storages.GetAndChange(key);
-                value.Value = BitConverter.GetBytes(timeOutMilliSeconds);
-                return true;
-            }
-            else
-            {
-                snapshot.Storages.Add(key, new StorageItem
-                {
-                    Value = BitConverter.GetBytes(timeOutMilliSeconds)
-                });
-                return true;
-            }
+            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TimeOutMilliSeconds));
+            storage.Value = BitConverter.GetBytes(timeOutMilliSeconds);
+            return true;
+        }
+
+        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        private StackItem GetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
+        {
+            return new Integer(GetTimeOutMilliSeconds(engine.Snapshot));
         }
 
         public int GetTimeOutMilliSeconds(StoreView snapshot)
         {
-            StorageKey key = CreateStorageKey(Prefix_TimeOutMilliSeconds);
-            if (snapshot.Storages.TryGet(key) != null)
-            {
-                return BitConverter.ToInt32(snapshot.Storages.TryGet(key).Value, 0);
-            }
-            else
-            {
-                snapshot.Storages.Add(key, new StorageItem
-                {
-                    Value = BitConverter.GetBytes(1000)
-                });
-                return 1000;
-            }
+            return BitConverter.ToInt32(snapshot.Storages[CreateStorageKey(Prefix_TimeOutMilliSeconds)].Value, 0);
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "fee" })]
@@ -145,42 +138,21 @@ namespace Neo.Oracle
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int perRequestFee = BitConverter.ToInt32(args[0].GetSpan());
-            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine))
-            {
-                return false;
-            }
-            StorageKey key = CreateStorageKey(Prefix_PerRequestFee);
-            if (snapshot.Storages.TryGet(key) != null)
-            {
-                StorageItem value = snapshot.Storages.GetAndChange(key);
-                value.Value = BitConverter.GetBytes(perRequestFee);
-                return true;
-            }
-            else
-            {
-                snapshot.Storages.Add(key, new StorageItem
-                {
-                    Value = BitConverter.GetBytes(perRequestFee)
-                });
-                return true;
-            }
+            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_PerRequestFee));
+            storage.Value = BitConverter.GetBytes(perRequestFee);
+            return true;
         }
 
-        public int GetPerRequestFee(SnapshotView snapshot)
+        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        private StackItem GetPerRequestFee(ApplicationEngine engine, Array args)
         {
-            StorageKey key = CreateStorageKey(Prefix_PerRequestFee);
-            if (snapshot.Storages.TryGet(key) != null)
-            {
-                return BitConverter.ToInt32(snapshot.Storages.TryGet(key).Value, 0);
-            }
-            else
-            {
-                snapshot.Storages.Add(key, new StorageItem
-                {
-                    Value = BitConverter.GetBytes(1000)
-                });
-                return 1000;
-            }
+            return new Integer(GetPerRequestFee(engine.Snapshot));
+        }
+
+        public int GetPerRequestFee(StoreView snapshot)
+        {
+            return BitConverter.ToInt32(snapshot.Storages[CreateStorageKey(Prefix_PerRequestFee)].Value, 0);
         }
     }
 }

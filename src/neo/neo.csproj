@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>2015-2019 The Neo Project</Copyright>
@@ -28,10 +28,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.1" />
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00201" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Oracle\" />
   </ItemGroup>
 
 </Project>
