@@ -16,6 +16,7 @@ namespace Neo.Trie.MPT
         {
             return Key.Concat(Next.GetHash()).Sha256();
         }
+        
         public ShortNode()
         {
             nType = NodeType.ShortNode;

@@ -22,6 +22,7 @@ namespace Neo.Trie.MPT
                 return size;
             }
         }
+        
         public FullNode()
         {
             nType = NodeType.FullNode;

@@ -6,6 +6,7 @@ namespace Neo.Trie.MPT
         public byte[] Hash;
 
         public override int Size => 1 + Hash.Length;
+        
         public HashNode()
         {
             nType = NodeType.HashNode;
