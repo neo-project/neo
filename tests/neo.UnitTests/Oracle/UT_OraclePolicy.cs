@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
-            Assert.AreEqual(result, 1000);
+            Assert.AreEqual(result, 5000);
         }
 
         [TestMethod]

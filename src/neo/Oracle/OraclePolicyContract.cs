@@ -25,12 +25,18 @@ namespace Neo.Oracle
         private const byte Prefix_Validator = 24;
         private const byte Prefix_TimeOutMilliSeconds = 25;
         private const byte Prefix_PerRequestFee = 26;
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public OraclePolicyContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
         }
-
+        /// <summary>
+        /// Initialization.Set default parameter value.
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
@@ -44,7 +50,12 @@ namespace Neo.Oracle
             });
             return true;
         }
-
+        /// <summary>
+        /// Oracle validator can delegate third party to operate Oracle nodes
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <param name="args">Parameter Array</param>
+        /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
         [ContractMethod(0_01000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
         private StackItem DelegateOracleValidator(ApplicationEngine engine, Array args)
         {
@@ -68,13 +79,22 @@ namespace Neo.Oracle
             }
             return true;
         }
-
+        /// <summary>
+        /// Get current authorized Oracle validator.
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <param name="args">Parameter Array</param>
+        /// <returns>Authorized Oracle validator</returns>
         [ContractMethod(0_03000000, ContractParameterType.Array)]
         private StackItem GetOracleValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetOracleValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
         }
-
+        /// <summary>
+        /// Get current authorized Oracle validator
+        /// </summary>
+        /// <param name="snapshot">snapshot</param>
+        /// <returns>Authorized Oracle validator</returns>
         public ECPoint[] GetOracleValidators(StoreView snapshot)
         {
             ECPoint[] consensusPublicKey = PolicyContract.NEO.GetValidators(snapshot);
@@ -86,18 +106,31 @@ namespace Neo.Oracle
             }
             return consensusPublicKey;
         }
-
+        /// <summary>
+        /// Get number of current authorized Oracle validator
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <param name="args">Parameter Array</param>
+        /// <returns>The number of authorized Oracle validator</returns>
         [ContractMethod(0_03000000, ContractParameterType.Integer)]
         private StackItem GetOracleValidatorsCount(ApplicationEngine engine, Array args)
         {
             return GetOracleValidatorsCount(engine.Snapshot);
         }
-
+        /// <summary>
+        /// Get number of current authorized Oracle validator
+        /// </summary>
+        /// <param name="snapshot">snapshot</param>
+        /// <returns>The number of authorized Oracle validator</returns>
         public BigInteger GetOracleValidatorsCount(StoreView snapshot)
         {
             return GetOracleValidators(snapshot).Length;
         }
-
+        /// <summary>
+        /// A collection of delegated Oracle validator
+        /// </summary>
+        /// <param name="snapshot">snapshot</param>
+        /// <returns></returns>
         internal IEnumerable<(ECPoint ConsensusPublicKey, ECPoint OraclePublicKey)> GetDelegateOracleValidators(StoreView snapshot)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
@@ -107,44 +140,65 @@ namespace Neo.Oracle
                 p.Value.Value.AsSerializable<ECPoint>(1)
             ));
         }
-
-        internal UInt160 GetOracleMultiSigAddress(ECPoint[] validators)
+        /// <summary>
+        /// Create a Oracle multisignature address
+        /// </summary>
+        /// <param name="snapshot">snapshot</param>
+        /// <returns>Oracle multisignature address</returns>
+        public UInt160 GetOracleMultiSigAddress(StoreView snapshot)
         {
+            ECPoint[] validators = GetOracleValidators(snapshot);
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
-
+        /// <summary>
+        /// Set timeout
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <param name="args">Parameter Array</param>
+        /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "TimeOutMilliSeconds" })]
         private StackItem SetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
-            ECPoint[] oracleValidators = GetOracleValidators(snapshot);
-            UInt160 account = GetOracleMultiSigAddress(oracleValidators);
+            UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int timeOutMilliSeconds = BitConverter.ToInt32(args[0].GetSpan());
-            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TimeOutMilliSeconds));
             storage.Value = BitConverter.GetBytes(timeOutMilliSeconds);
             return true;
         }
-
+        /// <summary>
+        /// Get timeout
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <param name="args">Parameter Array</param>
+        /// <returns>value</returns>
         [ContractMethod(1_00000000, ContractParameterType.Integer)]
         private StackItem GetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
         {
             return new Integer(GetTimeOutMilliSeconds(engine.Snapshot));
         }
-
+        /// <summary>
+        /// Get timeout
+        /// </summary>
+        /// <param name="snapshot">snapshot</param>
+        /// <returns>value</returns>
         public int GetTimeOutMilliSeconds(StoreView snapshot)
         {
             return BitConverter.ToInt32(snapshot.Storages[CreateStorageKey(Prefix_TimeOutMilliSeconds)].Value, 0);
         }
-
+        /// <summary>
+        /// Set PerRequestFee
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <param name="args">Parameter Array</param>
+        /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "fee" })]
         private StackItem SetPerRequestFee(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
-            ECPoint[] oracleValidators = GetOracleValidators(snapshot);
-            UInt160 account = GetOracleMultiSigAddress(oracleValidators);
+            UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int perRequestFee = BitConverter.ToInt32(args[0].GetSpan());
@@ -152,13 +206,22 @@ namespace Neo.Oracle
             storage.Value = BitConverter.GetBytes(perRequestFee);
             return true;
         }
-
+        /// <summary>
+        /// Get PerRequestFee
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <param name="args">Parameter Array</param>
+        /// <returns>Value</returns>
         [ContractMethod(1_00000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetPerRequestFee(ApplicationEngine engine, Array args)
         {
             return new Integer(GetPerRequestFee(engine.Snapshot));
         }
-
+        /// <summary>
+        /// Get PerRequestFee
+        /// </summary>
+        /// <param name="snapshot">VM</param>
+        /// <returns>Value</returns>
         public int GetPerRequestFee(StoreView snapshot)
         {
             return BitConverter.ToInt32(snapshot.Storages[CreateStorageKey(Prefix_PerRequestFee)].Value, 0);
