@@ -36,7 +36,7 @@ namespace Neo.Oracle
             if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_TimeOutMilliSeconds), new StorageItem
             {
-                Value = BitConverter.GetBytes(1000)
+                Value = BitConverter.GetBytes(5000)
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
@@ -108,17 +108,18 @@ namespace Neo.Oracle
             ));
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "fee" })]
+        internal UInt160 GetOracleMultiSigAddress(ECPoint[] validators)
+        {
+            return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
+        }
+
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "TimeOutMilliSeconds" })]
         private StackItem SetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
-            Transaction tx = (Transaction)engine.ScriptContainer;
-            Array signatures = new Array(tx.Witnesses.ToList().Select(p => StackItem.FromInterface(p.VerificationScript)));
-            Array pubkeys = new Array(GetOracleValidators(snapshot).ToList().Select(p => StackItem.FromInterface(p)));
-            engine.CurrentContext.EvaluationStack.Push(signatures);
-            engine.CurrentContext.EvaluationStack.Push(pubkeys);
-            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-
+            ECPoint[] oracleValidators = GetOracleValidators(snapshot);
+            UInt160 account = GetOracleMultiSigAddress(oracleValidators);
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int timeOutMilliSeconds = BitConverter.ToInt32(args[0].GetSpan());
             if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine)) return false;
@@ -142,15 +143,11 @@ namespace Neo.Oracle
         private StackItem SetPerRequestFee(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
-            Transaction tx = (Transaction)engine.ScriptContainer;
-            Array signatures = new Array(tx.Witnesses.ToList().Select(p => StackItem.FromInterface(p.VerificationScript)));
-            Array pubkeys = new Array(GetOracleValidators(snapshot).ToList().Select(p => StackItem.FromInterface(p)));
-            engine.CurrentContext.EvaluationStack.Push(signatures);
-            engine.CurrentContext.EvaluationStack.Push(pubkeys);
-            engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
+            ECPoint[] oracleValidators = GetOracleValidators(snapshot);
+            UInt160 account = GetOracleMultiSigAddress(oracleValidators);
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int perRequestFee = BitConverter.ToInt32(args[0].GetSpan());
-            if (!InteropService.Crypto.ECDsaCheckMultiSig.Handler.Invoke(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_PerRequestFee));
             storage.Value = BitConverter.GetBytes(perRequestFee);
             return true;
