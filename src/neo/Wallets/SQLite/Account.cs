@@ -1,5 +1,3 @@
-using Neo.Wallets.NEP6;
-
 namespace Neo.Wallets.SQLite
 {
     internal class Account
