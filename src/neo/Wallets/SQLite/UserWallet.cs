@@ -91,10 +91,8 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        private void AddAccount(UserWalletAccount account, ScryptParameters scrypt)
+        private void AddAccount(UserWalletAccount account)
         {
-            if (scrypt == null) scrypt = ScryptParameters.Default;
-
             lock (accounts)
             {
                 if (accounts.TryGetValue(account.ScriptHash, out UserWalletAccount account_old))
@@ -214,7 +212,7 @@ namespace Neo.Wallets.SQLite
                 Key = key,
                 Contract = contract
             };
-            AddAccount(account, ScryptParameters.Default);
+            AddAccount(account);
             return account;
         }
 
@@ -234,14 +232,14 @@ namespace Neo.Wallets.SQLite
                 Key = key,
                 Contract = verification_contract
             };
-            AddAccount(account, ScryptParameters.Default);
+            AddAccount(account);
             return account;
         }
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
             UserWalletAccount account = new UserWalletAccount(scriptHash);
-            AddAccount(account, ScryptParameters.Default);
+            AddAccount(account);
             return account;
         }
 
