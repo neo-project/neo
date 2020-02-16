@@ -17,11 +17,10 @@ namespace Neo.Wallets.SQLite
 {
     public class UserWallet : Wallet
     {
-        private static readonly byte[] Salt = Encoding.ASCII.GetBytes("NEO");
-
         private readonly object db_lock = new object();
         private readonly string path;
         private readonly byte[] iv;
+        private readonly byte[] salt;
         private readonly byte[] masterKey;
         private readonly ScryptParameters scrypt;
         private readonly Dictionary<UInt160, UserWalletAccount> accounts;
@@ -56,18 +55,21 @@ namespace Neo.Wallets.SQLite
             if (create)
             {
                 this.iv = new byte[16];
+                this.salt = new byte[20];
                 this.masterKey = new byte[32];
                 this.scrypt = scrypt ?? ScryptParameters.Default;
                 this.accounts = new Dictionary<UInt160, UserWalletAccount>();
                 using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
                 {
                     rng.GetBytes(iv);
+                    rng.GetBytes(salt);
                     rng.GetBytes(masterKey);
                 }
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
-                SaveStoredData("PasswordHash", passwordKey.Concat(Salt).ToArray().Sha256());
                 SaveStoredData("IV", iv);
+                SaveStoredData("Salt", salt);
+                SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
                 SaveStoredData("ScryptN", BitConverter.GetBytes(this.scrypt.N));
@@ -76,8 +78,9 @@ namespace Neo.Wallets.SQLite
             }
             else
             {
+                this.salt = LoadStoredData("Salt");
                 byte[] passwordHash = LoadStoredData("PasswordHash");
-                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(Salt).ToArray().Sha256()))
+                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
                     throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
@@ -360,7 +363,7 @@ namespace Neo.Wallets.SQLite
 
         public override bool VerifyPassword(string password)
         {
-            return password.ToAesKey().Concat(Salt).ToArray().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+            return password.ToAesKey().Concat(salt).ToArray().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
         }
     }
 }
