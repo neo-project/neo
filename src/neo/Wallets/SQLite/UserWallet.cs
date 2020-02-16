@@ -23,6 +23,7 @@ namespace Neo.Wallets.SQLite
         private readonly string path;
         private readonly byte[] iv;
         private readonly byte[] masterKey;
+        private readonly ScryptParameters scrypt;
         private readonly Dictionary<UInt160, UserWalletAccount> accounts;
 
         public override string Name => Path.GetFileNameWithoutExtension(path);
@@ -41,13 +42,22 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        private UserWallet(string path, byte[] passwordKey, bool create)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="path">Path</param>
+        /// <param name="passwordKey">Password Key</param>
+        /// <param name="create">True for create the wallet</param>
+        /// <param name="scrypt">Scrypt initialization value (only if create=True)</param>
+        private UserWallet(string path, byte[] passwordKey, bool create, ScryptParameters scrypt = null)
         {
             this.path = path;
+
             if (create)
             {
                 this.iv = new byte[16];
                 this.masterKey = new byte[32];
+                this.scrypt = scrypt ?? ScryptParameters.Default;
                 this.accounts = new Dictionary<UInt160, UserWalletAccount>();
                 using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
                 {
@@ -60,6 +70,9 @@ namespace Neo.Wallets.SQLite
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
+                SaveStoredData("ScryptN", BitConverter.GetBytes(scrypt.N));
+                SaveStoredData("ScryptR", BitConverter.GetBytes(scrypt.R));
+                SaveStoredData("ScryptP", BitConverter.GetBytes(scrypt.P));
             }
             else
             {
@@ -68,6 +81,12 @@ namespace Neo.Wallets.SQLite
                     throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
+                this.scrypt = new ScryptParameters
+                    (
+                    BitConverter.ToInt32(LoadStoredData("ScryptN")),
+                    BitConverter.ToInt32(LoadStoredData("ScryptR")),
+                    BitConverter.ToInt32(LoadStoredData("ScryptP"))
+                    );
                 this.accounts = LoadAccounts();
             }
         }
@@ -98,18 +117,12 @@ namespace Neo.Wallets.SQLite
                         {
                             db_account = ctx.Accounts.Add(new Account
                             {
-                                ScryptN = scrypt.N,
-                                ScryptR = scrypt.R,
-                                ScryptP = scrypt.P,
                                 Nep2key = account.Key.Export(passphrase, scrypt.N, scrypt.R, scrypt.P),
                                 PublicKeyHash = account.Key.PublicKeyHash.ToArray()
                             }).Entity;
                         }
                         else
                         {
-                            db_account.ScryptN = scrypt.N;
-                            db_account.ScryptR = scrypt.R;
-                            db_account.ScryptP = scrypt.P;
                             db_account.Nep2key = account.Key.Export(passphrase, scrypt.N, scrypt.R, scrypt.P);
                         }
                     }
@@ -296,8 +309,7 @@ namespace Neo.Wallets.SQLite
                     VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
                     UserWalletAccount account = accounts[contract.ScriptHash];
                     account.Contract = contract;
-                    account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase,
-                        db_contract.Account.ScryptN, db_contract.Account.ScryptR, db_contract.Account.ScryptP));
+                    account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase, scrypt.N, scrypt.R, scrypt.P));
                 }
                 return accounts;
             }
