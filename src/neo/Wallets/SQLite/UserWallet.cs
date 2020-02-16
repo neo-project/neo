@@ -70,9 +70,9 @@ namespace Neo.Wallets.SQLite
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
-                SaveStoredData("ScryptN", BitConverter.GetBytes(scrypt.N));
-                SaveStoredData("ScryptR", BitConverter.GetBytes(scrypt.R));
-                SaveStoredData("ScryptP", BitConverter.GetBytes(scrypt.P));
+                SaveStoredData("ScryptN", BitConverter.GetBytes(this.scrypt.N));
+                SaveStoredData("ScryptR", BitConverter.GetBytes(this.scrypt.R));
+                SaveStoredData("ScryptP", BitConverter.GetBytes(this.scrypt.P));
             }
             else
             {
@@ -360,7 +360,7 @@ namespace Neo.Wallets.SQLite
 
         public override bool VerifyPassword(string password)
         {
-            return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+            return password.ToAesKey().Concat(Salt).ToArray().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
         }
     }
 }
