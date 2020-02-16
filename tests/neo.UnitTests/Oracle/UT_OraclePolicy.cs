@@ -125,25 +125,17 @@ namespace Neo.UnitTests.Oracle
             KeyPair keyPair2 = new KeyPair(privateKey2);
             ECPoint pubkey2 = keyPair2.PublicKey;
 
-            ECPoint[] pubkeys = new ECPoint[2];
-            pubkeys[0] = pubkey1;
-            pubkeys[1] = pubkey2;
-
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
             using ScriptBuilder sb = new ScriptBuilder();
             sb.EmitAppCall(NativeContract.OraclePolicy.Hash, "delegateOracleValidator", new ContractParameter
             {
-                Type = ContractParameterType.Hash160,
-                Value = Contract.CreateSignatureRedeemScript(pubkey1).ToScriptHash()
+                Type = ContractParameterType.ByteArray,
+                Value = pubkey1.ToArray()
             }, new ContractParameter
             {
-                Type = ContractParameterType.Array,
-                Value = pubkeys.Select(p => new ContractParameter
-                {
-                    Type = ContractParameterType.PublicKey,
-                    Value = p
-                }).ToArray()
+                Type = ContractParameterType.ByteArray,
+                Value = pubkey2.ToArray()
             });
 
             MyWallet wallet = new MyWallet();

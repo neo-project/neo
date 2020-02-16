@@ -25,6 +25,7 @@ namespace Neo.Oracle
         private const byte Prefix_Validator = 24;
         private const byte Prefix_TimeOutMilliSeconds = 25;
         private const byte Prefix_PerRequestFee = 26;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -32,6 +33,7 @@ namespace Neo.Oracle
         {
             Manifest.Features = ContractFeatures.HasStorage;
         }
+
         /// <summary>
         /// Initialization.Set default parameter value.
         /// </summary>
@@ -50,35 +52,37 @@ namespace Neo.Oracle
             });
             return true;
         }
+
         /// <summary>
         /// Oracle validator can delegate third party to operate Oracle nodes
         /// </summary>
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
+        [ContractMethod(0_01000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "consignorPubKey", "consigneePubKey" })]
         private StackItem DelegateOracleValidator(ApplicationEngine engine, Array args)
         {
-            UInt160 account = new UInt160(args[0].GetSpan());
+            ECPoint consignorPubKey = args[0].GetSpan().AsSerializable<ECPoint>();
+            ECPoint consigneePubKey = args[1].GetSpan().AsSerializable<ECPoint>();
+            UInt160 account = Contract.CreateSignatureRedeemScript(consignorPubKey).ToScriptHash();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            ECPoint[] pubkeys = ((Array)args[1]).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToArray();
-            if (pubkeys.Length != 2) return false;
             StoreView snapshot = engine.Snapshot;
-            StorageKey key = CreateStorageKey(Prefix_Validator, pubkeys[0]);
+            StorageKey key = CreateStorageKey(Prefix_Validator, consignorPubKey);
             if (snapshot.Storages.TryGet(key) != null)
             {
                 StorageItem value = snapshot.Storages.GetAndChange(key);
-                value.Value = pubkeys[1].ToArray();
+                value.Value = consigneePubKey.ToArray();
             }
             else
             {
                 snapshot.Storages.Add(key, new StorageItem
                 {
-                    Value = pubkeys[1].ToArray()
+                    Value = consigneePubKey.ToArray()
                 });
             }
             return true;
         }
+
         /// <summary>
         /// Get current authorized Oracle validator.
         /// </summary>
@@ -90,6 +94,7 @@ namespace Neo.Oracle
         {
             return new Array(engine.ReferenceCounter, GetOracleValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
         }
+
         /// <summary>
         /// Get current authorized Oracle validator
         /// </summary>
@@ -106,6 +111,7 @@ namespace Neo.Oracle
             }
             return consensusPublicKey;
         }
+
         /// <summary>
         /// Get number of current authorized Oracle validator
         /// </summary>
@@ -117,6 +123,7 @@ namespace Neo.Oracle
         {
             return GetOracleValidatorsCount(engine.Snapshot);
         }
+
         /// <summary>
         /// Get number of current authorized Oracle validator
         /// </summary>
@@ -126,11 +133,12 @@ namespace Neo.Oracle
         {
             return GetOracleValidators(snapshot).Length;
         }
+
         /// <summary>
         /// A collection of delegated Oracle validator
         /// </summary>
         /// <param name="snapshot">snapshot</param>
-        /// <returns></returns>
+        /// <returns>delegated Oracle validator</returns>
         internal IEnumerable<(ECPoint ConsensusPublicKey, ECPoint OraclePublicKey)> GetDelegateOracleValidators(StoreView snapshot)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
@@ -140,6 +148,7 @@ namespace Neo.Oracle
                 p.Value.Value.AsSerializable<ECPoint>(1)
             ));
         }
+
         /// <summary>
         /// Create a Oracle multisignature address
         /// </summary>
@@ -150,6 +159,7 @@ namespace Neo.Oracle
             ECPoint[] validators = GetOracleValidators(snapshot);
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
+
         /// <summary>
         /// Set timeout
         /// </summary>
@@ -168,17 +178,18 @@ namespace Neo.Oracle
             storage.Value = BitConverter.GetBytes(timeOutMilliSeconds);
             return true;
         }
+
         /// <summary>
         /// Get timeout
         /// </summary>
         /// <param name="engine">VM</param>
-        /// <param name="args">Parameter Array</param>
         /// <returns>value</returns>
         [ContractMethod(1_00000000, ContractParameterType.Integer)]
         private StackItem GetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
         {
             return new Integer(GetTimeOutMilliSeconds(engine.Snapshot));
         }
+
         /// <summary>
         /// Get timeout
         /// </summary>
@@ -188,6 +199,7 @@ namespace Neo.Oracle
         {
             return BitConverter.ToInt32(snapshot.Storages[CreateStorageKey(Prefix_TimeOutMilliSeconds)].Value, 0);
         }
+
         /// <summary>
         /// Set PerRequestFee
         /// </summary>
@@ -206,6 +218,7 @@ namespace Neo.Oracle
             storage.Value = BitConverter.GetBytes(perRequestFee);
             return true;
         }
+
         /// <summary>
         /// Get PerRequestFee
         /// </summary>
@@ -217,10 +230,11 @@ namespace Neo.Oracle
         {
             return new Integer(GetPerRequestFee(engine.Snapshot));
         }
+
         /// <summary>
         /// Get PerRequestFee
         /// </summary>
-        /// <param name="snapshot">VM</param>
+        /// <param name="snapshot">snapshot</param>
         /// <returns>Value</returns>
         public int GetPerRequestFee(StoreView snapshot)
         {
