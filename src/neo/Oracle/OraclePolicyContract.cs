@@ -102,14 +102,22 @@ namespace Neo.Oracle
         /// <returns>Authorized Oracle validator</returns>
         public ECPoint[] GetOracleValidators(StoreView snapshot)
         {
-            ECPoint[] consensusPublicKey = PolicyContract.NEO.GetValidators(snapshot);
-            IEnumerable<(ECPoint ConsensusPublicKey, ECPoint OraclePublicKey)> hasDelegateOracleValidators = GetDelegateOracleValidators(snapshot).Where(p => consensusPublicKey.Contains(p.ConsensusPublicKey));
-            foreach (var item in hasDelegateOracleValidators)
+            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
+            for (int index = 0; index < oraclePubKeys.Length; index++)
             {
-                var index = System.Array.IndexOf(consensusPublicKey, item.ConsensusPublicKey);
-                if (index >= 0) consensusPublicKey[index] = item.OraclePublicKey;
+                var item1 = oraclePubKeys[index];
+                byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, Helper.Concat(new[] { Prefix_Validator }, item1.ToArray()));
+                IEnumerable<(ECPoint oraclePubKey, ECPoint delegatePubKeys)> hasDelegateOracleValidators = snapshot.Storages.Find(prefix_key).Select(p =>
+                (
+                    p.Key.Key.AsSerializable<ECPoint>(1),
+                    p.Value.Value.AsSerializable<ECPoint>(1)
+                ));
+                foreach (var item2 in hasDelegateOracleValidators)
+                {
+                    oraclePubKeys[index] = item2.delegatePubKeys;
+                }
             }
-            return consensusPublicKey;
+            return oraclePubKeys;
         }
 
         /// <summary>
@@ -132,21 +140,6 @@ namespace Neo.Oracle
         public BigInteger GetOracleValidatorsCount(StoreView snapshot)
         {
             return GetOracleValidators(snapshot).Length;
-        }
-
-        /// <summary>
-        /// A collection of delegated Oracle validator
-        /// </summary>
-        /// <param name="snapshot">snapshot</param>
-        /// <returns>delegated Oracle validator</returns>
-        internal IEnumerable<(ECPoint ConsensusPublicKey, ECPoint OraclePublicKey)> GetDelegateOracleValidators(StoreView snapshot)
-        {
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
-            return snapshot.Storages.Find(prefix_key).Select(p =>
-            (
-                p.Key.Key.AsSerializable<ECPoint>(1),
-                p.Value.Value.AsSerializable<ECPoint>(1)
-            ));
         }
 
         /// <summary>
