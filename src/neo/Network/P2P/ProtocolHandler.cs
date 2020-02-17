@@ -290,7 +290,8 @@ namespace Neo.Network.P2P
         {
             uint index = payload.IndexStart;
             int count = payload.Count < 0 || payload.Count > HeadersPayload.MaxHeadersCount ? HeadersPayload.MaxHeadersCount : payload.Count;
-            if (index > Blockchain.Singleton.HeaderHeight) return;
+            if (index > Blockchain.Singleton.HeaderHeight)
+                return;
             List<Header> headers = new List<Header>();
             for (uint i = 0; i < count; i++)
             {
