@@ -174,7 +174,7 @@ namespace Neo.Oracle
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int timeOutMilliSeconds = BitConverter.ToInt32(args[0].GetSpan());
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TimeOutMilliSeconds));
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TimeOutMilliSeconds));
             storage.Value = BitConverter.GetBytes(timeOutMilliSeconds);
             return true;
         }
@@ -214,7 +214,7 @@ namespace Neo.Oracle
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
             int perRequestFee = BitConverter.ToInt32(args[0].GetSpan());
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_PerRequestFee));
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_PerRequestFee));
             storage.Value = BitConverter.GetBytes(perRequestFee);
             return true;
         }
