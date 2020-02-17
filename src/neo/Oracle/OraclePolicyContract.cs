@@ -107,8 +107,8 @@ namespace Neo.Oracle
             {
                 var oraclePubKey = oraclePubKeys[index];
                 StorageKey key = CreateStorageKey(Prefix_Validator, oraclePubKey);
-                ECPoint delegatePubKey = snapshot.Storages.TryGet(key).Value.AsSerializable<ECPoint>(1);
-                if (delegatePubKey != null) oraclePubKeys[index] = delegatePubKey;
+                ECPoint delegatePubKey = snapshot.Storages.TryGet(key)?.Value.AsSerializable<ECPoint>(1);
+                if (delegatePubKey != null) { oraclePubKeys[index] = delegatePubKey; }
             }
             return oraclePubKeys;
         }
