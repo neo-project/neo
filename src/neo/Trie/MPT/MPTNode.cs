@@ -7,10 +7,10 @@ namespace Neo.Trie.MPT
 {
     public enum NodeType
     {
-        FullNode,
-        ShortNode,
-        HashNode,
-        ValueNode,
+        FullNode = 0x00,
+        ShortNode = 0x01,
+        HashNode = 0x02,
+        ValueNode = 0x03,
     }
 
     public class NodeFlag
