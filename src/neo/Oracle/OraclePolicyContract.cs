@@ -105,17 +105,10 @@ namespace Neo.Oracle
             ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
             for (int index = 0; index < oraclePubKeys.Length; index++)
             {
-                var item1 = oraclePubKeys[index];
-                byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, Helper.Concat(new[] { Prefix_Validator }, item1.ToArray()));
-                IEnumerable<(ECPoint oraclePubKey, ECPoint delegatePubKeys)> hasDelegateOracleValidators = snapshot.Storages.Find(prefix_key).Select(p =>
-                (
-                    p.Key.Key.AsSerializable<ECPoint>(1),
-                    p.Value.Value.AsSerializable<ECPoint>(1)
-                ));
-                foreach (var item2 in hasDelegateOracleValidators)
-                {
-                    oraclePubKeys[index] = item2.delegatePubKeys;
-                }
+                var oraclePubKey = oraclePubKeys[index];
+                StorageKey key = CreateStorageKey(Prefix_Validator, oraclePubKey);
+                ECPoint delegatePubKey = snapshot.Storages.TryGet(key).Value.AsSerializable<ECPoint>(1);
+                if (delegatePubKey != null) oraclePubKeys[index] = delegatePubKey;
             }
             return oraclePubKeys;
         }
