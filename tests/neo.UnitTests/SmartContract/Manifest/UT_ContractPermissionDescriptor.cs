@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System.Security.Cryptography;
