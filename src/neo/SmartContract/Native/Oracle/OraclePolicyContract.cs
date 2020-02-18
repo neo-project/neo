@@ -1,7 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -9,7 +8,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -59,7 +57,7 @@ namespace Neo.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "consignorPubKey", "consigneePubKey" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "consignorPubKey", "consigneePubKey" })]
         private StackItem DelegateOracleValidator(ApplicationEngine engine, Array args)
         {
             ECPoint consignorPubKey = args[0].GetSpan().AsSerializable<ECPoint>();
@@ -89,7 +87,7 @@ namespace Neo.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Authorized Oracle validator</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Array)]
+        [ContractMethod(0_01000000, ContractParameterType.Array)]
         private StackItem GetOracleValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetOracleValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
@@ -107,7 +105,7 @@ namespace Neo.Oracle
             {
                 var oraclePubKey = oraclePubKeys[index];
                 StorageKey key = CreateStorageKey(Prefix_Validator, oraclePubKey);
-                ECPoint delegatePubKey = snapshot.Storages.TryGet(key)?.Value.AsSerializable<ECPoint>(1);
+                ECPoint delegatePubKey = snapshot.Storages.TryGet(key)?.Value.AsSerializable<ECPoint>();
                 if (delegatePubKey != null) { oraclePubKeys[index] = delegatePubKey; }
             }
             return oraclePubKeys;
@@ -119,7 +117,7 @@ namespace Neo.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>The number of authorized Oracle validator</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer)]
         private StackItem GetOracleValidatorsCount(ApplicationEngine engine, Array args)
         {
             return GetOracleValidatorsCount(engine.Snapshot);
@@ -170,7 +168,7 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="engine">VM</param>
         /// <returns>value</returns>
-        [ContractMethod(1_00000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer)]
         private StackItem GetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
         {
             return new Integer(GetTimeOutMilliSeconds(engine.Snapshot));
@@ -211,7 +209,7 @@ namespace Neo.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Value</returns>
-        [ContractMethod(1_00000000, ContractParameterType.Integer, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetPerRequestFee(ApplicationEngine engine, Array args)
         {
             return new Integer(GetPerRequestFee(engine.Snapshot));
