@@ -25,11 +25,6 @@ namespace Neo.SmartContract
             return methods[hash].GetPrice(applicationEngine);
         }
 
-        public static long GetPrice(uint hash, EvaluationStack stack)
-        {
-            return methods[hash].GetPrice(stack);
-        }
-
         public static IEnumerable<InteropDescriptor> SupportedMethods()
         {
             return methods.Values;

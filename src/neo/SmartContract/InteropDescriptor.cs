@@ -62,17 +62,6 @@ namespace Neo.SmartContract
             return price;
         }
 
-        public long GetPrice(EvaluationStack stack)
-        {
-#if DEBUG
-            if (IsStateful)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-            return PriceCalculator is null ? Price : PriceCalculator(stack);
-        }
-
         public static implicit operator uint(InteropDescriptor descriptor)
         {
             return descriptor.Hash;

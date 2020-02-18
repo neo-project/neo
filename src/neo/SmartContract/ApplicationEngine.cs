@@ -71,7 +71,7 @@ namespace Neo.SmartContract
         private bool AddGas(long gas)
         {
             if (gas < 0)
-                RecyclingRewardGas = checked(RecyclingRewardGas + (-gas));
+                RecyclingRewardGas = checked(RecyclingRewardGas - gas);
             else
                 GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;

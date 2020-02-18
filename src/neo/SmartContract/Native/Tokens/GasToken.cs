@@ -57,7 +57,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "amount" })]
         private StackItem OnRecycleRewardGas(ApplicationEngine engine, VMArray args)
         {
-            if (engine.Trigger != TriggerType.System) return false;
+            if (engine.Trigger != TriggerType.System || args.Count != 2) return false;
             UInt160 acount = new UInt160(args[0].GetSpan());
             BigInteger amount = args[1].GetBigInteger();
             Mint(engine, acount, amount);
