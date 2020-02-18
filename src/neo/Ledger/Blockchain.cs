@@ -575,7 +575,6 @@ namespace Neo.Ledger
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     sb.EmitAppCall(NativeContract.GAS.Hash, "onRecycleRewardGas", tx.Sender, recycleRewardGas);
-                    sb.Emit(OpCode.THROWIFNOT);
                     onRecycleRewardGasScript = sb.ToArray();
                 }
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
