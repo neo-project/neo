@@ -30,6 +30,12 @@ namespace Neo.Network.P2P
 
         public int ConnectedCount => RemoteNodes.Count;
         public int UnconnectedCount => UnconnectedPeers.Count;
+
+        public delegate void NewRemoteBlock(uint lastBlockIndex);
+        public event NewRemoteBlock NewRemoteBlockEvent;
+
+        private uint LastRemoteBlockIndex = 0;
+
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
 
@@ -66,6 +72,29 @@ namespace Neo.Network.P2P
                     int index = i;
                     Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
                 }
+
+                NewRemoteBlockEvent += UpdateBlockIndex;
+            }
+        }
+
+        public void TryAddNewRemote(IActorRef key, RemoteNode value)
+        {
+            if (RemoteNodes.TryAdd(key, value))
+            {
+                value.NewBlockEvent += OnRemoteBlockIndexUpdate;
+            }
+        }
+
+        private void OnRemoteBlockIndexUpdate(uint lastBlockIndex)
+        {
+            NewRemoteBlockEvent(lastBlockIndex);
+        }
+
+        private void UpdateBlockIndex(uint lastBlockIndex)
+        {
+            if (lastBlockIndex > LastRemoteBlockIndex)
+            {
+                LastRemoteBlockIndex = lastBlockIndex;
             }
         }
 

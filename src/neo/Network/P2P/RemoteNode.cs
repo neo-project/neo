@@ -29,7 +29,21 @@ namespace Neo.Network.P2P
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public int ListenerTcpPort { get; private set; } = 0;
         public VersionPayload Version { get; private set; }
-        public uint LastBlockIndex { get; private set; } = 0;
+
+        internal delegate void NewBlock(uint lastBlockIndex);
+        internal event NewBlock NewBlockEvent;
+
+        private uint _lastBlockIndex = 0;
+        public uint LastBlockIndex
+        {
+            get => _lastBlockIndex;
+            private set
+            {
+                _lastBlockIndex = value;
+                NewBlockEvent(value);
+            }
+        }
+
         public bool IsFullNode { get; private set; } = false;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
@@ -37,7 +51,7 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
-            LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
+            LocalNode.Singleton.TryAddNewRemote(Self, this);
 
             var capabilities = new List<NodeCapability>
             {
