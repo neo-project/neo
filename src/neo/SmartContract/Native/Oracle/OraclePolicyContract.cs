@@ -156,8 +156,8 @@ namespace Neo.Oracle
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
-            int timeOutMilliSeconds = BitConverter.ToInt32(args[0].GetSpan());
+            int timeOutMilliSeconds = (int)args[0].GetBigInteger();
+            if (timeOutMilliSeconds <= 0) return false;
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TimeOutMilliSeconds));
             storage.Value = BitConverter.GetBytes(timeOutMilliSeconds);
             return true;
@@ -196,8 +196,8 @@ namespace Neo.Oracle
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
-            int perRequestFee = BitConverter.ToInt32(args[0].GetSpan());
+            int perRequestFee = (int)args[0].GetBigInteger();
+            if (perRequestFee <= 0) return false;
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_PerRequestFee));
             storage.Value = BitConverter.GetBytes(perRequestFee);
             return true;
