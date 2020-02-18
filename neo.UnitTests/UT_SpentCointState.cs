@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using System.Collections.Generic;
 using System.IO;
@@ -22,6 +23,31 @@ namespace Neo.UnitTests
         public void TransactionHash_Get()
         {
             uut.TransactionHash.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestFromReplica()
+        {
+            uut.Items = new Dictionary<ushort, uint>();
+            uut.Items.Add(1, 3);
+
+            var a = ((ICloneable<SpentCoinState>)uut).Clone();
+            var b = new SpentCoinState();
+
+            ((ICloneable<SpentCoinState>)b).FromReplica(uut);
+
+            CollectionAssert.AreEqual(a.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreEqual(a.Items.Values, uut.Items.Values);
+            CollectionAssert.AreEqual(b.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreEqual(b.Items.Values, uut.Items.Values);
+
+            a.Items.Clear();
+            b.Items.Clear();
+
+            CollectionAssert.AreNotEqual(a.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreNotEqual(b.Items.Keys, uut.Items.Keys);
+            CollectionAssert.AreNotEqual(a.Items.Values, uut.Items.Values);
+            CollectionAssert.AreNotEqual(b.Items.Values, uut.Items.Values);
         }
 
         [TestMethod]
