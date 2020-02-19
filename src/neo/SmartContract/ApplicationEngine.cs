@@ -103,7 +103,10 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(InteropService.GetPrice(method, this)))
+            var ret = InteropService.TryGetPrice(method, this, out long price);
+            if (!ret)
+                return false;
+            if (!AddGas(price))
                 return false;
             return InteropService.Invoke(this, method);
         }

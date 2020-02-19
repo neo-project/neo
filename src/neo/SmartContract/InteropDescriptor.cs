@@ -8,7 +8,7 @@ namespace Neo.SmartContract
         public string Method { get; }
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
-        public long Price { get; }
+        public long? Price { get; } = null;
         public Func<EvaluationStack, long> PriceCalculator { get; }
         public Func<ApplicationEngine, long> StoragePriceCalculator { get; }
         public bool IsStateful { get; } = false;
@@ -43,23 +43,36 @@ namespace Neo.SmartContract
             this.RequiredCallFlags = requiredCallFlags;
         }
 
-        public long GetPrice()
+        public bool TryGetPrice(out long price)
         {
-            return Price;
+            if (Price.HasValue)
+            {
+                price = (long)Price;
+                return true;
+            }
+            price = 0;
+            return false;
         }
 
-        public long GetPrice(ApplicationEngine applicationEngine)
+        public bool TryGetPrice(ApplicationEngine applicationEngine, out long price)
         {
-            long price = Price;
             if (!IsStateful && PriceCalculator != null)
             {
                 price = PriceCalculator(applicationEngine.CurrentContext.EvaluationStack);
+                return true;
             }
             else if (IsStateful && StoragePriceCalculator != null)
             {
                 price = StoragePriceCalculator(applicationEngine);
+                return true;
             }
-            return price;
+            else if (Price.HasValue)
+            {
+                price = (long)Price;
+                return true;
+            }
+            price = 0;
+            return false;
         }
 
         public static implicit operator uint(InteropDescriptor descriptor)

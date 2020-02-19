@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (engine.Trigger != TriggerType.System || args.Count != 2) return false;
             UInt160 acount = new UInt160(args[0].GetSpan());
             BigInteger amount = args[1].GetBigInteger();
-            Mint(engine, acount, amount);
+            Mint(engine, acount, amount, "RecycleRewardGas");
             return true;
         }
 
