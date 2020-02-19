@@ -11,12 +11,12 @@ namespace Neo.SmartContract
     {
         public static class Encode
         {
-            public static readonly InteropDescriptor PubKey2Address = Register("Neo.Crypto.PubKey2Address", Crypto_PubKey2Address, 0_00010000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor PubKey2ScriptHash = Register("Neo.Crypto.PubKey2ScriptHash", Crypto_PubKey2ScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor Address2ScriptHash = Register("Neo.Crypto.Address2ScriptHash", Crypto_Address2ScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor ScriptHash2Address = Register("Neo.Crypto.ScriptHash2Address", Crypto_ScriptHash2Address, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor PubKeyToAddress = Register("Neo.Encode.PubKeyToAddress", Encode_PubKeyToAddress, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor PubKeyToScriptHash = Register("Neo.Encode.PubKeyToScriptHash", Encode_PubKeyToScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor AddressToScriptHash = Register("Neo.Encode.AddressToScriptHash", Encode_AddressToScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor ScriptHashToAddress = Register("Neo.Encode.ScriptHashToAddress", Encode_ScriptHashToAddress, 0_00010000, TriggerType.All, CallFlags.None);
 
-            private static bool Crypto_PubKey2Address(ApplicationEngine engine)
+            private static bool Encode_PubKeyToAddress(ApplicationEngine engine)
             {
                 ReadOnlySpan<byte> pubKey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
                 string address = SmartContract.Contract.CreateSignatureRedeemScript(Cryptography.ECC.ECPoint.FromBytes(pubKey.ToArray(), Cryptography.ECC.ECCurve.Secp256r1)).ToScriptHash().ToAddress();
@@ -24,7 +24,7 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            private static bool Crypto_PubKey2ScriptHash(ApplicationEngine engine)
+            private static bool Encode_PubKeyToScriptHash(ApplicationEngine engine)
             {
                 ReadOnlySpan<byte> pubKey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
                 byte[] scriptHash = SmartContract.Contract.CreateSignatureRedeemScript(Cryptography.ECC.ECPoint.FromBytes(pubKey.ToArray(), Cryptography.ECC.ECCurve.Secp256r1)).ToScriptHash().ToArray();
@@ -32,7 +32,7 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            private static bool Crypto_Address2ScriptHash(ApplicationEngine engine)
+            private static bool Encode_AddressToScriptHash(ApplicationEngine engine)
             {
                 string address = engine.CurrentContext.EvaluationStack.Pop().GetString();
                 byte[] scriptHash = address.ToScriptHash().ToArray();
@@ -40,7 +40,7 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            private static bool Crypto_ScriptHash2Address(ApplicationEngine engine)
+            private static bool Encode_ScriptHashToAddress(ApplicationEngine engine)
             {
                 ReadOnlySpan<byte> hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
                 string address = new UInt160(hash).ToAddress();
