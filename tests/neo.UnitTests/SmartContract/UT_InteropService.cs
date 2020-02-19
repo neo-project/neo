@@ -862,40 +862,40 @@ namespace Neo.UnitTests.SmartContract
         public void TestEncode_PubKey2Address()
         {
             var engine = GetEngine(true, true);
-            byte[] data = "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70".HexToBytes();
+            byte[] data = "024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);
             InteropService.Invoke(engine, InteropService.Encode.PubKey2Address).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("Ng7aXNP1wfsQfcqHU9A12gPFJLdZUvvfpZ");
+            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1");
         }
 
         [TestMethod]
         public void TestEncode_PubKey2ScriptHash()
         {
             var engine = GetEngine(true, true);
-            byte[] data = "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70".HexToBytes();
+            byte[] data = "024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);
             InteropService.Invoke(engine, InteropService.Encode.PubKey2ScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().ToHexString().Should().BeEquivalentTo("dd94970ebb347304bc5e52583b2cbf49c4ce5af7");
+            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Parse("0x2c847208959ec1cc94dd13bfe231fa622a404a8a").ToArray());
         }
 
         [TestMethod]
         public void TestEncode_Address2ScriptHash()
         {
             var engine = GetEngine(true, true);
-            string data = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
+            string data = "NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1";
             engine.CurrentContext.EvaluationStack.Push(data);
             InteropService.Invoke(engine, InteropService.Encode.Address2ScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(Crypto.Hash160(new byte[] { 0x01 }));
+            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Parse("0x2c847208959ec1cc94dd13bfe231fa622a404a8a").ToArray());
         }
 
         [TestMethod]
         public void TestEncode_ScriptHash2Address()
         {
             var engine = GetEngine(true, true);
-            byte[] data = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash().ToArray();
+            byte[] data = "NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1".ToScriptHash().ToArray();
             engine.CurrentContext.EvaluationStack.Push(data);
             InteropService.Invoke(engine, InteropService.Encode.ScriptHash2Address).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf");
+            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)
