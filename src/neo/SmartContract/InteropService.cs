@@ -24,7 +24,7 @@ namespace Neo.SmartContract
 
         public static bool TryGetPrice(uint hash, ApplicationEngine applicationEngine, out long value)
         {
-            var ret =  methods[hash].TryGetPrice(applicationEngine,out long price);
+            var ret = methods[hash].TryGetPrice(applicationEngine, out long price);
             value = price;
             return ret;
         }
