@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native.Tokens
             return (uint)Decimals;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        [ContractMethod(0_00010000, ContractParameterType.Integer, SafeMethod = true)]
         protected StackItem TotalSupply(ApplicationEngine engine, Array args)
         {
             return TotalSupply(engine.Snapshot);
@@ -146,7 +146,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
+        [ContractMethod(0_00010000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
         protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
             return BalanceOf(engine.Snapshot, new UInt160(args[0].GetSpan()));
@@ -160,7 +160,7 @@ namespace Neo.SmartContract.Native.Tokens
             return state.Balance;
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
+        [ContractMethod(0_00080000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
         protected StackItem Transfer(ApplicationEngine engine, Array args)
         {
             UInt160 from = new UInt160(args[0].GetSpan());

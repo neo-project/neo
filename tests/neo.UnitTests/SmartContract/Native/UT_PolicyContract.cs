@@ -44,7 +44,8 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(1000);
+            ret.GetBigInteger().Should().Be(100);
+            ret.GetBigInteger().Should().Be(100);
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
@@ -153,7 +154,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(1000);
+            ret.GetBigInteger().Should().Be(100);
 
             // With signature
 

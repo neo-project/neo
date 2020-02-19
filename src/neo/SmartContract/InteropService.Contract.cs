@@ -14,10 +14,10 @@ namespace Neo.SmartContract
         {
             public static readonly InteropDescriptor Create = Register("System.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Update = Register("System.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
-            public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
-            public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_00010000, TriggerType.Application, CallFlags.AllowModifyStates);
+            public static readonly InteropDescriptor Call = Register("System.Contract.Call", Contract_Call, 0_00010000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
+            public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_00010000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
+            public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00000300, TriggerType.All, CallFlags.None);
 
             private static long GetDeploymentPrice(EvaluationStack stack)
             {

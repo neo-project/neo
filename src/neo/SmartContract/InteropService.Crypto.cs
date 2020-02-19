@@ -13,7 +13,7 @@ namespace Neo.SmartContract
     {
         public static class Crypto
         {
-            public static readonly InteropDescriptor ECDsaVerify = Register("Neo.Crypto.ECDsaVerify", Crypto_ECDsaVerify, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor ECDsaVerify = Register("Neo.Crypto.ECDsaVerify", Crypto_ECDsaVerify, 0_00010000, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor ECDsaCheckMultiSig = Register("Neo.Crypto.ECDsaCheckMultiSig", Crypto_ECDsaCheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
 
             private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack)
