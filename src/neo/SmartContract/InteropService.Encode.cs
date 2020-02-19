@@ -11,10 +11,10 @@ namespace Neo.SmartContract
     {
         public static class Encode
         {
-            public static readonly InteropDescriptor PubKey2Address = Register("Neo.Crypto.PubKey2Address", Crypto_PubKey2Address, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor PubKey2ScriptHash = Register("Neo.Crypto.PubKey2ScriptHash", Crypto_PubKey2ScriptHash, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor Address2ScriptHash = Register("Neo.Crypto.Address2ScriptHash", Crypto_Address2ScriptHash, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor ScriptHash2Address = Register("Neo.Crypto.ScriptHash2Address", Crypto_ScriptHash2Address, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor PubKey2Address = Register("Neo.Crypto.PubKey2Address", Crypto_PubKey2Address, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor PubKey2ScriptHash = Register("Neo.Crypto.PubKey2ScriptHash", Crypto_PubKey2ScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor Address2ScriptHash = Register("Neo.Crypto.Address2ScriptHash", Crypto_Address2ScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor ScriptHash2Address = Register("Neo.Crypto.ScriptHash2Address", Crypto_ScriptHash2Address, 0_00010000, TriggerType.All, CallFlags.None);
 
             private static bool Crypto_PubKey2Address(ApplicationEngine engine)
             {
