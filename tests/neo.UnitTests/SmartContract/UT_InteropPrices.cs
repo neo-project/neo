@@ -83,7 +83,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                (InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price)? price : 0) .Should().Be(200000L);
+                (InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0).Should().Be(200000L);
             }
 
             key = new byte[] { (byte)OpCode.PUSH3 };
@@ -99,7 +99,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                (InteropService.TryGetPrice(InteropService.Storage.PutEx, ae, out long price)? price : 0).Should().Be(200000L);
+                (InteropService.TryGetPrice(InteropService.Storage.PutEx, ae, out long price) ? price : 0).Should().Be(200000L);
             }
         }
 
@@ -132,7 +132,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var defaultDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price)? price : 0;
+                var defaultDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0;
                 defaultDataPrice.Should().Be(InteropService.Storage.GasPerByte * (key.Length + value.Length));
                 var expectedCost = defaultDataPrice + setupPrice;
                 debugger.Execute();
@@ -171,7 +171,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = applicationEngine.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, applicationEngine, out long price)? price : 0;
+                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, applicationEngine, out long price) ? price : 0;
                 reusedDataPrice.Should().Be(0);
                 debugger.Execute();
                 var expectedCost = reusedDataPrice + setupPrice;
@@ -210,7 +210,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price)? price : 0;
+                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0;
                 reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.StepInto();
                 var expectedCost = reusedDataPrice + setupPrice;
@@ -281,7 +281,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price)? price : 0;
+                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0;
                 reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerReleasedByte);
                 debugger.StepInto();
                 var expectedCost = setupPrice;
@@ -319,7 +319,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Delete, ae, out long price)? price : 0;
+                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Delete, ae, out long price) ? price : 0;
                 reusedDataPrice.Should().Be((skey.Key.Length + sItem.Value.Length) * InteropService.Storage.GasPerReleasedByte);
                 debugger.StepInto();
                 var expectedCost = setupPrice;
