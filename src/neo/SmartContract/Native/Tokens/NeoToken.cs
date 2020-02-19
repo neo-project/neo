@@ -235,7 +235,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(0_00030000, ContractParameterType.Array, SafeMethod = true)]
         private StackItem GetNextBlockValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
