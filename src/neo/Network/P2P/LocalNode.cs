@@ -31,8 +31,8 @@ namespace Neo.Network.P2P
         public int ConnectedCount => RemoteNodes.Count;
         public int UnconnectedCount => UnconnectedPeers.Count;
 
-        public delegate void NewRemoteBlock(uint lastBlockIndex);
-        public event NewRemoteBlock NewRemoteBlockEvent;
+        public delegate void RemoteBlockHandler(uint lastBlockIndex);
+        public event RemoteBlockHandler NewRemoteBlockEvent;
 
         private uint LastRemoteBlockIndex = 0;
 
@@ -72,29 +72,6 @@ namespace Neo.Network.P2P
                     int index = i;
                     Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
                 }
-
-                NewRemoteBlockEvent += UpdateBlockIndex;
-            }
-        }
-
-        public void TryAddNewRemote(IActorRef key, RemoteNode value)
-        {
-            if (RemoteNodes.TryAdd(key, value))
-            {
-                value.NewBlockEvent += OnRemoteBlockIndexUpdate;
-            }
-        }
-
-        private void OnRemoteBlockIndexUpdate(uint lastBlockIndex)
-        {
-            NewRemoteBlockEvent(lastBlockIndex);
-        }
-
-        private void UpdateBlockIndex(uint lastBlockIndex)
-        {
-            if (lastBlockIndex > LastRemoteBlockIndex)
-            {
-                LastRemoteBlockIndex = lastBlockIndex;
             }
         }
 
@@ -208,6 +185,9 @@ namespace Neo.Network.P2P
                 case SendDirectly send:
                     OnSendDirectly(send.Inventory);
                     break;
+                case PingPayload payload:
+                    OnPingPayload(payload);
+                    break;
                 case RelayResultReason _:
                     break;
             }
@@ -244,6 +224,16 @@ namespace Neo.Network.P2P
         }
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
+
+        private void OnPingPayload(PingPayload payload)
+        {
+            var lastBlockIndex = payload.LastBlockIndex;
+            if (lastBlockIndex > LastRemoteBlockIndex)
+            {
+                LastRemoteBlockIndex = lastBlockIndex;
+                NewRemoteBlockEvent?.Invoke(lastBlockIndex);
+            }
+        }
 
         public static Props Props(NeoSystem system)
         {
