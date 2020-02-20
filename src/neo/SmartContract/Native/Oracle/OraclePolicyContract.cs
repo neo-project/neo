@@ -5,9 +5,11 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -21,7 +23,7 @@ namespace Neo.Oracle
         public override int Id => -4;
 
         private const byte Prefix_Validator = 24;
-        private const byte Prefix_TimeOutMilliSeconds = 25;
+        private const byte Prefix_HttpConfig = 25;
         private const byte Prefix_PerRequestFee = 26;
 
         /// <summary>
@@ -40,9 +42,9 @@ namespace Neo.Oracle
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_TimeOutMilliSeconds), new StorageItem
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig), new StorageItem
             {
-                Value = BitConverter.GetBytes(5000)
+                Value = new OraclePolicyHttpConfig().ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
@@ -77,6 +79,23 @@ namespace Neo.Oracle
                 {
                     Value = consigneePubKey.ToArray()
                 });
+            }
+            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
+            List<ECPoint> hasDelegateOracleValidators = snapshot.Storages.Find(prefix_key).Select(p =>
+              (
+                  p.Key.Key.AsSerializable<ECPoint>()
+              )).ToList();
+            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
+            foreach (var item in oraclePubKeys)
+            {
+                if (hasDelegateOracleValidators.Contains(item))
+                {
+                    hasDelegateOracleValidators.Remove(item);
+                }
+            }
+            foreach (var item in hasDelegateOracleValidators)
+            {
+                snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, item));
             }
             return true;
         }
@@ -145,21 +164,21 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// Set timeout
+        /// Set HttpConfig
         /// </summary>
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "TimeOutMilliSeconds" })]
-        private StackItem SetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
+        private StackItem SetHttpConfig(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            if (BitConverter.ToInt32(args[0].GetSpan()) <= 0) return false;
-            int timeOutMilliSeconds = BitConverter.ToInt32(args[0].GetSpan());
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TimeOutMilliSeconds));
-            storage.Value = BitConverter.GetBytes(timeOutMilliSeconds);
+            OraclePolicyHttpConfig httpConfig = args[0].GetSpan().AsSerializable<OraclePolicyHttpConfig>();
+            if (httpConfig.Timeout <= 0) return false;
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig));
+            storage.Value = httpConfig.ToArray();
             return true;
         }
 
@@ -168,20 +187,20 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="engine">VM</param>
         /// <returns>value</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Integer)]
-        private StackItem GetTimeOutMilliSeconds(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
+        private StackItem GetHttpConfig(ApplicationEngine engine, Array args)
         {
-            return new Integer(GetTimeOutMilliSeconds(engine.Snapshot));
+            return GetHttpConfig(engine.Snapshot).ToArray();
         }
 
         /// <summary>
-        /// Get timeout
+        /// Get HttpConfig
         /// </summary>
         /// <param name="snapshot">snapshot</param>
         /// <returns>value</returns>
-        public int GetTimeOutMilliSeconds(StoreView snapshot)
+        public OraclePolicyHttpConfig GetHttpConfig(StoreView snapshot)
         {
-            return BitConverter.ToInt32(snapshot.Storages[CreateStorageKey(Prefix_TimeOutMilliSeconds)].Value, 0);
+            return snapshot.Storages[CreateStorageKey(Prefix_HttpConfig)].Value.AsSerializable<OraclePolicyHttpConfig>();
         }
 
         /// <summary>

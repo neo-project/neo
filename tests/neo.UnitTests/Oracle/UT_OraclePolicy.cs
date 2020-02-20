@@ -8,6 +8,7 @@ using Neo.Oracle;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.UnitTests.Wallets;
@@ -68,18 +69,18 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void Test_GetTimeOutMilliSeconds()
+        public void Test_GetHttpConfig()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getTimeOutMilliSeconds");
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getHttpConfig");
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
-            Assert.AreEqual(result, 5000);
+            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            Assert.AreEqual(result, new OraclePolicyHttpConfig().ToArray());
         }
 
         [TestMethod]
