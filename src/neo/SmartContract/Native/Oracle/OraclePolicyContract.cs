@@ -189,7 +189,7 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="engine">VM</param>
         /// <returns>value</returns>
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
+        [ContractMethod(0_01000000, ContractParameterType.Array)]
         private StackItem GetHttpConfig(ApplicationEngine engine, Array args)
         {
             return GetHttpConfig(engine.Snapshot).ToStackItem(engine.ReferenceCounter); ;
