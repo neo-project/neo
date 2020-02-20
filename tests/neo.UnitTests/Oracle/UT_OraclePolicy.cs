@@ -79,8 +79,8 @@ namespace Neo.UnitTests.Oracle
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
-            Assert.AreEqual(result, new OraclePolicyHttpConfig().ToArray());
+            result.Should().BeOfType(typeof(VM.Types.Array));
+            Assert.AreEqual(((VM.Types.Array)result)[0].GetBigInteger(), new OracleHttpConfig().Timeout);
         }
 
         [TestMethod]

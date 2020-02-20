@@ -44,7 +44,7 @@ namespace Neo.Oracle
             if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig), new StorageItem
             {
-                Value = new OraclePolicyHttpConfig().ToArray()
+                Value = new OracleHttpConfig().ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
@@ -169,28 +169,30 @@ namespace Neo.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "TimeOutMilliSeconds" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "httpConfig" })]
         private StackItem SetHttpConfig(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            OraclePolicyHttpConfig httpConfig = args[0].GetSpan().AsSerializable<OraclePolicyHttpConfig>();
-            if (httpConfig.Timeout <= 0) return false;
+            int timeOutMilliSeconds = (int)args[0].GetBigInteger();
+            if (timeOutMilliSeconds < 0) return false;
+            OracleHttpConfig httpConfig = new OracleHttpConfig();
+            httpConfig.Timeout = timeOutMilliSeconds;
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig));
             storage.Value = httpConfig.ToArray();
             return true;
         }
 
         /// <summary>
-        /// Get timeout
+        /// Get HttpConfig
         /// </summary>
         /// <param name="engine">VM</param>
         /// <returns>value</returns>
         [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
         private StackItem GetHttpConfig(ApplicationEngine engine, Array args)
         {
-            return GetHttpConfig(engine.Snapshot).ToArray();
+            return GetHttpConfig(engine.Snapshot).ToStackItem(engine.ReferenceCounter); ;
         }
 
         /// <summary>
@@ -198,9 +200,9 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="snapshot">snapshot</param>
         /// <returns>value</returns>
-        public OraclePolicyHttpConfig GetHttpConfig(StoreView snapshot)
+        public OracleHttpConfig GetHttpConfig(StoreView snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_HttpConfig)].Value.AsSerializable<OraclePolicyHttpConfig>();
+            return snapshot.Storages[CreateStorageKey(Prefix_HttpConfig)].Value.AsSerializable<OracleHttpConfig>();
         }
 
         /// <summary>
