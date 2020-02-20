@@ -1,4 +1,5 @@
 using Neo.IO;
+using System;
 using System.IO;
 
 namespace Neo.Trie.MPT
@@ -20,13 +21,13 @@ namespace Neo.Trie.MPT
 
         protected override byte[] CalHash()
         {
-            if (IsEmptyNode) return new byte[] { };
+            if (IsEmptyNode) return Array.Empty<byte>();
             return (byte[])Hash.Clone();
         }
 
         public static HashNode EmptyNode()
         {
-            return new HashNode(new byte[] { });
+            return new HashNode(Array.Empty<byte>());
         }
 
         public bool IsEmptyNode => Hash is null || Hash.Length == 0;

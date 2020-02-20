@@ -14,7 +14,7 @@ namespace Neo.Trie.MPT
 
         public static byte[] CommonPrefix(this byte[] a, byte[] b)
         {
-            var prefix = new byte[] { };
+            var prefix = Array.Empty<byte>();
             var minLen = a.Length <= b.Length ? a.Length : b.Length;
 
             if (a.Length != 0 && b.Length != 0)
@@ -40,7 +40,7 @@ namespace Neo.Trie.MPT
 
         public static byte[] Skip(this byte[] a, int count)
         {
-            var result = new byte[] { };
+            var result = Array.Empty<byte>();
             var len = a.Length - count;
             if (0 < len)
             {

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
@@ -73,7 +74,7 @@ namespace Neo.Trie.MPT
                         break;
                     }
             }
-            value = new byte[] { };
+            value = Array.Empty<byte>();
             return false;
         }
 
@@ -257,7 +258,7 @@ namespace Neo.Trie.MPT
                         }
                         if (!result) return false;
                         db.Delete(oldHash);
-                        var nonEmptyChildren = new byte[] { };
+                        var nonEmptyChildren = Array.Empty<byte>();
                         for (int i = 0; i < FullNode.CHILD_COUNT; i++)
                         {
                             if (fullNode.Children[i] is HashNode hn && hn.IsEmptyNode) continue;
