@@ -492,7 +492,7 @@ namespace Neo.UnitTests.VMT
         private void TestToParameterNull()
         {
             ContractParameter parameter = VM.Helper.ToParameter(null);
-            Assert.AreEqual(ContractParameterType.Any, parameter.Type);
+            Assert.AreEqual(ContractParameterType.Null, parameter.Type);
         }
 
         private void TestToParameter2InteropInterface()

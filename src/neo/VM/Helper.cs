@@ -273,17 +273,18 @@ namespace Neo.VM
                         Value = i.ToBigInteger()
                     };
                     break;
-                case InteropInterface _:
+                case InteropInterface i:
                     parameter = new ContractParameter
                     {
-                        Type = ContractParameterType.InteropInterface
+                        Type = ContractParameterType.InteropInterface,
+                        Value = i.GetInterface<object>()
                     };
                     break;
                 case Null _:
                 case null:
                     parameter = new ContractParameter
                     {
-                        Type = ContractParameterType.Any
+                        Type = ContractParameterType.Null
                     };
                     break;
                 default:
@@ -350,10 +351,11 @@ namespace Neo.VM
                 case ContractParameterType.String:
                     stackItem = (string)parameter.Value;
                     break;
-                case ContractParameterType.InteropInterface:
-                case ContractParameterType.Any:
-                case ContractParameterType.Void:
+                case ContractParameterType.Null:
                     stackItem = StackItem.Null;
+                    break;
+                case ContractParameterType.InteropInterface:
+                    stackItem = StackItem.FromInterface(parameter.Value);
                     break;
                 default:
                     throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");
