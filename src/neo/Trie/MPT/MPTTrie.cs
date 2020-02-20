@@ -122,7 +122,8 @@ namespace Neo.Trie.MPT
                         var pathRemain = path.Skip(prefix.Length);
                         var keyRemain = shortNode.Key.Skip(prefix.Length);
                         var son = new FullNode();
-                        MPTNode grandSon1 = HashNode.EmptyNode(), grandSon2 = HashNode.EmptyNode();
+                        MPTNode grandSon1 = HashNode.EmptyNode();
+                        MPTNode grandSon2 = HashNode.EmptyNode();
 
                         Put(ref grandSon1, keyRemain.Skip(1), shortNode.Next);
                         son.Children[keyRemain[0]] = grandSon1;
