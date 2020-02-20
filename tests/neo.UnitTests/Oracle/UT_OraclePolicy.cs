@@ -80,7 +80,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)result)[0].GetBigInteger(), new OracleHttpConfig().Timeout);
+            Assert.AreEqual(((VM.Types.Array)result)[0].GetBigInteger(), 5000);
         }
 
         [TestMethod]

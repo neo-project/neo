@@ -44,7 +44,7 @@ namespace Neo.Oracle
             if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig), new StorageItem
             {
-                Value = new OracleHttpConfig().ToArray()
+                Value = new OracleHttpConfig() { Timeout = 5000 }.ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
@@ -80,22 +80,19 @@ namespace Neo.Oracle
                     Value = consigneePubKey.ToArray()
                 });
             }
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
-            List<ECPoint> hasDelegateOracleValidators = snapshot.Storages.Find(prefix_key).Select(p =>
+
+            byte[] prefixKey = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
+            List<ECPoint> delegatedOracleValidators = snapshot.Storages.Find(prefixKey).Select(p =>
               (
                   p.Key.Key.AsSerializable<ECPoint>()
               )).ToList();
             ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
-            foreach (var item in oraclePubKeys)
+            foreach (var item in delegatedOracleValidators)
             {
-                if (hasDelegateOracleValidators.Contains(item))
+                if (!oraclePubKeys.Contains(item))
                 {
-                    hasDelegateOracleValidators.Remove(item);
+                    snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, item));
                 }
-            }
-            foreach (var item in hasDelegateOracleValidators)
-            {
-                snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, item));
             }
             return true;
         }
@@ -177,8 +174,7 @@ namespace Neo.Oracle
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             int timeOutMilliSeconds = (int)args[0].GetBigInteger();
             if (timeOutMilliSeconds < 0) return false;
-            OracleHttpConfig httpConfig = new OracleHttpConfig();
-            httpConfig.Timeout = timeOutMilliSeconds;
+            OracleHttpConfig httpConfig = new OracleHttpConfig() { Timeout = timeOutMilliSeconds };
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig));
             storage.Value = httpConfig.ToArray();
             return true;
@@ -192,7 +188,7 @@ namespace Neo.Oracle
         [ContractMethod(0_01000000, ContractParameterType.Array)]
         private StackItem GetHttpConfig(ApplicationEngine engine, Array args)
         {
-            return GetHttpConfig(engine.Snapshot).ToStackItem(engine.ReferenceCounter); ;
+            return GetHttpConfig(engine.Snapshot).ToStackItem(engine.ReferenceCounter);
         }
 
         /// <summary>
