@@ -112,8 +112,8 @@ namespace Neo.UnitTests.VMT
             StackItem intItem = new BigInteger(1000);
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
 
-            StackItem interopItem = new VM.Types.InteropInterface("test");
-            Assert.AreEqual(null, interopItem.ToParameter().Value);
+            StackItem interopItem = new InteropInterface("test");
+            Assert.AreEqual("test", interopItem.ToParameter().Value);
 
             StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
             Assert.AreEqual(1000, (BigInteger)(arrayItem.ToParameter().Value as List<ContractParameter>)[2].Value);
