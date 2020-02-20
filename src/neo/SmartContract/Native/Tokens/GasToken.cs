@@ -58,9 +58,9 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem OnRecycleRewardGas(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.System || args.Count != 2) return false;
-            UInt160 acount = new UInt160(args[0].GetSpan());
+            UInt160 account = new UInt160(args[0].GetSpan());
             BigInteger amount = args[1].GetBigInteger();
-            Mint(engine, acount, amount, "RecycleRewardGas");
+            Mint(engine, account, amount, "RecycleRewardGas");
             return true;
         }
 
