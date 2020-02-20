@@ -149,6 +149,9 @@ namespace Neo.UnitTests.VMT
             ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface };
             Assert.AreEqual(StackItem.Null, interopParameter.ToStackItem());
 
+            interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface, Value = 1 };
+            Assert.AreEqual(1, ((InteropInterface)interopParameter.ToStackItem()).GetInterface<int>());
+
             ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter, interopParameter }.ToList() };
             Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetBigInteger());
 
