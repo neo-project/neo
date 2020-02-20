@@ -60,9 +60,9 @@ namespace Neo.SmartContract
             return descriptor;
         }
 
-        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<ApplicationEngine, long> priceCalculator, TriggerType allowedTriggers, CallFlags flags)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<ApplicationEngine, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
-            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers, flags);
+            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers, requiredCallFlags);
             methods.Add(descriptor.Hash, descriptor);
             return descriptor;
         }

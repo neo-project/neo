@@ -9,9 +9,7 @@ namespace Neo.SmartContract
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
         public long? Price { get; } = null;
-        public Func<EvaluationStack, long> PriceCalculator { get; }
-        public Func<ApplicationEngine, long> StoragePriceCalculator { get; }
-        public bool IsStateful { get; } = false;
+        public Func<ApplicationEngine, long> PriceCalculator { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
 
@@ -24,14 +22,13 @@ namespace Neo.SmartContract
         internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<ApplicationEngine, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
             : this(method, handler, allowedTriggers, requiredCallFlags)
         {
-            this.StoragePriceCalculator = priceCalculator;
-            this.IsStateful = true;
+            this.PriceCalculator = priceCalculator;
         }
 
         internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
             : this(method, handler, allowedTriggers, requiredCallFlags)
         {
-            this.PriceCalculator = priceCalculator;
+            this.PriceCalculator = (engine) => priceCalculator(engine.CurrentContext.EvaluationStack);
         }
 
         private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, TriggerType allowedTriggers, CallFlags requiredCallFlags)
@@ -56,14 +53,9 @@ namespace Neo.SmartContract
 
         public bool TryGetPrice(ApplicationEngine applicationEngine, out long price)
         {
-            if (!IsStateful && PriceCalculator != null)
+            if (PriceCalculator != null)
             {
-                price = PriceCalculator(applicationEngine.CurrentContext.EvaluationStack);
-                return true;
-            }
-            else if (IsStateful && StoragePriceCalculator != null)
-            {
-                price = StoragePriceCalculator(applicationEngine);
+                price = PriceCalculator(applicationEngine);
                 return true;
             }
             else if (Price.HasValue)
