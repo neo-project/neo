@@ -366,7 +366,10 @@ namespace Neo.Trie.MPT
 
         public void Commit()
         {
-            db.PutRoot(GetRoot());
+            if (root.Flag.Dirty)
+            {
+                db.PutRoot(GetRoot());
+            }
         }
     }
 }
