@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[]{Timeout});
+            return new VM.Types.Array(referenceCounter, new StackItem[] { Timeout });
         }
     }
 }
