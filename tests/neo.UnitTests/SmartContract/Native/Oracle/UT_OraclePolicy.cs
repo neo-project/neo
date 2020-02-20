@@ -4,20 +4,15 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Oracle;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
-using Neo.UnitTests.Extensions;
 using Neo.UnitTests.Wallets;
 using Neo.VM;
-using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
-using System.Numerics;
+using static Neo.UnitTests.Extensions.Nep5NativeContractExtensions;
 
 namespace Neo.UnitTests.Oracle
 {
@@ -69,6 +64,43 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
+        public void Test_SetPerRequestFee()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+
+            // Init
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            NativeContract.OraclePolicy.Initialize(engine).Should().BeTrue();
+            var from = NativeContract.OraclePolicy.GetOracleMultiSigAddress(snapshot);
+            var value = 12345;
+
+            // Set
+
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = value });
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+
+            // Get
+
+            script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getPerRequestFee");
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.AreEqual(result, value);
+        }
+
+        [TestMethod]
         public void Test_GetHttpConfig()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -81,6 +113,55 @@ namespace Neo.UnitTests.Oracle
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
             Assert.AreEqual(((VM.Types.Array)result)[0].GetBigInteger(), 5000);
+        }
+
+        [TestMethod]
+        public void Test_SetHttpConfig()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+
+            // Init
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            NativeContract.OraclePolicy.Initialize(engine).Should().BeTrue();
+            var from = NativeContract.OraclePolicy.GetOracleMultiSigAddress(snapshot);
+            var value = 12345;
+
+            // Set wrong (negative)
+
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+
+            // Set good
+
+            script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = value });
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+
+            // Get
+
+            script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getHttpConfig");
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Array));
+            Assert.AreEqual(((VM.Types.Array)result)[0].GetBigInteger(), value);
         }
 
         [TestMethod]

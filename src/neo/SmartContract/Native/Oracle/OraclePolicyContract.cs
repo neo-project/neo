@@ -173,7 +173,7 @@ namespace Neo.Oracle
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             int timeOutMilliSeconds = (int)args[0].GetBigInteger();
-            if (timeOutMilliSeconds < 0) return false;
+            if (timeOutMilliSeconds <= 0) return false;
             OracleHttpConfig httpConfig = new OracleHttpConfig() { Timeout = timeOutMilliSeconds };
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig));
             storage.Value = httpConfig.ToArray();
