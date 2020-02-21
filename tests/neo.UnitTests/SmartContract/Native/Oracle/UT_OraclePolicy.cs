@@ -242,7 +242,23 @@ namespace Neo.UnitTests.Oracle
             tx.Witnesses = context.GetWitnesses();
 
             var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
+            engine.LoadScript(tx.Script);
+            var state=engine.Execute();
+            state.Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+
+            var from = Contract.CreateSignatureContract(pubkey1).ScriptHash;
+
+
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
+            engine.LoadScript(tx.Script.ToArray());
+
             engine.Execute().Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
         }
     }
 }

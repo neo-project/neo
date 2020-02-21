@@ -84,7 +84,7 @@ namespace Neo.Oracle
             byte[] prefixKey = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
             List<ECPoint> delegatedOracleValidators = snapshot.Storages.Find(prefixKey).Select(p =>
               (
-                  p.Key.Key.AsSerializable<ECPoint>()
+                  p.Key.Key.AsSerializable<ECPoint>(1)
               )).ToList();
             ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
             foreach (var item in delegatedOracleValidators)
