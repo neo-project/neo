@@ -68,19 +68,8 @@ namespace Neo.Oracle
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             StoreView snapshot = engine.Snapshot;
             StorageKey key = CreateStorageKey(Prefix_Validator, consignorPubKey);
-            if (snapshot.Storages.TryGet(key) != null)
-            {
-                StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem());
-                item.Value = consigneePubKey.ToArray();
-                value.Value = consigneePubKey.ToArray();
-            }
-            else
-            {
-                snapshot.Storages.Add(key, new StorageItem
-                {
-                    Value = consigneePubKey.ToArray()
-                });
-            }
+            StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem());
+            item.Value = consigneePubKey.ToArray();
 
             byte[] prefixKey = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
             List<ECPoint> delegatedOracleValidators = snapshot.Storages.Find(prefixKey).Select(p =>
@@ -88,11 +77,11 @@ namespace Neo.Oracle
                   p.Key.Key.AsSerializable<ECPoint>(1)
               )).ToList();
             ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
-            foreach (var item in delegatedOracleValidators)
+            foreach (var validator in delegatedOracleValidators)
             {
-                if (!oraclePubKeys.Contains(item))
+                if (!oraclePubKeys.Contains(validator))
                 {
-                    snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, item));
+                    snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, validator));
                 }
             }
             return true;
