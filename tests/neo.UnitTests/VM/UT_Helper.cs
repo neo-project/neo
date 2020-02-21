@@ -113,7 +113,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
 
             StackItem interopItem = new InteropInterface("test");
-            Assert.AreEqual("test", interopItem.ToParameter().Value);
+            Assert.AreEqual(ContractParameterType.InteropInterface, interopItem.ToParameter().Type);
 
             StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
             Assert.AreEqual(1000, (BigInteger)(arrayItem.ToParameter().Value as List<ContractParameter>)[2].Value);
@@ -147,12 +147,9 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual("test😂👍", strParameter.ToStackItem().GetString());
 
             ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface };
-            Assert.AreEqual(StackItem.Null, interopParameter.ToStackItem());
+            Assert.ThrowsException<ArgumentException>(() => interopParameter.ToStackItem());
 
-            interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface, Value = 1 };
-            Assert.AreEqual(1, ((InteropInterface)interopParameter.ToStackItem()).GetInterface<int>());
-
-            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter, interopParameter }.ToList() };
+            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter }.ToList() };
             Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetBigInteger());
 
             ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
@@ -495,7 +492,7 @@ namespace Neo.UnitTests.VMT
         private void TestToParameterNull()
         {
             ContractParameter parameter = VM.Helper.ToParameter(null);
-            Assert.AreEqual(ContractParameterType.Null, parameter.Type);
+            Assert.AreEqual(ContractParameterType.Any, parameter.Type);
         }
 
         private void TestToParameter2InteropInterface()

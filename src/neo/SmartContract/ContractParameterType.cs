@@ -10,7 +10,6 @@ namespace Neo.SmartContract
         ByteArray = 0x05,
         PublicKey = 0x06,
         String = 0x07,
-        Null = 0x08,
 
         Array = 0x10,
         Map = 0x12,

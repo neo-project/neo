@@ -92,8 +92,6 @@ namespace Neo.SmartContract
                     case ContractParameterType.Map:
                         parameter.Value = ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson(p["key"]), FromJson(p["value"]))).ToList();
                         break;
-                    case ContractParameterType.InteropInterface:
-                        break;
                     default:
                         throw new ArgumentException();
                 }
