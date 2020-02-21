@@ -62,11 +62,13 @@ namespace Neo.Oracle
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "consignorPubKey", "consigneePubKey" })]
         private StackItem DelegateOracleValidator(ApplicationEngine engine, Array args)
         {
+            StoreView snapshot = engine.Snapshot;
             ECPoint consignorPubKey = args[0].GetSpan().AsSerializable<ECPoint>();
             ECPoint consigneePubKey = args[1].GetSpan().AsSerializable<ECPoint>();
+            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
+            if (!oraclePubKeys.Contains(consignorPubKey)) return false;
             UInt160 account = Contract.CreateSignatureRedeemScript(consignorPubKey).ToScriptHash();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            StoreView snapshot = engine.Snapshot;
             StorageKey key = CreateStorageKey(Prefix_Validator, consignorPubKey);
             StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem());
             item.Value = consigneePubKey.ToArray();
@@ -76,7 +78,6 @@ namespace Neo.Oracle
               (
                   p.Key.Key.AsSerializable<ECPoint>(1)
               )).ToList();
-            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
             foreach (var validator in delegatedOracleValidators)
             {
                 if (!oraclePubKeys.Contains(validator))
