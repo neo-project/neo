@@ -116,7 +116,7 @@ namespace Neo.Network.P2P
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
                     break;
                 case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived((GetBlocksPayload)msg.Payload);
+                    OnGetHeadersMessageReceived((GetHeadersPayload)msg.Payload);
                     break;
                 case MessageCommand.Headers:
                     OnHeadersMessageReceived((HeadersPayload)msg.Payload);
@@ -288,24 +288,20 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Will be triggered when a MessageCommand.GetHeaders message is received.
-        /// Tell the specified number of blocks' headers starting with the requested HashStart to RemoteNode actor.
+        /// Tell the specified number of blocks' headers starting with the requested IndexStart to RemoteNode actor.
         /// A limit set by HeadersPayload.MaxHeadersCount is also applied to the number of requested Headers, namely payload.Count.
         /// </summary>
-        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks' headers requested.</param>
-        private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
+        /// <param name="payload">A GetBlocksPayload including start block index and number of blocks' headers requested.</param>
+        private void OnGetHeadersMessageReceived(GetHeadersPayload payload)
         {
-            UInt256 hash = payload.HashStart;
-            int count = payload.Count < 0 || payload.Count > HeadersPayload.MaxHeadersCount ? HeadersPayload.MaxHeadersCount : payload.Count;
-            DataCache<UInt256, TrimmedBlock> cache = Blockchain.Singleton.View.Blocks;
-            TrimmedBlock state = cache.TryGet(hash);
-            if (state == null) return;
+            uint index = payload.IndexStart;
+            int count = payload.Count < 0 ? HeadersPayload.MaxHeadersCount : payload.Count;
+            if (index > Blockchain.Singleton.HeaderHeight)
+                return;
             List<Header> headers = new List<Header>();
-            for (uint i = 1; i <= count; i++)
+            for (uint i = 0; i < count; i++)
             {
-                uint index = state.Index + i;
-                hash = Blockchain.Singleton.GetBlockHash(index);
-                if (hash == null) break;
-                Header header = cache.TryGet(hash)?.Header;
+                var header = Blockchain.Singleton.GetHeader(index + i);
                 if (header == null) break;
                 headers.Add(header);
             }
