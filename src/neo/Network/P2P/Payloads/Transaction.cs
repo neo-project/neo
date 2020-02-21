@@ -266,19 +266,6 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, BigInteger.Zero) == RelayResultReason.Succeed;
         }
 
-        public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
-            if (result != RelayResultReason.Succeed) return result;
-
-            int size = Size;
-            if (size > MaxTransactionSize) return RelayResultReason.Invalid;
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return RelayResultReason.InsufficientFunds;
-            if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
-            return RelayResultReason.Succeed;
-        }
-
         public virtual RelayResultReason VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
@@ -297,7 +284,19 @@ namespace Neo.Network.P2P.Payloads
             }
             return RelayResultReason.Succeed;
         }
-
+        
+        public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            if (result != RelayResultReason.Succeed) return result;
+            int size = Size;
+            if (size > MaxTransactionSize) return RelayResultReason.Invalid;
+            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (net_fee < 0) return RelayResultReason.InsufficientFunds;
+            if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
+            return RelayResultReason.Succeed;
+        }
+        
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter, new StackItem[]
