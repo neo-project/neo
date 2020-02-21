@@ -1,10 +1,12 @@
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Neo.SmartContract
@@ -13,7 +15,18 @@ namespace Neo.SmartContract
     {
         public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
         {
+            return IsMultiSigContract(script, out m, out n, out _, false);
+        }
+
+        public static bool IsMultiSigContract(this byte[] script, out int m, out int n, out ECPoint[] points)
+        {
+            return IsMultiSigContract(script, out m, out n, out points, true);
+        }
+
+        private static bool IsMultiSigContract(this byte[] script, out int m, out int n, out ECPoint[] points, bool parsePoints)
+        {
             m = 0; n = 0;
+            points = System.Array.Empty<ECPoint>();
             int i = 0;
             if (script.Length < 43) return false;
             switch (script[i])
@@ -34,10 +47,16 @@ namespace Neo.SmartContract
                     return false;
             }
             if (m < 1 || m > 1024) return false;
+            var recoverPoints = new List<ECPoint>();
             while (script[i] == (byte)OpCode.PUSHDATA1)
             {
                 if (script.Length <= i + 35) return false;
                 if (script[++i] != 33) return false;
+
+                if (parsePoints)
+                {
+                    recoverPoints.Add(ECPoint.DecodePoint(script.AsSpan(i + 1, 33), ECCurve.Secp256r1));
+                }
                 i += 34;
                 ++n;
             }
@@ -64,6 +83,7 @@ namespace Neo.SmartContract
             if (script.Length != i + 4) return false;
             if (BitConverter.ToUInt32(script, i) != InteropService.Crypto.ECDsaCheckMultiSig)
                 return false;
+            points = recoverPoints.ToArray();
             return true;
         }
 

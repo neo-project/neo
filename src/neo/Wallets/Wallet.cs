@@ -378,13 +378,38 @@ namespace Neo.Wallets
 
         public bool Sign(ContractParametersContext context)
         {
+            KeyPair key;
+            byte[] signature;
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
                 WalletAccount account = GetAccount(scriptHash);
-                if (account?.HasKey != true) continue;
-                KeyPair key = account.GetKey();
-                byte[] signature = context.Verifiable.Sign(key);
+                if (account?.HasKey != true)
+                {
+                    // Try to sign self-contained multiSig
+
+                    Contract multiSigContract = account.Contract;
+
+                    if (multiSigContract != null &&
+                        SmartContract.Helper.IsMultiSigContract(multiSigContract.Script, out var m, out var n, out var points))
+                    {
+                        foreach (var point in points)
+                        {
+                            account = GetAccount(point);
+                            if (account?.HasKey != true) continue;
+                            key = account.GetKey();
+                            signature = context.Verifiable.Sign(key);
+                            fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
+                            if (fSuccess) m--;
+                            if (context.Completed || m <= 0) break;
+                        }
+                    }
+
+                    continue;
+                }
+
+                key = account.GetKey();
+                signature = context.Verifiable.Sign(key);
                 fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
             }
             return fSuccess;

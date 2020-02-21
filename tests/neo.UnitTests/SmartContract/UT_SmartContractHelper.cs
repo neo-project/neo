@@ -4,6 +4,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -25,7 +26,8 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys1[i] = key1.PublicKey;
             }
             byte[] script1 = Contract.CreateMultiSigRedeemScript(20, publicKeys1);
-            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script1, out int m1, out int n1));
+            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script1, out int m1, out int n1, out var p1));
+            CollectionAssert.AreEqual(publicKeys1.OrderBy(p => p).ToArray(), p1);
 
             Neo.Cryptography.ECC.ECPoint[] publicKeys2 = new Neo.Cryptography.ECC.ECPoint[256];
             for (int i = 0; i < 256; i++)
@@ -37,7 +39,8 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys2[i] = key2.PublicKey;
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(256, publicKeys2);
-            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script2, out int m2, out int n2));
+            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script2, out int m2, out int n2, out var p2));
+            CollectionAssert.AreEqual(publicKeys2.OrderBy(p => p).ToArray(), p2);
 
             Neo.Cryptography.ECC.ECPoint[] publicKeys3 = new Neo.Cryptography.ECC.ECPoint[3];
             for (int i = 0; i < 3; i++)
@@ -49,7 +52,8 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys3[i] = key3.PublicKey;
             }
             byte[] script3 = Contract.CreateMultiSigRedeemScript(3, publicKeys3);
-            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script3, out int m3, out int n3));
+            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script3, out int m3, out int n3, out var p3));
+            CollectionAssert.AreEqual(publicKeys3.OrderBy(p => p).ToArray(), p3);
 
             Neo.Cryptography.ECC.ECPoint[] publicKeys4 = new Neo.Cryptography.ECC.ECPoint[3];
             for (int i = 0; i < 3; i++)
@@ -62,8 +66,8 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script4 = Contract.CreateMultiSigRedeemScript(3, publicKeys4);
             script4[script4.Length - 1] = 0x00;
-            Assert.AreEqual(false, Neo.SmartContract.Helper.IsMultiSigContract(script4, out int m4, out int n4));
-
+            Assert.AreEqual(false, Neo.SmartContract.Helper.IsMultiSigContract(script4, out int m4, out int n4, out var p4));
+            CollectionAssert.AreEqual(Array.Empty<ECPoint>(), p4);
         }
 
         [TestMethod]
