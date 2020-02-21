@@ -276,7 +276,7 @@ namespace Neo.VM
                 case InteropInterface _:
                     parameter = new ContractParameter
                     {
-                        Type = ContractParameterType.InteropInterface,
+                        Type = ContractParameterType.InteropInterface
                     };
                     break;
                 case Null _:
