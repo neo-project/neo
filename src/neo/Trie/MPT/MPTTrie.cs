@@ -258,26 +258,26 @@ namespace Neo.Trie.MPT
                         }
                         if (!result) return false;
                         db.Delete(oldHash);
-                        var nonEmptyChildren = Array.Empty<byte>();
+                        var childrenIndexes = Array.Empty<byte>();
                         for (int i = 0; i < FullNode.CHILD_COUNT; i++)
                         {
                             if (fullNode.Children[i] is HashNode hn && hn.IsEmptyNode) continue;
-                            nonEmptyChildren = nonEmptyChildren.Add((byte)i);
+                            childrenIndexes = childrenIndexes.Add((byte)i);
                         }
-                        if (1 < nonEmptyChildren.Length)
+                        if (childrenIndexes.Length > 1)
                         {
                             fullNode.ResetFlag();
                             db.Put(fullNode);
                             return true;
                         }
-                        var childIndex = nonEmptyChildren[0];
+                        var childIndex = childrenIndexes[0];
                         var child = fullNode.Children[childIndex];
                         if (child is HashNode hashNode)
                             child = Resolve(hashNode.Hash);
                         if (child is ShortNode shortNode)
                         {
                             db.Delete(shortNode.GetHash());
-                            shortNode.Key = nonEmptyChildren.Concat(shortNode.Key);
+                            shortNode.Key = childrenIndexes.Concat(shortNode.Key);
                             shortNode.ResetFlag();
                             db.Put(shortNode);
                             node = shortNode;
@@ -285,7 +285,7 @@ namespace Neo.Trie.MPT
                         }
                         var newNode = new ShortNode()
                         {
-                            Key = nonEmptyChildren,
+                            Key = childrenIndexes,
                             Next = child,
                         };
                         node = newNode;
