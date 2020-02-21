@@ -6,8 +6,8 @@ namespace Neo.Trie.MPT
     public class MPTDatabase
     {
         private ISnapshot store;
-        public static readonly byte TABLE = 0x4D;
-        public static readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("MPT_ROOT");
+        private static readonly byte TABLE = 0x4D;
+        private static readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("MPT_ROOT");
 
         public MPTDatabase(ISnapshot store)
         {
