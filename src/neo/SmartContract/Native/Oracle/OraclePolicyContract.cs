@@ -54,7 +54,7 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// Oracle validator can delegate third party to operate Oracle nodes
+        /// Consensus node can delegate third party to operate Oracle nodes
         /// </summary>
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
