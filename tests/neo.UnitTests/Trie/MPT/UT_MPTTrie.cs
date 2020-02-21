@@ -59,7 +59,6 @@ namespace Neo.UnitTests.Trie.MPT
         [TestMethod]
         public void TestTryGet()
         {
-
             var mpt = new MPTTrie(mptdb);
             var result = mpt.TryGet("ac01".HexToBytes(), out byte[] value);
             Assert.IsTrue(result);
@@ -112,7 +111,6 @@ namespace Neo.UnitTests.Trie.MPT
 
             var r = new ShortNode();
             r.Key = "0a0c".HexToBytes();
-
 
             var b = new FullNode();
             r.Next = b;
@@ -176,7 +174,6 @@ namespace Neo.UnitTests.Trie.MPT
             b.Children[10] = l3;
 
             var mpt = new MPTTrie(mptdb);
-
             Assert.AreEqual(r.GetHash().ToHexString(), mpt.GetRoot().ToHexString());
             var dict = mpt.GetProof("ac01".HexToBytes());
             Assert.AreEqual(4, dict.Count);
