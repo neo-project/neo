@@ -70,7 +70,8 @@ namespace Neo.Oracle
             StorageKey key = CreateStorageKey(Prefix_Validator, consignorPubKey);
             if (snapshot.Storages.TryGet(key) != null)
             {
-                StorageItem value = snapshot.Storages.GetAndChange(key);
+                StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem());
+                item.Value = consigneePubKey.ToArray();
                 value.Value = consigneePubKey.ToArray();
             }
             else
