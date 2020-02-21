@@ -401,7 +401,7 @@ namespace Neo.Ledger
         private void OnNewTransaction(Transaction transaction, bool relay)
         {
             RelayResultReason reason;
-            if (View.ContainsTransaction(transaction.Hash))
+            if (ContainsTransaction(transaction.Hash))
                 reason = RelayResultReason.AlreadyExists;
             else if (!MemPool.CanTransactionFitInPool(transaction))
                 reason = RelayResultReason.OutOfMemory;
