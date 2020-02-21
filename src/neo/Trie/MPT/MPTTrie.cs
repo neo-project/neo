@@ -1,3 +1,4 @@
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 
@@ -8,12 +9,12 @@ namespace Neo.Trie.MPT
         private MPTDatabase db;
         private MPTNode root;
 
-        public MPTTrie(MPTDatabase db)
+        public MPTTrie(ISnapshot store)
         {
-            if (db is null)
+            if (store is null)
                 throw new System.ArgumentNullException();
 
-            this.db = db;
+            this.db = new MPTDatabase(store);
 
             var rbytes = db.GetRoot();
             if (rbytes is null || rbytes.Length == 0)

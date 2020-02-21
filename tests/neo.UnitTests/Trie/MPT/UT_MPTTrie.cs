@@ -9,7 +9,7 @@ namespace Neo.UnitTests.Trie.MPT
     public class UT_MPTTrie
     {
         private MPTNode root;
-        private MPTDatabase mptdb;
+        private ISnapshot mptdb;
 
         [TestInitialize]
         public void TestInit()
@@ -42,18 +42,18 @@ namespace Neo.UnitTests.Trie.MPT
             root = r;
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
-            this.mptdb = new MPTDatabase(snapshot);
-            mptdb.PutRoot(root.GetHash());
-            mptdb.Put(r);
-            mptdb.Put(b);
-            mptdb.Put(l1);
-            mptdb.Put(l2);
-            mptdb.Put(l3);
-            mptdb.Put(v1);
-            mptdb.Put(v2);
-            mptdb.Put(v3);
+            var db = new MPTDatabase(snapshot);
+            db.PutRoot(root.GetHash());
+            db.Put(r);
+            db.Put(b);
+            db.Put(l1);
+            db.Put(l2);
+            db.Put(l3);
+            db.Put(v1);
+            db.Put(v2);
+            db.Put(v3);
             snapshot.Commit();
-            this.mptdb = new MPTDatabase(store.GetSnapshot());
+            this.mptdb = store.GetSnapshot();
         }
 
         [TestMethod]
@@ -95,10 +95,9 @@ namespace Neo.UnitTests.Trie.MPT
         public void TestTryPut()
         {
             var store = new MemoryStore();
-            var db = new MPTDatabase(store.GetSnapshot());
             var mpt1 = new MPTTrie(mptdb);
             Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt1.GetRoot().ToHexString());
-            var mpt = new MPTTrie(db);
+            var mpt = new MPTTrie(store.GetSnapshot());
             mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
             mpt.Put("ac99".HexToBytes(), "2222".HexToBytes());
             mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
