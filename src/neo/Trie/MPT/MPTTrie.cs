@@ -271,11 +271,11 @@ namespace Neo.Trie.MPT
                             db.Put(fullNode);
                             return true;
                         }
-                        var childIndex = childrenIndexes[0];
-                        var child = fullNode.Children[childIndex];
-                        if (child is HashNode hashNode)
-                            child = Resolve(hashNode.Hash);
-                        if (child is ShortNode shortNode)
+                        var lastChildIndex = childrenIndexes[0];
+                        var lastChild = fullNode.Children[lastChildIndex];
+                        if (lastChild is HashNode hashNode)
+                            lastChild = Resolve(hashNode.Hash);
+                        if (lastChild is ShortNode shortNode)
                         {
                             db.Delete(shortNode.GetHash());
                             shortNode.Key = childrenIndexes.Concat(shortNode.Key);
@@ -287,7 +287,7 @@ namespace Neo.Trie.MPT
                         var newNode = new ShortNode()
                         {
                             Key = childrenIndexes,
-                            Next = child,
+                            Next = lastChild,
                         };
                         node = newNode;
                         db.Put(node);
