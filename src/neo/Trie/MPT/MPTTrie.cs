@@ -140,7 +140,7 @@ namespace Neo.Trie.MPT
                             son.Children[pathRemain[0]] = grandSon2;
                         }
                         db.Put(son);
-                        if (0 < prefix.Length)
+                        if (prefix.Length > 0)
                         {
                             var extensionNode = new ShortNode()
                             {
