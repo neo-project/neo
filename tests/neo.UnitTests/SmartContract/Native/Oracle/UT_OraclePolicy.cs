@@ -243,7 +243,7 @@ namespace Neo.UnitTests.Oracle
 
             var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
             engine.LoadScript(tx.Script);
-            var state=engine.Execute();
+            var state = engine.Execute();
             state.Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
