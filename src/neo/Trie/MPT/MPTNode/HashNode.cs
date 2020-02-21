@@ -19,7 +19,7 @@ namespace Neo.Trie.MPT
             Hash = (byte[])hash.Clone();
         }
 
-        protected override byte[] CalHash()
+        protected override byte[] GenHash()
         {
             if (IsEmptyNode) return Array.Empty<byte>();
             return (byte[])Hash.Clone();

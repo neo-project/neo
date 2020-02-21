@@ -9,7 +9,7 @@ namespace Neo.Trie.MPT
         public byte[] Key;
         public MPTNode Next;
 
-        protected override byte[] CalHash()
+        protected override byte[] GenHash()
         {
             return Key.Concat(Next.GetHash()).Sha256();
         }
