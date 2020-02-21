@@ -273,7 +273,7 @@ namespace Neo.VM
                         Value = i.ToBigInteger()
                     };
                     break;
-                case InteropInterface i:
+                case InteropInterface _:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.InteropInterface,
