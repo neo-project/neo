@@ -30,6 +30,48 @@ namespace Neo.Network.RPC
 {
     public sealed class RpcServer : IDisposable
     {
+        private class CheckWitnessHashes : IVerifiable
+        {
+            private readonly UInt160[] _scriptHashesForVerifying;
+            public Witness[] Witnesses { get; set; }
+            public int Size { get; }
+
+            public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
+            {
+                _scriptHashesForVerifying = scriptHashesForVerifying;
+            }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Deserialize(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void DeserializeUnsigned(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+            {
+                return _scriptHashesForVerifying;
+            }
+
+            public void SerializeUnsigned(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public byte[] GetMessage()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public Wallet Wallet { get; set; }
         public Fixed8 MaxGasInvoke { get; }
         public int MaxConcurrentConnections { get; }
@@ -73,9 +115,9 @@ namespace Neo.Network.RPC
             }
         }
 
-        private JObject GetInvokeResult(byte[] script)
+        private JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            using (ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke))
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: MaxGasInvoke))
             {
                 JObject json = new JObject();
                 json["script"] = script.ToHexString();
@@ -89,6 +131,7 @@ namespace Neo.Network.RPC
                 {
                     json["stack"] = "error: recursive reference";
                 }
+
                 return json;
             }
         }
@@ -211,19 +254,37 @@ namespace Neo.Network.RPC
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         ContractParameter[] parameters = ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray();
-                        return Invoke(script_hash, parameters);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 2)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(2).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return Invoke(script_hash, parameters, checkWitnessHashes);
                     }
                 case "invokefunction":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         string operation = _params[1].AsString();
                         ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
-                        return InvokeFunction(script_hash, operation, args);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 3)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(3).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return InvokeFunction(script_hash, operation, args, checkWitnessHashes);
                     }
                 case "invokescript":
                     {
                         byte[] script = _params[0].AsString().HexToBytes();
-                        return InvokeScript(script);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 1)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(1).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return InvokeScript(script, checkWitnessHashes);
                     }
                 case "listplugins":
                     {
@@ -620,29 +681,29 @@ namespace Neo.Network.RPC
             return json;
         }
 
-        private JObject Invoke(UInt160 script_hash, ContractParameter[] parameters)
+        private JObject Invoke(UInt160 script_hash, ContractParameter[] parameters, IVerifiable checkWitnessHashes = null)
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 script = sb.EmitAppCall(script_hash, parameters).ToArray();
             }
-            return GetInvokeResult(script);
+            return GetInvokeResult(script, checkWitnessHashes);
         }
 
-        private JObject InvokeFunction(UInt160 script_hash, string operation, ContractParameter[] args)
+        private JObject InvokeFunction(UInt160 script_hash, string operation, ContractParameter[] args, IVerifiable checkWitnessHashes = null)
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 script = sb.EmitAppCall(script_hash, operation, args).ToArray();
             }
-            return GetInvokeResult(script);
+            return GetInvokeResult(script, checkWitnessHashes);
         }
 
-        private JObject InvokeScript(byte[] script)
+        private JObject InvokeScript(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            return GetInvokeResult(script);
+            return GetInvokeResult(script, checkWitnessHashes);
         }
 
         private JObject ListPlugins()
