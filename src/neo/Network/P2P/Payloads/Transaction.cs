@@ -268,10 +268,21 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
-            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
-                return RelayResultReason.Expired;
+            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            if (result != RelayResultReason.Succeed) return result;
+
             int size = Size;
             if (size > MaxTransactionSize) return RelayResultReason.Invalid;
+            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (net_fee < 0) return RelayResultReason.InsufficientFunds;
+            if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
+            return RelayResultReason.Succeed;
+        }
+
+        public virtual RelayResultReason VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
+                return RelayResultReason.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
                 return RelayResultReason.PolicyFail;
@@ -284,9 +295,6 @@ namespace Neo.Network.P2P.Payloads
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
                 if (snapshot.Contracts.TryGet(hashes[i]) is null) return RelayResultReason.Invalid;
             }
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return RelayResultReason.InsufficientFunds;
-            if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
             return RelayResultReason.Succeed;
         }
 
