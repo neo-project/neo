@@ -284,7 +284,7 @@ namespace Neo.Network.P2P.Payloads
             }
             return RelayResultReason.Succeed;
         }
-        
+
         public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
@@ -296,7 +296,7 @@ namespace Neo.Network.P2P.Payloads
             if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
             return RelayResultReason.Succeed;
         }
-        
+
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter, new StackItem[]
