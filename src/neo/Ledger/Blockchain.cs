@@ -61,7 +61,6 @@ namespace Neo.Ledger
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
-        private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
@@ -142,7 +141,6 @@ namespace Neo.Ledger
 
         public bool ContainsBlock(UInt256 hash)
         {
-            if (block_cache.ContainsKey(hash)) return true;
             return View.ContainsBlock(hash);
         }
 
@@ -189,8 +187,6 @@ namespace Neo.Ledger
 
         public Block GetBlock(UInt256 hash)
         {
-            if (block_cache.TryGetValue(hash, out Block block))
-                return block;
             return View.GetBlock(hash);
         }
 
@@ -215,8 +211,6 @@ namespace Neo.Ledger
 
         public Header GetHeader(UInt256 hash)
         {
-            if (block_cache.TryGetValue(hash, out Block block))
-                return block.Header;
             return View.GetHeader(hash);
         }
 
@@ -256,12 +250,19 @@ namespace Neo.Ledger
 
         private void AddUnverifiedBlockToCache(Block block)
         {
+            // Check if any block proposal for height `block.Index` exists
             if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
             {
+                // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
                 blocks = new LinkedList<Block>();
                 block_cache_unverified.Add(block.Index, blocks);
             }
-
+            // Check if any block with the hash being added already exists on possible candidates to be processed
+            foreach (var unverifiedBlock in blocks)
+            {
+                if (block.Hash == unverifiedBlock.Hash)
+                    return;
+            }
             blocks.AddLast(block);
         }
 
@@ -294,76 +295,28 @@ namespace Neo.Ledger
         {
             if (block.Index <= Height)
                 return RelayResultReason.AlreadyExists;
-            if (block_cache.ContainsKey(block.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (block.Index - 1 >= header_index.Count)
+            if (block.Index - 1 > Height)
             {
                 AddUnverifiedBlockToCache(block);
                 return RelayResultReason.UnableToVerify;
             }
-            if (block.Index == header_index.Count)
-            {
-                if (!block.Verify(currentSnapshot))
-                    return RelayResultReason.Invalid;
-            }
-            else
-            {
-                if (!block.Hash.Equals(header_index[(int)block.Index]))
-                    return RelayResultReason.Invalid;
-            }
             if (block.Index == Height + 1)
             {
-                Block block_persist = block;
-                List<Block> blocksToPersistList = new List<Block>();
-                while (true)
+                if (!block.Verify(currentSnapshot))
                 {
-                    blocksToPersistList.Add(block_persist);
-                    if (block_persist.Index + 1 >= header_index.Count) break;
-                    UInt256 hash = header_index[(int)block_persist.Index + 1];
-                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
+                    system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { InvalidIndex = block.Index });
+                    return RelayResultReason.Invalid;
                 }
-
-                int blocksPersisted = 0;
-                foreach (Block blockToPersist in blocksToPersistList)
-                {
-                    block_cache_unverified.Remove(blockToPersist.Index);
-                    Persist(blockToPersist);
-
-                    // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                    uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
-
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
-                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
-                    // Increase in the rate of 1 block per second in configurations with faster blocks
-
-                    if (blockToPersist.Index + 100 >= header_index.Count)
-                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
-                }
+                block_cache_unverified.Remove(block.Index);
+                Persist(block);
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
+                system.SyncManager.Tell(new SyncManager.PersistedBlockIndex { PersistedIndex = block.Index });
                 SaveHeaderHashList();
-
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
-                }
-            }
-            else
-            {
-                block_cache.Add(block.Hash, block);
-                if (block.Index + 100 >= header_index.Count)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
-                if (block.Index == header_index.Count)
-                {
-                    header_index.Add(block.Hash);
-                    using (SnapshotView snapshot = GetSnapshot())
-                    {
-                        snapshot.Blocks.Add(block.Hash, block.Header.Trim());
-                        snapshot.HeaderHashIndex.GetAndChange().Set(block);
-                        SaveHeaderHashList(snapshot);
-                        snapshot.Commit();
-                    }
-                    UpdateCurrentSnapshot();
                 }
             }
             return RelayResultReason.Succeed;
@@ -376,27 +329,6 @@ namespace Neo.Ledger
             ConsensusRelayCache.Add(payload);
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
             return RelayResultReason.Succeed;
-        }
-
-        private void OnNewHeaders(Header[] headers)
-        {
-            using (SnapshotView snapshot = GetSnapshot())
-            {
-                foreach (Header header in headers)
-                {
-                    if (header.Index - 1 >= header_index.Count) break;
-                    if (header.Index < header_index.Count) continue;
-                    if (!header.Verify(snapshot)) break;
-                    header_index.Add(header.Hash);
-                    snapshot.Blocks.Add(header.Hash, header.Trim());
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = header.Index;
-                }
-                SaveHeaderHashList(snapshot);
-                snapshot.Commit();
-            }
-            UpdateCurrentSnapshot();
-            system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
         private void OnNewTransaction(Transaction transaction, bool relay)
@@ -445,7 +377,6 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
@@ -459,9 +390,6 @@ namespace Neo.Ledger
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
-                    break;
-                case Header[] headers:
-                    OnNewHeaders(headers);
                     break;
                 case Block block:
                     Sender.Tell(OnNewBlock(block));
@@ -614,7 +542,6 @@ namespace Neo.Ledger
         {
             switch (message)
             {
-                case Header[] _:
                 case Block _:
                 case ConsensusPayload _:
                 case Terminated _:

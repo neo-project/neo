@@ -89,7 +89,7 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
+                    OnBlockReceived((Block)msg.Payload);
                     break;
                 case MessageCommand.Consensus:
                     OnInventoryReceived((ConsensusPayload)msg.Payload);
@@ -146,6 +146,12 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
+        }
+
+        private void OnBlockReceived(Block payload)
+        {
+            if (payload != null)
+                system.SyncManager.Tell(payload, Context.Parent);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)

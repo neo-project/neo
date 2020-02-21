@@ -16,6 +16,7 @@ namespace Neo.Network.P2P
     public class RemoteNode : Connection
     {
         internal class Relay { public IInventory Inventory; }
+        internal NodeSession session = new NodeSession();
 
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
@@ -161,7 +162,7 @@ namespace Neo.Network.P2P
             if (payload.LastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                system.SyncManager.Tell(new SyncManager.StartSync { });
             }
         }
 
@@ -195,7 +196,8 @@ namespace Neo.Network.P2P
         private void OnVerack()
         {
             verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Version = Version });
+            system.TaskManager.Tell(new TaskManager.Register { Node = this });
+            system.SyncManager.Tell(new SyncManager.Register { Node = this });
             CheckMessageQueue();
         }
 

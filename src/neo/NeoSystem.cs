@@ -21,6 +21,7 @@ namespace Neo
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }
+        internal IActorRef SyncManager { get; }
         public IActorRef Consensus { get; private set; }
 
         private readonly IStore store;
@@ -36,6 +37,7 @@ namespace Neo
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            this.SyncManager = ActorSystem.ActorOf(Network.P2P.SyncManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnPluginsLoaded();
         }
