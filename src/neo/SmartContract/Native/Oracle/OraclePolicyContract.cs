@@ -147,7 +147,7 @@ namespace Neo.Oracle
         /// <returns>Oracle multisignature address</returns>
         public UInt160 GetOracleMultiSigAddress(StoreView snapshot)
         {
-            ECPoint[] validators = GetOracleValidators(snapshot);
+            ECPoint[] validators = PolicyContract.NEO.GetValidators(snapshot);
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
