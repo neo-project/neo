@@ -354,19 +354,19 @@ namespace Neo.Wallets
             if (witness_script.IsSignatureContract())
             {
                 size += 67 + witness_script.GetVarSize();
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.ECDsaVerify, null);
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1)+ NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1) + NativeContract.Fee.GetOpCodePrice(OpCode.PUSHNULL) + NativeContract.Fee.GetSyscallPrice(InteropService.Crypto.ECDsaVerify);
             }
             else if (witness_script.IsMultiSigContract(out int m, out int n))
             {
                 int size_inv = 66 * m;
                 size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1) * m;
                 using (ScriptBuilder sb = new ScriptBuilder())
-                    networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
+                    networkFee += NativeContract.Fee.GetOpCodePrice((OpCode)sb.EmitPush(m).ToArray()[0]);
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1) * n;
                 using (ScriptBuilder sb = new ScriptBuilder())
-                    networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.ECDsaVerify, null) * n;
+                    networkFee += NativeContract.Fee.GetOpCodePrice((OpCode)sb.EmitPush(n).ToArray()[0]);
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHNULL) + NativeContract.Fee.GetSyscallPrice(InteropService.Crypto.ECDsaVerify) * n;
             }
             else
             {

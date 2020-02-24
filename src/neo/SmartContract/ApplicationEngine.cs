@@ -1,6 +1,7 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -78,7 +79,7 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack)))
+            if (!AddGas(NativeContract.Fee.GetSyscallPrice(method, CurrentContext.EvaluationStack)))
                 return false;
             return InteropService.Invoke(this, method);
         }
@@ -87,7 +88,7 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+            return AddGas(NativeContract.Fee.GetOpCodePrice(CurrentContext.CurrentInstruction.OpCode));
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)
