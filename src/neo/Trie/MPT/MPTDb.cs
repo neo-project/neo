@@ -3,13 +3,13 @@ using System.Text;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTDatabase
+    public class MPTDb
     {
         private ISnapshot store;
         private static readonly byte TABLE = 0x4D;
         private static readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("MPT_ROOT");
 
-        public MPTDatabase(ISnapshot store)
+        public MPTDb(ISnapshot store)
         {
             this.store = store;
         }

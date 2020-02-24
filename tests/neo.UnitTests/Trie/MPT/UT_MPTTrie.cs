@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Trie.MPT
             root = r;
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
-            var db = new MPTDatabase(snapshot);
+            var db = new MPTDb(snapshot);
             db.PutRoot(root.GetHash());
             db.Put(r);
             db.Put(b);

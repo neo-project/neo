@@ -6,7 +6,7 @@ namespace Neo.Trie.MPT
 {
     public class MPTReadOnlyTrie : IReadOnlyTrie
     {
-        protected MPTDatabase db;
+        protected MPTDb db;
         protected MPTNode root;
 
         public MPTReadOnlyTrie(ISnapshot store)
@@ -14,7 +14,7 @@ namespace Neo.Trie.MPT
             if (store is null)
                 throw new System.ArgumentNullException();
 
-            this.db = new MPTDatabase(store);
+            this.db = new MPTDb(store);
 
             var rbytes = db.GetRoot();
             if (rbytes is null || rbytes.Length == 0)
