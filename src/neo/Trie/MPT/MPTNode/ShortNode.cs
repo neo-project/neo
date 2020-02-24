@@ -11,7 +11,7 @@ namespace Neo.Trie.MPT
 
         protected override byte[] GenHash()
         {
-            return Key.Concat(Next.GetHash()).Sha256();
+            return Crypto.Hash256(Key.Concat(Next.GetHash()));
         }
 
         public ShortNode()

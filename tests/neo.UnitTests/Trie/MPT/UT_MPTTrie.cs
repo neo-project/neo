@@ -95,12 +95,12 @@ namespace Neo.UnitTests.Trie.MPT
         {
             var store = new MemoryStore();
             var mpt1 = new MPTTrie(mptdb);
-            Assert.AreEqual("c32dc0dee8cec33436eff759ee460c65d1a22c0a65a5edd27c68dd80ac3963b4", mpt1.GetRoot().ToHexString());
+            Assert.AreEqual("743d2d1f400ae407d14ec19d68c5b6d8791633277a8917d75ab97be4ffed7172", mpt1.GetRoot().ToHexString());
             var mpt = new MPTTrie(store.GetSnapshot());
             mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
             mpt.Put("ac99".HexToBytes(), "2222".HexToBytes());
             mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
-            Assert.AreEqual("76248d1bf457f0b95c1f6d05d787dca152906f106bcbafacbf7a69c6ae1797c4", mpt.GetRoot().ToHexString());
+            Assert.AreEqual("aae7f2cd9bcd3b3dadca286ccbecf03d7269fb4cc547fa40ba799abb89c3731f", mpt.GetRoot().ToHexString());
         }
 
         [TestMethod]
@@ -130,8 +130,8 @@ namespace Neo.UnitTests.Trie.MPT
             b.Children[9] = l2;
 
             r1.Next = v1;
-            Assert.AreEqual("76248d1bf457f0b95c1f6d05d787dca152906f106bcbafacbf7a69c6ae1797c4", r1.GetHash().ToHexString());
-            Assert.AreEqual("f3ad94e8fb6e1e85a8b573b2343845e3b0e0b96b61fcd0e20b6df159fde137a7", r.GetHash().ToHexString());
+            Assert.AreEqual("aae7f2cd9bcd3b3dadca286ccbecf03d7269fb4cc547fa40ba799abb89c3731f", r1.GetHash().ToHexString());
+            Assert.AreEqual("a388b72bf6f8af80eed633fe95d7397bf51dcb23ceb2026979bb0b831893368b", r.GetHash().ToHexString());
 
             var mpt = new MPTTrie(mptdb);
             var result = true;
@@ -141,7 +141,7 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             result = mpt.TryDelete("acae".HexToBytes());
             Assert.IsTrue(result);
-            Assert.AreEqual("76248d1bf457f0b95c1f6d05d787dca152906f106bcbafacbf7a69c6ae1797c4", mpt.GetRoot().ToHexString());
+            Assert.AreEqual("aae7f2cd9bcd3b3dadca286ccbecf03d7269fb4cc547fa40ba799abb89c3731f", mpt.GetRoot().ToHexString());
         }
 
         [TestMethod]

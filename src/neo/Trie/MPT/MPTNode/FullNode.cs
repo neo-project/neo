@@ -26,7 +26,7 @@ namespace Neo.Trie.MPT
             {
                 bytes = bytes.Concat(Children[i].GetHash());
             }
-            return bytes.Sha256();
+            return Crypto.Hash256(bytes);
         }
 
         public override void EncodeSpecific(BinaryWriter writer)
