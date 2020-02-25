@@ -65,7 +65,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.ToBoolean().Should().BeFalse();
 
             // With signature
-            
+
             ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                "setSyscallPrice", new ContractParameter(ContractParameterType.Array) { Value = values });
             ret.Should().BeOfType<VM.Types.Boolean>();
