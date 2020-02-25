@@ -22,6 +22,8 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Syscall = 12;
         private const byte Prefix_OpCode = 13;
 
+        private const uint DefaultRatio = 1;
+
         public FeeContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
@@ -66,6 +68,7 @@ namespace Neo.SmartContract.Native
             if (!CheckValidators(engine)) return false;
             uint method = (uint)((Array)args[0])[0].GetBigInteger();
             long value = (long)((Array)args[0])[1].GetBigInteger();
+            if (value < 0) return false;
             StorageKey key = CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method));
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem());
             item.Value = BitConverter.GetBytes(value);
@@ -94,6 +97,7 @@ namespace Neo.SmartContract.Native
             if (!CheckValidators(engine)) return false;
             uint opCode = (uint)((Array)args[0])[0].GetBigInteger();
             long value = (long)((Array)args[0])[1].GetBigInteger();
+            if (value < 0) return false;
             StorageKey key = CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes(opCode));
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem());
             item.Value = BitConverter.GetBytes(value);
@@ -111,7 +115,7 @@ namespace Neo.SmartContract.Native
             if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Ratio)) != null)
                 return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_Ratio)].Value, 0);
             else
-                return 1;
+                return DefaultRatio;
         }
 
         [ContractMethod(0_00030000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
@@ -119,8 +123,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckValidators(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
-            if (value == 0)
-                return false;
+            if (value == 0) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Ratio));
             storage.Value = BitConverter.GetBytes(value);
             return true;
