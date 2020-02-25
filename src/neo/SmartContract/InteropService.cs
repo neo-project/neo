@@ -7,7 +7,7 @@ namespace Neo.SmartContract
 {
     public static partial class InteropService
     {
-        private static readonly Dictionary<uint, InteropDescriptor> methods = new Dictionary<uint, InteropDescriptor>();
+        public static readonly Dictionary<uint, InteropDescriptor> methods = new Dictionary<uint, InteropDescriptor>();
 
         static InteropService()
         {

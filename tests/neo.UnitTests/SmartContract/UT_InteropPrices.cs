@@ -17,7 +17,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                NativeContract.Fee.GetSyscallPrice(InteropService.Runtime.CheckWitness, ae.CurrentContext.EvaluationStack).Should().Be(0_000300L);
+                NativeContract.Fee.GetSyscallPrice(InteropService.Runtime.CheckWitness, ae.CurrentContext.EvaluationStack).Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.GetContext, ae.CurrentContext.EvaluationStack).Should().Be(0_0000040L);
+                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.GetContext, ae.CurrentContext.EvaluationStack).Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.Get, ae.CurrentContext.EvaluationStack).Should().Be(0_010000L);
+                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.Get, ae.CurrentContext.EvaluationStack).Should().Be(0_01000000L);
             }
         }
 
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(SyscallContractCreateHash00);
                 debugger.StepInto(); // PUSHDATA1
                 debugger.StepInto(); // PUSHDATA1
-                NativeContract.Fee.GetSyscallPrice(InteropService.Contract.Create, ae.CurrentContext.EvaluationStack).Should().Be(0_003000L);
+                NativeContract.Fee.GetSyscallPrice(InteropService.Contract.Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack).Should().Be(2000L);
+                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
@@ -72,7 +72,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.PutEx, ae.CurrentContext.EvaluationStack).Should().Be(2000L);
+                NativeContract.Fee.GetSyscallPrice(InteropService.Storage.PutEx, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
             }
         }
     }

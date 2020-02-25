@@ -6,6 +6,7 @@ using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
@@ -27,10 +28,24 @@ namespace Neo.SmartContract.Native
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
+            foreach (KeyValuePair<uint, InteropDescriptor> kv in InteropService.methods)
+            {
+                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(kv.Key)), new StorageItem
+                {
+                    Value = BitConverter.GetBytes(kv.Value.Price)
+                });
+            }
+            foreach (KeyValuePair<OpCode, long> kv in ApplicationEngine.OpCodePrices)
+            {
+                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes((uint)kv.Key)), new StorageItem
+                {
+                    Value = BitConverter.GetBytes(kv.Value)
+                });
+            }
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Ratio), new StorageItem
             {
-                Value = BitConverter.GetBytes(100u)
-            }); 
+                Value = BitConverter.GetBytes(1u)
+            });
             return true;
         }
 
@@ -50,32 +65,21 @@ namespace Neo.SmartContract.Native
 
         public long GetSyscallPrice(uint method, EvaluationStack stack = null, StoreView snapshot = null)
         {
-            if (snapshot?.Storages.TryGet(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method))) != null)
+            if (snapshot != null)
             {
-                return BitConverter.ToInt64(snapshot?.Storages[CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method))].Value, 0);
+                return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method))].Value, 0) / GetRatio(snapshot);
             }
             return InteropService.GetPrice(method, stack);
         }
 
-        [ContractMethod(0_00030000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
+        [ContractMethod(0_00030000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Array }, ParameterNames = new[] { "value" })]
         private StackItem SetSyscallPrice(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
-            uint method = (uint)args[0].GetBigInteger();
-            long value = InteropService.GetPrice(method, engine.CurrentContext.EvaluationStack) / GetRatio(engine.Snapshot);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method)));
-            if (storage != null)
-            {
-                storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method)));
-                storage.Value = BitConverter.GetBytes(value);
-            }
-            else
-            {
-                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method)), new StorageItem
-                {
-                    Value = BitConverter.GetBytes(value)
-                });
-            }
+            uint method = (uint)((Array)args[0])[0].GetBigInteger();
+            ulong value = (ulong)((Array)args[0])[1].GetBigInteger();
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method)));
+            storage.Value = BitConverter.GetBytes(value);
             return true;
         }
 
@@ -88,45 +92,23 @@ namespace Neo.SmartContract.Native
 
         public long GetOpCodePrice(OpCode opCode, StoreView snapshot = null)
         {
-            if (snapshot?.Storages.TryGet(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes((int)opCode))) != null)
+            if (snapshot != null)
             {
-                return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes((int)opCode))].Value, 0);
+                return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes((int)opCode))].Value, 0) / GetRatio(snapshot);
             }
             return ApplicationEngine.OpCodePrices[opCode];
         }
 
-        [ContractMethod(0_00030000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
+        [ContractMethod(0_00030000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Array }, ParameterNames = new[] { "value" })]
         private StackItem SetOpCodePrice(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
-            uint opCode = (uint)args[0].GetBigInteger();
-            long value = ApplicationEngine.OpCodePrices[(OpCode)opCode] / GetRatio(engine.Snapshot);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes(opCode)));
-            if (storage != null)
-            {
-                storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes(opCode)));
-                storage.Value = BitConverter.GetBytes(value);
-            }
-            else
-            {
-                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes(opCode)), new StorageItem
-                {
-                    Value = BitConverter.GetBytes(value)
-                });
-            }
+            uint opCode = (uint)((Array)args[0])[0].GetBigInteger();
+            ulong value = (ulong)((Array)args[0])[1].GetBigInteger();
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes(opCode)));
+            storage.Value = BitConverter.GetBytes(value);
             return true;
         }
-
-        /**
-        [ContractMethod(0_00030000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
-        private StackItem SetOpcodePrice(ApplicationEngine engine, Array args)
-        {
-            if (!CheckValidators(engine)) return false;
-            byte opCode = args[0].GetBigInteger().ToByteArray()[0];
-            ApplicationEngine.OpCodePrices[(OpCode)opCode] / GetRatio(engine.Snapshot);
-            return true;
-        }
-        **/
 
         [ContractMethod(0_00010000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetRatio(ApplicationEngine engine, Array args)

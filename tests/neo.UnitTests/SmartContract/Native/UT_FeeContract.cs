@@ -7,6 +7,7 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -31,11 +32,23 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.Fee.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
 
-            (keyCount + 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
+            (keyCount + 232).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             var ret = NativeContract.Fee.Call(snapshot, "getRatio");
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(100);
+            ret.GetBigInteger().Should().Be(1u);
+
+            uint runtimeCheckWitness = "System.Runtime.CheckWitness".ToInteropMethodHash();
+            ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+               "getSyscallPrice", new ContractParameter(ContractParameterType.Integer) { Value = runtimeCheckWitness });
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetBigInteger().Should().Be(30000);
+
+            int pushdata4 = (int)OpCode.PUSHDATA4;
+            ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+              "getOpCodePrice", new ContractParameter(ContractParameterType.Integer) { Value = pushdata4 });
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetBigInteger().Should().Be(110000);
         }
 
         [TestMethod]
@@ -52,24 +65,28 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.Fee.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
 
+            IList<ContractParameter> values = new List<ContractParameter>();
+            values.Add(new ContractParameter { Type = ContractParameterType.Integer, Value = runtimeCheckWitness });
+            values.Add(new ContractParameter { Type = ContractParameterType.Integer, Value = 300 });
+
             // Without signature
 
             var ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
-               "setSyscallPrice", new ContractParameter(ContractParameterType.Integer) { Value = runtimeCheckWitness });
+               "setSyscallPrice", new ContractParameter(ContractParameterType.Array) { Value = values });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.ToBoolean().Should().BeFalse();
 
             // With signature
-
+            
             ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
-               "setSyscallPrice", new ContractParameter(ContractParameterType.Integer) { Value = runtimeCheckWitness } );
+               "setSyscallPrice", new ContractParameter(ContractParameterType.Array) { Value = values });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                "getSyscallPrice", new ContractParameter(ContractParameterType.Integer) { Value = runtimeCheckWitness });
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(3);
+            ret.GetBigInteger().Should().Be(300);
         }
 
         [TestMethod]
@@ -86,24 +103,28 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.Fee.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
 
+            IList<ContractParameter> values = new List<ContractParameter>();
+            values.Add(new ContractParameter { Type = ContractParameterType.Integer, Value = pushdata4 });
+            values.Add(new ContractParameter { Type = ContractParameterType.Integer, Value = 1100 });
+
             // Without signature
 
             var ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
-               "setOpCodePrice", new ContractParameter(ContractParameterType.Integer) { Value = pushdata4});
+               "setOpCodePrice", new ContractParameter(ContractParameterType.Array) { Value = values });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.ToBoolean().Should().BeFalse();
 
             // With signature
 
             ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
-               "setOpCodePrice", new ContractParameter(ContractParameterType.Integer) { Value = pushdata4 });
+               "setOpCodePrice", new ContractParameter(ContractParameterType.Array) { Value = values });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.ToBoolean().Should().BeTrue();
 
             ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
                "getOpCodePrice", new ContractParameter(ContractParameterType.Integer) { Value = pushdata4 });
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(11);
+            ret.GetBigInteger().Should().Be(1100);
         }
     }
 }
