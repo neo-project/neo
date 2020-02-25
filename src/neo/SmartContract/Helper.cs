@@ -13,20 +13,34 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
+        public static bool IsMultiSigContract(this byte[] script)
+        {
+            return IsMultiSigContract(script, out _, out _, null);
+        }
+
         public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
         {
-            return IsMultiSigContract(script, out m, out n, out _, false);
+            return IsMultiSigContract(script, out m, out n, null);
         }
 
-        public static bool IsMultiSigContract(this byte[] script, out int m, out int n, out ECPoint[] points)
+        public static bool IsMultiSigContract(this byte[] script, out int m, out ECPoint[] points)
         {
-            return IsMultiSigContract(script, out m, out n, out points, true);
+            List<ECPoint> list = new List<ECPoint>();
+            if (IsMultiSigContract(script, out m, out _, list))
+            {
+                points = list.ToArray();
+                return true;
+            }
+            else
+            {
+                points = null;
+                return false;
+            }
         }
 
-        private static bool IsMultiSigContract(this byte[] script, out int m, out int n, out ECPoint[] points, bool parsePoints)
+        private static bool IsMultiSigContract(byte[] script, out int m, out int n, List<ECPoint> points)
         {
             m = 0; n = 0;
-            points = System.Array.Empty<ECPoint>();
             int i = 0;
             if (script.Length < 43) return false;
             switch (script[i])
@@ -47,16 +61,11 @@ namespace Neo.SmartContract
                     return false;
             }
             if (m < 1 || m > 1024) return false;
-            var recoverPoints = new List<ECPoint>();
             while (script[i] == (byte)OpCode.PUSHDATA1)
             {
                 if (script.Length <= i + 35) return false;
                 if (script[++i] != 33) return false;
-
-                if (parsePoints)
-                {
-                    recoverPoints.Add(ECPoint.DecodePoint(script.AsSpan(i + 1, 33), ECCurve.Secp256r1));
-                }
+                points?.Add(ECPoint.DecodePoint(script.AsSpan(i + 1, 33), ECCurve.Secp256r1));
                 i += 34;
                 ++n;
             }
@@ -83,7 +92,6 @@ namespace Neo.SmartContract
             if (script.Length != i + 4) return false;
             if (BitConverter.ToUInt32(script, i) != InteropService.Crypto.ECDsaCheckMultiSig)
                 return false;
-            points = recoverPoints.ToArray();
             return true;
         }
 
@@ -101,7 +109,7 @@ namespace Neo.SmartContract
 
         public static bool IsStandardContract(this byte[] script)
         {
-            return script.IsSignatureContract() || script.IsMultiSigContract(out _, out _);
+            return script.IsSignatureContract() || script.IsMultiSigContract();
         }
 
         public static uint ToInteropMethodHash(this string method)

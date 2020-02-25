@@ -391,7 +391,7 @@ namespace Neo.Wallets
                     Contract multiSigContract = account.Contract;
 
                     if (multiSigContract != null &&
-                        SmartContract.Helper.IsMultiSigContract(multiSigContract.Script, out var m, out var n, out var points))
+                        multiSigContract.Script.IsMultiSigContract(out int m, out ECPoint[] points))
                     {
                         foreach (var point in points)
                         {
