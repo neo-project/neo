@@ -388,7 +388,7 @@ namespace Neo.Wallets
                 {
                     // Try to sign self-contained multiSig
 
-                    Contract multiSigContract = account.Contract;
+                    Contract multiSigContract = account?.Contract;
 
                     if (multiSigContract != null &&
                         multiSigContract.Script.IsMultiSigContract(out int m, out ECPoint[] points))
