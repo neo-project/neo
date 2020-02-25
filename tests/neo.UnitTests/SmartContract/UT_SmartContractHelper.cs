@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] script4 = Contract.CreateMultiSigRedeemScript(3, publicKeys4);
             script4[script4.Length - 1] = 0x00;
             Assert.AreEqual(false, Neo.SmartContract.Helper.IsMultiSigContract(script4, out _, out ECPoint[] p4));
-            CollectionAssert.AreEqual(Array.Empty<ECPoint>(), p4);
+            Assert.IsNull(p4);
         }
 
         [TestMethod]
