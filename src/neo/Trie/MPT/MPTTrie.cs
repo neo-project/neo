@@ -1,6 +1,6 @@
+using Neo.IO.Json;
 using Neo.Persistence;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
 {
@@ -27,9 +27,8 @@ namespace Neo.Trie.MPT
                     {
                         if (path.Length == 0 && val is ValueNode v)
                         {
-                            db.Delete(node.GetHash());
-                            valueNode = v;
-                            db.Put(valueNode);
+                            node = v;
+                            db.Put(node);
                             return true;
                         }
                         return false;
@@ -78,7 +77,7 @@ namespace Neo.Trie.MPT
                                 Next = son,
                             };
                             db.Put(extensionNode);
-                            shortNode = extensionNode;
+                            node = extensionNode;
                         }
                         else
                         {
@@ -117,6 +116,7 @@ namespace Neo.Trie.MPT
                                 Next = val,
                             };
                             node = newNode;
+                            db.Put(val);
                             db.Put(node);
                             return true;
                         }
@@ -142,7 +142,6 @@ namespace Neo.Trie.MPT
                     {
                         if (path.Length == 0)
                         {
-                            db.Delete(valueNode.GetHash());
                             node = HashNode.EmptyNode();
                             return true;
                         }
@@ -238,10 +237,12 @@ namespace Neo.Trie.MPT
 
         public void Commit()
         {
-            if (root.Flag.Dirty)
-            {
-                db.PutRoot(GetRoot());
-            }
+            db.PutRoot(GetRoot());
+        }
+
+        public JObject ToJson()
+        {
+            return root.ToJson();
         }
     }
 }

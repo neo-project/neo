@@ -1,5 +1,5 @@
 using Neo.Cryptography;
-using Neo.IO;
+using Neo.IO.Json;
 using System.IO;
 
 namespace Neo.Trie.MPT
@@ -46,6 +46,16 @@ namespace Neo.Trie.MPT
                 hashNode.DecodeSpecific(reader);
                 Children[i] = hashNode;
             }
+        }
+
+        public override JObject ToJson()
+        {
+            var jarr = new JArray();
+            for (int i = 0; i < CHILD_COUNT; i++)
+            {
+                jarr.Add(Children[i].ToJson());
+            }
+            return jarr;
         }
     }
 }

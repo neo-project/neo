@@ -97,10 +97,13 @@ namespace Neo.UnitTests.Trie.MPT
             var mpt1 = new MPTTrie(mptdb);
             Assert.AreEqual("743d2d1f400ae407d14ec19d68c5b6d8791633277a8917d75ab97be4ffed7172", mpt1.GetRoot().ToHexString());
             var mpt = new MPTTrie(store.GetSnapshot());
-            mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
-            mpt.Put("ac99".HexToBytes(), "2222".HexToBytes());
-            mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
-            Assert.AreEqual("aae7f2cd9bcd3b3dadca286ccbecf03d7269fb4cc547fa40ba799abb89c3731f", mpt.GetRoot().ToHexString());
+            var result = mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.Put("ac99".HexToBytes(), "2222".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
+            Assert.IsTrue(result);
+            Assert.AreEqual("743d2d1f400ae407d14ec19d68c5b6d8791633277a8917d75ab97be4ffed7172", mpt.GetRoot().ToHexString());
         }
 
         [TestMethod]
@@ -142,6 +145,30 @@ namespace Neo.UnitTests.Trie.MPT
             result = mpt.TryDelete("acae".HexToBytes());
             Assert.IsTrue(result);
             Assert.AreEqual("aae7f2cd9bcd3b3dadca286ccbecf03d7269fb4cc547fa40ba799abb89c3731f", mpt.GetRoot().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestDeleteSameValue()
+        {
+            var store = new MemoryStore();
+            var snapshot = store.GetSnapshot();
+            var mpt = new MPTTrie(snapshot);
+            var result = mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.Put("ac02".HexToBytes(), "abcd".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.TryGet("ac01".HexToBytes(), out byte[] value);
+            Assert.IsTrue(result);
+            result = mpt.TryGet("ac02".HexToBytes(), out value);
+            Assert.IsTrue(result);
+            result = mpt.TryDelete("ac01".HexToBytes());
+            result = mpt.TryGet("ac02".HexToBytes(), out value);
+            Assert.IsTrue(result);
+            mpt.Commit();
+            snapshot.Commit();
+            var mpt0 = new MPTTrie(store.GetSnapshot());
+            result = mpt0.TryGet("ac02".HexToBytes(), out value);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]

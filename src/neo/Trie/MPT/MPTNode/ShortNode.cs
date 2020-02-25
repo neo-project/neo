@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Json;
 using System.IO;
 
 namespace Neo.Trie.MPT
@@ -32,6 +33,14 @@ namespace Neo.Trie.MPT
             var hashNode = new HashNode();
             hashNode.DecodeSpecific(reader);
             Next = hashNode;
+        }
+
+        public override JObject ToJson()
+        {
+            var json = new JObject();
+            json["key"] = Key.ToHexString();
+            json["next"] = Next.ToJson();
+            return json;
         }
     }
 }

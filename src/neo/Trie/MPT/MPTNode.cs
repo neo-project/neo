@@ -1,5 +1,4 @@
-using Neo.Cryptography;
-using Neo.IO;
+using Neo.IO.Json;
 using System.IO;
 using System.Text;
 
@@ -33,7 +32,7 @@ namespace Neo.Trie.MPT
 
         public virtual byte[] GetHash()
         {
-            if (!Flag.Dirty) return Flag.Hash;
+            if (!Flag.Dirty && Flag.Hash.Length > 0) return Flag.Hash;
             Flag.Hash = GenHash();
             Flag.Dirty = false;
             return (byte[])Flag.Hash.Clone();
@@ -99,5 +98,7 @@ namespace Neo.Trie.MPT
         }
 
         public abstract void DecodeSpecific(BinaryReader reader);
+
+        public abstract JObject ToJson();
     }
 }

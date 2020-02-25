@@ -81,7 +81,7 @@ namespace Neo.Trie.MPT
 
         public byte[] GetRoot()
         {
-            return this.root.GetHash();
+            return root.GetHash();
         }
 
         public Dictionary<byte[], byte[]> GetProof(byte[] path)

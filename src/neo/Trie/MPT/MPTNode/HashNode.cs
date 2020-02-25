@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Json;
 using System;
 using System.IO;
 
@@ -40,6 +41,13 @@ namespace Neo.Trie.MPT
         public override void DecodeSpecific(BinaryReader reader)
         {
             Hash = reader.ReadVarBytes();
+        }
+
+        public override JObject ToJson()
+        {
+            var json = new JObject();
+            json["hash"] = Hash.ToHexString();
+            return json;
         }
     }
 }
