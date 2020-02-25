@@ -11,9 +11,24 @@ namespace Neo.SmartContract
     {
         public static class Encode
         {
+            /// <summary>
+            /// Convert public key to corresponding wallet account address
+            /// </summary>
             public static readonly InteropDescriptor PubKeyToAddress = Register("Neo.Encode.PubKeyToAddress", Encode_PubKeyToAddress, 0_00010000, TriggerType.All, CallFlags.None);
+
+            /// <summary>
+            /// Convert public key to corresponding wallet account scripthash
+            /// </summary>
             public static readonly InteropDescriptor PubKeyToScriptHash = Register("Neo.Encode.PubKeyToScriptHash", Encode_PubKeyToScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
+
+            /// <summary>
+            /// Convert wallet account address to corresponding scripthash
+            /// </summary>
             public static readonly InteropDescriptor AddressToScriptHash = Register("Neo.Encode.AddressToScriptHash", Encode_AddressToScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
+
+            /// <summary>
+            /// Convert wallet account scripthash to corresponding address
+            /// </summary>
             public static readonly InteropDescriptor ScriptHashToAddress = Register("Neo.Encode.ScriptHashToAddress", Encode_ScriptHashToAddress, 0_00010000, TriggerType.All, CallFlags.None);
 
             private static bool Encode_PubKeyToAddress(ApplicationEngine engine)
