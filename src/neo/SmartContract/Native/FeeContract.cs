@@ -34,7 +34,7 @@ namespace Neo.SmartContract.Native
             if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Ratio), new StorageItem
             {
-                Value = BitConverter.GetBytes(1u)
+                Value = BitConverter.GetBytes(DefaultRatio)
             });
             return true;
         }
