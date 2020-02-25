@@ -24,16 +24,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name().Should().Be("GAS");
+        public void Check_Name() => NativeContract.GAS.Name(Blockchain.Singleton.GetSnapshot()).Should().Be("GAS");
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol().Should().Be("gas");
+        public void Check_Symbol() => NativeContract.GAS.Symbol(Blockchain.Singleton.GetSnapshot()).Should().Be("gas");
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.GAS.Decimals().Should().Be(8);
+        public void Check_Decimals() => NativeContract.GAS.Decimals(Blockchain.Singleton.GetSnapshot()).Should().Be(8);
 
         [TestMethod]
-        public void Check_SupportedStandards() => NativeContract.GAS.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
+        public void Check_SupportedStandards() => NativeContract.GAS.SupportedStandards(Blockchain.Singleton.GetSnapshot()).Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
 
         [TestMethod]
         public void Check_BalanceOfTransferAndBurn()

@@ -339,7 +339,7 @@ namespace Neo.Wallets
                 {
                     byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
                     if (witness_script is null) continue;
-                    tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
+                    tx.NetworkFee += CalculateNetworkFee(witness_script, ref size, snapshot);
                 }
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
@@ -347,26 +347,26 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public static long CalculateNetworkFee(byte[] witness_script, ref int size)
+        public static long CalculateNetworkFee(byte[] witness_script, ref int size, StoreView snapshot)
         {
             long networkFee = 0;
 
             if (witness_script.IsSignatureContract())
             {
                 size += 67 + witness_script.GetVarSize();
-                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1)+ NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1) + NativeContract.Fee.GetOpCodePrice(OpCode.PUSHNULL) + NativeContract.Fee.GetSyscallPrice(InteropService.Crypto.ECDsaVerify);
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1, snapshot) + NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1, snapshot) + NativeContract.Fee.GetOpCodePrice(OpCode.PUSHNULL, snapshot) + NativeContract.Fee.GetSyscallPrice(InteropService.Crypto.ECDsaVerify, snapshot);
             }
             else if (witness_script.IsMultiSigContract(out int m, out int n))
             {
                 int size_inv = 66 * m;
                 size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1) * m;
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1, snapshot) * m;
                 using (ScriptBuilder sb = new ScriptBuilder())
-                    networkFee += NativeContract.Fee.GetOpCodePrice((OpCode)sb.EmitPush(m).ToArray()[0]);
-                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1) * n;
+                    networkFee += NativeContract.Fee.GetOpCodePrice((OpCode)sb.EmitPush(m).ToArray()[0], snapshot);
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHDATA1, snapshot) * n;
                 using (ScriptBuilder sb = new ScriptBuilder())
-                    networkFee += NativeContract.Fee.GetOpCodePrice((OpCode)sb.EmitPush(n).ToArray()[0]);
-                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHNULL) + NativeContract.Fee.GetSyscallPrice(InteropService.Crypto.ECDsaVerify) * n;
+                    networkFee += NativeContract.Fee.GetOpCodePrice((OpCode)sb.EmitPush(n).ToArray()[0], snapshot);
+                networkFee += NativeContract.Fee.GetOpCodePrice(OpCode.PUSHNULL, snapshot) + NativeContract.Fee.GetSyscallPrice(InteropService.Crypto.ECDsaVerify, snapshot) * n;
             }
             else
             {

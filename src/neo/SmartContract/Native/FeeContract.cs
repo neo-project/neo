@@ -3,6 +3,7 @@
 
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -21,27 +22,14 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Syscall = 12;
         private const byte Prefix_OpCode = 13;
 
-        internal FeeContract()
+        public FeeContract()
         {
+            Manifest.Features = ContractFeatures.HasStorage;
         }
 
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            foreach (KeyValuePair<uint, InteropDescriptor> kv in InteropService.methods)
-            {
-                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(kv.Key)), new StorageItem
-                {
-                    Value = BitConverter.GetBytes(kv.Value.Price)
-                });
-            }
-            foreach (KeyValuePair<OpCode, long> kv in ApplicationEngine.OpCodePrices)
-            {
-                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes((uint)kv.Key)), new StorageItem
-                {
-                    Value = BitConverter.GetBytes(kv.Value)
-                });
-            }
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Ratio), new StorageItem
             {
                 Value = BitConverter.GetBytes(1u)
@@ -60,16 +48,16 @@ namespace Neo.SmartContract.Native
         private StackItem GetSyscallPrice(ApplicationEngine engine, Array args)
         {
             uint method = (uint)args[0].GetBigInteger();
-            return GetSyscallPrice(method, null, engine.Snapshot);
+            return GetSyscallPrice(method, engine.Snapshot);
         }
 
-        public long GetSyscallPrice(uint method, EvaluationStack stack = null, StoreView snapshot = null)
+        public long GetSyscallPrice(uint method, StoreView snapshot, EvaluationStack stack = null)
         {
-            if (snapshot != null)
+            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method))) != null)
             {
                 return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method))].Value, 0) / GetRatio(snapshot);
             }
-            return InteropService.GetPrice(method, stack);
+            return InteropService.GetPrice(method, stack) / GetRatio(snapshot);
         }
 
         [ContractMethod(0_00030000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Array }, ParameterNames = new[] { "value" })]
@@ -77,9 +65,10 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckValidators(engine)) return false;
             uint method = (uint)((Array)args[0])[0].GetBigInteger();
-            ulong value = (ulong)((Array)args[0])[1].GetBigInteger();
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method)));
-            storage.Value = BitConverter.GetBytes(value);
+            long value = (long)((Array)args[0])[1].GetBigInteger();
+            StorageKey key = CreateStorageKey(Prefix_Syscall, BitConverter.GetBytes(method));
+            StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem());
+            item.Value = BitConverter.GetBytes(value);
             return true;
         }
 
@@ -90,13 +79,13 @@ namespace Neo.SmartContract.Native
             return GetOpCodePrice((OpCode)opCode, engine.Snapshot);
         }
 
-        public long GetOpCodePrice(OpCode opCode, StoreView snapshot = null)
+        public long GetOpCodePrice(OpCode opCode, StoreView snapshot)
         {
-            if (snapshot != null)
+            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes((int)opCode))) != null)
             {
                 return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes((int)opCode))].Value, 0) / GetRatio(snapshot);
             }
-            return ApplicationEngine.OpCodePrices[opCode];
+            return ApplicationEngine.OpCodePrices[opCode] / GetRatio(snapshot);
         }
 
         [ContractMethod(0_00030000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Array }, ParameterNames = new[] { "value" })]
@@ -104,9 +93,10 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckValidators(engine)) return false;
             uint opCode = (uint)((Array)args[0])[0].GetBigInteger();
-            ulong value = (ulong)((Array)args[0])[1].GetBigInteger();
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes(opCode)));
-            storage.Value = BitConverter.GetBytes(value);
+            long value = (long)((Array)args[0])[1].GetBigInteger();
+            StorageKey key = CreateStorageKey(Prefix_OpCode, BitConverter.GetBytes(opCode));
+            StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem());
+            item.Value = BitConverter.GetBytes(value);
             return true;
         }
 
@@ -118,7 +108,10 @@ namespace Neo.SmartContract.Native
 
         public uint GetRatio(StoreView snapshot)
         {
-            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_Ratio)].Value, 0);
+            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Ratio)) != null)
+                return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_Ratio)].Value, 0);
+            else
+                return 1;
         }
 
         [ContractMethod(0_00030000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
@@ -126,6 +119,8 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckValidators(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
+            if (value == 0)
+                return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Ratio));
             storage.Value = BitConverter.GetBytes(value);
             return true;

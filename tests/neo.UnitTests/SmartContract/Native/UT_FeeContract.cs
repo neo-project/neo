@@ -22,7 +22,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_SupportedStandards() => NativeContract.Fee.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-10" });
+        public void Check_SupportedStandards() => NativeContract.Fee.SupportedStandards(Blockchain.Singleton.GetSnapshot()).Should().BeEquivalentTo(new string[] { "NEP-10" });
 
         [TestMethod]
         public void Check_Initialize()
@@ -32,23 +32,11 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.Fee.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
 
-            (keyCount + 232).Should().Be(snapshot.Storages.GetChangeSet().Count());
+            (keyCount + 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             var ret = NativeContract.Fee.Call(snapshot, "getRatio");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetBigInteger().Should().Be(1u);
-
-            uint runtimeCheckWitness = "System.Runtime.CheckWitness".ToInteropMethodHash();
-            ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
-               "getSyscallPrice", new ContractParameter(ContractParameterType.Integer) { Value = runtimeCheckWitness });
-            ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(30000);
-
-            int pushdata4 = (int)OpCode.PUSHDATA4;
-            ret = NativeContract.Fee.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
-              "getOpCodePrice", new ContractParameter(ContractParameterType.Integer) { Value = pushdata4 });
-            ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(110000);
         }
 
         [TestMethod]

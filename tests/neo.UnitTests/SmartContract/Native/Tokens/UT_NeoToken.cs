@@ -28,16 +28,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.NEO.Name().Should().Be("NEO");
+        public void Check_Name() => NativeContract.NEO.Name(Blockchain.Singleton.GetSnapshot()).Should().Be("NEO");
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.NEO.Symbol().Should().Be("neo");
+        public void Check_Symbol() => NativeContract.NEO.Symbol(Blockchain.Singleton.GetSnapshot()).Should().Be("neo");
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.NEO.Decimals().Should().Be(0);
+        public void Check_Decimals() => NativeContract.NEO.Decimals(Blockchain.Singleton.GetSnapshot()).Should().Be(0);
 
         [TestMethod]
-        public void Check_SupportedStandards() => NativeContract.NEO.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
+        public void Check_SupportedStandards() => NativeContract.NEO.SupportedStandards(Blockchain.Singleton.GetSnapshot()).Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
 
         [TestMethod]
         public void Check_Vote()

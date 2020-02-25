@@ -96,7 +96,7 @@ namespace Neo.UnitTests.SmartContract
         public void Json_Deserialize()
         {
             // Good
-
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("123");
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("null");
                 script.EmitSysCall(InteropService.Json.Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("***");
                 script.EmitSysCall(InteropService.Json.Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -153,7 +153,7 @@ namespace Neo.UnitTests.SmartContract
         public void Json_Serialize()
         {
             // Good
-
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush(5);
@@ -172,7 +172,7 @@ namespace Neo.UnitTests.SmartContract
                 script.Emit(OpCode.SETITEM);
                 script.EmitSysCall(InteropService.Json.Serialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 

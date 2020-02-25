@@ -79,7 +79,7 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(NativeContract.Fee.GetSyscallPrice(method, CurrentContext.EvaluationStack)))
+            if (!AddGas(NativeContract.Fee.GetSyscallPrice(method, Snapshot, CurrentContext.EvaluationStack)))
                 return false;
             return InteropService.Invoke(this, method);
         }
@@ -88,7 +88,7 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            return AddGas(NativeContract.Fee.GetOpCodePrice(CurrentContext.CurrentInstruction.OpCode));
+            return AddGas(NativeContract.Fee.GetOpCodePrice(CurrentContext.CurrentInstruction.OpCode, Snapshot));
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)

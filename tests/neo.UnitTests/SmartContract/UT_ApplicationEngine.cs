@@ -119,13 +119,13 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestOnSysCall()
         {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             InteropDescriptor descriptor = new InteropDescriptor("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application, CallFlags.None);
-            TestApplicationEngine engine = new TestApplicationEngine(TriggerType.Application, null, null, 0);
+            TestApplicationEngine engine = new TestApplicationEngine(TriggerType.Application, null, snapshot, 0);
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             engine.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
             engine.GetOnSysCall(descriptor.Hash).Should().BeFalse();
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             engine = new TestApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
             engine.GetOnSysCall(descriptor.Hash).Should().BeTrue();

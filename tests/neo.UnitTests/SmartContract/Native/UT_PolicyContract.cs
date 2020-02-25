@@ -22,7 +22,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_SupportedStandards() => NativeContract.Policy.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-10" });
+        public void Check_SupportedStandards() => NativeContract.Policy.SupportedStandards(Blockchain.Singleton.GetSnapshot()).Should().BeEquivalentTo(new string[] { "NEP-10" });
 
         [TestMethod]
         public void Check_Initialize()

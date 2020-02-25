@@ -68,9 +68,9 @@ namespace Neo.UnitTests.Extensions
             return result.ToBoolean();
         }
 
-        public static string[] SupportedStandards(this NativeContract contract)
+        public static string[] SupportedStandards(this NativeContract contract, StoreView snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -131,9 +131,9 @@ namespace Neo.UnitTests.Extensions
             return (result as VM.Types.Integer).GetBigInteger();
         }
 
-        public static BigInteger Decimals(this NativeContract contract)
+        public static BigInteger Decimals(this NativeContract contract, StoreView snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -151,9 +151,9 @@ namespace Neo.UnitTests.Extensions
             return (result as VM.Types.Integer).GetBigInteger();
         }
 
-        public static string Symbol(this NativeContract contract)
+        public static string Symbol(this NativeContract contract, StoreView snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -171,9 +171,9 @@ namespace Neo.UnitTests.Extensions
             return result.GetString();
         }
 
-        public static string Name(this NativeContract contract)
+        public static string Name(this NativeContract contract, StoreView snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
