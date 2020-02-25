@@ -378,17 +378,22 @@ namespace Neo.Wallets
 
         public bool Sign(ContractParametersContext context)
         {
-            KeyPair key;
-            byte[] signature;
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
                 WalletAccount account = GetAccount(scriptHash);
-                if (account?.HasKey != true)
+                if (account is null) continue;
+                if (account.HasKey)
+                {
+                    KeyPair key = account.GetKey();
+                    byte[] signature = context.Verifiable.Sign(key);
+                    fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+                }
+                else
                 {
                     // Try to sign self-contained multiSig
 
-                    Contract multiSigContract = account?.Contract;
+                    Contract multiSigContract = account.Contract;
 
                     if (multiSigContract != null &&
                         multiSigContract.Script.IsMultiSigContract(out int m, out ECPoint[] points))
@@ -397,20 +402,14 @@ namespace Neo.Wallets
                         {
                             account = GetAccount(point);
                             if (account?.HasKey != true) continue;
-                            key = account.GetKey();
-                            signature = context.Verifiable.Sign(key);
+                            KeyPair key = account.GetKey();
+                            byte[] signature = context.Verifiable.Sign(key);
                             fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
                             if (fSuccess) m--;
                             if (context.Completed || m <= 0) break;
                         }
                     }
-
-                    continue;
                 }
-
-                key = account.GetKey();
-                signature = context.Verifiable.Sign(key);
-                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
             }
             return fSuccess;
         }
