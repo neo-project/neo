@@ -235,10 +235,16 @@ namespace Neo.UnitTests.Oracle
             ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
 
             ECPoint pubkey0 = oraclePubKeys[0];
+
             byte[] privateKey1 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair1 = new KeyPair(privateKey1);
             ECPoint pubkey1 = keyPair1.PublicKey;
+
+            byte[] privateKey2 = { 0x02,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            KeyPair keyPair2 = new KeyPair(privateKey2);
+            ECPoint pubkey2 = keyPair2.PublicKey;
 
             using ScriptBuilder sb = new ScriptBuilder();
             sb.EmitAppCall(NativeContract.OraclePolicy.Hash, "delegateOracleValidator", new ContractParameter
@@ -272,6 +278,7 @@ namespace Neo.UnitTests.Oracle
             wallet.Sign(context);
             tx.Witnesses = context.GetWitnesses();
 
+            // wrong witness
             var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
             engine.LoadScript(tx.Script);
             var state = engine.Execute();
@@ -280,7 +287,30 @@ namespace Neo.UnitTests.Oracle
             result.Should().BeOfType(typeof(VM.Types.Boolean));
             Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
 
-            var from = Contract.CreateSignatureContract(pubkey0).ScriptHash;
+            //wrong witness
+            using ScriptBuilder sb2 = new ScriptBuilder();
+            sb2.EmitAppCall(NativeContract.OraclePolicy.Hash, "delegateOracleValidator", new ContractParameter
+            {
+                Type = ContractParameterType.ByteArray,
+                Value = pubkey1.ToArray()
+            }, new ContractParameter
+            {
+                Type = ContractParameterType.ByteArray,
+                Value = pubkey2.ToArray()
+            });
+
+            var from = Contract.CreateSignatureContract(pubkey1).ScriptHash;
+
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
+            engine.LoadScript(sb2.ToArray());
+            state = engine.Execute();
+            state.Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+
+            //correct
+            from = Contract.CreateSignatureContract(pubkey0).ScriptHash;
 
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(tx.Script.ToArray());
