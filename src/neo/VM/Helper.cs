@@ -225,6 +225,7 @@ namespace Neo.VM
 
         private static ContractParameter ToParameter(StackItem item, List<(StackItem, ContractParameter)> context)
         {
+            if (item is null) throw new ArgumentNullException();
             ContractParameter parameter = null;
             switch (item)
             {
@@ -280,7 +281,6 @@ namespace Neo.VM
                     };
                     break;
                 case Null _:
-                case null:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Any
@@ -299,12 +299,12 @@ namespace Neo.VM
 
         private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
         {
-            if (parameter is null) return StackItem.Null;
+            if (parameter is null) throw new ArgumentNullException();
+            if (parameter.Value is null) return StackItem.Null;
             StackItem stackItem = null;
             switch (parameter.Type)
             {
                 case ContractParameterType.Array:
-                    if (parameter.Value is null) return StackItem.Null;
                     if (context is null)
                         context = new List<(StackItem, ContractParameter)>();
                     else
@@ -316,7 +316,6 @@ namespace Neo.VM
                     }
                     break;
                 case ContractParameterType.Map:
-                    if (parameter.Value is null) return StackItem.Null;
                     if (context is null)
                         context = new List<(StackItem, ContractParameter)>();
                     else
@@ -331,32 +330,25 @@ namespace Neo.VM
                     }
                     break;
                 case ContractParameterType.Boolean:
-                    if (parameter.Value is null) return StackItem.Null;
                     stackItem = (bool)parameter.Value;
                     break;
                 case ContractParameterType.ByteArray:
                 case ContractParameterType.Signature:
-                    if (parameter.Value is null) return StackItem.Null;
                     stackItem = (byte[])parameter.Value;
                     break;
                 case ContractParameterType.Integer:
-                    if (parameter.Value is null) return StackItem.Null;
                     stackItem = (BigInteger)parameter.Value;
                     break;
                 case ContractParameterType.Hash160:
-                    if (parameter.Value is null) return StackItem.Null;
                     stackItem = ((UInt160)parameter.Value).ToArray();
                     break;
                 case ContractParameterType.Hash256:
-                    if (parameter.Value is null) return StackItem.Null;
                     stackItem = ((UInt256)parameter.Value).ToArray();
                     break;
                 case ContractParameterType.PublicKey:
-                    if (parameter.Value is null) return StackItem.Null;
                     stackItem = ((ECPoint)parameter.Value).EncodePoint(true);
                     break;
                 case ContractParameterType.String:
-                    if (parameter.Value is null) return StackItem.Null;
                     stackItem = (string)parameter.Value;
                     break;
                 default:
