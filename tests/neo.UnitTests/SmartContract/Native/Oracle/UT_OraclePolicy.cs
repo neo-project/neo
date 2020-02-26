@@ -319,6 +319,7 @@ namespace Neo.UnitTests.Oracle
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
             Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+            Test_GetOracleValidators();
         }
     }
 }
