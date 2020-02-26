@@ -75,8 +75,7 @@ namespace Neo.UnitTests.Oracle
             var from = NativeContract.OraclePolicy.GetOracleMultiSigAddress(snapshot);
             var value = 12345;
 
-            // Set
-
+            // Set 
             var script = new ScriptBuilder();
             script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = value });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
@@ -86,6 +85,29 @@ namespace Neo.UnitTests.Oracle
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
             Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+
+            // Set (wrong witness)
+            script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = value });
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+
+            // Set wrong (negative)
+
+            script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = -1 });
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
 
             // Get
 
@@ -136,6 +158,17 @@ namespace Neo.UnitTests.Oracle
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+
+            // Set (wrong witness)
+            script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
             Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
 

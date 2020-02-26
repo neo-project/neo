@@ -42,7 +42,6 @@ namespace Neo.Oracle
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            if (GetPerRequestFee(engine.Snapshot) != 0) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig), new StorageItem
             {
                 Value = new OracleHttpConfig() { Timeout = 5000 }.ToArray()
