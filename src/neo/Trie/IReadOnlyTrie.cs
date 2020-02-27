@@ -8,7 +8,7 @@ namespace Neo.Trie
 
         byte[] GetRoot();
 
-        Dictionary<byte[], byte[]> GetProof(byte[] path);
+        List<byte[]> GetProof(byte[] path);
 
         bool VerifyProof(byte[] path, Dictionary<byte[], byte[]> proof);
     }

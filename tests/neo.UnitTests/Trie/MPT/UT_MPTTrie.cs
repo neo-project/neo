@@ -202,9 +202,18 @@ namespace Neo.UnitTests.Trie.MPT
 
             var mpt = new MPTTrie(mptdb);
             Assert.AreEqual(r.GetHash().ToHexString(), mpt.GetRoot().ToHexString());
-            var dict = mpt.GetProof("ac01".HexToBytes());
-            Assert.AreEqual(4, dict.Count);
-            Assert.IsTrue(dict.TryGetValue(mpt.GetRoot(), out byte[] value));
+            var proof = mpt.GetProof("ac01".HexToBytes());
+            Assert.AreEqual(4, proof.Count);
+            bool exist = false;
+            foreach (byte[] item in proof)
+            {
+                if (item.Equal(b.Encode()))
+                {
+                    exist = true;
+                    break;
+                }
+            }
+            Assert.IsTrue(exist);
         }
     }
 }

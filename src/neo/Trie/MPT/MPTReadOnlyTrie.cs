@@ -84,15 +84,15 @@ namespace Neo.Trie.MPT
             return root.GetHash();
         }
 
-        public Dictionary<byte[], byte[]> GetProof(byte[] path)
+        public List<byte[]> GetProof(byte[] path)
         {
-            var dict = new Dictionary<byte[], byte[]> { };
+            var dict = new List<byte[]> { };
             path = path.ToNibbles();
             GetProof(ref root, path, dict);
             return dict;
         }
 
-        private void GetProof(ref MPTNode node, byte[] path, Dictionary<byte[], byte[]> dict)
+        private void GetProof(ref MPTNode node, byte[] path, List<byte[]> dict)
         {
             switch (node)
             {
@@ -100,7 +100,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.Length == 0)
                         {
-                            dict.Add(valueNode.GetHash(), valueNode.Encode());
+                            dict.Add(valueNode.Encode());
                         }
                         break;
                     }
@@ -113,7 +113,7 @@ namespace Neo.Trie.MPT
                     }
                 case FullNode fullNode:
                     {
-                        dict.Add(fullNode.GetHash(), fullNode.Encode());
+                        dict.Add(fullNode.Encode());
                         if (path.Length == 0)
                         {
                             GetProof(ref fullNode.Children[16], path, dict);
@@ -129,7 +129,7 @@ namespace Neo.Trie.MPT
                         var prefix = shortNode.Key.CommonPrefix(path);
                         if (prefix.Length == shortNode.Key.Length)
                         {
-                            dict.Add(shortNode.GetHash(), shortNode.Encode());
+                            dict.Add(shortNode.Encode());
                             GetProof(ref shortNode.Next, path.Skip(prefix.Length), dict);
                         }
                         break;
