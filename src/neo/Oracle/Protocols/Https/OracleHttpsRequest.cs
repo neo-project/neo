@@ -18,6 +18,11 @@ namespace Neo.Oracle.Protocols.Https
         public HTTPMethod Method { get; set; }
 
         /// <summary>
+        /// Type
+        /// </summary>
+        public override OracleRequestType Type => OracleRequestType.HTTPS;
+
+        /// <summary>
         /// URL
         /// </summary>
         public Uri URL { get; set; }
@@ -31,11 +36,6 @@ namespace Neo.Oracle.Protocols.Https
         /// Body
         /// </summary>
         public byte[] Body { get; set; }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public OracleHttpsRequest() : base(OracleRequestType.HTTPS) { }
 
         /// <summary>
         /// Get hash data

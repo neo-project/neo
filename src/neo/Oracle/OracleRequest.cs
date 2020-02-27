@@ -28,12 +28,6 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="type">Type</param>
-        protected OracleRequest(OracleRequestType type) { Type = type; }
-
-        /// <summary>
         /// This method serialize the parts of the class that should be taken into account for compute the Hash
         /// </summary>
         /// <returns>Serialized data</returns>
