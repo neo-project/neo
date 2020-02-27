@@ -201,6 +201,19 @@ namespace Neo.UnitTests.Oracle
         public void Test_GetOracleValidators()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
+
+            // Fake a oracle validator has cosignor.
+            ECPoint pubkey0 = oraclePubKeys[0]; // Validator0 is the cosignor
+            ECPoint cosignorPubKey = oraclePubKeys[1]; // Validator1 is the cosignee
+            var validator0Key = NativeContract.OraclePolicy.CreateStorageKey(24, pubkey0); // 24 = Prefix_Validator
+            var validator0Value = new StorageItem()
+            {
+                Value = cosignorPubKey.ToArray()
+            };
+            snapshot.Storages.Add(validator0Key, validator0Value);
+            snapshot.Commit();
+
             var script = new ScriptBuilder();
             script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getOracleValidators");
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
@@ -210,6 +223,14 @@ namespace Neo.UnitTests.Oracle
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
             Assert.AreEqual(((VM.Types.Array)result).Count, 7);
+
+            // The validator0's cosignee should be the validator1
+            var validators = (VM.Types.Array)result;
+            var cosignee0Bytes = (VM.Types.ByteArray)validators[0];
+            var cosignee1Bytes = (VM.Types.ByteArray)validators[1];
+            Assert.AreEqual(cosignee0Bytes, cosignee1Bytes);
+            VM.Types.ByteArray validator1Bytes = cosignorPubKey.ToArray();
+            Assert.AreEqual(cosignee1Bytes, validator1Bytes);
         }
 
         [TestMethod]
@@ -271,6 +292,19 @@ namespace Neo.UnitTests.Oracle
                 Balance = 1000000 * NativeContract.GAS.Factor
             }
             .ToByteArray();
+
+            // Fake an nonexist validator in delegatedOracleValidators
+            byte[] fakerPrivateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02};
+            KeyPair fakerKeyPair = new KeyPair(fakerPrivateKey);
+            ECPoint fakerPubkey = fakerKeyPair.PublicKey;
+            var invalidOracleValidatorKey = NativeContract.OraclePolicy.CreateStorageKey(24, fakerPubkey); // 24 = Prefix_Validator
+            var invalidOracleValidatorValue = new StorageItem()
+            {
+                Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray()
+            };
+            snapshot.Storages.Add(invalidOracleValidatorKey, invalidOracleValidatorValue);
+
             snapshot.Commit();
 
             var tx = wallet.MakeTransaction(sb.ToArray(), account.ScriptHash, new TransactionAttribute[] { });
@@ -319,6 +353,10 @@ namespace Neo.UnitTests.Oracle
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
             Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+
+            // The invalid oracle validator should be removed
+            Assert.IsNull(snapshot.Storages.TryGet(invalidOracleValidatorKey));
+
             Test_GetOracleValidators();
         }
     }
