@@ -164,10 +164,20 @@ namespace Neo.IO
 
         public static byte[] ReadFixedBytes(this BinaryReader reader, int size)
         {
+            var index = 0;
             var data = new byte[size];
-            if (reader.Read(data, 0, size) != size)
+
+            while (size > 0)
             {
-                throw new FormatException();
+                var readed = reader.Read(data, index, size);
+
+                if (readed <= 0 && size > 0)
+                {
+                    throw new FormatException();
+                }
+
+                size -= readed;
+                index += readed;
             }
 
             return data;
