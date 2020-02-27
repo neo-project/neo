@@ -3,9 +3,9 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Neo.Oracle.Protocols.HTTP
+namespace Neo.Oracle.Protocols.Https
 {
-    public class OracleHTTPRequest : OracleRequest
+    public class OracleHttpsRequest : OracleRequest
     {
         public enum HTTPMethod : byte
         {
@@ -35,7 +35,7 @@ namespace Neo.Oracle.Protocols.HTTP
         /// <summary>
         /// Constructor
         /// </summary>
-        public OracleHTTPRequest() : base(RequestType.HTTPS) { }
+        public OracleHttpsRequest() : base(OracleRequestType.HTTPS) { }
 
         /// <summary>
         /// Get hash data

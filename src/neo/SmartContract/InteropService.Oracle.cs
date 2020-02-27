@@ -1,4 +1,4 @@
-using Neo.Oracle.Protocols.HTTP;
+using Neo.Oracle.Protocols.Https;
 using System;
 
 namespace Neo.SmartContract
@@ -16,9 +16,9 @@ namespace Neo.SmartContract
                 if (!engine.TryPop(out string filter)) return false;
                 if (url.Scheme != "https") return false;
 
-                var request = new OracleHTTPRequest()
+                var request = new OracleHttpsRequest()
                 {
-                    Method = OracleHTTPRequest.HTTPMethod.GET,
+                    Method = OracleHttpsRequest.HTTPMethod.GET,
                     URL = url,
                     Filter = filter,
                     Body = null

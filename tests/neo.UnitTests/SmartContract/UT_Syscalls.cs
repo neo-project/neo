@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
+using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -167,14 +168,14 @@ namespace Neo.UnitTests.SmartContract
 
         private OracleResult Oracle(OracleRequest arg)
         {
-            if (arg is Neo.Oracle.Protocols.HTTP.OracleHTTPRequest https)
+            if (arg is OracleHttpsRequest https)
             {
                 if (https.Filter != "MyFilter")
                 {
                     return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError);
                 }
 
-                if (https.URL.ToString() == "https://google.es/" && https.Method == Neo.Oracle.Protocols.HTTP.OracleHTTPRequest.HTTPMethod.GET)
+                if (https.URL.ToString() == "https://google.es/" && https.Method == OracleHttpsRequest.HTTPMethod.GET)
                 {
                     return OracleResult.CreateResult(UInt256.Zero, UInt160.Zero, "MyResponse");
                 }

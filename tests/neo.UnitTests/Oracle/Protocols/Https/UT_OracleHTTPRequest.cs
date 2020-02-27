@@ -1,8 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Oracle.Protocols.HTTP;
+using Neo.Oracle.Protocols.Https;
 using System;
 
-namespace Neo.UnitTests.Oracle.Protocols.HTTP
+namespace Neo.UnitTests.Oracle.Protocols.Https
 {
     [TestClass]
     public class UT_OracleHTTPRequest
@@ -25,17 +25,17 @@ namespace Neo.UnitTests.Oracle.Protocols.HTTP
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
-            requestB.Method = (OracleHTTPRequest.HTTPMethod)0xFF;
+            requestB.Method = (OracleHttpsRequest.HTTPMethod)0xFF;
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
         }
 
-        private OracleHTTPRequest CreateDefault()
+        private OracleHttpsRequest CreateDefault()
         {
-            return new OracleHTTPRequest()
+            return new OracleHttpsRequest()
             {
                 Body = new byte[0],
                 Filter = "",
-                Method = OracleHTTPRequest.HTTPMethod.GET,
+                Method = OracleHttpsRequest.HTTPMethod.GET,
                 URL = new Uri("https://google.es")
             };
         }
