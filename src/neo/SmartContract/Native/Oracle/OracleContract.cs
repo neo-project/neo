@@ -74,7 +74,6 @@ namespace Neo.Oracle
             {
                 if (!oraclePubKeys.Contains(validator))
                 {
-                    Console.WriteLine("start to delete invalidator....");
                     snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, validator));
                 }
             }
