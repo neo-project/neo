@@ -9,7 +9,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Type
         /// </summary>
-        public OracleRequestType Type { get; }
+        public abstract OracleRequestType Type { get; }
 
         /// <summary>
         /// Hash
