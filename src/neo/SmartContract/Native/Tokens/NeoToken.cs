@@ -203,6 +203,7 @@ namespace Neo.SmartContract.Native.Tokens
         public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(StoreView snapshot)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
+            Console.WriteLine("get register validator key: " + prefix_key.ToHexString());
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
@@ -219,7 +220,12 @@ namespace Neo.SmartContract.Native.Tokens
         public ECPoint[] GetValidators(StoreView snapshot)
         {
             StorageItem storage_count = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
-            if (storage_count is null) return Blockchain.StandbyValidators;
+            if (storage_count is null)
+            {
+                ECPoint[] validators = new ECPoint[Blockchain.StandbyValidators.Length];
+                System.Array.Copy(Blockchain.StandbyValidators, validators, validators.Length);
+                return validators;
+            }
             ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
             int count = (int)state_count.Votes.Select((p, i) => new
             {

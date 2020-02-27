@@ -16,7 +16,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.Oracle
 {
-    public sealed class OraclePolicyContract : NativeContract
+    public sealed class OracleContract : NativeContract
     {
         public override string ServiceName => "Neo.Native.Oracle.Policy";
 
@@ -26,19 +26,11 @@ namespace Neo.Oracle
         private const byte Prefix_HttpConfig = 25;
         private const byte Prefix_PerRequestFee = 26;
 
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public OraclePolicyContract()
+        public OracleContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        /// <summary>
-        /// Initialization.Set default parameter value.
-        /// </summary>
-        /// <param name="engine">VM</param>
-        /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
@@ -65,7 +57,7 @@ namespace Neo.Oracle
             StoreView snapshot = engine.Snapshot;
             ECPoint consignorPubKey = args[0].GetSpan().AsSerializable<ECPoint>();
             ECPoint consigneePubKey = args[1].GetSpan().AsSerializable<ECPoint>();
-            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
+            ECPoint[] oraclePubKeys = NativeContract.NEO.GetValidators(snapshot);
             if (!oraclePubKeys.Contains(consignorPubKey)) return false;
             UInt160 account = Contract.CreateSignatureRedeemScript(consignorPubKey).ToScriptHash();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
@@ -82,6 +74,7 @@ namespace Neo.Oracle
             {
                 if (!oraclePubKeys.Contains(validator))
                 {
+                    Console.WriteLine("start to delete invalidator....");
                     snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, validator));
                 }
             }
@@ -107,7 +100,7 @@ namespace Neo.Oracle
         /// <returns>Authorized Oracle validator</returns>
         public ECPoint[] GetOracleValidators(StoreView snapshot)
         {
-            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
+            ECPoint[] oraclePubKeys = NativeContract.NEO.GetValidators(snapshot);
             for (int index = 0; index < oraclePubKeys.Length; index++)
             {
                 var oraclePubKey = oraclePubKeys[index];
@@ -147,7 +140,7 @@ namespace Neo.Oracle
         /// <returns>Oracle multisignature address</returns>
         public UInt160 GetOracleMultiSigAddress(StoreView snapshot)
         {
-            ECPoint[] validators = PolicyContract.NEO.GetValidators(snapshot);
+            ECPoint[] validators = NativeContract.NEO.GetValidators(snapshot);
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 

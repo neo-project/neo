@@ -17,7 +17,7 @@ using static Neo.UnitTests.Extensions.Nep5NativeContractExtensions;
 namespace Neo.UnitTests.Oracle
 {
     [TestClass]
-    public class UT_OraclePolicy
+    public class UT_OracleContract
     {
         [TestInitialize]
         public void TestSetup()
@@ -34,13 +34,13 @@ namespace Neo.UnitTests.Oracle
             snapshot.Storages.Delete(CreateStorageKey(11));
             snapshot.PersistingBlock = Blockchain.GenesisBlock;
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.OraclePolicy.Initialize(engine).Should().BeTrue();
+            NativeContract.Oracle.Initialize(engine).Should().BeTrue();
         }
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
             StorageKey storageKey = new StorageKey
             {
-                Id = NativeContract.OraclePolicy.Id,
+                Id = NativeContract.Oracle.Id,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getPerRequestFee");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getPerRequestFee");
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -71,13 +71,13 @@ namespace Neo.UnitTests.Oracle
             // Init
 
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.OraclePolicy.Initialize(engine).Should().BeTrue();
-            var from = NativeContract.OraclePolicy.GetOracleMultiSigAddress(snapshot);
+            NativeContract.Oracle.Initialize(engine).Should().BeTrue();
+            var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
             var value = 12345;
 
             // Set 
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = value });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.Oracle
 
             // Set (wrong witness)
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = value });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.Oracle
             // Set wrong (negative)
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = -1 });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setPerRequestFee", new ContractParameter(ContractParameterType.Integer) { Value = -1 });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -112,7 +112,7 @@ namespace Neo.UnitTests.Oracle
             // Get
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getPerRequestFee");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getPerRequestFee");
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -127,7 +127,7 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getHttpConfig");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig");
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -145,14 +145,14 @@ namespace Neo.UnitTests.Oracle
             // Init
 
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.OraclePolicy.Initialize(engine).Should().BeTrue();
-            var from = NativeContract.OraclePolicy.GetOracleMultiSigAddress(snapshot);
+            NativeContract.Oracle.Initialize(engine).Should().BeTrue();
+            var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
             var value = 12345;
 
             // Set wrong (negative)
 
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -163,7 +163,7 @@ namespace Neo.UnitTests.Oracle
 
             // Set (wrong witness)
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.Oracle
             // Set good
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = value });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -187,7 +187,7 @@ namespace Neo.UnitTests.Oracle
             // Get
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getHttpConfig");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig");
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -201,21 +201,20 @@ namespace Neo.UnitTests.Oracle
         public void Test_GetOracleValidators()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
 
-            // Fake a oracle validator has cosignor.
+            // Fake a oracle validator has cosignee.
+            ECPoint[] oraclePubKeys = NativeContract.Oracle.GetOracleValidators(snapshot);
             ECPoint pubkey0 = oraclePubKeys[0]; // Validator0 is the cosignor
             ECPoint cosignorPubKey = oraclePubKeys[1]; // Validator1 is the cosignee
-            var validator0Key = NativeContract.OraclePolicy.CreateStorageKey(24, pubkey0); // 24 = Prefix_Validator
+            var validator0Key = NativeContract.Oracle.CreateStorageKey(24, pubkey0); // 24 = Prefix_Validator
             var validator0Value = new StorageItem()
             {
                 Value = cosignorPubKey.ToArray()
             };
             snapshot.Storages.Add(validator0Key, validator0Value);
-            snapshot.Commit();
 
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getOracleValidators");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getOracleValidators");
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -231,6 +230,9 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(cosignee0Bytes, cosignee1Bytes);
             VM.Types.ByteArray validator1Bytes = cosignorPubKey.ToArray();
             Assert.AreEqual(cosignee1Bytes, validator1Bytes);
+
+            // clear data
+            snapshot.Storages.Delete(validator0Key);
         }
 
         [TestMethod]
@@ -238,7 +240,7 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.OraclePolicy.Hash, "getOracleValidatorsCount");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getOracleValidatorsCount");
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -253,7 +255,7 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            ECPoint[] oraclePubKeys = PolicyContract.NEO.GetValidators(snapshot);
+            ECPoint[] oraclePubKeys = NativeContract.NEO.GetValidators(snapshot);
 
             ECPoint pubkey0 = oraclePubKeys[0];
 
@@ -268,7 +270,7 @@ namespace Neo.UnitTests.Oracle
             ECPoint pubkey2 = keyPair2.PublicKey;
 
             using ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitAppCall(NativeContract.OraclePolicy.Hash, "delegateOracleValidator", new ContractParameter
+            sb.EmitAppCall(NativeContract.Oracle.Hash, "delegateOracleValidator", new ContractParameter
             {
                 Type = ContractParameterType.ByteArray,
                 Value = pubkey0.ToArray()
@@ -293,19 +295,19 @@ namespace Neo.UnitTests.Oracle
             }
             .ToByteArray();
 
+            snapshot.Commit();
+
             // Fake an nonexist validator in delegatedOracleValidators
             byte[] fakerPrivateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02};
             KeyPair fakerKeyPair = new KeyPair(fakerPrivateKey);
             ECPoint fakerPubkey = fakerKeyPair.PublicKey;
-            var invalidOracleValidatorKey = NativeContract.OraclePolicy.CreateStorageKey(24, fakerPubkey); // 24 = Prefix_Validator
+            var invalidOracleValidatorKey = NativeContract.Oracle.CreateStorageKey(24, fakerPubkey); // 24 = Prefix_Validator
             var invalidOracleValidatorValue = new StorageItem()
             {
-                Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray()
+                Value = fakerPubkey.ToArray()
             };
             snapshot.Storages.Add(invalidOracleValidatorKey, invalidOracleValidatorValue);
-
-            snapshot.Commit();
 
             var tx = wallet.MakeTransaction(sb.ToArray(), account.ScriptHash, new TransactionAttribute[] { });
             ContractParametersContext context = new ContractParametersContext(tx);
@@ -323,7 +325,7 @@ namespace Neo.UnitTests.Oracle
 
             //wrong witness
             using ScriptBuilder sb2 = new ScriptBuilder();
-            sb2.EmitAppCall(NativeContract.OraclePolicy.Hash, "delegateOracleValidator", new ContractParameter
+            sb2.EmitAppCall(NativeContract.Oracle.Hash, "delegateOracleValidator", new ContractParameter
             {
                 Type = ContractParameterType.ByteArray,
                 Value = pubkey1.ToArray()
