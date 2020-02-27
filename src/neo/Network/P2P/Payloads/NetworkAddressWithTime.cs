@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
             Timestamp = reader.ReadUInt32();
 
             // Address
-            byte[] data = reader.ReadFixed(16);
+            byte[] data = reader.ReadFixedBytes(16);
             Address = new IPAddress(data).Unmap();
 
             // Capabilities
