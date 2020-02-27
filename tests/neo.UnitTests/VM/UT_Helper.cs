@@ -112,8 +112,8 @@ namespace Neo.UnitTests.VMT
             StackItem intItem = new BigInteger(1000);
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
 
-            StackItem interopItem = new VM.Types.InteropInterface("test");
-            Assert.AreEqual(null, interopItem.ToParameter().Value);
+            StackItem interopItem = new InteropInterface("test");
+            Assert.AreEqual(ContractParameterType.InteropInterface, interopItem.ToParameter().Type);
 
             StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
             Assert.AreEqual(1000, (BigInteger)(arrayItem.ToParameter().Value as List<ContractParameter>)[2].Value);
@@ -125,6 +125,9 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestToStackItem()
         {
+            ContractParameter parameter = null;
+            Assert.ThrowsException<ArgumentNullException>(() => parameter.ToStackItem());
+
             ContractParameter byteParameter = new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() };
             Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetBigInteger());
 
@@ -146,10 +149,13 @@ namespace Neo.UnitTests.VMT
             ContractParameter strParameter = new ContractParameter { Type = ContractParameterType.String, Value = "test😂👍" };
             Assert.AreEqual("test😂👍", strParameter.ToStackItem().GetString());
 
-            ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface };
-            Assert.AreEqual(null, interopParameter.ToStackItem());
+            ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface, Value = new object() };
+            Assert.ThrowsException<ArgumentException>(() => interopParameter.ToStackItem());
 
-            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter, interopParameter }.ToList() };
+            ContractParameter interopParameter2 = new ContractParameter { Type = ContractParameterType.InteropInterface };
+            Assert.AreEqual(StackItem.Null, interopParameter2.ToStackItem());
+
+            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter }.ToList() };
             Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetBigInteger());
 
             ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
@@ -486,9 +492,13 @@ namespace Neo.UnitTests.VMT
             TestToParameter2ByteArray();
             TestToParameter2Integer();
             TestToParameter2InteropInterface();
+            TestToParameterNull();
+        }
 
-            Action action = () => VM.Helper.ToParameter(null);
-            action.Should().Throw<ArgumentException>();
+        private void TestToParameterNull()
+        {
+            StackItem item = null;
+            Assert.ThrowsException<ArgumentNullException>(() => item.ToParameter());
         }
 
         private void TestToParameter2InteropInterface()
