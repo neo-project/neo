@@ -219,7 +219,12 @@ namespace Neo.SmartContract.Native.Tokens
         public ECPoint[] GetValidators(StoreView snapshot)
         {
             StorageItem storage_count = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
-            if (storage_count is null) return Blockchain.StandbyValidators;
+            if (storage_count is null)
+            {
+                ECPoint[] validators = new ECPoint[Blockchain.StandbyValidators.Length];
+                System.Array.Copy(Blockchain.StandbyValidators, validators, validators.Length);
+                return validators;
+            }
             ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
             int count = (int)state_count.Votes.Select((p, i) => new
             {

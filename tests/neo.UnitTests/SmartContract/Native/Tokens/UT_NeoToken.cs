@@ -389,6 +389,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var result = NativeContract.NEO.GetValidators(snapshot);
+            result[0] = result[1]; // tampering the data
+            result = NativeContract.NEO.GetValidators(snapshot);
             result[0].ToArray().ToHexString().Should().Be("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c");
             result[1].ToArray().ToHexString().Should().Be("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093");
             result[2].ToArray().ToHexString().Should().Be("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a");
