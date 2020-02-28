@@ -204,6 +204,7 @@ namespace Neo.UnitTests.Oracle
 
             // Fake a oracle validator has cosignee.
             ECPoint[] oraclePubKeys = NativeContract.Oracle.GetOracleValidators(snapshot);
+
             ECPoint pubkey0 = oraclePubKeys[0]; // Validator0 is the cosignor
             ECPoint cosignorPubKey = oraclePubKeys[1]; // Validator1 is the cosignee
             var validator0Key = NativeContract.Oracle.CreateStorageKey(24, pubkey0); // 24 = Prefix_Validator
@@ -255,7 +256,7 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            ECPoint[] oraclePubKeys = NativeContract.NEO.GetValidators(snapshot);
+            ECPoint[] oraclePubKeys = NativeContract.Oracle.GetOracleValidators(snapshot);
 
             ECPoint pubkey0 = oraclePubKeys[0];
 
