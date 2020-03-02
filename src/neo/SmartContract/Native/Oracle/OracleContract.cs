@@ -99,7 +99,9 @@ namespace Neo.Oracle
         /// <returns>Authorized Oracle validator</returns>
         public ECPoint[] GetOracleValidators(StoreView snapshot)
         {
-            ECPoint[] oraclePubKeys = NativeContract.NEO.GetValidators(snapshot);
+            ECPoint[] cnPubKeys = NativeContract.NEO.GetValidators(snapshot);
+            ECPoint[] oraclePubKeys = new ECPoint[cnPubKeys.Length];
+            System.Array.Copy(cnPubKeys, oraclePubKeys, cnPubKeys.Length);
             for (int index = 0; index < oraclePubKeys.Length; index++)
             {
                 var oraclePubKey = oraclePubKeys[index];
