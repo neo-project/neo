@@ -57,8 +57,8 @@ namespace Neo.Oracle
             StoreView snapshot = engine.Snapshot;
             ECPoint consignorPubKey = args[0].GetSpan().AsSerializable<ECPoint>();
             ECPoint consigneePubKey = args[1].GetSpan().AsSerializable<ECPoint>();
-            ECPoint[] oraclePubKeys = NativeContract.NEO.GetValidators(snapshot);
-            if (!oraclePubKeys.Contains(consignorPubKey)) return false;
+            ECPoint[] cnPubKeys = NativeContract.NEO.GetValidators(snapshot);
+            if (!cnPubKeys.Contains(consignorPubKey)) return false;
             UInt160 account = Contract.CreateSignatureRedeemScript(consignorPubKey).ToScriptHash();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             StorageKey key = CreateStorageKey(Prefix_Validator, consignorPubKey);
@@ -72,7 +72,7 @@ namespace Neo.Oracle
               )).ToList();
             foreach (var validator in delegatedOracleValidators)
             {
-                if (!oraclePubKeys.Contains(validator))
+                if (!cnPubKeys.Contains(validator))
                 {
                     snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, validator));
                 }
@@ -141,8 +141,8 @@ namespace Neo.Oracle
         /// <returns>Oracle multisignature address</returns>
         public UInt160 GetOracleMultiSigAddress(StoreView snapshot)
         {
-            ECPoint[] validators = NativeContract.NEO.GetValidators(snapshot);
-            return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
+            ECPoint[] cnPubKeys = NativeContract.NEO.GetValidators(snapshot);
+            return Contract.CreateMultiSigRedeemScript(cnPubKeys.Length - (cnPubKeys.Length - 1) / 3, cnPubKeys).ToScriptHash();
         }
 
         /// <summary>
