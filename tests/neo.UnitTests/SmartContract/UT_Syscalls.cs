@@ -175,7 +175,7 @@ namespace Neo.UnitTests.SmartContract
                     return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError);
                 }
 
-                if (https.URL.ToString() == "https://google.es/" && https.Method == OracleHttpsRequest.HTTPMethod.GET)
+                if (https.URL.ToString() == "https://google.es/" && https.Method == HttpMethod.GET)
                 {
                     return OracleResult.CreateResult(UInt256.Zero, UInt160.Zero, "MyResponse");
                 }

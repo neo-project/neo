@@ -7,15 +7,10 @@ namespace Neo.Oracle.Protocols.Https
 {
     public class OracleHttpsRequest : OracleRequest
     {
-        public enum HTTPMethod : byte
-        {
-            GET = 0x00
-        }
-
         /// <summary>
         /// HTTP Methods
         /// </summary>
-        public HTTPMethod Method { get; set; }
+        public HttpMethod Method { get; set; }
 
         /// <summary>
         /// Type

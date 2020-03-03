@@ -18,7 +18,7 @@ namespace Neo.SmartContract
 
                 var request = new OracleHttpsRequest()
                 {
-                    Method = OracleHttpsRequest.HTTPMethod.GET,
+                    Method = HttpMethod.GET,
                     URL = url,
                     Filter = filter,
                     Body = null

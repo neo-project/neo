@@ -25,7 +25,7 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
-            requestB.Method = (OracleHttpsRequest.HTTPMethod)0xFF;
+            requestB.Method = (HttpMethod)0xFF;
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
         }
 
@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
             {
                 Body = new byte[0],
                 Filter = "",
-                Method = OracleHttpsRequest.HTTPMethod.GET,
+                Method = HttpMethod.GET,
                 URL = new Uri("https://google.es")
             };
         }

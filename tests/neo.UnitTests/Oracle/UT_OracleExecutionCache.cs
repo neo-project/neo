@@ -41,7 +41,7 @@ namespace Neo.UnitTests.Oracle
                 Counter = 0,
                 URL = new Uri("https://google.es"),
                 Filter = "Filter",
-                Method = OracleHttpsRequest.HTTPMethod.GET,
+                Method = HttpMethod.GET,
                 Body = new byte[] { 0x01 }
             };
             Assert.IsTrue(cache.TryGet(req, out var ret));
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.Oracle
             {
                 URL = new Uri("https://google.es"),
                 Filter = "Filter",
-                Method = OracleHttpsRequest.HTTPMethod.GET,
+                Method = HttpMethod.GET,
                 Body = new byte[] { 0x01 }
             };
 
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.Oracle
             {
                 URL = new Uri("https://google.es"),
                 Filter = "Filter",
-                Method = OracleHttpsRequest.HTTPMethod.GET,
+                Method = HttpMethod.GET,
                 Body = new byte[] { 0x01, 0x02 }
             }, out var ret));
 
