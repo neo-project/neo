@@ -8,18 +8,18 @@ namespace Neo.SmartContract
         public string Method { get; }
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
-        public long Price { get; }
-        public Func<EvaluationStack, long> PriceCalculator { get; }
+        public uint Price { get; }
+        public Func<EvaluationStack, uint> PriceCalculator { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
 
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, uint price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
             : this(method, handler, allowedTriggers, requiredCallFlags)
         {
             this.Price = price;
         }
 
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, uint> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
             : this(method, handler, allowedTriggers, requiredCallFlags)
         {
             this.PriceCalculator = priceCalculator;
@@ -34,7 +34,7 @@ namespace Neo.SmartContract
             this.RequiredCallFlags = requiredCallFlags;
         }
 
-        public long GetPrice(EvaluationStack stack)
+        public uint GetPrice(EvaluationStack stack)
         {
             return PriceCalculator is null ? Price : PriceCalculator(stack);
         }

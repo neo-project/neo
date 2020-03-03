@@ -37,10 +37,10 @@ namespace Neo.UnitTests.Ledger
         public void PoolItem_CompareTo_Fee()
         {
             int size1 = 51;
-            int netFeeSatoshi1 = 1;
+            uint netFeeSatoshi1 = 1;
             var tx1 = GenerateTx(netFeeSatoshi1, size1);
             int size2 = 51;
-            int netFeeSatoshi2 = 2;
+            uint netFeeSatoshi2 = 2;
             var tx2 = GenerateTx(netFeeSatoshi2, size2);
 
             PoolItem pitem1 = new PoolItem(tx1);
@@ -57,7 +57,7 @@ namespace Neo.UnitTests.Ledger
         public void PoolItem_CompareTo_Hash()
         {
             int sizeFixed = 51;
-            int netFeeSatoshiFixed = 1;
+            uint netFeeSatoshiFixed = 1;
 
             for (int testRuns = 0; testRuns < 30; testRuns++)
             {
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Ledger
         public void PoolItem_CompareTo_Equals()
         {
             int sizeFixed = 500;
-            int netFeeSatoshiFixed = 10;
+            uint netFeeSatoshiFixed = 10;
             var tx = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
 
             PoolItem pitem1 = new PoolItem(tx);
@@ -90,7 +90,7 @@ namespace Neo.UnitTests.Ledger
             pitem2.CompareTo(pitem1).Should().Be(0);
         }
 
-        public Transaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, long networkFee, int size)
+        public Transaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, uint networkFee, int size)
         {
             Transaction tx;
             do
@@ -101,7 +101,7 @@ namespace Neo.UnitTests.Ledger
             return tx;
         }
 
-        public Transaction GenerateTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, long networkFee, int size)
+        public Transaction GenerateTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, uint networkFee, int size)
         {
             Transaction tx;
             do
@@ -113,7 +113,7 @@ namespace Neo.UnitTests.Ledger
         }
 
         // Generate Transaction with different sizes and prices
-        public static Transaction GenerateTx(long networkFee, int size, byte[] overrideScriptBytes = null)
+        public static Transaction GenerateTx(uint networkFee, int size, byte[] overrideScriptBytes = null)
         {
             Transaction tx = new Transaction
             {

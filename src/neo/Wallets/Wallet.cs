@@ -132,7 +132,7 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: 20000000L * accounts.Length);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: checked(20000000u * (uint)accounts.Length));
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
@@ -321,8 +321,8 @@ namespace Neo.Wallets
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
                     if (tx.SystemFee > 0)
                     {
-                        long d = (long)NativeContract.GAS.Factor;
-                        long remainder = tx.SystemFee % d;
+                        uint d = (uint)NativeContract.GAS.Factor;
+                        uint remainder = tx.SystemFee % d;
                         if (remainder > 0)
                             tx.SystemFee += d - remainder;
                         else if (remainder < 0)
@@ -341,15 +341,15 @@ namespace Neo.Wallets
                     if (witness_script is null) continue;
                     tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
                 }
-                tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
+                tx.NetworkFee += checked((uint)size * NativeContract.Policy.GetFeePerByte(snapshot));
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public static long CalculateNetworkFee(byte[] witness_script, ref int size)
+        public static uint CalculateNetworkFee(byte[] witness_script, ref int size)
         {
-            long networkFee = 0;
+            uint networkFee = 0;
 
             if (witness_script.IsSignatureContract())
             {
@@ -360,13 +360,13 @@ namespace Neo.Wallets
             {
                 int size_inv = 66 * m;
                 size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
+                networkFee += checked(ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (uint)m);
                 using (ScriptBuilder sb = new ScriptBuilder())
                     networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
+                networkFee += checked(ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (uint)n);
                 using (ScriptBuilder sb = new ScriptBuilder())
                     networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.ECDsaVerify, null) * n;
+                networkFee += checked(ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.ECDsaVerify, null) * (uint)n);
             }
             else
             {

@@ -7,7 +7,7 @@ namespace Neo.SmartContract.Native
     internal class ContractMethodMetadata
     {
         public Func<ApplicationEngine, VMArray, StackItem> Delegate;
-        public long Price;
+        public uint Price;
         public CallFlags RequiredCallFlags;
     }
 }

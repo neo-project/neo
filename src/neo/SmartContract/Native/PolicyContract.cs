@@ -58,7 +58,7 @@ namespace Neo.SmartContract.Native
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
             {
-                Value = BitConverter.GetBytes(1000L)
+                Value = BitConverter.GetBytes(1000u)
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_BlockedAccounts), new StorageItem
             {
@@ -95,9 +95,9 @@ namespace Neo.SmartContract.Native
             return GetFeePerByte(engine.Snapshot);
         }
 
-        public long GetFeePerByte(StoreView snapshot)
+        public uint GetFeePerByte(StoreView snapshot)
         {
-            return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
+            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Array, SafeMethod = true)]
@@ -136,7 +136,7 @@ namespace Neo.SmartContract.Native
         private StackItem SetFeePerByte(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
-            long value = (long)args[0].GetBigInteger();
+            uint value = (uint)args[0].GetBigInteger();
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
             storage.Value = BitConverter.GetBytes(value);
             return true;

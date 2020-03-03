@@ -16,14 +16,14 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor ECDsaVerify = Register("Neo.Crypto.ECDsaVerify", Crypto_ECDsaVerify, 0_01000000, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor ECDsaCheckMultiSig = Register("Neo.Crypto.ECDsaCheckMultiSig", Crypto_ECDsaCheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
 
-            private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack)
+            private static uint GetECDsaCheckMultiSigPrice(EvaluationStack stack)
             {
-                if (stack.Count < 2) return 0;
+                if (stack.Count < 2) return 0u;
                 var item = stack.Peek(1);
-                int n;
-                if (item is Array array) n = array.Count;
-                else n = (int)item.GetBigInteger();
-                if (n < 1) return 0;
+                uint n;
+                if (item is Array array) n = (uint)array.Count;
+                else n = (uint)item.GetBigInteger();
+                if (n < 1) return 0u;
                 return ECDsaVerify.Price * n;
             }
 

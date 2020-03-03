@@ -11,7 +11,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetMethod()
         {
             string method = @"System.ExecutionEngine.GetScriptContainer";
-            long price = 0_00000250;
+            uint price = 0_00000250u;
             TriggerType allowedTriggers = TriggerType.All;
             InteropDescriptor descriptor = new InteropDescriptor(method, TestHandler, price, allowedTriggers, CallFlags.None);
             descriptor.Method.Should().Be(method);

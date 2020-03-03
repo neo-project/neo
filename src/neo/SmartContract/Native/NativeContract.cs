@@ -101,9 +101,9 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        internal long GetPrice(EvaluationStack stack)
+        internal uint GetPrice(EvaluationStack stack)
         {
-            return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
+            return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0u;
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)

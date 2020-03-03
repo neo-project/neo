@@ -19,9 +19,9 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All, CallFlags.None);
 
-            private static long GetDeploymentPrice(EvaluationStack stack)
+            private static uint GetDeploymentPrice(EvaluationStack stack)
             {
-                int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
+                uint size = (uint)(stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength());
                 return Storage.GasPerByte * size;
             }
 

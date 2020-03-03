@@ -11,7 +11,7 @@ namespace Neo.SmartContract
     {
         public static class Storage
         {
-            public const long GasPerByte = 100000;
+            public const uint GasPerByte = 100000;
             public const int MaxKeySize = 64;
             public const int MaxValueSize = ushort.MaxValue;
 
@@ -24,9 +24,9 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
 
-            private static long GetStoragePrice(EvaluationStack stack)
+            private static uint GetStoragePrice(EvaluationStack stack)
             {
-                return (stack.Peek(1).GetByteLength() + stack.Peek(2).GetByteLength()) * GasPerByte;
+                return checked((uint)(stack.Peek(1).GetByteLength() + stack.Peek(2).GetByteLength()) * GasPerByte);
             }
 
             private static bool PutExInternal(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)

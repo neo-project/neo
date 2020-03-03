@@ -15,7 +15,7 @@ namespace Neo.SmartContract
                 t.GetFields()[0].GetValue(null);
         }
 
-        public static long GetPrice(uint hash, EvaluationStack stack)
+        public static uint GetPrice(uint hash, EvaluationStack stack)
         {
             return methods[hash].GetPrice(stack);
         }
@@ -37,14 +37,14 @@ namespace Neo.SmartContract
             return descriptor.Handler(engine);
         }
 
-        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, uint price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers, requiredCallFlags);
             methods.Add(descriptor.Hash, descriptor);
             return descriptor;
         }
 
-        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, uint> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers, requiredCallFlags);
             methods.Add(descriptor.Hash, descriptor);

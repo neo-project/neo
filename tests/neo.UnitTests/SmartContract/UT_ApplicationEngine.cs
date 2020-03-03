@@ -140,7 +140,7 @@ namespace Neo.UnitTests.SmartContract
 
     public class TestApplicationEngine : ApplicationEngine
     {
-        public TestApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false) : base(trigger, container, snapshot, gas, testMode)
+        public TestApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, uint gas, bool testMode = false) : base(trigger, container, snapshot, gas, testMode)
         {
         }
 

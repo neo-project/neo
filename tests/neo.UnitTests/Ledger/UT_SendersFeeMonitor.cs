@@ -12,7 +12,7 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_SendersFeeMonitor
     {
-        private Transaction CreateTransactionWithFee(long networkFee, long systemFee)
+        private Transaction CreateTransactionWithFee(uint networkFee, uint systemFee)
         {
             Random random = new Random();
             var randomBytes = new byte[16];

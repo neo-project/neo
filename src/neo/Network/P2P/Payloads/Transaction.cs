@@ -289,7 +289,7 @@ namespace Neo.Network.P2P.Payloads
             if (result != RelayResultReason.Succeed) return result;
             int size = Size;
             if (size > MaxTransactionSize) return RelayResultReason.Invalid;
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            uint net_fee = NetworkFee - (uint)size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return RelayResultReason.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
             return RelayResultReason.Succeed;

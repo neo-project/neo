@@ -15,7 +15,7 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
-        public const long GasFree = 0;
+        public const uint GasFree = 0;
         private readonly long gas_amount;
         private readonly bool testMode;
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
@@ -24,14 +24,14 @@ namespace Neo.SmartContract
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
-        public long GasConsumed { get; private set; } = 0;
+        public uint GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
         internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, uint gas, bool testMode = false)
         {
             this.gas_amount = GasFree + gas;
             this.testMode = testMode;
@@ -46,7 +46,7 @@ namespace Neo.SmartContract
             return disposable;
         }
 
-        private bool AddGas(long gas)
+        private bool AddGas(uint gas)
         {
             GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
@@ -112,7 +112,7 @@ namespace Neo.SmartContract
         }
 
         public static ApplicationEngine Run(byte[] script, StoreView snapshot,
-            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, uint extraGAS = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
@@ -121,7 +121,7 @@ namespace Neo.SmartContract
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, uint extraGAS = default)
         {
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {

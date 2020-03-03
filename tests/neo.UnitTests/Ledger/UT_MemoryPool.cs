@@ -61,14 +61,14 @@ namespace Neo.UnitTests.Ledger
             Plugin.TxObserverPlugins.Remove(plugin);
         }
 
-        long LongRandom(long min, long max, Random rand)
+        uint Uint32Random(uint min, uint max, Random rand)
         {
             // Only returns positive random long values.
-            long longRand = (long)rand.NextBigInteger(63);
+            uint longRand = (uint)rand.NextBigInteger(63);
             return longRand % (max - min) + min;
         }
 
-        private Transaction CreateTransactionWithFee(long fee)
+        private Transaction CreateTransactionWithFee(uint fee)
         {
             Random random = new Random();
             var randomBytes = new byte[16];
@@ -92,7 +92,7 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransactionWithFeeAndBalanceVerify(long fee)
+        private Transaction CreateTransactionWithFeeAndBalanceVerify(uint fee)
         {
             Random random = new Random();
             var randomBytes = new byte[16];
@@ -117,11 +117,11 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransaction(long fee = -1)
+        private Transaction CreateTransaction(uint fee = uint.MaxValue)
         {
-            if (fee != -1)
+            if (fee != uint.MaxValue)
                 return CreateTransactionWithFee(fee);
-            return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
+            return CreateTransactionWithFee(Uint32Random(100000u, 100000000u, TestUtils.TestRandom));
         }
 
         private void AddTransactions(int count)
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.Ledger
             _unit.TryAdd(txToAdd.Hash, txToAdd);
         }
 
-        private void AddTransactionsWithBalanceVerify(int count, long fee)
+        private void AddTransactionsWithBalanceVerify(int count, uint fee)
         {
             for (int i = 0; i < count; i++)
             {
@@ -210,7 +210,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
         {
-            long txFee = 1;
+            uint txFee = 1;
             AddTransactionsWithBalanceVerify(70, txFee);
 
             _unit.SortedTxCount.Should().Be(70);
@@ -225,7 +225,7 @@ namespace Neo.UnitTests.Ledger
             SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
 
-            ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (long)balance);
+            ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.All, block, snapshot, (uint)balance);
             NativeContract.GAS.Burn(applicationEngine, sender, balance);
             NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30); // Set the balance to meet 30 txs only
 

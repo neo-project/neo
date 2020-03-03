@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Gas_Set()
         {
-            long val = 4200000000;
+            uint val = 4200000000u;
             uut.SystemFee = val;
             uut.SystemFee.Should().Be(val);
         }
@@ -790,7 +790,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (uint)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new TransactionAttribute[0] { },
@@ -818,7 +818,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (uint)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new TransactionAttribute[0] { },
@@ -866,7 +866,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (uint)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new TransactionAttribute[0] { },
@@ -927,7 +927,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (uint)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new TransactionAttribute[0] { },
@@ -962,7 +962,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (uint)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new TransactionAttribute[0] { },
