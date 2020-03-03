@@ -33,8 +33,8 @@ namespace Neo.Network.P2P.Payloads
         private byte version;
         private uint nonce;
         private UInt160 sender;
-        private long sysfee;
-        private long netfee;
+        private uint sysfee;
+        private uint netfee;
         private uint validUntilBlock;
         private TransactionAttribute[] attributes;
         private Cosigner[] cosigners;
@@ -45,8 +45,8 @@ namespace Neo.Network.P2P.Payloads
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
             20 +            //Sender
-            sizeof(long) +  //SystemFee
-            sizeof(long) +  //NetworkFee
+            sizeof(uint) +  //SystemFee
+            sizeof(uint) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
         public TransactionAttribute[] Attributes
@@ -85,7 +85,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Distributed to consensus nodes.
         /// </summary>
-        public long NetworkFee
+        public uint NetworkFee
         {
             get => netfee;
             set { netfee = value; _hash = null; }
@@ -129,7 +129,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Distributed to NEO holders.
         /// </summary>
-        public long SystemFee
+        public uint SystemFee
         {
             get => sysfee;
             set { sysfee = value; _hash = null; }
@@ -170,12 +170,10 @@ namespace Neo.Network.P2P.Payloads
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
             Sender = reader.ReadSerializable<UInt160>();
-            SystemFee = reader.ReadInt64();
-            if (SystemFee < 0) throw new FormatException();
+            SystemFee = reader.ReadUInt32();
             if (SystemFee % NativeContract.GAS.Factor != 0) throw new FormatException();
-            NetworkFee = reader.ReadInt64();
-            if (NetworkFee < 0) throw new FormatException();
-            if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
+            NetworkFee = reader.ReadUInt32();
+            if (NetworkFee % NativeContract.GAS.Factor != 0) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
@@ -251,8 +249,8 @@ namespace Neo.Network.P2P.Payloads
             tx.Version = byte.Parse(json["version"].AsString());
             tx.Nonce = uint.Parse(json["nonce"].AsString());
             tx.Sender = json["sender"].AsString().ToScriptHash();
-            tx.SystemFee = long.Parse(json["sys_fee"].AsString());
-            tx.NetworkFee = long.Parse(json["net_fee"].AsString());
+            tx.SystemFee = uint.Parse(json["sys_fee"].AsString());
+            tx.NetworkFee = uint.Parse(json["net_fee"].AsString());
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
             tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
             tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
