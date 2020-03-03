@@ -14,6 +14,13 @@ namespace Neo.UnitTests.Oracle
             public int Counter = 0;
         }
 
+        private OracleResult OracleLogic(OracleRequest arg)
+        {
+            var http = (CounterRequest)arg;
+            http.Counter++;
+            return OracleResult.CreateResult(_txHash, arg.Hash, BitConverter.GetBytes(http.Counter));
+        }
+
         UInt256 _txHash;
 
         [TestInitialize]
@@ -38,27 +45,26 @@ namespace Neo.UnitTests.Oracle
 
             var req = new CounterRequest()
             {
-                Counter = 0,
+                Counter = 1,
                 URL = new Uri("https://google.es"),
                 Filter = "Filter",
-                Method = HttpMethod.GET,
-                Body = new byte[] { 0x01 }
+                Method = HttpMethod.GET
             };
             Assert.IsTrue(cache.TryGet(req, out var ret));
 
-            Assert.AreEqual(1, req.Counter);
+            Assert.AreEqual(2, req.Counter);
             Assert.AreEqual(1, cache.Count);
             Assert.AreEqual(OracleResultError.None, ret.Error);
-            CollectionAssert.AreEqual(new byte[] { 0x01 }, ret.Result);
+            CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, ret.Result);
 
             // Test cached
 
             Assert.IsTrue(cache.TryGet(req, out ret));
 
-            Assert.AreEqual(1, req.Counter);
+            Assert.AreEqual(2, req.Counter);
             Assert.AreEqual(1, cache.Count);
             Assert.AreEqual(OracleResultError.None, ret.Error);
-            CollectionAssert.AreEqual(new byte[] { 0x01 }, ret.Result);
+            CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, ret.Result);
 
             // Check collection
 
@@ -67,14 +73,7 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(req.Hash, array[0].Key);
             Assert.AreEqual(_txHash, array[0].Value.TransactionHash);
             Assert.AreEqual(OracleResultError.None, array[0].Value.Error);
-            CollectionAssert.AreEqual(new byte[] { 0x01 }, array[0].Value.Result);
-        }
-
-        private OracleResult OracleLogic(Neo.Oracle.OracleRequest arg)
-        {
-            var http = (CounterRequest)arg;
-            http.Counter++;
-            return OracleResult.CreateResult(_txHash, arg.Hash, http.Body);
+            CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, array[0].Value.Result);
         }
 
         [TestMethod]
@@ -84,8 +83,7 @@ namespace Neo.UnitTests.Oracle
             {
                 URL = new Uri("https://google.es"),
                 Filter = "Filter",
-                Method = HttpMethod.GET,
-                Body = new byte[] { 0x01 }
+                Method = HttpMethod.GET
             };
 
             var initRes = OracleResult.CreateError(_txHash, initReq.Hash, OracleResultError.ServerError);
@@ -100,17 +98,17 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(initReq.Hash, array[0].Key);
             Assert.AreEqual(_txHash, array[0].Value.TransactionHash);
             Assert.AreEqual(OracleResultError.ServerError, array[0].Value.Error);
-            CollectionAssert.AreEqual(new byte[] { }, array[0].Value.Result);
+            CollectionAssert.AreEqual(Array.Empty<byte>(), array[0].Value.Result);
 
             // Test without cache
 
             Assert.IsFalse(cache.TryGet(new OracleHttpsRequest()
             {
-                URL = new Uri("https://google.es"),
+                URL = new Uri("https://google.es/?p=1"),
                 Filter = "Filter",
-                Method = HttpMethod.GET,
-                Body = new byte[] { 0x01, 0x02 }
-            }, out var ret));
+                Method = HttpMethod.GET
+            }
+            , out var ret));
 
             Assert.IsNull(ret);
 

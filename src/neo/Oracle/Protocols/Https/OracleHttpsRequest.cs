@@ -28,11 +28,6 @@ namespace Neo.Oracle.Protocols.Https
         public string Filter { get; set; }
 
         /// <summary>
-        /// Body
-        /// </summary>
-        public byte[] Body { get; set; }
-
-        /// <summary>
         /// Get hash data
         /// </summary>
         /// <returns>Hash data</returns>
@@ -45,7 +40,6 @@ namespace Neo.Oracle.Protocols.Https
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL.ToString());
                 writer.WriteVarString(Filter);
-                if (Body != null) writer.WriteVarBytes(Body);
                 writer.Flush();
 
                 return stream.ToArray();

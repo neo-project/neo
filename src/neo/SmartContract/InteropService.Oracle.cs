@@ -20,8 +20,7 @@ namespace Neo.SmartContract
                 {
                     Method = HttpMethod.GET,
                     URL = url,
-                    Filter = filter,
-                    Body = null
+                    Filter = filter
                 };
 
                 if (engine.OracleCache.TryGet(request, out var response))
