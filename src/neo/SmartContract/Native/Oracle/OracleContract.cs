@@ -14,7 +14,7 @@ using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.Oracle
+namespace Neo.SmartContract.Native.Oracle
 {
     public sealed class OracleContract : NativeContract
     {
