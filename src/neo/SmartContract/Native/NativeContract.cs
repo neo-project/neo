@@ -2,8 +2,8 @@
 
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Oracle;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
