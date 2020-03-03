@@ -234,10 +234,10 @@ namespace Neo.UnitTests.SmartContract
 
                 debugger.StepInto(); //push key
                 debugger.StepInto(); //push value
-                debugger.StepInto(); //syscall Storage.GetContext
+                debugger.StepInto();
                 setupPrice = ae.GasConsumed;
                 var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
-                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte); // = basic fee
+                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte); // = PUT basic fee
             }
         }
 
@@ -249,7 +249,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 scriptBuilder.EmitPush(value);
                 scriptBuilder.EmitPush(key);
-                scriptBuilder.EmitSysCall(InteropService.Storage.   );
+                scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
                 scriptBuilder.EmitSysCall(InteropService.Storage.Put);
             }
 
