@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_Account, account);
         }
 
-        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, string reason = null)
+        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -86,10 +86,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            if (reason != null)
-                engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount, reason }));
-            else
-                engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount }));
+            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount }));
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)

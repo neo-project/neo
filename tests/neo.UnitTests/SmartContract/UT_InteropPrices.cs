@@ -1,12 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.Ledger;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using Neo.Wallets;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -27,7 +24,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                (InteropService.TryGetPrice(InteropService.Runtime.CheckWitness, ae, out long price) ? price : 0).Should().Be(0_00030000L);
+                InteropService.GetPrice(InteropService.Runtime.CheckWitness, ae).Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -35,7 +32,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                (InteropService.TryGetPrice(InteropService.Storage.GetContext, ae, out long price) ? price : 0).Should().Be(0_00000400L);
+                InteropService.GetPrice(InteropService.Storage.GetContext, ae).Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -43,7 +40,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                (InteropService.TryGetPrice(InteropService.Storage.Get, ae, out long price) ? price : 0).Should().Be(0_01000000L);
+                InteropService.GetPrice(InteropService.Storage.Get, ae).Should().Be(0_01000000L);
             }
         }
 
@@ -58,48 +55,31 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(SyscallContractCreateHash00);
                 debugger.StepInto(); // PUSHDATA1
                 debugger.StepInto(); // PUSHDATA1
-                (InteropService.TryGetPrice(InteropService.Contract.Create, ae, out long price) ? price : 0).Should().Be(0_00300000L);
+                InteropService.GetPrice(InteropService.Contract.Create, ae).Should().Be(0_00300000L);
             }
 
-            var key = new byte[] { (byte)OpCode.PUSH3 };
-            var value = new byte[] { (byte)OpCode.PUSH3 };
-            byte[] script = CreatePutScript(key, value);
-
-            ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
-
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(null);
-
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
-
-            byte[] scriptPut = script;
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            // System.Storage.Put: e63f1884 (requires push key and value)
+            byte[] SyscallStoragePutHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0xe6, 0x3f, 0x18, 0x84 };
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(scriptPut);
+                ae.LoadScript(SyscallStoragePutHash);
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                (InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0).Should().Be(200000L);
+                InteropService.GetPrice(InteropService.Storage.Put, ae).Should().Be(200000L);
             }
 
-            key = new byte[] { (byte)OpCode.PUSH3 };
-            value = new byte[] { (byte)OpCode.PUSH3 };
-            script = CreatePutExScript(key, value);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
-
-            byte[] scriptPutEx = script;
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            // System.Storage.PutEx: 73e19b3a (requires push key and value)
+            byte[] SyscallStoragePutExHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0x73, 0xe1, 0x9b, 0x3a };
+            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(scriptPutEx);
+                ae.LoadScript(SyscallStoragePutExHash);
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                (InteropService.TryGetPrice(InteropService.Storage.PutEx, ae, out long price) ? price : 0).Should().Be(200000L);
+                InteropService.GetPrice(InteropService.Storage.PutEx, ae).Should().Be(200000L);
             }
         }
 
@@ -132,7 +112,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var defaultDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0;
+                var defaultDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
                 defaultDataPrice.Should().Be(InteropService.Storage.GasPerByte * (key.Length + value.Length));
                 var expectedCost = defaultDataPrice + setupPrice;
                 debugger.Execute();
@@ -148,8 +128,6 @@ namespace Neo.UnitTests.SmartContract
         {
             var key = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1 };
-
-            var mockedStoreView = new Mock<StoreView>();
 
             byte[] script = CreatePutScript(key, value);
 
@@ -171,8 +149,8 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = applicationEngine.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, applicationEngine, out long price) ? price : 0;
-                reusedDataPrice.Should().Be(0);
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, applicationEngine);
+                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.Execute();
                 var expectedCost = reusedDataPrice + setupPrice;
                 applicationEngine.GasConsumed.Should().Be(expectedCost);
@@ -210,7 +188,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0;
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
                 reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.StepInto();
                 var expectedCost = reusedDataPrice + setupPrice;
@@ -252,154 +230,6 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
-        /// <summary>
-        /// Releases 1 byte from the storage receiving Gas credit using implicit delete
-        /// </summary>
-        [TestMethod]
-        public void ApplicationEngineReleaseStorage_ImplicitDelete()
-        {
-            var key = new byte[] { (byte)OpCode.PUSH1 };
-            var oldValue = new byte[] { (byte)OpCode.PUSH1 };
-
-            byte[] script = CreateImplicitDeleteScript(key);
-
-            ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
-
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(oldValue);
-
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
-
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(script);
-                debugger.StepInto();
-                debugger.StepInto();
-                debugger.StepInto();
-                var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Put, ae, out long price) ? price : 0;
-                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerReleasedByte);
-                debugger.StepInto();
-                var expectedCost = setupPrice;
-                var expectedReward = -reusedDataPrice;
-                ae.GasConsumed.Should().Be(expectedCost);
-                ae.RecyclingRewardGas.Should().Be(expectedReward);
-            }
-        }
-
-        /// <summary>
-        /// Releases 1 byte from the storage receiving Gas credit using explicit delete
-        /// </summary>
-        [TestMethod]
-        public void ApplicationEngineReleaseStorage_ExplicitDelete()
-        {
-            var key = new byte[] { (byte)OpCode.PUSH1 };
-            var oldValue = new byte[] { (byte)OpCode.PUSH1 };
-
-            byte[] script = CreateExplicitDeleteScript(key);
-
-            ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
-
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(oldValue);
-
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
-
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(script);
-                debugger.StepInto();
-                debugger.StepInto();
-                var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.TryGetPrice(InteropService.Storage.Delete, ae, out long price) ? price : 0;
-                reusedDataPrice.Should().Be((skey.Key.Length + sItem.Value.Length) * InteropService.Storage.GasPerReleasedByte);
-                debugger.StepInto();
-                var expectedCost = setupPrice;
-                var expectedReward = -reusedDataPrice;
-                ae.GasConsumed.Should().Be(expectedCost);
-                ae.RecyclingRewardGas.Should().Be(expectedReward);
-            }
-        }
-
-        [TestMethod]
-        public void TestCalculateMinimumRequiredToRun()
-        {
-            var key = new byte[] { (byte)OpCode.PUSH1 };
-            var oldValue = new byte[] { (byte)OpCode.PUSH1 };
-
-            byte[] script = CreateExplicitDeleteScript(key);
-
-            ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
-
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(oldValue);
-
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
-
-            long ConsumedGas = 0;
-            long rewardGas = 0;
-            long minimumRequiredToRun = 0;
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
-            {
-                ae.LoadScript(script);
-                ae.Execute();
-                ae.State.Should().Be(VMState.HALT);
-                ConsumedGas = ae.GasConsumed;
-                rewardGas = ae.RecyclingRewardGas;
-            }
-            rewardGas.Should().Be(2 * InteropService.Storage.GasPerByte);
-
-            minimumRequiredToRun = ConsumedGas;
-            snapshot.Storages.Add(skey, sItem);
-            //If you send GasConsumed, it should HALT because GasConsumed is enough to cover the cost.
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, minimumRequiredToRun, testMode: false))
-            {
-                ae.LoadScript(script);
-                ae.Execute();
-                ae.State.Should().Be(VMState.HALT);
-            }
-
-            minimumRequiredToRun = ConsumedGas - 1;
-            //If you send GasConsumed-1, it should FAULT because it isn't enough to cover the cost.
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, minimumRequiredToRun, testMode: false))
-            {
-                ae.LoadScript(script);
-                ae.Execute();
-                ae.State.Should().Be(VMState.FAULT);
-            }
-        }
-
-        private byte[] CreateExplicitDeleteScript(byte[] key)
-        {
-            var scriptBuilder = new ScriptBuilder();
-            scriptBuilder.EmitPush(key);
-            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-            scriptBuilder.EmitSysCall(InteropService.Storage.Delete);
-            return scriptBuilder.ToArray();
-        }
-
-        private byte[] CreateImplicitDeleteScript(byte[] key)
-        {
-            var emptyArray = new byte[0];
-            var scriptBuilder = new ScriptBuilder();
-            scriptBuilder.EmitPush(emptyArray);
-            scriptBuilder.EmitPush(key);
-            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
-            return scriptBuilder.ToArray();
-        }
-
         private byte[] CreateMultiplePutScript(byte[] key, byte[] value, int times = 2)
         {
             var scriptBuilder = new ScriptBuilder();
@@ -422,16 +252,6 @@ namespace Neo.UnitTests.SmartContract
             scriptBuilder.EmitPush(key);
             scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
             scriptBuilder.EmitSysCall(InteropService.Storage.Put);
-            return scriptBuilder.ToArray();
-        }
-
-        private byte[] CreatePutExScript(byte[] key, byte[] value)
-        {
-            var scriptBuilder = new ScriptBuilder();
-            scriptBuilder.EmitPush(value);
-            scriptBuilder.EmitPush(key);
-            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-            scriptBuilder.EmitSysCall(InteropService.Storage.PutEx);
             return scriptBuilder.ToArray();
         }
     }

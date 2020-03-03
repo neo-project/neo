@@ -24,7 +24,7 @@ namespace Neo.SmartContract
                 if (item is Array array) n = array.Count;
                 else n = (int)item.GetBigInteger();
                 if (n < 1) return 0;
-                return (ECDsaVerify.Price.HasValue ? (long)ECDsaVerify.Price : 0) * n;
+                return ECDsaVerify.Price * n;
             }
 
             private static bool Crypto_ECDsaVerify(ApplicationEngine engine)

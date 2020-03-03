@@ -15,18 +15,9 @@ namespace Neo.SmartContract
                 t.GetFields()[0].GetValue(null);
         }
 
-        public static bool TryGetPrice(uint hash, out long value)
+        public static long GetPrice(uint hash, ApplicationEngine applicationEngine)
         {
-            var ret = methods[hash].TryGetPrice(out long price);
-            value = price;
-            return ret;
-        }
-
-        public static bool TryGetPrice(uint hash, ApplicationEngine applicationEngine, out long value)
-        {
-            var ret = methods[hash].TryGetPrice(applicationEngine, out long price);
-            value = price;
-            return ret;
+            return methods[hash].GetPrice(applicationEngine);
         }
 
         public static IEnumerable<InteropDescriptor> SupportedMethods()

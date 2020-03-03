@@ -12,7 +12,6 @@ namespace Neo.SmartContract
         public static class Storage
         {
             public const long GasPerByte = 100000;
-            public const long GasPerReleasedByte = -GasPerByte;
             public const int MaxKeySize = 64;
             public const int MaxValueSize = ushort.MaxValue;
 
@@ -23,25 +22,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Find = Register("System.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, GetDeletePrice, TriggerType.Application, CallFlags.AllowModifyStates);
-
-            private static long GetDeletePrice(ApplicationEngine engine)
-            {
-                var stack = engine.CurrentContext.EvaluationStack;
-                var key = stack.Peek(1);
-                if (!(engine.CurrentContext.EvaluationStack.Peek() is InteropInterface _interface))
-                    return 0_01000000;
-                StorageContext context = _interface.GetInterface<StorageContext>();
-                StorageKey skey = new StorageKey
-                {
-                    Id = context.Id,
-                    Key = key.GetSpan().ToArray()
-                };
-                var skeyValue = engine.Snapshot.Storages.TryGet(skey);
-                if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || engine.HasUpdatedKey(skey))
-                    return 0_01000000;
-                return (skeyValue.Value.Length + key.GetByteLength()) * GasPerReleasedByte;
-            }
+            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
 
             private static long GetStoragePrice(ApplicationEngine engine)
             {
@@ -51,6 +32,7 @@ namespace Neo.SmartContract
                 var newDataSize = value.IsNull ? 0 : value.GetByteLength();
                 if (!(engine.CurrentContext.EvaluationStack.Peek() is InteropInterface _interface))
                     return (key.GetByteLength() + newDataSize) * GasPerByte;
+
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 StorageKey skey = new StorageKey
                 {
@@ -58,13 +40,13 @@ namespace Neo.SmartContract
                     Key = key.GetSpan().ToArray()
                 };
                 var skeyValue = engine.Snapshot.Storages.TryGet(skey);
-                if (skeyValue == null || skeyValue.Value == null || skeyValue.Value.Length == 0 || engine.HasUpdatedKey(skey))
+                if (skeyValue is null || skeyValue.Value is null || skeyValue.Value.Length == 0)
                     return (key.GetByteLength() + newDataSize) * GasPerByte;
+
                 var currentOccupiedBytes = skeyValue.Value.Length;
                 if (newDataSize <= currentOccupiedBytes)
                 {
-                    var releasedBytes = currentOccupiedBytes - newDataSize;
-                    return releasedBytes * GasPerReleasedByte;
+                    return 1 * GasPerByte;
                 }
                 else
                 {
@@ -98,7 +80,6 @@ namespace Neo.SmartContract
                     item.Value = value;
                     item.IsConstant = flags.HasFlag(StorageFlags.Constant);
                 }
-                engine.TryAddUpdatedKey(skey);
                 return true;
             }
 
@@ -210,7 +191,6 @@ namespace Neo.SmartContract
                     };
                     if (engine.Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                     engine.Snapshot.Storages.Delete(key);
-                    engine.TryAddUpdatedKey(key);
                     return true;
                 }
                 return false;

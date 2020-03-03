@@ -8,7 +8,7 @@ namespace Neo.SmartContract
         public string Method { get; }
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
-        public long? Price { get; } = null;
+        public long Price { get; }
         public Func<ApplicationEngine, long> PriceCalculator { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
@@ -40,31 +40,9 @@ namespace Neo.SmartContract
             this.RequiredCallFlags = requiredCallFlags;
         }
 
-        public bool TryGetPrice(out long price)
+        public long GetPrice(ApplicationEngine applicationEngine)
         {
-            if (Price.HasValue)
-            {
-                price = (long)Price;
-                return true;
-            }
-            price = 0;
-            return false;
-        }
-
-        public bool TryGetPrice(ApplicationEngine applicationEngine, out long price)
-        {
-            if (PriceCalculator != null)
-            {
-                price = PriceCalculator(applicationEngine);
-                return true;
-            }
-            else if (Price.HasValue)
-            {
-                price = (long)Price;
-                return true;
-            }
-            price = 0;
-            return false;
+            return PriceCalculator is null ? Price : PriceCalculator(applicationEngine);
         }
 
         public static implicit operator uint(InteropDescriptor descriptor)

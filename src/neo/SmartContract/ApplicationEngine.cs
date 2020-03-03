@@ -20,17 +20,12 @@ namespace Neo.SmartContract
         private readonly bool testMode;
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
-        private readonly List<StorageKey> updatedKeys = new List<StorageKey>();
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
 
-        /// <summary>
-        /// RecyclingRewardGas shows how many gas should be recycled as a reward
-        /// </summary>
-        public long RecyclingRewardGas { get; private set; } = 0;
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
@@ -52,28 +47,9 @@ namespace Neo.SmartContract
             return disposable;
         }
 
-        internal bool HasUpdatedKey(StorageKey key)
-        {
-            return updatedKeys.Contains(key);
-        }
-
-        internal bool TryAddUpdatedKey(StorageKey key)
-        {
-            bool keyAdded = false;
-            if (!updatedKeys.Contains(key))
-            {
-                updatedKeys.Add(key);
-                keyAdded = true;
-            }
-            return keyAdded;
-        }
-
         private bool AddGas(long gas)
         {
-            if (gas < 0)
-                RecyclingRewardGas = checked(RecyclingRewardGas - gas);
-            else
-                GasConsumed = checked(GasConsumed + gas);
+            GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
         }
 
@@ -103,9 +79,7 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!InteropService.TryGetPrice(method, this, out long price))
-                return false;
-            if (!AddGas(price))
+            if (!AddGas(InteropService.GetPrice(method, this)))
                 return false;
             return InteropService.Invoke(this, method);
         }
