@@ -199,7 +199,7 @@ namespace Neo.UnitTests.SmartContract
 
         /// <summary>
         /// Use put for the same key twice.
-        /// Pays for 1 extra byte for the first Put and 3 extra bytes for the second put (key + value).
+        /// Pays for 1 extra byte for the first Put and 1 byte for the second basic fee (as value2.length == value1.length).
         /// </summary>
         [TestMethod]
         public void ApplicationEngineReusedStorage_PartialReuseTwice()
@@ -224,9 +224,20 @@ namespace Neo.UnitTests.SmartContract
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
-                ae.Execute();
-                //1 reused + 1 from key + 2 from value (no discount on second use)
-                ae.GasConsumed.Should().BeGreaterThan(4 * InteropService.Storage.GasPerByte);
+                debugger.StepInto(); //push key
+                debugger.StepInto(); //push value
+                debugger.StepInto(); //syscall Storage.GetContext
+                var setupPrice = ae.GasConsumed;
+                var incrementDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                incrementDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
+                debugger.StepInto(); // syscall Storage.Put
+
+                debugger.StepInto(); //push key
+                debugger.StepInto(); //push value
+                debugger.StepInto(); //syscall Storage.GetContext
+                setupPrice = ae.GasConsumed;
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte); // = basic fee
             }
         }
 
@@ -238,7 +249,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 scriptBuilder.EmitPush(value);
                 scriptBuilder.EmitPush(key);
-                scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
+                scriptBuilder.EmitSysCall(InteropService.Storage.   );
                 scriptBuilder.EmitSysCall(InteropService.Storage.Put);
             }
 
