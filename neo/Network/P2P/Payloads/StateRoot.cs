@@ -43,13 +43,13 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public int Size =>
-            sizeof(uint) +      //Version
-            sizeof(uint) +      //Index 
-            PreHash.Size +    //PrevHash
-            StateRoot_.Size +    //StateRoot
-            Consensus.Size +    //Consensus
-            1 +                 //Witness array count
-            Witness.Size;       //Witness   
+            sizeof(uint) +          //Version
+            sizeof(uint) +          //Index 
+            PreHash.Size +          //PrevHash
+            StateRoot_.Size +       //StateRoot
+            Consensus.Size +        //Consensus
+            1 +                     //Witness array count
+            Witness.Size;           //Witness   
 
         public void Deserialize(BinaryReader reader)
         {
