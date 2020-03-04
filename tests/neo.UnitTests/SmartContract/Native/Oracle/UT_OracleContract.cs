@@ -128,7 +128,7 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig", new ContractParameter(ContractParameterType.String) { Value = "Timeout" });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new ContractParameter(ContractParameterType.String) { Value = "HttpTimeout" });
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void Test_SetHttpConfig()
+        public void Test_SetConfig()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
 
@@ -148,12 +148,12 @@ namespace Neo.UnitTests.Oracle
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             NativeContract.Oracle.Initialize(engine).Should().BeTrue();
             var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
-            var key = "Timeout";
+            var key = "HttpTimeout";
             var value = BitConverter.GetBytes(12345);
 
             // Set (wrong witness)
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -165,7 +165,7 @@ namespace Neo.UnitTests.Oracle
             // Set good
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -177,7 +177,7 @@ namespace Neo.UnitTests.Oracle
             // Get
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig", new ContractParameter(ContractParameterType.String) { Value = key });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new ContractParameter(ContractParameterType.String) { Value = key });
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 

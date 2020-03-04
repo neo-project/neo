@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native.Oracle
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes("Timeout")), new StorageItem
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes("HttpTimeout")), new StorageItem
             {
                 Value = new ByteArray(BitConverter.GetBytes(5000)).GetSpan().ToArray()
             });
@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray }, ParameterNames = new[] { "configKey", "configValue" })]
-        private StackItem SetHttpConfig(ApplicationEngine engine, Array args)
+        private StackItem SetConfig(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
@@ -168,11 +168,11 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <returns>value</returns>
         [ContractMethod(0_01000000, ContractParameterType.Array, ParameterTypes = new[] { ContractParameterType.String }, ParameterNames = new[] { "configKey" })]
-        private StackItem GetHttpConfig(ApplicationEngine engine, Array args)
+        private StackItem GetConfig(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
             string key = args[0].GetString();
-            return GetHttpConfig(snapshot, key);
+            return GetConfig(snapshot, key);
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="snapshot">snapshot</param>
         /// <param name="key">key</param>
         /// <returns>value</returns>
-        public ByteArray GetHttpConfig(StoreView snapshot, string key)
+        public ByteArray GetConfig(StoreView snapshot, string key)
         {
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes(key)));
             return storage.Value;
