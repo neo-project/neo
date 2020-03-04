@@ -50,8 +50,7 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    var reusedBytes = currentOccupiedBytes;
-                    return (newDataSize - reusedBytes) * GasPerByte;
+                    return (newDataSize - currentOccupiedBytes) * GasPerByte;
                 }
             }
 
