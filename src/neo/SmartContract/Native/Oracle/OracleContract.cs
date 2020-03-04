@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Oracle
@@ -31,9 +32,9 @@ namespace Neo.SmartContract.Native.Oracle
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig), new StorageItem
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes("Timeout")), new StorageItem
             {
-                Value = new OracleHttpConfig() { Timeout = 5000 }.ToArray()
+                Value = new ByteArray(BitConverter.GetBytes(5000)).GetSpan().ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
@@ -148,17 +149,16 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "httpConfig" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray }, ParameterNames = new[] { "configKey", "configValue" })]
         private StackItem SetHttpConfig(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            int timeOutMilliSeconds = (int)args[0].GetBigInteger();
-            if (timeOutMilliSeconds <= 0) return false;
-            OracleHttpConfig httpConfig = new OracleHttpConfig() { Timeout = timeOutMilliSeconds };
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig));
-            storage.Value = httpConfig.ToArray();
+            string key = args[0].GetString();
+            ByteArray value = args[1].GetSpan().ToArray();
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes(key)));
+            storage.Value = value.GetSpan().ToArray();
             return true;
         }
 
@@ -167,20 +167,24 @@ namespace Neo.SmartContract.Native.Oracle
         /// </summary>
         /// <param name="engine">VM</param>
         /// <returns>value</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Array)]
+        [ContractMethod(0_01000000, ContractParameterType.Array, ParameterTypes = new[] { ContractParameterType.String }, ParameterNames = new[] { "configKey" })]
         private StackItem GetHttpConfig(ApplicationEngine engine, Array args)
         {
-            return GetHttpConfig(engine.Snapshot).ToStackItem(engine.ReferenceCounter);
+            StoreView snapshot = engine.Snapshot;
+            string key = args[0].GetString();
+            return GetHttpConfig(snapshot, key);
         }
 
         /// <summary>
         /// Get HttpConfig
         /// </summary>
         /// <param name="snapshot">snapshot</param>
+        /// <param name="key">key</param>
         /// <returns>value</returns>
-        public OracleHttpConfig GetHttpConfig(StoreView snapshot)
+        public ByteArray GetHttpConfig(StoreView snapshot, string key)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_HttpConfig)].Value.AsSerializable<OracleHttpConfig>();
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes(key)));
+            return storage.Value;
         }
 
         /// <summary>

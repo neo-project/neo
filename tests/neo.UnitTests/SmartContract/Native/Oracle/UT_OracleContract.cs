@@ -12,6 +12,7 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Numerics;
 using static Neo.UnitTests.Extensions.Nep5NativeContractExtensions;
 
 namespace Neo.UnitTests.Oracle
@@ -127,14 +128,14 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig", new ContractParameter(ContractParameterType.String) { Value = "Timeout" });
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)result)[0].GetBigInteger(), 5000);
+            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            Assert.AreEqual(result.GetBigInteger(), 5000);
         }
 
         [TestMethod]
@@ -147,13 +148,13 @@ namespace Neo.UnitTests.Oracle
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             NativeContract.Oracle.Initialize(engine).Should().BeTrue();
             var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
-            var value = 12345;
+            var key = "Timeout";
+            var value = BitConverter.GetBytes(12345);
 
-            // Set wrong (negative)
-
+            // Set (wrong witness)
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
-            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
+            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
@@ -161,21 +162,10 @@ namespace Neo.UnitTests.Oracle
             result.Should().BeOfType(typeof(VM.Types.Boolean));
             Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
 
-            // Set (wrong witness)
-            script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
-            engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute().Should().Be(VMState.HALT);
-            result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
-
             // Set good
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.Integer) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setHttpConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -187,14 +177,14 @@ namespace Neo.UnitTests.Oracle
             // Get
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig");
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getHttpConfig", new ContractParameter(ContractParameterType.String) { Value = key });
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)result)[0].GetBigInteger(), value);
+            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            Assert.AreEqual(result.GetBigInteger(), new BigInteger(value));
         }
 
         [TestMethod]
