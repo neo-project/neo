@@ -23,6 +23,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Trie.MPT;
 using Neo.VM;
 using Neo.Wallets;
 
@@ -30,17 +31,61 @@ namespace Neo.Network.RPC
 {
     public sealed class RpcServer : IDisposable
     {
+        private class CheckWitnessHashes : IVerifiable
+        {
+            private readonly UInt160[] _scriptHashesForVerifying;
+            public Witness[] Witnesses { get; set; }
+            public int Size { get; }
+
+            public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
+            {
+                _scriptHashesForVerifying = scriptHashesForVerifying;
+            }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Deserialize(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void DeserializeUnsigned(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+            {
+                return _scriptHashesForVerifying;
+            }
+
+            public void SerializeUnsigned(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public byte[] GetMessage()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public Wallet Wallet { get; set; }
         public Fixed8 MaxGasInvoke { get; }
+        public int MaxConcurrentConnections { get; }
 
         private IWebHost host;
         private readonly NeoSystem system;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
+        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8), int maxConcurrentConnections = Peer.DefaultMaxConnections)
         {
             this.system = system;
             this.Wallet = wallet;
             this.MaxGasInvoke = maxGasInvoke;
+            this.MaxConcurrentConnections = maxConcurrentConnections;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -71,9 +116,9 @@ namespace Neo.Network.RPC
             }
         }
 
-        private JObject GetInvokeResult(byte[] script)
+        private JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            using (ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke))
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: MaxGasInvoke))
             {
                 JObject json = new JObject();
                 json["script"] = script.ToHexString();
@@ -87,6 +132,7 @@ namespace Neo.Network.RPC
                 {
                     json["stack"] = "error: recursive reference";
                 }
+
                 return json;
             }
         }
@@ -209,19 +255,37 @@ namespace Neo.Network.RPC
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         ContractParameter[] parameters = ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray();
-                        return Invoke(script_hash, parameters);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 2)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(2).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return Invoke(script_hash, parameters, checkWitnessHashes);
                     }
                 case "invokefunction":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         string operation = _params[1].AsString();
                         ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
-                        return InvokeFunction(script_hash, operation, args);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 3)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(3).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return InvokeFunction(script_hash, operation, args, checkWitnessHashes);
                     }
                 case "invokescript":
                     {
                         byte[] script = _params[0].AsString().HexToBytes();
-                        return InvokeScript(script);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 1)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(1).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return InvokeScript(script, checkWitnessHashes);
                     }
                 case "listplugins":
                     {
@@ -241,6 +305,33 @@ namespace Neo.Network.RPC
                     {
                         string address = _params[0].AsString();
                         return ValidateAddress(address);
+                    }
+                case "getstateheight":
+                    {
+                        return GetStateHeight();
+                    }
+                case "getstateroot":
+                    {
+                        JObject param = _params[0];
+                        return GetStateRoot(param);
+                    }
+                case "getproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        UInt160 script_hash = UInt160.Parse(_params[1].AsString());
+                        byte[] store_key = _params[2].AsString().HexToBytes();
+                        return GetStateProof(state_root, script_hash, store_key);
+                    }
+                case "verifyproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        byte[] path = _params[1].AsString().HexToBytes();
+                        var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+                        foreach (var item in ((JArray)_params[2]))
+                        {
+                            proof.Add(item.AsString().HexToBytes());
+                        }
+                        return VerifyProof(state_root, path, proof);
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
@@ -361,6 +452,13 @@ namespace Neo.Network.RPC
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
+                // Default value is unlimited
+                options.Limits.MaxConcurrentConnections = MaxConcurrentConnections;
+                // Default value is 2 minutes
+                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(1);
+                // Default value is 30 seconds
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
+
                 if (string.IsNullOrEmpty(sslCert)) return;
                 listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
                 {
@@ -611,29 +709,29 @@ namespace Neo.Network.RPC
             return json;
         }
 
-        private JObject Invoke(UInt160 script_hash, ContractParameter[] parameters)
+        private JObject Invoke(UInt160 script_hash, ContractParameter[] parameters, IVerifiable checkWitnessHashes = null)
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 script = sb.EmitAppCall(script_hash, parameters).ToArray();
             }
-            return GetInvokeResult(script);
+            return GetInvokeResult(script, checkWitnessHashes);
         }
 
-        private JObject InvokeFunction(UInt160 script_hash, string operation, ContractParameter[] args)
+        private JObject InvokeFunction(UInt160 script_hash, string operation, ContractParameter[] args, IVerifiable checkWitnessHashes = null)
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 script = sb.EmitAppCall(script_hash, operation, args).ToArray();
             }
-            return GetInvokeResult(script);
+            return GetInvokeResult(script, checkWitnessHashes);
         }
 
-        private JObject InvokeScript(byte[] script)
+        private JObject InvokeScript(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            return GetInvokeResult(script);
+            return GetInvokeResult(script, checkWitnessHashes);
         }
 
         private JObject ListPlugins()
@@ -677,6 +775,62 @@ namespace Neo.Network.RPC
             }
             json["address"] = address;
             json["isvalid"] = scriptHash != null;
+            return json;
+        }
+
+        private JObject GetStateHeight()
+        {
+            var json = new JObject();
+            json["blockheight"] = Blockchain.Singleton.Height;
+            json["stateheight"] = Blockchain.Singleton.StateHeight;
+            return json;
+        }
+
+        private JObject GetStateRoot(JObject key)
+        {
+            JObject json = new JObject();
+            StateRootState state_root = null;
+            if (key is JNumber)
+            {
+                state_root = Blockchain.Singleton.GetStateRoot((uint)key.AsNumber());
+            }
+            else if (key is JString)
+            {
+                var hash = UInt256.Parse(key.AsString());
+                state_root = Blockchain.Singleton.GetStateRoot(hash);
+            }
+            else{
+                throw new RpcException(-100, "Invalid parameter.");
+            }
+            if (state_root is null) throw new RpcException(-100, "Unknown state root.");
+            return state_root.ToJson();
+        }
+
+        private JObject GetStateProof(UInt256 state_root, UInt160 script_hash, byte[] store_key)
+        {
+            JObject json = new JObject();
+            var skey = new StorageKey{
+                ScriptHash = script_hash,
+                Key = store_key,
+            };
+            var result = Blockchain.Singleton.GetStateProof(state_root, skey.ToArray(), out HashSet<byte[]> proof);
+            json["success"] = result;
+            json["proof"] = new JArray(proof.Select(ele => (JObject)ele.ToHexString()));
+            return json;
+        }
+
+        private JObject VerifyProof(UInt256 state_root, byte[] path, HashSet<byte[]> proof)
+        {
+            var json = new JObject();
+            var result = MPTTrie.VerifyProof(state_root.ToArray(), path, proof, out byte[] value);
+            if (!result)
+            {
+                json = "unvalid";
+            }
+            else
+            {
+                json["value"] = value.ToHexString();
+            }
             return json;
         }
     }

@@ -77,6 +77,11 @@ namespace Neo.Persistence.LevelDB
             return new DbCache<StorageKey, StorageItem>(db, null, null, Prefixes.ST_Storage);
         }
 
+        public override DataCache<UInt256, StateRootState> GetStateRoots()
+        {
+            return new DbCache<UInt256, StateRootState>(db, null, null, Prefixes.ST_StateRoot);
+        }
+
         public override DataCache<UInt256, TransactionState> GetTransactions()
         {
             return new DbCache<UInt256, TransactionState>(db, null, null, Prefixes.DATA_Transaction);
