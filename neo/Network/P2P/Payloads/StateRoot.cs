@@ -15,7 +15,6 @@ namespace Neo.Network.P2P.Payloads
         public uint Index;
         public UInt256 PreHash;
         public UInt256 StateRoot_;
-        public UInt160 Consensus;
         public Witness Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.StateRoot;
@@ -47,7 +46,6 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +          //Index 
             PreHash.Size +          //PrevHash
             StateRoot_.Size +       //StateRoot
-            Consensus.Size +        //Consensus
             1 +                     //Witness array count
             Witness.Size;           //Witness   
 
@@ -55,7 +53,7 @@ namespace Neo.Network.P2P.Payloads
         {
             this.DeserializeUnsigned(reader);
             Witness[] witnesses = reader.ReadSerializableArray<Witness>();
-            if (witnesses.Length != 1) throw new FormatException();
+            if (witnesses.Length != 1) return;
             Witness = witnesses[0];
         }
 
@@ -65,13 +63,12 @@ namespace Neo.Network.P2P.Payloads
             Index = reader.ReadUInt32();
             PreHash = reader.ReadSerializable<UInt256>();
             StateRoot_ = reader.ReadSerializable<UInt256>();
-            Consensus = reader.ReadSerializable<UInt160>();
         }
 
         public void Serialize(BinaryWriter writer)
         {
             this.SerializeUnsigned(writer);
-            writer.Write(new Witness[] { Witness });
+            writer.Write(Witness is null ? new Witness[] { } : new Witness[] { Witness });
         }
 
         public void SerializeUnsigned(BinaryWriter writer)
@@ -80,7 +77,6 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Index);
             writer.Write(PreHash);
             writer.Write(StateRoot_);
-            writer.Write(Consensus);
         }
 
         public bool Verify(Snapshot snapshot)
@@ -91,7 +87,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            return new[] { Consensus };
+            return new UInt160[] { snapshot.GetBlock(Index).NextConsensus };
         }
 
         public byte[] GetMessage()
@@ -106,8 +102,7 @@ namespace Neo.Network.P2P.Payloads
             json["index"] = Index;
             json["prehash"] = PreHash.ToString();
             json["stateroot"] = StateRoot_.ToString();
-            json["consensus"] = Consensus.ToAddress();
-            json["witness"] = new JArray(Witness.ToJson());
+            json["witness"] = Witness is null ? new JArray() : new JArray(Witness.ToJson());
             return json;
         }
     }
