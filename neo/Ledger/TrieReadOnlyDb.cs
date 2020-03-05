@@ -11,7 +11,7 @@ namespace Neo.Ledger
         private readonly Store store;
         private readonly byte prefix;
 
-        private readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("MPT_CURRENT_ROOT");
+        private readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("CURRENT_ROOT");
 
         public TrieReadOnlyDb(Store store, byte prefix)
         {

@@ -97,6 +97,9 @@ namespace Neo.Network.P2P
                 case "stateroot":
                     OnInventoryReceived(msg.GetPayload<StateRoot>());
                     break;
+                case "getstateroots":
+                    OnGetStateRootsReceived(msg.GetPayload<GetStateRootsPayload>());
+                    break;
                 case "filteradd":
                     OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
@@ -156,6 +159,22 @@ namespace Neo.Network.P2P
             {
                 EndPoints = payload.AddressList.Select(p => p.EndPoint)
             });
+        }
+        
+        private void OnGetStateRootsReceived(GetStateRootsPayload payload)
+        {
+            var start = payload.StartIndex;
+            var count = payload.Count;
+            for (uint i = start; i < start + count; i++)
+            {
+                var state = Blockchain.Singleton.GetStateRoot(i);
+                if (state.Verified == StateRootVerifyFlag.Verified)
+                {
+                    Context.Parent.Tell(Message.Create("stateroot", state.StateRoot));
+                    continue;
+                }
+                break;
+            }
         }
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)
@@ -244,9 +263,6 @@ namespace Neo.Network.P2P
                         if (inventory != null)
                             Context.Parent.Tell(Message.Create("consensus", inventory));
                         break;
-                    case InventoryType.StateRoot:
-                        //TODO: send stateroot if there it is
-                        break;
                 }
             }
         }
@@ -301,9 +317,6 @@ namespace Neo.Network.P2P
                 case InventoryType.TX:
                     using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                         hashes = hashes.Where(p => !snapshot.ContainsTransaction(p)).ToArray();
-                    break;
-                case InventoryType.StateRoot:
-                    //TODO: check if the stateroot is verified.
                     break;
             }
             if (hashes.Length == 0) return;

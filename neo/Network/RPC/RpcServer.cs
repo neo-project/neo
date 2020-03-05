@@ -789,21 +789,21 @@ namespace Neo.Network.RPC
         private JObject GetStateRoot(JObject key)
         {
             JObject json = new JObject();
-            StateRootState state_root = null;
+            StateRootState state = null;
             if (key is JNumber)
             {
-                state_root = Blockchain.Singleton.GetStateRoot((uint)key.AsNumber());
+                state = Blockchain.Singleton.GetStateRoot((uint)key.AsNumber());
             }
             else if (key is JString)
             {
                 var hash = UInt256.Parse(key.AsString());
-                state_root = Blockchain.Singleton.GetStateRoot(hash);
+                state = Blockchain.Singleton.GetStateRoot(hash);
             }
             else{
                 throw new RpcException(-100, "Invalid parameter.");
             }
-            if (state_root is null) throw new RpcException(-100, "Unknown state root.");
-            return state_root.ToJson();
+            if (state is null) throw new RpcException(-100, "Unknown state root.");
+            return state.ToJson();
         }
 
         private JObject GetStateProof(UInt256 state_root, UInt160 script_hash, byte[] store_key)

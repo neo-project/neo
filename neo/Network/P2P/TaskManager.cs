@@ -265,7 +265,16 @@ namespace Neo.Network.P2P
             {
                 session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
             }
-            //TODO: sync state root.
+            else if (Blockchain.Singleton.StateHeight + 2 < Blockchain.Singleton.Height)
+            {
+                var state_height = Blockchain.Singleton.StateHeight;
+                var height = Blockchain.Singleton.Height;
+                var state = Blockchain.Singleton.GetStateRoot(state_height + 1);
+                if (state.Verified == StateRootVerifyFlag.Unverified)
+                {
+                    session.RemoteNode.Tell(Message.Create("getstateroots", GetStateRootsPayload.Create(state_height + 1, height - state_height)));
+                }
+            }
         }
     }
 
