@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
+using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -67,7 +68,8 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                InteropService.GetPrice(InteropService.Storage.Put, ae).Should().Be(200000L);
+                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae);
+                act.Should().Throw<InvalidOperationException>();
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
@@ -79,7 +81,8 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                InteropService.GetPrice(InteropService.Storage.PutEx, ae).Should().Be(200000L);
+                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae);
+                act.Should().Throw<InvalidOperationException>();
             }
         }
 
