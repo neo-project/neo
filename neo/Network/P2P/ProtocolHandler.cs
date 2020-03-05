@@ -94,6 +94,9 @@ namespace Neo.Network.P2P
                 case "consensus":
                     OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
+                case "stateroot":
+                    OnInventoryReceived(msg.GetPayload<StateRoot>());
+                    break;
                 case "filteradd":
                     OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
@@ -241,6 +244,9 @@ namespace Neo.Network.P2P
                         if (inventory != null)
                             Context.Parent.Tell(Message.Create("consensus", inventory));
                         break;
+                    case InventoryType.StateRoot:
+                        //TODO: send stateroot if there it is
+                        break;
                 }
             }
         }
@@ -295,6 +301,9 @@ namespace Neo.Network.P2P
                 case InventoryType.TX:
                     using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                         hashes = hashes.Where(p => !snapshot.ContainsTransaction(p)).ToArray();
+                    break;
+                case InventoryType.StateRoot:
+                    //TODO: check if the stateroot is verified.
                     break;
             }
             if (hashes.Length == 0) return;

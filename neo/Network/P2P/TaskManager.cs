@@ -265,6 +265,7 @@ namespace Neo.Network.P2P
             {
                 session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
             }
+            //TODO: sync state root.
         }
     }
 

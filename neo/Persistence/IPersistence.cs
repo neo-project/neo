@@ -16,6 +16,7 @@ namespace Neo.Persistence
         DataCache<UInt256, AssetState> Assets { get; }
         DataCache<UInt160, ContractState> Contracts { get; }
         DataCache<StorageKey, StorageItem> Storages { get; }
+        DataCache<UInt256, StateRootState> StateRoots { get; }
         DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         MetaDataCache<HashIndexState> BlockHashIndex { get; }

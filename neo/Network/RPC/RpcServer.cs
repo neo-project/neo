@@ -23,6 +23,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Trie.MPT;
 using Neo.VM;
 using Neo.Wallets;
 
@@ -304,6 +305,33 @@ namespace Neo.Network.RPC
                     {
                         string address = _params[0].AsString();
                         return ValidateAddress(address);
+                    }
+                case "getstateheight":
+                    {
+                        return GetStateHeight();
+                    }
+                case "getstateroot":
+                    {
+                        JObject param = _params[0];
+                        return GetStateRoot(param);
+                    }
+                case "getproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        UInt160 script_hash = UInt160.Parse(_params[1].AsString());
+                        byte[] store_key = _params[2].AsString().HexToBytes();
+                        return GetStateProof(state_root, script_hash, store_key);
+                    }
+                case "verifyproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        byte[] path = _params[1].AsString().HexToBytes();
+                        var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+                        foreach (var item in ((JArray)_params[2]))
+                        {
+                            proof.Add(item.AsString().HexToBytes());
+                        }
+                        return VerifyProof(state_root, path, proof);
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
@@ -747,6 +775,62 @@ namespace Neo.Network.RPC
             }
             json["address"] = address;
             json["isvalid"] = scriptHash != null;
+            return json;
+        }
+
+        private JObject GetStateHeight()
+        {
+            var json = new JObject();
+            json["blockheight"] = Blockchain.Singleton.Height;
+            json["stateheight"] = Blockchain.Singleton.StateHeight;
+            return json;
+        }
+
+        private JObject GetStateRoot(JObject key)
+        {
+            JObject json = new JObject();
+            StateRootState state_root = null;
+            if (key is JNumber)
+            {
+                state_root = Blockchain.Singleton.GetStateRoot((uint)key.AsNumber());
+            }
+            else if (key is JString)
+            {
+                var hash = UInt256.Parse(key.AsString());
+                state_root = Blockchain.Singleton.GetStateRoot(hash);
+            }
+            else{
+                throw new RpcException(-100, "Invalid parameter.");
+            }
+            if (state_root is null) throw new RpcException(-100, "Unknown state root.");
+            return state_root.ToJson();
+        }
+
+        private JObject GetStateProof(UInt256 state_root, UInt160 script_hash, byte[] store_key)
+        {
+            JObject json = new JObject();
+            var skey = new StorageKey{
+                ScriptHash = script_hash,
+                Key = store_key,
+            };
+            var result = Blockchain.Singleton.GetStateProof(state_root, skey.ToArray(), out HashSet<byte[]> proof);
+            json["success"] = result;
+            json["proof"] = new JArray(proof.Select(ele => (JObject)ele.ToHexString()));
+            return json;
+        }
+
+        private JObject VerifyProof(UInt256 state_root, byte[] path, HashSet<byte[]> proof)
+        {
+            var json = new JObject();
+            var result = MPTTrie.VerifyProof(state_root.ToArray(), path, proof, out byte[] value);
+            if (!result)
+            {
+                json = "unvalid";
+            }
+            else
+            {
+                json["value"] = value.ToHexString();
+            }
             return json;
         }
     }

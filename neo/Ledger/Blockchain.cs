@@ -7,8 +7,10 @@ using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Persistence.LevelDB;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Trie.MPT;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -130,6 +132,9 @@ namespace Neo.Ledger
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
 
+        public uint StateHeight {get; private set;}
+        private uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
+        private readonly Dictionary<uint, StateRoot> stateRooCache = new Dictionary<uint, StateRoot>();
         private static Blockchain singleton;
         public static Blockchain Singleton
         {
@@ -177,6 +182,15 @@ namespace Neo.Ledger
                     Persist(GenesisBlock);
                 else
                     UpdateCurrentSnapshot();
+                for (uint i = Height; i >= StateRootEnableIndex; i--)
+                {
+                    var state = currentSnapshot.StateRoots.TryGet(GetBlockHash(i));
+                    if (state.Verified != StateRootVerified.Unverified)
+                    {
+                        StateHeight = i;
+                        break;
+                    }
+                }
                 singleton = this;
             }
         }
@@ -214,6 +228,24 @@ namespace Neo.Ledger
         public Snapshot GetSnapshot()
         {
             return Store.GetSnapshot();
+        }
+
+        public StateRootState GetStateRoot(uint index)
+        {
+            var hash = GetBlockHash(index);
+            return GetStateRoot(hash);
+        }
+
+        public StateRootState GetStateRoot(UInt256 hash)
+        {
+            return currentSnapshot.StateRoots.TryGet(hash);
+        }
+
+        public bool GetStateProof(UInt256 root, byte[] path, out HashSet<byte[]> proof)
+        {
+            var trieReadOnlyDb = new TrieReadOnlyDb(Store, Prefixes.DATA_MPT);
+            var readOnlyTrie = new MPTReadOnlyTrie(root.ToArray(), trieReadOnlyDb);
+            return readOnlyTrie.GetProof(path, out proof);
         }
 
         public Transaction GetTransaction(UInt256 hash)
@@ -409,6 +441,37 @@ namespace Neo.Ledger
             return RelayResultReason.Succeed;
         }
 
+        private void OnNewStateRoot(StateRoot state_root)
+        {
+            if (state_root.Index <= StateRootEnableIndex || state_root.Index <= StateHeight) return;
+            if (state_root.Witness is null) return;
+            if (stateRooCache.ContainsKey(state_root.Index)) return;
+            if (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex)
+            {
+                stateRooCache.Add(state_root.Index, state_root);
+                return;
+            }
+            var state_root_to_verify = state_root;
+            var state_roots_to_verify = new List<StateRoot>();
+            while(true)
+            {
+                state_roots_to_verify.Add(state_root_to_verify);
+                var index = state_root_to_verify.Index + 1;
+                if (index > Height) break;
+                if (!stateRooCache.TryGetValue(index, out state_root_to_verify)) break;
+            }
+            foreach (var state_root_verify in state_roots_to_verify)
+            {
+                stateRooCache.Remove(state_root_verify.Index);
+                if (!state_root_verify.Verify(currentSnapshot)) break;
+                var local_state_root = currentSnapshot.StateRoots.TryGet(currentSnapshot.GetBlock(state_root_verify.Index).Hash).StateRoot;
+                if (local_state_root.StateRoot_ == (state_root_verify.StateRoot_) && local_state_root.PreHash == state_root_verify.PreHash)
+                {
+                    StateHeight = state_root_verify.Index;
+                }
+            }
+        }
+
         private void OnPersistCompleted(Block block)
         {
             block_cache.Remove(block.Hash);
@@ -434,6 +497,9 @@ namespace Neo.Ledger
                     break;
                 case Transaction transaction:
                     Sender.Tell(OnNewTransaction(transaction));
+                    break;
+                case StateRoot stateRoot:
+                    OnNewStateRoot(stateRoot);
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -642,6 +708,7 @@ namespace Neo.Ledger
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
+            UpdateStateRoots();
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
         }
@@ -721,6 +788,40 @@ namespace Neo.Ledger
             finally
             {
                 if (snapshot_created) snapshot.Dispose();
+            }
+        }
+
+        private void UpdateStateRoots()
+        {
+            using(Snapshot snapshot = GetSnapshot())
+            {
+                var trie_db = new TrieReadOnlyDb(Store, Prefixes.DATA_MPT);
+                var root = trie_db.GetRoot();
+                var current_root = root is null || root.Length == 0 ? UInt256.Zero : new UInt256(root);
+                var current_index = snapshot.Height;
+                var pre_hash = UInt256.Zero;
+                var consensus = UInt160.Zero;
+                if (currentSnapshot?.Height > 0)
+                {
+                    var last_state_root = currentSnapshot.StateRoots.TryGet(currentSnapshot.CurrentBlockHash);
+                    pre_hash = last_state_root.StateRoot.Hash;
+                }
+                
+                var stateRoot = new StateRoot
+                {
+                    Version = MPTTrie.Version,
+                    Index = current_index,
+                    PreHash = pre_hash,
+                    StateRoot_ = current_root,
+                };
+                var stateRootState = new StateRootState
+                {
+                    Verified = StateRootVerified.Unverified,
+                    StateRoot = stateRoot,
+                };
+                snapshot.StateRoots.Add(snapshot.CurrentBlockHash, stateRootState);
+                Console.WriteLine($"Add state root, hash={snapshot.CurrentBlockHash}, state={stateRootState.ToJson().ToString()}");
+                snapshot.Commit();
             }
         }
 
