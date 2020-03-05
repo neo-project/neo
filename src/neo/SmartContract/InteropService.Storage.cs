@@ -31,7 +31,7 @@ namespace Neo.SmartContract
                 var value = stack.Peek(2);
                 var newDataSize = value.IsNull ? 0 : value.GetByteLength();
                 if (!(engine.CurrentContext.EvaluationStack.Peek() is InteropInterface _interface))
-                    return (key.GetByteLength() + newDataSize) * GasPerByte;
+                    throw new InvalidOperationException();
 
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 StorageKey skey = new StorageKey
