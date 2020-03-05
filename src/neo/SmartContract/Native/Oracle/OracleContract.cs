@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Native.Oracle
         public override int Id => -4;
 
         private const byte Prefix_Validator = 24;
-        private const byte Prefix_HttpConfig = 25;
+        private const byte Prefix_Config = 25;
         private const byte Prefix_PerRequestFee = 26;
 
         public OracleContract()
@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native.Oracle
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes("HttpTimeout")), new StorageItem
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Timeout)), new StorageItem
             {
                 Value = new ByteArray(BitConverter.GetBytes(5000)).GetSpan().ToArray()
             });
@@ -157,7 +157,7 @@ namespace Neo.SmartContract.Native.Oracle
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             string key = args[0].GetString();
             ByteArray value = args[1].GetSpan().ToArray();
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes(key)));
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
             storage.Value = value.GetSpan().ToArray();
             return true;
         }
@@ -183,7 +183,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <returns>value</returns>
         public ByteArray GetConfig(StoreView snapshot, string key)
         {
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_HttpConfig, Encoding.UTF8.GetBytes(key)));
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
             return storage.Value;
         }
 
