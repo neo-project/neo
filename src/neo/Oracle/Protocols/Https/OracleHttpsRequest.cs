@@ -8,14 +8,14 @@ namespace Neo.Oracle.Protocols.Https
     public class OracleHttpsRequest : OracleRequest
     {
         /// <summary>
-        /// HTTP Methods
-        /// </summary>
-        public HttpMethod Method { get; set; }
-
-        /// <summary>
         /// Type
         /// </summary>
         public override OracleRequestType Type => OracleRequestType.HTTPS;
+
+        /// <summary>
+        /// HTTP Methods
+        /// </summary>
+        public HttpMethod Method { get; set; }
 
         /// <summary>
         /// URL
