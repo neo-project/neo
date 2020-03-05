@@ -117,6 +117,11 @@ namespace Neo.Consensus
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
+
+                //发送stateRoot
+/*                StateRoot stateRoot = context.CreateStateRoot();
+                Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Hash}");
+                localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });*/
             }
         }
 

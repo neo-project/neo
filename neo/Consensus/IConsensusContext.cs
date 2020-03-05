@@ -28,6 +28,7 @@ namespace Neo.Consensus
         Block Block { get; set; }
         Snapshot Snapshot { get; }
 
+        StateRoot CreateStateRoot();
         Block CreateBlock();
 
         bool Load();

@@ -46,6 +46,8 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
         private readonly Store store;
 
+        public StateRoot StateRoot_ { get; set; }
+
         public int Size => throw new NotImplementedException();
 
         public ConsensusContext(Wallet wallet, Store store)
@@ -72,6 +74,25 @@ namespace Neo.Consensus
                 Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             }
             return Block;
+        }
+
+        public StateRoot CreateStateRoot()
+        {
+            if (StateRoot_ is null)
+            {
+                StateRoot_ = MakeStateRoot();
+                if (StateRoot_ == null) return null;
+                Contract contract = Contract.CreateMultiSigContract(this.M(), Validators);
+                ContractParametersContext sc = new ContractParametersContext(StateRoot_);
+                for (int i = 0, j = 0; i < Validators.Length && j < this.M(); i++)
+                {
+                    if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
+                    sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature);
+                    j++;
+                }
+                StateRoot_.Witness = sc.GetWitnesses()[0];
+            }
+            return StateRoot_;
         }
 
         public void Deserialize(BinaryReader reader)
@@ -150,8 +171,25 @@ namespace Neo.Consensus
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = MakeHeader()?.Sign(keyPair)
+                Signature = MakeHeader()?.Sign(keyPair),
+                StateRootSignature= MakeStateRoot()?.Sign(keyPair)
             }));
+        }
+
+        private StateRoot _stateRoot = null;
+        public StateRoot MakeStateRoot() {
+            if (_stateRoot == null)
+            {
+                _stateRoot = new StateRoot
+                {
+                   Version=1,
+                   Index=2,
+                   PreHash=UInt256.Zero,
+                   StateRoot_=UInt256.Zero,
+                   Consensus=UInt160.Zero
+                };
+            }
+            return _stateRoot;
         }
 
         private Block _header = null;
@@ -214,7 +252,13 @@ namespace Neo.Consensus
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
+
+                Version=1,
+                Index=2,
+                PreHash=UInt256.Zero,
+                StateRoot_=UInt256.Zero,
+                Consensus=UInt160.Zero
             });
         }
 
@@ -238,7 +282,13 @@ namespace Neo.Consensus
                     Nonce = Nonce,
                     NextConsensus = NextConsensus,
                     MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                    Timestamp = Timestamp
+                    Timestamp = Timestamp,
+
+                    Version = 1,
+                    Index = 2,
+                    PreHash = UInt256.Zero,
+                    StateRoot_ = UInt256.Zero,
+                    Consensus = UInt160.Zero
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
