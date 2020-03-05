@@ -25,7 +25,7 @@ namespace Neo.Persistence.LevelDB
             this.options = options ?? ReadOptions.Default;
             this.batch = batch;
             this.prefix = prefix;
-            this.trieDb = new DbTrieStore(db, options, batch, prefix);
+            this.trieDb = new DbTrieStore(db, options, batch, Prefixes.DATA_MPT);
             this.mptTrie = new MPTTrie(trieDb.GetRoot(), trieDb);
         }
 

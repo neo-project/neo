@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Neo.Ledger
 {
-    public enum StateRootVerified : byte
+    public enum StateRootVerifyFlag : byte
     {
         Unverified = 0x00,
         Verified = 0x01,
@@ -14,7 +14,7 @@ namespace Neo.Ledger
 
     public class StateRootState : StateBase, ICloneable<StateRootState>
     {
-        public StateRootVerified Verified;
+        public StateRootVerifyFlag Verified;
         public StateRoot StateRoot;
 
         public override int Size => base.Size + sizeof(bool) + StateRoot.Size;
@@ -31,7 +31,7 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Verified = (StateRootVerified)reader.ReadByte();
+            Verified = (StateRootVerifyFlag)reader.ReadByte();
             StateRoot = reader.ReadSerializable<StateRoot>();
         }
 

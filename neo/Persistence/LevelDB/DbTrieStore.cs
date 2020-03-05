@@ -13,7 +13,7 @@ namespace Neo.Persistence.LevelDB
         private readonly WriteBatch batch;
         private readonly byte prefix;
 
-        private readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("MPT_CURRENT_ROOT");
+        private readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("CURRENT_ROOT");
 
         public DbTrieStore(DB db, ReadOptions options, WriteBatch batch, byte prefix)
         {
@@ -41,14 +41,14 @@ namespace Neo.Persistence.LevelDB
 
         public byte[] GetRoot()
         {
-            var result = db.TryGet(options, ROOT_KEY, out Slice value);
+            var result = db.TryGet(options, StoreKey(ROOT_KEY), out Slice value);
             return result ? value.ToArray() : null;
         }
 
         public void PutRoot(byte[] root)
         {
             if (root is null || root.Length == 0 ) return;
-            batch.Put(ROOT_KEY, root);
+            batch.Put(StoreKey(ROOT_KEY), root);
         }       
     }
 }
