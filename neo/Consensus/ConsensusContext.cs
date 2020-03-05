@@ -16,6 +16,11 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
+        public uint StateRootVersion { get; set; }
+        public uint StateRootIndex { get; set; }
+        public UInt256 StateRootPreHash { get; set; }
+        public UInt256 StateRootStateRoot_ { get; set; }
+
         /// <summary>
         /// Prefix for saving consensus state.
         /// </summary>
@@ -185,8 +190,7 @@ namespace Neo.Consensus
                    Version=1,
                    Index=2,
                    PreHash=UInt256.Zero,
-                   StateRoot_=UInt256.Zero,
-                   Consensus=UInt160.Zero
+                   StateRoot_=UInt256.Zero
                 };
             }
             return _stateRoot;
@@ -257,8 +261,7 @@ namespace Neo.Consensus
                 Version=1,
                 Index=2,
                 PreHash=UInt256.Zero,
-                StateRoot_=UInt256.Zero,
-                Consensus=UInt160.Zero
+                StateRoot_=UInt256.Zero
             });
         }
 
@@ -287,8 +290,7 @@ namespace Neo.Consensus
                     Version = 1,
                     Index = 2,
                     PreHash = UInt256.Zero,
-                    StateRoot_ = UInt256.Zero,
-                    Consensus = UInt160.Zero
+                    StateRoot_ = UInt256.Zero
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -366,6 +368,11 @@ namespace Neo.Consensus
 
         public void Serialize(BinaryWriter writer)
         {
+            writer.Write(StateRootVersion);
+            writer.Write(StateRootIndex);
+            writer.Write(StateRootPreHash);
+            writer.Write(StateRootVersion);
+
             writer.Write(Version);
             writer.Write(BlockIndex);
             writer.Write(ViewNumber);

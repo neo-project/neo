@@ -18,7 +18,6 @@ namespace Neo.Consensus
         public uint Index;
         public UInt256 PreHash;
         public UInt256 StateRoot_;
-        public UInt160 Consensus;
 
         public override int Size => base.Size
             + sizeof(uint)                      //Timestamp
@@ -30,8 +29,7 @@ namespace Neo.Consensus
             + sizeof(uint)                      //Version
             + sizeof(uint)                      //Index
             + PreHash.Size                      //PreHash
-            + StateRoot_.Size                   //StateRoot_
-            + Consensus.Size;                   //Consensus
+            + StateRoot_.Size;                  //StateRoot_
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
@@ -55,7 +53,6 @@ namespace Neo.Consensus
             Index = reader.ReadUInt32();
             PreHash= reader.ReadSerializable<UInt256>();
             StateRoot_=reader.ReadSerializable<UInt256>();
-            Consensus= reader.ReadSerializable<UInt160>();
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -71,7 +68,6 @@ namespace Neo.Consensus
             writer.Write(Index);
             writer.Write(PreHash);
             writer.Write(StateRoot_);
-            writer.Write(Consensus);
         }
     }
 }
