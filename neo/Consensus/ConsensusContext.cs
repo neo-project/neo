@@ -103,6 +103,13 @@ namespace Neo.Consensus
         public void Deserialize(BinaryReader reader)
         {
             Reset(0);
+            if (reader.ReadUInt32() != StateRootVersion) throw new FormatException();
+            if (reader.ReadUInt32() != StateRootIndex) throw new FormatException();
+/*            StateRootVersion = reader.ReadUInt32();
+            StateRootIndex= reader.ReadUInt32();*/
+            StateRootPreHash= reader.ReadSerializable<UInt256>();
+            StateRootStateRoot_ = reader.ReadSerializable<UInt256>();
+
             if (reader.ReadUInt32() != Version) throw new FormatException();
             if (reader.ReadUInt32() != BlockIndex) throw new InvalidOperationException();
             ViewNumber = reader.ReadByte();
@@ -359,6 +366,12 @@ namespace Neo.Consensus
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int) BlockIndex;
             _header = null;
+
+            _stateRoot = null;
+            StateRootVersion = 0;
+            StateRootIndex = 1;
+            StateRootPreHash = UInt256.Zero;
+            StateRootStateRoot_ = UInt256.Zero;
         }
 
         public void Save()
@@ -371,7 +384,7 @@ namespace Neo.Consensus
             writer.Write(StateRootVersion);
             writer.Write(StateRootIndex);
             writer.Write(StateRootPreHash);
-            writer.Write(StateRootVersion);
+            writer.Write(StateRootStateRoot_);
 
             writer.Write(Version);
             writer.Write(BlockIndex);
