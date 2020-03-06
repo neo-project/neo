@@ -297,6 +297,12 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
+            if (inventory.InventoryType == InventoryType.StateRoot && !knownHashes.Contains(inventory.Hash))
+            {
+                knownHashes.Add(inventory.Hash);
+                system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+                return;
+            }
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
             if (inventory is MinerTransaction) return;
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });

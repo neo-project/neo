@@ -10,7 +10,7 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => sizeof(uint) + sizeof(uint);
 
-        public static GetStateRootsPayload Create(uint start_index, uint count = 100)
+        public static GetStateRootsPayload Create(uint start_index, uint count = 20)
         {
             return new GetStateRootsPayload
             {

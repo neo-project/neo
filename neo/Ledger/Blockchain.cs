@@ -441,15 +441,16 @@ namespace Neo.Ledger
             return RelayResultReason.Succeed;
         }
 
-        private void OnNewStateRoot(StateRoot state_root)
+        private RelayResultReason OnNewStateRoot(StateRoot state_root)
         {
-            if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return;
-            if (state_root.Witness is null) return;
-            if (state_root_cache.ContainsKey(state_root.Index)) return;
+            Console.WriteLine($"[blockchain] new state root, index={state_root.Index}");
+            if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return RelayResultReason.Invalid;
+            if (state_root.Witness is null) return RelayResultReason.Invalid;
+            if (state_root_cache.ContainsKey(state_root.Index)) return RelayResultReason.AlreadyExists;
             if (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex)
             {
                 state_root_cache.Add(state_root.Index, state_root);
-                return;
+                return RelayResultReason.Succeed;
             }
             var state_root_to_verify = state_root;
             var state_roots_to_verify = new List<StateRoot>();
@@ -465,7 +466,11 @@ namespace Neo.Ledger
                 using(Snapshot snapshot = GetSnapshot())
                 {
                     state_root_cache.Remove(state_root_verifying.Index);
-                    if (!state_root_verifying.Verify(snapshot)) break;
+                    if (!state_root_verifying.Verify(snapshot)) 
+                    {
+                        Console.WriteLine($"[blockchain] state root verify failed. index={state_root.Index}");
+                        break;
+                    }
                     var local_state = snapshot.StateRoots.GetAndChange(state_root_verifying.Index);
                     if (local_state.StateRoot.StateRoot_ == state_root_verifying.StateRoot_ && local_state.StateRoot.PreHash == state_root_verifying.PreHash)
                     {
@@ -484,9 +489,9 @@ namespace Neo.Ledger
                         snapshot.Commit();
                         break;
                     }
-
                 }
             }
+            return RelayResultReason.Succeed;
         }
 
         private void OnPersistCompleted(Block block)
@@ -522,7 +527,8 @@ namespace Neo.Ledger
                     Sender.Tell(OnNewTransaction(transaction));
                     break;
                 case StateRoot stateRoot:
-                    OnNewStateRoot(stateRoot);
+                    var result = OnNewStateRoot(stateRoot);
+                    Console.WriteLine($"[blockchain] new state root, result={result}");
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -843,7 +849,7 @@ namespace Neo.Ledger
                     StateRoot = stateRoot,
                 };
                 snapshot.StateRoots.Add(snapshot.Height, stateRootState);
-                Console.WriteLine($"Add state root, stateheight={StateHeight}, hash={snapshot.CurrentBlockHash}, state={stateRootState.ToJson().ToString()}");
+                Console.WriteLine($"[blockchain] Add state root, stateheight={StateHeight}, index={stateRoot.Index}, state={stateRoot.ToJson().ToString()}");
                 snapshot.Commit();
             }
         }
