@@ -14,7 +14,7 @@ namespace Neo.Ledger
 
     public class StateRootState : StateBase, ICloneable<StateRootState>
     {
-        public StateRootVerifyFlag Verified;
+        public StateRootVerifyFlag Flag;
         public StateRoot StateRoot;
 
         public override int Size => base.Size + sizeof(bool) + StateRoot.Size;
@@ -23,7 +23,7 @@ namespace Neo.Ledger
         {
             return new StateRootState
             {
-                Verified = Verified,
+                Flag = Flag,
                 StateRoot = StateRoot,
             };
         }
@@ -31,27 +31,27 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Verified = (StateRootVerifyFlag)reader.ReadByte();
+            Flag = (StateRootVerifyFlag)reader.ReadByte();
             StateRoot = reader.ReadSerializable<StateRoot>();
         }
 
         void ICloneable<StateRootState>.FromReplica(StateRootState replica)
         {
-            Verified = replica.Verified;
+            Flag = replica.Flag;
             StateRoot = replica.StateRoot;
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((byte)Verified);
+            writer.Write((byte)Flag);
             writer.Write(StateRoot);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["verified"] = Verified;
+            json["flag"] = Flag;
             json["stateroot"] = StateRoot.ToJson();
             return json;
         }

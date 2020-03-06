@@ -168,7 +168,7 @@ namespace Neo.Network.P2P
             for (uint i = start; i < start + count; i++)
             {
                 var state = Blockchain.Singleton.GetStateRoot(i);
-                if (state.Verified == StateRootVerifyFlag.Verified)
+                if (state.Flag == StateRootVerifyFlag.Verified)
                 {
                     Context.Parent.Tell(Message.Create("stateroot", state.StateRoot));
                     continue;
