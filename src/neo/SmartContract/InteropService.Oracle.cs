@@ -7,7 +7,7 @@ namespace Neo.SmartContract
     {
         public static class Oracle
         {
-            public static readonly uint System_Oracle_Get = Register("System.Oracle.Get", Oracle_Get, 0, TriggerType.Application, CallFlags.None);
+            public static readonly uint Neo_Oracle_Get = Register("Neo.Oracle.Get", Oracle_Get, 0, TriggerType.Application, CallFlags.None);
 
             private static bool Oracle_Get(ApplicationEngine engine)
             {

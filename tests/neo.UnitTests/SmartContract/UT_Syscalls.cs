@@ -96,7 +96,7 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void System_Oracle_Get()
+        public void Neo_Oracle_Get()
         {
             // Good
 
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitPush("MyFilter");
                 script.EmitPush("https://google.es");
-                script.EmitSysCall(InteropService.Oracle.System_Oracle_Get);
+                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
                 {
@@ -129,7 +129,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitPush("WrongFilter");
                 script.EmitPush("https://google.es");
-                script.EmitSysCall(InteropService.Oracle.System_Oracle_Get);
+                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
                 {
@@ -154,7 +154,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitPush("MyFilter");
                 script.EmitPush("http://google.es");
-                script.EmitSysCall(InteropService.Oracle.System_Oracle_Get);
+                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
                 {
