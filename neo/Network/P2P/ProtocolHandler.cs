@@ -97,7 +97,7 @@ namespace Neo.Network.P2P
                 case "stateroot":
                     OnInventoryReceived(msg.GetPayload<StateRoot>());
                     break;
-                case "getstateroots":
+                case "getsts":
                     OnGetStateRootsReceived(msg.GetPayload<GetStateRootsPayload>());
                     break;
                 case "filteradd":

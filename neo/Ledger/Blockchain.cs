@@ -443,7 +443,7 @@ namespace Neo.Ledger
 
         private void OnNewStateRoot(StateRoot state_root)
         {
-            if (state_root.Index <= StateRootEnableIndex || state_root.Index <= StateHeight) return;
+            if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return;
             if (state_root.Witness is null) return;
             if (state_root_cache.ContainsKey(state_root.Index)) return;
             if (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex)
@@ -843,7 +843,7 @@ namespace Neo.Ledger
                     StateRoot = stateRoot,
                 };
                 snapshot.StateRoots.Add(snapshot.Height, stateRootState);
-                Console.WriteLine($"Add state root, hash={snapshot.CurrentBlockHash}, state={stateRootState.ToJson().ToString()}");
+                Console.WriteLine($"Add state root, stateheight={StateHeight}, hash={snapshot.CurrentBlockHash}, state={stateRootState.ToJson().ToString()}");
                 snapshot.Commit();
             }
         }
