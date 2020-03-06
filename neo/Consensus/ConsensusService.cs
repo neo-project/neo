@@ -119,9 +119,9 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
 
                 //发送stateRoot
-/*                StateRoot stateRoot = context.CreateStateRoot();
+                StateRoot stateRoot = context.CreateStateRoot();
                 Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Hash}");
-                localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });*/
+                localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });
             }
         }
 

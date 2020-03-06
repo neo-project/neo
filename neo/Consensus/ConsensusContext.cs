@@ -195,7 +195,7 @@ namespace Neo.Consensus
                 _stateRoot = new StateRoot
                 {
                    Version=1,
-                   Index=2,
+                   Index= BlockIndex-1,
                    PreHash=UInt256.Zero,
                    StateRoot_=UInt256.Zero
                 };
@@ -265,10 +265,10 @@ namespace Neo.Consensus
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
 
-                Version=1,
-                Index=2,
-                PreHash=UInt256.Zero,
-                StateRoot_=UInt256.Zero
+                Version=StateRootVersion,
+                Index=StateRootIndex,
+                PreHash=StateRootPreHash,
+                StateRoot_=StateRootStateRoot_
             });
         }
 
@@ -294,10 +294,10 @@ namespace Neo.Consensus
                     MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                     Timestamp = Timestamp,
 
-                    Version = 1,
-                    Index = 2,
-                    PreHash = UInt256.Zero,
-                    StateRoot_ = UInt256.Zero
+                    Version = StateRootVersion,
+                    Index = StateRootIndex,
+                    PreHash = StateRootPreHash,
+                    StateRoot_ = StateRootStateRoot_
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -369,7 +369,7 @@ namespace Neo.Consensus
 
             _stateRoot = null;
             StateRootVersion = 0;
-            StateRootIndex = 1;
+            StateRootIndex = Snapshot.Height;
             StateRootPreHash = UInt256.Zero;
             StateRootStateRoot_ = UInt256.Zero;
         }

@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -87,7 +88,13 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
+            Console.WriteLine($"corresponding StateRootIndex: {Index}");
             return new UInt160[] { snapshot.GetBlock(Index).NextConsensus };
+        }
+
+        private void Log(string message, LogLevel level = LogLevel.Info)
+        {
+            Plugin.Log(nameof(StateRoot), level, message);
         }
 
         public byte[] GetMessage()
