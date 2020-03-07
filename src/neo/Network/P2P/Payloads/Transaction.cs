@@ -266,13 +266,6 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, BigInteger.Zero) == RelayResultReason.Succeed;
         }
 
-        public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
-            if (result != RelayResultReason.Succeed) return result;
-            return VerifyParallelParts(snapshot);
-        }
-
         public virtual RelayResultReason VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
@@ -292,8 +285,10 @@ namespace Neo.Network.P2P.Payloads
             return RelayResultReason.Succeed;
         }
 
-        public RelayResultReason VerifyParallelParts(StoreView snapshot)
+        public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
+            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            if (result != RelayResultReason.Succeed) return result;
             int size = Size;
             if (size > MaxTransactionSize) return RelayResultReason.Invalid;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
