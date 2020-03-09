@@ -466,7 +466,7 @@ namespace Neo.Ledger
                 using(Snapshot snapshot = GetSnapshot())
                 {
                     state_root_cache.Remove(state_root_verifying.Index);
-                    if (!state_root_verifying.Verify(snapshot)) 
+                    if (!state_root_verifying.Verify(snapshot))
                     {
                         Console.WriteLine($"[blockchain] state root verify failed. index={state_root.Index}");
                         break;
@@ -475,18 +475,20 @@ namespace Neo.Ledger
                     if (local_state.StateRoot.StateRoot_ == state_root_verifying.StateRoot_ && local_state.StateRoot.PreHash == state_root_verifying.PreHash)
                     {
                         StateHeight = state_root_verifying.Index;
-                        if (state_root_verifying.Index + 3 > Height)
+                        if (state_root_verifying.Index + 3 > HeaderHeight)
                         {
                             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = state_root_verifying });
                         }
                         local_state.StateRoot = state_root_verifying;
                         local_state.Flag = StateRootVerifyFlag.Verified;
                         snapshot.Commit();
+                        UpdateCurrentSnapshot();
                     }
                     else
                     {
                         local_state.Flag = StateRootVerifyFlag.Invalid;
                         snapshot.Commit();
+                        UpdateCurrentSnapshot();
                         break;
                     }
                 }
@@ -849,7 +851,7 @@ namespace Neo.Ledger
                     StateRoot = stateRoot,
                 };
                 snapshot.StateRoots.Add(snapshot.Height, stateRootState);
-                Console.WriteLine($"[blockchain] Add state root, stateheight={StateHeight}, index={stateRoot.Index}, state={stateRoot.ToJson().ToString()}");
+                Console.WriteLine($"[blockchain] Add state root, stateheight={StateHeight}, index={stateRoot.Index}");
                 snapshot.Commit();
             }
         }

@@ -164,8 +164,8 @@ namespace Neo.Network.P2P
         private void OnGetStateRootsReceived(GetStateRootsPayload payload)
         {
             var start = payload.StartIndex;
-            var count = payload.Count;
-            for (uint i = start; i < start + count; i++)
+            var end = payload.EndIndex;
+            for (uint i = start; i <= end; i++)
             {
                 var state = Blockchain.Singleton.GetStateRoot(i);
                 if (state.Flag == StateRootVerifyFlag.Verified)
