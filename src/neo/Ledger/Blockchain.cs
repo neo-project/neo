@@ -23,11 +23,10 @@ namespace Neo.Ledger
     {
         public partial class ApplicationExecuted { }
         public class PersistCompleted { public Block Block; }
-        public class Import { public IEnumerable<Block> Blocks; }
+        public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        private class ParallelVerified { public Transaction Transaction; public bool ShouldRelay; public RelayResultReason VerifyResult; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
@@ -239,12 +238,14 @@ namespace Neo.Ledger
             return View.GetTransaction(hash);
         }
 
-        private void OnImport(IEnumerable<Block> blocks)
+        private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
             foreach (Block block in blocks)
             {
                 if (block.Index <= Height) continue;
                 if (block.Index != Height + 1)
+                    throw new InvalidOperationException();
+                if (verify && !block.Verify(currentSnapshot))
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
@@ -405,37 +406,16 @@ namespace Neo.Ledger
             else if (!MemPool.CanTransactionFitInPool(transaction))
                 reason = RelayResultReason.OutOfMemory;
             else
-                reason = transaction.VerifyForEachBlock(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
-            if (reason == RelayResultReason.Succeed)
-            {
-                Task.Run(() =>
-                {
-                    return new ParallelVerified
-                    {
-                        Transaction = transaction,
-                        ShouldRelay = relay,
-                        VerifyResult = transaction.VerifyParallelParts(currentSnapshot)
-                    };
-                }).PipeTo(Self, Sender);
-            }
-            else
-            {
-                Sender.Tell(reason);
-            }
-        }
+                reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
 
-        private void OnParallelVerified(ParallelVerified parallelVerified)
-        {
-            RelayResultReason reason = parallelVerified.VerifyResult;
             if (reason == RelayResultReason.Succeed)
             {
-                if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
+                if (!MemPool.TryAdd(transaction.Hash, transaction))
                     reason = RelayResultReason.OutOfMemory;
-                else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
-                    reason = RelayResultReason.OutOfMemory;
-                else if (parallelVerified.ShouldRelay)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });
+                else if (relay)
+                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             }
+
             Sender.Tell(reason);
         }
 
@@ -451,7 +431,7 @@ namespace Neo.Ledger
             switch (message)
             {
                 case Import import:
-                    OnImport(import.Blocks);
+                    OnImport(import.Blocks, import.Verify);
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
@@ -470,9 +450,6 @@ namespace Neo.Ledger
                     }
                 case Transaction transaction:
                     OnNewTransaction(transaction, true);
-                    break;
-                case ParallelVerified parallelVerified:
-                    OnParallelVerified(parallelVerified);
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));

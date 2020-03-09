@@ -339,7 +339,7 @@ namespace Neo.Wallets
                 {
                     byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
                     if (witness_script is null) continue;
-                    tx.NetworkFee += CalculateNetWorkFee(witness_script, ref size);
+                    tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
                 }
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
@@ -347,7 +347,7 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public static long CalculateNetWorkFee(byte[] witness_script, ref int size)
+        public static long CalculateNetworkFee(byte[] witness_script, ref int size)
         {
             long networkFee = 0;
 
@@ -382,10 +382,37 @@ namespace Neo.Wallets
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
                 WalletAccount account = GetAccount(scriptHash);
-                if (account?.HasKey != true) continue;
-                KeyPair key = account.GetKey();
-                byte[] signature = context.Verifiable.Sign(key);
-                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+                if (account is null) continue;
+
+                // Try to sign self-contained multiSig
+
+                Contract multiSigContract = account.Contract;
+
+                if (multiSigContract != null &&
+                    multiSigContract.Script.IsMultiSigContract(out int m, out ECPoint[] points))
+                {
+                    foreach (var point in points)
+                    {
+                        account = GetAccount(point);
+                        if (account?.HasKey != true) continue;
+                        KeyPair key = account.GetKey();
+                        byte[] signature = context.Verifiable.Sign(key);
+                        fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
+                        if (fSuccess) m--;
+                        if (context.Completed || m <= 0) break;
+                    }
+                }
+                else
+                {
+                    // Try to sign with regular accounts
+
+                    if (account.HasKey)
+                    {
+                        KeyPair key = account.GetKey();
+                        byte[] signature = context.Verifiable.Sign(key);
+                        fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+                    }
+                }
             }
             return fSuccess;
         }
