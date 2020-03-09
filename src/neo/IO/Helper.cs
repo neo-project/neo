@@ -169,15 +169,15 @@ namespace Neo.IO
 
             while (size > 0)
             {
-                var readed = reader.Read(data, index, size);
+                var bytesRead = reader.Read(data, index, size);
 
-                if (readed <= 0 && size > 0)
+                if (bytesRead <= 0 && size > 0)
                 {
                     throw new FormatException();
                 }
 
-                size -= readed;
-                index += readed;
+                size -= bytesRead;
+                index += bytesRead;
             }
 
             return data;
