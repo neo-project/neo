@@ -443,7 +443,6 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewStateRoot(StateRoot state_root)
         {
-            Console.WriteLine($"[blockchain] new state root, index={state_root.Index}");
             if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return RelayResultReason.Invalid;
             if (state_root.Witness is null) return RelayResultReason.Invalid;
             if (state_root_cache.ContainsKey(state_root.Index)) return RelayResultReason.AlreadyExists;
@@ -468,7 +467,6 @@ namespace Neo.Ledger
                     state_root_cache.Remove(state_root_verifying.Index);
                     if (!state_root_verifying.Verify(snapshot))
                     {
-                        Console.WriteLine($"[blockchain] state root verify failed. index={state_root.Index}");
                         break;
                     }
                     var local_state = snapshot.StateRoots.GetAndChange(state_root_verifying.Index);
@@ -477,7 +475,7 @@ namespace Neo.Ledger
                         StateHeight = state_root_verifying.Index;
                         if (state_root_verifying.Index + 3 > HeaderHeight)
                         {
-                            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = state_root_verifying });
+                            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = state_root_verifying });
                         }
                         local_state.StateRoot = state_root_verifying;
                         local_state.Flag = StateRootVerifyFlag.Verified;
@@ -529,8 +527,7 @@ namespace Neo.Ledger
                     Sender.Tell(OnNewTransaction(transaction));
                     break;
                 case StateRoot stateRoot:
-                    var result = OnNewStateRoot(stateRoot);
-                    Console.WriteLine($"[blockchain] new state root, result={result}");
+                    OnNewStateRoot(stateRoot);
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -851,7 +848,6 @@ namespace Neo.Ledger
                     StateRoot = stateRoot,
                 };
                 snapshot.StateRoots.Add(snapshot.Height, stateRootState);
-                Console.WriteLine($"[blockchain] Add state root, stateheight={StateHeight}, index={stateRoot.Index}");
                 snapshot.Commit();
             }
         }
