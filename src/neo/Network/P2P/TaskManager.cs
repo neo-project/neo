@@ -1,5 +1,5 @@
 using Akka.Actor;
-using Akka.Configuration;
+using Hocon;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;

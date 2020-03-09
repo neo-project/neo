@@ -1,6 +1,7 @@
 using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
+using Hocon;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
@@ -15,8 +16,9 @@ namespace Neo.UnitTests.Network.P2P
         private static NeoSystem testBlockchain;
 
         public UT_RemoteNode()
-            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
-                $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}")
+            : base(HoconConfigurationFactory.ParseString($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}")
+            .WithFallback(HoconConfigurationFactory.ParseString($"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}")
+            .WithFallback(HoconConfigurationFactory.Default())))
         {
         }
 
