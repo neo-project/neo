@@ -171,7 +171,7 @@ namespace Neo.IO
             {
                 var bytesRead = reader.Read(data, index, size);
 
-                if (bytesRead <= 0 && size > 0)
+                if (bytesRead <= 0)
                 {
                     throw new FormatException();
                 }
