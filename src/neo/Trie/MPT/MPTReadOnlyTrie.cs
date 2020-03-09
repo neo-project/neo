@@ -86,13 +86,13 @@ namespace Neo.Trie.MPT
 
         public List<byte[]> GetProof(byte[] path)
         {
-            var dict = new List<byte[]> { };
+            var list = new List<byte[]> { };
             path = path.ToNibbles();
-            GetProof(ref root, path, dict);
-            return dict;
+            GetProof(ref root, path, list);
+            return list;
         }
 
-        private void GetProof(ref MPTNode node, byte[] path, List<byte[]> dict)
+        private void GetProof(ref MPTNode node, byte[] path, List<byte[]> list)
         {
             switch (node)
             {
@@ -100,7 +100,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.Length == 0)
                         {
-                            dict.Add(valueNode.Encode());
+                            list.Add(valueNode.Encode());
                         }
                         break;
                     }
@@ -108,19 +108,19 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode) break;
                         node = Resolve(hashNode.Hash);
-                        GetProof(ref node, path, dict);
+                        GetProof(ref node, path, list);
                         break;
                     }
                 case FullNode fullNode:
                     {
-                        dict.Add(fullNode.Encode());
+                        list.Add(fullNode.Encode());
                         if (path.Length == 0)
                         {
-                            GetProof(ref fullNode.Children[16], path, dict);
+                            GetProof(ref fullNode.Children[16], path, list);
                         }
                         else
                         {
-                            GetProof(ref fullNode.Children[path[0]], path.Skip(1), dict);
+                            GetProof(ref fullNode.Children[path[0]], path.Skip(1), list);
                         }
                         break;
                     }
@@ -129,8 +129,8 @@ namespace Neo.Trie.MPT
                         var prefix = shortNode.Key.CommonPrefix(path);
                         if (prefix.Length == shortNode.Key.Length)
                         {
-                            dict.Add(shortNode.Encode());
-                            GetProof(ref shortNode.Next, path.Skip(prefix.Length), dict);
+                            list.Add(shortNode.Encode());
+                            GetProof(ref shortNode.Next, path.Skip(prefix.Length), list);
                         }
                         break;
                     }
