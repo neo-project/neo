@@ -84,15 +84,15 @@ namespace Neo.Trie.MPT
             return root.GetHash();
         }
 
-        public List<byte[]> GetProof(byte[] path)
+        public HashSet<byte[]> GetProof(byte[] path)
         {
-            var list = new List<byte[]> { };
+            var set = new HashSet<byte[]> { };
             path = path.ToNibbles();
-            GetProof(ref root, path, list);
-            return list;
+            GetProof(ref root, path, set);
+            return set;
         }
 
-        private void GetProof(ref MPTNode node, byte[] path, List<byte[]> list)
+        private void GetProof(ref MPTNode node, byte[] path, HashSet<byte[]> set)
         {
             switch (node)
             {
@@ -100,7 +100,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.Length == 0)
                         {
-                            list.Add(valueNode.Encode());
+                            set.Add(valueNode.Encode());
                         }
                         break;
                     }
@@ -108,19 +108,19 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode) break;
                         node = Resolve(hashNode.Hash);
-                        GetProof(ref node, path, list);
+                        GetProof(ref node, path, set);
                         break;
                     }
                 case FullNode fullNode:
                     {
-                        list.Add(fullNode.Encode());
+                        set.Add(fullNode.Encode());
                         if (path.Length == 0)
                         {
-                            GetProof(ref fullNode.Children[16], path, list);
+                            GetProof(ref fullNode.Children[16], path, set);
                         }
                         else
                         {
-                            GetProof(ref fullNode.Children[path[0]], path.Skip(1), list);
+                            GetProof(ref fullNode.Children[path[0]], path.Skip(1), set);
                         }
                         break;
                     }
@@ -129,15 +129,15 @@ namespace Neo.Trie.MPT
                         var prefix = shortNode.Key.CommonPrefix(path);
                         if (prefix.Length == shortNode.Key.Length)
                         {
-                            list.Add(shortNode.Encode());
-                            GetProof(ref shortNode.Next, path.Skip(prefix.Length), list);
+                            set.Add(shortNode.Encode());
+                            GetProof(ref shortNode.Next, path.Skip(prefix.Length), set);
                         }
                         break;
                     }
             }
         }
 
-        public bool VerifyProof(byte[] path, Dictionary<byte[], byte[]> proof)
+        public bool VerifyProof(byte[] path, HashSet<byte[]> proof)
         {
             return true;
         }

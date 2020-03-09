@@ -8,8 +8,8 @@ namespace Neo.Trie
 
         byte[] GetRoot();
 
-        List<byte[]> GetProof(byte[] path);
+        HashSet<byte[]> GetProof(byte[] path);
 
-        bool VerifyProof(byte[] path, Dictionary<byte[], byte[]> proof);
+        bool VerifyProof(byte[] path, HashSet<byte[]> proof);
     }
 }
