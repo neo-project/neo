@@ -869,33 +869,13 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestEncode_PubKeyToScriptHash()
+        public void TestEncode_CreateStandardAccount()
         {
             var engine = GetEngine(true, true);
             byte[] data = "024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);
-            InteropService.Invoke(engine, InteropService.Encode.PubKeyToScriptHash).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Encode.CreateStandardAccount).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Parse("0x2c847208959ec1cc94dd13bfe231fa622a404a8a").ToArray());
-        }
-
-        [TestMethod]
-        public void TestEncode_AddressToScriptHash()
-        {
-            var engine = GetEngine(true, true);
-            string data = "NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1";
-            engine.CurrentContext.EvaluationStack.Push(data);
-            InteropService.Invoke(engine, InteropService.Encode.AddressToScriptHash).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Parse("0x2c847208959ec1cc94dd13bfe231fa622a404a8a").ToArray());
-        }
-
-        [TestMethod]
-        public void TestEncode_ScriptHashToAddress()
-        {
-            var engine = GetEngine(true, true);
-            byte[] data = "NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1".ToScriptHash().ToArray();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            InteropService.Invoke(engine, InteropService.Encode.ScriptHashToAddress).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)

@@ -17,19 +17,9 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor PubKeyToAddress = Register("Neo.Encode.PubKeyToAddress", Encode_PubKeyToAddress, 0_00010000, TriggerType.All, CallFlags.None);
 
             /// <summary>
-            /// Convert public key to corresponding wallet account scripthash
+            /// Calculate corresponding account scripthash for given public key
             /// </summary>
-            public static readonly InteropDescriptor PubKeyToScriptHash = Register("Neo.Encode.PubKeyToScriptHash", Encode_PubKeyToScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
-
-            /// <summary>
-            /// Convert wallet account address to corresponding scripthash
-            /// </summary>
-            public static readonly InteropDescriptor AddressToScriptHash = Register("Neo.Encode.AddressToScriptHash", Encode_AddressToScriptHash, 0_00010000, TriggerType.All, CallFlags.None);
-
-            /// <summary>
-            /// Convert wallet account scripthash to corresponding address
-            /// </summary>
-            public static readonly InteropDescriptor ScriptHashToAddress = Register("Neo.Encode.ScriptHashToAddress", Encode_ScriptHashToAddress, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor CreateStandardAccount = Register("System.Contract.CreateStandardAccount", Encode_CreateStandardAccount, 0_00010000, TriggerType.All, CallFlags.None);
 
             private static bool Encode_PubKeyToAddress(ApplicationEngine engine)
             {
@@ -39,27 +29,11 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            private static bool Encode_PubKeyToScriptHash(ApplicationEngine engine)
+            private static bool Encode_CreateStandardAccount(ApplicationEngine engine)
             {
                 ReadOnlySpan<byte> pubKey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
                 byte[] scriptHash = SmartContract.Contract.CreateSignatureRedeemScript(Cryptography.ECC.ECPoint.FromBytes(pubKey.ToArray(), Cryptography.ECC.ECCurve.Secp256r1)).ToScriptHash().ToArray();
                 engine.CurrentContext.EvaluationStack.Push(scriptHash);
-                return true;
-            }
-
-            private static bool Encode_AddressToScriptHash(ApplicationEngine engine)
-            {
-                string address = engine.CurrentContext.EvaluationStack.Pop().GetString();
-                byte[] scriptHash = address.ToScriptHash().ToArray();
-                engine.CurrentContext.EvaluationStack.Push(scriptHash);
-                return true;
-            }
-
-            private static bool Encode_ScriptHashToAddress(ApplicationEngine engine)
-            {
-                ReadOnlySpan<byte> hash = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
-                string address = new UInt160(hash).ToAddress();
-                engine.CurrentContext.EvaluationStack.Push(address);
                 return true;
             }
         }
