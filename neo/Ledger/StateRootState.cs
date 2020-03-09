@@ -50,7 +50,7 @@ namespace Neo.Ledger
 
         public override JObject ToJson()
         {
-            JObject json = base.ToJson();
+            JObject json = new JObject();
             json["flag"] = Flag;
             json["stateroot"] = StateRoot.ToJson();
             return json;

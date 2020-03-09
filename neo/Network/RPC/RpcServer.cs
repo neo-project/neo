@@ -788,7 +788,6 @@ namespace Neo.Network.RPC
 
         private JObject GetStateRoot(JObject key)
         {
-            JObject json = new JObject();
             StateRootState state = null;
             if (key is JNumber)
             {
