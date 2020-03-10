@@ -60,5 +60,30 @@ namespace Neo.UnitTests.Cryptography
             Action action = () => Crypto.VerifySignature(message, signature, wrongKey).Should().BeFalse();
             action.Should().Throw<ArgumentException>();
         }
+
+        [TestMethod]
+        public void TestSecp256k1()
+        {
+            byte[] message = System.Text.Encoding.Default.GetBytes("hello");
+            byte[] signature = "5331be791532d157df5b5620620d938bcb622ad02c81cfc184c460efdad18e695480d77440c511e9ad02ea30d773cb54e88f8cbb069644aefa283957085f38b5".HexToBytes();
+            byte[] pubKey = "03ea01cb94bdaf0cd1c01b159d474f9604f4af35a3e2196f6bdfdb33b2aa4961fa".HexToBytes();
+
+            Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Curve.Secp256k1)
+                .Should().BeTrue();
+
+            message = System.Text.Encoding.Default.GetBytes("world");
+            signature = "b1e6ff4f40536fb7ed706b0f7567903cc227a5241a079fb86f3de51b8321c1e690f37ad0c788848605c1653567935845f0d35a8a1a37174dcbbd235caac8e969".HexToBytes();
+            pubKey = "03661b86d54eb3a8e7ea2399e0db36ab65753f95fff661da53ae0121278b881ad0".HexToBytes();
+
+            Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Curve.Secp256k1)
+                .Should().BeTrue();
+
+            message = System.Text.Encoding.Default.GetBytes("中文");
+            signature = "b8cba1ff42304d74d083e87706058f59cdd4f755b995926d2cd80a734c5a3c37e4583bfd4339ac762c1c91eee3782660a6baf62cd29e407eccd3da3e9de55a02".HexToBytes();
+            pubKey = "03661b86d54eb3a8e7ea2399e0db36ab65753f95fff661da53ae0121278b881ad0".HexToBytes();
+
+            Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Curve.Secp256k1)
+                .Should().BeTrue();
+        }
     }
 }

@@ -3,7 +3,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
-using Org.BouncyCastle.Crypto.Digests;
 using System;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
@@ -14,7 +13,6 @@ namespace Neo.SmartContract
     {
         public static class Crypto
         {
-            public static readonly InteropDescriptor SHA3Keccak256 = Register("Neo.Crypto.SHA3.Keccak256", Crypto_SHA3Keccak256, 0_01000000, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor SHA256 = Register("Neo.Crypto.SHA256", Crypto_SHA256, 0_01000000, TriggerType.All, CallFlags.None);
 
             public static readonly InteropDescriptor ECDsaSecp256r1Verify = Register("Neo.Crypto.ECDsa.Secp256r1.Verify", Crypto_ECDsaSecp256r1Verify, 0_01000000, TriggerType.All, CallFlags.None);
@@ -31,24 +29,6 @@ namespace Neo.SmartContract
                 else n = (int)item.GetBigInteger();
                 if (n < 1) return 0;
                 return ECDsaSecp256r1Verify.Price * n;
-            }
-
-            private static bool Crypto_SHA3Keccak256(ApplicationEngine engine)
-            {
-                StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
-                ReadOnlySpan<byte> value = item0 switch
-                {
-                    InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
-                    Null _ => engine.ScriptContainer.GetHashData(),
-                    _ => item0.GetSpan()
-                };
-
-                var digest = new KeccakDigest(256);
-                var output = new byte[digest.GetDigestSize()];
-                digest.BlockUpdate(value.ToArray(), 0, value.Length);
-                digest.DoFinal(output, 0);
-                engine.CurrentContext.EvaluationStack.Push(output);
-                return true;
             }
 
             private static bool Crypto_SHA256(ApplicationEngine engine)

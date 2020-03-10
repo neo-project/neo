@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Numerics;
 
@@ -23,6 +24,54 @@ namespace Neo.Cryptography.ECC
             this.N = N;
             this.Infinity = new ECPoint(null, null, this);
             this.G = ECPoint.DecodePoint(G, this);
+        }
+
+        private BigInteger CalculateE(BigInteger n, ReadOnlySpan<byte> message)
+        {
+            int messageBitLength = message.Length * 8;
+            BigInteger trunc = new BigInteger(message, isUnsigned: true, isBigEndian: true);
+            if (n.GetBitLength() < messageBitLength)
+            {
+                trunc >>= messageBitLength - n.GetBitLength();
+            }
+            return trunc;
+        }
+
+        public bool VerifySignature(ReadOnlySpan<byte> message, ECPoint publicKey, BigInteger r, BigInteger s)
+        {
+            if (r.Sign < 1 || s.Sign < 1 || r.CompareTo(N) >= 0 || s.CompareTo(N) >= 0)
+                return false;
+            BigInteger e = CalculateE(N, message);
+            BigInteger c = s.ModInverse(N);
+            BigInteger u1 = (e * c).Mod(N);
+            BigInteger u2 = (r * c).Mod(N);
+            ECPoint point = SumOfTwoMultiplies(G, u1, publicKey, u2);
+            BigInteger v = point.X.Value.Mod(N);
+            return v.Equals(r);
+        }
+
+        private static ECPoint SumOfTwoMultiplies(ECPoint P, BigInteger k, ECPoint Q, BigInteger l)
+        {
+            int m = Math.Max(k.GetBitLength(), l.GetBitLength());
+            ECPoint Z = P + Q;
+            ECPoint R = P.Curve.Infinity;
+            for (int i = m - 1; i >= 0; --i)
+            {
+                R = R.Twice();
+                if (k.TestBit(i))
+                {
+                    if (l.TestBit(i))
+                        R = R + Z;
+                    else
+                        R = R + P;
+                }
+                else
+                {
+                    if (l.TestBit(i))
+                        R = R + Q;
+                }
+            }
+            return R;
         }
 
         public static readonly ECCurve Secp256k1 = new ECCurve

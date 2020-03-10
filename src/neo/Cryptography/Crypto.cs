@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Security.Cryptography;
 
 namespace Neo.Cryptography
@@ -63,26 +64,34 @@ namespace Neo.Cryptography
                 throw new ArgumentException();
             }
 
-            ECCurve ncurve;
-
             switch (curve)
             {
-                case ECC.ECCurve.Curve.Secp256r1: ncurve = ECCurve.NamedCurves.nistP256; break;
-                case ECC.ECCurve.Curve.Secp256k1: ncurve = ECCurve.CreateFromValue("1.3.132.0.10"); break;
-                default: return false;
-            }
+                case ECC.ECCurve.Curve.Secp256r1:
+                    {
+                        var ncurve = ECCurve.NamedCurves.nistP256;
 
-            using (var ecdsa = ECDsa.Create(new ECParameters
-            {
-                Curve = ncurve,
-                Q = new ECPoint
-                {
-                    X = pubkey[..32].ToArray(),
-                    Y = pubkey[32..].ToArray()
-                }
-            }))
-            {
-                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+                        using (var ecdsa = ECDsa.Create(new ECParameters
+                        {
+                            Curve = ncurve,
+                            Q = new ECPoint
+                            {
+                                X = pubkey[..32].ToArray(),
+                                Y = pubkey[32..].ToArray()
+                            }
+                        }))
+                        {
+                            return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+                        }
+                    }
+                case ECC.ECCurve.Curve.Secp256k1:
+                    {
+                        var publicKey = ECC.ECPoint.FromBytes(pubkey.ToArray(), ECC.ECCurve.Secp256k1);
+                        var r = new BigInteger(signature[..32].ToArray(), true, true);
+                        var s = new BigInteger(signature[32..].ToArray(), true, true);
+
+                        return ECC.ECCurve.Secp256k1.VerifySignature(message.Sha256(), publicKey, r, s);
+                    }
+                default: return false;
             }
         }
     }
