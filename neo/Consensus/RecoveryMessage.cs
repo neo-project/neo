@@ -78,7 +78,8 @@ namespace Neo.Consensus
                 ConsensusMessage = new Commit
                 {
                     ViewNumber = p.ViewNumber,
-                    Signature = p.Signature
+                    Signature = p.Signature,
+                    StateRootSignature=p.StateRootSignature
                 },
                 Witness = new Witness
                 {
