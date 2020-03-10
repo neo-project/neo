@@ -41,6 +41,7 @@ namespace Neo.Consensus
         ConsensusPayload MakeChangeView();
 
         ConsensusPayload MakeCommit();
+        StateRoot MakeStateRoot();
 
         Block MakeHeader();
 

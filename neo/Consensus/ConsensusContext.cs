@@ -463,7 +463,7 @@ namespace Neo.Consensus
             StateRootVersion = stateRoot.Version;
             StateRootIndex = stateRoot.Index;
             StateRootPreHash = stateRoot.PreHash;
-            StateRootStateRoot_ = stateRoot.Hash;
+            StateRootStateRoot_ = stateRoot.StateRoot_;
         }
 
         private static ulong GetNonce()

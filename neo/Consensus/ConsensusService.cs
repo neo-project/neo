@@ -224,12 +224,14 @@ namespace Neo.Consensus
             {
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted()} nf={context.CountFailed()}");
 
-                byte[] hashData = context.MakeHeader()?.GetHashData();
-                if (hashData == null)
+                byte[] hashData1 = context.MakeHeader()?.GetHashData();
+                byte[] hashData2 = context.MakeStateRoot()?.GetHashData();
+                if (hashData1 == null|| hashData2 == null)
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.Default.VerifySignature(hashData, commit.Signature,
+                else if (Crypto.Default.VerifySignature(hashData1, commit.Signature,
+                    context.Validators[payload.ValidatorIndex].EncodePoint(false))&& Crypto.Default.VerifySignature(hashData2, commit.StateRootSignature,
                     context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 {
                     existingCommitPayload = payload;
@@ -411,6 +413,19 @@ namespace Neo.Consensus
             if (message.TransactionHashes.Any(p => context.Snapshot.ContainsTransaction(p)))
             {
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
+                return;
+            }
+
+            StateRoot contextStateRoot = Blockchain.Singleton.GetStateRoot(Blockchain.Singleton.Height).StateRoot;
+            if (message.Index!= contextStateRoot.Index) return;
+            if (message.PreHash != contextStateRoot.PreHash)
+            {
+                Log($"PreHash incorrect: {message.PreHash}", LogLevel.Warning);
+                return;
+            }
+            if (message.StateRoot_ != contextStateRoot.StateRoot_)
+            {
+                Log($"StateRoot incorrect: {message.StateRoot_} local:{contextStateRoot.StateRoot_}", LogLevel.Warning);
                 return;
             }
 
