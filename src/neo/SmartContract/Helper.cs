@@ -1,17 +1,44 @@
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Neo.SmartContract
 {
     public static class Helper
     {
+        public static bool IsMultiSigContract(this byte[] script)
+        {
+            return IsMultiSigContract(script, out _, out _, null);
+        }
+
         public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
+        {
+            return IsMultiSigContract(script, out m, out n, null);
+        }
+
+        public static bool IsMultiSigContract(this byte[] script, out int m, out ECPoint[] points)
+        {
+            List<ECPoint> list = new List<ECPoint>();
+            if (IsMultiSigContract(script, out m, out _, list))
+            {
+                points = list.ToArray();
+                return true;
+            }
+            else
+            {
+                points = null;
+                return false;
+            }
+        }
+
+        private static bool IsMultiSigContract(byte[] script, out int m, out int n, List<ECPoint> points)
         {
             m = 0; n = 0;
             int i = 0;
@@ -38,6 +65,7 @@ namespace Neo.SmartContract
             {
                 if (script.Length <= i + 35) return false;
                 if (script[++i] != 33) return false;
+                points?.Add(ECPoint.DecodePoint(script.AsSpan(i + 1, 33), ECCurve.Secp256r1));
                 i += 34;
                 ++n;
             }
@@ -81,7 +109,7 @@ namespace Neo.SmartContract
 
         public static bool IsStandardContract(this byte[] script)
         {
-            return script.IsSignatureContract() || script.IsMultiSigContract(out _, out _);
+            return script.IsSignatureContract() || script.IsMultiSigContract();
         }
 
         public static uint ToInteropMethodHash(this string method)
