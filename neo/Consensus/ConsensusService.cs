@@ -418,14 +418,10 @@ namespace Neo.Consensus
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
-
-            //
             context.StateRootVersion = message.Version;
             context.StateRootIndex = message.Index;
             context.StateRootPreHash = message.PreHash;
             context.StateRootStateRoot_ = message.StateRoot_;
-            ///
-
 
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;

@@ -105,8 +105,6 @@ namespace Neo.Consensus
             Reset(0);
             if (reader.ReadUInt32() != StateRootVersion) throw new FormatException();
             if (reader.ReadUInt32() != StateRootIndex) throw new FormatException();
-/*            StateRootVersion = reader.ReadUInt32();
-            StateRootIndex= reader.ReadUInt32();*/
             StateRootPreHash= reader.ReadSerializable<UInt256>();
             StateRootStateRoot_ = reader.ReadSerializable<UInt256>();
 
@@ -192,13 +190,7 @@ namespace Neo.Consensus
         public StateRoot MakeStateRoot() {
             if (_stateRoot == null)
             {
-                _stateRoot = new StateRoot
-                {
-                   Version=1,
-                   Index= BlockIndex-1,
-                   PreHash=UInt256.Zero,
-                   StateRoot_=UInt256.Zero
-                };
+                _stateRoot = Blockchain.Singleton.GetStateRoot(BlockIndex - 1).StateRoot;
             }
             return _stateRoot;
         }
