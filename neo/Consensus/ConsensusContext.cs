@@ -186,20 +186,15 @@ namespace Neo.Consensus
             }));
         }
 
-        private StateRoot _stateRoot = null;
         public StateRoot MakeStateRoot()
         {
-            if (_stateRoot == null)
+            return new StateRoot()
             {
-                _stateRoot = new StateRoot()
-                {
-                    Version = StateRootVersion,
-                    Index = StateRootIndex,
-                    PreHash = StateRootPreHash,
-                    StateRoot_ = StateRootStateRoot_
-                };
-            }
-            return _stateRoot;
+                Version = StateRootVersion,
+                Index = StateRootIndex,
+                PreHash = StateRootPreHash,
+                StateRoot_ = StateRootStateRoot_
+            };
         }
 
         private Block _header = null;
@@ -324,6 +319,7 @@ namespace Neo.Consensus
         {
             if (viewNumber == 0)
             {
+                StateRoot_ = null;
                 Block = null;
                 Snapshot?.Dispose();
                 Snapshot = Blockchain.Singleton.GetSnapshot();
@@ -366,7 +362,6 @@ namespace Neo.Consensus
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)BlockIndex;
             _header = null;
 
-            _stateRoot = null;
             StateRootVersion = 0;
             StateRootIndex = Snapshot.Height;
             StateRootPreHash = UInt256.Zero;
@@ -464,7 +459,7 @@ namespace Neo.Consensus
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
 
-            StateRoot stateRoot = Blockchain.Singleton.GetStateRoot(BlockIndex - 1).StateRoot;
+            StateRoot stateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
             StateRootVersion = stateRoot.Version;
             StateRootIndex = stateRoot.Index;
             StateRootPreHash = stateRoot.PreHash;
