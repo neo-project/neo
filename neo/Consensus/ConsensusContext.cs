@@ -105,7 +105,7 @@ namespace Neo.Consensus
             Reset(0);
             if (reader.ReadUInt32() != StateRootVersion) throw new FormatException();
             if (reader.ReadUInt32() != StateRootIndex) throw new FormatException();
-            StateRootPreHash= reader.ReadSerializable<UInt256>();
+            StateRootPreHash = reader.ReadSerializable<UInt256>();
             StateRootStateRoot_ = reader.ReadSerializable<UInt256>();
 
             if (reader.ReadUInt32() != Version) throw new FormatException();
@@ -182,15 +182,22 @@ namespace Neo.Consensus
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
                 Signature = MakeHeader()?.Sign(keyPair),
-                StateRootSignature= MakeStateRoot()?.Sign(keyPair)
+                StateRootSignature = MakeStateRoot()?.Sign(keyPair)
             }));
         }
 
         private StateRoot _stateRoot = null;
-        public StateRoot MakeStateRoot() {
+        public StateRoot MakeStateRoot()
+        {
             if (_stateRoot == null)
             {
-                _stateRoot = Blockchain.Singleton.GetStateRoot(BlockIndex - 1).StateRoot;
+                _stateRoot = new StateRoot()
+                {
+                    Version = StateRootVersion,
+                    Index = StateRootIndex,
+                    PreHash = StateRootPreHash,
+                    StateRoot_ = StateRootStateRoot_
+                };
             }
             return _stateRoot;
         }
@@ -257,10 +264,10 @@ namespace Neo.Consensus
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
 
-                Version=StateRootVersion,
-                Index=StateRootIndex,
-                PreHash=StateRootPreHash,
-                StateRoot_=StateRootStateRoot_
+                Version = StateRootVersion,
+                Index = StateRootIndex,
+                PreHash = StateRootPreHash,
+                StateRoot_ = StateRootStateRoot_
             });
         }
 
@@ -356,7 +363,7 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int) BlockIndex;
+            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)BlockIndex;
             _header = null;
 
             _stateRoot = null;
@@ -456,6 +463,12 @@ namespace Neo.Consensus
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
+
+            StateRoot stateRoot = Blockchain.Singleton.GetStateRoot(BlockIndex - 1).StateRoot;
+            StateRootVersion = stateRoot.Version;
+            StateRootIndex = stateRoot.Index;
+            StateRootPreHash = stateRoot.PreHash;
+            StateRootStateRoot_ = stateRoot.Hash;
         }
 
         private static ulong GetNonce()
