@@ -117,6 +117,11 @@ namespace Neo.Consensus
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
+
+                //发送stateRoot
+                StateRoot stateRoot = context.CreateStateRoot();
+                Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Hash}");
+                localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });
             }
         }
 
@@ -413,6 +418,15 @@ namespace Neo.Consensus
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
+
+            //
+            context.StateRootVersion = message.Version;
+            context.StateRootIndex = message.Index;
+            context.StateRootPreHash = message.PreHash;
+            context.StateRootStateRoot_ = message.StateRoot_;
+            ///
+
+
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
@@ -455,6 +469,7 @@ namespace Neo.Consensus
                     Payload = InvPayload.Create(InventoryType.TX, hashes)
                 });
             }
+
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
