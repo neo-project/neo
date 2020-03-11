@@ -446,7 +446,7 @@ namespace Neo.Ledger
             if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return RelayResultReason.Invalid;
             if (state_root.Witness is null) return RelayResultReason.Invalid;
             if (state_root_cache.ContainsKey(state_root.Index)) return RelayResultReason.AlreadyExists;
-            if (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex)
+            if (state_root.Index > Height || (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex))
             {
                 state_root_cache.Add(state_root.Index, state_root);
                 return RelayResultReason.Succeed;
