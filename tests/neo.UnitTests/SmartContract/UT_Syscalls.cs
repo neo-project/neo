@@ -2,9 +2,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Oracle;
+using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
@@ -90,6 +93,95 @@ namespace Neo.UnitTests.SmartContract
                 blocks.Delete(block.Hash);
                 txs.Delete(tx.Hash);
             }
+        }
+
+        [TestMethod]
+        public void Neo_Oracle_Get()
+        {
+            // Good
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitPush("MyFilter");
+                script.EmitPush("https://google.es");
+                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(1, engine.ResultStack.Count);
+
+                    Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
+
+                    PrimitiveType type = array[0] as PrimitiveType;
+                    ByteArray response = array[1] as ByteArray;
+
+                    Assert.AreEqual((int)OracleResultError.None, type.GetBigInteger());
+                    Assert.AreEqual("MyResponse", response.GetString());
+                }
+            }
+
+            // Wrong Filter
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitPush("WrongFilter");
+                script.EmitPush("https://google.es");
+                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(1, engine.ResultStack.Count);
+
+                    Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
+
+                    PrimitiveType type = array[0] as PrimitiveType;
+                    ByteArray response = array[1] as ByteArray;
+
+                    Assert.AreEqual((int)OracleResultError.FilterError, type.GetBigInteger());
+                    Assert.AreEqual("", response.GetString());
+                }
+            }
+
+            // Wrong schema
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitPush("MyFilter");
+                script.EmitPush("http://google.es");
+                script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                    Assert.AreEqual(0, engine.ResultStack.Count);
+                }
+            }
+        }
+
+        private OracleResult Oracle(OracleRequest arg)
+        {
+            if (arg is OracleHttpsRequest https)
+            {
+                if (https.Filter != "MyFilter")
+                {
+                    return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError);
+                }
+
+                if (https.URL.ToString() == "https://google.es/" && https.Method == HttpMethod.GET)
+                {
+                    return OracleResult.CreateResult(UInt256.Zero, UInt160.Zero, "MyResponse");
+                }
+            }
+
+            return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.PolicyError);
         }
 
         [TestMethod]
