@@ -91,11 +91,6 @@ namespace Neo.Network.P2P.Payloads
             return new UInt160[] { snapshot.GetBlock(Index).NextConsensus };
         }
 
-        private void Log(string message, LogLevel level = LogLevel.Info)
-        {
-            Plugin.Log(nameof(StateRoot), level, message);
-        }
-
         public byte[] GetMessage()
         {
             return this.GetHashData();
