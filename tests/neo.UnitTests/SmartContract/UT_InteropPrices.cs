@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                InteropService.GetPrice(InteropService.Runtime.CheckWitness, ae).Should().Be(0_00030000L);
+                InteropService.GetPrice(InteropService.Runtime.CheckWitness, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                InteropService.GetPrice(InteropService.Storage.GetContext, ae).Should().Be(0_00000400L);
+                InteropService.GetPrice(InteropService.Storage.GetContext, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -41,7 +41,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                InteropService.GetPrice(InteropService.Storage.Get, ae).Should().Be(0_01000000L);
+                InteropService.GetPrice(InteropService.Storage.Get, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_01000000L);
             }
         }
 
@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
                 ae.LoadScript(SyscallContractCreateHash00);
                 debugger.StepInto(); // PUSHDATA1
                 debugger.StepInto(); // PUSHDATA1
-                InteropService.GetPrice(InteropService.Contract.Create, ae).Should().Be(0_00300000L);
+                InteropService.GetPrice(InteropService.Contract.Create, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_00300000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae);
+                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
                 act.Should().Throw<InvalidOperationException>();
             }
 
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae);
+                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
                 act.Should().Throw<InvalidOperationException>();
             }
         }
@@ -115,7 +115,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var defaultDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                var defaultDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
                 defaultDataPrice.Should().Be(InteropService.Storage.GasPerByte * (key.Length + value.Length));
                 var expectedCost = defaultDataPrice + setupPrice;
                 debugger.Execute();
@@ -152,7 +152,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = applicationEngine.GasConsumed;
-                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, applicationEngine);
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, applicationEngine.CurrentContext.EvaluationStack, applicationEngine.Snapshot);
                 reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.Execute();
                 var expectedCost = reusedDataPrice + setupPrice;
@@ -191,7 +191,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
                 reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.StepInto();
                 var expectedCost = reusedDataPrice + setupPrice;
@@ -231,7 +231,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); //push value
                 debugger.StepInto(); //syscall Storage.GetContext
                 var setupPrice = ae.GasConsumed;
-                var incrementDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                var incrementDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
                 incrementDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.StepInto(); // syscall Storage.Put
 
@@ -239,7 +239,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); //push value
                 debugger.StepInto();
                 setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae);
+                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
                 reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte); // = PUT basic fee
             }
         }

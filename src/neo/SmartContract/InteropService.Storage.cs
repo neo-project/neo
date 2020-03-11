@@ -1,4 +1,5 @@
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.VM;
 using Neo.VM.Types;
@@ -24,13 +25,12 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
 
-            private static long GetStoragePrice(ApplicationEngine engine)
+            private static long GetStoragePrice(EvaluationStack stack, StoreView snapshot)
             {
-                var stack = engine.CurrentContext.EvaluationStack;
                 var key = stack.Peek(1);
                 var value = stack.Peek(2);
                 var newDataSize = value.IsNull ? 0 : value.GetByteLength();
-                if (!(engine.CurrentContext.EvaluationStack.Peek() is InteropInterface _interface))
+                if (!(stack.Peek() is InteropInterface _interface))
                     throw new InvalidOperationException();
 
                 StorageContext context = _interface.GetInterface<StorageContext>();
@@ -39,7 +39,7 @@ namespace Neo.SmartContract
                     Id = context.Id,
                     Key = key.GetSpan().ToArray()
                 };
-                var skeyValue = engine.Snapshot.Storages.TryGet(skey);
+                var skeyValue = snapshot.Storages.TryGet(skey);
                 if (skeyValue is null || skeyValue.Value is null || skeyValue.Value.Length == 0)
                     return (key.GetByteLength() + newDataSize) * GasPerByte;
 
