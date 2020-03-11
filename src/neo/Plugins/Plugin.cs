@@ -61,6 +61,11 @@ namespace Neo.Plugins
         {
         }
 
+        public virtual void RegisterCommands(Action<MethodInfo, string[]> command)
+        {
+            
+        }
+
         private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             switch (GetExtension(e.Name))
