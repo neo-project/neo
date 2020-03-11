@@ -23,6 +23,7 @@ namespace Neo.UnitTests
     [TestClass]
     public class ConsensusTests : TestKit
     {
+
         [TestInitialize]
         public void TestSetup()
         {
@@ -184,7 +185,7 @@ namespace Neo.UnitTests
             var consensusContext = new ConsensusContext(null, null);
 
             consensusContext.StateRootVersion = 0;
-            consensusContext.StateRootIndex = 1;
+            consensusContext.StateRootIndex = 0;
             consensusContext.StateRootPreHash = UInt256.Zero;
             consensusContext.StateRootStateRoot_ = UInt256.Zero;
 
@@ -233,7 +234,7 @@ namespace Neo.UnitTests
                 Timestamp = 23,
 
                 Version = 0,
-                Index = 1,
+                Index = 0,
                 PreHash = UInt256.Zero,
                 StateRoot_ = UInt256.Zero
             };
