@@ -88,7 +88,6 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            Console.WriteLine($"corresponding StateRootIndex: {Index}");
             return new UInt160[] { snapshot.GetBlock(Index).NextConsensus };
         }
 
