@@ -12,7 +12,7 @@ namespace Neo.Trie.MPT
         protected override byte[] GenHash()
         {
             var data = this.Encode();
-            return data.Length < 32 ? (byte[])data.Clone() : Crypto.Default.Hash256(data);
+            return Crypto.Default.Hash256(data);
         }
 
         public ValueNode()
