@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Oracle
             snapshot.Storages.Delete(CreateStorageKey(11));
             snapshot.PersistingBlock = Blockchain.GenesisBlock;
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.Oracle.Initialize(engine).Should().BeTrue();
+            NativeContract.Oracle.Initialize(engine).Should().BeFalse(); // already registered
         }
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
@@ -72,7 +72,6 @@ namespace Neo.UnitTests.Oracle
             // Init
 
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.Oracle.Initialize(engine).Should().BeTrue();
             var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
             var value = 12345;
 
@@ -146,7 +145,6 @@ namespace Neo.UnitTests.Oracle
             // Init
 
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.Oracle.Initialize(engine).Should().BeTrue();
             var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
             var key = "HttpTimeout";
             var value = BitConverter.GetBytes(12345);

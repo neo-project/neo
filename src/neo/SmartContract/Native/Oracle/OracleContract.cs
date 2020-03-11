@@ -32,6 +32,8 @@ namespace Neo.SmartContract.Native.Oracle
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
+            if (GetPerRequestFee(engine.Snapshot) != 0) return false;
+
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Timeout)), new StorageItem
             {
                 Value = new ByteArray(BitConverter.GetBytes(5000)).GetSpan().ToArray()
@@ -225,7 +227,9 @@ namespace Neo.SmartContract.Native.Oracle
         /// <returns>Value</returns>
         public int GetPerRequestFee(StoreView snapshot)
         {
-            return BitConverter.ToInt32(snapshot.Storages[CreateStorageKey(Prefix_PerRequestFee)].Value, 0);
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_PerRequestFee));
+            if (storage is null) return 0;
+            return BitConverter.ToInt32(storage.Value, 0);
         }
     }
 }
