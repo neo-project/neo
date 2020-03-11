@@ -229,7 +229,7 @@ namespace Neo.SmartContract.Native.Oracle
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_PerRequestFee));
             if (storage is null) return 0;
-            return BitConverter.ToInt32(storage.Value, 0);
+            return BitConverter.ToInt32(storage.Value);
         }
     }
 }
