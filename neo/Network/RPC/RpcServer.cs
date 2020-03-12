@@ -336,7 +336,7 @@ namespace Neo.Network.RPC
                             ScriptHash = script_hash,
                             Key = key,
                         };
-                        return VerifyProof(state_root, skey.ToArray(), proof);
+                        return VerifyProof(state_root, skey, proof);
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
@@ -817,23 +817,23 @@ namespace Neo.Network.RPC
                 ScriptHash = script_hash,
                 Key = store_key,
             };
-            var result = Blockchain.Singleton.GetStateProof(state_root, skey.ToArray(), out HashSet<byte[]> proof);
+            var result = Blockchain.Singleton.GetStateProof(state_root, skey, out HashSet<byte[]> proof);
             json["success"] = result;
             json["proof"] = new JArray(proof.Select(ele => (JObject)ele.ToHexString()));
             return json;
         }
 
-        private JObject VerifyProof(UInt256 state_root, byte[] path, HashSet<byte[]> proof)
+        private JObject VerifyProof(UInt256 state_root, StorageKey skey, HashSet<byte[]> proof)
         {
             var json = new JObject();
-            var result = MPTTrie.VerifyProof(state_root.ToArray(), path, proof, out byte[] value);
+            var result = Blockchain.Singleton.VerifyProof(state_root, skey, proof, out byte[] value);
             if (!result)
             {
                 json = "invalid";
             }
             else
             {   
-                json["value"] = value.AsSerializable<StorageItem>().Value.ToHexString();
+                json["value"] = value.ToHexString();
             }
             return json;
         }

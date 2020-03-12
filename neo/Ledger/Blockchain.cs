@@ -241,11 +241,18 @@ namespace Neo.Ledger
             return currentSnapshot.StateRoots.TryGet(index);
         }
 
-        public bool GetStateProof(UInt256 root, byte[] path, out HashSet<byte[]> proof)
+        public bool GetStateProof(UInt256 root, StorageKey skey, out HashSet<byte[]> proof)
         {
             var trieReadOnlyDb = new TrieReadOnlyDb(Store, Prefixes.DATA_MPT);
             var readOnlyTrie = new MPTReadOnlyTrie(root.ToArray(), trieReadOnlyDb);
-            return readOnlyTrie.GetProof(path, out proof);
+            return readOnlyTrie.GetProof(skey.ToArray(), out proof);
+        }
+
+        public bool VerifyProof(UInt256 root, StorageKey skey, HashSet<byte[]> proof, out byte[] value)
+        {
+            var result = MPTTrie.VerifyProof(root.ToArray(), skey.ToArray(), proof, out value);
+            if (result) value = value.AsSerializable<StorageItem>().Value;
+            return result;
         }
 
         public Transaction GetTransaction(UInt256 hash)
