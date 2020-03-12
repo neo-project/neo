@@ -40,18 +40,13 @@ namespace Neo.SmartContract
                     Key = key.GetSpan().ToArray()
                 };
                 var skeyValue = snapshot.Storages.TryGet(skey);
-                if (skeyValue is null || skeyValue.Value is null || skeyValue.Value.Length == 0)
-                    return (key.GetByteLength() + newDataSize) * GasPerByte;
-
-                var currentOccupiedBytes = skeyValue.Value.Length;
-                if (newDataSize <= currentOccupiedBytes)
-                {
-                    return 1 * GasPerByte;
-                }
+                if (skeyValue is null)
+                    newDataSize += key.GetByteLength();
+                else if (newDataSize <= skeyValue.Value.Length)
+                    newDataSize = 1;
                 else
-                {
-                    return (newDataSize - currentOccupiedBytes) * GasPerByte;
-                }
+                    newDataSize -= skeyValue.Value.Length;
+                return newDataSize * GasPerByte;
             }
 
             private static bool PutExInternal(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
