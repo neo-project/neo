@@ -829,7 +829,7 @@ namespace Neo.Network.RPC
             var result = MPTTrie.VerifyProof(state_root.ToArray(), path, proof, out byte[] value);
             if (!result)
             {
-                json = "unvalid";
+                json = "invalid";
             }
             else
             {   
