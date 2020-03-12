@@ -151,7 +151,7 @@ namespace Neo.IO
                 int count;
                 do
                 {
-                    byte[] group = reader.ReadBytes(GroupingSizeInBytes);
+                    byte[] group = reader.ReadFixedBytes(GroupingSizeInBytes);
                     count = reader.ReadByte();
                     if (count > GroupingSizeInBytes)
                         throw new FormatException();
@@ -162,9 +162,30 @@ namespace Neo.IO
             }
         }
 
+        public static byte[] ReadFixedBytes(this BinaryReader reader, int size)
+        {
+            var index = 0;
+            var data = new byte[size];
+
+            while (size > 0)
+            {
+                var bytesRead = reader.Read(data, index, size);
+
+                if (bytesRead <= 0)
+                {
+                    throw new FormatException();
+                }
+
+                size -= bytesRead;
+                index += bytesRead;
+            }
+
+            return data;
+        }
+
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
-            byte[] data = reader.ReadBytes(length);
+            byte[] data = reader.ReadFixedBytes(length);
             return Encoding.UTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
         }
 
@@ -196,7 +217,7 @@ namespace Neo.IO
 
         public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0x1000000)
         {
-            return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
+            return reader.ReadFixedBytes((int)reader.ReadVarInt((ulong)max));
         }
 
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
