@@ -40,7 +40,7 @@ namespace Neo.SmartContract
                     Key = key.GetSpan().ToArray()
                 };
                 var skeyValue = snapshot.Storages.TryGet(skey);
-                if (skeyValue is null || skeyValue.Value is null)
+                if (skeyValue is null)
                     newDataSize += key.GetByteLength();
                 else if (newDataSize <= skeyValue.Value.Length)
                     newDataSize = 1;

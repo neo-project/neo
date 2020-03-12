@@ -101,7 +101,7 @@ namespace Neo.UnitTests.SmartContract
             contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(null);
+            StorageItem sItem = TestUtils.GetStorageItem(new byte[0] { });
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.Storages.Add(skey, sItem);
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
                 var defaultDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                defaultDataPrice.Should().Be(InteropService.Storage.GasPerByte * (key.Length + value.Length));
+                defaultDataPrice.Should().Be(InteropService.Storage.GasPerByte * value.Length);
                 var expectedCost = defaultDataPrice + setupPrice;
                 debugger.Execute();
                 ae.GasConsumed.Should().Be(expectedCost);
