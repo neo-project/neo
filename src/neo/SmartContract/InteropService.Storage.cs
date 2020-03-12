@@ -23,7 +23,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Find = Register("System.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
+            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 1 * GasPerByte, TriggerType.Application, CallFlags.AllowModifyStates);
 
             private static long GetStoragePrice(EvaluationStack stack, StoreView snapshot)
             {
