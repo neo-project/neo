@@ -325,13 +325,18 @@ namespace Neo.Network.RPC
                 case "verifyproof":
                     {
                         UInt256 state_root = UInt256.Parse(_params[0].AsString());
-                        byte[] path = _params[1].AsString().HexToBytes();
+                        UInt160 script_hash = UInt160.Parse(_params[1].AsString());
+                        byte[] key = _params[2].AsString().HexToBytes();
                         var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-                        foreach (var item in ((JArray)_params[2]))
+                        foreach (var item in ((JArray)_params[3]))
                         {
                             proof.Add(item.AsString().HexToBytes());
                         }
-                        return VerifyProof(state_root, path, proof);
+                        var skey = new StorageKey{
+                            ScriptHash = script_hash,
+                            Key = key,
+                        };
+                        return VerifyProof(state_root, skey.ToArray(), proof);
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
@@ -827,8 +832,8 @@ namespace Neo.Network.RPC
                 json = "unvalid";
             }
             else
-            {
-                json["value"] = value.ToHexString();
+            {   
+                json["value"] = value.AsSerializable<StorageItem>().Value.ToHexString();
             }
             return json;
         }
