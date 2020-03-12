@@ -233,5 +233,15 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(proof.Contains(l1.Encode()));
             Assert.IsTrue(proof.Contains(v1.Encode()));
         }
+
+        [TestMethod]
+        public void TestVerifyProof()
+        {
+            var mpt = new MPTTrie(rootHash, mptdb);
+            var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
+            Assert.IsTrue(result);
+            result = MPTTrie.VerifyProof(rootHash, "ac01".HexToBytes(), proof, out byte[] value);
+            Assert.IsTrue(result);
+        }
     }
 }

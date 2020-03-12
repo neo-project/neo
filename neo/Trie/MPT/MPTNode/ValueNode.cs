@@ -9,12 +9,6 @@ namespace Neo.Trie.MPT
     {
         public byte[] Value;
 
-        protected override byte[] GenHash()
-        {
-            var data = this.Encode();
-            return Crypto.Default.Hash256(data);
-        }
-
         public ValueNode()
         {
             nType = NodeType.ValueNode;

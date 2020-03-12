@@ -1,3 +1,4 @@
+using Neo.Cryptography;
 using Neo.IO.Json;
 using System;
 using System.IO;
@@ -29,7 +30,10 @@ namespace Neo.Trie.MPT
         public NodeFlag Flag;
         protected NodeType nType;
 
-        protected abstract byte[] GenHash();
+        protected virtual byte[] GenHash()
+        {
+            return Crypto.Default.Hash256(this.Encode());
+        }
 
         public virtual byte[] GetHash()
         {

@@ -10,11 +10,6 @@ namespace Neo.Trie.MPT
         public byte[] Key;
         public MPTNode Next;
 
-        protected override byte[] GenHash()
-        {
-            return Crypto.Default.Hash256(this.Encode());
-        }
-
         public ShortNode()
         {
             nType = NodeType.ShortNode;

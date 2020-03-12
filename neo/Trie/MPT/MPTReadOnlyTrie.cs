@@ -91,7 +91,7 @@ namespace Neo.Trie.MPT
             return GetProof(ref root, path, proof);
         }
 
-        private bool GetProof(ref MPTNode node, byte[] path, HashSet<byte[]> dict)
+        private bool GetProof(ref MPTNode node, byte[] path, HashSet<byte[]> proof)
         {
             switch (node)
             {
@@ -99,7 +99,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.Length == 0)
                         {
-                            dict.Add(valueNode.Encode());
+                            proof.Add(valueNode.Encode());
                             return true;
                         }
                         break;
@@ -110,24 +110,24 @@ namespace Neo.Trie.MPT
                         var newNode = Resolve(hashNode.Hash);
                         if (newNode is null) break;
                         node = newNode;
-                        return GetProof(ref node, path, dict);
+                        return GetProof(ref node, path, proof);
                     }
                 case FullNode fullNode:
                     {
-                        dict.Add(fullNode.Encode());
+                        proof.Add(fullNode.Encode());
                         if (path.Length == 0)
                         {
-                            return GetProof(ref fullNode.Children[16], path, dict);
+                            return GetProof(ref fullNode.Children[16], path, proof);
                         }
-                        return GetProof(ref fullNode.Children[path[0]], path.Skip(1), dict);
+                        return GetProof(ref fullNode.Children[path[0]], path.Skip(1), proof);
                     }
                 case ShortNode shortNode:
                     {
                         var prefix = shortNode.Key.CommonPrefix(path);
                         if (prefix.Length == shortNode.Key.Length)
                         {
-                            dict.Add(shortNode.Encode());
-                            return GetProof(ref shortNode.Next, path.Skip(prefix.Length), dict);
+                            proof.Add(shortNode.Encode());
+                            return GetProof(ref shortNode.Next, path.Skip(prefix.Length), proof);
                         }
                         break;
                     }
