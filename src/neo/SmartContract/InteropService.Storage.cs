@@ -4,7 +4,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
-using System.Numerics;
 
 namespace Neo.SmartContract
 {
