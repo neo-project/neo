@@ -869,12 +869,12 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestEncode_CreateStandardAccount()
+        public void TestContract_CreateStandardAccount()
         {
             var engine = GetEngine(true, true);
             byte[] data = "024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);
-            InteropService.Invoke(engine, InteropService.Encode.CreateStandardAccount).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Parse("0x2c847208959ec1cc94dd13bfe231fa622a404a8a").ToArray());
         }
 
