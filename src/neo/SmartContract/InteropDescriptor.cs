@@ -1,3 +1,4 @@
+using Neo.Persistence;
 using Neo.VM;
 using System;
 
@@ -9,7 +10,7 @@ namespace Neo.SmartContract
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
         public long Price { get; }
-        public Func<EvaluationStack, long> PriceCalculator { get; }
+        public Func<EvaluationStack, StoreView, long> PriceCalculator { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
 
@@ -19,7 +20,7 @@ namespace Neo.SmartContract
             this.Price = price;
         }
 
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, StoreView, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
             : this(method, handler, allowedTriggers, requiredCallFlags)
         {
             this.PriceCalculator = priceCalculator;
@@ -34,9 +35,9 @@ namespace Neo.SmartContract
             this.RequiredCallFlags = requiredCallFlags;
         }
 
-        public long GetPrice(EvaluationStack stack)
+        public long GetPrice(EvaluationStack stack, StoreView snapshot)
         {
-            return PriceCalculator is null ? Price : PriceCalculator(stack);
+            return PriceCalculator is null ? Price : PriceCalculator(stack, snapshot);
         }
 
         public static implicit operator uint(InteropDescriptor descriptor)

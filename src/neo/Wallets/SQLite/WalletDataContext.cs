@@ -32,7 +32,7 @@ namespace Neo.Wallets.SQLite
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<Account>().ToTable(nameof(Account));
             modelBuilder.Entity<Account>().HasKey(p => p.PublicKeyHash);
-            modelBuilder.Entity<Account>().Property(p => p.PrivateKeyEncrypted).HasColumnType("VarBinary").HasMaxLength(96).IsRequired();
+            modelBuilder.Entity<Account>().Property(p => p.Nep2key).HasColumnType("VarChar").HasMaxLength(byte.MaxValue).IsRequired();
             modelBuilder.Entity<Account>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Address>().ToTable(nameof(Address));
             modelBuilder.Entity<Address>().HasKey(p => p.ScriptHash);

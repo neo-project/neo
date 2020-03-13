@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -19,7 +20,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All, CallFlags.None);
 
-            private static long GetDeploymentPrice(EvaluationStack stack)
+            private static long GetDeploymentPrice(EvaluationStack stack, StoreView snapshot)
             {
                 int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
                 return Storage.GasPerByte * size;

@@ -4,6 +4,7 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
@@ -61,6 +62,33 @@ namespace Neo.UnitTests
             {
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
                 Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
+            };
+        }
+
+        internal static ContractState GetContract(byte[] script)
+        {
+            return new ContractState
+            {
+                Id = 1,
+                Script = script,
+                Manifest = ContractManifest.CreateDefault(script.ToScriptHash())
+            };
+        }
+
+        internal static StorageItem GetStorageItem(byte[] value)
+        {
+            return new StorageItem
+            {
+                Value = value
+            };
+        }
+
+        internal static StorageKey GetStorageKey(int id, byte[] keyValue)
+        {
+            return new StorageKey
+            {
+                Id = id,
+                Key = keyValue
             };
         }
 
