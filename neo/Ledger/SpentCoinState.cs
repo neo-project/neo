@@ -42,7 +42,7 @@ namespace Neo.Ledger
         {
             TransactionHash = replica.TransactionHash;
             TransactionHeight = replica.TransactionHeight;
-            Items = replica.Items;
+            Items = new Dictionary<ushort, uint>(replica.Items);
         }
 
         public override void Serialize(BinaryWriter writer)
