@@ -4,6 +4,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.SmartContract
 {
@@ -43,17 +44,10 @@ namespace Neo.SmartContract
 
                 if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
 
-                if (value.Length == 0 && !flags.HasFlag(StorageFlags.Constant))
-                {
-                    // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)
-                    engine.Snapshot.Storages.Delete(skey);
-                }
-                else
-                {
-                    StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
-                    item.Value = value;
-                    item.IsConstant = flags.HasFlag(StorageFlags.Constant);
-                }
+                StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
+                item.Value = value;
+                item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+
                 return true;
             }
 
