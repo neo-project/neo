@@ -12,7 +12,7 @@ namespace Neo.SmartContract
         public static class Storage
         {
             public const long GasPerByte = 100000;
-            public const int MaxKeySize = 64;
+            public const int MaxKeySize = byte.MaxValue;
             public const int MaxValueSize = ushort.MaxValue;
 
             public static readonly InteropDescriptor GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application, CallFlags.None);
