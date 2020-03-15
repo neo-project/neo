@@ -39,7 +39,7 @@ namespace Neo.Consensus
             {
                 int preparationHashSize = UInt256.Zero.Size;
                 if (preparationHashSize == (int)reader.ReadVarInt((ulong)preparationHashSize))
-                    PreparationHash = new UInt256(reader.ReadBytes(preparationHashSize));
+                    PreparationHash = new UInt256(reader.ReadFixedBytes(preparationHashSize));
             }
 
             PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
