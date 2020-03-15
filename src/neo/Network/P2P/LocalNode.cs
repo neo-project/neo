@@ -23,6 +23,7 @@ namespace Neo.Network.P2P
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
+        private const int PeersToReturnOnDisconnect = 10;
         private readonly IPEndPoint[] SeedList = new IPEndPoint[ProtocolSettings.Default.SeedList.Length];
 
         private static readonly object lockObj = new object();
@@ -142,6 +143,10 @@ namespace Neo.Network.P2P
             var version = remoteNode.Version;
             var remote = remoteNode.Remote;
 
+            if (remote is null)
+            {
+                return false;
+            }
             if (version.Nonce == Nonce)
             {
                 if (LocalAddresses.Count < MaxConnections)
@@ -149,10 +154,6 @@ namespace Neo.Network.P2P
                     LocalAddresses.Add(remote.Address);
                 }
                 return true;
-            }
-            if (remote == null)
-            {
-                return false;
             }
             foreach (var pair in RemoteNodes)
             {
@@ -329,7 +330,7 @@ namespace Neo.Network.P2P
             {
                 case DisconnectReason.MaxConnectionReached:
                 case DisconnectReason.MaxConnectionPerAddressReached:
-                    data = GetRandomConnectedPeers(10).ToByteArray();
+                    data = GetRandomConnectedPeers(PeersToReturnOnDisconnect).ToByteArray();
                     break;
                 default:
                     data = new byte[0];

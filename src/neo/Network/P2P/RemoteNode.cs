@@ -263,7 +263,7 @@ namespace Neo.Network.P2P
         {
             return new OneForOneStrategy(ex =>
             {
-                DisconnectWithReason(DisconnectReason.InternalError);
+                Disconnect(true);
                 return Directive.Stop;
             }, loggingEnabled: false);
         }
