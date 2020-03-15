@@ -160,7 +160,7 @@ namespace Neo.Network.P2P
                 var remoteActorRef = pair.Key;
                 var otherNode = pair.Value;
                 if (otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
-                {
+                {// filter duplicate connections
                     return true;
                 }
             }
