@@ -117,6 +117,11 @@ namespace Neo.Consensus
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
+
+                //发送stateRoot
+                StateRoot stateRoot = context.CreateStateRoot();
+                Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Hash}");
+                localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });
             }
         }
 
@@ -219,12 +224,14 @@ namespace Neo.Consensus
             {
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted()} nf={context.CountFailed()}");
 
-                byte[] hashData = context.MakeHeader()?.GetHashData();
-                if (hashData == null)
+                byte[] hashData1 = context.MakeHeader()?.GetHashData();
+                byte[] hashData2 = context.MakeStateRoot()?.GetHashData();
+                if (hashData1 == null|| hashData2 == null)
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.Default.VerifySignature(hashData, commit.Signature,
+                else if (Crypto.Default.VerifySignature(hashData1, commit.Signature,
+                    context.Validators[payload.ValidatorIndex].EncodePoint(false))&& Crypto.Default.VerifySignature(hashData2, commit.StateRootSignature,
                     context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 {
                     existingCommitPayload = payload;
@@ -409,9 +416,27 @@ namespace Neo.Consensus
                 return;
             }
 
+            StateRoot contextStateRoot = Blockchain.Singleton.GetStateRoot(Blockchain.Singleton.Height).StateRoot;
+            if (message.Index!= contextStateRoot.Index) return;
+            if (message.PreHash != contextStateRoot.PreHash)
+            {
+                Log($"PreHash incorrect: {message.PreHash}", LogLevel.Warning);
+                return;
+            }
+            if (message.StateRoot_ != contextStateRoot.StateRoot_)
+            {
+                Log($"StateRoot incorrect: {message.StateRoot_} local:{contextStateRoot.StateRoot_}", LogLevel.Warning);
+                return;
+            }
+
             // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
+
+            context.StateRootVersion = message.Version;
+            context.StateRootIndex = message.Index;
+            context.StateRootPreHash = message.PreHash;
+            context.StateRootStateRoot_ = message.StateRoot_;
 
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
@@ -455,6 +480,7 @@ namespace Neo.Consensus
                     Payload = InvPayload.Create(InventoryType.TX, hashes)
                 });
             }
+
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)

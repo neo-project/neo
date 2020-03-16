@@ -1,4 +1,5 @@
-﻿using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -47,6 +48,7 @@ namespace Neo.SmartContract
             Register("System.Runtime.GetTime", Runtime_GetTime, 1);
             Register("System.Runtime.Serialize", Runtime_Serialize, 1);
             Register("System.Runtime.Deserialize", Runtime_Deserialize, 1);
+            Register("System.Runtime.MerkleProve", Merkle_Prove, 200);
             Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 1);
             Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 100);
             Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 200);
@@ -385,6 +387,24 @@ namespace Neo.SmartContract
                     return false;
                 }
                 engine.CurrentContext.EvaluationStack.Push(item);
+            }
+            return true;
+        }
+
+        protected bool Merkle_Prove(ExecutionEngine engine)
+        {
+            byte[] path = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] root_bytes = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            if (root_bytes.Length != 32) return false;
+            var root = new UInt256(root_bytes);
+            var value = MerkleTree.MerkleProve(path, root);
+            if (value is null)
+            {
+                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+            }
+            else
+            {
+                engine.CurrentContext.EvaluationStack.Push(value);
             }
             return true;
         }

@@ -16,6 +16,7 @@ namespace Neo.UnitTests
             if (TheNeoSystem == null)
             {
                 var mockSnapshot = new Mock<Snapshot>();
+                mockSnapshot.SetupGet(p => p.StateRoots).Returns(new TestDataCache<UInt32Wrapper, StateRootState>());
                 mockSnapshot.SetupGet(p => p.Blocks).Returns(new TestDataCache<UInt256, BlockState>());
                 mockSnapshot.SetupGet(p => p.Transactions).Returns(new TestDataCache<UInt256, TransactionState>());
                 mockSnapshot.SetupGet(p => p.Accounts).Returns(new TestDataCache<UInt160, AccountState>());
