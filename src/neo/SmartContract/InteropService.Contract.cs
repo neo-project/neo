@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -24,7 +25,7 @@ namespace Neo.SmartContract
             /// </summary>
             public static readonly InteropDescriptor CreateStandardAccount = Register("System.Contract.CreateStandardAccount", Contract_CreateStandardAccount, 0_00010000, TriggerType.All, CallFlags.None);
 
-            private static long GetDeploymentPrice(EvaluationStack stack)
+            private static long GetDeploymentPrice(EvaluationStack stack, StoreView snapshot)
             {
                 int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
                 return Storage.GasPerByte * size;
