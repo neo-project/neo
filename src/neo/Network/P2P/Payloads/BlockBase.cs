@@ -108,7 +108,7 @@ namespace Neo.Network.P2P.Payloads
             json["merkleroot"] = MerkleRoot.ToString();
             json["time"] = Timestamp;
             json["index"] = Index;
-            json["nextconsensus"] = NextConsensus.ToAddress();
+            json["nextconsensus"] = NextConsensus.ToString();
             json["witnesses"] = new JArray(Witness.ToJson());
             return json;
         }
@@ -120,7 +120,7 @@ namespace Neo.Network.P2P.Payloads
             MerkleRoot = UInt256.Parse(json["merkleroot"].AsString());
             Timestamp = (ulong)json["time"].AsNumber();
             Index = (uint)json["index"].AsNumber();
-            NextConsensus = json["nextconsensus"].AsString().ToScriptHash();
+            NextConsensus = UInt160.Parse(json["nextconsensus"].AsString());
             Witness = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).FirstOrDefault();
         }
 

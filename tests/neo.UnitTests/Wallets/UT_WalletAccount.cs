@@ -33,7 +33,7 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAddress()
         {
             MyWalletAccount walletAccount = new MyWalletAccount(UInt160.Zero);
-            walletAccount.Address.Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
+            walletAccount.Address.Should().Be("0x0000000000000000000000000000000000000000");
         }
 
         [TestMethod]

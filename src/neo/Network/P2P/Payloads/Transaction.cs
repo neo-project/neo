@@ -234,7 +234,7 @@ namespace Neo.Network.P2P.Payloads
             json["size"] = Size;
             json["version"] = Version;
             json["nonce"] = Nonce;
-            json["sender"] = Sender.ToAddress();
+            json["sender"] = Sender.ToString();
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
@@ -250,7 +250,7 @@ namespace Neo.Network.P2P.Payloads
             Transaction tx = new Transaction();
             tx.Version = byte.Parse(json["version"].AsString());
             tx.Nonce = uint.Parse(json["nonce"].AsString());
-            tx.Sender = json["sender"].AsString().ToScriptHash();
+            tx.Sender = UInt160.Parse(json["sender"].AsString());
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
             tx.NetworkFee = long.Parse(json["net_fee"].AsString());
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());

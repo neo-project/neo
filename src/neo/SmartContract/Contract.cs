@@ -18,7 +18,7 @@ namespace Neo.SmartContract
             {
                 if (_address == null)
                 {
-                    _address = ScriptHash.ToAddress();
+                    _address = ScriptHash.ToString();
                 }
                 return _address;
             }

@@ -28,7 +28,7 @@ namespace Neo.Wallets.NEP6
 
         public static NEP6Account FromJson(JObject json, NEP6Wallet wallet)
         {
-            return new NEP6Account(wallet, json["address"].AsString().ToScriptHash(), json["key"]?.AsString())
+            return new NEP6Account(wallet, UInt160.Parse(json["address"].AsString()), json["key"]?.AsString())
             {
                 Label = json["label"]?.AsString(),
                 IsDefault = json["isDefault"].AsBoolean(),
@@ -61,7 +61,7 @@ namespace Neo.Wallets.NEP6
         public JObject ToJson()
         {
             JObject account = new JObject();
-            account["address"] = ScriptHash.ToAddress();
+            account["address"] = ScriptHash.ToString();
             account["label"] = Label;
             account["isDefault"] = IsDefault;
             account["lock"] = Lock;

@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[35] = (byte)OpCode.PUSHNULL;
             expectedArray[36] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(InteropService.Crypto.ECDsaVerify), 0, expectedArray, 37, 4);
-            Assert.AreEqual(expectedArray.ToScriptHash().ToAddress(), contract.Address);
+            Assert.AreEqual(expectedArray.ToScriptHash().ToString(), contract.Address);
         }
 
         [TestMethod]
