@@ -32,15 +32,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CheckFirstLetterOfAddresses()
-        {
-            UInt160 min = UInt160.Parse("0x0000000000000000000000000000000000000000");
-            min.ToAddress()[0].Should().Be('N');
-            UInt160 max = UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff");
-            max.ToAddress()[0].Should().Be('N');
-        }
-
-        [TestMethod]
         public void Default_Magic_should_be_mainnet_Magic_value()
         {
             var mainNetMagic = 0x4F454Eu;

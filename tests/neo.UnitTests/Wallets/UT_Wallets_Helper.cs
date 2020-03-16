@@ -19,15 +19,6 @@ namespace Neo.UnitTests.Wallets
 
             Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash();
             action.Should().Throw<FormatException>();
-
-            var address = scriptHash.ToAddress();
-            Span<byte> data = stackalloc byte[21];
-            // NEO version is 0x17
-            data[0] = 0x01;
-            scriptHash.ToArray().CopyTo(data[1..]);
-            address = Base58.Base58CheckEncode(data);
-            action = () => address.ToScriptHash();
-            action.Should().Throw<FormatException>();
         }
     }
 }
