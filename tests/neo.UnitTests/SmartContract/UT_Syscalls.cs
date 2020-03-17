@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Linq;
@@ -274,6 +275,9 @@ namespace Neo.UnitTests.SmartContract
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractA.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractB.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractC.ScriptHash.ToArray()));
+                CreateDefaultManifest(contractA, "dummyMain");
+                CreateDefaultManifest(contractB, "dummyMain");
+                CreateDefaultManifest(contractC, "dummyMain");
                 contracts.Add(contractA.ScriptHash, contractA);
                 contracts.Add(contractB.ScriptHash, contractB);
                 contracts.Add(contractC.ScriptHash, contractC);
@@ -308,6 +312,20 @@ namespace Neo.UnitTests.SmartContract
                         }
                     );
             }
+
+            
+        }
+        private void CreateDefaultManifest(ContractState contractState, string method)
+        {
+            contractState.Manifest = TestUtils.CreateDefaultManifest(contractState.ScriptHash);
+            contractState.Manifest.Abi.Methods = new ContractMethodDescriptor[]
+            {
+                new ContractMethodDescriptor(){
+                    Name = method,
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.Void
+                }
+            };
         }
     }
 }
