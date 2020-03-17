@@ -2,7 +2,6 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -62,7 +61,8 @@ namespace Neo.Ledger
             Amount = reader.ReadSerializable<Fixed8>();
             Available = reader.ReadSerializable<Fixed8>();
             Precision = reader.ReadByte();
-            reader.ReadByte(); //FeeMode
+            if (reader.ReadByte() != FeeMode) //FeeMode
+                throw new FormatException();
             Fee = reader.ReadSerializable<Fixed8>(); //Fee
             FeeAddress = reader.ReadSerializable<UInt160>();
             Owner = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
