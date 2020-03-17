@@ -1,7 +1,7 @@
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.Dispatch;
 using Akka.Dispatch.MessageQueues;
-using Hocon;
 using System.Collections;
 
 namespace Neo.IO.Actors

@@ -1,5 +1,4 @@
 using Akka.Actor;
-using Hocon;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -12,13 +11,13 @@ namespace Neo
 {
     public class NeoSystem : IDisposable
     {
-        public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem), HoconConfigurationFactory.ParseString("akka.log-dead-letters = off")
-            .WithFallback(HoconConfigurationFactory.ParseString($"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}"))
-            .WithFallback(HoconConfigurationFactory.ParseString($"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}"))
-            .WithFallback(HoconConfigurationFactory.ParseString($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}"))
-            .WithFallback(HoconConfigurationFactory.ParseString($"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}"))
-            .WithFallback(HoconConfigurationFactory.ParseString($"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}"))
-            .WithFallback(HoconConfigurationFactory.Default()));
+        public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
+            $"akka {{ log-dead-letters = off }}" +
+            $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
+            $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
+            $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
+            $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}" +
+            $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }

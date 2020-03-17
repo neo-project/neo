@@ -1,5 +1,5 @@
 using Akka.Actor;
-using Hocon;
+using Akka.Configuration;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
