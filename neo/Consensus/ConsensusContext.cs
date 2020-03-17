@@ -16,6 +16,11 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
+        public uint StateRootVersion { get; set; }
+        public uint StateRootIndex { get; set; }
+        public UInt256 StateRootPreHash { get; set; }
+        public UInt256 StateRootStateRoot_ { get; set; }
+
         /// <summary>
         /// Prefix for saving consensus state.
         /// </summary>
@@ -46,6 +51,8 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
         private readonly Store store;
 
+        public StateRoot StateRoot_ { get; set; }
+
         public int Size => throw new NotImplementedException();
 
         public ConsensusContext(Wallet wallet, Store store)
@@ -74,9 +81,33 @@ namespace Neo.Consensus
             return Block;
         }
 
+        public StateRoot CreateStateRoot()
+        {
+            if (StateRoot_ is null)
+            {
+                StateRoot_ = MakeStateRoot();
+                if (StateRoot_ == null) return null;
+                Contract contract = Contract.CreateMultiSigContract(this.M(), Validators);
+                ContractParametersContext sc = new ContractParametersContext(StateRoot_);
+                for (int i = 0, j = 0; i < Validators.Length && j < this.M(); i++)
+                {
+                    if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
+                    sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature);
+                    j++;
+                }
+                StateRoot_.Witness = sc.GetWitnesses()[0];
+            }
+            return StateRoot_;
+        }
+
         public void Deserialize(BinaryReader reader)
         {
             Reset(0);
+            if (reader.ReadUInt32() != StateRootVersion) throw new FormatException();
+            if (reader.ReadUInt32() != StateRootIndex) throw new FormatException();
+            StateRootPreHash = reader.ReadSerializable<UInt256>();
+            StateRootStateRoot_ = reader.ReadSerializable<UInt256>();
+
             if (reader.ReadUInt32() != Version) throw new FormatException();
             if (reader.ReadUInt32() != BlockIndex) throw new InvalidOperationException();
             ViewNumber = reader.ReadByte();
@@ -150,8 +181,20 @@ namespace Neo.Consensus
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = MakeHeader()?.Sign(keyPair)
+                Signature = MakeHeader()?.Sign(keyPair),
+                StateRootSignature = MakeStateRoot()?.Sign(keyPair)
             }));
+        }
+
+        public StateRoot MakeStateRoot()
+        {
+            return new StateRoot()
+            {
+                Version = StateRootVersion,
+                Index = StateRootIndex,
+                PreHash = StateRootPreHash,
+                StateRoot_ = StateRootStateRoot_
+            };
         }
 
         private Block _header = null;
@@ -214,7 +257,12 @@ namespace Neo.Consensus
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
+
+                Version = StateRootVersion,
+                Index = StateRootIndex,
+                PreHash = StateRootPreHash,
+                StateRoot_ = StateRootStateRoot_
             });
         }
 
@@ -238,7 +286,12 @@ namespace Neo.Consensus
                     Nonce = Nonce,
                     NextConsensus = NextConsensus,
                     MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                    Timestamp = Timestamp
+                    Timestamp = Timestamp,
+
+                    Version = StateRootVersion,
+                    Index = StateRootIndex,
+                    PreHash = StateRootPreHash,
+                    StateRoot_ = StateRootStateRoot_
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -266,6 +319,7 @@ namespace Neo.Consensus
         {
             if (viewNumber == 0)
             {
+                StateRoot_ = null;
                 Block = null;
                 Snapshot?.Dispose();
                 Snapshot = Blockchain.Singleton.GetSnapshot();
@@ -305,8 +359,13 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int) BlockIndex;
+            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)BlockIndex;
             _header = null;
+
+            StateRootVersion = 0;
+            StateRootIndex = Snapshot.Height;
+            StateRootPreHash = UInt256.Zero;
+            StateRootStateRoot_ = UInt256.Zero;
         }
 
         public void Save()
@@ -316,6 +375,11 @@ namespace Neo.Consensus
 
         public void Serialize(BinaryWriter writer)
         {
+            writer.Write(StateRootVersion);
+            writer.Write(StateRootIndex);
+            writer.Write(StateRootPreHash);
+            writer.Write(StateRootStateRoot_);
+
             writer.Write(Version);
             writer.Write(BlockIndex);
             writer.Write(ViewNumber);
@@ -394,6 +458,12 @@ namespace Neo.Consensus
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
+
+            StateRoot stateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
+            StateRootVersion = stateRoot.Version;
+            StateRootIndex = stateRoot.Index;
+            StateRootPreHash = stateRoot.PreHash;
+            StateRootStateRoot_ = stateRoot.StateRoot_;
         }
 
         private static ulong GetNonce()

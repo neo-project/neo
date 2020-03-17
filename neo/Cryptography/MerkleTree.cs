@@ -1,6 +1,8 @@
+using Neo.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -116,6 +118,52 @@ namespace Neo.Cryptography
                     node.RightChild = null;
                 }
             }
+        }
+
+        public static byte[] MerkleProve(byte[] path, UInt256 root)
+        {
+            using (MemoryStream ms = new MemoryStream(path, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                var value = reader.ReadVarBytes();
+                var hash = HashLeaf(value);
+                int size = (int)(ms.Length - ms.Position) / 32;
+                for (int i = 0 ; i < size ; i++ )
+                {
+                    var f = reader.ReadByte();
+                    byte[] v = reader.ReadBytes(32);
+                    if (f == 0)
+                        hash = HashChildren(v, hash);
+                    else
+                        hash = HashChildren(hash, v);
+                }
+                if(!ByteArrayEquals(hash, root.ToArray()))
+                {
+                    return null;
+                }                   
+                return value;
+            }
+        }
+
+        public static byte[] HashChildren(byte[] v, byte[] hash)
+        {
+            byte[] prefix = { 1 };
+            return prefix.Concat(v).Concat(hash).Sha256();
+        }
+
+        public static byte[] HashLeaf(byte[] value)
+        {
+            byte[] prefix = { 0 };
+            return prefix.Concat(value).Sha256();
+        }
+
+        public static bool ByteArrayEquals(byte[] b1, byte[] b2)
+        {
+            if (b1 is null || b2 is null) return false;
+            if (b1.Length != b2.Length) return false;
+            for (int i = 0; i < b1.Length; i++)
+                if (b1[i] != b2[i]) return false;
+            return true;
         }
     }
 }
