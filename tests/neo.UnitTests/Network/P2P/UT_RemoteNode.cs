@@ -1,7 +1,6 @@
 using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
-using Akka.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
