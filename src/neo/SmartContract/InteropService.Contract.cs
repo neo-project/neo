@@ -2,10 +2,12 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
@@ -101,38 +103,33 @@ namespace Neo.SmartContract
 
             private static bool Contract_Call(ApplicationEngine engine)
             {
-                StackItem contractHash = engine.CurrentContext.EvaluationStack.Pop();
-                StackItem method = engine.CurrentContext.EvaluationStack.Pop();
-                StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+                if (!engine.TryPop(out ReadOnlySpan<byte> contractHash)) return false;
+                if (!engine.TryPop(out string method)) return false;
+                if (!engine.TryPop(out Array args)) return false;
 
-                return Contract_CallEx(engine, new UInt160(contractHash.GetSpan()), method, args, CallFlags.All);
+                return Contract_CallEx(engine, new UInt160(contractHash), method, args, CallFlags.All);
             }
 
             private static bool Contract_CallEx(ApplicationEngine engine)
             {
-                StackItem contractHash = engine.CurrentContext.EvaluationStack.Pop();
-                StackItem method = engine.CurrentContext.EvaluationStack.Pop();
-                StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+                if (!engine.TryPop(out ReadOnlySpan<byte> contractHash)) return false;
+                if (!engine.TryPop(out string method)) return false;
+                if (!engine.TryPop(out Array args)) return false;
+                if (!engine.TryPop(out int flags)) return false;
 
-                if (!engine.CurrentContext.EvaluationStack.TryPop<PrimitiveType>(out var flagItem))
-                {
-                    return false;
-                }
+                if (!Enum.IsDefined(typeof(CallFlags), (CallFlags)flags)) return false;
 
-                CallFlags flags = (CallFlags)(int)flagItem.ToBigInteger();
-                if (!Enum.IsDefined(typeof(CallFlags), flags)) return false;
-
-                return Contract_CallEx(engine, new UInt160(contractHash.GetSpan()), method, args, flags);
+                return Contract_CallEx(engine, new UInt160(contractHash), method, args, (CallFlags)flags);
             }
 
-            private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, StackItem method, StackItem args, CallFlags flags)
+            private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, string method, Array args, CallFlags flags)
             {
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
                 if (contract is null) return false;
 
                 ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
-                if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
+                if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
                     return false;
 
                 if (engine.InvocationCounter.TryGetValue(contract.ScriptHash, out var counter))
@@ -148,13 +145,24 @@ namespace Neo.SmartContract
                 UInt160 callingScriptHash = state.ScriptHash;
                 CallFlags callingFlags = state.CallFlags;
 
-                ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+                ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+                int rvcount = md.ReturnType == ContractParameterType.Void ? 0 : 1;
+                ExecutionContext context_new = engine.LoadScript(contract.Script, rvcount);
                 state = context_new.GetState<ExecutionContextState>();
                 state.CallingScriptHash = callingScriptHash;
                 state.CallFlags = flags & callingFlags;
 
-                context_new.EvaluationStack.Push(args);
-                context_new.EvaluationStack.Push(method);
+                if (NativeContract.IsNative(contractHash))
+                {
+                    context_new.EvaluationStack.Push(args);
+                    context_new.EvaluationStack.Push(method);
+                }
+                else
+                {
+                    for (int i = args.Count - 1; i >= 0; i--)
+                        context_new.EvaluationStack.Push(args[i]);
+                    context_new.InstructionPointer = md.Offset;
+                }
                 return true;
             }
 

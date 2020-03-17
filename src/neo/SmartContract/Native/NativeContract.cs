@@ -17,10 +17,11 @@ namespace Neo.SmartContract.Native
 {
     public abstract class NativeContract
     {
-        private static readonly List<NativeContract> contracts = new List<NativeContract>();
+        private static readonly List<NativeContract> contractsList = new List<NativeContract>();
+        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
-        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
@@ -78,7 +79,8 @@ namespace Neo.SmartContract.Native
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null,
             };
-            contracts.Add(this);
+            contractsList.Add(this);
+            contractsDictionary.Add(Hash, this);
         }
 
         protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
@@ -112,6 +114,11 @@ namespace Neo.SmartContract.Native
             StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
+        }
+
+        public static bool IsNative(UInt160 hash)
+        {
+            return contractsDictionary.ContainsKey(hash);
         }
 
         internal long GetPrice(EvaluationStack stack, StoreView snapshot)

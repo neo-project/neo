@@ -1,4 +1,5 @@
 using Neo.IO.Json;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.SmartContract.Manifest
@@ -8,6 +9,8 @@ namespace Neo.SmartContract.Manifest
     /// </summary>
     public class ContractAbi
     {
+        private IReadOnlyDictionary<string, ContractMethodDescriptor> methodDictionary;
+
         /// <summary>
         /// Hash is the script hash of the contract. It is encoded as a hexadecimal string in big-endian.
         /// </summary>
@@ -46,6 +49,13 @@ namespace Neo.SmartContract.Manifest
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
                 Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
+        }
+
+        public ContractMethodDescriptor GetMethod(string name)
+        {
+            methodDictionary ??= Methods.ToDictionary(p => p.Name);
+            methodDictionary.TryGetValue(name, out var method);
+            return method;
         }
 
         public JObject ToJson()

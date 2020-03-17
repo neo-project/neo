@@ -6,7 +6,7 @@ namespace Neo.SmartContract.Manifest
 {
     public class ContractMethodDescriptor : ContractEventDescriptor
     {
-        public uint Offset { get; set; }
+        public int Offset { get; set; }
 
         /// <summary>
         /// Returntype indicates the return type of the method. It can be one of the following values: 
@@ -36,7 +36,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
-                Offset = (uint)json["offset"].AsNumber(),
+                Offset = (int)json["offset"].AsNumber(),
                 ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returnType"].AsString()),
             };
         }
