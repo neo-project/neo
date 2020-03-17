@@ -6,6 +6,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
@@ -287,16 +288,18 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Contract.Call, contractA.ScriptHash.ToArray(), "dummyMain", 0);
-                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", 0);
-                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", 0);
-                script.EmitSysCall(InteropService.Contract.Call, contractC.ScriptHash.ToArray(), "dummyMain", 0);
+                var parameter = new Array { 0, 1 }.ToParameter();
+
+                script.EmitSysCall(InteropService.Contract.Call, contractA.ScriptHash.ToArray(), "dummyMain", parameter);
+                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", parameter);
+                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", parameter);
+                script.EmitSysCall(InteropService.Contract.Call, contractC.ScriptHash.ToArray(), "dummyMain", parameter);
 
                 // Execute
 
                 var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
 
                 // Check the results
 
@@ -312,9 +315,8 @@ namespace Neo.UnitTests.SmartContract
                         }
                     );
             }
-
-            
         }
+
         private void CreateDefaultManifest(ContractState contractState, string method)
         {
             contractState.Manifest = TestUtils.CreateDefaultManifest(contractState.ScriptHash);
@@ -323,7 +325,7 @@ namespace Neo.UnitTests.SmartContract
                 new ContractMethodDescriptor(){
                     Name = method,
                     Parameters = new ContractParameterDefinition[0],
-                    ReturnType = ContractParameterType.Void
+                    ReturnType = ContractParameterType.Integer
                 }
             };
         }

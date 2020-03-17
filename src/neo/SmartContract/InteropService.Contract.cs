@@ -105,7 +105,7 @@ namespace Neo.SmartContract
             {
                 if (!engine.TryPop(out ReadOnlySpan<byte> contractHash)) return false;
                 if (!engine.TryPop(out string method)) return false;
-                if (!engine.TryPop(out StackItem args)) return false;
+                if (!engine.TryPop(out Array args)) return false;
 
                 return Contract_CallEx(engine, new UInt160(contractHash), method, args, CallFlags.All);
             }
@@ -122,7 +122,7 @@ namespace Neo.SmartContract
                 return Contract_CallEx(engine, new UInt160(contractHash), method, args, (CallFlags)flags);
             }
 
-            private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, string method, StackItem args, CallFlags flags)
+            private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, string method, Array args, CallFlags flags)
             {
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
                 if (contract is null) return false;
@@ -159,9 +159,8 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    Array temp = (Array)args;
-                    for (int i = temp.Count - 1; i >= 0; i--)
-                        context_new.EvaluationStack.Push(temp[i]);
+                    for (int i = args.Count - 1; i >= 0; i--)
+                        context_new.EvaluationStack.Push(args[i]);
                     context_new.InstructionPointer = md.Offset;
                 }
                 return true;
