@@ -230,8 +230,10 @@ namespace Neo.Consensus
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.Default.VerifySignature(hashData1, commit.Signature,
-                    context.Validators[payload.ValidatorIndex].EncodePoint(false))&& Crypto.Default.VerifySignature(hashData2, commit.StateRootSignature,
+                else if (Crypto.Default.VerifySignature(hashData1,
+                    commit.Signature,
+                    context.Validators[payload.ValidatorIndex].EncodePoint(false)) && Crypto.Default.VerifySignature(hashData2,
+                    commit.StateRootSignature,
                     context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 {
                     existingCommitPayload = payload;
@@ -449,9 +451,14 @@ namespace Neo.Consensus
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.MakeHeader().GetHashData();
+            byte[] stateData = context.MakeStateRoot().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    if (!Crypto.Default.VerifySignature(hashData,
+                        context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature,
+                        context.Validators[i].EncodePoint(false)) || !Crypto.Default.VerifySignature(stateData,
+                        context.CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature,
+                        context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
