@@ -106,7 +106,7 @@ namespace Neo.SmartContract
                     }
                 Transaction tx = engine.ScriptContainer as Transaction;
                 paybackFee = releaseDataSize * Storage.GasPerByte * NativeContract.GAS.Factor;
-                NativeContract.GAS.Payback(engine, tx.Sender, paybackFee);
+                NativeContract.GAS.Mint(engine, tx.Sender, paybackFee);
                 return true;
             }
 
