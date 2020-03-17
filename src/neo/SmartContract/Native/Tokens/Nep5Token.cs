@@ -66,6 +66,24 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_Account, account);
         }
 
+        internal protected virtual void Payback(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        {
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount.IsZero) return;
+            StorageKey key = CreateAccountKey(account);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
+            TState state = new TState();
+            state.FromByteArray(storage.Value);
+            OnBalanceChanging(engine, account, state, amount);
+            state.Balance += amount;
+            storage.Value = state.ToByteArray();
+            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
+            BigInteger totalSupply = new BigInteger(storage.Value);
+            totalSupply += amount;
+            storage.Value = totalSupply.ToByteArrayStandard();
+            engine.SendNotification(Hash, new VM.Types.Array(new StackItem[] { "Payback", account.ToArray(), StackItem.Null, amount }));
+        }
+
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));

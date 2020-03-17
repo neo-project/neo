@@ -1,11 +1,14 @@
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.SmartContract
 {
@@ -93,9 +96,17 @@ namespace Neo.SmartContract
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
                 if (contract == null) return true;
                 engine.Snapshot.Contracts.Delete(hash);
+                var releaseDataSize = 0;
+                BigInteger paybackFee = 0;
                 if (contract.HasStorage)
-                    foreach (var (key, _) in engine.Snapshot.Storages.Find(hash.ToArray()))
+                    foreach (var (key, value) in engine.Snapshot.Storages.Find(hash.ToArray()))
+                    {
+                        releaseDataSize += (StackItem.FromInterface(key).GetByteLength() + StackItem.FromInterface(value).GetByteLength());
                         engine.Snapshot.Storages.Delete(key);
+                    }
+                Transaction tx = engine.ScriptContainer as Transaction;
+                paybackFee = releaseDataSize * Storage.GasPerByte * NativeContract.GAS.Factor;
+                NativeContract.GAS.Payback(engine, tx.Sender, paybackFee);
                 return true;
             }
 

@@ -845,7 +845,11 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(scriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            Transaction tx = new Transaction()
+            {
+                Sender = UInt160.Zero
+            };
+            engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0);
             engine.LoadScript(new byte[0]);
             InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
 
@@ -853,7 +857,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot = Blockchain.Singleton.GetSnapshot();
             state = TestUtils.GetContract();
             snapshot.Contracts.Add(scriptHash, state);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0);
             engine.LoadScript(new byte[0]);
             InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
         }
