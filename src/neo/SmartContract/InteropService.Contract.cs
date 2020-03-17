@@ -1,3 +1,4 @@
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -19,12 +20,12 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All, CallFlags.None);
-            
+
             /// <summary>
             /// Calculate corresponding account scripthash for given public key
             /// </summary>
             public static readonly InteropDescriptor CreateStandardAccount = Register("System.Contract.CreateStandardAccount", Contract_CreateStandardAccount, 0_00010000, TriggerType.All, CallFlags.None);
-            
+
             private static long GetDeploymentPrice(EvaluationStack stack, StoreView snapshot)
             {
                 int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
@@ -174,9 +175,9 @@ namespace Neo.SmartContract
 
             private static bool Contract_CreateStandardAccount(ApplicationEngine engine)
             {
-                ReadOnlySpan<byte> pubKey = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
-                byte[] scriptHash = SmartContract.Contract.CreateSignatureRedeemScript(Cryptography.ECC.ECPoint.FromBytes(pubKey.ToArray(), Cryptography.ECC.ECCurve.Secp256r1)).ToScriptHash().ToArray();
-                engine.CurrentContext.EvaluationStack.Push(scriptHash);
+                if (!engine.TryPop(out ReadOnlySpan<byte> pubKey)) return false;
+                UInt160 scriptHash = SmartContract.Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubKey, ECCurve.Secp256r1)).ToScriptHash();
+                engine.CurrentContext.EvaluationStack.Push(scriptHash.ToArray());
                 return true;
             }
         }
