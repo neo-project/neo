@@ -3,8 +3,8 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
@@ -16,6 +16,25 @@ namespace Neo.UnitTests
     public static class TestUtils
     {
         public static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
+
+        public static ContractManifest CreateDefaultManifest(UInt160 hash)
+        {
+            return new ContractManifest()
+            {
+                Permissions = new[] { ContractPermission.DefaultPermission },
+                Abi = new ContractAbi()
+                {
+                    Hash = hash,
+                    Events = new ContractEventDescriptor[0],
+                    Methods = new ContractMethodDescriptor[0]
+                },
+                Features = ContractFeatures.NoProperty,
+                Groups = new ContractGroup[0],
+                SafeMethods = WildcardContainer<string>.Create(),
+                Trusts = WildcardContainer<UInt160>.Create(),
+                Extra = null,
+            };
+        }
 
         public static byte[] GetByteArray(int length, byte firstByte)
         {
@@ -61,7 +80,7 @@ namespace Neo.UnitTests
             return new ContractState
             {
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
-                Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
+                Manifest = CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
         }
 
@@ -71,7 +90,7 @@ namespace Neo.UnitTests
             {
                 Id = 1,
                 Script = script,
-                Manifest = ContractManifest.CreateDefault(script.ToScriptHash())
+                Manifest = CreateDefaultManifest(script.ToScriptHash())
             };
         }
 

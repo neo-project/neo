@@ -42,7 +42,6 @@ namespace Neo.SmartContract.Native
                 this.Script = sb.ToArray();
             }
             this.Hash = Script.ToScriptHash();
-            this.Manifest = ContractManifest.CreateDefault(this.Hash);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             List<string> safeMethods = new List<string>();
             foreach (MethodInfo method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
@@ -64,8 +63,21 @@ namespace Neo.SmartContract.Native
                     RequiredCallFlags = attribute.SafeMethod ? CallFlags.None : CallFlags.AllowModifyStates
                 });
             }
-            this.Manifest.Abi.Methods = descriptors.ToArray();
-            this.Manifest.SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray());
+            this.Manifest = new ContractManifest
+            {
+                Permissions = new[] { ContractPermission.DefaultPermission },
+                Abi = new ContractAbi()
+                {
+                    Hash = Hash,
+                    Events = new ContractEventDescriptor[0],
+                    Methods = descriptors.ToArray()
+                },
+                Features = ContractFeatures.NoProperty,
+                Groups = new ContractGroup[0],
+                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
+                Trusts = WildcardContainer<UInt160>.Create(),
+                Extra = null,
+            };
             contracts.Add(this);
         }
 

@@ -14,11 +14,6 @@ namespace Neo.SmartContract.Manifest
         public UInt160 Hash { get; set; }
 
         /// <summary>
-        /// Entrypoint is a Method object which describe the details of the entrypoint of the contract.
-        /// </summary>
-        public ContractMethodDescriptor EntryPoint { get; set; }
-
-        /// <summary>
         /// Methods is an array of Method objects which describe the details of each method in the contract.
         /// </summary>
         public ContractMethodDescriptor[] Methods { get; set; }
@@ -33,7 +28,6 @@ namespace Neo.SmartContract.Manifest
             return new ContractAbi
             {
                 Hash = Hash,
-                EntryPoint = EntryPoint.Clone(),
                 Methods = Methods.Select(p => p.Clone()).ToArray(),
                 Events = Events.Select(p => p.Clone()).ToArray()
             };
@@ -49,7 +43,6 @@ namespace Neo.SmartContract.Manifest
             return new ContractAbi
             {
                 Hash = UInt160.Parse(json["hash"].AsString()),
-                EntryPoint = ContractMethodDescriptor.FromJson(json["entryPoint"]),
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
                 Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
@@ -59,7 +52,6 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject();
             json["hash"] = Hash.ToString();
-            json["entryPoint"] = EntryPoint.ToJson();
             json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
             json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
             return json;

@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.Contracts.Add(scriptHash2, new Neo.Ledger.ContractState()
                 {
                     Script = script.ToArray(),
-                    Manifest = ContractManifest.CreateDefault(scriptHash2),
+                    Manifest = TestUtils.CreateDefaultManifest(scriptHash2),
                 });
             }
 
@@ -236,7 +236,7 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Manifest = ContractManifest.CreateDefault(scriptA.ToArray().ToScriptHash()),
+                Manifest = TestUtils.CreateDefaultManifest(scriptA.ToArray().ToScriptHash()),
                 Script = scriptA.ToArray()
             };
 
