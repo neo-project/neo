@@ -36,6 +36,20 @@ namespace Neo.UnitTests
             };
         }
 
+        public static void CreateDefaultManifest(ContractState contractState, string method)
+        {
+            if(contractState.Manifest is null)
+                contractState.Manifest = CreateDefaultManifest(contractState.ScriptHash);
+            contractState.Manifest.Abi.Methods = new ContractMethodDescriptor[]
+            {
+                new ContractMethodDescriptor(){
+                    Name = method,
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.Integer
+                }
+            };
+        }
+
         public static byte[] GetByteArray(int length, byte firstByte)
         {
             byte[] array = new byte[length];

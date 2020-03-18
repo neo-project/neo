@@ -56,14 +56,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             };
             var key = CreateStorageKey(Prefix_TotalSupply);
 
-            var ServiceHash = "test".ToInteropMethodHash();
-            byte[] script = null;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitSysCall(ServiceHash);
-                script = sb.ToArray();
-            }
-            var Hash = script.ToScriptHash();
             key.Id = test.Id;
 
             snapshot.Storages.Add(key, item);
@@ -96,7 +88,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         public override byte Decimals => 8;
 
-        public override string ServiceName => "test";
+        public override string ServiceName => "testNep5Token";
+
+        internal TestNep5Token()
+        {
+        }
 
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {

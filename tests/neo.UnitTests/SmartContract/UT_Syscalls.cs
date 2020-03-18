@@ -276,9 +276,9 @@ namespace Neo.UnitTests.SmartContract
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractA.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractB.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractC.ScriptHash.ToArray()));
-                CreateDefaultManifest(contractA, "dummyMain");
-                CreateDefaultManifest(contractB, "dummyMain");
-                CreateDefaultManifest(contractC, "dummyMain");
+                TestUtils.CreateDefaultManifest(contractA, "dummyMain");
+                TestUtils.CreateDefaultManifest(contractB, "dummyMain");
+                TestUtils.CreateDefaultManifest(contractC, "dummyMain");
                 contracts.Add(contractA.ScriptHash, contractA);
                 contracts.Add(contractB.ScriptHash, contractB);
                 contracts.Add(contractC.ScriptHash, contractC);
@@ -315,19 +315,6 @@ namespace Neo.UnitTests.SmartContract
                         }
                     );
             }
-        }
-
-        private void CreateDefaultManifest(ContractState contractState, string method)
-        {
-            contractState.Manifest = TestUtils.CreateDefaultManifest(contractState.ScriptHash);
-            contractState.Manifest.Abi.Methods = new ContractMethodDescriptor[]
-            {
-                new ContractMethodDescriptor(){
-                    Name = method,
-                    Parameters = new ContractParameterDefinition[0],
-                    ReturnType = ContractParameterType.Integer
-                }
-            };
         }
     }
 }
