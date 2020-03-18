@@ -157,9 +157,10 @@ namespace Neo.UnitTests.SmartContract
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
             Header header3 = new Header() { PrevHash = index3, Witness = new Witness { VerificationScript = new byte[0] } };
-            snapshot3.Contracts.Add(UInt160.Zero, new ContractState());
-            ContractState cs = snapshot3.Contracts.TryGet(UInt160.Zero);
-            TestUtils.CreateDefaultManifest(cs, "verify");
+            snapshot3.Contracts.Add(UInt160.Zero, new ContractState()
+            {
+                Manifest = TestUtils.CreateDefaultManifest(UInt160.Zero, "verify"),
+            });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
         }
     }

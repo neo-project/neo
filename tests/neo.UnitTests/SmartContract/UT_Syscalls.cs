@@ -276,9 +276,9 @@ namespace Neo.UnitTests.SmartContract
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractA.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractB.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractC.ScriptHash.ToArray()));
-                TestUtils.CreateDefaultManifest(contractA, "dummyMain");
-                TestUtils.CreateDefaultManifest(contractB, "dummyMain");
-                TestUtils.CreateDefaultManifest(contractC, "dummyMain");
+                contractA.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
+                contractB.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
+                contractC.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
                 contracts.Add(contractA.ScriptHash, contractA);
                 contracts.Add(contractB.ScriptHash, contractB);
                 contracts.Add(contractC.ScriptHash, contractC);
