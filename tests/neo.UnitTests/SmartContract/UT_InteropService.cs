@@ -246,8 +246,7 @@ namespace Neo.UnitTests.SmartContract
             engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            var parameter = new VM.Types.Array { 0, 1 }.ToParameter();
-            scriptB.EmitSysCall(InteropService.Contract.Call,contract.ScriptHash, "test", parameter);
+            scriptB.EmitAppCall(contract.ScriptHash, "test", 0, 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
