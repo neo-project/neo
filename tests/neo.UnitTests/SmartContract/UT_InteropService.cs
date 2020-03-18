@@ -44,7 +44,8 @@ namespace Neo.UnitTests.SmartContract
 
                 // Add return
 
-                script.EmitPush(OpCode.RET);
+                script.EmitPush(true);
+                script.Emit(OpCode.RET);
 
                 // Mock contract
 
