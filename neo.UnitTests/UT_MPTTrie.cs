@@ -194,6 +194,24 @@ namespace Neo.UnitTests.Trie.MPT
         }
 
         [TestMethod]
+        public void TestBranchNodeRemainValue()
+        {
+            var store = new MemoryStore();
+            var mpt = new MPTTrie(null, store);
+            var result = mpt.Put("ac11".HexToBytes(), "ac11".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.Put("ac22".HexToBytes(), "ac22".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.Put("ac".HexToBytes(), "ac".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.TryDelete("ac11".HexToBytes());
+            Assert.IsTrue(result);
+            result = mpt.TryDelete("ac22".HexToBytes());
+            Assert.IsTrue(result);
+            Assert.AreEqual("{\"key\":\"0a0c\",\"next\":{\"value\":\"ac\"}}", mpt.ToJson().ToString());
+        }
+        
+        [TestMethod]
         public void TestGetProof()
         {
             var r = new ShortNode();

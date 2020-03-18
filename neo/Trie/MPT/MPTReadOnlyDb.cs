@@ -14,8 +14,7 @@ namespace Neo.Trie.MPT
         public MPTNode Node(byte[] hash)
         {
             var data = store.Get(hash);
-            var n = MPTNode.Decode(data);
-            return n;
+            return MPTNode.Decode(data);
         }
     }
 }

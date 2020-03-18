@@ -197,8 +197,16 @@ namespace Neo.Trie.MPT
                         }
                         var lastChildIndex = childrenIndexes[0];
                         var lastChild = fullNode.Children[lastChildIndex];
+                        if (lastChildIndex == FullNode.CHILD_COUNT - 1)
+                        {
+                            node = lastChild;
+                            return true;
+                        }
                         if (lastChild is HashNode hashNode)
+                        {
                             lastChild = Resolve(hashNode.Hash);
+                            if (lastChild is null) throw new System.ArgumentNullException("Invalid hash node");
+                        }
                         if (lastChild is ShortNode shortNode)
                         {
                             shortNode.Key = childrenIndexes.Concat(shortNode.Key);
