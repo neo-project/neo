@@ -8,7 +8,5 @@ namespace Neo.Trie
         bool Put(byte[] path, byte[] value);
 
         bool TryDelete(byte[] path);
-
-        void Commit();
     }
 }

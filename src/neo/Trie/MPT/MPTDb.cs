@@ -3,42 +3,22 @@ using System.Text;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTDb
+    public class MPTDb : MPTReadOnlyDb
     {
-        private ISnapshot store;
-        private static readonly byte TABLE = 0x4D;
-        private static readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("MPT_ROOT");
+        private IKVStore store;
 
-        public MPTDb(ISnapshot store)
+        public MPTDb(IKVStore store) : base(store)
         {
             this.store = store;
         }
 
-        public MPTNode Node(byte[] hash)
-        {
-            var data = store.TryGet(TABLE, hash);
-            var n = MPTNode.Decode(data);
-            return n;
-        }
-
-        public void Delete(byte[] hash)
-        {
-            store.Delete(TABLE, hash);
-        }
-
         public void Put(MPTNode node)
         {
-            store.Put(TABLE, node.GetHash(), node.Encode());
-        }
-
-        public void PutRoot(byte[] root)
-        {
-            store.Put(TABLE, ROOT_KEY, root);
-        }
-
-        public byte[] GetRoot()
-        {
-            return store.TryGet(TABLE, ROOT_KEY);
+            if (node is HashNode hn)
+            {
+                throw new System.InvalidOperationException("Means nothing to store HashNode");
+            }
+            store.Put(node.GetHash(), node.Encode());
         }
     }
 }

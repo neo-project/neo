@@ -19,16 +19,6 @@ namespace Neo.Trie.MPT
             }
         }
 
-        protected override byte[] GenHash()
-        {
-            var bytes = new byte[0];
-            for (int i = 0; i < Children.Length; i++)
-            {
-                bytes = bytes.Concat(Children[i].GetHash());
-            }
-            return Crypto.Hash256(bytes);
-        }
-
         public override void EncodeSpecific(BinaryWriter writer)
         {
             for (int i = 0; i < Children.Length; i++)

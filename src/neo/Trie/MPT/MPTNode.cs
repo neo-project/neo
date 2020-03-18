@@ -1,3 +1,4 @@
+using Neo.Cryptography;
 using Neo.IO.Json;
 using System.IO;
 using System.Text;
@@ -28,7 +29,10 @@ namespace Neo.Trie.MPT
         public NodeFlag Flag;
         protected NodeType nType;
 
-        protected abstract byte[] GenHash();
+        protected virtual byte[] GenHash()
+        {
+            return Crypto.Hash256(this.Encode());
+        }
 
         public virtual byte[] GetHash()
         {
@@ -65,7 +69,7 @@ namespace Neo.Trie.MPT
         public static MPTNode Decode(byte[] data)
         {
             if (data is null || data.Length == 0)
-                throw new System.ArgumentException();
+                return null;
 
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))

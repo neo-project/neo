@@ -6,30 +6,29 @@ namespace Neo.Trie.MPT
 {
     public class MPTReadOnlyTrie : IReadOnlyTrie
     {
-        protected MPTDb db;
+        private MPTReadOnlyDb rodb;
         protected MPTNode root;
 
-        public MPTReadOnlyTrie(ISnapshot store)
+        public MPTReadOnlyTrie(byte[] root, IKVReadOnlyStore store)
         {
             if (store is null)
                 throw new System.ArgumentNullException();
 
-            this.db = new MPTDb(store);
+            this.rodb = new MPTReadOnlyDb(store);
 
-            var rbytes = db.GetRoot();
-            if (rbytes is null || rbytes.Length == 0)
+            if (root is null || root.Length == 0)
             {
                 this.root = HashNode.EmptyNode();
             }
             else
             {
-                this.root = Resolve(rbytes);
+                this.root = new HashNode(root);
             }
         }
 
-        public MPTNode Resolve(byte[] hash)
+        public MPTNode Resolve(HashNode hn)
         {
-            return db.Node(hash);
+            return rodb.Node(hn.Hash);
         }
 
         public bool TryGet(byte[] path, out byte[] value)
@@ -54,7 +53,9 @@ namespace Neo.Trie.MPT
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmptyNode) break;
-                        node = Resolve(hashNode.Hash);
+                        var new_node = Resolve(hashNode);
+                        if (new_node is null) throw new System.ArgumentNullException("Invalid hash node");
+                        node = new_node;
                         return TryGet(ref node, path, out value);
                     }
                 case FullNode fullNode:
@@ -84,15 +85,14 @@ namespace Neo.Trie.MPT
             return root.GetHash();
         }
 
-        public HashSet<byte[]> GetProof(byte[] path)
+        public bool GetProof(byte[] path, out HashSet<byte[]> set)
         {
-            var set = new HashSet<byte[]> { };
+            set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
             path = path.ToNibbles();
-            GetProof(ref root, path, set);
-            return set;
+            return GetProof(ref root, path, set);
         }
 
-        private void GetProof(ref MPTNode node, byte[] path, HashSet<byte[]> set)
+        private bool GetProof(ref MPTNode node, byte[] path, HashSet<byte[]> set)
         {
             switch (node)
             {
@@ -101,28 +101,26 @@ namespace Neo.Trie.MPT
                         if (path.Length == 0)
                         {
                             set.Add(valueNode.Encode());
+                            return true;
                         }
                         break;
                     }
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmptyNode) break;
-                        node = Resolve(hashNode.Hash);
-                        GetProof(ref node, path, set);
-                        break;
+                        var new_node = Resolve(hashNode);
+                        if (new_node is null) throw new System.ArgumentNullException("Invalid hash node");
+                        node = new_node;
+                        return GetProof(ref node, path, set);
                     }
                 case FullNode fullNode:
                     {
                         set.Add(fullNode.Encode());
                         if (path.Length == 0)
                         {
-                            GetProof(ref fullNode.Children[16], path, set);
+                            return GetProof(ref fullNode.Children[16], path, set);
                         }
-                        else
-                        {
-                            GetProof(ref fullNode.Children[path[0]], path.Skip(1), set);
-                        }
-                        break;
+                        return GetProof(ref fullNode.Children[path[0]], path.Skip(1), set);
                     }
                 case ShortNode shortNode:
                     {
@@ -130,16 +128,19 @@ namespace Neo.Trie.MPT
                         if (prefix.Length == shortNode.Key.Length)
                         {
                             set.Add(shortNode.Encode());
-                            GetProof(ref shortNode.Next, path.Skip(prefix.Length), set);
+                            return GetProof(ref shortNode.Next, path.Skip(prefix.Length), set);
                         }
                         break;
                     }
             }
+            return false;
         }
 
-        public bool VerifyProof(byte[] path, HashSet<byte[]> proof)
+        public static bool VerifyProof(byte[] root, byte[] path, HashSet<byte[]> proof, out byte[] value)
         {
-            return true;
+            var store = new MPTProofStore(proof);
+            var trie = new MPTReadOnlyTrie(root, store);
+            return trie.TryGet(path, out value);
         }
     }
 }
