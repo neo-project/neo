@@ -859,16 +859,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestEncode_PubKeyToAddress()
-        {
-            var engine = GetEngine(true, true);
-            byte[] data = "024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            InteropService.Invoke(engine, InteropService.Encode.PubKeyToAddress).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetString().Should().BeEquivalentTo("NYXBPFgUM2Wa9wUdtEZV3zk1pLWamNEJB1");
-        }
-
-        [TestMethod]
         public void TestContract_CreateStandardAccount()
         {
             var engine = GetEngine(true, true);
