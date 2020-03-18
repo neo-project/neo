@@ -109,9 +109,6 @@ namespace Neo.VM
         {
             switch (obj)
             {
-                case ContractParameter parameter:
-                    sb.EmitPush(parameter);
-                    break;
                 case bool data:
                     sb.EmitPush(data);
                     break;

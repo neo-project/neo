@@ -288,12 +288,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                var parameter = new Array { 0, 1 }.ToParameter();
-
-                script.EmitSysCall(InteropService.Contract.Call, contractA.ScriptHash.ToArray(), "dummyMain", parameter);
-                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", parameter);
-                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", parameter);
-                script.EmitSysCall(InteropService.Contract.Call, contractC.ScriptHash.ToArray(), "dummyMain", parameter);
+                script.EmitAppCall(contractA.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractC.ScriptHash, "dummyMain", 0, 1);
 
                 // Execute
 
