@@ -44,14 +44,14 @@ namespace Neo.UnitTests.SmartContract
 
                 // Add return
 
-                script.EmitPush(true);
+                script.EmitPush(OpCode.RET);
 
                 // Mock contract
 
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.Contracts.Delete(scriptHash2);
-                snapshot.Contracts.Add(scriptHash2, new Neo.Ledger.ContractState()
+                snapshot.Contracts.Add(scriptHash2, new ContractState()
                 {
                     Script = script.ToArray(),
                     Manifest = TestUtils.CreateDefaultManifest(scriptHash2),
@@ -89,8 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                var parameter = new VM.Types.Array { 0, 1 }.ToParameter();
-                script.EmitSysCall(InteropService.Contract.Call, scriptHash2, "test", parameter);
+                script.EmitAppCall(scriptHash2, "test", 2, 1);
 
                 // Drop return
 
@@ -116,13 +115,13 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[1], scriptHash2, "");
+                AssertNotification(array[1], scriptHash2, 2);
                 AssertNotification(array[0], currentScriptHash, 13);
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual("", engine.Notifications[1].State.GetString());
+                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
                 Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());
@@ -140,8 +139,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                var parameter = new VM.Types.Array { 0, 1 }.ToParameter();
-                script.EmitSysCall(InteropService.Contract.Call, scriptHash2, "test", parameter);
+                script.EmitAppCall(scriptHash2, "test", 2, 1);
 
                 // Drop return
 
@@ -167,12 +165,12 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[0], scriptHash2, "");
+                AssertNotification(array[0], scriptHash2, 2);
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual("", engine.Notifications[1].State.GetString());
+                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
                 Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());

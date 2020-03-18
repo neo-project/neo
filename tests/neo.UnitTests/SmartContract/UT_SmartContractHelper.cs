@@ -1,4 +1,3 @@
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -13,7 +12,7 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public class UT_SmartContractHelper : TestKit
+    public class UT_SmartContractHelper
     {
         [TestInitialize]
         public void TestSetup()
@@ -21,16 +20,10 @@ namespace Neo.UnitTests.SmartContract
             TestBlockchain.InitializeMockNeoSystem();
         }
 
-        [TestCleanup]
-        public void Cleanup()
-        {
-            Shutdown();
-        }
-
         [TestMethod]
         public void TestIsMultiSigContract()
         {
-            Neo.Cryptography.ECC.ECPoint[] publicKeys1 = new Neo.Cryptography.ECC.ECPoint[20];
+            ECPoint[] publicKeys1 = new ECPoint[20];
             for (int i = 0; i < 20; i++)
             {
                 byte[] privateKey1 = new byte[32];

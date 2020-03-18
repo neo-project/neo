@@ -109,9 +109,6 @@ namespace Neo.VM
         {
             switch (obj)
             {
-                case null:
-                    sb.Emit(OpCode.PUSHNULL);
-                    break;
                 case ContractParameter parameter:
                     sb.EmitPush(parameter);
                     break;
@@ -156,6 +153,9 @@ namespace Neo.VM
                     break;
                 case Enum data:
                     sb.EmitPush(BigInteger.Parse(data.ToString("d")));
+                    break;
+                case null:
+                    sb.Emit(OpCode.PUSHNULL);
                     break;
                 default:
                     throw new ArgumentException();

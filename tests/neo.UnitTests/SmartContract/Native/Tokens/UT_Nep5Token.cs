@@ -90,10 +90,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         public override string ServiceName => "testNep5Token";
 
-        internal TestNep5Token()
-        {
-        }
-
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {
             return base.TotalSupply(engine, args);
