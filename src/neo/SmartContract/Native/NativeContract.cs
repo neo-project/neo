@@ -2,6 +2,7 @@
 
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
@@ -101,7 +102,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        internal long GetPrice(EvaluationStack stack)
+        internal long GetPrice(EvaluationStack stack, StoreView snapshot)
         {
             return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
         }
