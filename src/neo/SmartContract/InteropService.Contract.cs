@@ -1,4 +1,3 @@
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -146,6 +145,7 @@ namespace Neo.SmartContract
                 CallFlags callingFlags = state.CallFlags;
 
                 ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+                if (md is null) return false;
                 int rvcount = md.ReturnType == ContractParameterType.Void ? 0 : 1;
                 ExecutionContext context_new = engine.LoadScript(contract.Script, rvcount);
                 state = context_new.GetState<ExecutionContextState>();
