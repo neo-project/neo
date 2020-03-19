@@ -129,7 +129,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Check GetRegisteredValidators
 
-            var validators = NativeContract.NEO.GetRegisteredValidators(snapshot).OrderBy(u => u.PublicKey).ToArray();
+            var validators = NativeContract.NEO.GetCandidates(snapshot).OrderBy(u => u.PublicKey).ToArray();
             var check = Blockchain.StandbyValidators.Select(u => u.EncodePoint(true)).ToList();
             check.Add(point); // Add the new member
 
@@ -341,7 +341,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestGetRegisteredValidators2()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var result = NativeContract.NEO.GetRegisteredValidators(snapshot).ToArray();
+            var result = NativeContract.NEO.GetCandidates(snapshot).ToArray();
             result.Length.Should().Be(7);
             result[0].PublicKey.ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
             result[0].Votes.Should().Be(new BigInteger(0));
@@ -363,7 +363,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             {
                 Value = new ValidatorState().ToByteArray()
             });
-            NativeContract.NEO.GetRegisteredValidators(snapshot).ToArray().Length.Should().Be(8);
+            NativeContract.NEO.GetCandidates(snapshot).ToArray().Length.Should().Be(8);
         }
 
         [TestMethod]
@@ -396,18 +396,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result[4].ToArray().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
             result[5].ToArray().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
             result[6].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
-
-            StorageKey key = CreateStorageKey(15);
-            ValidatorsCountState state = new ValidatorsCountState();
-            for (int i = 0; i < 100; i++)
-            {
-                state.Votes[i] = new BigInteger(i + 1);
-            }
-            snapshot.Storages.Add(key, new StorageItem()
-            {
-                Value = state.ToByteArray()
-            });
-            NativeContract.NEO.GetValidators(snapshot).ToArray().Length.Should().Be(7);
         }
 
         [TestMethod]
@@ -490,7 +478,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             {
                 Value = new AccountState()
                 {
-                    Votes = new ECPoint[] { ECCurve.Secp256r1.G }
+                    VoteTo = ECCurve.Secp256r1.G
                 }.ToByteArray()
             });
             snapshot.Storages.Add(keyValidator, new StorageItem
@@ -500,14 +488,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret = Check_Vote(snapshot, account.ToArray(), new byte[][] { ECCurve.Secp256r1.G.ToArray() }, true);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestValidatorsCountState_FromByteArray()
-        {
-            ValidatorsCountState input = new ValidatorsCountState { Votes = new BigInteger[] { new BigInteger(1000) } };
-            ValidatorsCountState output = ValidatorsCountState.FromByteArray(input.ToByteArray());
-            output.Should().BeEquivalentTo(input);
         }
 
         [TestMethod]
@@ -539,23 +519,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 {
                     Value = new AccountState()
                     {
-                        Votes = new ECPoint[] { ECCurve.Secp256r1.G },
+                        VoteTo = ECCurve.Secp256r1.G,
                         Balance = new BigInteger(1000)
                     }.ToByteArray()
                 });
                 snapshot.Storages.Add(NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G), new StorageItem
                 {
                     Value = new ValidatorState().ToByteArray()
-                });
-
-                ValidatorsCountState state = new ValidatorsCountState();
-                for (int i = 0; i < 100; i++)
-                {
-                    state.Votes[i] = new BigInteger(i + 1);
-                }
-                snapshot.Storages.Add(CreateStorageKey(15), new StorageItem()
-                {
-                    Value = state.ToByteArray()
                 });
             }
             else
@@ -685,7 +655,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             trackable.Item.IsConstant.Should().Be(false);
         }
 
-        internal static void CheckBalance(byte[] account, DataCache<StorageKey, StorageItem>.Trackable trackable, BigInteger balance, BigInteger height, ECPoint[] votes)
+        internal static void CheckBalance(byte[] account, DataCache<StorageKey, StorageItem>.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
             var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, 16, 32);
 
@@ -694,7 +664,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             st[0].GetBigInteger().Should().Be(balance); // Balance
             st[1].GetBigInteger().Should().Be(height);  // BalanceHeight
-            (st[2].GetSpan().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)).Should().BeEquivalentTo(votes);  // Votes
+            st[2].GetSpan().AsSerializable<ECPoint>().Should().BeEquivalentTo(voteTo);  // Votes
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
             trackable.Item.IsConstant.Should().Be(false);
