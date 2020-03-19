@@ -87,6 +87,7 @@ namespace Neo.UnitTests
         {
             return new ContractState
             {
+                Id = 0x43000000,
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
                 Manifest = CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method)
             };

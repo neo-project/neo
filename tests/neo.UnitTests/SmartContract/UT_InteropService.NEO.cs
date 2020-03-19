@@ -13,6 +13,7 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
+using System;
 using System.Linq;
 using VMArray = Neo.VM.Types.Array;
 
@@ -218,6 +219,7 @@ namespace Neo.UnitTests.SmartContract
                     Signature = signature
                 }
             };
+            manifest.Features = ContractFeatures.HasStorage;
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
@@ -239,6 +241,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeTrue();
+            engine.Snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
         }
 
         [TestMethod]
