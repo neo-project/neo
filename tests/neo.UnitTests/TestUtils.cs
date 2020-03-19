@@ -17,7 +17,7 @@ namespace Neo.UnitTests
     {
         public static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-        public static ContractManifest CreateDefaultManifest(UInt160 hash)
+        public static ContractManifest CreateDefaultManifest(UInt160 hash, string method = null)
         {
             return new ContractManifest()
             {
@@ -26,7 +26,15 @@ namespace Neo.UnitTests
                 {
                     Hash = hash,
                     Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
+                    Methods = method == null ? new ContractMethodDescriptor[0] : new ContractMethodDescriptor[]
+                    {
+                        new ContractMethodDescriptor()
+                        {
+                            Name = method,
+                            Parameters = new ContractParameterDefinition[0],
+                            ReturnType = ContractParameterType.Integer
+                        }
+                    }
                 },
                 Features = ContractFeatures.NoProperty,
                 Groups = new ContractGroup[0],
@@ -75,12 +83,12 @@ namespace Neo.UnitTests
             };
         }
 
-        internal static ContractState GetContract()
+        internal static ContractState GetContract(string method = null)
         {
             return new ContractState
             {
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
-                Manifest = CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
+                Manifest = CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method)
             };
         }
 
