@@ -873,11 +873,11 @@ namespace Neo.UnitTests.SmartContract
 
             data = "064b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<FormatException>(()=>InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Invalid point encoding 6");
+            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Invalid point encoding 6");
 
             data = "024b817ef37f2fc3d4a33fe36687e599f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<FormatException>(()=>InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Incorrect length for compressed encoding");
+            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Incorrect length for compressed encoding");
 
             data = "02ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);
