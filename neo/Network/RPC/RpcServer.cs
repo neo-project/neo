@@ -327,16 +327,12 @@ namespace Neo.Network.RPC
                         UInt256 state_root = UInt256.Parse(_params[0].AsString());
                         UInt160 script_hash = UInt160.Parse(_params[1].AsString());
                         byte[] key = _params[2].AsString().HexToBytes();
-                        var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-                        foreach (var item in ((JArray)_params[3]))
-                        {
-                            proof.Add(item.AsString().HexToBytes());
-                        }
+                        byte[] proof_bytes = _params[3].AsString().HexToBytes();
                         var skey = new StorageKey{
                             ScriptHash = script_hash,
                             Key = key,
                         };
-                        return VerifyProof(state_root, skey, proof);
+                        return VerifyProof(state_root, skey, proof_bytes);
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
@@ -819,13 +815,34 @@ namespace Neo.Network.RPC
             };
             var result = Blockchain.Singleton.GetStateProof(state_root, skey, out HashSet<byte[]> proof);
             json["success"] = result;
-            json["proof"] = new JArray(proof.Select(ele => (JObject)ele.ToHexString()));
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                writer.WriteVarInt(proof.Count);
+                foreach (var item in proof)
+                {
+                    writer.WriteVarBytes(item);
+                }
+                writer.Flush();
+                json["proof"] = ms.ToArray().ToHexString();
+            }
+            
             return json;
         }
 
-        private JObject VerifyProof(UInt256 state_root, StorageKey skey, HashSet<byte[]> proof)
+        private JObject VerifyProof(UInt256 state_root, StorageKey skey, byte[] proof_bytes)
         {
             var json = new JObject();
+            var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+            using (MemoryStream ms = new MemoryStream(proof_bytes, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                var count = reader.ReadVarInt();
+                for (ulong i = 0; i < count; i++)
+                {
+                    proof.Add(reader.ReadVarBytes());
+                }
+            }
             var result = Blockchain.Singleton.VerifyProof(state_root, skey, proof, out byte[] value);
             if (!result)
             {
