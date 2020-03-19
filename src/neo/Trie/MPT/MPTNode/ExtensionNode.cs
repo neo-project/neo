@@ -5,14 +5,14 @@ using System.IO;
 
 namespace Neo.Trie.MPT
 {
-    public class ShortNode : MPTNode
+    public class ExtensionNode : MPTNode
     {
         public byte[] Key;
         public MPTNode Next;
 
-        public ShortNode()
+        public ExtensionNode()
         {
-            nType = NodeType.ShortNode;
+            nType = NodeType.ExtensionNode;
         }
 
         public override void EncodeSpecific(BinaryWriter writer)

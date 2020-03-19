@@ -4,15 +4,15 @@ using System.IO;
 
 namespace Neo.Trie.MPT
 {
-    public class FullNode : MPTNode
+    public class BranchNode : MPTNode
     {
         public const int CHILD_COUNT = 17;
         public MPTNode[] Children = new MPTNode[CHILD_COUNT];
 
 
-        public FullNode()
+        public BranchNode()
         {
-            nType = NodeType.FullNode;
+            nType = NodeType.BranchNode;
             for (int i = 0; i < Children.Length; i++)
             {
                 Children[i] = HashNode.EmptyNode();

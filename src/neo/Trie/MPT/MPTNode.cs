@@ -7,8 +7,8 @@ namespace Neo.Trie.MPT
 {
     public enum NodeType
     {
-        FullNode = 0x00,
-        ShortNode = 0x01,
+        BranchNode = 0x00,
+        ExtensionNode = 0x01,
         HashNode = 0x02,
         ValueNode = 0x03,
     }
@@ -77,15 +77,15 @@ namespace Neo.Trie.MPT
                 var nodeType = (NodeType)reader.ReadByte();
                 switch (nodeType)
                 {
-                    case NodeType.FullNode:
+                    case NodeType.BranchNode:
                         {
-                            var n = new FullNode();
+                            var n = new BranchNode();
                             n.DecodeSpecific(reader);
                             return n;
                         }
-                    case NodeType.ShortNode:
+                    case NodeType.ExtensionNode:
                         {
-                            var n = new ShortNode();
+                            var n = new ExtensionNode();
                             n.DecodeSpecific(reader);
                             return n;
                         }

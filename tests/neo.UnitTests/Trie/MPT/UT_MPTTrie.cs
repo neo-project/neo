@@ -41,12 +41,12 @@ namespace Neo.UnitTests.Trie.MPT
         [TestInitialize]
         public void TestInit()
         {
-            var r = new ShortNode();
+            var r = new ExtensionNode();
             r.Key = "0a0c".HexToBytes();
-            var b = new FullNode();
-            var l1 = new ShortNode();
+            var b = new BranchNode();
+            var l1 = new ExtensionNode();
             l1.Key = new byte[] { 0x01 };
-            var l2 = new ShortNode();
+            var l2 = new ExtensionNode();
             l2.Key = new byte[] { 0x09 };
             var v1 = new ValueNode();
             v1.Value = "abcd".HexToBytes();
@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Trie.MPT
             v3.Value = Encoding.ASCII.GetBytes("hello");
             var h1 = new HashNode();
             h1.Hash = v3.GetHash();
-            var l3 = new ShortNode();
+            var l3 = new ExtensionNode();
             l3.Next = h1;
             l3.Key = "0e".HexToBytes();
 
@@ -132,23 +132,23 @@ namespace Neo.UnitTests.Trie.MPT
         [TestMethod]
         public void TestTryDelete()
         {
-            var r1 = new ShortNode();
+            var r1 = new ExtensionNode();
             r1.Key = "0a0c0001".HexToBytes();
 
-            var r = new ShortNode();
+            var r = new ExtensionNode();
             r.Key = "0a0c".HexToBytes();
 
-            var b = new FullNode();
+            var b = new BranchNode();
             r.Next = b;
 
-            var l1 = new ShortNode();
+            var l1 = new ExtensionNode();
             l1.Key = new byte[] { 0x01 };
             var v1 = new ValueNode();
             v1.Value = "abcd".HexToBytes();
             l1.Next = v1;
             b.Children[0] = l1;
 
-            var l2 = new ShortNode();
+            var l2 = new ExtensionNode();
             l2.Key = new byte[] { 0x09 };
             var v2 = new ValueNode();
             v2.Value = "2222".HexToBytes();
@@ -213,12 +213,12 @@ namespace Neo.UnitTests.Trie.MPT
         [TestMethod]
         public void TestGetProof()
         {
-            var r = new ShortNode();
+            var r = new ExtensionNode();
             r.Key = "0a0c".HexToBytes();
-            var b = new FullNode();
-            var l1 = new ShortNode();
+            var b = new BranchNode();
+            var l1 = new ExtensionNode();
             l1.Key = new byte[] { 0x01 };
-            var l2 = new ShortNode();
+            var l2 = new ExtensionNode();
             l2.Key = new byte[] { 0x09 };
             var v1 = new ValueNode();
             v1.Value = "abcd".HexToBytes();
@@ -228,7 +228,7 @@ namespace Neo.UnitTests.Trie.MPT
             v3.Value = Encoding.ASCII.GetBytes("hello");
             var h1 = new HashNode();
             h1.Hash = v3.GetHash();
-            var l3 = new ShortNode();
+            var l3 = new ExtensionNode();
             l3.Next = h1;
             l3.Key = "0e".HexToBytes();
 
@@ -258,6 +258,7 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             result = MPTTrie.VerifyProof(rootHash, "ac01".HexToBytes(), proof, out byte[] value);
             Assert.IsTrue(result);
+            Assert.AreEqual(value.ToHexString(), "abcd");
         }
     }
 }

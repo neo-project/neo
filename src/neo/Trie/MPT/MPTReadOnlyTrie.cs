@@ -53,25 +53,25 @@ namespace Neo.Trie.MPT
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmptyNode) break;
-                        var new_node = Resolve(hashNode);
-                        if (new_node is null) throw new System.ArgumentNullException("Invalid hash node");
-                        node = new_node;
+                        var newNode = Resolve(hashNode);
+                        if (newNode is null) throw new System.ArgumentNullException("Invalid hash node");
+                        node = newNode;
                         return TryGet(ref node, path, out value);
                     }
-                case FullNode fullNode:
+                case BranchNode branchNode:
                     {
                         if (path.Length == 0)
                         {
-                            return TryGet(ref fullNode.Children[16], path, out value);
+                            return TryGet(ref branchNode.Children[16], path, out value);
                         }
-                        return TryGet(ref fullNode.Children[path[0]], path.Skip(1), out value);
+                        return TryGet(ref branchNode.Children[path[0]], path.Skip(1), out value);
                     }
-                case ShortNode shortNode:
+                case ExtensionNode extensionNode:
                     {
-                        var prefix = shortNode.Key.CommonPrefix(path);
-                        if (prefix.Length == shortNode.Key.Length)
+                        var prefix = extensionNode.Key.CommonPrefix(path);
+                        if (prefix.Length == extensionNode.Key.Length)
                         {
-                            return TryGet(ref shortNode.Next, path.Skip(prefix.Length), out value);
+                            return TryGet(ref extensionNode.Next, path.Skip(prefix.Length), out value);
                         }
                         break;
                     }
@@ -113,22 +113,22 @@ namespace Neo.Trie.MPT
                         node = new_node;
                         return GetProof(ref node, path, set);
                     }
-                case FullNode fullNode:
+                case BranchNode branchNode:
                     {
-                        set.Add(fullNode.Encode());
+                        set.Add(branchNode.Encode());
                         if (path.Length == 0)
                         {
-                            return GetProof(ref fullNode.Children[16], path, set);
+                            return GetProof(ref branchNode.Children[16], path, set);
                         }
-                        return GetProof(ref fullNode.Children[path[0]], path.Skip(1), set);
+                        return GetProof(ref branchNode.Children[path[0]], path.Skip(1), set);
                     }
-                case ShortNode shortNode:
+                case ExtensionNode extensionNode:
                     {
-                        var prefix = shortNode.Key.CommonPrefix(path);
-                        if (prefix.Length == shortNode.Key.Length)
+                        var prefix = extensionNode.Key.CommonPrefix(path);
+                        if (prefix.Length == extensionNode.Key.Length)
                         {
-                            set.Add(shortNode.Encode());
-                            return GetProof(ref shortNode.Next, path.Skip(prefix.Length), set);
+                            set.Add(extensionNode.Encode());
+                            return GetProof(ref extensionNode.Next, path.Skip(prefix.Length), set);
                         }
                         break;
                     }
