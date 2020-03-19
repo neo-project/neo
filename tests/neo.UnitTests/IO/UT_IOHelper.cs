@@ -24,6 +24,40 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
+        public void TestReadFixedBytes()
+        {
+            byte[] data = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+
+            // Less data
+
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            {
+                byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 3);
+
+                Assert.AreEqual("010203", result.ToHexString());
+                Assert.AreEqual(3, reader.BaseStream.Position);
+            }
+
+            // Same data
+
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            {
+                byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 4);
+
+                Assert.AreEqual("01020304", result.ToHexString());
+                Assert.AreEqual(4, reader.BaseStream.Position);
+            }
+
+            // More data
+
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            {
+                Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.ReadFixedBytes(reader, 5));
+                Assert.AreEqual(4, reader.BaseStream.Position);
+            }
+        }
+
+        [TestMethod]
         public void TestNullableArray()
         {
             var caseArray = new UInt160[]
