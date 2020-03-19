@@ -6,7 +6,13 @@ namespace Neo.SmartContract.Manifest
 {
     public class ContractMethodDescriptor : ContractEventDescriptor
     {
-        public int Offset { get; set; }
+        private int _offset;
+
+        public int Offset
+        {
+            get => _offset;
+            set => _offset = value >= 0 ? value : throw new FormatException();
+        }
 
         /// <summary>
         /// Returntype indicates the return type of the method. It can be one of the following values: 
