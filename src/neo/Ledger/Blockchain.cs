@@ -63,7 +63,7 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
-        private SnapshotView currentSnapshot;
+        public SnapshotView currentSnapshot;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -400,14 +400,11 @@ namespace Neo.Ledger
 
         private void OnNewTransaction(Transaction transaction, bool relay)
         {
-            RelayResultReason reason;
+            RelayResultReason reason = RelayResultReason.Succeed;
             if (ContainsTransaction(transaction.Hash))
                 reason = RelayResultReason.AlreadyExists;
             else if (!MemPool.CanTransactionFitInPool(transaction))
                 reason = RelayResultReason.OutOfMemory;
-            else
-                reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
-
             if (reason == RelayResultReason.Succeed)
             {
                 if (!MemPool.TryAdd(transaction.Hash, transaction))

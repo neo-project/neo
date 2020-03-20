@@ -135,7 +135,14 @@ namespace Neo.Network.P2P
                     break;
                 case MessageCommand.Transaction:
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived((Transaction)msg.Payload);
+                    {
+                        Transaction tx = (Transaction)msg.Payload;
+                        if (tx.Verify(Blockchain.Singleton.currentSnapshot, Blockchain.Singleton.MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != RelayResultReason.Succeed)
+                        {
+                            return;
+                        }
+                        OnInventoryReceived(tx);
+                    }
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
