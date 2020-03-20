@@ -59,6 +59,7 @@ namespace Neo.SmartContract
             [OpCode.CALL_L] = 22000,
             [OpCode.CALLA] = 22000,
             [OpCode.THROW] = 30,
+            [OpCode.ABORT] = 30,
             [OpCode.ASSERT] = 30,
             [OpCode.RET] = 0,
             [OpCode.SYSCALL] = 0,
