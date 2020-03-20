@@ -101,8 +101,8 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
             Register("Neo.Iterator.Concat", Iterator_Concat, 1);
-            Register("Neo.CrossChain.Crypto", Keccak256, 1);
-            Register("Neo.CrossChain.Crypto", Ecrecover, 1);
+            Register("Neo.CrossChain.Keccak256", Keccak256, 1);
+            Register("Neo.CrossChain.Ecrecover", Ecrecover, 1);
 
             #region Aliases
             Register("Neo.Iterator.Next", Enumerator_Next, 1);
