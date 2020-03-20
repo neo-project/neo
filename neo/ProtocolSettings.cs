@@ -89,7 +89,7 @@ namespace Neo
             }
             this.SystemFee = sys_fee;
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
-            this.StateRootEnableIndex = section.GetValue("StateRootEnableIndex", 5400000u);
+            this.StateRootEnableIndex = section.GetValue("StateRootEnableIndex", 1u);
             this.LowPriorityThreshold = Fixed8.Parse(section.GetValue("LowPriorityThreshold", "0.001"));
         }
     }
