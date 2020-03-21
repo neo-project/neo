@@ -1,4 +1,5 @@
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.VM;
 using Neo.VM.Types;
@@ -22,11 +23,30 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Find = Register("System.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
+            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 1 * GasPerByte, TriggerType.Application, CallFlags.AllowModifyStates);
 
-            private static long GetStoragePrice(EvaluationStack stack)
+            private static long GetStoragePrice(EvaluationStack stack, StoreView snapshot)
             {
-                return (stack.Peek(1).GetByteLength() + stack.Peek(2).GetByteLength()) * GasPerByte;
+                var key = stack.Peek(1);
+                var value = stack.Peek(2);
+                var newDataSize = value.IsNull ? 0 : value.GetByteLength();
+                if (!(stack.Peek() is InteropInterface _interface))
+                    throw new InvalidOperationException();
+
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                StorageKey skey = new StorageKey
+                {
+                    Id = context.Id,
+                    Key = key.GetSpan().ToArray()
+                };
+                var skeyValue = snapshot.Storages.TryGet(skey);
+                if (skeyValue is null)
+                    newDataSize += key.GetByteLength();
+                else if (newDataSize <= skeyValue.Value.Length)
+                    newDataSize = 1;
+                else
+                    newDataSize -= skeyValue.Value.Length;
+                return newDataSize * GasPerByte;
             }
 
             private static bool PutExInternal(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
@@ -43,17 +63,10 @@ namespace Neo.SmartContract
 
                 if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
 
-                if (value.Length == 0 && !flags.HasFlag(StorageFlags.Constant))
-                {
-                    // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)
-                    engine.Snapshot.Storages.Delete(skey);
-                }
-                else
-                {
-                    StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
-                    item.Value = value;
-                    item.IsConstant = flags.HasFlag(StorageFlags.Constant);
-                }
+                StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
+                item.Value = value;
+                item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+
                 return true;
             }
 

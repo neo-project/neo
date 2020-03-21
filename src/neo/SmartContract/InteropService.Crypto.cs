@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -20,7 +21,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor ECDsaSecp256r1CheckMultiSig = Register("Neo.Crypto.ECDsa.Secp256r1.CheckMultiSig", Crypto_ECDsaSecp256r1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor ECDsaSecp256k1CheckMultiSig = Register("Neo.Crypto.ECDsa.Secp256k1.CheckMultiSig", Crypto_ECDsaSecp256k1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
 
-            private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack)
+            private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack, StoreView snapshot)
             {
                 if (stack.Count < 2) return 0;
                 var item = stack.Peek(1);
