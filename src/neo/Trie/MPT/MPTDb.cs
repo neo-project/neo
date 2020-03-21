@@ -15,9 +15,7 @@ namespace Neo.Trie.MPT
         public void Put(MPTNode node)
         {
             if (node is HashNode hn)
-            {
                 throw new System.InvalidOperationException("Means nothing to store HashNode");
-            }
             store.Put(node.GetHash(), node.Encode());
         }
     }
