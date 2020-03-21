@@ -403,54 +403,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestBlockchain_GetBlock()
-        {
-            var engine = GetEngine(true, true);
-
-            engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
-            InteropService.Invoke(engine, InteropService.Blockchain.GetBlock).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().Should().Be(StackItem.Null);
-
-            byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.CurrentContext.EvaluationStack.Push(data1);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetBlock).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
-
-            byte[] data2 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-            engine.CurrentContext.EvaluationStack.Push(data2);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetBlock).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestBlockchain_GetTransaction()
-        {
-            var engine = GetEngine(true, true);
-            byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.CurrentContext.EvaluationStack.Push(data1);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetTransaction).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestBlockchain_GetTransactionHeight()
-        {
-            var engine = GetEngine(true, true);
-            byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.CurrentContext.EvaluationStack.Push(data1);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetTransactionHeight).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(-1);
-        }
-
-        [TestMethod]
         public void TestBlockchain_GetContract()
         {
             var engine = GetEngine(true, true);
