@@ -6,7 +6,7 @@ namespace Neo.Trie.MPT
     public class MPTTrie : MPTReadOnlyTrie, ITrie
     {
         private MPTDb db;
-        
+
         public MPTTrie(byte[] root, IKVStore store) : base(root, store)
         {
             this.db = new MPTDb(store);
