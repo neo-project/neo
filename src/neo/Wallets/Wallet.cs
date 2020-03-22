@@ -255,7 +255,7 @@ namespace Neo.Wallets
                             foreach (var (account, value) in balances_used)
                             {
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
-                                sb.Emit(OpCode.THROWIFNOT);
+                                sb.Emit(OpCode.ASSERT);
                             }
                         }
                         if (assetId.Equals(NativeContract.GAS.Hash))
