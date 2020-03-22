@@ -1,5 +1,6 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -43,7 +44,7 @@ namespace Neo.SmartContract
                     return false;
                 }
                 Block block = hash != null ? engine.Snapshot.GetBlock(hash) : null;
-                if (block?.Index <= engine.Snapshot.Height - MaxTraceableBlocks) block = null;
+                if (block != null && !IsTraceableBlock(engine.Snapshot, block.Index)) block = null;
                 engine.Push(block?.ToStackItem(engine.ReferenceCounter) ?? StackItem.Null);
                 return true;
             }
@@ -52,7 +53,7 @@ namespace Neo.SmartContract
             {
                 if (!engine.TryPop(out ReadOnlySpan<byte> hash)) return false;
                 TransactionState state = engine.Snapshot.Transactions.TryGet(new UInt256(hash));
-                if (state?.BlockIndex <= engine.Snapshot.Height - MaxTraceableBlocks) state = null;
+                if (state != null && !IsTraceableBlock(engine.Snapshot, state.BlockIndex)) state = null;
                 engine.Push(state?.Transaction.ToStackItem(engine.ReferenceCounter) ?? StackItem.Null);
                 return true;
             }
@@ -61,7 +62,7 @@ namespace Neo.SmartContract
             {
                 if (!engine.TryPop(out ReadOnlySpan<byte> hash)) return false;
                 TransactionState state = engine.Snapshot.Transactions.TryGet(new UInt256(hash));
-                if (state?.BlockIndex <= engine.Snapshot.Height - MaxTraceableBlocks) state = null;
+                if (state != null && !IsTraceableBlock(engine.Snapshot, state.BlockIndex)) state = null;
                 engine.Push(state?.BlockIndex ?? BigInteger.MinusOne);
                 return true;
             }
@@ -83,7 +84,7 @@ namespace Neo.SmartContract
                     return false;
                 }
                 TrimmedBlock block = hash != null ? engine.Snapshot.Blocks.TryGet(hash) : null;
-                if (block?.Index <= engine.Snapshot.Height - MaxTraceableBlocks) block = null;
+                if (block != null && !IsTraceableBlock(engine.Snapshot, block.Index)) block = null;
                 if (block is null)
                 {
                     engine.Push(StackItem.Null);
@@ -107,6 +108,12 @@ namespace Neo.SmartContract
                 else
                     engine.CurrentContext.EvaluationStack.Push(contract.ToStackItem(engine.ReferenceCounter));
                 return true;
+            }
+
+            private static bool IsTraceableBlock(StoreView snapshot, uint index)
+            {
+                if (index > snapshot.Height) return false;
+                return index + MaxTraceableBlocks > snapshot.Height;
             }
         }
     }
