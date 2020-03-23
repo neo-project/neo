@@ -96,7 +96,7 @@ namespace Neo.Wallets.NEP6
             }
             else
             {
-                if(!VerifyPassword(password_old))
+                if (!VerifyPassword(password_old))
                 {
                     return false;
                 }
