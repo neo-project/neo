@@ -167,6 +167,7 @@ namespace Neo.UnitTests.Wallets.SQLite
         {
             wallet.ChangePassword("123455", "654321").Should().BeFalse();
             wallet.ChangePassword("123456", "654321").Should().BeTrue();
+            wallet.ChangePassword("654321", "123456").Should().BeTrue();
         }
 
         [TestMethod]
