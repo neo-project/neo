@@ -174,7 +174,7 @@ namespace Neo.Wallets.SQLite
             byte[] passwordKey = password_new.ToAesKey();
             try
             {
-                SaveStoredData("PasswordHash", passwordKey.Sha256());
+                SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 return true;
             }
