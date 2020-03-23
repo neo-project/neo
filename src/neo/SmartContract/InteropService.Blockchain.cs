@@ -12,7 +12,7 @@ namespace Neo.SmartContract
     {
         public static class Blockchain
         {
-            private const uint MaxTraceableBlocks = Transaction.MaxValidUntilBlockIncrement;
+            public const uint MaxTraceableBlocks = Transaction.MaxValidUntilBlockIncrement;
 
             public static readonly InteropDescriptor GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application, CallFlags.None);
             public static readonly InteropDescriptor GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000, TriggerType.Application, CallFlags.None);
