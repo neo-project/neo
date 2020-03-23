@@ -68,12 +68,26 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Peek().IsNull);
 
-                // With block
+                // Not traceable block
+
+                var height = snapshot.BlockHashIndex.GetAndChange();
+                height.Index = block.Index + Transaction.MaxValidUntilBlockIncrement;
 
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
                 blocks.Add(block.Hash, block.Trim());
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
+
+                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+
+                // With block
+
+                height.Index = block.Index;
 
                 script.EmitSysCall(InteropService.Json.Serialize);
                 engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
@@ -87,6 +101,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // Clean
+
                 blocks.Delete(block.Hash);
                 txs.Delete(tx.Hash);
             }
