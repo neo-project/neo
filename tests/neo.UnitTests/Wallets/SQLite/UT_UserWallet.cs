@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using Neo.Wallets.SQLite;
 using System;
 using System.IO;
@@ -27,7 +28,7 @@ namespace Neo.UnitTests.Wallets.SQLite
         public void Setup()
         {
             path = GetRandomPath();
-            wallet = UserWallet.Create(path, "123456");
+            wallet = UserWallet.Create(path, "123456", new ScryptParameters(0, 0, 0));
         }
 
         [TestCleanup]
