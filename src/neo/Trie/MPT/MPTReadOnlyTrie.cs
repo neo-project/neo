@@ -54,7 +54,7 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode) break;
                         var newNode = Resolve(hashNode);
-                        if (newNode is null) throw new System.ArgumentNullException("Invalid hash node");
+                        if (newNode is null) break;
                         node = newNode;
                         return TryGet(ref node, path, out value);
                     }
@@ -109,7 +109,7 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode) break;
                         var new_node = Resolve(hashNode);
-                        if (new_node is null) throw new System.ArgumentNullException("Invalid hash node");
+                        if (new_node is null) break;
                         node = new_node;
                         return GetProof(ref node, path, set);
                     }

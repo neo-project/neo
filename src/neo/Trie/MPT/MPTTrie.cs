@@ -119,11 +119,11 @@ namespace Neo.Trie.MPT
                             return true;
                         }
                         var new_node = Resolve(hashNode);
-                        if (new_node is null) throw new System.ArgumentNullException("Invalid hash node");
+                        if (new_node is null) return false;
                         return Put(ref node, path, val);
                     }
                 default:
-                    throw new System.InvalidOperationException("Invalid node type.");
+                    return false;
             }
         }
 
@@ -203,7 +203,7 @@ namespace Neo.Trie.MPT
                         if (lastChild is HashNode hashNode)
                         {
                             lastChild = Resolve(hashNode);
-                            if (lastChild is null) throw new System.ArgumentNullException("Invalid hash node");
+                            if (lastChild is null) return false;
                         }
                         if (lastChild is ExtensionNode exNode)
                         {
@@ -229,7 +229,7 @@ namespace Neo.Trie.MPT
                             return true;
                         }
                         var new_node = Resolve(hashNode);
-                        if (new_node is null) throw new System.ArgumentNullException("Invalid hash node");
+                        if (new_node is null) return false;
                         node = new_node;
                         return TryDelete(ref node, path);
                     }
