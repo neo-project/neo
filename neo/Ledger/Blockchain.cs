@@ -248,9 +248,9 @@ namespace Neo.Ledger
             return readOnlyTrie.GetProof(skey.ToArray(), out proof);
         }
 
-        public bool VerifyProof(UInt256 root, StorageKey skey, HashSet<byte[]> proof, out byte[] value)
+        public bool VerifyProof(UInt256 root, byte[] key, HashSet<byte[]> proof, out byte[] value)
         {
-            var result = MPTTrie.VerifyProof(root.ToArray(), skey.ToArray(), proof, out value);
+            var result = MPTTrie.VerifyProof(root.ToArray(), key, proof, out value);
             if (result) value = value.AsSerializable<StorageItem>().Value;
             return result;
         }

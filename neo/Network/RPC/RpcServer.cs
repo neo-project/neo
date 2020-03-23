@@ -829,19 +829,18 @@ namespace Neo.Network.RPC
         {
             var json = new JObject();
             var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-            StorageKey skey;
+            byte[] key;
             using (MemoryStream ms = new MemoryStream(proof_bytes, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                var key = reader.ReadVarBytes();
-                skey = key.AsSerializable<StorageKey>();
+                key = reader.ReadVarBytes();
                 var count = reader.ReadVarInt();
                 for (ulong i = 0; i < count; i++)
                 {
                     proof.Add(reader.ReadVarBytes());
                 }
             }
-            var result = Blockchain.Singleton.VerifyProof(state_root, skey, proof, out byte[] value);
+            var result = Blockchain.Singleton.VerifyProof(state_root, key, proof, out byte[] value);
             if (!result)
             {
                 json = "invalid";
