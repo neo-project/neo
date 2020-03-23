@@ -176,8 +176,8 @@ namespace Neo.SmartContract
         /// <returns></returns>
         private bool Ecrecover(ExecutionEngine engine)
         {          
-            var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().ToArray());
+            var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().ToArray());
             bool v = engine.CurrentContext.EvaluationStack.Pop().GetBoolean();
             byte[] messageHash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Keccak256();
 
