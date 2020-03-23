@@ -71,6 +71,18 @@ namespace Neo.UnitTests.Wallets.NEP6
         }
 
         [TestMethod]
+        public void TestChangePassword()
+        {
+            uut.Unlock("123");
+            uut.CreateAccount(keyPair.PrivateKey);
+            uut.ChangePassword("456", "123").Should().BeFalse();
+            uut.ChangePassword("123", "456").Should().BeTrue();
+            uut.VerifyPassword("456").Should().BeTrue();
+            uut.ChangePassword("456", "123").Should().BeTrue();
+            uut.Lock();
+        }
+
+        [TestMethod]
         public void TestConstructorWithPathAndName()
         {
             NEP6Wallet wallet = new NEP6Wallet(wPath);

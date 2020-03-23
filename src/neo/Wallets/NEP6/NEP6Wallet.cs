@@ -300,5 +300,21 @@ namespace Neo.Wallets.NEP6
                 }
             }
         }
+
+        public bool ChangePassword(string password_old, string password_new)
+        {
+            lock (accounts)
+            {
+                foreach (NEP6Account account in accounts.Values)
+                {
+                    if (!account.ChangePassword(password_old, password_new)) return false;
+                }
+            }
+            if (password != null)
+            {
+                password = password_new;
+            }
+            return true;
+        }
     }
 }

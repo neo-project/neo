@@ -6,7 +6,7 @@ namespace Neo.Wallets.NEP6
     internal class NEP6Account : WalletAccount
     {
         private readonly NEP6Wallet wallet;
-        private readonly string nep2key;
+        private string nep2key;
         private KeyPair key;
         public JObject Extra;
 
@@ -82,6 +82,31 @@ namespace Neo.Wallets.NEP6
             {
                 return false;
             }
+        }
+
+        public bool ChangePassword(string password_old, string password_new)
+        {
+            if (WatchOnly) return true;
+            if (nep2key == null)
+            {
+                if (key == null)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if(!VerifyPassword(password_old))
+                {
+                    return false;
+                }
+                else if (key == null)
+                {
+                    key = wallet.DecryptKey(nep2key);
+                }
+            }
+            nep2key = key.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
+            return true;
         }
     }
 }

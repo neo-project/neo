@@ -36,6 +36,20 @@ namespace Neo.UnitTests.Wallets.NEP6
         }
 
         [TestMethod]
+        public void TestChangePassword()
+        {
+            _account = new NEP6Account(_wallet, _hash, _nep2);
+            _account.ChangePassword("b", "Satoshi").Should().BeTrue();
+            _account.Contract = new Contract();
+            _wallet.Unlock("Satoshi");
+            _account.ChangePassword("b", "Satoshi").Should().BeFalse();
+            _account.ChangePassword("Satoshi", "b").Should().BeTrue();
+            _account.VerifyPassword("b").Should().BeTrue();
+            _account.ChangePassword("b", "Satoshi").Should().BeTrue();
+            _wallet.Lock();
+        }
+
+        [TestMethod]
         public void TestConstructorWithNep2Key()
         {
             _account.ScriptHash.Should().Be(_hash);
