@@ -7,6 +7,7 @@ namespace Neo.Trie.MPT
     public class MPTProofStore : IKVReadOnlyStore
     {
         private Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+
         public MPTProofStore(HashSet<byte[]> proof)
         {
             foreach (byte[] data in proof)
