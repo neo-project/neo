@@ -17,7 +17,7 @@ namespace Neo.Network.P2P.Payloads
             Usage = (TransactionAttributeUsage)reader.ReadByte();
             if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
                 throw new FormatException();
-            Data = reader.ReadVarBytes(252);
+            Data = reader.ReadVarBytes(ushort.MaxValue);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
