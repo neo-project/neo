@@ -286,6 +286,13 @@ namespace Neo.VM
                         Type = ContractParameterType.Any
                     };
                     break;
+                case Buffer buffer:
+                    parameter = new ContractParameter
+                    {
+                        Type = ContractParameterType.ByteArray,
+                        Value = buffer.GetSpan().ToArray()
+                    };
+                    break;
                 default:
                     throw new ArgumentException($"StackItemType({item.Type}) is not supported to ContractParameter.");
             }
