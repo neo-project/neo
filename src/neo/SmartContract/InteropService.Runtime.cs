@@ -170,6 +170,7 @@ namespace Neo.SmartContract
 
             private static bool Runtime_GasLeft(ApplicationEngine engine)
             {
+                if (engine.TestMode) return false;
                 engine.CurrentContext.EvaluationStack.Push(engine.GasAmount - engine.GasConsumed);
                 return true;
             }
