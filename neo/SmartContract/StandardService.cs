@@ -394,18 +394,13 @@ namespace Neo.SmartContract
         protected bool Merkle_Prove(ExecutionEngine engine)
         {
             byte[] path = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] position = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             byte[] root_bytes = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] toMerkleValue = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (root_bytes.Length != 32) return false;
             var root = new UInt256(root_bytes);
-            var value = MerkleTree.MerkleProve(path, root);
-            if (value is null)
-            {
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
-            }
-            else
-            {
-                engine.CurrentContext.EvaluationStack.Push(value);
-            }
+            bool value = MerkleTree.MerkleProve(path, position, root, toMerkleValue);
+            engine.CurrentContext.EvaluationStack.Push(value);
             return true;
         }
 

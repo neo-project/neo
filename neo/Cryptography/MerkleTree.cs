@@ -120,17 +120,16 @@ namespace Neo.Cryptography
             }
         }
 
-        public static byte[] MerkleProve(byte[] path, UInt256 root)
+        public static bool MerkleProve(byte[] path, byte[] position, UInt256 root, byte[] toMerkleValueHash)
         {
             using (MemoryStream ms = new MemoryStream(path, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                var value = reader.ReadVarBytes();
-                var hash = HashLeaf(value);
+                var hash = HashLeaf(toMerkleValueHash);
                 int size = (int)(ms.Length - ms.Position) / 32;
                 for (int i = 0 ; i < size ; i++ )
                 {
-                    var f = reader.ReadByte();
+                    var f = position[i];
                     byte[] v = reader.ReadBytes(32);
                     if (f == 0)
                         hash = HashChildren(v, hash);
@@ -139,9 +138,9 @@ namespace Neo.Cryptography
                 }
                 if(!ByteArrayEquals(hash, root.ToArray()))
                 {
-                    return null;
+                    return false;
                 }                   
-                return value;
+                return true;
             }
         }
 
