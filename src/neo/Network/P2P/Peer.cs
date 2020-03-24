@@ -41,7 +41,6 @@ namespace Neo.Network.P2P
         /// <summary>
         /// A dictionary that stores the connected nodes.
         /// </summary>
-
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
         /// <summary>
         /// An ImmutableHashSet that stores the Peers received: 1) from other nodes or 2) from default file.
