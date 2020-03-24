@@ -42,56 +42,58 @@ namespace Neo.Wallets.SQLite
         }
 
         /// <summary>
-        /// Constructor
+        /// Open an existing wallet
         /// </summary>
         /// <param name="path">Path</param>
         /// <param name="passwordKey">Password Key</param>
-        /// <param name="create">True for create the wallet</param>
-        /// <param name="scrypt">Scrypt initialization value (only if create=True)</param>
-        private UserWallet(string path, byte[] passwordKey, bool create, ScryptParameters scrypt = null)
+        private UserWallet(string path, byte[] passwordKey)
         {
             this.path = path;
+            this.salt = LoadStoredData("Salt");
+            byte[] passwordHash = LoadStoredData("PasswordHash");
+            if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
+                throw new CryptographicException();
+            this.iv = LoadStoredData("IV");
+            this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
+            this.scrypt = new ScryptParameters
+                (
+                BitConverter.ToInt32(LoadStoredData("ScryptN")),
+                BitConverter.ToInt32(LoadStoredData("ScryptR")),
+                BitConverter.ToInt32(LoadStoredData("ScryptP"))
+                );
+            this.accounts = LoadAccounts();
+        }
 
-            if (create)
+        /// <summary>
+        /// Create a new wallet
+        /// </summary>
+        /// <param name="path">Path</param>
+        /// <param name="passwordKey">Password Key</param>
+        /// <param name="scrypt">Scrypt initialization value</param>
+        private UserWallet(string path, byte[] passwordKey, ScryptParameters scrypt)
+        {
+            this.path = path;
+            this.iv = new byte[16];
+            this.salt = new byte[20];
+            this.masterKey = new byte[32];
+            this.scrypt = scrypt;
+            this.accounts = new Dictionary<UInt160, UserWalletAccount>();
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
-                this.iv = new byte[16];
-                this.salt = new byte[20];
-                this.masterKey = new byte[32];
-                this.scrypt = scrypt ?? ScryptParameters.Default;
-                this.accounts = new Dictionary<UInt160, UserWalletAccount>();
-                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-                {
-                    rng.GetBytes(iv);
-                    rng.GetBytes(salt);
-                    rng.GetBytes(masterKey);
-                }
-                Version version = Assembly.GetExecutingAssembly().GetName().Version;
-                BuildDatabase();
-                SaveStoredData("IV", iv);
-                SaveStoredData("Salt", salt);
-                SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
-                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
-                SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
-                SaveStoredData("ScryptN", BitConverter.GetBytes(this.scrypt.N));
-                SaveStoredData("ScryptR", BitConverter.GetBytes(this.scrypt.R));
-                SaveStoredData("ScryptP", BitConverter.GetBytes(this.scrypt.P));
+                rng.GetBytes(iv);
+                rng.GetBytes(salt);
+                rng.GetBytes(masterKey);
             }
-            else
-            {
-                this.salt = LoadStoredData("Salt");
-                byte[] passwordHash = LoadStoredData("PasswordHash");
-                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
-                    throw new CryptographicException();
-                this.iv = LoadStoredData("IV");
-                this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
-                this.scrypt = new ScryptParameters
-                    (
-                    BitConverter.ToInt32(LoadStoredData("ScryptN")),
-                    BitConverter.ToInt32(LoadStoredData("ScryptR")),
-                    BitConverter.ToInt32(LoadStoredData("ScryptP"))
-                    );
-                this.accounts = LoadAccounts();
-            }
+            Version version = Assembly.GetExecutingAssembly().GetName().Version;
+            BuildDatabase();
+            SaveStoredData("IV", iv);
+            SaveStoredData("Salt", salt);
+            SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
+            SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+            SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
+            SaveStoredData("ScryptN", BitConverter.GetBytes(this.scrypt.N));
+            SaveStoredData("ScryptR", BitConverter.GetBytes(this.scrypt.R));
+            SaveStoredData("ScryptP", BitConverter.GetBytes(this.scrypt.P));
         }
 
         private void AddAccount(UserWalletAccount account)
@@ -174,7 +176,7 @@ namespace Neo.Wallets.SQLite
             byte[] passwordKey = password_new.ToAesKey();
             try
             {
-                SaveStoredData("PasswordHash", passwordKey.Sha256());
+                SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 return true;
             }
@@ -192,14 +194,14 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public static UserWallet Create(string path, string password)
+        public static UserWallet Create(string path, string password, ScryptParameters scrypt = null)
         {
-            return new UserWallet(path, password.ToAesKey(), true);
+            return new UserWallet(path, password.ToAesKey(), scrypt ?? ScryptParameters.Default);
         }
 
-        public static UserWallet Create(string path, SecureString password)
+        public static UserWallet Create(string path, SecureString password, ScryptParameters scrypt = null)
         {
-            return new UserWallet(path, password.ToAesKey(), true);
+            return new UserWallet(path, password.ToAesKey(), scrypt ?? ScryptParameters.Default);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -326,12 +328,12 @@ namespace Neo.Wallets.SQLite
 
         public static UserWallet Open(string path, string password)
         {
-            return new UserWallet(path, password.ToAesKey(), false);
+            return new UserWallet(path, password.ToAesKey());
         }
 
         public static UserWallet Open(string path, SecureString password)
         {
-            return new UserWallet(path, password.ToAesKey(), false);
+            return new UserWallet(path, password.ToAesKey());
         }
 
         private void SaveStoredData(string name, byte[] value)
