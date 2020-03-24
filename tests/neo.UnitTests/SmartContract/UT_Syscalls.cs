@@ -307,8 +307,13 @@ namespace Neo.UnitTests.SmartContract
 
                 var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                Assert.AreEqual(0, engine.ResultStack.Count);
+
+                // Check the results
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
+                Assert.AreEqual(-1, engine.ResultStack.Pop().GetBigInteger());
             }
         }
 
