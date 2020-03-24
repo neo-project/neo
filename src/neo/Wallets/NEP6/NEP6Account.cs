@@ -96,13 +96,13 @@ namespace Neo.Wallets.NEP6
             }
             else
             {
-                if (!VerifyPassword(password_old))
+                try
+                {
+                    key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password_old, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
+                }
+                catch (FormatException)
                 {
                     return false;
-                }
-                else if (key == null)
-                {
-                    key = wallet.DecryptKey(nep2key);
                 }
             }
             nep2key = key.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
