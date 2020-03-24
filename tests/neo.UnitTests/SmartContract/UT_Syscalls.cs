@@ -296,6 +296,20 @@ namespace Neo.UnitTests.SmartContract
                     new int[] { 99_999_570, 99_999_140, 99_998_650 }
                     );
             }
+
+            // Check test mode
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitSysCall(InteropService.Runtime.GasLeft);
+
+                // Execute
+
+                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(0, engine.ResultStack.Count);
+            }
         }
 
         [TestMethod]
