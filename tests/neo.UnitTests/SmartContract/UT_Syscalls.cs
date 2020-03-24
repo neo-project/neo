@@ -267,6 +267,38 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void System_Runtime_GasLeft()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            using (var script = new ScriptBuilder())
+            {
+                script.Emit(OpCode.NOP);
+                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.Emit(OpCode.NOP);
+                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.Emit(OpCode.NOP);
+                script.Emit(OpCode.NOP);
+                script.Emit(OpCode.NOP);
+                script.EmitSysCall(InteropService.Runtime.GasLeft);
+
+                // Execute
+
+                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 100_000_000, false);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+
+                // Check the results
+
+                CollectionAssert.AreEqual
+                    (
+                    engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
+                    new int[] { 99_999_570, 99_999_140, 99_998_650 }
+                    );
+            }
+        }
+
+        [TestMethod]
         public void System_Runtime_GetInvocationCounter()
         {
             ContractState contractA, contractB, contractC;
