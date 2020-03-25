@@ -143,21 +143,11 @@ namespace Neo.Network.P2P
             var version = remoteNode.Version;
             var remote = remoteNode.Remote;
 
-            if (remote is null)
-            {
-                return false;
-            }
-            if (version.Nonce == Nonce)
-            {
-                if (LocalAddresses.Count < MaxConnections)
-                {
-                    LocalAddresses.Add(remote.Address);
-                }
-                return true;
-            }
+            if (remote is null) return false;
+            if (version.Nonce == Nonce) return true;
+
             foreach (var pair in RemoteNodes)
             {
-                var remoteActorRef = pair.Key;
                 var otherNode = pair.Value;
                 if (otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
                 {// filter duplicate connections
