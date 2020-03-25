@@ -137,7 +137,7 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                     {
                         Transaction tx = (Transaction)msg.Payload;
-                        if (tx.Verify(Blockchain.Singleton.currentSnapshot, Blockchain.Singleton.MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != RelayResultReason.Succeed)
+                        if (tx.Verify(Blockchain.Singleton.currentSnapshot, Blockchain.Singleton.MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
                         {
                             return;
                         }
