@@ -36,7 +36,7 @@ namespace Neo.Network.P2P
         private ICancelable timer;
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
 
-        protected static readonly HashSet<IPAddress> LocalAddresses = new HashSet<IPAddress>();
+        private static readonly HashSet<IPAddress> localAddresses = new HashSet<IPAddress>();
         protected readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
         /// <summary>
         /// A dictionary that stores the connected nodes.
@@ -73,7 +73,7 @@ namespace Neo.Network.P2P
 
         static Peer()
         {
-            LocalAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.Unmap()));
+            localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.Unmap()));
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace Neo.Network.P2P
             {
                 // Do not select peers to be added that are already on the ConnectedPeers
                 // If the address is the same, the ListenerTcpPort should be different
-                peers = peers.Where(p => (p.Port != ListenerTcpPort || !LocalAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
+                peers = peers.Where(p => (p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
                 ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
         }
@@ -96,7 +96,7 @@ namespace Neo.Network.P2P
             endPoint = endPoint.Unmap();
 
             // If the address is the same, the ListenerTcpPort should be different, otherwise, return
-            if (endPoint.Port == ListenerTcpPort && LocalAddresses.Contains(endPoint.Address)) return;
+            if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
@@ -170,12 +170,12 @@ namespace Neo.Network.P2P
             // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
             if ((ListenerTcpPort > 0 || ListenerWsPort > 0)
-                && LocalAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
+                && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
                 try
                 {
-                    LocalAddresses.Add(UPnP.GetExternalIP());
+                    localAddresses.Add(UPnP.GetExternalIP());
 
                     if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
                     if (ListenerWsPort > 0) UPnP.ForwardPort(ListenerWsPort, ProtocolType.Tcp, "NEO WebSocket");
