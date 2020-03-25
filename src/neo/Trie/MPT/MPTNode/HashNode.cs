@@ -14,9 +14,8 @@ namespace Neo.Trie.MPT
             nType = NodeType.HashNode;
         }
 
-        public HashNode(byte[] hash)
+        public HashNode(byte[] hash) : this()
         {
-            nType = NodeType.HashNode;
             Hash = (byte[])hash.Clone();
         }
 
