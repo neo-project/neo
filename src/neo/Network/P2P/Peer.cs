@@ -208,16 +208,9 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="remote">The remote endpoint of TCP connection.</param>
         /// <param name="local">The local endpoint of TCP connection.</param>
-        private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
+        protected virtual void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
-            if (!PreTcpConnectedCheck(remote, local, out Tcp.Message errorMsg))
-            {
-                Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
-                Sender.Ask(errorMsg).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
-                return;
-            }
-
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             ConnectedAddresses[remote.Address] = count + 1;
             IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
@@ -225,8 +218,6 @@ namespace Neo.Network.P2P
             Sender.Tell(new Tcp.Register(connection));
             ConnectedPeers.TryAdd(connection, remote);
         }
-
-        protected abstract bool PreTcpConnectedCheck(IPEndPoint remote, IPEndPoint local, out Tcp.Message errorMsg);
 
         /// <summary>
         /// Will be triggered when a Tcp.CommandFailed message is received.
@@ -272,22 +263,12 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
+        protected virtual void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
         {
-            if (!PreWsConnectedCheck(remote, local, out ArraySegment<byte> errorMsg))
-            {
-                ws.SendAsync(errorMsg, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
-                    failure: ex => new Tcp.ErrorClosed(ex.Message));
-                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
-                return;
-            }
-
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             ConnectedAddresses[remote.Address] = count + 1;
             Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
         }
-
-        protected abstract bool PreWsConnectedCheck(IPEndPoint remote, IPEndPoint local, out ArraySegment<byte> errorMsg);
 
         protected override void PostStop()
         {

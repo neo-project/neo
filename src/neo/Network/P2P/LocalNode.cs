@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -262,49 +263,46 @@ namespace Neo.Network.P2P
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
-        /// <summary>
-        /// TCP connection establishment pre-check includes MaxConnections, MaxConnectionsPerAddress. If the check fails, it'll return false and error messages.
-        /// </summary>
-        /// <param name="remote"></param>
-        /// <param name="local"></param>
-        /// <param name="errorMsg"></param>
-        protected override bool PreTcpConnectedCheck(IPEndPoint remote, IPEndPoint local, out Tcp.Message errorMsg)
+        protected override void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
+            // Pre-check includes MaxConnections, MaxConnectionsPerAddress. If the check fails, it'll seed the error message.
+            Tcp.Message errorMsg = null;
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
                 Message reason = CreateDisconnectMessage(DisconnectReason.MaxConnectionReached);
                 errorMsg = Tcp.Write.Create(ByteString.FromBytes(reason.ToArray()));
-                return false;
             }
-
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
                 Message reason = CreateDisconnectMessage(DisconnectReason.MaxConnectionPerAddressReached);
                 errorMsg = Tcp.Write.Create(ByteString.FromBytes(reason.ToArray()));
-                return false;
             }
-            errorMsg = null;
-            return true;
+            if (errorMsg != null)
+            {
+                Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
+                Sender.Ask(errorMsg).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
+                return;
+            }
+
+            base.OnTcpConnected(remote, local);
         }
 
-        /// <summary>
-        /// Websocket connection establishment pre-check includes MaxConnectionsPerAddress. If the check fails, it'll return false and error messages.
-        /// </summary>
-        /// <param name="remote"></param>
-        /// <param name="local"></param>
-        /// <param name="errorMsg"></param>
-        protected override bool PreWsConnectedCheck(IPEndPoint remote, IPEndPoint local, out ArraySegment<byte> errorMsg)
+        protected override void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
         {
+            // Pre-check includes MaxConnectionsPerAddress. If the check fails, it'll send the error message.
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
                 var disconnectMessage = CreateDisconnectMessage(DisconnectReason.MaxConnectionPerAddressReached);
-                errorMsg = new ArraySegment<byte>(disconnectMessage.ToArray());
-                return false;
+                var errorMsg = new ArraySegment<byte>(disconnectMessage.ToArray());
+                ws.SendAsync(errorMsg, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    failure: ex => new Tcp.ErrorClosed(ex.Message));
+                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+                return;
             }
-            errorMsg = null;
-            return true;
+
+            base.OnWsConnected(ws, remote, local);
         }
 
         /// <summary>
