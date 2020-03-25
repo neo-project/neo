@@ -103,7 +103,7 @@ namespace Neo.Network.P2P.Payloads
             json["index"] = Index;
             json["prehash"] = PreHash.ToString();
             json["stateroot"] = StateRoot_.ToString();
-            json["witness"] = Witness is null ? new JArray() : new JArray(Witness.ToJson());
+            json["witness"] = Witness is null ? new JObject() : Witness.ToJson();
             return json;
         }
     }
