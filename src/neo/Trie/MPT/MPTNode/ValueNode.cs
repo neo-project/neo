@@ -14,9 +14,8 @@ namespace Neo.Trie.MPT
             nType = NodeType.ValueNode;
         }
 
-        public ValueNode(byte[] val)
+        public ValueNode(byte[] val) : this()
         {
-            nType = NodeType.ValueNode;
             Value = (byte[])val.Clone();
         }
 
