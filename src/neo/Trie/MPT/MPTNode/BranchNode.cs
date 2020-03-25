@@ -1,4 +1,3 @@
-using Neo.Cryptography;
 using Neo.IO.Json;
 using System.IO;
 
@@ -8,7 +7,6 @@ namespace Neo.Trie.MPT
     {
         public const int CHILD_COUNT = 17;
         public MPTNode[] Children = new MPTNode[CHILD_COUNT];
-
 
         public BranchNode()
         {
