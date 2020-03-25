@@ -324,7 +324,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
-                    sb.Emit(OpCode.THROWIFNOT);
+                    sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
 
@@ -417,7 +417,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
-                    sb.Emit(OpCode.THROWIFNOT);
+                    sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
 
@@ -511,7 +511,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
-                    sb.Emit(OpCode.THROWIFNOT);
+                    sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
 
@@ -606,7 +606,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
-                    sb.Emit(OpCode.THROWIFNOT);
+                    sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
 
@@ -666,7 +666,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
-                    sb.Emit(OpCode.THROWIFNOT);
+                    sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
 
@@ -763,7 +763,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
-                    sb.Emit(OpCode.THROWIFNOT);
+                    sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
 
@@ -806,7 +806,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(2, hashes.Length);
-            Assert.AreNotEqual(RelayResultReason.Succeed, txSimple.VerifyForEachBlock(snapshot, BigInteger.Zero));
+            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyForEachBlock(snapshot, BigInteger.Zero));
         }
 
         [TestMethod]
@@ -1023,7 +1023,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
-                    sb.Emit(OpCode.THROWIFNOT);
+                    sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
 
