@@ -180,6 +180,7 @@ namespace Neo.VM
             {
                 PrimitiveType p => p.Size,
                 Buffer b => b.Size,
+                Null _ => 0,
                 _ => throw new ArgumentException(),
             };
         }

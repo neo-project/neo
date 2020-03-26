@@ -122,6 +122,11 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
+        public static UInt160 ToScriptHash(this ReadOnlySpan<byte> script)
+        {
+            return new UInt160(Crypto.Hash160(script));
+        }
+
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
