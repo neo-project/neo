@@ -33,6 +33,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.lastTaskIndex = Blockchain.Singleton.Height;
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         protected override void OnReceive(object message)
@@ -45,11 +47,12 @@ namespace Neo.Network.P2P
                 case Block block:
                     OnReceiveBlock(block);
                     break;
-                case PersistedBlockIndex blockIndex:
-                    OnReceivePersistedBlockIndex(blockIndex);
+                case Blockchain.PersistCompleted persistBlock:
+                    OnReceivePersistedBlockIndex(persistBlock.Block.Index);
                     break;
-                case InvalidBlockIndex invalidBlockIndex:
-                    OnReceiveInvalidBlockIndex(invalidBlockIndex);
+                case Blockchain.RelayResult rr:
+                    if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
+                        OnReceiveInvalidBlockIndex(invalidBlock.Index);
                     break;
                 case StartSync _:
                     RequestSync();
@@ -80,19 +83,19 @@ namespace Neo.Network.P2P
             RequestSync();
         }
 
-        private void OnReceivePersistedBlockIndex(PersistedBlockIndex blockIndex)
+        private void OnReceivePersistedBlockIndex(uint blockIndex)
         {
-            receivedBlockIndex.Remove(blockIndex.PersistedIndex);
+            receivedBlockIndex.Remove(blockIndex);
         }
 
-        private void OnReceiveInvalidBlockIndex(InvalidBlockIndex invalidBlockIndex)
+        private void OnReceiveInvalidBlockIndex(uint invalidIndex)
         {
-            receivedBlockIndex.TryGetValue(invalidBlockIndex.InvalidIndex, out RemoteNode node);
+            receivedBlockIndex.TryGetValue(invalidIndex, out RemoteNode node);
             if (node is null) return;
             node.session.InvalidBlockCount++;
-            node.session.IndexTasks.Remove(invalidBlockIndex.InvalidIndex);
-            receivedBlockIndex.Remove(invalidBlockIndex.InvalidIndex);
-            AssignTask(invalidBlockIndex.InvalidIndex, node.session);
+            node.session.IndexTasks.Remove(invalidIndex);
+            receivedBlockIndex.Remove(invalidIndex);
+            AssignTask(invalidIndex, node.session);
         }
 
         private void RequestSync()

@@ -320,14 +320,9 @@ namespace Neo.Ledger
             if (block.Index == Height + 1)
             {
                 if (!block.Verify(currentSnapshot))
-                {
-                    system.SyncManager.Tell(new SyncManager.InvalidBlockIndex { InvalidIndex = block.Index });
                     return VerifyResult.Invalid;
-                }
                 block_cache_unverified.Remove(block.Index);
                 Persist(block);
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
-                system.SyncManager.Tell(new SyncManager.PersistedBlockIndex { PersistedIndex = block.Index });
                 SaveHeaderHashList();
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
@@ -361,6 +356,7 @@ namespace Neo.Ledger
         {
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
         }
 
         protected override void OnReceive(object message)
