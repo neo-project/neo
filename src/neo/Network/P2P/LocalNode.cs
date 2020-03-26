@@ -263,6 +263,10 @@ namespace Neo.Network.P2P
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
+        /// <summary>
+        /// Disconnect tcp connection with reason message
+        /// </summary>
+        /// <param name="reason"></param>
         protected override void TcpDisconnect(DisconnectReason reason)
         {
             var message = CreateDisconnectMessage(reason);
@@ -278,7 +282,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Create disconnect message with reason
+        /// Create disconnect message with reason and attached with connected peers' addresses.
         /// </summary>
         /// <param name="reason">Disconnect reason</param>
         private Message CreateDisconnectMessage(DisconnectReason reason)
