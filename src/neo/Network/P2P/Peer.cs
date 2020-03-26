@@ -208,10 +208,24 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="remote">The remote endpoint of TCP connection.</param>
         /// <param name="local">The local endpoint of TCP connection.</param>
-        protected virtual void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
+        private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
-            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
+            // Pre-check includes MaxConnections, MaxConnectionsPerAddress. If the check fails, it'll seed the error message.
+            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
+            {
+                Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
+                TcpDisconnect(DisconnectReason.MaxConnectionReached);
+                return;
+            }
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            if (count >= MaxConnectionsPerAddress)
+            {
+                Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
+                TcpDisconnect(DisconnectReason.MaxConnectionPerAddressReached);
+                return;
+            }
+
+            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             ConnectedAddresses[remote.Address] = count + 1;
             IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
             Context.Watch(connection);
@@ -247,21 +261,9 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected void TcpDisconnect(byte[] lastMsg = null, bool connected = true)
+        protected virtual void TcpDisconnect(DisconnectReason reason)
         {
-            if (!connected && lastMsg != null)
-            {
-                Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
-            }
-
-            if (lastMsg is null)
-            {
-                Sender.Tell(Tcp.Abort.Instance);
-            }
-            else
-            {
-                Sender.Ask(Tcp.Write.Create(ByteString.FromBytes(lastMsg.ToArray()))).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
-            }
+            Sender.Tell(Tcp.Abort.Instance);
         }
 
         private void OnTimer()
@@ -280,25 +282,22 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected virtual void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
+        private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
         {
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            if (count >= MaxConnectionsPerAddress)
+            {
+                WsDisconnect(ws, DisconnectReason.MaxConnectionPerAddressReached);
+                return;
+            }
+
             ConnectedAddresses[remote.Address] = count + 1;
             Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
         }
 
-        protected void WsDisconnect(WebSocket ws, byte[] lastMsg = null)
+        protected virtual void WsDisconnect(WebSocket ws, DisconnectReason reason)
         {
-            if (lastMsg is null)
-            {
-                ws.Abort();
-            }
-            else
-            {
-                ws.SendAsync(new ArraySegment<byte>(lastMsg), WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
-                    failure: ex => new Tcp.ErrorClosed(ex.Message));
-                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
-            }
+            ws.Abort();
         }
 
         protected override void PostStop()

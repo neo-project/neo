@@ -263,40 +263,18 @@ namespace Neo.Network.P2P
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
-        protected override void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
+        protected override void TcpDisconnect(DisconnectReason reason)
         {
-            // Pre-check includes MaxConnections, MaxConnectionsPerAddress. If the check fails, it'll seed the error message.
-            Message reason = null;
-            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
-            {
-                reason = CreateDisconnectMessage(DisconnectReason.MaxConnectionReached);
-            }
-            ConnectedAddresses.TryGetValue(remote.Address, out int count);
-            if (count >= MaxConnectionsPerAddress)
-            {
-                reason = CreateDisconnectMessage(DisconnectReason.MaxConnectionPerAddressReached);
-            }
-            if (reason != null)
-            {
-                TcpDisconnect(reason.ToArray(), false);
-                return;
-            }
-
-            base.OnTcpConnected(remote, local);
+            var message = CreateDisconnectMessage(reason);
+            Sender.Ask(Tcp.Write.Create(ByteString.FromBytes(message.ToArray()))).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
         }
 
-        protected override void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
+        protected override void WsDisconnect(WebSocket ws, DisconnectReason reason)
         {
-            // Pre-check includes MaxConnectionsPerAddress. If the check fails, it'll send the error message.
-            ConnectedAddresses.TryGetValue(remote.Address, out int count);
-            if (count >= MaxConnectionsPerAddress)
-            {
-                var reason = CreateDisconnectMessage(DisconnectReason.MaxConnectionPerAddressReached);
-                WsDisconnect(ws, reason.ToArray());
-                return;
-            }
-
-            base.OnWsConnected(ws, remote, local);
+            var message = CreateDisconnectMessage(reason);
+            ws.SendAsync(new ArraySegment<byte>(message.ToArray()), WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    failure: ex => new Tcp.ErrorClosed(ex.Message));
+            ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
         }
 
         /// <summary>
