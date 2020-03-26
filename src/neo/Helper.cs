@@ -359,10 +359,10 @@ namespace Neo
 
         public static byte[] Add(this byte[] a, byte b)
         {
-            var result = new byte[a.Length + 1];
-            a.CopyTo(result, 0);
-            result[a.Length] = b;
-            return result;
+            var len = a.Length;
+            Array.Resize<byte>(ref a, len + 1);
+            a[len] = b;
+            return a;
         }
 
         public static byte[] ToNibbles(this byte[] path)
