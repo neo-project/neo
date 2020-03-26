@@ -7,7 +7,7 @@ namespace Neo.Trie.MPT
     {
         private MPTDb db;
 
-        public MPTTrie(byte[] root, IKVStore store) : base(root, store)
+        public MPTTrie(UInt256 root, IKVStore store) : base(root, store)
         {
             this.db = new MPTDb(store);
         }

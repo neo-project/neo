@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Trie.MPT
         private MPTNode root;
         private IKVStore mptdb;
 
-        private byte[] rootHash;
+        private UInt256 rootHash;
 
         [TestInitialize]
         public void TestInit()
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             result = mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
             Assert.IsTrue(result);
-            Assert.AreEqual(rootHash.ToHexString(), mpt.GetRoot().ToHexString());
+            Assert.AreEqual(rootHash.ToString(), mpt.GetRoot().ToString());
         }
 
         [TestMethod]
@@ -156,8 +156,8 @@ namespace Neo.UnitTests.Trie.MPT
             b.Children[9] = l2;
 
             r1.Next = v1;
-            Assert.AreEqual("b3fba0ac4e39628963bc9cd348b230800a3e531e1c09d75e881e46e946aba3de", r1.GetHash().ToHexString());
-            Assert.AreEqual("0dd6476b36e7d5251b9d8d8f4bf61b81cc3b270e3367ca2fd93df8e2ffe1e893", r.GetHash().ToHexString());
+            Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", r1.GetHash().ToString());
+            Assert.AreEqual("0x93e8e1ffe2f83dd92fca67330e273bcc811bf64b8f8d9d1b25d5e7366b47d60d", r.GetHash().ToString());
 
             var mpt = new MPTTrie(rootHash, mptdb);
             var result = true;
@@ -167,7 +167,7 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             result = mpt.TryDelete("acae".HexToBytes());
             Assert.IsTrue(result);
-            Assert.AreEqual("b3fba0ac4e39628963bc9cd348b230800a3e531e1c09d75e881e46e946aba3de", mpt.GetRoot().ToHexString());
+            Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", mpt.GetRoot().ToString());
         }
 
         [TestMethod]
@@ -240,7 +240,7 @@ namespace Neo.UnitTests.Trie.MPT
             b.Children[10] = l3;
 
             var mpt = new MPTTrie(rootHash, mptdb);
-            Assert.AreEqual(r.GetHash().ToHexString(), mpt.GetRoot().ToHexString());
+            Assert.AreEqual(r.GetHash().ToString(), mpt.GetRoot().ToString());
             var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
             Assert.IsTrue(result);
             Assert.AreEqual(4, proof.Count);

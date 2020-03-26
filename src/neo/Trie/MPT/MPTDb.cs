@@ -1,3 +1,4 @@
+using Neo.IO;
 
 namespace Neo.Trie.MPT
 {
@@ -14,7 +15,7 @@ namespace Neo.Trie.MPT
         {
             if (node is HashNode hn)
                 throw new System.InvalidOperationException("Means nothing to store HashNode");
-            store.Put(node.GetHash(), node.Encode());
+            store.Put(node.GetHash().ToArray(), node.Encode());
         }
     }
 }

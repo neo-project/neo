@@ -8,21 +8,21 @@ namespace Neo.Trie.MPT
 
     public abstract class MPTNode
     {
-        private byte[] hash;
+        private UInt256 hash;
         public bool Dirty { get; private set; }
         protected NodeType nType;
 
-        protected virtual byte[] GenHash()
+        protected virtual UInt256 GenHash()
         {
-            return Crypto.Hash256(this.Encode());
+            return new UInt256(Crypto.Hash256(this.Encode()));
         }
 
-        public virtual byte[] GetHash()
+        public virtual UInt256 GetHash()
         {
-            if (!Dirty && hash.Length > 0) return hash;
+            if (!Dirty && !(hash is null)) return hash;
             hash = GenHash();
             Dirty = false;
-            return (byte[])hash.Clone();
+            return hash;
         }
 
         public void SetDirty()

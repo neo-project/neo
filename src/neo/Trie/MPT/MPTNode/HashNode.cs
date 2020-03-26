@@ -7,45 +7,56 @@ namespace Neo.Trie.MPT
 {
     public class HashNode : MPTNode
     {
-        public byte[] Hash;
+        public UInt256 Hash;
 
         public HashNode()
         {
             nType = NodeType.HashNode;
         }
 
-        public HashNode(byte[] hash) : this()
+        public HashNode(UInt256 hash) : this()
         {
-            Hash = (byte[])hash.Clone();
+            Hash = hash;
         }
 
-        protected override byte[] GenHash()
+        protected override UInt256 GenHash()
         {
-            if (IsEmptyNode) return Array.Empty<byte>();
-            return (byte[])Hash.Clone();
+            return Hash;
         }
 
         public static HashNode EmptyNode()
         {
-            return new HashNode(Array.Empty<byte>());
+            return new HashNode(null);
         }
 
-        public bool IsEmptyNode => Hash is null || Hash.Length == 0;
+        public bool IsEmptyNode => Hash is null;
 
         public override void EncodeSpecific(BinaryWriter writer)
         {
-            writer.WriteVarBytes(Hash);
+            if (this.IsEmptyNode)
+            {
+                writer.WriteVarBytes(Array.Empty<byte>());
+                return;
+            }
+            writer.WriteVarBytes(Hash.ToArray());
         }
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            Hash = reader.ReadVarBytes();
+            var len = reader.ReadVarInt();
+            if (len == 0)
+            {
+                Hash = null;
+                return;
+            }
+            if (len != UInt256.Length) throw new System.InvalidOperationException("Invalid hash bytes");
+            Hash = new UInt256(reader.ReadBytes((int)len));
         }
 
         public override JObject ToJson()
         {
             var json = new JObject();
-            json["hash"] = Hash.ToHexString();
+            json["hash"] = Hash.ToString();
             return json;
         }
     }

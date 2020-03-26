@@ -23,5 +23,13 @@ namespace Neo.UnitTests.Trie.MPT
             var n = new ExtensionNode();
             Assert.IsTrue(n.Dirty);
         }
+
+        [TestMethod]
+        public void TestHashNode()
+        {
+            var hn = new HashNode(null);
+            var data = hn.Encode();
+            Assert.AreEqual("0200", data.ToHexString());
+        }
     }
 }

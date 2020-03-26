@@ -1,4 +1,3 @@
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using System.IO;
