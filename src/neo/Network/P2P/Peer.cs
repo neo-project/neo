@@ -247,6 +247,11 @@ namespace Neo.Network.P2P
             }
         }
 
+        protected virtual void Disconnect()
+        {
+            Sender.Tell(Tcp.Abort.Instance);
+        }
+
         private void OnTimer()
         {
             // Check if the number of desired connections is already enough
