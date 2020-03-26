@@ -247,9 +247,21 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected virtual void Disconnect()
+        protected void TcpDisconnect(byte[] lastMsg = null, bool connected = true)
         {
-            Sender.Tell(Tcp.Abort.Instance);
+            if (!connected && lastMsg != null)
+            {
+                Sender.Tell(new Tcp.Register(ActorRefs.Nobody));
+            }
+
+            if (lastMsg is null)
+            {
+                Sender.Tell(Tcp.Abort.Instance);
+            }
+            else
+            {
+                Sender.Ask(Tcp.Write.Create(ByteString.FromBytes(lastMsg.ToArray()))).ContinueWith(t => Sender.Tell(Tcp.Abort.Instance));
+            }
         }
 
         private void OnTimer()
@@ -273,6 +285,20 @@ namespace Neo.Network.P2P
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             ConnectedAddresses[remote.Address] = count + 1;
             Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
+        }
+
+        protected void WsDisconnect(WebSocket ws, byte[] lastMsg = null)
+        {
+            if (lastMsg is null)
+            {
+                ws.Abort();
+            }
+            else
+            {
+                ws.SendAsync(new ArraySegment<byte>(lastMsg), WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
+                    failure: ex => new Tcp.ErrorClosed(ex.Message));
+                ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ws", CancellationToken.None);
+            }
         }
 
         protected override void PostStop()
