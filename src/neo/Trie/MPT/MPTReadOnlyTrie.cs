@@ -41,11 +41,11 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
                         if (path.Length == 0)
                         {
-                            value = (byte[])valueNode.Value.Clone();
+                            value = (byte[])leafNode.Value.Clone();
                             return true;
                         }
                         break;
@@ -96,11 +96,11 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
                         if (path.Length == 0)
                         {
-                            set.Add(valueNode.Encode());
+                            set.Add(leafNode.Encode());
                             return true;
                         }
                         break;

@@ -48,11 +48,11 @@ namespace Neo.UnitTests.Trie.MPT
             l1.Key = new byte[] { 0x01 };
             var l2 = new ExtensionNode();
             l2.Key = new byte[] { 0x09 };
-            var v1 = new ValueNode();
+            var v1 = new LeafNode();
             v1.Value = "abcd".HexToBytes();
-            var v2 = new ValueNode();
+            var v2 = new LeafNode();
             v2.Value = "2222".HexToBytes();
-            var v3 = new ValueNode();
+            var v3 = new LeafNode();
             v3.Value = Encoding.ASCII.GetBytes("hello");
             var h1 = new HashNode();
             h1.Hash = v3.GetHash();
@@ -143,14 +143,14 @@ namespace Neo.UnitTests.Trie.MPT
 
             var l1 = new ExtensionNode();
             l1.Key = new byte[] { 0x01 };
-            var v1 = new ValueNode();
+            var v1 = new LeafNode();
             v1.Value = "abcd".HexToBytes();
             l1.Next = v1;
             b.Children[0] = l1;
 
             var l2 = new ExtensionNode();
             l2.Key = new byte[] { 0x09 };
-            var v2 = new ValueNode();
+            var v2 = new LeafNode();
             v2.Value = "2222".HexToBytes();
             l2.Next = v2;
             b.Children[9] = l2;
@@ -220,11 +220,11 @@ namespace Neo.UnitTests.Trie.MPT
             l1.Key = new byte[] { 0x01 };
             var l2 = new ExtensionNode();
             l2.Key = new byte[] { 0x09 };
-            var v1 = new ValueNode();
+            var v1 = new LeafNode();
             v1.Value = "abcd".HexToBytes();
-            var v2 = new ValueNode();
+            var v2 = new LeafNode();
             v2.Value = "2222".HexToBytes();
-            var v3 = new ValueNode();
+            var v3 = new LeafNode();
             v3.Value = Encoding.ASCII.GetBytes("hello");
             var h1 = new HashNode();
             h1.Hash = v3.GetHash();

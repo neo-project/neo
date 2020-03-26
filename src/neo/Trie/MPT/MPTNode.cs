@@ -72,9 +72,9 @@ namespace Neo.Trie.MPT
                             n.DecodeSpecific(reader);
                             return n;
                         }
-                    case NodeType.ValueNode:
+                    case NodeType.LeafNode:
                         {
-                            var n = new ValueNode();
+                            var n = new LeafNode();
                             n.DecodeSpecific(reader);
                             return n;
                         }

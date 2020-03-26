@@ -19,7 +19,7 @@ namespace Neo.Trie.MPT
             {
                 return TryDelete(ref root, path);
             }
-            var n = new ValueNode(value);
+            var n = new LeafNode(value);
             return Put(ref root, path, n);
         }
 
@@ -27,9 +27,9 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
-                        if (path.Length == 0 && val is ValueNode v)
+                        if (path.Length == 0 && val is LeafNode v)
                         {
                             node = v;
                             db.Put(node);
@@ -138,7 +138,7 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
                         if (path.Length == 0)
                         {

@@ -10,7 +10,7 @@ namespace Neo.UnitTests.Trie.MPT
         [TestMethod]
         public void TestDecode()
         {
-            var n = new ValueNode();
+            var n = new LeafNode();
             n.Value = Encoding.ASCII.GetBytes("hello");
             var code = n.Encode();
             var m = MPTNode.Decode(code);

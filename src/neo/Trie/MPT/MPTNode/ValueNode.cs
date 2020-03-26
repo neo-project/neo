@@ -5,16 +5,16 @@ using System.IO;
 
 namespace Neo.Trie.MPT
 {
-    public class ValueNode : MPTNode
+    public class LeafNode : MPTNode
     {
         public byte[] Value;
 
-        public ValueNode()
+        public LeafNode()
         {
-            nType = NodeType.ValueNode;
+            nType = NodeType.LeafNode;
         }
 
-        public ValueNode(byte[] val) : this()
+        public LeafNode(byte[] val) : this()
         {
             Value = (byte[])val.Clone();
         }
