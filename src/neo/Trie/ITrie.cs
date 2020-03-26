@@ -3,8 +3,8 @@ namespace Neo.Trie
 {
     public interface ITrie : IReadOnlyTrie
     {
-        bool Put(byte[] path, byte[] value);
+        bool Put(byte[] key, byte[] value);
 
-        bool TryDelete(byte[] path);
+        bool TryDelete(byte[] key);
     }
 }

@@ -31,9 +31,9 @@ namespace Neo.Trie.MPT
             return rodb.Node(hn.Hash);
         }
 
-        public bool TryGet(byte[] path, out byte[] value)
+        public bool TryGet(byte[] key, out byte[] value)
         {
-            path = path.ToNibbles();
+            var path = key.ToNibbles();
             return TryGet(ref root, path, out value);
         }
 
@@ -85,10 +85,10 @@ namespace Neo.Trie.MPT
             return root.GetHash();
         }
 
-        public bool GetProof(byte[] path, out HashSet<byte[]> set)
+        public bool GetProof(byte[] key, out HashSet<byte[]> set)
         {
             set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-            path = path.ToNibbles();
+            var path = key.ToNibbles();
             return GetProof(ref root, path, set);
         }
 
@@ -136,11 +136,11 @@ namespace Neo.Trie.MPT
             return false;
         }
 
-        public static bool VerifyProof(UInt256 root, byte[] path, HashSet<byte[]> proof, out byte[] value)
+        public static bool VerifyProof(UInt256 root, byte[] key, HashSet<byte[]> proof, out byte[] value)
         {
             var store = new MPTProofStore(proof);
             var trie = new MPTReadOnlyTrie(root, store);
-            return trie.TryGet(path, out value);
+            return trie.TryGet(key, out value);
         }
     }
 }

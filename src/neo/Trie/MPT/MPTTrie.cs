@@ -12,9 +12,9 @@ namespace Neo.Trie.MPT
             this.db = new MPTDb(store);
         }
 
-        public bool Put(byte[] path, byte[] value)
+        public bool Put(byte[] key, byte[] value)
         {
-            path = path.ToNibbles();
+            var path = key.ToNibbles();
             if (value.Length == 0)
             {
                 return TryDelete(ref root, path);
@@ -128,9 +128,9 @@ namespace Neo.Trie.MPT
             }
         }
 
-        public bool TryDelete(byte[] path)
+        public bool TryDelete(byte[] key)
         {
-            path = path.ToNibbles();
+            var path = key.ToNibbles();
             return TryDelete(ref root, path);
         }
 

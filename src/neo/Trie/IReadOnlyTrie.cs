@@ -4,10 +4,10 @@ namespace Neo.Trie
 {
     public interface IReadOnlyTrie
     {
-        bool TryGet(byte[] path, out byte[] value);
+        bool TryGet(byte[] key, out byte[] value);
 
         UInt256 GetRoot();
 
-        bool GetProof(byte[] path, out HashSet<byte[]> set);
+        bool GetProof(byte[] key, out HashSet<byte[]> set);
     }
 }
