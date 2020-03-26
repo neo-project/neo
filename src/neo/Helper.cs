@@ -337,10 +337,28 @@ namespace Neo
 
         public static bool Equal(this byte[] a, byte[] b)
         {
-            if (a.Length != b.Length) return false;
-            for (int i = 0; i < a.Length; i++)
+            if (a is null || b is null) return false;
+            var len = a.Length;
+            if (len != b.Length) return false;
+            unsafe
             {
-                if (a[i] != b[i]) return false;
+                fixed (byte* ap = a, bp = b)
+                {
+                    long* alp = (long*)ap, blp = (long*)bp;
+                    for (; len >= 8; len -= 8)
+                    {
+                        if (*alp != *blp) return false;
+                        alp++;
+                        blp++;
+                    }
+                    byte* abp = (byte*)alp, bbp = (byte*)blp;
+                    for (; len > 0; len--)
+                    {
+                        if (*abp != *bbp) return false;
+                        abp++;
+                        bbp++;
+                    }
+                }
             }
             return true;
         }
