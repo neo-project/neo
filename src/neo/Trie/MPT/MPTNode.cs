@@ -5,28 +5,11 @@ using System.Text;
 
 namespace Neo.Trie.MPT
 {
-    public enum NodeType
-    {
-        BranchNode = 0x00,
-        ExtensionNode = 0x01,
-        HashNode = 0x02,
-        ValueNode = 0x03,
-    }
-
-    public class NodeFlag
-    {
-        public byte[] Hash;
-        public bool Dirty;
-
-        public NodeFlag()
-        {
-            Dirty = true;
-        }
-    }
 
     public abstract class MPTNode
     {
-        public NodeFlag Flag;
+        private byte[] hash;
+        public bool Dirty { get; private set; }
         protected NodeType nType;
 
         protected virtual byte[] GenHash()
@@ -36,20 +19,20 @@ namespace Neo.Trie.MPT
 
         public virtual byte[] GetHash()
         {
-            if (!Flag.Dirty && Flag.Hash.Length > 0) return Flag.Hash;
-            Flag.Hash = GenHash();
-            Flag.Dirty = false;
-            return (byte[])Flag.Hash.Clone();
+            if (!Dirty && hash.Length > 0) return hash;
+            hash = GenHash();
+            Dirty = false;
+            return (byte[])hash.Clone();
         }
 
-        public void ResetFlag()
+        public void SetDirty()
         {
-            Flag = new NodeFlag();
+            Dirty = true;
         }
 
         public MPTNode()
         {
-            Flag = new NodeFlag();
+            Dirty = true;
         }
 
         public byte[] Encode()

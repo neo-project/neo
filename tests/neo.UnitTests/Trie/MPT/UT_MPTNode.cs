@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Trie.MPT
         public void TestFlag()
         {
             var n = new ExtensionNode();
-            Assert.IsTrue(n.Flag.Dirty);
+            Assert.IsTrue(n.Dirty);
         }
     }
 }

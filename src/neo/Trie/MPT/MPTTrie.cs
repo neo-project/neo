@@ -45,7 +45,7 @@ namespace Neo.Trie.MPT
                             var result = Put(ref extensionNode.Next, path.Skip(prefix.Length), val);
                             if (result)
                             {
-                                extensionNode.ResetFlag();
+                                extensionNode.SetDirty();
                                 db.Put(extensionNode);
                             }
                             return result;
@@ -100,7 +100,7 @@ namespace Neo.Trie.MPT
                         }
                         if (result)
                         {
-                            branchNode.ResetFlag();
+                            branchNode.SetDirty();
                             db.Put(branchNode);
                         }
                         return result;
@@ -164,7 +164,7 @@ namespace Neo.Trie.MPT
                                 extensionNode.Key = extensionNode.Key.Concat(sn.Key);
                                 extensionNode.Next = sn.Next;
                             }
-                            extensionNode.ResetFlag();
+                            extensionNode.SetDirty();
                             db.Put(extensionNode);
                             return true;
                         }
@@ -190,7 +190,7 @@ namespace Neo.Trie.MPT
                         }
                         if (childrenIndexes.Length > 1)
                         {
-                            branchNode.ResetFlag();
+                            branchNode.SetDirty();
                             db.Put(branchNode);
                             return true;
                         }
@@ -209,7 +209,7 @@ namespace Neo.Trie.MPT
                         if (lastChild is ExtensionNode exNode)
                         {
                             exNode.Key = childrenIndexes.Concat(exNode.Key);
-                            exNode.ResetFlag();
+                            exNode.SetDirty();
                             db.Put(exNode);
                             node = exNode;
                             return true;
