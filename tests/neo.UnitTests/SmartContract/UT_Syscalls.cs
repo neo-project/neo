@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract
 
             var block = new Block()
             {
-                Index = 1,
+                Index = 0,
                 Timestamp = 2,
                 Version = 3,
                 Witness = new Witness()
@@ -68,12 +68,26 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Peek().IsNull);
 
-                // With block
+                // Not traceable block
+
+                var height = snapshot.BlockHashIndex.GetAndChange();
+                height.Index = block.Index + Transaction.MaxValidUntilBlockIncrement;
 
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
                 blocks.Add(block.Hash, block.Trim());
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
+
+                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+
+                // With block
+
+                height.Index = block.Index;
 
                 script.EmitSysCall(InteropService.Json.Serialize);
                 engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
@@ -83,10 +97,11 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    "5b22556168352f4b6f446d39723064555950636353714346745a30594f726b583164646e7334366e676e3962383d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c312c224141414141414141414141414141414141414141414141414141413d222c315d");
+                    "5b22366b4139757552614430373634585358466c706674686b436b5954702f6e34623878715057476c6a6659303d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c302c224141414141414141414141414141414141414141414141414141413d222c315d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // Clean
+
                 blocks.Delete(block.Hash);
                 txs.Delete(tx.Hash);
             }
