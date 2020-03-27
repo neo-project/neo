@@ -226,7 +226,7 @@ namespace Neo.Network.P2P
                 TcpDisconnect(DisconnectReason.MaxConnectionPerAddressReached);
                 return;
             }
-            
+
             ConnectedAddresses[remote.Address] = count + 1;
             IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
             Context.Watch(connection);
