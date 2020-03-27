@@ -100,7 +100,7 @@ namespace Neo.Wallets.NEP6
                 {
                     key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password_old, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
                 }
-                catch (FormatException)
+                catch
                 {
                     return false;
                 }
