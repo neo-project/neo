@@ -29,6 +29,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Log = Register("System.Runtime.Log", Runtime_Log, 0_01000000, TriggerType.All, CallFlags.AllowNotify);
             public static readonly InteropDescriptor Notify = Register("System.Runtime.Notify", Runtime_Notify, 0_01000000, TriggerType.All, CallFlags.AllowNotify);
             public static readonly InteropDescriptor GetNotifications = Register("System.Runtime.GetNotifications", Runtime_GetNotifications, 0_00010000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor GasLeft = Register("System.Runtime.GasLeft", Runtime_GasLeft, 0_00000400, TriggerType.All, CallFlags.None);
 
             private static bool CheckItemForNotification(StackItem state)
             {
@@ -164,6 +165,12 @@ namespace Neo.SmartContract
                 };
                 if (hash is null) return false;
                 engine.CurrentContext.EvaluationStack.Push(CheckWitnessInternal(engine, hash));
+                return true;
+            }
+
+            private static bool Runtime_GasLeft(ApplicationEngine engine)
+            {
+                engine.Push(engine.GasLeft);
                 return true;
             }
 
