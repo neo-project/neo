@@ -111,7 +111,7 @@ namespace Neo.UnitTests
                 }
             }
 
-            block.ConsensusData = new ConsensusData();
+            block.ConsensusData = new ConsensusData() { Oracle = new Neo.Oracle.OracleExecutionCache() };
             block.Transactions = transactionsVal;
             block.MerkleRoot = merkRootVal = Block.CalculateMerkleRoot(block.ConsensusData.Hash, block.Transactions.Select(p => p.Hash));
         }

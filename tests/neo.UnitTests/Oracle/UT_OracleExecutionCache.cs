@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Oracle
         {
             var http = (CounterRequest)arg;
             http.Counter++;
-            return OracleResult.CreateResult(_txHash, arg.Hash, BitConverter.GetBytes(http.Counter));
+            return OracleResult.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter));
         }
 
         UInt256 _txHash;
@@ -71,7 +71,6 @@ namespace Neo.UnitTests.Oracle
             var array = cache.ToArray();
             Assert.AreEqual(1, array.Length);
             Assert.AreEqual(req.Hash, array[0].Key);
-            Assert.AreEqual(_txHash, array[0].Value.TransactionHash);
             Assert.AreEqual(OracleResultError.None, array[0].Value.Error);
             CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, array[0].Value.Result);
         }
@@ -86,7 +85,7 @@ namespace Neo.UnitTests.Oracle
                 Method = HttpMethod.GET
             };
 
-            var initRes = OracleResult.CreateError(_txHash, initReq.Hash, OracleResultError.ServerError);
+            var initRes = OracleResult.CreateError(initReq.Hash, OracleResultError.ServerError);
             var cache = new OracleExecutionCache(initRes);
 
             Assert.AreEqual(1, cache.Count);
@@ -96,7 +95,6 @@ namespace Neo.UnitTests.Oracle
             var array = cache.ToArray();
             Assert.AreEqual(1, array.Length);
             Assert.AreEqual(initReq.Hash, array[0].Key);
-            Assert.AreEqual(_txHash, array[0].Value.TransactionHash);
             Assert.AreEqual(OracleResultError.ServerError, array[0].Value.Error);
             CollectionAssert.AreEqual(Array.Empty<byte>(), array[0].Value.Result);
 

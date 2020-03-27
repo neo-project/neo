@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -15,11 +16,6 @@ namespace Neo.Oracle
     public class OracleResult : IInteroperable, IVerifiable
     {
         private UInt160 _hash;
-
-        /// <summary>
-        /// Transaction Hash
-        /// </summary>
-        public UInt256 TransactionHash { get; set; }
 
         /// <summary>
         /// Request hash
@@ -52,7 +48,7 @@ namespace Neo.Oracle
             }
         }
 
-        public int Size => UInt256.Length + UInt160.Length + sizeof(byte) + Result.GetVarSize();
+        public int Size => UInt160.Length + sizeof(byte) + Result.GetVarSize();
 
         public Witness[] Witnesses
         {
@@ -63,14 +59,12 @@ namespace Neo.Oracle
         /// <summary>
         /// Create error result
         /// </summary>
-        /// <param name="txHash">Tx Hash</param>
         /// <param name="requestHash">Request Id</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateError(UInt256 txHash, UInt160 requestHash, OracleResultError error)
+        public static OracleResult CreateError(UInt160 requestHash, OracleResultError error)
         {
             return new OracleResult()
             {
-                TransactionHash = txHash,
                 RequestHash = requestHash,
                 Error = error,
                 Result = new byte[0],
@@ -80,27 +74,24 @@ namespace Neo.Oracle
         /// <summary>
         /// Create result
         /// </summary>
-        /// <param name="txHash">Tx Hash</param>
         /// <param name="requestHash">Request Hash</param>
         /// <param name="result">Result</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateResult(UInt256 txHash, UInt160 requestHash, string result)
+        public static OracleResult CreateResult(UInt160 requestHash, string result)
         {
-            return CreateResult(txHash, requestHash, Encoding.UTF8.GetBytes(result));
+            return CreateResult(requestHash, Encoding.UTF8.GetBytes(result));
         }
 
         /// <summary>
         /// Create result
         /// </summary>
-        /// <param name="txHash">Tx Hash</param>
         /// <param name="requestHash">Request Id</param>
         /// <param name="result">Result</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateResult(UInt256 txHash, UInt160 requestHash, byte[] result)
+        public static OracleResult CreateResult(UInt160 requestHash, byte[] result)
         {
             return new OracleResult()
             {
-                TransactionHash = txHash,
                 RequestHash = requestHash,
                 Error = OracleResultError.None,
                 Result = result,
@@ -109,7 +100,6 @@ namespace Neo.Oracle
 
         public void SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(TransactionHash);
             writer.Write(RequestHash);
             writer.Write((byte)Error);
             if (Error == OracleResultError.None)
@@ -123,7 +113,6 @@ namespace Neo.Oracle
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
-            TransactionHash = reader.ReadSerializable<UInt256>();
             RequestHash = reader.ReadSerializable<UInt160>();
             Error = (OracleResultError)reader.ReadByte();
             Result = Error != OracleResultError.None ? reader.ReadVarBytes(ushort.MaxValue) : new byte[0];
@@ -147,9 +136,29 @@ namespace Neo.Oracle
         {
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {
+                new ByteArray(RequestHash.ToArray()),
                 new Integer((byte)Error),
                 new ByteArray(Result)
             });
+        }
+
+        public JObject ToJson()
+        {
+            JArray json = new JArray();
+            json["requestHash"] = Convert.ToBase64String(RequestHash.ToArray());
+            json["result"] = Convert.ToBase64String(Result);
+            json["error"] = new JString(Error.ToString());
+            return json;
+        }
+
+        public static OracleResult FromJson(JObject json)
+        {
+            return new OracleResult()
+            {
+                RequestHash = new UInt160(Convert.FromBase64String(json["requestHash"].AsString())),
+                Result = Convert.FromBase64String(json["result"].AsString()),
+                Error = Enum.Parse<OracleResultError>(json["error"].AsString())
+            };
         }
     }
 }

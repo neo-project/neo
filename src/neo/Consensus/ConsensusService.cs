@@ -422,6 +422,7 @@ namespace Neo.Consensus
 
             context.Block.Timestamp = message.Timestamp;
             context.Block.ConsensusData.Nonce = message.Nonce;
+            context.Block.ConsensusData.Oracle = message.Oracle;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.SendersFeeMonitor = new SendersFeeMonitor();

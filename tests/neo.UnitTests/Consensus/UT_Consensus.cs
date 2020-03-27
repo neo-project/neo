@@ -483,7 +483,8 @@ namespace Neo.UnitTests.Consensus
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     ConsensusData = new ConsensusData
                     {
-                        PrimaryIndex = 6
+                        PrimaryIndex = 6,
+                        Oracle = new Neo.Oracle.OracleExecutionCache()
                     }
                 },
                 ViewNumber = 2,
@@ -518,6 +519,7 @@ namespace Neo.UnitTests.Consensus
             var prepareRequestMessage = new PrepareRequest
             {
                 TransactionHashes = consensusContext.TransactionHashes,
+                Oracle = new Neo.Oracle.OracleExecutionCache(),
                 Timestamp = 23
             };
             consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
@@ -712,7 +714,8 @@ namespace Neo.UnitTests.Consensus
                 },
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    Oracle = new Neo.Oracle.OracleExecutionCache()
                 },
                 PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -765,7 +768,8 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    Oracle = new Neo.Oracle.OracleExecutionCache()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -825,7 +829,8 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    Oracle = new Neo.Oracle.OracleExecutionCache()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {

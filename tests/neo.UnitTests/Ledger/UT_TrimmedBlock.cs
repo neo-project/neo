@@ -16,7 +16,7 @@ namespace Neo.UnitTests.Ledger
         {
             return new TrimmedBlock
             {
-                ConsensusData = new ConsensusData(),
+                ConsensusData = new ConsensusData() { Oracle = new Neo.Oracle.OracleExecutionCache() },
                 MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
                 PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Timestamp = new DateTime(1988, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp(),

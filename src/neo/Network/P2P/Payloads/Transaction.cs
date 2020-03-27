@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         private const int MaxCosigners = 16;
 
-        private byte version;
+        private TransactionType version;
         private uint nonce;
         private UInt160 sender;
         private long sysfee;
@@ -141,7 +141,7 @@ namespace Neo.Network.P2P.Payloads
             set { validUntilBlock = value; _hash = null; }
         }
 
-        public byte Version
+        public TransactionType Version
         {
             get => version;
             set { version = value; _hash = null; }
@@ -166,8 +166,8 @@ namespace Neo.Network.P2P.Payloads
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
-            Version = reader.ReadByte();
-            if (Version > 0) throw new FormatException();
+            Version = (TransactionType)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(TransactionType), Version)) throw new FormatException();
             Nonce = reader.ReadUInt32();
             Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
@@ -216,7 +216,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Version);
+            writer.Write((byte)Version);
             writer.Write(Nonce);
             writer.Write(Sender);
             writer.Write(SystemFee);
@@ -232,7 +232,7 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
-            json["version"] = Version;
+            json["version"] = (byte)Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
             json["sys_fee"] = SystemFee.ToString();
@@ -248,7 +248,9 @@ namespace Neo.Network.P2P.Payloads
         public static Transaction FromJson(JObject json)
         {
             Transaction tx = new Transaction();
-            tx.Version = byte.Parse(json["version"].AsString());
+            tx.Version = (TransactionType)byte.Parse(json["version"].AsString());
+            if (!Enum.IsDefined(typeof(TransactionType), tx.Version)) throw new FormatException();
+
             tx.Nonce = uint.Parse(json["nonce"].AsString());
             tx.Sender = json["sender"].AsString().ToScriptHash();
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());

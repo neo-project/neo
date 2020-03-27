@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Oracle;
 using System;
 using System.IO;
 using System.Linq;
@@ -11,11 +12,13 @@ namespace Neo.Consensus
         public ulong Timestamp;
         public ulong Nonce;
         public UInt256[] TransactionHashes;
+        public OracleExecutionCache Oracle;
 
         public override int Size => base.Size
-            + sizeof(ulong)                      //Timestamp
-            + sizeof(ulong)                     //Nonce
-            + TransactionHashes.GetVarSize();   //TransactionHashes
+            + sizeof(ulong)                     // Timestamp
+            + sizeof(ulong)                     // Nonce
+            + TransactionHashes.GetVarSize()    // TransactionHashes
+            + Oracle.Size;                      // Oracle
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
@@ -30,6 +33,7 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
+            Oracle = reader.ReadSerializable<OracleExecutionCache>();
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -38,6 +42,7 @@ namespace Neo.Consensus
             writer.Write(Timestamp);
             writer.Write(Nonce);
             writer.Write(TransactionHashes);
+            writer.Write(Oracle);
         }
     }
 }

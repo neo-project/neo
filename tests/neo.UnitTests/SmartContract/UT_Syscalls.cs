@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
-                Version = 0x06,
+                Version = TransactionType.Normal,
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
                 Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
             };
@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract
                 PrevHash = UInt256.Zero,
                 MerkleRoot = UInt256.Zero,
                 NextConsensus = UInt160.Zero,
-                ConsensusData = new ConsensusData() { Nonce = 1, PrimaryIndex = 1 },
+                ConsensusData = new ConsensusData() { Nonce = 1, PrimaryIndex = 1, Oracle = new OracleExecutionCache() },
                 Transactions = new Transaction[] { tx }
             };
 
@@ -130,8 +130,8 @@ namespace Neo.UnitTests.SmartContract
 
                     Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
 
-                    PrimitiveType type = array[0] as PrimitiveType;
-                    ByteArray response = array[1] as ByteArray;
+                    PrimitiveType type = array[1] as PrimitiveType;
+                    ByteArray response = array[2] as ByteArray;
 
                     Assert.AreEqual((int)OracleResultError.None, type.GetBigInteger());
                     Assert.AreEqual("MyResponse", response.GetString());
@@ -155,8 +155,8 @@ namespace Neo.UnitTests.SmartContract
 
                     Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
 
-                    PrimitiveType type = array[0] as PrimitiveType;
-                    ByteArray response = array[1] as ByteArray;
+                    PrimitiveType type = array[1] as PrimitiveType;
+                    ByteArray response = array[2] as ByteArray;
 
                     Assert.AreEqual((int)OracleResultError.FilterError, type.GetBigInteger());
                     Assert.AreEqual("", response.GetString());
@@ -187,16 +187,16 @@ namespace Neo.UnitTests.SmartContract
             {
                 if (https.Filter != "MyFilter")
                 {
-                    return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError);
+                    return OracleResult.CreateError(UInt160.Zero, OracleResultError.FilterError);
                 }
 
                 if (https.URL.ToString() == "https://google.es/" && https.Method == HttpMethod.GET)
                 {
-                    return OracleResult.CreateResult(UInt256.Zero, UInt160.Zero, "MyResponse");
+                    return OracleResult.CreateResult(UInt160.Zero, "MyResponse");
                 }
             }
 
-            return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.PolicyError);
+            return OracleResult.CreateError(UInt160.Zero, OracleResultError.PolicyError);
         }
 
         [TestMethod]
@@ -341,7 +341,7 @@ namespace Neo.UnitTests.SmartContract
                     SystemFee = 0x03,
                     Nonce = 0x04,
                     ValidUntilBlock = 0x05,
-                    Version = 0x06,
+                    Version =  TransactionType.Normal,
                     Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
                     Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
                 };
@@ -352,8 +352,9 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
-                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b225c75303032426b53415959527a4c4b69685a676464414b50596f754655737a63544d7867445a6572584a3172784c37303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
+                Assert.AreEqual(
+                    @"5b224d6b344d5a4c52754b6763313542517137623545775c75303032424e586152577a6974306357662f69737339765a68553d222c302c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d",
+                    engine.ResultStack.Pop().GetSpan().ToHexString());
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }

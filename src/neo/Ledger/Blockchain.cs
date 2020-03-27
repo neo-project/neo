@@ -49,7 +49,8 @@ namespace Neo.Ledger
             ConsensusData = new ConsensusData
             {
                 PrimaryIndex = 0,
-                Nonce = 2083236893
+                Nonce = 2083236893,
+                Oracle = new Oracle.OracleExecutionCache()
             },
             Transactions = new[] { DeployNativeContracts() }
         };
@@ -495,7 +496,7 @@ namespace Neo.Ledger
 
                     snapshot.Transactions.Add(tx.Hash, state);
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee, false, block.ConsensusData.Oracle))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();

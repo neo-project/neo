@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.Oracle;
 using System.Globalization;
 using System.IO;
 
@@ -11,6 +12,7 @@ namespace Neo.Network.P2P.Payloads
     {
         public uint PrimaryIndex;
         public ulong Nonce;
+        public OracleExecutionCache Oracle;
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -31,12 +33,14 @@ namespace Neo.Network.P2P.Payloads
         {
             PrimaryIndex = (uint)reader.ReadVarInt(Blockchain.MaxValidators - 1);
             Nonce = reader.ReadUInt64();
+            Oracle = reader.ReadSerializable<OracleExecutionCache>();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.WriteVarInt(PrimaryIndex);
             writer.Write(Nonce);
+            writer.Write(Oracle);
         }
 
         public JObject ToJson()
@@ -44,6 +48,7 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new JObject();
             json["primary"] = PrimaryIndex;
             json["nonce"] = Nonce.ToString("x16");
+            json["oracle"] = Oracle.ToJson();
             return json;
         }
 
@@ -52,8 +57,8 @@ namespace Neo.Network.P2P.Payloads
             ConsensusData block = new ConsensusData();
             block.PrimaryIndex = (uint)json["primary"].AsNumber();
             block.Nonce = ulong.Parse(json["nonce"].AsString(), NumberStyles.HexNumber);
+            block.Oracle = OracleExecutionCache.FromJson(json["oracle"]);
             return block;
         }
-
     }
 }

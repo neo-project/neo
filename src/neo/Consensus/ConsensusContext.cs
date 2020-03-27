@@ -3,6 +3,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Oracle;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -282,6 +283,7 @@ namespace Neo.Consensus
             var random = new Random();
             Span<byte> buffer = stackalloc byte[sizeof(ulong)];
             random.NextBytes(buffer);
+            Block.ConsensusData.Oracle = new OracleExecutionCache();
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer);
             EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
@@ -290,7 +292,8 @@ namespace Neo.Consensus
             {
                 Timestamp = Block.Timestamp,
                 Nonce = Block.ConsensusData.Nonce,
-                TransactionHashes = TransactionHashes
+                TransactionHashes = TransactionHashes,
+                Oracle = Block.ConsensusData.Oracle
             });
         }
 
@@ -312,7 +315,8 @@ namespace Neo.Consensus
                     ViewNumber = ViewNumber,
                     Timestamp = Block.Timestamp,
                     Nonce = Block.ConsensusData.Nonce,
-                    TransactionHashes = TransactionHashes
+                    TransactionHashes = TransactionHashes,
+                    Oracle = Block.ConsensusData.Oracle
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -397,7 +401,8 @@ namespace Neo.Consensus
             ViewNumber = viewNumber;
             Block.ConsensusData = new ConsensusData
             {
-                PrimaryIndex = GetPrimaryIndex(viewNumber)
+                PrimaryIndex = GetPrimaryIndex(viewNumber),
+                Oracle = new OracleExecutionCache()
             };
             Block.MerkleRoot = null;
             Block.Timestamp = 0;
