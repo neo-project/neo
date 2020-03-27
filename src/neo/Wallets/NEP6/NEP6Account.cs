@@ -7,6 +7,8 @@ namespace Neo.Wallets.NEP6
     {
         private readonly NEP6Wallet wallet;
         private string nep2key;
+        private string nep2keyDraft = null;
+        private bool isChangingPassword = false;
         private KeyPair key;
         public JObject Extra;
 
@@ -84,7 +86,8 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public bool ChangePassword(string password_old, string password_new)
+        //Cache draft nep2key during wallet password changing process. Should not be called alone for a single account
+        internal bool ChangePasswordPrelude(string password_old, string password_new)
         {
             if (WatchOnly) return true;
             if (nep2key == null)
@@ -105,8 +108,27 @@ namespace Neo.Wallets.NEP6
                     return false;
                 }
             }
-            nep2key = key.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
+            nep2keyDraft = key.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
+            isChangingPassword = true;
             return true;
+        }
+
+        internal bool ChangePassword()
+        {
+            if (isChangingPassword)
+            {
+                nep2key = nep2keyDraft;
+                isChangingPassword = false;
+                nep2keyDraft = null;
+                return true;
+            }
+            return false;
+        }
+
+        internal void KeepPassword()
+        {
+            nep2keyDraft = null;
+            isChangingPassword = false;
         }
     }
 }

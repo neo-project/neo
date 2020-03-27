@@ -39,13 +39,19 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestChangePassword()
         {
             _account = new NEP6Account(_wallet, _hash, _nep2);
-            _account.ChangePassword("b", "Satoshi").Should().BeTrue();
+            _account.ChangePasswordPrelude("b", "Satoshi").Should().BeTrue();
+            _account.ChangePassword().Should().BeFalse();
             _account.Contract = new Contract();
             _wallet.Unlock("Satoshi");
-            _account.ChangePassword("b", "Satoshi").Should().BeFalse();
-            _account.ChangePassword("Satoshi", "b").Should().BeTrue();
+            _account.ChangePasswordPrelude("b", "Satoshi").Should().BeFalse();
+            _account.ChangePasswordPrelude("Satoshi", "b").Should().BeTrue();
+            _account.ChangePassword().Should().BeTrue();
             _account.VerifyPassword("b").Should().BeTrue();
-            _account.ChangePassword("b", "Satoshi").Should().BeTrue();
+            _account.ChangePasswordPrelude("b", "Satoshi").Should().BeTrue();
+            _account.ChangePassword().Should().BeTrue();
+            _account.ChangePasswordPrelude("Satoshi", "b").Should().BeTrue();
+            _account.KeepPassword();
+            _account.VerifyPassword("Satoshi").Should().BeTrue();
             _wallet.Lock();
         }
 

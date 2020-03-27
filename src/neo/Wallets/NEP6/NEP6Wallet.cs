@@ -309,23 +309,30 @@ namespace Neo.Wallets.NEP6
             {
                 Parallel.ForEach<NEP6Account>(accounts.Values, (account, state) =>
                 {
-                    if (!account.ChangePassword(password_old, password_new))
+                    if (!account.ChangePasswordPrelude(password_old, password_new))
                     {
                         state.Stop();
                         isSuccessful = false;
-                        return;
-                    }
-                    if (state.IsStopped)
-                    {
-                        return;
                     }
                 });
             }
-            if (!isSuccessful) return false;
+            if (!isSuccessful)
+            {
+                Parallel.ForEach<NEP6Account>(accounts.Values, account =>
+                {
+                    account.KeepPassword();
+                });
+                return false;
+            }
+            Parallel.ForEach<NEP6Account>(accounts.Values, account =>
+            {
+                account.ChangePassword();
+            });
             if (password != null)
             {
                 password = password_new;
             }
+            Save();
             return true;
         }
     }
