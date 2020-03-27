@@ -210,6 +210,8 @@ namespace Neo.Network.P2P
         /// <param name="local">The local endpoint of TCP connection.</param>
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
+            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
+
             // Pre-check includes MaxConnections, MaxConnectionsPerAddress. If the check fails, it'll seed the error message.
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
@@ -224,8 +226,7 @@ namespace Neo.Network.P2P
                 TcpDisconnect(DisconnectReason.MaxConnectionPerAddressReached);
                 return;
             }
-
-            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
+            
             ConnectedAddresses[remote.Address] = count + 1;
             IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
             Context.Watch(connection);
