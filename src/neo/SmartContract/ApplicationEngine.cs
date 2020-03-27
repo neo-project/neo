@@ -25,6 +25,7 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
+        public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
 
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
