@@ -14,11 +14,11 @@ namespace Neo.UnitTests.Oracle
             public int Counter = 0;
         }
 
-        private OracleResult OracleLogic(OracleRequest arg)
+        private OracleResponse OracleLogic(OracleRequest arg)
         {
             var http = (CounterRequest)arg;
             http.Counter++;
-            return OracleResult.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter));
+            return OracleResponse.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter));
         }
 
         UInt256 _txHash;
@@ -85,7 +85,7 @@ namespace Neo.UnitTests.Oracle
                 Method = HttpMethod.GET
             };
 
-            var initRes = OracleResult.CreateError(initReq.Hash, OracleResultError.ServerError);
+            var initRes = OracleResponse.CreateError(initReq.Hash, OracleResultError.ServerError);
             var cache = new OracleExecutionCache(initRes);
 
             Assert.AreEqual(1, cache.Count);

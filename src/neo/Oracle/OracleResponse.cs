@@ -13,7 +13,7 @@ using System.Text;
 
 namespace Neo.Oracle
 {
-    public class OracleResult : IInteroperable, IVerifiable
+    public class OracleResponse : IInteroperable, IVerifiable
     {
         private UInt160 _hash;
 
@@ -61,9 +61,9 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="requestHash">Request Id</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateError(UInt160 requestHash, OracleResultError error)
+        public static OracleResponse CreateError(UInt160 requestHash, OracleResultError error)
         {
-            return new OracleResult()
+            return new OracleResponse()
             {
                 RequestHash = requestHash,
                 Error = error,
@@ -77,7 +77,7 @@ namespace Neo.Oracle
         /// <param name="requestHash">Request Hash</param>
         /// <param name="result">Result</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateResult(UInt160 requestHash, string result)
+        public static OracleResponse CreateResult(UInt160 requestHash, string result)
         {
             return CreateResult(requestHash, Encoding.UTF8.GetBytes(result));
         }
@@ -88,9 +88,9 @@ namespace Neo.Oracle
         /// <param name="requestHash">Request Id</param>
         /// <param name="result">Result</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateResult(UInt160 requestHash, byte[] result)
+        public static OracleResponse CreateResult(UInt160 requestHash, byte[] result)
         {
-            return new OracleResult()
+            return new OracleResponse()
             {
                 RequestHash = requestHash,
                 Error = OracleResultError.None,
@@ -151,9 +151,9 @@ namespace Neo.Oracle
             return json;
         }
 
-        public static OracleResult FromJson(JObject json)
+        public static OracleResponse FromJson(JObject json)
         {
-            return new OracleResult()
+            return new OracleResponse()
             {
                 RequestHash = new UInt160(Convert.FromBase64String(json["requestHash"].AsString())),
                 Result = Convert.FromBase64String(json["result"].AsString()),

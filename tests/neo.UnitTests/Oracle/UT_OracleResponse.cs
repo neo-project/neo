@@ -4,7 +4,7 @@ using Neo.Oracle;
 namespace Neo.UnitTests.Oracle
 {
     [TestClass]
-    public class UT_OracleResult
+    public class UT_OracleResponse
     {
         [TestMethod]
         public void TestHash()
@@ -24,9 +24,9 @@ namespace Neo.UnitTests.Oracle
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
         }
 
-        private OracleResult CreateDefault()
+        private OracleResponse CreateDefault()
         {
-            return new OracleResult()
+            return new OracleResponse()
             {
                 Error = OracleResultError.None,
                 RequestHash = UInt160.Zero,

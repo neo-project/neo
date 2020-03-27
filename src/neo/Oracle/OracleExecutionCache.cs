@@ -8,17 +8,17 @@ using System.Linq;
 
 namespace Neo.Oracle
 {
-    public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResult>>, ISerializable
+    public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResponse>>, ISerializable
     {
         /// <summary>
         /// Results
         /// </summary>
-        private readonly Dictionary<UInt160, OracleResult> _cache = new Dictionary<UInt160, OracleResult>();
+        private readonly Dictionary<UInt160, OracleResponse> _cache = new Dictionary<UInt160, OracleResponse>();
 
         /// <summary>
         /// Engine
         /// </summary>
-        private readonly Func<OracleRequest, OracleResult> _oracle;
+        private readonly Func<OracleRequest, OracleResponse> _oracle;
 
         /// <summary>
         /// Count
@@ -34,7 +34,7 @@ namespace Neo.Oracle
         /// Constructor for oracles
         /// </summary>
         /// <param name="oracle">Oracle Engine</param>
-        public OracleExecutionCache(Func<OracleRequest, OracleResult> oracle = null)
+        public OracleExecutionCache(Func<OracleRequest, OracleResponse> oracle = null)
         {
             _oracle = oracle;
         }
@@ -48,7 +48,7 @@ namespace Neo.Oracle
         /// Constructor for cached results
         /// </summary>
         /// <param name="results">Results</param>
-        public OracleExecutionCache(params OracleResult[] results)
+        public OracleExecutionCache(params OracleResponse[] results)
         {
             _oracle = null;
 
@@ -64,7 +64,7 @@ namespace Neo.Oracle
         /// <param name="request">Request</param>
         /// <param name="result">Result</param>
         /// <returns></returns>
-        public bool TryGet(OracleRequest request, out OracleResult result)
+        public bool TryGet(OracleRequest request, out OracleResponse result)
         {
             if (_cache.TryGetValue(request.Hash, out result))
             {
@@ -86,7 +86,7 @@ namespace Neo.Oracle
             return false;
         }
 
-        public IEnumerator<KeyValuePair<UInt160, OracleResult>> GetEnumerator()
+        public IEnumerator<KeyValuePair<UInt160, OracleResponse>> GetEnumerator()
         {
             return _cache.GetEnumerator();
         }
@@ -113,7 +113,7 @@ namespace Neo.Oracle
             _cache.Clear();
             for (int x = 0; x < count; x++)
             {
-                var result = reader.ReadSerializable<OracleResult>();
+                var result = reader.ReadSerializable<OracleResponse>();
                 _cache.Add(result.Hash, result);
             }
         }
@@ -132,13 +132,13 @@ namespace Neo.Oracle
 
         public static OracleExecutionCache FromJson(JObject json)
         {
-            List<OracleResult> entries = new List<OracleResult>();
+            List<OracleResponse> entries = new List<OracleResponse>();
 
             if (json is JArray arr)
             {
                 foreach (var entry in arr)
                 {
-                    entries.Add(OracleResult.FromJson(entry));
+                    entries.Add(OracleResponse.FromJson(entry));
                 }
             }
 
