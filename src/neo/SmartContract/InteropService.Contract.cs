@@ -177,7 +177,7 @@ namespace Neo.SmartContract
             {
                 if (!engine.TryPop(out ReadOnlySpan<byte> pubKey)) return false;
                 UInt160 scriptHash = SmartContract.Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubKey, ECCurve.Secp256r1)).ToScriptHash();
-                engine.CurrentContext.EvaluationStack.Push(scriptHash.ToArray());
+                engine.Push(scriptHash.ToArray());
                 return true;
             }
         }
