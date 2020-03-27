@@ -848,6 +848,7 @@ namespace Neo.UnitTests.SmartContract
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[0]);
             InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
+            engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
 
             //storages are removed
             snapshot = Blockchain.Singleton.GetSnapshot();
@@ -856,6 +857,8 @@ namespace Neo.UnitTests.SmartContract
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[0]);
             InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
+            engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
+
         }
 
         public static void LogEvent(object sender, LogEventArgs args)
