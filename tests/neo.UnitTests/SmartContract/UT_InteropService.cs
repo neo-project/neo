@@ -205,7 +205,7 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(true);
             InteropService.Invoke(engine, InteropService.Runtime.GetScriptContainer).Should().BeTrue();
             var stackItem = ((VM.Types.Array)engine.CurrentContext.EvaluationStack.Pop()).ToArray();
-            stackItem.Length.Should().Be(8);
+            stackItem.Length.Should().Be(9);
             stackItem[0].GetSpan().ToHexString().Should().Be(TestUtils.GetTransaction().Hash.ToArray().ToHexString());
         }
 

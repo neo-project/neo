@@ -311,7 +311,8 @@ namespace Neo.Network.P2P.Payloads
                 SystemFee,
                 NetworkFee,
                 ValidUntilBlock,
-                Script,
+                new Array(Attributes.Select(p=> (StackItem)p.ToArray())),
+                Script
             });
         }
     }
