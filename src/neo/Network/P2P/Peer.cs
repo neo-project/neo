@@ -37,7 +37,7 @@ namespace Neo.Network.P2P
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
 
         private static readonly HashSet<IPAddress> localAddresses = new HashSet<IPAddress>();
-        protected readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
+        private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
         /// <summary>
         /// A dictionary that stores the connected nodes.
         /// </summary>
