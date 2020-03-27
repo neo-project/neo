@@ -118,9 +118,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetHeaders:
                     OnGetHeadersMessageReceived((GetHeadersPayload)msg.Payload);
                     break;
-                case MessageCommand.Headers:
-                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
-                    break;
                 case MessageCommand.Inv:
                     OnInvMessageReceived((InvPayload)msg.Payload);
                     break;
@@ -141,6 +138,7 @@ namespace Neo.Network.P2P
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
                 case MessageCommand.Alert:
+                case MessageCommand.Headers:
                 case MessageCommand.MerkleBlock:
                 case MessageCommand.NotFound:
                 case MessageCommand.Reject:
@@ -307,12 +305,6 @@ namespace Neo.Network.P2P
             }
             if (headers.Count == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
-        }
-
-        private void OnHeadersMessageReceived(HeadersPayload payload)
-        {
-            if (payload.Headers.Length == 0) return;
-            system.Blockchain.Tell(payload.Headers, Context.Parent);
         }
 
         private void OnInventoryReceived(IInventory inventory)
