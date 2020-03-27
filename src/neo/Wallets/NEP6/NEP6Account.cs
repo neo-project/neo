@@ -87,9 +87,9 @@ namespace Neo.Wallets.NEP6
         }
 
         /// <summary>
-		/// Cache draft nep2key during wallet password changing process. Should not be called alone for a single account
-		/// </summary>
-		internal bool ChangePasswordPrelude(string password_old, string password_new)
+	/// Cache draft nep2key during wallet password changing process. Should not be called alone for a single account
+	/// </summary>
+	internal bool ChangePasswordPrelude(string password_old, string password_new)
         {
             if (WatchOnly) return true;
             if (nep2key == null)
