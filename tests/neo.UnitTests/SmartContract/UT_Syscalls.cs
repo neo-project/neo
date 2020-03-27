@@ -181,22 +181,22 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
-        private OracleResult Oracle(OracleRequest arg)
+        private OracleResponse Oracle(OracleRequest arg)
         {
             if (arg is OracleHttpsRequest https)
             {
                 if (https.Filter != "MyFilter")
                 {
-                    return OracleResult.CreateError(UInt160.Zero, OracleResultError.FilterError);
+                    return OracleResponse.CreateError(UInt160.Zero, OracleResultError.FilterError);
                 }
 
                 if (https.URL.ToString() == "https://google.es/" && https.Method == HttpMethod.GET)
                 {
-                    return OracleResult.CreateResult(UInt160.Zero, "MyResponse");
+                    return OracleResponse.CreateResult(UInt160.Zero, "MyResponse");
                 }
             }
 
-            return OracleResult.CreateError(UInt160.Zero, OracleResultError.PolicyError);
+            return OracleResponse.CreateError(UInt160.Zero, OracleResultError.PolicyError);
         }
 
         [TestMethod]
