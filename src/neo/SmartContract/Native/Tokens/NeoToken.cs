@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (state.VoteTo != null)
             {
                 StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
-                ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
+                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
                 state_validator.Votes += amount;
                 storage_validator.Value = state_validator.ToByteArray();
             }
@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (snapshot.Storages.TryGet(key) != null) return false;
             snapshot.Storages.Add(key, new StorageItem
             {
-                Value = new ValidatorState().ToByteArray()
+                Value = new CandidateState().ToByteArray()
             });
             return true;
         }
@@ -172,7 +172,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (state_account.VoteTo != null)
             {
                 StorageItem storage_validator = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray()));
-                ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
+                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
                 state_validator.Votes -= state_account.Balance;
                 storage_validator.Value = state_validator.ToByteArray();
             }
@@ -183,7 +183,7 @@ namespace Neo.SmartContract.Native.Tokens
                 StorageKey key = CreateStorageKey(Prefix_Candidate, voteTo.ToArray());
                 if (snapshot.Storages.TryGet(key) is null) return false;
                 StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
-                ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
+                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
                 state_validator.Votes += state_account.Balance;
                 storage_validator.Value = state_validator.ToByteArray();
             }
@@ -202,7 +202,7 @@ namespace Neo.SmartContract.Native.Tokens
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
-                ValidatorState.FromByteArray(p.Value.Value).Votes
+                CandidateState.FromByteArray(p.Value.Value).Votes
             ));
         }
 
@@ -276,13 +276,13 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        internal class ValidatorState
+        internal class CandidateState
         {
             public BigInteger Votes;
 
-            public static ValidatorState FromByteArray(byte[] data)
+            public static CandidateState FromByteArray(byte[] data)
             {
-                return new ValidatorState
+                return new CandidateState
                 {
                     Votes = new BigInteger(data)
                 };

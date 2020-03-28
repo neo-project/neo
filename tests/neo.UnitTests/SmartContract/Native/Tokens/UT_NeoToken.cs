@@ -347,7 +347,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             StorageKey key = NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G);
             snapshot.Storages.Add(key, new StorageItem
             {
-                Value = new ValidatorState().ToByteArray()
+                Value = new CandidateState().ToByteArray()
             });
             NativeContract.NEO.GetCandidates(snapshot).ToArray().Length.Should().Be(22);
         }
@@ -469,7 +469,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             });
             snapshot.Storages.Add(keyValidator, new StorageItem
             {
-                Value = new ValidatorState().ToByteArray()
+                Value = new CandidateState().ToByteArray()
             });
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true);
             ret.State.Should().BeTrue();
@@ -479,15 +479,15 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestValidatorState_FromByteArray()
         {
-            ValidatorState input = new ValidatorState { Votes = new BigInteger(1000) };
-            ValidatorState output = ValidatorState.FromByteArray(input.ToByteArray());
+            CandidateState input = new CandidateState { Votes = new BigInteger(1000) };
+            CandidateState output = CandidateState.FromByteArray(input.ToByteArray());
             output.Should().BeEquivalentTo(input);
         }
 
         [TestMethod]
         public void TestValidatorState_ToByteArray()
         {
-            ValidatorState input = new ValidatorState { Votes = new BigInteger(1000) };
+            CandidateState input = new CandidateState { Votes = new BigInteger(1000) };
             input.ToByteArray().ToHexString().Should().Be("e803");
         }
 
@@ -511,7 +511,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 });
                 snapshot.Storages.Add(NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G), new StorageItem
                 {
-                    Value = new ValidatorState().ToByteArray()
+                    Value = new CandidateState().ToByteArray()
                 });
             }
             else
