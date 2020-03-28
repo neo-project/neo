@@ -99,7 +99,6 @@ namespace Neo.UnitTests.Consensus
             var tx = new Transaction()
             {
                 Cosigners = new Cosigner[0],
-                Attributes = new TransactionAttribute[0],
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],

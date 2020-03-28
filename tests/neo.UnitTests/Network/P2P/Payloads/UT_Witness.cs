@@ -56,7 +56,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Cosigners = new Cosigner[0],
                 Sender = multiSignContract.ScriptHash,
-                Attributes = new TransactionAttribute[0],
                 NetworkFee = 0,
                 Nonce = 0,
                 Script = new byte[0],

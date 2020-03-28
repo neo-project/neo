@@ -3,8 +3,8 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
@@ -46,7 +46,6 @@ namespace Neo.UnitTests
             {
                 Script = new byte[1],
                 Sender = UInt160.Zero,
-                Attributes = new TransactionAttribute[0],
                 Cosigners = new Cosigner[0],
                 Witnesses = new Witness[]{ new Witness
                 {
@@ -143,7 +142,6 @@ namespace Neo.UnitTests
             {
                 Script = randomBytes,
                 Sender = UInt160.Zero,
-                Attributes = new TransactionAttribute[0],
                 Cosigners = new Cosigner[0],
                 Witnesses = new[]
                 {

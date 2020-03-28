@@ -22,10 +22,6 @@ namespace Neo.Network.P2P.Payloads
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
         /// <summary>
-        /// Maximum number of attributes that can be contained within a transaction
-        /// </summary>
-        private const int MaxTransactionAttributes = 16;
-        /// <summary>
         /// Maximum number of cosigners that can be contained within a transaction
         /// </summary>
         private const int MaxCosigners = 16;
@@ -36,7 +32,6 @@ namespace Neo.Network.P2P.Payloads
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
-        private TransactionAttribute[] attributes;
         private Cosigner[] cosigners;
         private byte[] script;
         private Witness[] witnesses;
@@ -48,12 +43,6 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //SystemFee
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
-
-        public TransactionAttribute[] Attributes
-        {
-            get => attributes;
-            set { attributes = value; _hash = null; _size = 0; }
-        }
 
         public Cosigner[] Cosigners
         {
@@ -117,7 +106,6 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.GetVarSize() +   //Attributes
                         Cosigners.GetVarSize() +    //Cosigners
                         Script.GetVarSize() +       //Script
                         Witnesses.GetVarSize();     //Witnesses
@@ -177,7 +165,6 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
@@ -222,7 +209,6 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
-            writer.Write(Attributes);
             writer.Write(Cosigners);
             writer.WriteVarBytes(Script);
         }
@@ -238,7 +224,6 @@ namespace Neo.Network.P2P.Payloads
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
-            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
@@ -254,7 +239,6 @@ namespace Neo.Network.P2P.Payloads
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
             tx.NetworkFee = long.Parse(json["net_fee"].AsString());
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
-            tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
             tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
             tx.Script = Convert.FromBase64String(json["script"].AsString());
             tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();

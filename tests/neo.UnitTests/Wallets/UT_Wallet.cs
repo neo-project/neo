@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
@@ -402,7 +401,7 @@ namespace Neo.UnitTests.Wallets
         public void TestMakeTransaction2()
         {
             MyWallet wallet = new MyWallet();
-            Action action = () => wallet.MakeTransaction(new byte[] { }, UInt160.Zero, new TransactionAttribute[] { });
+            Action action = () => wallet.MakeTransaction(new byte[] { }, UInt160.Zero);
             action.Should().Throw<ArgumentException>();
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
@@ -423,10 +422,10 @@ namespace Neo.UnitTests.Wallets
             .ToByteArray();
             snapshot.Commit();
 
-            var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new TransactionAttribute[] { });
+            var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash);
             tx.Should().NotBeNull();
 
-            tx = wallet.MakeTransaction(new byte[] { }, null, new TransactionAttribute[] { });
+            tx = wallet.MakeTransaction(new byte[] { }, null);
             tx.Should().NotBeNull();
 
             entry.Value = new NeoToken.AccountState()

@@ -24,7 +24,6 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Attributes = new TransactionAttribute[0],
                 Cosigners = new Cosigner[0],
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
@@ -243,7 +242,6 @@ namespace Neo.UnitTests.SmartContract
                 var tx = new Transaction()
                 {
                     Script = new byte[] { 0x01 },
-                    Attributes = new TransactionAttribute[0],
                     Cosigners = new Cosigner[0],
                     NetworkFee = 0x02,
                     SystemFee = 0x03,
@@ -261,7 +259,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b225c75303032426b53415959527a4c4b69685a676464414b50596f754655737a63544d7867445a6572584a3172784c37303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
+                    @"5b22725679582f735a576c504d79325641715741756c7766515c75303032422f53327239685739595356535c753030324274773447634d3d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }
