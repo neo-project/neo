@@ -105,9 +105,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             var ret = Check_RegisterValidator(snapshot, point); // Exists
             ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            ret.Result.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount); // No changes
+            snapshot.Storages.GetChangeSet().Count().Should().Be(++keyCount); // No changes
 
             point[20]++; // fake point
             ret = Check_RegisterValidator(snapshot, point); // New
@@ -488,7 +488,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestValidatorState_ToByteArray()
         {
             CandidateState input = new CandidateState { Votes = new BigInteger(1000) };
-            input.ToByteArray().ToHexString().Should().Be("e803");
+            input.ToByteArray().ToHexString().Should().Be("410220012102e803");
         }
 
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
