@@ -146,11 +146,40 @@ namespace Neo.SmartContract.Native.Tokens
         private bool RegisterCandidate(StoreView snapshot, ECPoint pubkey)
         {
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
-            if (snapshot.Storages.TryGet(key) != null) return false;
-            snapshot.Storages.Add(key, new StorageItem
+            StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
                 Value = new CandidateState().ToByteArray()
             });
+            CandidateState state = CandidateState.FromByteArray(item.Value);
+            state.Registered = true;
+            item.Value = state.ToByteArray();
+            return true;
+        }
+
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
+        private StackItem UnregisterCandidate(ApplicationEngine engine, Array args)
+        {
+            ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                return false;
+            return UnregisterCandidate(engine.Snapshot, pubkey);
+        }
+
+        private bool UnregisterCandidate(StoreView snapshot, ECPoint pubkey)
+        {
+            StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
+            if (snapshot.Storages.TryGet(key) is null) return true;
+            StorageItem item = snapshot.Storages.GetAndChange(key);
+            CandidateState state = CandidateState.FromByteArray(item.Value);
+            if (state.Votes.IsZero)
+            {
+                snapshot.Storages.Delete(key);
+            }
+            else
+            {
+                state.Registered = false;
+                item.Value = state.ToByteArray();
+            }
             return true;
         }
 
@@ -171,10 +200,14 @@ namespace Neo.SmartContract.Native.Tokens
             AccountState state_account = new AccountState(storage_account.Value);
             if (state_account.VoteTo != null)
             {
-                StorageItem storage_validator = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray()));
+                StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray());
+                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
                 state_validator.Votes -= state_account.Balance;
-                storage_validator.Value = state_validator.ToByteArray();
+                if (!state_validator.Registered && state_validator.Votes.IsZero)
+                    snapshot.Storages.Delete(key);
+                else
+                    storage_validator.Value = state_validator.ToByteArray();
             }
             state_account.VoteTo = voteTo;
             storage_account.Value = state_account.ToByteArray();
@@ -184,6 +217,7 @@ namespace Neo.SmartContract.Native.Tokens
                 if (snapshot.Storages.TryGet(key) is null) return false;
                 StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
+                if (!state_validator.Registered) return false;
                 state_validator.Votes += state_account.Balance;
                 storage_validator.Value = state_validator.ToByteArray();
             }
@@ -202,8 +236,8 @@ namespace Neo.SmartContract.Native.Tokens
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
-                CandidateState.FromByteArray(p.Value.Value).Votes
-            ));
+                CandidateState.FromByteArray(p.Value.Value)
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
@@ -278,19 +312,22 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal class CandidateState
         {
+            public bool Registered = true;
             public BigInteger Votes;
 
             public static CandidateState FromByteArray(byte[] data)
             {
+                Struct @struct = (Struct)BinarySerializer.Deserialize(data, 16, 32);
                 return new CandidateState
                 {
-                    Votes = new BigInteger(data)
+                    Registered = @struct[0].ToBoolean(),
+                    Votes = @struct[1].GetBigInteger()
                 };
             }
 
             public byte[] ToByteArray()
             {
-                return Votes.ToByteArrayStandard();
+                return BinarySerializer.Serialize(new Struct { Registered, Votes }, 32);
             }
         }
     }
