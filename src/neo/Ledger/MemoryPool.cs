@@ -27,7 +27,6 @@ namespace Neo.Ledger
 
         private readonly NeoSystem _system;
 
-        //
         /// <summary>
         /// Guarantees consistency of the pool data structures.
         ///
