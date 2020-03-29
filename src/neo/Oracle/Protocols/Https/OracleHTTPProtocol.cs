@@ -54,7 +54,7 @@ namespace Neo.Oracle.Protocols.Https
         /// </summary>
         /// <param name="request">Request</param>
         /// <returns>Oracle result</returns>
-        public OracleResult Process(OracleHttpsRequest request)
+        public OracleResponse Process(OracleHttpsRequest request)
         {
             LoadConfig();
 
@@ -86,13 +86,13 @@ namespace Neo.Oracle.Protocols.Https
                     //    }
                     default:
                         {
-                            return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.PolicyError);
+                            return OracleResponse.CreateError(request.Hash, OracleResultError.PolicyError);
                         }
                 }
 
                 if (!result.Wait(TimeOut))
                 {
-                    return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.Timeout);
+                    return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
                 }
 
                 if (result.Result.IsSuccessStatusCode)
@@ -101,21 +101,21 @@ namespace Neo.Oracle.Protocols.Https
 
                     if (!ret.Wait(TimeOut))
                     {
-                        return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.Timeout);
+                        return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
                     }
 
                     if (!ret.IsFaulted)
                     {
                         if (!FilterResponse(ret.Result, request.Filter, out var filteredStr))
                         {
-                            return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.FilterError);
+                            return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError);
                         }
 
-                        return OracleResult.CreateResult(UInt256.Zero, request.Hash, filteredStr);
+                        return OracleResponse.CreateResult(request.Hash, filteredStr);
                     }
                 }
 
-                return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.ServerError);
+                return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
             }
         }
 

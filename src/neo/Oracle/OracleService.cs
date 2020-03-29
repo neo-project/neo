@@ -52,7 +52,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Oracle
         /// </summary>
-        public Func<OracleRequest, OracleResult> Oracle { get; }
+        public Func<OracleRequest, OracleResponse> Oracle { get; }
 
         /// <summary>
         /// Is started
@@ -237,13 +237,13 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="request">Request</param>
         /// <returns>Return Oracle response</returns>
-        public static OracleResult Process(OracleRequest request)
+        public static OracleResponse Process(OracleRequest request)
         {
             return request switch
             {
                 OracleHttpsRequest https => _https.Process(https),
 
-                _ => OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.ProtocolError),
+                _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
             };
         }
     }
