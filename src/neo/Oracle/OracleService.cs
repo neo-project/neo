@@ -139,7 +139,7 @@ namespace Neo.Oracle
             var oracle = new OracleExecutionCache(Process);
 
             using var snapshot = Blockchain.Singleton.GetSnapshot();
-            using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee + tx.NetworkFee, false, oracle);
+            using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
 
             if (engine.Execute() == VM.VMState.HALT)
             {
