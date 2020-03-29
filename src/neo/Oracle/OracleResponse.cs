@@ -12,14 +12,9 @@ using System.Text;
 
 namespace Neo.Oracle
 {
-    public class OracleResult : IInteroperable, IVerifiable
+    public class OracleResponse : IInteroperable, IVerifiable
     {
         private UInt160 _hash;
-
-        /// <summary>
-        /// Transaction Hash
-        /// </summary>
-        public UInt256 TransactionHash { get; set; }
 
         /// <summary>
         /// Request hash
@@ -52,7 +47,7 @@ namespace Neo.Oracle
             }
         }
 
-        public int Size => UInt256.Length + UInt160.Length + sizeof(byte) + Result.GetVarSize();
+        public int Size => UInt160.Length + sizeof(byte) + Result.GetVarSize();
 
         public Witness[] Witnesses
         {
@@ -63,14 +58,13 @@ namespace Neo.Oracle
         /// <summary>
         /// Create error result
         /// </summary>
-        /// <param name="txHash">Tx Hash</param>
         /// <param name="requestHash">Request Id</param>
+        /// <param name="error">Error</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateError(UInt256 txHash, UInt160 requestHash, OracleResultError error)
+        public static OracleResponse CreateError(UInt160 requestHash, OracleResultError error)
         {
-            return new OracleResult()
+            return new OracleResponse()
             {
-                TransactionHash = txHash,
                 RequestHash = requestHash,
                 Error = error,
                 Result = new byte[0],
@@ -80,27 +74,24 @@ namespace Neo.Oracle
         /// <summary>
         /// Create result
         /// </summary>
-        /// <param name="txHash">Tx Hash</param>
         /// <param name="requestHash">Request Hash</param>
         /// <param name="result">Result</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateResult(UInt256 txHash, UInt160 requestHash, string result)
+        public static OracleResponse CreateResult(UInt160 requestHash, string result)
         {
-            return CreateResult(txHash, requestHash, Encoding.UTF8.GetBytes(result));
+            return CreateResult(requestHash, Encoding.UTF8.GetBytes(result));
         }
 
         /// <summary>
         /// Create result
         /// </summary>
-        /// <param name="txHash">Tx Hash</param>
         /// <param name="requestHash">Request Id</param>
         /// <param name="result">Result</param>
         /// <returns>OracleResult</returns>
-        public static OracleResult CreateResult(UInt256 txHash, UInt160 requestHash, byte[] result)
+        public static OracleResponse CreateResult(UInt160 requestHash, byte[] result)
         {
-            return new OracleResult()
+            return new OracleResponse()
             {
-                TransactionHash = txHash,
                 RequestHash = requestHash,
                 Error = OracleResultError.None,
                 Result = result,
@@ -109,7 +100,6 @@ namespace Neo.Oracle
 
         public void SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(TransactionHash);
             writer.Write(RequestHash);
             writer.Write((byte)Error);
             if (Error == OracleResultError.None)
@@ -123,7 +113,6 @@ namespace Neo.Oracle
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
-            TransactionHash = reader.ReadSerializable<UInt256>();
             RequestHash = reader.ReadSerializable<UInt160>();
             Error = (OracleResultError)reader.ReadByte();
             Result = Error != OracleResultError.None ? reader.ReadVarBytes(ushort.MaxValue) : new byte[0];
@@ -147,6 +136,7 @@ namespace Neo.Oracle
         {
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {
+                new ByteArray(RequestHash.ToArray()),
                 new Integer((byte)Error),
                 new ByteArray(Result)
             });

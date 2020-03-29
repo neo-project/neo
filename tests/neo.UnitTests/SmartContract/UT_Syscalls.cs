@@ -130,8 +130,8 @@ namespace Neo.UnitTests.SmartContract
 
                     Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
 
-                    PrimitiveType type = array[0] as PrimitiveType;
-                    ByteArray response = array[1] as ByteArray;
+                    PrimitiveType type = array[1] as PrimitiveType;
+                    ByteArray response = array[2] as ByteArray;
 
                     Assert.AreEqual((int)OracleResultError.None, type.GetBigInteger());
                     Assert.AreEqual("MyResponse", response.GetString());
@@ -155,8 +155,8 @@ namespace Neo.UnitTests.SmartContract
 
                     Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
 
-                    PrimitiveType type = array[0] as PrimitiveType;
-                    ByteArray response = array[1] as ByteArray;
+                    PrimitiveType type = array[1] as PrimitiveType;
+                    ByteArray response = array[2] as ByteArray;
 
                     Assert.AreEqual((int)OracleResultError.FilterError, type.GetBigInteger());
                     Assert.AreEqual("", response.GetString());
@@ -181,22 +181,22 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
-        private OracleResult Oracle(OracleRequest arg)
+        private OracleResponse Oracle(OracleRequest arg)
         {
             if (arg is OracleHttpsRequest https)
             {
                 if (https.Filter != "MyFilter")
                 {
-                    return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.FilterError);
+                    return OracleResponse.CreateError(UInt160.Zero, OracleResultError.FilterError);
                 }
 
                 if (https.URL.ToString() == "https://google.es/" && https.Method == HttpMethod.GET)
                 {
-                    return OracleResult.CreateResult(UInt256.Zero, UInt160.Zero, "MyResponse");
+                    return OracleResponse.CreateResult(UInt160.Zero, "MyResponse");
                 }
             }
 
-            return OracleResult.CreateError(UInt256.Zero, UInt160.Zero, OracleResultError.PolicyError);
+            return OracleResponse.CreateError(UInt160.Zero, OracleResultError.PolicyError);
         }
 
         [TestMethod]
