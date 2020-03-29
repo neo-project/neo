@@ -3,10 +3,11 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,30 +15,14 @@ namespace Neo.Oracle
 {
     public class OracleService : UntypedActor
     {
-        /// <summary>
-        /// A flag for know if the pool was ordered or not
-        /// </summary>
-        private bool _itsDirty = false;
         private long _isStarted = 0;
         private CancellationTokenSource _cancel;
         private readonly IActorRef _localNode;
         private readonly Wallet _wallet;
 
-        /// <summary>
-        /// Number of threads for processing the oracle
-        /// </summary>
-        private readonly Task[] _oracleTasks = new Task[4]; // TODO: Set this
-        /// <summary>
-        /// _oracleTasks will consume from this pool
-        /// </summary>
-        private readonly BlockingCollection<Transaction> _asyncPool = new BlockingCollection<Transaction>();
-        /// <summary>
-        /// Sortable pool
-        /// </summary>
-        private readonly List<Transaction> _orderedPool = new List<Transaction>();
-        /// <summary>
-        /// HTTPS protocol
-        /// </summary>
+        private readonly Task[] _oracleTasks = new Task[4];
+        private readonly BlockingCollection<Transaction> _pool = new BlockingCollection<Transaction>();
+
         private static readonly OracleHTTPProtocol _https = new OracleHTTPProtocol();
 
         /// <summary>
@@ -84,44 +69,9 @@ namespace Neo.Oracle
                         // TODO: Check that it's a oracleTx
                         // TODO: Should we check the max, or use MemoryPool?
 
-                        lock (_orderedPool)
-                        {
-                            // Add and sort
-
-                            _orderedPool.Add(tx);
-                            _itsDirty = true;
-
-                            // Pop one item if it's needed
-
-                            if (_asyncPool.Count <= 0)
-                            {
-                                PopTransaction();
-                            }
-                        }
+                        _pool.Add(tx);
                         break;
                     }
-            }
-        }
-
-        /// <summary>
-        /// Move one transaction from _orderedPool to _asyncPool
-        /// </summary>
-        private void PopTransaction()
-        {
-            if (_orderedPool.Count > 0)
-            {
-                if (_itsDirty)
-                {
-                    // It will require a sort before pop the item
-
-                    _orderedPool.Sort((a, b) => b.FeePerByte.CompareTo(a.FeePerByte));
-                    _itsDirty = false;
-                }
-
-                var entry = _orderedPool[0];
-                _orderedPool.RemoveAt(0);
-
-                _asyncPool.Add(entry);
             }
         }
 
@@ -140,16 +90,9 @@ namespace Neo.Oracle
             {
                 _oracleTasks[x] = new Task(() =>
                 {
-                    // TODO: it sould be sorted by fee
-
-                    foreach (var tx in _asyncPool.GetConsumingEnumerable(_cancel.Token))
+                    foreach (var tx in _pool.GetConsumingEnumerable(_cancel.Token))
                     {
                         ProcessTransaction(tx);
-
-                        lock (_orderedPool)
-                        {
-                            PopTransaction();
-                        }
                     }
                 },
                 _cancel.Token);
@@ -181,9 +124,9 @@ namespace Neo.Oracle
 
             // Clean queue
 
-            while (_asyncPool.Count > 0)
+            while (_pool.Count > 0)
             {
-                _asyncPool.TryTake(out _);
+                _pool.TryTake(out _);
             }
         }
 
@@ -194,18 +137,21 @@ namespace Neo.Oracle
         private void ProcessTransaction(Transaction tx)
         {
             var oracle = new OracleExecutionCache(Process);
+
             using var snapshot = Blockchain.Singleton.GetSnapshot();
-            using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
+            using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee + tx.NetworkFee, false, oracle);
 
             if (engine.Execute() == VM.VMState.HALT)
             {
                 // Send oracle result
 
-                _localNode.Tell(new OracleServiceResponse()
+                var msg = new OracleServiceResponse()
                 {
                     ExecutionResult = oracle,
                     OracleSignature = Sign(oracle)
-                });
+                };
+
+                _localNode.Tell(oracle);
             }
             else
             {
@@ -239,12 +185,22 @@ namespace Neo.Oracle
         /// <returns>Return Oracle response</returns>
         public static OracleResult Process(OracleRequest request)
         {
-            return request switch
+            switch (request)
             {
-                OracleHttpsRequest https => _https.Process(https),
+                case OracleHttpsRequest https:
+                    {
+                        short seconds;
 
-                _ => OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.ProtocolError),
-            };
+                        using (var snapshot = Blockchain.Singleton.GetSnapshot())
+                        {
+                            seconds = (short)NativeContract.Oracle.GetConfig(snapshot, HttpConfig.Timeout).ToBigInteger();
+                        }
+
+                        return _https.Process(https, TimeSpan.FromSeconds(seconds));
+                    }
+            }
+
+            return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.ProtocolError);
         }
     }
 }

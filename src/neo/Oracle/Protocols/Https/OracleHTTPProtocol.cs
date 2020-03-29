@@ -1,63 +1,19 @@
-using Neo.Ledger;
-using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Oracle;
 using System;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Oracle.Protocols.Https
 {
     internal class OracleHTTPProtocol
     {
-        private long _lastHeight = -1;
-
-        /// <summary>
-        /// Timeout
-        /// </summary>
-        public TimeSpan TimeOut { get; private set; }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public OracleHTTPProtocol()
-        {
-            LoadConfig();
-        }
-
-        /// <summary>
-        /// Load config
-        /// </summary>
-        private void LoadConfig()
-        {
-            // Check if it's the same
-
-            var height = Blockchain.Singleton.Height;
-            if (Interlocked.Exchange(ref _lastHeight, height) == height)
-            {
-                return;
-            }
-
-            // Load the configuration
-
-            short seconds;
-            using (var snapshot = Blockchain.Singleton.GetSnapshot())
-            {
-                seconds = (short)NativeContract.Oracle.GetConfig(snapshot, HttpConfig.Timeout).ToBigInteger();
-            }
-
-            TimeOut = TimeSpan.FromSeconds(seconds);
-        }
-
         // <summary>
         /// Process HTTP oracle request
         /// </summary>
         /// <param name="request">Request</param>
+        /// <param name="timeout">Timeouts</param>
         /// <returns>Oracle result</returns>
-        public OracleResult Process(OracleHttpsRequest request)
+        public OracleResult Process(OracleHttpsRequest request, TimeSpan timeout)
         {
-            LoadConfig();
-
             using (var client = new HttpClient())
             {
                 Task<HttpResponseMessage> result;
@@ -90,7 +46,7 @@ namespace Neo.Oracle.Protocols.Https
                         }
                 }
 
-                if (!result.Wait(TimeOut))
+                if (!result.Wait(timeout))
                 {
                     return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.Timeout);
                 }
@@ -99,7 +55,7 @@ namespace Neo.Oracle.Protocols.Https
                 {
                     var ret = result.Result.Content.ReadAsStringAsync();
 
-                    if (!ret.Wait(TimeOut))
+                    if (!ret.Wait(timeout))
                     {
                         return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.Timeout);
                     }
