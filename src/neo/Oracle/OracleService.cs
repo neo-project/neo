@@ -110,7 +110,7 @@ namespace Neo.Oracle
         {
             if (_orderedPool.Count > 0)
             {
-                if (_itsDirty)
+                if (_itsDirty && _orderedPool.Count > 1)
                 {
                     // It will require a sort before pop the item
 
@@ -140,8 +140,6 @@ namespace Neo.Oracle
             {
                 _oracleTasks[x] = new Task(() =>
                 {
-                    // TODO: it sould be sorted by fee
-
                     foreach (var tx in _asyncPool.GetConsumingEnumerable(_cancel.Token))
                     {
                         ProcessTransaction(tx);
