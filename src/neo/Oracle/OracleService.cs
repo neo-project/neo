@@ -3,8 +3,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Oracle;
 using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
@@ -137,7 +135,6 @@ namespace Neo.Oracle
         private void ProcessTransaction(Transaction tx)
         {
             var oracle = new OracleExecutionCache(Process);
-
             using var snapshot = Blockchain.Singleton.GetSnapshot();
             using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
 
@@ -185,22 +182,12 @@ namespace Neo.Oracle
         /// <returns>Return Oracle response</returns>
         public static OracleResult Process(OracleRequest request)
         {
-            switch (request)
+            return request switch
             {
-                case OracleHttpsRequest https:
-                    {
-                        short seconds;
+                OracleHttpsRequest https => _https.Process(https),
 
-                        using (var snapshot = Blockchain.Singleton.GetSnapshot())
-                        {
-                            seconds = (short)NativeContract.Oracle.GetConfig(snapshot, HttpConfig.Timeout).ToBigInteger();
-                        }
-
-                        return _https.Process(https, TimeSpan.FromSeconds(seconds));
-                    }
-            }
-
-            return OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.ProtocolError);
+                _ => OracleResult.CreateError(UInt256.Zero, request.Hash, OracleResultError.ProtocolError),
+            };
         }
     }
 }
