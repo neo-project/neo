@@ -23,13 +23,18 @@ namespace Neo.Oracle
         PolicyError = 0x03,
 
         /// <summary>
+        /// There was an error with the protocol
+        /// </summary>
+        ProtocolError = 0x04,
+
+        /// <summary>
         /// There was an error with the filter
         /// </summary>
-        FilterError = 0x04,
+        FilterError = 0x05,
 
         /// <summary>
         /// Unrecognized format
         /// </summary>
-        ResponseError = 0x05
+        ResponseError = 0x06
     }
 }
