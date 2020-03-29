@@ -88,6 +88,8 @@ namespace Neo.Oracle
             {
                 _oracleTasks[x] = new Task(() =>
                 {
+                    // TODO: it sould be sorted by fee
+
                     foreach (var tx in _pool.GetConsumingEnumerable(_cancel.Token))
                     {
                         ProcessTransaction(tx);
@@ -142,13 +144,11 @@ namespace Neo.Oracle
             {
                 // Send oracle result
 
-                var msg = new OracleServiceResponse()
+                _localNode.Tell(new OracleServiceResponse()
                 {
                     ExecutionResult = oracle,
                     OracleSignature = Sign(oracle)
-                };
-
-                _localNode.Tell(oracle);
+                });
             }
             else
             {
