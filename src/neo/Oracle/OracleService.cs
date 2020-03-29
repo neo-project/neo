@@ -114,7 +114,7 @@ namespace Neo.Oracle
                 {
                     // It will require a sort before pop the item
 
-                    _orderedPool.Sort((a, b) => a.FeePerByte.CompareTo(b.FeePerByte));
+                    _orderedPool.Sort((a, b) => b.FeePerByte.CompareTo(a.FeePerByte));
                     _itsDirty = false;
                 }
 
