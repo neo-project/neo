@@ -6,6 +6,7 @@ using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,14 +14,30 @@ namespace Neo.Oracle
 {
     public class OracleService : UntypedActor
     {
+        /// <summary>
+        /// A flag for know if the pool was ordered or not
+        /// </summary>
+        private bool _itsDirty = false;
         private long _isStarted = 0;
         private CancellationTokenSource _cancel;
         private readonly IActorRef _localNode;
         private readonly Wallet _wallet;
-
-        private readonly Task[] _oracleTasks = new Task[4];
-        private readonly BlockingCollection<Transaction> _pool = new BlockingCollection<Transaction>();
-
+        
+        /// <summary>
+        /// Number of threads for processing the oracle
+        /// </summary>
+        private readonly Task[] _oracleTasks = new Task[4]; // TODO: Set this
+        /// <summary>
+        /// _oracleTasks will consume from this pool
+        /// </summary>
+        private readonly BlockingCollection<Transaction> _asyncPool = new BlockingCollection<Transaction>();
+        /// <summary>
+        /// Sortable pool
+        /// </summary>
+        private readonly List<Transaction> _orderedPool = new List<Transaction>();
+        /// <summary>
+        /// HTTPS protocol
+        /// </summary>
         private static readonly OracleHTTPProtocol _https = new OracleHTTPProtocol();
 
         /// <summary>
@@ -67,9 +84,44 @@ namespace Neo.Oracle
                         // TODO: Check that it's a oracleTx
                         // TODO: Should we check the max, or use MemoryPool?
 
-                        _pool.Add(tx);
+                        lock (_orderedPool)
+                        {
+                            // Add and sort
+
+                            _orderedPool.Add(tx);
+                            _itsDirty = true;
+
+                            // Pop one item if it's needed
+
+                            if (_asyncPool.Count <= 0)
+                            {
+                                PopTransaction();
+                            }
+                        }
                         break;
                     }
+            }
+        }
+
+        /// <summary>
+        /// Move one transaction from _orderedPool to _asyncPool
+        /// </summary>
+        private void PopTransaction()
+        {
+            if (_orderedPool.Count > 0)
+            {
+                if (_itsDirty)
+                {
+                    // It will require a sort before pop the item
+
+                    _orderedPool.Sort((a, b) => a.FeePerByte.CompareTo(b.FeePerByte));
+                    _itsDirty = false;
+                }
+
+                var entry = _orderedPool[0];
+                _orderedPool.RemoveAt(0);
+
+                _asyncPool.Add(entry);
             }
         }
 
@@ -90,9 +142,14 @@ namespace Neo.Oracle
                 {
                     // TODO: it sould be sorted by fee
 
-                    foreach (var tx in _pool.GetConsumingEnumerable(_cancel.Token))
+                    foreach (var tx in _asyncPool.GetConsumingEnumerable(_cancel.Token))
                     {
                         ProcessTransaction(tx);
+
+                        lock (_orderedPool)
+                        {
+                            PopTransaction();
+                        }
                     }
                 },
                 _cancel.Token);
@@ -124,9 +181,9 @@ namespace Neo.Oracle
 
             // Clean queue
 
-            while (_pool.Count > 0)
+            while (_asyncPool.Count > 0)
             {
-                _pool.TryTake(out _);
+                _asyncPool.TryTake(out _);
             }
         }
 
