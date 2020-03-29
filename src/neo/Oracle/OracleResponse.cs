@@ -60,6 +60,7 @@ namespace Neo.Oracle
         /// Create error result
         /// </summary>
         /// <param name="requestHash">Request Id</param>
+        /// <param name="error">Error</param>
         /// <returns>OracleResult</returns>
         public static OracleResponse CreateError(UInt160 requestHash, OracleResultError error)
         {
