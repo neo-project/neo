@@ -22,7 +22,7 @@ namespace Neo.Oracle
         private CancellationTokenSource _cancel;
         private readonly IActorRef _localNode;
         private readonly Wallet _wallet;
-        
+
         /// <summary>
         /// Number of threads for processing the oracle
         /// </summary>
