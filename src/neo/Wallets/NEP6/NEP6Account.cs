@@ -1,5 +1,6 @@
 using Neo.IO.Json;
 using System;
+using System.Threading;
 
 namespace Neo.Wallets.NEP6
 {
@@ -7,8 +8,7 @@ namespace Neo.Wallets.NEP6
     {
         private readonly NEP6Wallet wallet;
         private string nep2key;
-        private string nep2keyDraft = null;
-        private bool isChangingPassword = false;
+        private string nep2KeyNew = null;
         private KeyPair key;
         public JObject Extra;
 
@@ -110,18 +110,15 @@ namespace Neo.Wallets.NEP6
                     return false;
                 }
             }
-            nep2keyDraft = key.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
-            isChangingPassword = true;
+            nep2KeyNew = key.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
             return true;
         }
 
         internal bool ChangePassword()
         {
-            if (isChangingPassword)
+            if (nep2KeyNew != null)
             {
-                nep2key = nep2keyDraft;
-                isChangingPassword = false;
-                nep2keyDraft = null;
+                nep2key = Interlocked.Exchange(ref nep2KeyNew, null);
                 return true;
             }
             return false;
@@ -129,8 +126,7 @@ namespace Neo.Wallets.NEP6
 
         internal void KeepPassword()
         {
-            nep2keyDraft = null;
-            isChangingPassword = false;
+            nep2KeyNew = null;
         }
     }
 }
