@@ -26,7 +26,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         private const int MaxCosigners = 16;
 
-        private TransactionVersion version;
+        private byte version;
         private uint nonce;
         private UInt160 sender;
         private long sysfee;
@@ -37,12 +37,12 @@ namespace Neo.Network.P2P.Payloads
         private Witness[] witnesses;
 
         public const int HeaderSize =
-            sizeof(TransactionVersion) +    //Version
-            sizeof(uint) +                  //Nonce
-            20 +                            //Sender
-            sizeof(long) +                  //SystemFee
-            sizeof(long) +                  //NetworkFee
-            sizeof(uint);                   //ValidUntilBlock
+            sizeof(byte) +  //Version
+            sizeof(uint) +  //Nonce
+            20 +            //Sender
+            sizeof(long) +  //SystemFee
+            sizeof(long) +  //NetworkFee
+            sizeof(uint);   //ValidUntilBlock
 
         public Cosigner[] Cosigners
         {
@@ -129,7 +129,7 @@ namespace Neo.Network.P2P.Payloads
             set { validUntilBlock = value; _hash = null; }
         }
 
-        public TransactionVersion Version
+        public byte Version
         {
             get => version;
             set { version = value; _hash = null; }
@@ -154,9 +154,8 @@ namespace Neo.Network.P2P.Payloads
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
-            Version = (TransactionVersion)reader.ReadByte();
-            if ((Version & ~TransactionVersion.All) != TransactionVersion.Default)
-                throw new FormatException();
+            Version = reader.ReadByte();
+            if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
             Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
@@ -204,7 +203,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write((byte)Version);
+            writer.Write(Version);
             writer.Write(Nonce);
             writer.Write(Sender);
             writer.Write(SystemFee);
@@ -219,7 +218,7 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
-            json["version"] = (byte)Version;
+            json["version"] = Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
             json["sys_fee"] = SystemFee.ToString();
@@ -233,18 +232,17 @@ namespace Neo.Network.P2P.Payloads
 
         public static Transaction FromJson(JObject json)
         {
-            return new Transaction
-            {
-                Version = (TransactionVersion)byte.Parse(json["version"].AsString()),
-                Nonce = uint.Parse(json["nonce"].AsString()),
-                Sender = json["sender"].AsString().ToScriptHash(),
-                SystemFee = long.Parse(json["sys_fee"].AsString()),
-                NetworkFee = long.Parse(json["net_fee"].AsString()),
-                ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString()),
-                Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray(),
-                Script = Convert.FromBase64String(json["script"].AsString()),
-                Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray()
-            };
+            Transaction tx = new Transaction();
+            tx.Version = byte.Parse(json["version"].AsString());
+            tx.Nonce = uint.Parse(json["nonce"].AsString());
+            tx.Sender = json["sender"].AsString().ToScriptHash();
+            tx.SystemFee = long.Parse(json["sys_fee"].AsString());
+            tx.NetworkFee = long.Parse(json["net_fee"].AsString());
+            tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
+            tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
+            tx.Script = Convert.FromBase64String(json["script"].AsString());
+            tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
+            return tx;
         }
 
         bool IInventory.Verify(StoreView snapshot)
