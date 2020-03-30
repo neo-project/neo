@@ -7,7 +7,7 @@ namespace Neo.Oracle
     public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResponse>>
     {
         /// <summary>
-        /// Results
+        /// Results (OracleRequest.Hash/OracleResponse)
         /// </summary>
         private readonly Dictionary<UInt160, OracleResponse> _cache = new Dictionary<UInt160, OracleResponse>();
 
