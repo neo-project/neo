@@ -109,14 +109,14 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                     OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
-                case MessageCommand.GetBlockData:
-                    OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
+                case MessageCommand.GetBlockByIndex:
+                    OnGetBlockByIndexMessageReceived((GetBlockByIndexPayload)msg.Payload);
                     break;
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
                     break;
                 case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived((GetHeadersPayload)msg.Payload);
+                    OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload);
                     break;
                 case MessageCommand.Headers:
                     OnHeadersMessageReceived((HeadersPayload)msg.Payload);
@@ -225,7 +225,7 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
-        private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
+        private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
         {
             for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
             {
@@ -292,10 +292,10 @@ namespace Neo.Network.P2P
         /// A limit set by HeadersPayload.MaxHeadersCount is also applied to the number of requested Headers, namely payload.Count.
         /// </summary>
         /// <param name="payload">A GetBlocksPayload including start block index and number of blocks' headers requested.</param>
-        private void OnGetHeadersMessageReceived(GetHeadersPayload payload)
+        private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
             uint index = payload.IndexStart;
-            int count = payload.Count < 0 ? HeadersPayload.MaxHeadersCount : payload.Count;
+            int count = payload.Count;
             if (index > Blockchain.Singleton.HeaderHeight)
                 return;
             List<Header> headers = new List<Header>();

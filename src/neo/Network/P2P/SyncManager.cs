@@ -166,7 +166,7 @@ namespace Neo.Network.P2P
             }
             NodeSession session = remoteNode.Value.session;
             session.IndexTasks.Add(index, DateTime.UtcNow);
-            remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockData, GetBlockDataPayload.Create(index, 1)));
+            remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(index, 1)));
             failedTasks.Remove(index);
             return true;
         }
