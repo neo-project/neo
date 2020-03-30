@@ -179,8 +179,6 @@ namespace Neo.Network.P2P
                 case SendDirectly send:
                     OnSendDirectly(send.Inventory);
                     break;
-                case RelayResultReason _:
-                    break;
             }
         }
 
