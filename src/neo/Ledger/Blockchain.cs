@@ -279,7 +279,9 @@ namespace Neo.Ledger
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Verify the the transaction
-                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
+                if (tx.VerifySenderFeeFromPool(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
+                    continue;
+                if (tx.Verify(currentSnapshot) != VerifyResult.Succeed)
                     continue;
                 // Add to the memory pool
                 MemPool.TryAdd(tx.Hash, tx);
@@ -419,6 +421,8 @@ namespace Neo.Ledger
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
             if (!MemPool.CanTransactionFitInPool(transaction)) return VerifyResult.OutOfMemory;
+            VerifyResult reason = transaction.VerifySenderFeeFromPool(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
+            if (reason != VerifyResult.Succeed) return reason;
             if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
             return VerifyResult.Succeed;
         }

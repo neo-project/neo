@@ -61,7 +61,8 @@ namespace Neo.Consensus
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (verify && tx.Verify(context.Snapshot, context.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
+            if (verify && tx.VerifySenderFeeFromPool(context.Snapshot, context.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed
+                && tx.Verify(context.Snapshot) != VerifyResult.Succeed)
             {
                 Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView(ChangeViewReason.TxInvalid);

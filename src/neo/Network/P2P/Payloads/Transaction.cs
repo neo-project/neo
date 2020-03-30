@@ -263,19 +263,25 @@ namespace Neo.Network.P2P.Payloads
 
         bool IInventory.Verify(StoreView snapshot)
         {
-            return Verify(snapshot, BigInteger.Zero) == VerifyResult.Succeed;
+            return VerifySenderFeeFromPool(snapshot, BigInteger.Zero) == VerifyResult.Succeed
+                && Verify(snapshot) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult VerifySenderFeeFromPool (StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
+            if (balance < fee) return VerifyResult.InsufficientFunds;
+            else return VerifyResult.Succeed;
+        }
+
+        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
                 return VerifyResult.PolicyFail;
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return VerifyResult.InsufficientFunds;
             if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -285,9 +291,9 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult Verify(StoreView snapshot)
         {
-            VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            VerifyResult result = VerifyForEachBlock(snapshot);
             if (result != VerifyResult.Succeed) return result;
             int size = Size;
             if (size > MaxTransactionSize) return VerifyResult.Invalid;
