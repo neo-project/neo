@@ -304,36 +304,31 @@ namespace Neo.Wallets.NEP6
 
         public bool ChangePassword(string password_old, string password_new)
         {
-            bool isSuccessful = true;
+            bool succeed = true;
             lock (accounts)
             {
-                Parallel.ForEach<NEP6Account>(accounts.Values, (account, state) =>
+                Parallel.ForEach(accounts.Values, (account, state) =>
                 {
                     if (!account.ChangePasswordPrelude(password_old, password_new))
                     {
                         state.Stop();
-                        isSuccessful = false;
+                        succeed = false;
                     }
                 });
             }
-            if (!isSuccessful)
+            if (succeed)
             {
-                Parallel.ForEach<NEP6Account>(accounts.Values, account =>
-                {
+                foreach (NEP6Account account in accounts.Values)
+                    account.ChangePassword();
+                if (password != null)
+                    password = password_new;
+            }
+            else
+            {
+                foreach (NEP6Account account in accounts.Values)
                     account.KeepPassword();
-                });
-                return false;
             }
-            Parallel.ForEach<NEP6Account>(accounts.Values, account =>
-            {
-                account.ChangePassword();
-            });
-            if (password != null)
-            {
-                password = password_new;
-            }
-            Save();
-            return true;
+            return succeed;
         }
     }
 }
