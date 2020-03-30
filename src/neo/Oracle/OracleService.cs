@@ -38,7 +38,7 @@ namespace Neo.Oracle
         /// <summary>
         /// HTTPS protocol
         /// </summary>
-        private static readonly OracleHTTPProtocol _https = new OracleHTTPProtocol();
+        private static readonly OracleHttpsProtocol _https = new OracleHttpsProtocol();
 
         /// <summary>
         /// Akka message
@@ -178,6 +178,8 @@ namespace Neo.Oracle
             _cancel = null;
 
             // Clean queue
+
+            _orderedPool.Clear();
 
             while (_asyncPool.Count > 0)
             {
