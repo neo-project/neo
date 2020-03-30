@@ -267,7 +267,7 @@ namespace Neo.Network.P2P.Payloads
                 && Verify(snapshot) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifySenderFeeFromPool (StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult VerifySenderFeeFromPool(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
