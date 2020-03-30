@@ -309,7 +309,7 @@ namespace Neo.Wallets.NEP6
             {
                 Parallel.ForEach(accounts.Values, (account, state) =>
                 {
-                    if (!account.ChangePasswordPrelude(password_old, password_new))
+                    if (!account.ChangePasswordPrepare(password_old, password_new))
                     {
                         state.Stop();
                         succeed = false;
@@ -319,14 +319,14 @@ namespace Neo.Wallets.NEP6
             if (succeed)
             {
                 foreach (NEP6Account account in accounts.Values)
-                    account.ChangePassword();
+                    account.ChangePasswordCommit();
                 if (password != null)
                     password = password_new;
             }
             else
             {
                 foreach (NEP6Account account in accounts.Values)
-                    account.KeepPassword();
+                    account.ChangePasswordRoolback();
             }
             return succeed;
         }

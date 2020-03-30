@@ -89,7 +89,7 @@ namespace Neo.Wallets.NEP6
         /// <summary>
         /// Cache draft nep2key during wallet password changing process. Should not be called alone for a single account
         /// </summary>
-        internal bool ChangePasswordPrelude(string password_old, string password_new)
+        internal bool ChangePasswordPrepare(string password_old, string password_new)
         {
             if (WatchOnly) return true;
             if (nep2key == null)
@@ -114,7 +114,7 @@ namespace Neo.Wallets.NEP6
             return true;
         }
 
-        internal bool ChangePassword()
+        internal bool ChangePasswordCommit()
         {
             if (nep2KeyNew != null)
             {
@@ -124,7 +124,7 @@ namespace Neo.Wallets.NEP6
             return false;
         }
 
-        internal void KeepPassword()
+        internal void ChangePasswordRoolback()
         {
             nep2KeyNew = null;
         }
