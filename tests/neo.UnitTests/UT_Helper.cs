@@ -320,6 +320,23 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestEqual()
+        {
+            var a = new byte[] { 1, 2, 3, 4, 5 };
+            var b = new byte[] { 1, 2, 3, 4, 6 };
+            var c = new byte[0];
+            var d = new byte[] { 1, 2, 3, 4, 5 };
+            var e = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var f = new byte[] { 1 };
+
+            Assert.IsFalse(a.Equal(b));
+            Assert.IsFalse(a.Equal(c));
+            Assert.IsTrue(a.Equal(d));
+            Assert.IsFalse(a.Equal(e));
+            Assert.IsFalse(a.Equal(f));
+        }
+
+        [TestMethod]
         public void TestToNibbles()
         {
             var a = "1234abcd".HexToBytes();
