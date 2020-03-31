@@ -15,8 +15,7 @@ namespace Neo.UnitTests.Network.P2P
         private static NeoSystem testBlockchain;
 
         public UT_RemoteNode()
-            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
-                $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}")
+            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}")
         {
         }
 
