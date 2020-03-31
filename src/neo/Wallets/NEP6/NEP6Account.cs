@@ -92,6 +92,7 @@ namespace Neo.Wallets.NEP6
         internal bool ChangePasswordPrepare(string password_old, string password_new)
         {
             if (WatchOnly) return true;
+            KeyPair keyTemplate = null;
             if (nep2key == null)
             {
                 if (key == null)
@@ -103,14 +104,14 @@ namespace Neo.Wallets.NEP6
             {
                 try
                 {
-                    key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password_old, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
+                    keyTemplate = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password_old, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
                 }
                 catch
                 {
                     return false;
                 }
             }
-            nep2KeyNew = key.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
+            nep2KeyNew = keyTemplate.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
             return true;
         }
 
