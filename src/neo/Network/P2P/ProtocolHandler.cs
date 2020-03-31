@@ -225,7 +225,8 @@ namespace Neo.Network.P2P
 
         private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
         {
-            for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
+            uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
+            for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
                 Block block = Blockchain.Singleton.GetBlock(i);
                 if (block == null)
@@ -293,7 +294,7 @@ namespace Neo.Network.P2P
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
             uint index = payload.IndexStart;
-            int count = payload.Count;
+            uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
             if (index > Blockchain.Singleton.HeaderHeight)
                 return;
             List<Header> headers = new List<Header>();
