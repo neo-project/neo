@@ -321,7 +321,6 @@ namespace Neo
 
         public static byte[] CommonPrefix(this byte[] a, byte[] b)
         {
-            var prefix = Array.Empty<byte>();
             var minLen = a.Length <= b.Length ? a.Length : b.Length;
             int i = 0;
             if (a.Length != 0 && b.Length != 0)
@@ -331,7 +330,9 @@ namespace Neo
                     if (a[i] != b[i]) break;
                 }
             }
-            return a.Take(i).ToArray();
+            var prefix = new byte[i];
+            Array.Copy(a, prefix, i);
+            return prefix;
         }
 
         public static bool Equal(this byte[] a, byte[] b)
