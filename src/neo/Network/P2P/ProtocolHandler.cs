@@ -89,7 +89,7 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnBlockReceived((Block)msg.Payload);
+                    OnInventoryReceived((Block)msg.Payload);
                     break;
                 case MessageCommand.Consensus:
                     OnInventoryReceived((ConsensusPayload)msg.Payload);
@@ -144,12 +144,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
-        }
-
-        private void OnBlockReceived(Block payload)
-        {
-            if (payload != null)
-                system.SyncManager.Tell(payload, Context.Parent);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
@@ -309,6 +303,11 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
+            if (inventory is Block block)
+            {
+                system.SyncManager.Tell(block, Context.Parent);
+                return;
+            }
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
             pendingKnownHashes.Remove(inventory.Hash);
