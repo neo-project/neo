@@ -6,7 +6,6 @@ namespace Neo.Network.P2P.Payloads
 {
     public class GetBlockByIndexPayload : ISerializable
     {
-        private const ushort MaxBlocksCount = 2000;
         public uint IndexStart;
         public ushort Count;
 
@@ -25,7 +24,8 @@ namespace Neo.Network.P2P.Payloads
         {
             IndexStart = reader.ReadUInt32();
             Count = reader.ReadUInt16();
-            if (Count == 0 || Count > MaxBlocksCount) throw new FormatException();
+            if (Count == 0 || Count > HeadersPayload.MaxHeadersCount)
+                throw new FormatException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
