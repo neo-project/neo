@@ -323,16 +323,15 @@ namespace Neo
         {
             var prefix = Array.Empty<byte>();
             var minLen = a.Length <= b.Length ? a.Length : b.Length;
-
+            int i = 0;
             if (a.Length != 0 && b.Length != 0)
             {
-                for (int i = 0; i < minLen; i++)
+                for (i = 0; i < minLen; i++)
                 {
                     if (a[i] != b[i]) break;
-                    prefix = prefix.Add(a[i]);
                 }
             }
-            return prefix;
+            return a.Take(i).ToArray();
         }
 
         public static bool Equal(this byte[] a, byte[] b)
