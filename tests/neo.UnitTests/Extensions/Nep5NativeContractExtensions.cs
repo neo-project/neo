@@ -166,7 +166,7 @@ namespace Neo.UnitTests.Extensions
             engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            result.Should().BeOfType(typeof(VM.Types.ByteString));
 
             return result.GetString();
         }
@@ -186,7 +186,7 @@ namespace Neo.UnitTests.Extensions
             engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            result.Should().BeOfType(typeof(VM.Types.ByteString));
 
             return result.GetString();
         }

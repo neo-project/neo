@@ -260,7 +260,7 @@ namespace Neo.VM
                         Value = item.ToBoolean()
                     };
                     break;
-                case ByteArray array:
+                case ByteString array:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,

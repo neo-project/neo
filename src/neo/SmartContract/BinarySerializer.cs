@@ -50,7 +50,7 @@ namespace Neo.SmartContract
                     case StackItemType.Integer:
                         deserialized.Push(new BigInteger(reader.ReadVarBytes(Integer.MaxSize)));
                         break;
-                    case StackItemType.ByteArray:
+                    case StackItemType.ByteString:
                         deserialized.Push(reader.ReadVarBytes((int)maxItemSize));
                         break;
                     case StackItemType.Buffer:
@@ -142,7 +142,7 @@ namespace Neo.SmartContract
                     case Integer integer:
                         writer.WriteVarBytes(integer.Span);
                         break;
-                    case ByteArray bytes:
+                    case ByteString bytes:
                         writer.WriteVarBytes(bytes.Span);
                         break;
                     case Buffer buffer:
