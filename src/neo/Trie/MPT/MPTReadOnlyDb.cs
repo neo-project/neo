@@ -7,6 +7,7 @@ namespace Neo.Trie.MPT
     {
         private IReadOnlyStore store;
         protected byte prefix;
+
         public MPTReadOnlyDb(IReadOnlyStore store, byte prefix)
         {
             this.store = store;
