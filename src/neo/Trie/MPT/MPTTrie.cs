@@ -15,10 +15,10 @@ namespace Neo.Trie.MPT
         public bool Put(byte[] key, byte[] value)
         {
             var path = key.ToNibbles();
+            if (ExtensionNode.MAX_KEY_LENGTH < path.Length)
+                return false;
             if (value.Length == 0)
-            {
                 return TryDelete(ref root, path);
-            }
             var n = new LeafNode(value);
             return Put(ref root, path, n);
         }

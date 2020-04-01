@@ -6,6 +6,7 @@ namespace Neo.Trie.MPT
 {
     public class ExtensionNode : MPTNode
     {
+        public const int MAX_KEY_LENGTH = UInt256.Length * 4;
         public byte[] Key;
         public MPTNode Next;
 
