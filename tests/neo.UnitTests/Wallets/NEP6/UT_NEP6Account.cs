@@ -40,15 +40,15 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             _account = new NEP6Account(_wallet, _hash, _nep2);
             _account.ChangePasswordPrepare("b", "Satoshi").Should().BeTrue();
-            _account.ChangePasswordCommit().Should().BeFalse();
+            _account.ChangePasswordCommit();
             _account.Contract = new Contract();
             _wallet.Unlock("Satoshi");
             _account.ChangePasswordPrepare("b", "Satoshi").Should().BeFalse();
             _account.ChangePasswordPrepare("Satoshi", "b").Should().BeTrue();
-            _account.ChangePasswordCommit().Should().BeTrue();
+            _account.ChangePasswordCommit();
             _account.VerifyPassword("b").Should().BeTrue();
             _account.ChangePasswordPrepare("b", "Satoshi").Should().BeTrue();
-            _account.ChangePasswordCommit().Should().BeTrue();
+            _account.ChangePasswordCommit();
             _account.ChangePasswordPrepare("Satoshi", "b").Should().BeTrue();
             _account.ChangePasswordRoolback();
             _account.VerifyPassword("Satoshi").Should().BeTrue();

@@ -115,14 +115,12 @@ namespace Neo.Wallets.NEP6
             return true;
         }
 
-        internal bool ChangePasswordCommit()
+        internal void ChangePasswordCommit()
         {
             if (nep2KeyNew != null)
             {
                 nep2key = Interlocked.Exchange(ref nep2KeyNew, null);
-                return true;
             }
-            return false;
         }
 
         internal void ChangePasswordRoolback()
