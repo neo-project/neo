@@ -5,7 +5,6 @@ using System.Text;
 
 namespace Neo.Trie.MPT
 {
-
     public abstract class MPTNode
     {
         private UInt256 hash;
