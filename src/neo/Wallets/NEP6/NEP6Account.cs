@@ -92,10 +92,10 @@ namespace Neo.Wallets.NEP6
         internal bool ChangePasswordPrepare(string password_old, string password_new)
         {
             if (WatchOnly) return true;
-            KeyPair keyTemplate = null;
+            KeyPair keyTemplate = key;
             if (nep2key == null)
             {
-                if (key == null)
+                if (keyTemplate == null)
                 {
                     return true;
                 }
