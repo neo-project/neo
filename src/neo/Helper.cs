@@ -330,9 +330,7 @@ namespace Neo
                     if (a[i] != b[i]) break;
                 }
             }
-            var prefix = new byte[i];
-            Array.Copy(a, prefix, i);
-            return prefix;
+            return a[..i];
         }
 
         public static bool Equal(this byte[] a, byte[] b)
