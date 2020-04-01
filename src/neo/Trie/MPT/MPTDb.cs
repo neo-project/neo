@@ -1,12 +1,13 @@
 using Neo.IO;
+using Neo.Persistence;
 
 namespace Neo.Trie.MPT
 {
     public class MPTDb : MPTReadOnlyDb
     {
-        private IKVStore store;
+        private IStore store;
 
-        public MPTDb(IKVStore store) : base(store)
+        public MPTDb(IStore store, byte prefix) : base(store, prefix)
         {
             this.store = store;
         }
@@ -15,7 +16,7 @@ namespace Neo.Trie.MPT
         {
             if (node is HashNode hn)
                 throw new System.InvalidOperationException("Means nothing to store HashNode");
-            store.Put(node.GetHash().ToArray(), node.Encode());
+            store.Put(prefix, node.GetHash().ToArray(), node.Encode());
         }
     }
 }

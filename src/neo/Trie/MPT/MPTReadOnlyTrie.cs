@@ -9,12 +9,12 @@ namespace Neo.Trie.MPT
         private MPTReadOnlyDb rodb;
         protected MPTNode root;
 
-        public MPTReadOnlyTrie(UInt256 root, IKVReadOnlyStore store)
+        public MPTReadOnlyTrie(UInt256 root, IReadOnlyStore store, byte prefix)
         {
             if (store is null)
                 throw new System.ArgumentNullException();
 
-            this.rodb = new MPTReadOnlyDb(store);
+            this.rodb = new MPTReadOnlyDb(store, prefix);
 
             if (root is null)
             {
@@ -139,7 +139,7 @@ namespace Neo.Trie.MPT
         public static bool VerifyProof(UInt256 root, byte[] key, HashSet<byte[]> proof, out byte[] value)
         {
             var store = new MPTProofStore(proof);
-            var trie = new MPTReadOnlyTrie(root, store);
+            var trie = new MPTReadOnlyTrie(root, store, 0);
             return trie.TryGet(key, out value);
         }
     }

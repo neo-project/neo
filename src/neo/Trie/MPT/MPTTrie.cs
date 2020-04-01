@@ -1,4 +1,5 @@
 using Neo.IO.Json;
+using Neo.Persistence;
 using System;
 
 namespace Neo.Trie.MPT
@@ -7,9 +8,9 @@ namespace Neo.Trie.MPT
     {
         private MPTDb db;
 
-        public MPTTrie(UInt256 root, IKVStore store) : base(root, store)
+        public MPTTrie(UInt256 root, IStore store, byte prefix) : base(root, store, prefix)
         {
-            this.db = new MPTDb(store);
+            this.db = new MPTDb(store, prefix);
         }
 
         public bool Put(byte[] key, byte[] value)
