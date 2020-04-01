@@ -5,9 +5,9 @@ namespace Neo.Trie.MPT
 {
     public class MPTDb : MPTReadOnlyDb
     {
-        private IStore store;
+        private ISnapshot store;
 
-        public MPTDb(IStore store, byte prefix) : base(store, prefix)
+        public MPTDb(ISnapshot store, byte prefix) : base(store, prefix)
         {
             this.store = store;
         }
