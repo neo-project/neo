@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTReadOnlyTrie : IReadOnlyTrie
+    public class MPTReadOnlyTrie
     {
         private MPTReadOnlyDb rodb;
         protected MPTNode root;
