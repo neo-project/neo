@@ -363,14 +363,12 @@ namespace Neo
 
         public static byte[] Skip(this byte[] a, int count)
         {
-            var result = Array.Empty<byte>();
             var len = a.Length - count;
-            if (0 < len)
+            if (len > 0)
             {
-                result = new byte[len];
-                Array.Copy(a, count, result, 0, len);
+                return a[count..];
             }
-            return result;
+            return Array.Empty<byte>();
         }
 
         public static byte[] Add(this byte[] a, byte b)
