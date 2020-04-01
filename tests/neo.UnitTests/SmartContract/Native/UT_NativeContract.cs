@@ -49,13 +49,13 @@ namespace Neo.UnitTests.SmartContract.Native
             sb2.EmitSysCall("test".ToInteropMethodHash());
             engine2.LoadScript(sb2.ToArray());
 
-            ByteArray method1 = new ByteArray(System.Text.Encoding.Default.GetBytes("wrongMethod"));
+            ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             VMArray args1 = new VMArray();
             engine2.CurrentContext.EvaluationStack.Push(args1);
             engine2.CurrentContext.EvaluationStack.Push(method1);
             testNativeContract.Invoke(engine2).Should().BeFalse();
 
-            ByteArray method2 = new ByteArray(System.Text.Encoding.Default.GetBytes("onPersist"));
+            ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("onPersist"));
             VMArray args2 = new VMArray();
             engine2.CurrentContext.EvaluationStack.Push(args2);
             engine2.CurrentContext.EvaluationStack.Push(method2);
