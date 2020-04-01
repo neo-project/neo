@@ -1,12 +1,13 @@
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.SmartContract;
 using System.IO;
 
 namespace Neo.Trie.MPT
 {
     public class ExtensionNode : MPTNode
     {
-        public const int MAX_KEY_LENGTH = UInt256.Length * 4;
+        public const int MAX_KEY_LENGTH = (InteropService.Storage.MaxKeySize + sizeof(int) + InteropService.Storage.MaxKeySize / IO.Helper.GroupingSizeInBytes) * 2;
         public byte[] Key;
         public MPTNode Next;
 
