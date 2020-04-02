@@ -2,6 +2,7 @@ using Neo.Ledger;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,11 @@ namespace Neo.Oracle.Protocols.Https
         /// Timeout
         /// </summary>
         public TimeSpan TimeOut { get; private set; }
+
+        /// <summary>
+        /// Allow private host
+        /// </summary>
+        internal static bool AllowPrivateHost { get; set; } = false;
 
         /// <summary>
         /// Constructor
@@ -46,7 +52,7 @@ namespace Neo.Oracle.Protocols.Https
                 seconds = (ushort)NativeContract.Oracle.GetConfig(snapshot, HttpConfig.Timeout).ToBigInteger();
             }
 
-            TimeOut = TimeSpan.FromSeconds(seconds);
+            TimeOut = TimeSpan.FromMilliseconds(seconds);
         }
 
         // <summary>
@@ -57,6 +63,13 @@ namespace Neo.Oracle.Protocols.Https
         public OracleResponse Process(OracleHttpsRequest request)
         {
             LoadConfig();
+
+            if (!AllowPrivateHost && IsPrivateHost(Dns.GetHostEntry(request.URL.Host)))
+            {
+                // Don't allow private host in order to prevent SSRF
+
+                return OracleResponse.CreateError(request.Hash, OracleResultError.PolicyError);
+            }
 
             Task<HttpResponseMessage> result;
             using var client = new HttpClient();
@@ -105,7 +118,7 @@ namespace Neo.Oracle.Protocols.Https
 
                 if (!ret.IsFaulted)
                 {
-                    if (!FilterResponse(ret.Result, request.Filter, out var filteredStr))
+                    if (!OracleService.FilterResponse(ret.Result, request.Filter, out string filteredStr))
                     {
                         return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError);
                     }
@@ -117,14 +130,39 @@ namespace Neo.Oracle.Protocols.Https
             return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
         }
 
-        private bool FilterResponse(string input, string filter, out string filtered)
+        private bool IsPrivateHost(IPHostEntry entry)
         {
-            // TODO: Filter
-            //filtered = "";
-            //return false;
+            foreach (var ip in entry.AddressList)
+            {
+                if (IPAddress.IsLoopback(ip)) return true;
+                if (IsInternal(ip)) return true;
+            }
 
-            filtered = input;
-            return true;
+            return false;
+        }
+
+        /// <summary>
+        ///       ::1          -   IPv6  loopback
+        ///       10.0.0.0     -   10.255.255.255  (10/8 prefix)
+        ///       127.0.0.0    -   127.255.255.255  (127/8 prefix)
+        ///       172.16.0.0   -   172.31.255.255  (172.16/12 prefix)
+        ///       192.168.0.0  -   192.168.255.255 (192.168/16 prefix)
+        /// </summary>
+        /// <param name="ipAddress">Address</param>
+        /// <returns>True if it was an internal address</returns>
+        public bool IsInternal(IPAddress ipAddress)
+        {
+            if (ipAddress.ToString() == "::1") return true;
+
+            var ip = ipAddress.GetAddressBytes();
+            switch (ip[0])
+            {
+                case 10:
+                case 127: return true;
+                case 172: return ip[1] >= 16 && ip[1] < 32;
+                case 192: return ip[1] == 168;
+                default: return false;
+            }
         }
     }
 }
