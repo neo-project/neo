@@ -5,8 +5,8 @@ namespace Neo.Trie.MPT
 {
     public class BranchNode : MPTNode
     {
-        public const int CHILD_COUNT = 17;
-        public MPTNode[] Children = new MPTNode[CHILD_COUNT];
+        public const int ChildCount = 17;
+        public MPTNode[] Children = new MPTNode[ChildCount];
 
         public BranchNode()
         {
@@ -39,7 +39,7 @@ namespace Neo.Trie.MPT
         public override JObject ToJson()
         {
             var jarr = new JArray();
-            for (int i = 0; i < CHILD_COUNT; i++)
+            for (int i = 0; i < ChildCount; i++)
             {
                 jarr.Add(Children[i].ToJson());
             }

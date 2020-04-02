@@ -16,7 +16,7 @@ namespace Neo.Trie.MPT
         public bool Put(byte[] key, byte[] value)
         {
             var path = key.ToNibbles();
-            if (ExtensionNode.MAX_KEY_LENGTH < path.Length)
+            if (ExtensionNode.MaxKeyLength < path.Length)
                 return false;
             if (value.Length == 0)
                 return TryDelete(ref root, path);
@@ -64,7 +64,7 @@ namespace Neo.Trie.MPT
                         if (pathRemain.Length == 0)
                         {
                             Put(ref grandSon2, pathRemain, val);
-                            son.Children[BranchNode.CHILD_COUNT - 1] = grandSon2;
+                            son.Children[BranchNode.ChildCount - 1] = grandSon2;
                         }
                         else
                         {
@@ -93,7 +93,7 @@ namespace Neo.Trie.MPT
                         var result = false;
                         if (path.Length == 0)
                         {
-                            result = Put(ref branchNode.Children[BranchNode.CHILD_COUNT - 1], path, val);
+                            result = Put(ref branchNode.Children[BranchNode.ChildCount - 1], path, val);
                         }
                         else
                         {
@@ -176,7 +176,7 @@ namespace Neo.Trie.MPT
                         var result = false;
                         if (path.Length == 0)
                         {
-                            result = TryDelete(ref branchNode.Children[BranchNode.CHILD_COUNT - 1], path);
+                            result = TryDelete(ref branchNode.Children[BranchNode.ChildCount - 1], path);
                         }
                         else
                         {
@@ -184,7 +184,7 @@ namespace Neo.Trie.MPT
                         }
                         if (!result) return false;
                         var childrenIndexes = Array.Empty<byte>();
-                        for (int i = 0; i < BranchNode.CHILD_COUNT; i++)
+                        for (int i = 0; i < BranchNode.ChildCount; i++)
                         {
                             if (branchNode.Children[i] is HashNode hn && hn.IsEmptyNode) continue;
                             childrenIndexes = childrenIndexes.Add((byte)i);
@@ -197,7 +197,7 @@ namespace Neo.Trie.MPT
                         }
                         var lastChildIndex = childrenIndexes[0];
                         var lastChild = branchNode.Children[lastChildIndex];
-                        if (lastChildIndex == BranchNode.CHILD_COUNT - 1)
+                        if (lastChildIndex == BranchNode.ChildCount - 1)
                         {
                             node = lastChild;
                             return true;
