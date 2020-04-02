@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
@@ -47,7 +48,10 @@ namespace Neo.Oracle
         public class OracleServiceResponse
         {
             public OracleExecutionCache ExecutionResult;
-            public byte[] OracleSignature;
+
+            public UInt256 UserTxHash;
+            public byte[] OracleResponseScript;
+            public byte[] OracleResponseSignature;
         }
 
         /// <summary>
@@ -203,11 +207,17 @@ namespace Neo.Oracle
             {
                 // Send oracle result
 
-                _localNode.Tell(new OracleServiceResponse()
+                var script = CreateResponseScript(oracle, tx.Hash);
+                var response = new OracleServiceResponse()
                 {
                     ExecutionResult = oracle,
-                    OracleSignature = Sign(oracle)
-                });
+                    UserTxHash = tx.Hash,
+                    OracleResponseScript = script,
+                };
+
+                Sign(response);
+
+                _localNode.Tell(response);
             }
             else
             {
@@ -216,22 +226,30 @@ namespace Neo.Oracle
         }
 
         /// <summary>
+        /// Create Oracle response script
+        /// </summary>
+        /// <param name="oracle">Oracle</param>
+        /// <param name="hash">Hash</param>
+        /// <returns>Script</returns>
+        private byte[] CreateResponseScript(OracleExecutionCache oracle, UInt256 hash)
+        {
+            using ScriptBuilder script = new ScriptBuilder();
+
+            // TODO: Create the OracleResponseTx script
+
+            return script.ToArray();
+        }
+
+        /// <summary>
         /// Sign
         /// </summary>
-        /// <param name="oracle">Oracle result</param>
+        /// <param name="message">Oracle result</param>
         /// <returns>Signature</returns>
-        private byte[] Sign(OracleExecutionCache oracle)
+        private void Sign(OracleServiceResponse message)
         {
-            // TODO: With tx or not?
+            // TODO: Create the deterministic TX and sign it
 
-            //using (ScriptBuilder script = new ScriptBuilder())
-            //{
-            //    // Compose script
-            //    var tx = _wallet.MakeTransaction(script.ToArray(), null, null, null);
-            //    return tx.Witnesses[0];
-            //}
-
-            return new byte[0];
+            message.OracleResponseSignature = new byte[0];
         }
 
         #region Public Static methods

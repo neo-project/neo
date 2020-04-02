@@ -70,27 +70,6 @@ namespace Neo.UnitTests.Oracle
 
             switch (context.Request.Path.Value)
             {
-                case "/xml":
-                    {
-                        context.Response.ContentType = "text/xml";
-                        response =
-                            @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<bookstore>
-<book category=""cooking"">
-  <title lang=""en"">Everyday Italian</title>
-  <author>Giada De Laurentiis</author>
-  <year>2005</year>
-  <price>30.00</price>
-</book>
-<book category=""children"">
-  <title lang=""en"">Harry Potter</title>
-  <author>J K. Rowling</author>
-  <year>2005</year>
-  <price>29.99</price>
-</book>
-</bookstore>";
-                        break;
-                    }
                 case "/json":
                     {
                         context.Response.ContentType = "application/json";
@@ -136,19 +115,6 @@ namespace Neo.UnitTests.Oracle
                 case "/timeout":
                     {
                         Thread.Sleep(6000);
-                        break;
-                    }
-                case "/post":
-                    {
-                        if (context.Request.Method != "POST")
-                        {
-                            context.Response.StatusCode = 404;
-                            break;
-                        }
-
-                        var read = new byte[4096];
-                        Array.Resize(ref read, context.Request.Body.Read(read, 0, read.Length));
-                        response = Encoding.UTF8.GetString(read);
                         break;
                     }
                 case "/error":
@@ -200,16 +166,18 @@ namespace Neo.UnitTests.Oracle
 
             // Send tx
 
-            service.Tell(CreateTx("https://127.0.0.1:9898/ping", ""));
+            var tx = CreateTx("https://127.0.0.1:9898/ping", "");
+            service.Tell(tx);
 
             // Receive response
 
             var response = subscriber.ExpectMsg<OracleService.OracleServiceResponse>();
-            Assert.AreEqual(0, response.OracleSignature.Length);
+            Assert.AreEqual(0, response.OracleResponseSignature.Length);
             Assert.AreEqual(1, response.ExecutionResult.Count);
 
             var entry = response.ExecutionResult.First();
             Assert.AreEqual("pong", Encoding.UTF8.GetString(entry.Value.Result));
+            Assert.AreEqual(tx.Hash, response.UserTxHash);
 
             service.UnderlyingActor.Stop();
 
