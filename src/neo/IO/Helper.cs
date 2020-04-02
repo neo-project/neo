@@ -322,6 +322,15 @@ namespace Neo.IO
             }
         }
 
+        public static void WriteArray<T>(this BinaryWriter writer, T[] value) where T : class, ISerializable
+        {
+            writer.WriteVarInt(value.Length);
+            foreach (var item in value)
+            {
+                item.Serialize(writer);
+            }
+        }
+
         public static void WriteVarBytes(this BinaryWriter writer, ReadOnlySpan<byte> value)
         {
             writer.WriteVarInt(value.Length);

@@ -1,8 +1,10 @@
 using Akka.Actor;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -203,16 +205,16 @@ namespace Neo.Oracle
             using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
             engine.LoadScript(tx.Script);
 
-            if (engine.Execute() == VM.VMState.HALT)
+            if (engine.Execute() == VMState.HALT)
             {
                 // Send oracle result
 
-                var script = CreateResponseScript(oracle, tx.Hash);
+                var responseTx = CreateResponseTransaction(oracle, tx);
                 var response = new OracleServiceResponse()
                 {
                     ExecutionResult = oracle,
                     UserTxHash = tx.Hash,
-                    OracleResponseScript = script,
+                    OracleResponseScript = responseTx.Script,
                 };
 
                 Sign(response);
@@ -226,18 +228,33 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// Create Oracle response script
+        /// Create Oracle response transaction
+        /// We need to create a deterministic TX for this result/oracleRequest
         /// </summary>
         /// <param name="oracle">Oracle</param>
-        /// <param name="hash">Hash</param>
-        /// <returns>Script</returns>
-        private byte[] CreateResponseScript(OracleExecutionCache oracle, UInt256 hash)
+        /// <param name="requestTx">Request Hash</param>
+        /// <returns>Transaction</returns>
+        private Transaction CreateResponseTransaction(OracleExecutionCache oracle, Transaction requestTx)
         {
             using ScriptBuilder script = new ScriptBuilder();
 
-            // TODO: Create the OracleResponseTx script
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setOracleResponse", requestTx.Hash, oracle.ToArray());
 
-            return script.ToArray();
+            return new Transaction()
+            {
+                Attributes = new TransactionAttribute[]
+                {
+                    // DependsOn = hash
+                },
+                Cosigners = new Cosigner[0],
+                NetworkFee = 1_000_000, // TODO: Define fee
+                SystemFee = 1_000_000,
+                Sender = UInt160.Zero, // <- OracleSender
+                Nonce = requestTx.Nonce,
+                ValidUntilBlock = requestTx.ValidUntilBlock,
+                Witnesses = new Witness[0],
+                Script = script.ToArray()
+            };
         }
 
         /// <summary>
