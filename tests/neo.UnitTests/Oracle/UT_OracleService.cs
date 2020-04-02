@@ -22,32 +22,34 @@ using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Oracle
 {
-    [TestClass]
+    [TestClass, NotReRunnable]
     public class UT_OracleService : TestKit
     {
-        IWebHost server;
-
         [TestInitialize]
         public void Init()
         {
             TestBlockchain.InitializeMockNeoSystem();
+        }
 
-            server = new WebHostBuilder().UseKestrel(options =>
-            {
-                options.Listen(IPAddress.Any, 9898, listenOptions =>
-                {
-                    if (File.Exists("UT-cert.pfx"))
-                    {
-                        listenOptions.UseHttps("UT-cert.pfx", "123");
-                    }
-                    else if (File.Exists("../../../UT-cert.pfx"))
-                    {
-                        // Unix doesn't copy to the output dir
+        public static IWebHost CreateServer(int port = 19898)
+        {
 
-                        listenOptions.UseHttps("../../../UT-cert.pfx", "123");
-                    }
-                });
-            })
+            var server = new WebHostBuilder().UseKestrel(options =>
+             {
+                 options.Listen(IPAddress.Any, port, listenOptions =>
+                 {
+                     if (File.Exists("UT-cert.pfx"))
+                     {
+                         listenOptions.UseHttps("UT-cert.pfx", "123");
+                     }
+                     else if (File.Exists("../../../UT-cert.pfx"))
+                     {
+                         // Unix doesn't copy to the output dir
+
+                         listenOptions.UseHttps("../../../UT-cert.pfx", "123");
+                     }
+                 });
+             })
             .Configure(app =>
             {
                 app.UseResponseCompression();
@@ -70,9 +72,10 @@ namespace Neo.UnitTests.Oracle
             .Build();
 
             server.Start();
+            return server;
         }
 
-        private async Task ProcessAsync(HttpContext context)
+        private static async Task ProcessAsync(HttpContext context)
         {
             var response = "";
             context.Response.ContentType = "text/plain";
@@ -141,13 +144,6 @@ namespace Neo.UnitTests.Oracle
             await context.Response.WriteAsync(response, Encoding.UTF8);
         }
 
-        [TestCleanup]
-        public void Clean()
-        {
-            server.StopAsync().Wait();
-            server.Dispose();
-        }
-
         [TestMethod]
         public void StartStop()
         {
@@ -163,6 +159,8 @@ namespace Neo.UnitTests.Oracle
         [TestMethod]
         public void ProcessTx()
         {
+            using var server = CreateServer();
+
             OracleHttpsProtocol.AllowPrivateHost = true;
 
             TestProbe subscriber = CreateTestProbe();
@@ -175,7 +173,7 @@ namespace Neo.UnitTests.Oracle
 
             // Send tx
 
-            var tx = CreateTx("https://127.0.0.1:9898/ping", "");
+            var tx = CreateTx("https://127.0.0.1:19898/ping", "");
             service.Tell(tx);
 
             // Receive response
@@ -213,6 +211,8 @@ namespace Neo.UnitTests.Oracle
         [TestMethod]
         public void TestOracleHttpsRequest()
         {
+            using var server = CreateServer();
+
             // With local access (Only for UT)
 
             OracleHttpsProtocol.AllowPrivateHost = true;
@@ -223,7 +223,7 @@ namespace Neo.UnitTests.Oracle
             {
                 Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:9898/timeout")
+                URL = new Uri("https://127.0.0.1:19898/timeout")
             };
 
             var response = OracleService.Process(request);
@@ -239,7 +239,7 @@ namespace Neo.UnitTests.Oracle
             {
                 Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:9898/ping")
+                URL = new Uri("https://127.0.0.1:19898/ping")
             };
 
             response = OracleService.Process(request);
@@ -255,12 +255,12 @@ namespace Neo.UnitTests.Oracle
             {
                 Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:9898/error")
+                URL = new Uri("https://127.0.0.1:19898/error")
             };
 
             response = OracleService.Process(request);
 
-            Assert.AreEqual(OracleResultError.ServerError, response.Error);
+            Assert.AreEqual(OracleResultError.ResponseError, response.Error);
             Assert.IsTrue(response.Result.Length == 0);
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
