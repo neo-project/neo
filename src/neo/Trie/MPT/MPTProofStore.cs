@@ -27,11 +27,13 @@ namespace Neo.Trie.MPT
 
         public IEnumerable<(byte[] Key, byte[] Value)> Find(byte table, byte[] prefix)
         {
-            IEnumerable<KeyValuePair<byte[], byte[]>> records = store;
-            if (prefix?.Length > 0)
-                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
-            records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
-            return records.Select(p => (p.Key, p.Value));
+            foreach (var pair in store)
+            {
+                if (prefix is null || pair.Key.CommonPrefix(prefix).Length == prefix.Length)
+                {
+                    yield return (pair.Key, pair.Value);
+                }
+            }
         }
     }
 }
