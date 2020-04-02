@@ -72,9 +72,11 @@ namespace Neo.Oracle.Protocols.Https
             }
 
             Task<HttpResponseMessage> result;
-            using var handler = new HttpClientHandler();
-            // TODO: Accept all certificates
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            using var handler = new HttpClientHandler
+            {
+                // TODO: Accept all certificates
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
             using var client = new HttpClient(handler);
 
             switch (request.Method)
@@ -105,39 +107,44 @@ namespace Neo.Oracle.Protocols.Https
                     }
             }
 
-            try
+            if (!result.Wait(TimeOut))
             {
-                if (!result.Wait(TimeOut))
-                {
-                    return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
-                }
-            }
-            catch
-            {
-                return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
+                // Timeout
+
+                return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
             }
 
-            if (result.Result.IsSuccessStatusCode)
+            if (!result.Result.IsSuccessStatusCode)
             {
-                var ret = result.Result.Content.ReadAsStringAsync();
+                // Error with response
 
-                if (!ret.Wait(TimeOut))
-                {
-                    return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
-                }
-
-                if (!ret.IsFaulted)
-                {
-                    if (!OracleService.FilterResponse(ret.Result, request.Filter, out string filteredStr))
-                    {
-                        return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError);
-                    }
-
-                    return OracleResponse.CreateResult(request.Hash, filteredStr);
-                }
+                return OracleResponse.CreateError(request.Hash, OracleResultError.ResponseError);
             }
 
-            return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
+            string ret;
+            var taskRet = result.Result.Content.ReadAsStringAsync();
+
+            if (!taskRet.Wait(TimeOut))
+            {
+                // Timeout
+
+                return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
+            }
+            else
+            {
+                // Good response
+
+                ret = taskRet.Result;
+            }
+
+            // Filter
+
+            if (!OracleService.FilterResponse(ret, request.Filter, out string filteredStr))
+            {
+                return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError);
+            }
+
+            return OracleResponse.CreateResult(request.Hash, filteredStr);
         }
 
         private bool IsPrivateHost(IPHostEntry entry)
