@@ -212,14 +212,15 @@ namespace Neo.Oracle
                 // Send oracle result
 
                 var responseTx = CreateResponseTransaction(oracle, tx);
+                Sign(responseTx, out var signature);
+
                 var response = new OracleServiceResponse()
                 {
                     ExecutionResult = oracle,
                     UserTxHash = tx.Hash,
                     OracleResponseScript = responseTx.Script,
+                    OracleResponseSignature = signature
                 };
-
-                Sign(response);
 
                 _localNode.Tell(response);
             }
@@ -262,13 +263,13 @@ namespace Neo.Oracle
         /// <summary>
         /// Sign
         /// </summary>
-        /// <param name="message">Oracle result</param>
+        /// <param name="tx">Transaction</param>
         /// <returns>Signature</returns>
-        private void Sign(OracleServiceResponse message)
+        private void Sign(Transaction tx, out byte[] signature)
         {
-            // TODO: Create the deterministic TX and sign it
+            // Sign the transaction and extract the signature of this oracle
 
-            message.OracleResponseSignature = new byte[0];
+            signature = new byte[0];
         }
 
         #region Public Static methods
