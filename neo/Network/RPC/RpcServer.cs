@@ -793,7 +793,8 @@ namespace Neo.Network.RPC
                 var hash = UInt256.Parse(key.AsString());
                 state = Blockchain.Singleton.GetStateRoot(hash);
             }
-            else{
+            else
+            {
                 throw new RpcException(-100, "Invalid parameter.");
             }
             if (state is null) throw new RpcException(-100, "Unknown state root.");
@@ -803,7 +804,8 @@ namespace Neo.Network.RPC
         private JObject GetStateProof(UInt256 state_root, UInt160 script_hash, byte[] store_key)
         {
             JObject json = new JObject();
-            var skey = new StorageKey{
+            var skey = new StorageKey
+            {
                 ScriptHash = script_hash,
                 Key = store_key,
             };
@@ -821,7 +823,7 @@ namespace Neo.Network.RPC
                 writer.Flush();
                 json["proof"] = ms.ToArray().ToHexString();
             }
-            
+
             return json;
         }
 
@@ -846,7 +848,7 @@ namespace Neo.Network.RPC
                 json = "invalid";
             }
             else
-            {   
+            {
                 json["value"] = value.ToHexString();
             }
             return json;

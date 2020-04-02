@@ -132,7 +132,7 @@ namespace Neo.Ledger
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
 
-        public uint StateHeight {get; private set;}
+        public uint StateHeight { get; private set; }
         private uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
         private readonly Dictionary<uint, StateRoot> state_root_cache = new Dictionary<uint, StateRoot>();
         private static Blockchain singleton;
@@ -352,7 +352,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
@@ -460,7 +460,7 @@ namespace Neo.Ledger
             }
             var state_root_to_verify = state_root;
             var state_roots_to_verify = new List<StateRoot>();
-            while(true)
+            while (true)
             {
                 state_roots_to_verify.Add(state_root_to_verify);
                 var index = state_root_to_verify.Index + 1;
@@ -469,7 +469,7 @@ namespace Neo.Ledger
             }
             foreach (var state_root_verifying in state_roots_to_verify)
             {
-                using(Snapshot snapshot = GetSnapshot())
+                using (Snapshot snapshot = GetSnapshot())
                 {
                     state_root_cache.Remove(state_root_verifying.Index);
                     if (!state_root_verifying.Verify(snapshot))
@@ -499,6 +499,19 @@ namespace Neo.Ledger
                 }
             }
             return RelayResultReason.Succeed;
+        }
+
+        private void OnStateRoots(StateRoot[] sts)
+        {
+            foreach (var state_root in sts)
+            {
+                var result = OnNewStateRoot(state_root);
+                if (result != RelayResultReason.Succeed)
+                {
+                    break;
+                }
+            }
+            system.TaskManager.Tell(new TaskManager.StateRootTaskCompleted(), Sender);
         }
 
         private void OnPersistCompleted(Block block)
@@ -535,6 +548,9 @@ namespace Neo.Ledger
                     break;
                 case StateRoot stateRoot:
                     OnNewStateRoot(stateRoot);
+                    break;
+                case StateRoot[] stateRoots:
+                    OnStateRoots(stateRoots);
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -828,7 +844,7 @@ namespace Neo.Ledger
 
         private void UpdateStateRoots()
         {
-            using(Snapshot snapshot = GetSnapshot())
+            using (Snapshot snapshot = GetSnapshot())
             {
                 var trie_db = new TrieReadOnlyDb(Store, Prefixes.DATA_MPT);
                 var root = trie_db.GetRoot();
@@ -841,7 +857,7 @@ namespace Neo.Ledger
                     var last_state_root = currentSnapshot.StateRoots.TryGet(currentSnapshot.Height);
                     pre_hash = last_state_root.StateRoot.Hash;
                 }
-                
+
                 var stateRoot = new StateRoot
                 {
                     Version = MPTTrie.Version,

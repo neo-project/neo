@@ -236,13 +236,6 @@ namespace Neo.Network.P2P
 
         private void RequestTasks(TaskSession session)
         {
-            if (HashStateRootTask && session.Tasks.ContainsKey(StateRootTaskHash))
-            {
-                if (state_root_task_index <= Blockchain.Singleton.StateHeight)
-                {
-                    Self.Tell(new StateRootTaskCompleted());
-                }
-            }
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
             {
