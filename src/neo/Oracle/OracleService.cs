@@ -19,7 +19,7 @@ namespace Neo.Oracle
         /// <summary>
         /// A flag for know if the pool was ordered or not
         /// </summary>
-        private bool _itsDirty = false;
+        private bool _isDirty = false;
         private long _isStarted = 0;
         private CancellationTokenSource _cancel;
         private readonly IActorRef _localNode;
@@ -94,7 +94,7 @@ namespace Neo.Oracle
                             // Add and sort
 
                             _orderedPool.Add(tx);
-                            _itsDirty = true;
+                            _isDirty = true;
 
                             // Pop one item if it's needed
 
@@ -115,12 +115,12 @@ namespace Neo.Oracle
         {
             if (_orderedPool.Count > 0)
             {
-                if (_itsDirty && _orderedPool.Count > 1)
+                if (_isDirty && _orderedPool.Count > 1)
                 {
                     // It will require a sort before pop the item
 
                     _orderedPool.Sort((a, b) => b.FeePerByte.CompareTo(a.FeePerByte));
-                    _itsDirty = false;
+                    _isDirty = false;
                 }
 
                 var entry = _orderedPool[0];
@@ -261,11 +261,18 @@ namespace Neo.Oracle
         /// <returns>Return Oracle response</returns>
         public static OracleResponse Process(OracleRequest request)
         {
-            return request switch
+            try
             {
-                OracleHttpsRequest https => _https.Process(https),
-                _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
-            };
+                return request switch
+                {
+                    OracleHttpsRequest https => _https.Process(https),
+                    _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
+                };
+            }
+            catch
+            {
+                return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
+            }
         }
 
         /// <summary>
