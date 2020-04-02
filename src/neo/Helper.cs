@@ -313,6 +313,9 @@ namespace Neo
 
         public static byte[] Concat(this byte[] a, byte[] b)
         {
+            if (a is null && b is null) return Array.Empty<byte>();
+            if (a is null) return b;
+            if (b is null) return a;
             var result = new byte[a.Length + b.Length];
             a.CopyTo(result, 0);
             b.CopyTo(result, a.Length);
@@ -321,6 +324,7 @@ namespace Neo
 
         public static byte[] CommonPrefix(this byte[] a, byte[] b)
         {
+            if (a is null || b is null) return Array.Empty<byte>();
             var minLen = a.Length <= b.Length ? a.Length : b.Length;
             int i = 0;
             if (a.Length != 0 && b.Length != 0)
@@ -363,6 +367,7 @@ namespace Neo
 
         public static byte[] Skip(this byte[] a, int count)
         {
+            if (a is null) return Array.Empty<byte>();
             var len = a.Length - count;
             if (len > 0)
             {
@@ -373,7 +378,7 @@ namespace Neo
 
         public static byte[] Add(this byte[] a, byte b)
         {
-            var len = a.Length;
+            var len = a is null ? 0 : a.Length;
             Array.Resize<byte>(ref a, len + 1);
             a[len] = b;
             return a;
@@ -381,6 +386,7 @@ namespace Neo
 
         public static byte[] ToNibbles(this byte[] path)
         {
+            if (path is null) return Array.Empty<byte>();
             var result = new byte[path.Length * 2];
             for (int i = 0; i < path.Length; i++)
             {

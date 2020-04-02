@@ -263,6 +263,12 @@ namespace Neo.UnitTests
             var b = new byte[] { 0x02 };
             a = a.Concat(b);
             Assert.AreEqual(2, a.Length);
+
+            a = null;
+            Assert.AreEqual(b, a.Concat(b));
+
+            b = null;
+            Assert.AreEqual(0, a.Concat(b).Length);
         }
 
         [TestMethod]
@@ -277,6 +283,9 @@ namespace Neo.UnitTests
             a = a.Add(b);
             Assert.AreEqual(1, a.Length);
             Assert.AreEqual("0c", a.ToHexString());
+
+            a = null;
+            Assert.AreEqual("0c", a.Add(b).ToHexString());
         }
 
         [TestMethod]
@@ -291,6 +300,9 @@ namespace Neo.UnitTests
             Assert.AreEqual(0, s.Length);
             s = s.Skip(2);
             Assert.AreEqual(0, s.Length);
+
+            s = null;
+            Assert.AreEqual(0, s.Skip(1).Length);
         }
 
         [TestMethod]
@@ -317,6 +329,14 @@ namespace Neo.UnitTests
             b = new byte[0];
             prefix = a.CommonPrefix(b);
             Assert.IsTrue(prefix.Length == 0);
+
+            a = "1234abcd".HexToBytes();
+            b = null;
+            Assert.AreEqual(0, a.CommonPrefix(b).Length);
+
+            a = null;
+            b = null;
+            Assert.AreEqual(0, a.CommonPrefix(b).Length);
         }
 
         [TestMethod]
@@ -328,12 +348,14 @@ namespace Neo.UnitTests
             var d = new byte[] { 1, 2, 3, 4, 5 };
             var e = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
             var f = new byte[] { 1 };
+            byte[] g = null;
 
             Assert.IsFalse(a.Equal(b));
             Assert.IsFalse(a.Equal(c));
             Assert.IsTrue(a.Equal(d));
             Assert.IsFalse(a.Equal(e));
             Assert.IsFalse(a.Equal(f));
+            Assert.IsFalse(a.Equal(g));
         }
 
         [TestMethod]
@@ -342,6 +364,9 @@ namespace Neo.UnitTests
             var a = "1234abcd".HexToBytes();
             var n = a.ToNibbles();
             Assert.AreEqual("010203040a0b0c0d", n.ToHexString());
+
+            a = null;
+            Assert.AreEqual(0, a.ToNibbles().Length);
         }
     }
 
