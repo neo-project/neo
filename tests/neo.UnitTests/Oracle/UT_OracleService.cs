@@ -6,8 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
+using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.IO.Compression;
 using System.Linq;
@@ -28,7 +31,14 @@ namespace Neo.UnitTests.Oracle
         {
             TestBlockchain.InitializeMockNeoSystem();
 
-            server = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, 9898))
+            server = new WebHostBuilder().UseKestrel(options =>
+            {
+                options.Listen(IPAddress.Any, 9898, listenOptions =>
+                 {
+                     listenOptions.UseHttps("UT-cert.pfx", "123");
+
+                 });
+            })
             .Configure(app =>
             {
                 app.UseResponseCompression();
@@ -169,8 +179,58 @@ namespace Neo.UnitTests.Oracle
             TestProbe subscriber = CreateTestProbe();
 
             var service = new OracleService(subscriber, null);
+            Assert.IsFalse(service.IsStarted);
             service.Start();
+            Assert.IsTrue(service.IsStarted);
             service.Stop();
+        }
+
+        [TestMethod]
+        public void ProcessTx()
+        {
+            OracleHttpsProtocol.AllowPrivateHost = true;
+
+            TestProbe subscriber = CreateTestProbe();
+
+            var wallet = TestUtils.GenerateTestWallet();
+            TestActorRef<OracleService> service = ActorOfAsTestActorRef<OracleService>(
+                Akka.Actor.Props.Create(() => new OracleService(subscriber, wallet)));
+
+            service.UnderlyingActor.Start();
+
+            // Send tx
+
+            service.Tell(CreateTx("https://127.0.0.1:9898/ping", ""));
+
+            // Receive response
+
+            var response = subscriber.ExpectMsg<OracleService.OracleServiceResponse>();
+            Assert.AreEqual(0, response.OracleSignature.Length);
+            Assert.AreEqual(1, response.ExecutionResult.Count);
+
+            var entry = response.ExecutionResult.First();
+            Assert.AreEqual("pong", Encoding.UTF8.GetString(entry.Value.Result));
+
+            service.UnderlyingActor.Stop();
+
+            OracleHttpsProtocol.AllowPrivateHost = false;
+        }
+
+        private Transaction CreateTx(string url, string filter)
+        {
+            using ScriptBuilder script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, url, filter);
+
+            return new Transaction()
+            {
+                Attributes = new TransactionAttribute[0],
+                Cosigners = new Cosigner[0],
+                Script = script.ToArray(),
+                Sender = UInt160.Zero,
+                Witnesses = new Witness[0],
+                NetworkFee = 1_000_000,
+                SystemFee = 1_000_000,
+            };
         }
 
         [TestMethod]
@@ -186,7 +246,7 @@ namespace Neo.UnitTests.Oracle
             {
                 Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("http://127.0.0.1:9898/timeout")
+                URL = new Uri("https://127.0.0.1:9898/timeout")
             };
 
             var response = OracleService.Process(request);
@@ -202,7 +262,7 @@ namespace Neo.UnitTests.Oracle
             {
                 Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("http://127.0.0.1:9898/ping")
+                URL = new Uri("https://127.0.0.1:9898/ping")
             };
 
             response = OracleService.Process(request);
@@ -218,7 +278,7 @@ namespace Neo.UnitTests.Oracle
             {
                 Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("http://127.0.0.1:9898/error")
+                URL = new Uri("https://127.0.0.1:9898/error")
             };
 
             response = OracleService.Process(request);

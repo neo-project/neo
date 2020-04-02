@@ -72,7 +72,10 @@ namespace Neo.Oracle.Protocols.Https
             }
 
             Task<HttpResponseMessage> result;
-            using var client = new HttpClient();
+            using var handler = new HttpClientHandler();
+            // TODO: Accept all certificates
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            using var client = new HttpClient(handler);
 
             switch (request.Method)
             {
@@ -102,9 +105,16 @@ namespace Neo.Oracle.Protocols.Https
                     }
             }
 
-            if (!result.Wait(TimeOut))
+            try
             {
-                return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
+                if (!result.Wait(TimeOut))
+                {
+                    return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
+                }
+            }
+            catch
+            {
+                return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
             }
 
             if (result.Result.IsSuccessStatusCode)
