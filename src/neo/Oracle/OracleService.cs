@@ -131,7 +131,7 @@ namespace Neo.Oracle
         /// </summary>
         public void Start()
         {
-            if (Interlocked.Exchange(ref _isStarted, 1) == 0) return;
+            if (Interlocked.Exchange(ref _isStarted, 1) != 0) return;
 
             // Create tasks
 
@@ -166,14 +166,14 @@ namespace Neo.Oracle
         /// </summary>
         public void Stop()
         {
-            if (Interlocked.Exchange(ref _isStarted, 0) == 1) return;
+            if (Interlocked.Exchange(ref _isStarted, 0) != 1) return;
 
             _cancel.Cancel();
 
             for (int x = 0; x < _oracleTasks.Length; x++)
             {
-                _oracleTasks[x].Wait();
-                _oracleTasks[x].Dispose();
+                try { _oracleTasks[x].Wait(); } catch { }
+                try { _oracleTasks[x].Dispose(); } catch { }
                 _oracleTasks[x] = null;
             }
 
