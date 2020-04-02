@@ -1,3 +1,5 @@
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +19,7 @@ using System.Threading.Tasks;
 namespace Neo.UnitTests.Oracle
 {
     [TestClass]
-    public class UT_OracleService
+    public class UT_OracleService : TestKit
     {
         IWebHost server;
 
@@ -159,6 +161,16 @@ namespace Neo.UnitTests.Oracle
         {
             server.StopAsync().Wait();
             server.Dispose();
+        }
+
+        [TestMethod]
+        public void StartStop()
+        {
+            TestProbe subscriber = CreateTestProbe();
+
+            var service = new OracleService(subscriber, null);
+            service.Start();
+            service.Stop();
         }
 
         [TestMethod]
