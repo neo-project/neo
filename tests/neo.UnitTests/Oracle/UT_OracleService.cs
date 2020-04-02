@@ -40,7 +40,7 @@ namespace Neo.UnitTests.Oracle
                     {
                         listenOptions.UseHttps("UT-cert.pfx", "123");
                     }
-                    else if (File.Exists("../../../UT-cert.pfx")) 
+                    else if (File.Exists("../../../UT-cert.pfx"))
                     {
                         // Unix doesn't copy to the output dir
 
