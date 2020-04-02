@@ -1,5 +1,7 @@
+using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
+using Neo.SmartContract.Native;
 using System;
 
 namespace Neo.SmartContract
@@ -12,7 +14,18 @@ namespace Neo.SmartContract
 
             private static bool Oracle_Get(ApplicationEngine engine)
             {
-                if (engine.OracleCache == null) return false;
+                if (engine.OracleCache == null)
+                {
+                    if (engine.ScriptContainer is Transaction tx)
+                    {
+                        // Read Oracle Response, if exists
+
+                        engine.OracleCache = NativeContract.Oracle.GetOracleResponse(engine.Snapshot, tx.Hash);
+                        return engine.OracleCache == null;
+                    }
+
+                    return false;
+                }
                 if (!engine.TryPop(out string urlItem) || !Uri.TryCreate(urlItem, UriKind.Absolute, out var url)) return false;
                 if (!engine.TryPop(out string filter)) return false;
 

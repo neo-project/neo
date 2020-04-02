@@ -1,10 +1,13 @@
+using Neo.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Neo.Oracle
 {
-    public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResponse>>
+    public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResponse>>, ISerializable
     {
         /// <summary>
         /// Results (OracleRequest.Hash/OracleResponse)
@@ -21,6 +24,8 @@ namespace Neo.Oracle
         /// </summary>
         public int Count => _cache.Count;
 
+        public int Size => IO.Helper.GetVarSize(Count) + _cache.Values.Sum(u => u.Size);
+
         /// <summary>
         /// Constructor for oracles
         /// </summary>
@@ -29,6 +34,11 @@ namespace Neo.Oracle
         {
             _oracle = oracle;
         }
+
+        /// <summary>
+        /// Constructor for ISerializable
+        /// </summary>
+        public OracleExecutionCache() { }
 
         /// <summary>
         /// Constructor for cached results
@@ -80,6 +90,22 @@ namespace Neo.Oracle
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _cache.GetEnumerator();
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.WriteArray(_cache.Values.ToArray());
+        }
+
+        public void Deserialize(BinaryReader reader)
+        {
+            var results = reader.ReadSerializableArray<OracleResponse>(byte.MaxValue);
+
+            _cache.Clear();
+            foreach (var result in results)
+            {
+                _cache[result.RequestHash] = result;
+            }
         }
     }
 }
