@@ -1,3 +1,4 @@
+using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
 using System;
 
@@ -14,18 +15,26 @@ namespace Neo.SmartContract
                 if (engine.OracleCache == null) return false;
                 if (!engine.TryPop(out string urlItem) || !Uri.TryCreate(urlItem, UriKind.Absolute, out var url)) return false;
                 if (!engine.TryPop(out string filter)) return false;
-                if (url.Scheme != "https") return false;
 
-                var request = new OracleHttpsRequest()
+                OracleRequest request;
+                switch (url.Scheme.ToLowerInvariant())
                 {
-                    Method = HttpMethod.GET,
-                    URL = url,
-                    Filter = filter
-                };
+                    case "https":
+                        {
+                            request = new OracleHttpsRequest()
+                            {
+                                Method = HttpMethod.GET,
+                                URL = url,
+                                Filter = filter
+                            };
+                            break;
+                        }
+                    default: return false;
+                }
 
                 if (engine.OracleCache.TryGet(request, out var response))
                 {
-                    engine.CurrentContext.EvaluationStack.Push(response.ToStackItem(engine.ReferenceCounter));
+                    engine.Push(response.ToStackItem(engine.ReferenceCounter));
                     return true;
                 }
 

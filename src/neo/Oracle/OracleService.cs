@@ -7,6 +7,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -234,6 +235,8 @@ namespace Neo.Oracle
             return new byte[0];
         }
 
+        #region Public Static methods
+
         /// <summary>
         /// Process oracle request
         /// </summary>
@@ -244,9 +247,52 @@ namespace Neo.Oracle
             return request switch
             {
                 OracleHttpsRequest https => _https.Process(https),
-
                 _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
             };
         }
+
+        /// <summary>
+        /// Filter response
+        /// </summary>
+        /// <param name="input">Input</param>
+        /// <param name="filter">Filter</param>
+        /// <param name="result">Result</param>
+        /// <returns>True if was filtered</returns>
+        public static bool FilterResponse(string input, string filter, out string result)
+        {
+            if (string.IsNullOrEmpty(filter))
+            {
+                result = input;
+                return true;
+            }
+
+            if (FilterResponse(Encoding.UTF8.GetBytes(input), filter, out var bufferResult))
+            {
+                result = Encoding.UTF8.GetString(bufferResult);
+                return true;
+            }
+
+            result = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Filter response
+        /// </summary>
+        /// <param name="input">Input</param>
+        /// <param name="filter">Filter</param>
+        /// <param name="result">Result</param>
+        /// <returns>True if was filtered</returns>
+        public static bool FilterResponse(byte[] input, string filter, out byte[] result)
+        {
+            // TODO: Filter
+            //result = "";
+            //return false;
+
+            result = input;
+            return true;
+        }
+
+        #endregion
     }
 }

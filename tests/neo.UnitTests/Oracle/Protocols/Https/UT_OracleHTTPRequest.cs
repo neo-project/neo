@@ -20,7 +20,7 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
-            requestB.URL = new Uri("https://google.es/?dummy=1");
+            requestB.URL = new Uri("https://google.com/?dummy=1");
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
             {
                 Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("https://google.es")
+                URL = new Uri("https://google.com")
             };
         }
     }
