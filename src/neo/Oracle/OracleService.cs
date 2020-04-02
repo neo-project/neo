@@ -58,7 +58,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Is started
         /// </summary>
-        public bool IsStarted => Interlocked.Read(ref _isStarted) == 0;
+        public bool IsStarted => Interlocked.Read(ref _isStarted) == 1;
 
         /// <summary>
         /// Constructor
@@ -199,6 +199,7 @@ namespace Neo.Oracle
             var oracle = new OracleExecutionCache(Process);
             using var snapshot = Blockchain.Singleton.GetSnapshot();
             using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
+            engine.LoadScript(tx.Script);
 
             if (engine.Execute() == VM.VMState.HALT)
             {
