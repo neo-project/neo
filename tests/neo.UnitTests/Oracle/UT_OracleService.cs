@@ -12,6 +12,7 @@ using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
+using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
@@ -34,10 +35,18 @@ namespace Neo.UnitTests.Oracle
             server = new WebHostBuilder().UseKestrel(options =>
             {
                 options.Listen(IPAddress.Any, 9898, listenOptions =>
-                 {
-                     listenOptions.UseHttps("UT-cert.pfx", "123");
+                {
+                    if (File.Exists("UT-cert.pfx"))
+                    {
+                        listenOptions.UseHttps("UT-cert.pfx", "123");
+                    }
+                    else if (File.Exists("../../../UT-cert.pfx")) 
+                    {
+                        // Unix doesn't copy to the output dir
 
-                 });
+                        listenOptions.UseHttps("../../../UT-cert.pfx", "123");
+                    }
+                });
             })
             .Configure(app =>
             {
