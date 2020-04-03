@@ -133,7 +133,7 @@ namespace Neo.UnitTests.Oracle
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            result.Should().BeOfType(typeof(VM.Types.ByteString));
             Assert.AreEqual(result.GetBigInteger(), 5000);
         }
 
@@ -181,7 +181,7 @@ namespace Neo.UnitTests.Oracle
 
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            result.Should().BeOfType(typeof(VM.Types.ByteString));
             Assert.AreEqual(result.GetBigInteger(), new BigInteger(value));
         }
 
@@ -214,11 +214,44 @@ namespace Neo.UnitTests.Oracle
 
             // The validator0's cosignee should be the validator1
             var validators = (VM.Types.Array)result;
-            var cosignee0Bytes = (VM.Types.ByteArray)validators[0];
-            var cosignee1Bytes = (VM.Types.ByteArray)validators[1];
+            var cosignee0Bytes = (VM.Types.ByteString)validators[0];
+            var cosignee1Bytes = (VM.Types.ByteString)validators[1];
             Assert.AreEqual(cosignee0Bytes, cosignee1Bytes);
-            VM.Types.ByteArray validator1Bytes = cosignorPubKey.ToArray();
+            VM.Types.ByteString validator1Bytes = cosignorPubKey.ToArray();
             Assert.AreEqual(cosignee1Bytes, validator1Bytes);
+
+            // clear data
+            snapshot.Storages.Delete(validator0Key);
+        }
+
+        [TestMethod]
+        public void Test_GetOracleAddress()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Fake a oracle validator has cosignee.
+            ECPoint[] oraclePubKeys = NativeContract.Oracle.GetOracleValidators(snapshot);
+
+            ECPoint pubkey0 = oraclePubKeys[0]; // Validator0 is the cosignor
+            ECPoint cosignorPubKey = oraclePubKeys[1]; // Validator1 is the cosignee
+            var validator0Key = NativeContract.Oracle.CreateStorageKey(24, pubkey0); // 24 = Prefix_Validator
+            var validator0Value = new StorageItem()
+            {
+                Value = cosignorPubKey.ToArray()
+            };
+            snapshot.Storages.Add(validator0Key, validator0Value);
+
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getOracleAddress");
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.ByteString));
+            Assert.AreEqual(((VM.Types.ByteString)result).GetByteLength(), 20);
+            Assert.AreEqual(result.GetSpan().ToHexString(),
+                    @"dcbb134114104f09c1b020c39b1922a66473f302");
 
             // clear data
             snapshot.Storages.Delete(validator0Key);

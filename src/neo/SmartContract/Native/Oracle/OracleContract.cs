@@ -36,7 +36,7 @@ namespace Neo.SmartContract.Native.Oracle
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Timeout)), new StorageItem
             {
-                Value = new ByteArray(BitConverter.GetBytes(5000)).GetSpan().ToArray()
+                Value = new ByteString(BitConverter.GetBytes(5000)).GetSpan().ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
@@ -125,6 +125,18 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
+        /// Get Oracle Address
+        /// </summary>
+        /// <param name="engine">VM</param>
+        /// <returns>Oracle multisign address</returns>
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray)]
+        public StackItem GetOracleAddress(ApplicationEngine engine, Array args)
+        {
+            ECPoint[] validators = GetOracleValidators(engine.Snapshot);
+            return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash().ToArray();
+        }
+
+        /// <summary>
         /// Get number of current authorized Oracle validator
         /// </summary>
         /// <param name="snapshot">snapshot</param>
@@ -158,7 +170,7 @@ namespace Neo.SmartContract.Native.Oracle
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             string key = args[0].GetString();
-            ByteArray value = args[1].GetSpan().ToArray();
+            ByteString value = args[1].GetSpan().ToArray();
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
             storage.Value = value.GetSpan().ToArray();
             return true;
@@ -183,7 +195,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="snapshot">snapshot</param>
         /// <param name="key">key</param>
         /// <returns>value</returns>
-        public ByteArray GetConfig(StoreView snapshot, string key)
+        public ByteString GetConfig(StoreView snapshot, string key)
         {
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
             return storage.Value;

@@ -136,9 +136,9 @@ namespace Neo.Oracle
         {
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {
-                new ByteArray(RequestHash.ToArray()),
+                new ByteString(RequestHash.ToArray()),
                 new Integer((byte)Error),
-                new ByteArray(Result)
+                new ByteString(Result)
             });
         }
     }
