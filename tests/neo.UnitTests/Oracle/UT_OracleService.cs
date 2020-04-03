@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Oracle
 {
-    [TestClass, NotReRunnable]
+    [TestClass]
     public class UT_OracleService : TestKit
     {
         [TestInitialize]
