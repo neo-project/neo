@@ -126,7 +126,7 @@ namespace Neo.UnitTests.Oracle
                     }
                 case "/timeout":
                     {
-                        Thread.Sleep(1250);
+                        Thread.Sleep((int)(OracleService.HTTPSProtocol.TimeOut.TotalMilliseconds + 250));
                         break;
                     }
                 case "/error":
@@ -173,7 +173,7 @@ namespace Neo.UnitTests.Oracle
 
             // Send tx
 
-            var tx = CreateTx("https://127.0.0.1:19898/ping", "");
+            var tx = CreateTx("https://127.0.0.1:19898/ping", null);
             service.Tell(tx);
 
             // Receive response
@@ -191,10 +191,10 @@ namespace Neo.UnitTests.Oracle
             OracleService.HTTPSProtocol.AllowPrivateHost = false;
         }
 
-        private Transaction CreateTx(string url, string filter)
+        private Transaction CreateTx(string url, OracleFilter filter)
         {
             using ScriptBuilder script = new ScriptBuilder();
-            script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, url, filter);
+            script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, url, filter?.ContractHash, filter?.FilterMethod);
 
             return new Transaction()
             {
@@ -209,7 +209,7 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void TestOracleHttpsRequest()
+        public void TestOracleHttpsRequestTimeout()
         {
             using var server = CreateServer();
 
@@ -219,11 +219,10 @@ namespace Neo.UnitTests.Oracle
 
             // Timeout
 
-            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(1);
+            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(2);
 
             var request = new OracleHttpsRequest()
             {
-                Filter = "",
                 Method = HttpMethod.GET,
                 URL = new Uri("https://127.0.0.1:19898/timeout")
             };
@@ -236,17 +235,26 @@ namespace Neo.UnitTests.Oracle
             Assert.IsTrue(response.Result.Length == 0);
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
+        }
+
+        [TestMethod]
+        public void TestOracleHttpsRequest()
+        {
+            using var server = CreateServer();
+
+            // With local access (Only for UT)
+
+            OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             // OK
 
-            request = new OracleHttpsRequest()
+            var request = new OracleHttpsRequest()
             {
-                Filter = "",
                 Method = HttpMethod.GET,
                 URL = new Uri("https://127.0.0.1:19898/ping")
             };
 
-            response = OracleService.Process(request);
+            var response = OracleService.Process(request);
 
             Assert.AreEqual(OracleResultError.None, response.Error);
             Assert.AreEqual("pong", Encoding.UTF8.GetString(response.Result));
@@ -257,7 +265,6 @@ namespace Neo.UnitTests.Oracle
 
             request = new OracleHttpsRequest()
             {
-                Filter = "",
                 Method = HttpMethod.GET,
                 URL = new Uri("https://127.0.0.1:19898/error")
             };
@@ -295,7 +302,7 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(OracleResultError.ProtocolError, response.Error);
             CollectionAssert.AreEqual(new byte[0], response.Result);
             Assert.AreEqual(request.Hash, response.RequestHash);
-            Assert.AreEqual("0x7202b7ba0427e8ea902bffac6ea76a45febecc03", response.Hash.ToString());
+            Assert.AreEqual("0x6d53b08489400de6e2d3bf0edfd1385e14dbde68", response.Hash.ToString());
         }
     }
 }

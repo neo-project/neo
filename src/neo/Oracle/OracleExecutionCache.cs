@@ -24,13 +24,18 @@ namespace Neo.Oracle
         /// </summary>
         public int Count => _cache.Count;
 
+        /// <summary>
+        /// Filter Cost
+        /// </summary>
+        public long FilterCost { get; private set; }
+
         public int Size => IO.Helper.GetVarSize(Count) + _cache.Values.Sum(u => u.Size);
 
         /// <summary>
         /// Constructor for oracles
         /// </summary>
         /// <param name="oracle">Oracle Engine</param>
-        public OracleExecutionCache(Func<OracleRequest, OracleResponse> oracle = null)
+        public OracleExecutionCache(Func<OracleRequest, OracleResponse> oracle = null) : this()
         {
             _oracle = oracle;
         }
@@ -38,7 +43,10 @@ namespace Neo.Oracle
         /// <summary>
         /// Constructor for ISerializable
         /// </summary>
-        public OracleExecutionCache() { }
+        public OracleExecutionCache()
+        {
+            FilterCost = 0;
+        }
 
         /// <summary>
         /// Constructor for cached results
@@ -47,10 +55,12 @@ namespace Neo.Oracle
         public OracleExecutionCache(params OracleResponse[] results)
         {
             _oracle = null;
+            FilterCost = 0;
 
             foreach (var result in results)
             {
                 _cache[result.RequestHash] = result;
+                FilterCost += result.FilterCost;
             }
         }
 
@@ -101,10 +111,13 @@ namespace Neo.Oracle
         {
             var results = reader.ReadSerializableArray<OracleResponse>(byte.MaxValue);
 
+            FilterCost = 0;
             _cache.Clear();
+
             foreach (var result in results)
             {
                 _cache[result.RequestHash] = result;
+                FilterCost += result.FilterCost;
             }
         }
     }

@@ -18,6 +18,8 @@ namespace Neo.Oracle
 {
     public class OracleService : UntypedActor
     {
+        private const long MaxGasFilter = 1_000_000;
+
         /// <summary>
         /// A flag for know if the pool was ordered or not
         /// </summary>
@@ -307,15 +309,16 @@ namespace Neo.Oracle
         /// <param name="filter">Filter</param>
         /// <param name="result">Result</param>
         /// <returns>True if was filtered</returns>
-        public static bool FilterResponse(string input, string filter, out string result)
+        public static bool FilterResponse(string input, OracleFilter filter, out string result, out long gasCost)
         {
-            if (string.IsNullOrEmpty(filter))
+            if (filter == null)
             {
                 result = input;
+                gasCost = 0;
                 return true;
             }
 
-            if (FilterResponse(Encoding.UTF8.GetBytes(input), filter, out var bufferResult))
+            if (FilterResponse(Encoding.UTF8.GetBytes(input), filter, out var bufferResult, out gasCost))
             {
                 result = Encoding.UTF8.GetString(bufferResult);
                 return true;
@@ -331,14 +334,39 @@ namespace Neo.Oracle
         /// <param name="input">Input</param>
         /// <param name="filter">Filter</param>
         /// <param name="result">Result</param>
+        /// <param name="gasCost">Gas cost</param>
         /// <returns>True if was filtered</returns>
-        public static bool FilterResponse(byte[] input, string filter, out byte[] result)
+        public static bool FilterResponse(byte[] input, OracleFilter filter, out byte[] result, out long gasCost)
         {
-            // TODO: Filter
-            //result = "";
-            //return false;
+            if (filter == null)
+            {
+                result = input;
+                gasCost = 0;
+                return true;
+            }
 
-            result = input;
+            // Prepare the execution
+
+            using ScriptBuilder script = new ScriptBuilder();
+            script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, input, (byte)CallFlags.None);
+
+            // Execute
+
+            using var engine = new ApplicationEngine(TriggerType.Application, null, null, MaxGasFilter, false, null);
+
+            engine.LoadScript(script.ToArray(), CallFlags.None);
+
+            if (engine.Execute() != VMState.HALT || engine.ResultStack.Count != 1)
+            {
+                result = null;
+                gasCost = engine.GasConsumed;
+                return false;
+            }
+
+            // Extract the filtered item
+
+            result = engine.ResultStack.Pop().GetSpan().ToArray();
+            gasCost = engine.GasConsumed;
             return true;
         }
 
