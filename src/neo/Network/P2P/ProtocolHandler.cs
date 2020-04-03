@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -134,15 +135,17 @@ namespace Neo.Network.P2P
                     OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
-                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
+                    Task.Run(() =>
                     {
-                        Transaction tx = (Transaction)msg.Payload;
-                        if (tx.Verify(Blockchain.Singleton.currentSnapshot) != VerifyResult.Succeed)
+                        if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         {
-                            return;
+                            Transaction tx = (Transaction)msg.Payload;
+                            if (tx.VerifyStateIndependent(Blockchain.Singleton.currentSnapshot) == VerifyResult.Succeed)
+                            {
+                                OnInventoryReceived(tx);
+                            }
                         }
-                        OnInventoryReceived(tx);
-                    }
+                    });
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:

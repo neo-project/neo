@@ -416,7 +416,7 @@ namespace Neo.Ledger
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                if (item.Tx.VerifySenderFeeFromPool(snapshot, SendersFeeMonitor.GetSenderFee(item.Tx.Sender)) == VerifyResult.Succeed
+                if (item.Tx.VerifyStateDependent(snapshot, SendersFeeMonitor.GetSenderFee(item.Tx.Sender)) == VerifyResult.Succeed
                         && item.Tx.VerifyForEachBlock(snapshot) == VerifyResult.Succeed)
                 {
                     reverifiedItems.Add(item);

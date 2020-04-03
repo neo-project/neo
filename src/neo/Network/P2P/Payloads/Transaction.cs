@@ -263,11 +263,11 @@ namespace Neo.Network.P2P.Payloads
 
         bool IInventory.Verify(StoreView snapshot)
         {
-            return VerifySenderFeeFromPool(snapshot, BigInteger.Zero) == VerifyResult.Succeed
-                && Verify(snapshot) == VerifyResult.Succeed;
+            return VerifyStateDependent(snapshot, BigInteger.Zero) == VerifyResult.Succeed
+                && VerifyStateIndependent(snapshot) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifySenderFeeFromPool(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
@@ -291,7 +291,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult Verify(StoreView snapshot)
+        public virtual VerifyResult VerifyStateIndependent(StoreView snapshot)
         {
             VerifyResult result = VerifyForEachBlock(snapshot);
             if (result != VerifyResult.Succeed) return result;
