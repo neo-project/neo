@@ -690,7 +690,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, 16, 32);
 
             st.Count.Should().Be(3);
-            st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteArray) }); // Balance
+            st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }); // Balance
 
             st[0].GetBigInteger().Should().Be(balance); // Balance
             st[1].GetBigInteger().Should().Be(height);  // BalanceHeight
