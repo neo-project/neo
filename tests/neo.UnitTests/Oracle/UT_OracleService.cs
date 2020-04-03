@@ -166,7 +166,8 @@ namespace Neo.UnitTests.Oracle
         [TestMethod]
         public void ProcessTx()
         {
-            using var server = CreateServer();
+            var port = 8443;
+            using var server = CreateServer(port);
 
             OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
@@ -180,7 +181,7 @@ namespace Neo.UnitTests.Oracle
 
             // Send tx
 
-            var tx = CreateTx("https://127.0.0.1:19898/ping", null);
+            var tx = CreateTx($"https://127.0.0.1:{port}/ping", null);
             service.Tell(tx);
 
             // Receive response
@@ -216,9 +217,10 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
-        public void TestOracleHttpsRequestTimeout()
+        public void TestOracleHttpsRequest()
         {
-            using var server = CreateServer();
+            var port = 8443;
+            using var server = CreateServer(port);
 
             // With local access (Only for UT)
 
@@ -231,7 +233,7 @@ namespace Neo.UnitTests.Oracle
             var request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:443/timeout")
+                URL = new Uri($"https://127.0.0.1:{port}/timeout")
             };
 
             var response = OracleService.Process(request);
@@ -242,26 +244,16 @@ namespace Neo.UnitTests.Oracle
             Assert.IsTrue(response.Result.Length == 0);
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
-        }
-
-        [TestMethod]
-        public void TestOracleHttpsRequest()
-        {
-            using var server = CreateServer();
-
-            // With local access (Only for UT)
-
-            OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             // OK
 
-            var request = new OracleHttpsRequest()
+            request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:443/ping")
+                URL = new Uri($"https://127.0.0.1:{port}/ping")
             };
 
-            var response = OracleService.Process(request);
+            response = OracleService.Process(request);
 
             Assert.AreEqual(OracleResultError.None, response.Error);
             Assert.AreEqual("pong", Encoding.UTF8.GetString(response.Result));
@@ -273,7 +265,7 @@ namespace Neo.UnitTests.Oracle
             request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:443/error")
+                URL = new Uri($"https://127.0.0.1:{port}/error")
             };
 
             response = OracleService.Process(request);
