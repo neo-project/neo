@@ -8,6 +8,7 @@ using System.Reflection;
 namespace Neo.UnitTests
 {
     [TestClass]
+    [NotReRunnable]
     public class UT_ProtocolSettings
     {
         // since ProtocolSettings.Default is designed to be writable only once, use reflection to 
