@@ -16,9 +16,9 @@ namespace Neo.UnitTests
         [NotReRunnable]
         public void All_Tests_Cultures()
         {
-            // get all tests in the unit test project assembly
+            // get all tests in the unit test project assembly except UT_ProtocolSettings to avoid test failure by design (ProtocolSettings._default would possibly be initialized multiple times by other threads)
             var testClasses = (from t in typeof(NotReRunnableAttribute).GetTypeInfo().Assembly.DefinedTypes
-                               where t.GetCustomAttribute<TestClassAttribute>() != null && t.GetCustomAttribute<NotReRunnableAttribute>() == null
+                               where t.GetCustomAttribute<TestClassAttribute>() != null && t.GetCustomAttribute<NotReRunnableAttribute>() == null && !t.Name.Equals(nameof(UT_ProtocolSettings))
                                select new
                                {
                                    Constructor = t.GetConstructor(new Type[] { }),
