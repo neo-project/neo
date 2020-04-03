@@ -86,9 +86,8 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// Can receive TX
+        /// Receive AKKA Messages
         /// </summary>
-        /// <param name="message"></param>
         protected override void OnReceive(object message)
         {
             switch (message)
@@ -154,8 +153,6 @@ namespace Neo.Oracle
             {
                 _oracleTasks[x] = new Task(() =>
                 {
-                    // TODO: it sould be sorted by fee
-
                     foreach (var tx in _asyncPool.GetConsumingEnumerable(_cancel.Token))
                     {
                         ProcessTransaction(tx);
