@@ -118,7 +118,8 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("MyFilter");
-                script.EmitPush("https://google.es");
+                script.EmitPush(UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray());
+                script.EmitPush("https://google.com");
                 script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
@@ -143,7 +144,8 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("WrongFilter");
-                script.EmitPush("https://google.es");
+                script.EmitPush(UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray());
+                script.EmitPush("https://google.com");
                 script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
@@ -167,8 +169,9 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitPush("MyFilter");
-                script.EmitPush("http://google.es");
+                script.Emit(OpCode.PUSHNULL);
+                script.Emit(OpCode.PUSHNULL);
+                script.EmitPush("http://google.com");
                 script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true, new OracleExecutionCache(Oracle)))
@@ -185,14 +188,16 @@ namespace Neo.UnitTests.SmartContract
         {
             if (arg is OracleHttpsRequest https)
             {
-                if (https.Filter != "MyFilter")
+                if (https.Filter != null &&
+                    (https.Filter.ContractHash != UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff") ||
+                    https.Filter.FilterMethod != "MyFilter"))
                 {
                     return OracleResponse.CreateError(UInt160.Zero, OracleResultError.FilterError);
                 }
 
-                if (https.URL.ToString() == "https://google.es/" && https.Method == HttpMethod.GET)
+                if (https.URL.ToString() == "https://google.com/" && https.Method == HttpMethod.GET)
                 {
-                    return OracleResponse.CreateResult(UInt160.Zero, "MyResponse");
+                    return OracleResponse.CreateResult(UInt160.Zero, "MyResponse", 0);
                 }
             }
 

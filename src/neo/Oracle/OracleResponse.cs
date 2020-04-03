@@ -32,6 +32,11 @@ namespace Neo.Oracle
         public byte[] Result { get; set; }
 
         /// <summary>
+        /// Filter cost paid by Oracle and must be claimed to the user
+        /// </summary>
+        public long FilterCost { get; set; }
+
+        /// <summary>
         /// Hash
         /// </summary>
         public UInt160 Hash
@@ -47,7 +52,7 @@ namespace Neo.Oracle
             }
         }
 
-        public int Size => UInt160.Length + sizeof(byte) + Result.GetVarSize();
+        public int Size => UInt160.Length + sizeof(byte) + Result.GetVarSize() + sizeof(long);
 
         public Witness[] Witnesses
         {
@@ -60,14 +65,16 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="requestHash">Request Id</param>
         /// <param name="error">Error</param>
+        /// <param name="filterCost">Gas cost</param>
         /// <returns>OracleResult</returns>
-        public static OracleResponse CreateError(UInt160 requestHash, OracleResultError error)
+        public static OracleResponse CreateError(UInt160 requestHash, OracleResultError error, long filterCost = 0)
         {
             return new OracleResponse()
             {
                 RequestHash = requestHash,
                 Error = error,
                 Result = new byte[0],
+                FilterCost = filterCost
             };
         }
 
@@ -76,10 +83,11 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="requestHash">Request Hash</param>
         /// <param name="result">Result</param>
+        /// <param name="filterCost">Gas cost</param>
         /// <returns>OracleResult</returns>
-        public static OracleResponse CreateResult(UInt160 requestHash, string result)
+        public static OracleResponse CreateResult(UInt160 requestHash, string result, long filterCost)
         {
-            return CreateResult(requestHash, Encoding.UTF8.GetBytes(result));
+            return CreateResult(requestHash, Encoding.UTF8.GetBytes(result), filterCost);
         }
 
         /// <summary>
@@ -87,14 +95,16 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="requestHash">Request Id</param>
         /// <param name="result">Result</param>
+        /// <param name="filterCost">Gas cost</param>
         /// <returns>OracleResult</returns>
-        public static OracleResponse CreateResult(UInt160 requestHash, byte[] result)
+        public static OracleResponse CreateResult(UInt160 requestHash, byte[] result, long filterCost)
         {
             return new OracleResponse()
             {
                 RequestHash = requestHash,
                 Error = OracleResultError.None,
                 Result = result,
+                FilterCost = filterCost
             };
         }
 
@@ -104,6 +114,7 @@ namespace Neo.Oracle
             writer.Write((byte)Error);
             if (Error == OracleResultError.None)
                 writer.WriteVarBytes(Result);
+            writer.Write(FilterCost);
         }
 
         public void Serialize(BinaryWriter writer)
@@ -116,6 +127,8 @@ namespace Neo.Oracle
             RequestHash = reader.ReadSerializable<UInt160>();
             Error = (OracleResultError)reader.ReadByte();
             Result = Error != OracleResultError.None ? reader.ReadVarBytes(ushort.MaxValue) : new byte[0];
+            FilterCost = reader.ReadInt64();
+            if (FilterCost < 0) throw new FormatException(nameof(FilterCost));
         }
 
         public void Deserialize(BinaryReader reader)

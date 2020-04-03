@@ -2,7 +2,9 @@ using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract.Native;
+using Neo.VM.Types;
 using System;
+using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -12,6 +14,10 @@ namespace Neo.SmartContract
         {
             public static readonly uint Neo_Oracle_Get = Register("Neo.Oracle.Get", Oracle_Get, 0, TriggerType.Application, CallFlags.None);
 
+            /// <summary>
+            /// Oracle Get
+            ///     string url, [UInt160 filter], [string filterMethod]
+            /// </summary>
             private static bool Oracle_Get(ApplicationEngine engine)
             {
                 if (engine.OracleCache == null)
@@ -27,7 +33,31 @@ namespace Neo.SmartContract
                     return false;
                 }
                 if (!engine.TryPop(out string urlItem) || !Uri.TryCreate(urlItem, UriKind.Absolute, out var url)) return false;
-                if (!engine.TryPop(out string filter)) return false;
+                if (!engine.TryPop(out StackItem filterContractItem)) return false;
+                if (!engine.TryPop(out StackItem filterMethodItem)) return false;
+
+                // Create filter
+
+                OracleFilter filter = null;
+
+                if (!filterContractItem.IsNull)
+                {
+                    if (filterContractItem is PrimitiveType filterContract &&
+                        filterMethodItem is PrimitiveType filterMethod)
+                    {
+                        filter = new OracleFilter()
+                        {
+                            ContractHash = new UInt160(filterContract.Span),
+                            FilterMethod = Encoding.UTF8.GetString(filterMethod.Span)
+                        };
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                // Create request
 
                 OracleRequest request;
                 switch (url.Scheme.ToLowerInvariant())
@@ -44,6 +74,8 @@ namespace Neo.SmartContract
                         }
                     default: return false;
                 }
+
+                // Execute the oracle request
 
                 if (engine.OracleCache.TryGet(request, out var response))
                 {

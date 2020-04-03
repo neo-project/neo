@@ -139,12 +139,12 @@ namespace Neo.Oracle.Protocols.Https
 
             // Filter
 
-            if (!OracleService.FilterResponse(ret, request.Filter, out string filteredStr))
+            if (!OracleService.FilterResponse(ret, request.Filter, out string filteredStr, out var gasCost))
             {
-                return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError);
+                return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError, gasCost);
             }
 
-            return OracleResponse.CreateResult(request.Hash, filteredStr);
+            return OracleResponse.CreateResult(request.Hash, filteredStr, gasCost);
         }
 
         private bool IsPrivateHost(IPHostEntry entry)

@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Oracle
         {
             var http = (CounterRequest)arg;
             http.Counter++;
-            return OracleResponse.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter));
+            return OracleResponse.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter), 0);
         }
 
         UInt256 _txHash;
@@ -47,7 +47,6 @@ namespace Neo.UnitTests.Oracle
             {
                 Counter = 1,
                 URL = new Uri("https://google.es"),
-                Filter = "Filter",
                 Method = HttpMethod.GET
             };
             Assert.IsTrue(cache.TryGet(req, out var ret));
@@ -81,7 +80,6 @@ namespace Neo.UnitTests.Oracle
             var initReq = new OracleHttpsRequest()
             {
                 URL = new Uri("https://google.es"),
-                Filter = "Filter",
                 Method = HttpMethod.GET
             };
 
@@ -103,7 +101,6 @@ namespace Neo.UnitTests.Oracle
             Assert.IsFalse(cache.TryGet(new OracleHttpsRequest()
             {
                 URL = new Uri("https://google.es/?p=1"),
-                Filter = "Filter",
                 Method = HttpMethod.GET
             }
             , out var ret));

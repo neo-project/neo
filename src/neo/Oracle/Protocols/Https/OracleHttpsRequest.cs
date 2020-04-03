@@ -25,7 +25,7 @@ namespace Neo.Oracle.Protocols.Https
         /// <summary>
         /// Filter
         /// </summary>
-        public string Filter { get; set; }
+        public OracleFilter Filter { get; set; }
 
         /// <summary>
         /// Get hash data
@@ -39,7 +39,18 @@ namespace Neo.Oracle.Protocols.Https
                 writer.Write((byte)Type);
                 writer.Write((byte)Method);
                 writer.WriteVarString(URL.ToString());
-                writer.WriteVarString(Filter);
+
+                if (Filter != null)
+                {
+                    writer.Write(0x01);
+                    writer.Write(Filter.ContractHash);
+                    writer.WriteVarString(Filter.FilterMethod);
+                }
+                else
+                {
+                    writer.Write(0x00);
+                }
+
                 writer.Flush();
 
                 return stream.ToArray();
