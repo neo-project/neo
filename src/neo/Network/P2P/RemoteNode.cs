@@ -16,6 +16,7 @@ namespace Neo.Network.P2P
     public class RemoteNode : Connection
     {
         internal class Relay { public IInventory Inventory; }
+        internal class SendVersion { }
 
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
@@ -38,16 +39,6 @@ namespace Neo.Network.P2P
             this.system = system;
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
-
-            var capabilities = new List<NodeCapability>
-            {
-                new FullNodeCapability(Blockchain.Singleton.Height)
-            };
-
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
-
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         /// <summary>
@@ -153,7 +144,23 @@ namespace Neo.Network.P2P
                 case PingPayload payload:
                     OnPingPayload(payload);
                     break;
+                case SendVersion _:
+                    OnSendVersion();
+                    break;
             }
+        }
+
+        private void OnSendVersion()
+        {
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(Blockchain.Singleton.Height)
+            };
+
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
+
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         private void OnPingPayload(PingPayload payload)
