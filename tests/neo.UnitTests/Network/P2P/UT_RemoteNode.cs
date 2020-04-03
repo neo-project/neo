@@ -9,7 +9,6 @@ using Neo.Network.P2P.Payloads;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    [NotReRunnable]
     public class UT_RemoteNode : TestKit
     {
         private static NeoSystem testBlockchain;
