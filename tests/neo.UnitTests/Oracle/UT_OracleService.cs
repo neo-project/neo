@@ -126,7 +126,7 @@ namespace Neo.UnitTests.Oracle
                     }
                 case "/timeout":
                     {
-                        Thread.Sleep(6000);
+                        Thread.Sleep(1250);
                         break;
                     }
                 case "/error":
@@ -161,7 +161,7 @@ namespace Neo.UnitTests.Oracle
         {
             using var server = CreateServer();
 
-            OracleHttpsProtocol.AllowPrivateHost = true;
+            OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             TestProbe subscriber = CreateTestProbe();
 
@@ -183,12 +183,12 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(1, response.ExecutionResult.Count);
 
             var entry = response.ExecutionResult.First();
+            Assert.AreEqual(OracleResultError.None, entry.Value.Error);
             Assert.AreEqual("pong", Encoding.UTF8.GetString(entry.Value.Result));
             Assert.AreEqual(tx.Hash, response.UserTxHash);
 
             service.UnderlyingActor.Stop();
-
-            OracleHttpsProtocol.AllowPrivateHost = false;
+            OracleService.HTTPSProtocol.AllowPrivateHost = false;
         }
 
         private Transaction CreateTx(string url, string filter)
@@ -215,9 +215,11 @@ namespace Neo.UnitTests.Oracle
 
             // With local access (Only for UT)
 
-            OracleHttpsProtocol.AllowPrivateHost = true;
+            OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             // Timeout
+
+            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(1);
 
             var request = new OracleHttpsRequest()
             {
@@ -227,6 +229,8 @@ namespace Neo.UnitTests.Oracle
             };
 
             var response = OracleService.Process(request);
+
+            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(5);
 
             Assert.AreEqual(OracleResultError.Timeout, response.Error);
             Assert.IsTrue(response.Result.Length == 0);
@@ -267,7 +271,7 @@ namespace Neo.UnitTests.Oracle
 
             // Without local access
 
-            OracleHttpsProtocol.AllowPrivateHost = false;
+            OracleService.HTTPSProtocol.AllowPrivateHost = false;
             response = OracleService.Process(request);
 
             Assert.AreEqual(OracleResultError.PolicyError, response.Error);

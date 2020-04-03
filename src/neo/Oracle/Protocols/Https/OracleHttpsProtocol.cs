@@ -16,12 +16,12 @@ namespace Neo.Oracle.Protocols.Https
         /// <summary>
         /// Timeout
         /// </summary>
-        public TimeSpan TimeOut { get; private set; }
+        public TimeSpan TimeOut { get; internal set; }
 
         /// <summary>
         /// Allow private host
         /// </summary>
-        internal static bool AllowPrivateHost { get; set; } = false;
+        public bool AllowPrivateHost { get; internal set; } = false;
 
         /// <summary>
         /// Constructor
