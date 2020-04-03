@@ -39,10 +39,15 @@ namespace Neo.Oracle
         /// Sortable pool
         /// </summary>
         private readonly List<Transaction> _orderedPool = new List<Transaction>();
+
+        #region Protocols
+
         /// <summary>
         /// HTTPS protocol
         /// </summary>
-        private static readonly OracleHttpsProtocol _https = new OracleHttpsProtocol();
+        internal static OracleHttpsProtocol HTTPSProtocol { get; } = new OracleHttpsProtocol();
+
+        #endregion
 
         /// <summary>
         /// Akka message
@@ -285,7 +290,7 @@ namespace Neo.Oracle
             {
                 return request switch
                 {
-                    OracleHttpsRequest https => _https.Process(https),
+                    OracleHttpsRequest https => HTTPSProtocol.Process(https),
                     _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
                 };
             }
