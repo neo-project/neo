@@ -294,8 +294,10 @@ namespace Neo.Oracle
                     _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
                 };
             }
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine(e.ToString()); // TODO: remove this when fix UT
+
                 return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
             }
         }
