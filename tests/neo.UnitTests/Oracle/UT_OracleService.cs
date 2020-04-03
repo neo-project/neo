@@ -31,22 +31,29 @@ namespace Neo.UnitTests.Oracle
             TestBlockchain.InitializeMockNeoSystem();
         }
 
-        public static IWebHost CreateServer(int port = 19898)
+        public static IWebHost CreateServer(int port = 443)
         {
-
             var server = new WebHostBuilder().UseKestrel(options =>
              {
                  options.Listen(IPAddress.Any, port, listenOptions =>
                  {
                      if (File.Exists("UT-cert.pfx"))
                      {
-                         listenOptions.UseHttps("UT-cert.pfx", "123");
+                         listenOptions.UseHttps("UT-cert.pfx", "123", https =>
+                         {
+                             https.CheckCertificateRevocation = false;
+                             https.SslProtocols = System.Security.Authentication.SslProtocols.Tls;
+                         });
                      }
                      else if (File.Exists("../../../UT-cert.pfx"))
                      {
                          // Unix doesn't copy to the output dir
 
-                         listenOptions.UseHttps("../../../UT-cert.pfx", "123");
+                         listenOptions.UseHttps("../../../UT-cert.pfx", "123", https =>
+                         {
+                             https.CheckCertificateRevocation = false;
+                             https.SslProtocols = System.Security.Authentication.SslProtocols.Tls;
+                         });
                      }
                  });
              })
@@ -224,7 +231,7 @@ namespace Neo.UnitTests.Oracle
             var request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:19898/timeout")
+                URL = new Uri("https://127.0.0.1:443/timeout")
             };
 
             var response = OracleService.Process(request);
@@ -251,7 +258,7 @@ namespace Neo.UnitTests.Oracle
             var request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:19898/ping")
+                URL = new Uri("https://127.0.0.1:443/ping")
             };
 
             var response = OracleService.Process(request);
@@ -266,7 +273,7 @@ namespace Neo.UnitTests.Oracle
             request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
-                URL = new Uri("https://127.0.0.1:19898/error")
+                URL = new Uri("https://127.0.0.1:443/error")
             };
 
             response = OracleService.Process(request);
