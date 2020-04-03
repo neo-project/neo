@@ -48,7 +48,6 @@ namespace Neo.SmartContract
             Register("System.Runtime.GetTime", Runtime_GetTime, 1);
             Register("System.Runtime.Serialize", Runtime_Serialize, 1);
             Register("System.Runtime.Deserialize", Runtime_Deserialize, 1);
-            Register("System.Runtime.MerkleProve", Merkle_Prove, 200);
             Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 1);
             Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 100);
             Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 200);
@@ -388,19 +387,6 @@ namespace Neo.SmartContract
                 }
                 engine.CurrentContext.EvaluationStack.Push(item);
             }
-            return true;
-        }
-
-        protected bool Merkle_Prove(ExecutionEngine engine)
-        {
-            byte[] path = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            byte[] position = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            byte[] root_bytes = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            byte[] toMerkleValue = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if (root_bytes.Length != 32) return false;
-            var root = new UInt256(root_bytes);
-            bool value = MerkleTree.MerkleProve(path, position, root, toMerkleValue);
-            engine.CurrentContext.EvaluationStack.Push(value);
             return true;
         }
 
