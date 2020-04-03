@@ -322,6 +322,7 @@ namespace Neo.Wallets.NEP6
                     account.ChangePasswordCommit();
                 if (password != null)
                     password = password_new;
+                Save();
             }
             else
             {
