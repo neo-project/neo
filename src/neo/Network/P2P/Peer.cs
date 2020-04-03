@@ -224,7 +224,7 @@ namespace Neo.Network.P2P
                 ConnectedAddresses[remote.Address] = count + 1;
                 IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
-                Sender.Tell(new Tcp.Register(connection)); 
+                Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
                 connection.Tell(new RemoteNode.SendVersion());
             }
