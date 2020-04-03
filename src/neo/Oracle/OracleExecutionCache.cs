@@ -94,7 +94,7 @@ namespace Neo.Oracle
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteArray(_cache.Values.ToArray());
+            writer.Write(_cache.Values.ToArray());
         }
 
         public void Deserialize(BinaryReader reader)
