@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Oracle
             TestBlockchain.InitializeMockNeoSystem();
         }
 
-        public static IWebHost CreateServer(int port = 443)
+        public static IWebHost CreateServer(int port)
         {
             var server = new WebHostBuilder().UseKestrel(options =>
              {
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Oracle
                          listenOptions.UseHttps("UT-cert.pfx", "123", https =>
                          {
                              https.CheckCertificateRevocation = false;
-                             https.SslProtocols = System.Security.Authentication.SslProtocols.Tls;
+                             https.SslProtocols = System.Security.Authentication.SslProtocols.None;
                          });
                      }
                      else if (File.Exists("../../../UT-cert.pfx"))
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Oracle
                          listenOptions.UseHttps("../../../UT-cert.pfx", "123", https =>
                          {
                              https.CheckCertificateRevocation = false;
-                             https.SslProtocols = System.Security.Authentication.SslProtocols.Tls;
+                             https.SslProtocols = System.Security.Authentication.SslProtocols.None;
                          });
                      }
                  });
