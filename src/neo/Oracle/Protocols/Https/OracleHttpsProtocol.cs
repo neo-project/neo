@@ -64,7 +64,7 @@ namespace Neo.Oracle.Protocols.Https
         {
             LoadConfig();
 
-            if (!AllowPrivateHost && IsPrivateHost(Dns.GetHostEntry(request.URL.Host)))
+            if (!AllowPrivateHost && IsInternal(Dns.GetHostEntry(request.URL.Host)))
             {
                 // Don't allow private host in order to prevent SSRF
 
@@ -147,11 +147,10 @@ namespace Neo.Oracle.Protocols.Https
             return OracleResponse.CreateResult(request.Hash, filteredStr, gasCost);
         }
 
-        private bool IsPrivateHost(IPHostEntry entry)
+        internal static bool IsInternal(IPHostEntry entry)
         {
             foreach (var ip in entry.AddressList)
             {
-                if (IPAddress.IsLoopback(ip)) return true;
                 if (IsInternal(ip)) return true;
             }
 
@@ -167,9 +166,13 @@ namespace Neo.Oracle.Protocols.Https
         /// </summary>
         /// <param name="ipAddress">Address</param>
         /// <returns>True if it was an internal address</returns>
-        public bool IsInternal(IPAddress ipAddress)
+        internal static bool IsInternal(IPAddress ipAddress)
         {
-            if (ipAddress.ToString() == "::1") return true;
+            if (IPAddress.IsLoopback(ipAddress)) return true;
+            if (IPAddress.Broadcast.Equals(ipAddress)) return true;
+            if (IPAddress.Any.Equals(ipAddress)) return true;
+            if (IPAddress.IPv6Any.Equals(ipAddress)) return true;
+            if (IPAddress.IPv6Loopback.Equals(ipAddress)) return true;
 
             var ip = ipAddress.GetAddressBytes();
             switch (ip[0])

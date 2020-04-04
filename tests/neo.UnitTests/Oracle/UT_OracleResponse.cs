@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Oracle;
 
 namespace Neo.UnitTests.Oracle
@@ -24,13 +25,29 @@ namespace Neo.UnitTests.Oracle
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
         }
 
-        private OracleResponse CreateDefault()
+        [TestMethod]
+        public void TestSerialization()
+        {
+            var entry = CreateDefault();
+            var data = entry.ToArray();
+
+            Assert.AreEqual(entry.Size, data.Length);
+
+            var copy = data.AsSerializable<OracleResponse>();
+
+            Assert.AreEqual(entry.Hash, copy.Hash);
+            Assert.AreEqual(entry.Error, copy.Error);
+            Assert.AreEqual(entry.RequestHash, copy.RequestHash);
+            CollectionAssert.AreEqual(entry.Result, copy.Result);
+        }
+
+        internal static OracleResponse CreateDefault()
         {
             return new OracleResponse()
             {
                 Error = OracleResultError.None,
-                RequestHash = UInt160.Zero,
-                Result = new byte[0]
+                RequestHash = UInt160.Parse("0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                Result = new byte[] { 0x01, 0x02, 0x03 }
             };
         }
     }

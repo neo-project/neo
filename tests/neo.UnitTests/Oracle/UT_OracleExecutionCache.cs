@@ -34,6 +34,31 @@ namespace Neo.UnitTests.Oracle
         }
 
         [TestMethod]
+        public void TestEnumerator()
+        {
+            var copy = UT_OracleResponse.CreateDefault();
+            var entry = new OracleExecutionCache(UT_OracleResponse.CreateDefault());
+            var entries = entry.ToArray();
+
+            Assert.AreEqual(entries[0].Value.Hash, copy.Hash);
+        }
+
+        [TestMethod]
+        public void TestSerialization()
+        {
+            var entry = new OracleExecutionCache(UT_OracleResponse.CreateDefault());
+            var data = Neo.IO.Helper.ToArray(entry);
+
+            Assert.AreEqual(entry.Size, data.Length);
+
+            var copy = Neo.IO.Helper.AsSerializable<OracleExecutionCache>(data);
+
+            Assert.AreEqual(entry.Count, copy.Count);
+            Assert.AreEqual(entry.FilterCost, copy.FilterCost);
+            Assert.AreEqual(entry.First().Value.Hash, copy.First().Value.Hash);
+        }
+
+        [TestMethod]
         public void TestWithOracle()
         {
             var cache = new OracleExecutionCache(OracleLogic);

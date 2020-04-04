@@ -126,7 +126,7 @@ namespace Neo.Oracle
         {
             RequestHash = reader.ReadSerializable<UInt160>();
             Error = (OracleResultError)reader.ReadByte();
-            Result = Error != OracleResultError.None ? reader.ReadVarBytes(ushort.MaxValue) : new byte[0];
+            Result = Error == OracleResultError.None ? reader.ReadVarBytes(ushort.MaxValue) : new byte[0];
             FilterCost = reader.ReadInt64();
             if (FilterCost < 0) throw new FormatException(nameof(FilterCost));
         }
