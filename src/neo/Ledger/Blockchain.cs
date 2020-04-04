@@ -15,7 +15,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -23,11 +22,11 @@ namespace Neo.Ledger
     {
         public partial class ApplicationExecuted { }
         public class PersistCompleted { public Block Block; }
-        public class Import { public IEnumerable<Block> Blocks; }
+        public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        private class ParallelVerified { public Transaction Transaction; public bool ShouldRelay; public RelayResultReason VerifyResult; }
+        public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
@@ -239,12 +238,14 @@ namespace Neo.Ledger
             return View.GetTransaction(hash);
         }
 
-        private void OnImport(IEnumerable<Block> blocks)
+        private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
             foreach (Block block in blocks)
             {
                 if (block.Index <= Height) continue;
                 if (block.Index != Height + 1)
+                    throw new InvalidOperationException();
+                if (verify && !block.Verify(currentSnapshot))
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
@@ -278,7 +279,7 @@ namespace Neo.Ledger
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Verify the the transaction
-                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != RelayResultReason.Succeed)
+                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
                     continue;
                 // Add to the memory pool
                 MemPool.TryAdd(tx.Hash, tx);
@@ -288,26 +289,44 @@ namespace Neo.Ledger
             Sender.Tell(new FillCompleted());
         }
 
-        private RelayResultReason OnNewBlock(Block block)
+        private void OnInventory(IInventory inventory, bool relay = true)
+        {
+            RelayResult rr = new RelayResult
+            {
+                Inventory = inventory,
+                Result = inventory switch
+                {
+                    Block block => OnNewBlock(block),
+                    Transaction transaction => OnNewTransaction(transaction),
+                    ConsensusPayload payload => OnNewConsensus(payload),
+                    _ => VerifyResult.Unknown
+                }
+            };
+            if (relay && rr.Result == VerifyResult.Succeed)
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
+            Context.System.EventStream.Publish(rr);
+        }
+
+        private VerifyResult OnNewBlock(Block block)
         {
             if (block.Index <= Height)
-                return RelayResultReason.AlreadyExists;
+                return VerifyResult.AlreadyExists;
             if (block_cache.ContainsKey(block.Hash))
-                return RelayResultReason.AlreadyExists;
+                return VerifyResult.AlreadyExists;
             if (block.Index - 1 >= header_index.Count)
             {
                 AddUnverifiedBlockToCache(block);
-                return RelayResultReason.UnableToVerify;
+                return VerifyResult.UnableToVerify;
             }
             if (block.Index == header_index.Count)
             {
                 if (!block.Verify(currentSnapshot))
-                    return RelayResultReason.Invalid;
+                    return VerifyResult.Invalid;
             }
             else
             {
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
-                    return RelayResultReason.Invalid;
+                    return VerifyResult.Invalid;
             }
             if (block.Index == Height + 1)
             {
@@ -364,16 +383,15 @@ namespace Neo.Ledger
                     UpdateCurrentSnapshot();
                 }
             }
-            return RelayResultReason.Succeed;
+            return VerifyResult.Succeed;
         }
 
-        private RelayResultReason OnNewConsensus(ConsensusPayload payload)
+        private VerifyResult OnNewConsensus(ConsensusPayload payload)
         {
-            if (!payload.Verify(currentSnapshot)) return RelayResultReason.Invalid;
+            if (!payload.Verify(currentSnapshot)) return VerifyResult.Invalid;
             system.Consensus?.Tell(payload);
             ConsensusRelayCache.Add(payload);
-            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
-            return RelayResultReason.Succeed;
+            return VerifyResult.Succeed;
         }
 
         private void OnNewHeaders(Header[] headers)
@@ -397,48 +415,14 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private void OnNewTransaction(Transaction transaction, bool relay)
+        private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            RelayResultReason reason;
-            if (ContainsTransaction(transaction.Hash))
-                reason = RelayResultReason.AlreadyExists;
-            else if (!MemPool.CanTransactionFitInPool(transaction))
-                reason = RelayResultReason.OutOfMemory;
-            else
-                reason = transaction.VerifyForEachBlock(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
-            if (reason == RelayResultReason.Succeed)
-            {
-                Task.Run(() =>
-                {
-                    return new ParallelVerified
-                    {
-                        Transaction = transaction,
-                        ShouldRelay = relay,
-                        VerifyResult = transaction.VerifyParallelParts(currentSnapshot)
-                    };
-                }).PipeTo(Self, Sender);
-            }
-            else
-            {
-                Sender.Tell(reason);
-            }
-        }
-
-        private void OnParallelVerified(ParallelVerified parallelVerified)
-        {
-            RelayResultReason reason = parallelVerified.VerifyResult;
-            if (reason == RelayResultReason.Succeed)
-            {
-                if (View.ContainsTransaction(parallelVerified.Transaction.Hash))
-                    reason = RelayResultReason.AlreadyExists;
-                else if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
-                    reason = RelayResultReason.OutOfMemory;
-                else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
-                    reason = RelayResultReason.OutOfMemory;
-                else if (parallelVerified.ShouldRelay)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });
-            }
-            Sender.Tell(reason);
+            if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
+            if (!MemPool.CanTransactionFitInPool(transaction)) return VerifyResult.OutOfMemory;
+            VerifyResult reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
+            if (reason != VerifyResult.Succeed) return reason;
+            if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
+            return VerifyResult.Succeed;
         }
 
         private void OnPersistCompleted(Block block)
@@ -453,7 +437,7 @@ namespace Neo.Ledger
             switch (message)
             {
                 case Import import:
-                    OnImport(import.Blocks);
+                    OnImport(import.Blocks, import.Verify);
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
@@ -462,22 +446,19 @@ namespace Neo.Ledger
                     OnNewHeaders(headers);
                     break;
                 case Block block:
-                    Sender.Tell(OnNewBlock(block));
+                    OnInventory(block, false);
                     break;
                 case Transaction[] transactions:
                     {
                         // This message comes from a mempool's revalidation, already relayed
-                        foreach (var tx in transactions) OnNewTransaction(tx, false);
+                        foreach (var tx in transactions) OnInventory(tx, false);
                         break;
                     }
                 case Transaction transaction:
-                    OnNewTransaction(transaction, true);
-                    break;
-                case ParallelVerified parallelVerified:
-                    OnParallelVerified(parallelVerified);
+                    OnInventory(transaction);
                     break;
                 case ConsensusPayload payload:
-                    Sender.Tell(OnNewConsensus(payload));
+                    OnInventory(payload);
                     break;
                 case Idle _:
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))

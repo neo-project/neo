@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using Neo.Wallets.SQLite;
 using System;
 using System.IO;
@@ -15,76 +16,46 @@ namespace Neo.UnitTests.Wallets.SQLite
     [TestClass]
     public class UT_UserWallet
     {
-        private string path;
-        private UserWallet wallet;
+        private static string path;
+        private static UserWallet wallet;
+        private static WalletAccount account;
         public static string GetRandomPath()
         {
             string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
             return Path.GetFullPath(string.Format("Wallet_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
         }
 
-        [TestInitialize]
-        public void Setup()
+        [ClassInitialize]
+        public static void Setup(TestContext ctx)
         {
             path = GetRandomPath();
-            wallet = UserWallet.Create(path, "123456");
-        }
-
-        [TestCleanup]
-        public void Cleanup()
-        {
-            TestUtils.DeleteFile(path);
-        }
-
-        [TestMethod]
-        public void TestGetName()
-        {
-            wallet.Name.Should().Be(Path.GetFileNameWithoutExtension(path));
-        }
-
-        [TestMethod]
-        public void TestGetVersion()
-        {
-            Action action = () => wallet.Version.ToString();
-            action.Should().NotThrow();
-        }
-
-        [TestMethod]
-        public void TestCreateAndOpenSecureString()
-        {
-            string myPath = GetRandomPath();
-            var ss = new SecureString();
-            ss.AppendChar('a');
-            ss.AppendChar('b');
-            ss.AppendChar('c');
-
-            var w1 = UserWallet.Create(myPath, ss);
-            w1.Should().NotBeNull();
-
-            var w2 = UserWallet.Open(myPath, ss);
-            w2.Should().NotBeNull();
-
-            ss.AppendChar('d');
-            Action action = () => UserWallet.Open(myPath, ss);
-            action.Should().Throw<CryptographicException>();
-
-            TestUtils.DeleteFile(myPath);
-        }
-
-        [TestMethod]
-        public void TestOpen()
-        {
+            wallet = UserWallet.Create(path, "123456", new ScryptParameters(0, 0, 0));
             byte[] privateKey = new byte[32];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(privateKey);
             }
-            var account = wallet.CreateAccount(privateKey);
-            var w1 = UserWallet.Open(path, "123456");
-            w1.Should().NotBeNull();
+            account = wallet.CreateAccount(privateKey);
+        }
 
-            Action action = () => UserWallet.Open(path, "123");
-            action.Should().Throw<CryptographicException>();
+        [ClassCleanup]
+        public static void Cleanup()
+        {
+            TestUtils.DeleteFile(path);
+        }
+
+        [TestMethod]
+        public void TestChangePassword()
+        {
+            wallet.ChangePassword("123455", "654321").Should().BeFalse();
+            wallet.ChangePassword("123456", "654321").Should().BeTrue();
+            wallet.ChangePassword("654321", "123456").Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestContains()
+        {
+            wallet.Contains(account.ScriptHash).Should().BeTrue();
         }
 
         [TestMethod]
@@ -102,6 +73,8 @@ namespace Neo.UnitTests.Wallets.SQLite
             var account1 = wallet.CreateAccount(privateKey);
             var dbAccount1 = wallet.GetAccount(account1.ScriptHash);
             account1.Should().Be(dbAccount1);
+            wallet.DeleteAccount(account.ScriptHash);
+            wallet.DeleteAccount(account1.ScriptHash);
         }
 
         [TestMethod]
@@ -110,6 +83,7 @@ namespace Neo.UnitTests.Wallets.SQLite
             var account = wallet.CreateAccount(UInt160.Parse("0xa6ee944042f3c7ea900481a95d65e4a887320cf0"));
             var dbAccount = wallet.GetAccount(account.ScriptHash);
             account.Should().Be(dbAccount);
+            wallet.DeleteAccount(account.ScriptHash);
         }
 
         [TestMethod]
@@ -144,56 +118,37 @@ namespace Neo.UnitTests.Wallets.SQLite
             var account2 = wallet.CreateAccount(contract2, key2);
             var dbAccount2 = wallet.GetAccount(account2.ScriptHash);
             account2.Should().Be(dbAccount2);
+            wallet.DeleteAccount(account.ScriptHash);
+            wallet.DeleteAccount(account2.ScriptHash);
         }
 
         [TestMethod]
-        public void TestDeleteAccount()
+        public void TestCreateAndOpenSecureString()
         {
-            bool ret = wallet.DeleteAccount(UInt160.Parse("0xa6ee944042f3c7ea900481a95d65e4a887320cf0"));
-            ret.Should().BeFalse();
+            string myPath = GetRandomPath();
+            var ss = new SecureString();
+            ss.AppendChar('a');
+            ss.AppendChar('b');
+            ss.AppendChar('c');
 
-            byte[] privateKey = new byte[32];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(privateKey);
-            }
-            var account = wallet.CreateAccount(privateKey);
-            bool ret2 = wallet.DeleteAccount(account.ScriptHash);
-            ret2.Should().BeTrue();
-        }
+            var w1 = UserWallet.Create(myPath, ss, new ScryptParameters(0, 0, 0));
+            w1.Should().NotBeNull();
 
-        [TestMethod]
-        public void TestChangePassword()
-        {
-            wallet.ChangePassword("123455", "654321").Should().BeFalse();
-            wallet.ChangePassword("123456", "654321").Should().BeTrue();
-        }
+            var w2 = UserWallet.Open(myPath, ss);
+            w2.Should().NotBeNull();
 
-        [TestMethod]
-        public void TestContains()
-        {
-            byte[] privateKey = new byte[32];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(privateKey);
-            }
-            var account = wallet.CreateAccount(privateKey);
-            wallet.Contains(account.ScriptHash).Should().BeTrue();
+            ss.AppendChar('d');
+            Action action = () => UserWallet.Open(myPath, ss);
+            action.Should().Throw<CryptographicException>();
+
+            TestUtils.DeleteFile(myPath);
         }
 
         [TestMethod]
         public void TestGetAccounts()
         {
             var ret = wallet.GetAccounts();
-            ret.Should().BeNullOrEmpty();
-
-            byte[] privateKey = new byte[32];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(privateKey);
-            }
-            var account = wallet.CreateAccount(privateKey);
-            ret = wallet.GetAccounts();
+            ret.Should().NotBeEmpty();
             foreach (var dbAccount in ret)
             {
                 dbAccount.Should().Be(account);
@@ -201,7 +156,39 @@ namespace Neo.UnitTests.Wallets.SQLite
         }
 
         [TestMethod]
-        public void TestVerifyPassword()
+        public void TestGetName()
+        {
+            wallet.Name.Should().Be(Path.GetFileNameWithoutExtension(path));
+        }
+
+        [TestMethod]
+        public void TestGetVersion()
+        {
+            Action action = () => wallet.Version.ToString();
+            action.Should().NotThrow();
+        }
+
+        [TestMethod]
+        public void TestOpen()
+        {
+            var w1 = UserWallet.Open(path, "123456");
+            w1.Should().NotBeNull();
+
+            Action action = () => UserWallet.Open(path, "123");
+            action.Should().Throw<CryptographicException>();
+        }
+
+        [TestMethod]
+        public void TestToDeleteAccount()
+        {
+            bool ret = wallet.DeleteAccount(UInt160.Parse("0xa6ee944042f3c7ea900481a95d65e4a887320cf0"));
+            ret.Should().BeFalse();
+            bool ret2 = wallet.DeleteAccount(account.ScriptHash);
+            ret2.Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestToVerifyPassword()
         {
             wallet.VerifyPassword("123456").Should().BeTrue();
             wallet.VerifyPassword("123").Should().BeFalse();

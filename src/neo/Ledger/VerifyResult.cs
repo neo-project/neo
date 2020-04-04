@@ -1,6 +1,6 @@
 namespace Neo.Ledger
 {
-    public enum RelayResultReason : byte
+    public enum VerifyResult : byte
     {
         Succeed,
         AlreadyExists,

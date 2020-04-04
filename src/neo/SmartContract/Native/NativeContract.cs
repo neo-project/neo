@@ -2,6 +2,7 @@
 
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
@@ -28,6 +29,7 @@ namespace Neo.SmartContract.Native
         public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
+        public abstract int Id { get; }
         public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
@@ -71,7 +73,7 @@ namespace Neo.SmartContract.Native
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = Hash,
+                Id = Id,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
@@ -100,7 +102,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        internal long GetPrice(EvaluationStack stack)
+        internal long GetPrice(EvaluationStack stack, StoreView snapshot)
         {
             return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
         }

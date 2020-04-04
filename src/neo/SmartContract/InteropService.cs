@@ -1,3 +1,4 @@
+using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -15,9 +16,9 @@ namespace Neo.SmartContract
                 t.GetFields()[0].GetValue(null);
         }
 
-        public static long GetPrice(uint hash, EvaluationStack stack)
+        public static long GetPrice(uint hash, EvaluationStack stack, StoreView snapshot)
         {
-            return methods[hash].GetPrice(stack);
+            return methods[hash].GetPrice(stack, snapshot);
         }
 
         public static IEnumerable<InteropDescriptor> SupportedMethods()
@@ -44,7 +45,7 @@ namespace Neo.SmartContract
             return descriptor;
         }
 
-        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, StoreView, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers, requiredCallFlags);
             methods.Add(descriptor.Hash, descriptor);

@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -19,7 +20,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All, CallFlags.None);
 
-            private static long GetDeploymentPrice(EvaluationStack stack)
+            private static long GetDeploymentPrice(EvaluationStack stack, StoreView snapshot)
             {
                 int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
                 return Storage.GasPerByte * size;
@@ -38,6 +39,7 @@ namespace Neo.SmartContract
                 if (contract != null) return false;
                 contract = new ContractState
                 {
+                    Id = engine.Snapshot.ContractId.GetAndChange().NextId++,
                     Script = script,
                     Manifest = ContractManifest.Parse(manifest)
                 };
@@ -66,34 +68,20 @@ namespace Neo.SmartContract
                     if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
                     contract = new ContractState
                     {
+                        Id = contract.Id,
                         Script = script,
                         Manifest = contract.Manifest
                     };
                     contract.Manifest.Abi.Hash = hash_new;
                     engine.Snapshot.Contracts.Add(hash_new, contract);
-                    if (contract.HasStorage)
-                    {
-                        foreach (var (key, value) in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
-                        {
-                            engine.Snapshot.Storages.Add(new StorageKey
-                            {
-                                ScriptHash = hash_new,
-                                Key = key.Key
-                            }, new StorageItem
-                            {
-                                Value = value.Value,
-                                IsConstant = false
-                            });
-                        }
-                    }
-                    Contract_Destroy(engine);
+                    engine.Snapshot.Contracts.Delete(engine.CurrentScriptHash);
                 }
                 if (manifest.Length > 0)
                 {
                     contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                     contract.Manifest = ContractManifest.Parse(manifest);
                     if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
-                    if (!contract.HasStorage && engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).Any()) return false;
+                    if (!contract.HasStorage && engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any()) return false;
                 }
 
                 return true;
@@ -106,7 +94,7 @@ namespace Neo.SmartContract
                 if (contract == null) return true;
                 engine.Snapshot.Contracts.Delete(hash);
                 if (contract.HasStorage)
-                    foreach (var (key, _) in engine.Snapshot.Storages.Find(hash.ToArray()))
+                    foreach (var (key, _) in engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
                         engine.Snapshot.Storages.Delete(key);
                 return true;
             }

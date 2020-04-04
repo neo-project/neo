@@ -23,7 +23,7 @@ namespace Neo.Consensus
             {
                 ViewNumber = reader.ReadByte();
                 ValidatorIndex = reader.ReadUInt16();
-                Signature = reader.ReadBytes(64);
+                Signature = reader.ReadFixedBytes(64);
                 InvocationScript = reader.ReadVarBytes(1024);
             }
 
