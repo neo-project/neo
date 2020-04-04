@@ -174,8 +174,8 @@ namespace Neo.SmartContract.Native.Oracle
         /// <returns>Oracle multisignature address</returns>
         public UInt160 GetOracleMultiSigAddress(StoreView snapshot)
         {
-            ECPoint[] OracleValidators = GetOracleValidators(snapshot);
-            return Contract.CreateMultiSigRedeemScript(OracleValidators.Length - (OracleValidators.Length - 1) / 3, OracleValidators).ToScriptHash();
+            ECPoint[] oracleValidators = GetOracleValidators(snapshot);
+            return Contract.CreateMultiSigRedeemScript(oracleValidators.Length - (oracleValidators.Length - 1) / 3, oracleValidators).ToScriptHash();
         }
 
         /// <summary>
