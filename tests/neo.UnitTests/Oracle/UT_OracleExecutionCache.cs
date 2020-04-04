@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Oracle
         {
             var http = (CounterRequest)arg;
             http.Counter++;
-            return OracleResponse.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter));
+            return OracleResponse.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter), 0);
         }
 
         UInt256 _txHash;
@@ -31,6 +31,31 @@ namespace Neo.UnitTests.Oracle
             rand.NextBytes(data);
 
             _txHash = new UInt256(data);
+        }
+
+        [TestMethod]
+        public void TestEnumerator()
+        {
+            var copy = UT_OracleResponse.CreateDefault();
+            var entry = new OracleExecutionCache(UT_OracleResponse.CreateDefault());
+            var entries = entry.ToArray();
+
+            Assert.AreEqual(entries[0].Value.Hash, copy.Hash);
+        }
+
+        [TestMethod]
+        public void TestSerialization()
+        {
+            var entry = new OracleExecutionCache(UT_OracleResponse.CreateDefault());
+            var data = Neo.IO.Helper.ToArray(entry);
+
+            Assert.AreEqual(entry.Size, data.Length);
+
+            var copy = Neo.IO.Helper.AsSerializable<OracleExecutionCache>(data);
+
+            Assert.AreEqual(entry.Count, copy.Count);
+            Assert.AreEqual(entry.FilterCost, copy.FilterCost);
+            Assert.AreEqual(entry.First().Value.Hash, copy.First().Value.Hash);
         }
 
         [TestMethod]
@@ -47,7 +72,6 @@ namespace Neo.UnitTests.Oracle
             {
                 Counter = 1,
                 URL = new Uri("https://google.es"),
-                Filter = "Filter",
                 Method = HttpMethod.GET
             };
             Assert.IsTrue(cache.TryGet(req, out var ret));
@@ -81,7 +105,6 @@ namespace Neo.UnitTests.Oracle
             var initReq = new OracleHttpsRequest()
             {
                 URL = new Uri("https://google.es"),
-                Filter = "Filter",
                 Method = HttpMethod.GET
             };
 
@@ -103,7 +126,6 @@ namespace Neo.UnitTests.Oracle
             Assert.IsFalse(cache.TryGet(new OracleHttpsRequest()
             {
                 URL = new Uri("https://google.es/?p=1"),
-                Filter = "Filter",
                 Method = HttpMethod.GET
             }
             , out var ret));

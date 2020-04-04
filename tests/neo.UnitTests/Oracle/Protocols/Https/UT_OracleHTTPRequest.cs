@@ -16,11 +16,15 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
             Assert.AreEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
-            requestB.Filter = "X";
+            requestB.Filter = new Neo.Oracle.OracleFilter()
+            {
+                ContractHash = UInt160.Zero,
+                FilterMethod = ""
+            };
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
-            requestB.URL = new Uri("https://google.es/?dummy=1");
+            requestB.URL = new Uri("https://google.com/?dummy=1");
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
@@ -32,9 +36,8 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
         {
             return new OracleHttpsRequest()
             {
-                Filter = "",
                 Method = HttpMethod.GET,
-                URL = new Uri("https://google.es")
+                URL = new Uri("https://google.com")
             };
         }
     }

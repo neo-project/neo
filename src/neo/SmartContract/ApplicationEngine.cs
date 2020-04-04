@@ -25,7 +25,7 @@ namespace Neo.SmartContract
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
-        public OracleExecutionCache OracleCache { get; }
+        public OracleExecutionCache OracleCache { get; internal set; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
 

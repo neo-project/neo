@@ -1,13 +1,16 @@
+using Neo.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Neo.Oracle
 {
-    public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResponse>>
+    public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResponse>>, ISerializable
     {
         /// <summary>
-        /// Results
+        /// Results (OracleRequest.Hash/OracleResponse)
         /// </summary>
         private readonly Dictionary<UInt160, OracleResponse> _cache = new Dictionary<UInt160, OracleResponse>();
 
@@ -22,12 +25,27 @@ namespace Neo.Oracle
         public int Count => _cache.Count;
 
         /// <summary>
+        /// Filter Cost
+        /// </summary>
+        public long FilterCost { get; private set; }
+
+        public int Size => IO.Helper.GetVarSize(Count) + _cache.Values.Sum(u => u.Size);
+
+        /// <summary>
         /// Constructor for oracles
         /// </summary>
         /// <param name="oracle">Oracle Engine</param>
-        public OracleExecutionCache(Func<OracleRequest, OracleResponse> oracle = null)
+        public OracleExecutionCache(Func<OracleRequest, OracleResponse> oracle = null) : this()
         {
             _oracle = oracle;
+        }
+
+        /// <summary>
+        /// Constructor for ISerializable
+        /// </summary>
+        public OracleExecutionCache()
+        {
+            FilterCost = 0;
         }
 
         /// <summary>
@@ -37,10 +55,12 @@ namespace Neo.Oracle
         public OracleExecutionCache(params OracleResponse[] results)
         {
             _oracle = null;
+            FilterCost = 0;
 
             foreach (var result in results)
             {
                 _cache[result.RequestHash] = result;
+                FilterCost += result.FilterCost;
             }
         }
 
@@ -80,6 +100,25 @@ namespace Neo.Oracle
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _cache.GetEnumerator();
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.Write(_cache.Values.ToArray());
+        }
+
+        public void Deserialize(BinaryReader reader)
+        {
+            var results = reader.ReadSerializableArray<OracleResponse>(byte.MaxValue);
+
+            FilterCost = 0;
+            _cache.Clear();
+
+            foreach (var result in results)
+            {
+                _cache[result.RequestHash] = result;
+                FilterCost += result.FilterCost;
+            }
         }
     }
 }

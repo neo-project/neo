@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Oracle;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -23,6 +24,7 @@ namespace Neo.SmartContract.Native.Oracle
         private const byte Prefix_Validator = 24;
         private const byte Prefix_Config = 25;
         private const byte Prefix_PerRequestFee = 26;
+        private const byte Prefix_OracleResponse = 27;
 
         public OracleContract()
         {
@@ -36,13 +38,44 @@ namespace Neo.SmartContract.Native.Oracle
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Timeout)), new StorageItem
             {
-                Value = new ByteArray(BitConverter.GetBytes(5000)).GetSpan().ToArray()
+                Value = new ByteString(BitConverter.GetBytes(5000)).GetSpan().ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
                 Value = BitConverter.GetBytes(1000)
             });
             return true;
+        }
+
+        /// <summary>
+        /// Oracle Response Only
+        /// </summary>
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "transactionHash", "oracleResponse" })]
+        private StackItem SetOracleResponse(ApplicationEngine engine, Array args)
+        {
+            // TODO: Check witness oracle contract
+            // This only can be called by the oracle's multi signature
+
+            var txHash = args[0].GetSpan().AsSerializable<UInt256>();
+            var response = args[1].GetSpan().AsSerializable<OracleExecutionCache>();
+
+            // TODO: Store or memory?
+
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()));
+            storage.Value = IO.Helper.ToArray(response);
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get Oracle Response
+        /// </summary>
+        /// <param name="snapshot">Snapshot</param>
+        /// <param name="txHash">Transaction Hash</param>
+        public OracleExecutionCache GetOracleResponse(StoreView snapshot, UInt256 txHash)
+        {
+            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()));
+            return storage.Value.AsSerializable<OracleExecutionCache>();
         }
 
         /// <summary>
@@ -158,7 +191,7 @@ namespace Neo.SmartContract.Native.Oracle
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
             string key = args[0].GetString();
-            ByteArray value = args[1].GetSpan().ToArray();
+            ByteString value = args[1].GetSpan().ToArray();
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
             storage.Value = value.GetSpan().ToArray();
             return true;
@@ -183,7 +216,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="snapshot">snapshot</param>
         /// <param name="key">key</param>
         /// <returns>value</returns>
-        public ByteArray GetConfig(StoreView snapshot, string key)
+        public ByteString GetConfig(StoreView snapshot, string key)
         {
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
             return storage.Value;

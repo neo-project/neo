@@ -133,7 +133,7 @@ namespace Neo.UnitTests.Oracle
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            result.Should().BeOfType(typeof(VM.Types.ByteString));
             Assert.AreEqual(result.GetBigInteger(), 5000);
         }
 
@@ -181,7 +181,7 @@ namespace Neo.UnitTests.Oracle
 
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+            result.Should().BeOfType(typeof(VM.Types.ByteString));
             Assert.AreEqual(result.GetBigInteger(), new BigInteger(value));
         }
 
@@ -214,10 +214,10 @@ namespace Neo.UnitTests.Oracle
 
             // The validator0's cosignee should be the validator1
             var validators = (VM.Types.Array)result;
-            var cosignee0Bytes = (VM.Types.ByteArray)validators[0];
-            var cosignee1Bytes = (VM.Types.ByteArray)validators[1];
+            var cosignee0Bytes = (VM.Types.ByteString)validators[0];
+            var cosignee1Bytes = (VM.Types.ByteString)validators[1];
             Assert.AreEqual(cosignee0Bytes, cosignee1Bytes);
-            VM.Types.ByteArray validator1Bytes = cosignorPubKey.ToArray();
+            VM.Types.ByteString validator1Bytes = cosignorPubKey.ToArray();
             Assert.AreEqual(cosignee1Bytes, validator1Bytes);
 
             // clear data
