@@ -241,7 +241,7 @@ namespace Neo.Oracle
         /// <param name="oracle">Oracle</param>
         /// <param name="requestTx">Request Hash</param>
         /// <returns>Transaction</returns>
-        private Transaction CreateResponseTransaction(OracleExecutionCache oracle, Transaction requestTx)
+        public static Transaction CreateResponseTransaction(OracleExecutionCache oracle, Transaction requestTx)
         {
             using ScriptBuilder script = new ScriptBuilder();
 

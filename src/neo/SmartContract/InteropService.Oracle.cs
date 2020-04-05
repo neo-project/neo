@@ -22,15 +22,25 @@ namespace Neo.SmartContract
             {
                 if (engine.OracleCache == null)
                 {
+                    // We should enter here only during OnPersist with the OracleRequestTx
+
                     if (engine.ScriptContainer is Transaction tx)
                     {
-                        // Read Oracle Response, if exists
+                        // Read Oracle Response
 
                         engine.OracleCache = NativeContract.Oracle.GetOracleResponse(engine.Snapshot, tx.Hash);
-                        return engine.OracleCache == null;
-                    }
 
-                    return false;
+                        // If it doesn't exist, fault
+
+                        if (engine.OracleCache == null)
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 if (!engine.TryPop(out string urlItem) || !Uri.TryCreate(urlItem, UriKind.Absolute, out var url)) return false;
                 if (!engine.TryPop(out StackItem filterContractItem)) return false;
