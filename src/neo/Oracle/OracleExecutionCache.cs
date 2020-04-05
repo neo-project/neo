@@ -30,6 +30,11 @@ namespace Neo.Oracle
         /// </summary>
         public long FilterCost { get; private set; }
 
+        /// <summary>
+        /// Responses
+        /// </summary>
+        public OracleResponse[] Responses => _cache.Values.ToArray();
+
         public int Size => IO.Helper.GetVarSize(Count) + _cache.Values.Sum(u => u.Size);
 
         /// <summary>

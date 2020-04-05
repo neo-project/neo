@@ -17,7 +17,7 @@ namespace Neo.SmartContract
             public static readonly uint Neo_Oracle_Hash = Register("Neo.Oracle.Hash", Oracle_Hash, 0, TriggerType.Application, CallFlags.None);
 
             /// <summary>
-            /// Oracle Get the hash of the current OracleFlow [Request/Response]
+            /// Oracle get the hash of the current OracleFlow [Request/Response]
             /// </summary>
             private static bool Oracle_Hash(ApplicationEngine engine)
             {
