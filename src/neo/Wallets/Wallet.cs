@@ -318,12 +318,15 @@ namespace Neo.Wallets
                 });
             }
 
+        Start:
+
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
             {
                 Transaction tx = new Transaction
                 {
                     Version = 0,
+                    //TODO: x.Version = TransactionType.Oracle; <- if oracleQueries.Count != 0
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,
@@ -351,7 +354,6 @@ namespace Neo.Wallets
                     if (oracleQueries.Count > 0)
                     {
                         // Change the Transaction type because it's an oracle request
-                        //TODO: x.Version = TransactionType.Oracle;
 
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
@@ -398,8 +400,9 @@ namespace Neo.Wallets
 
                             // Concat two scripts [OracleAsserts+Script]
 
-                            return MakeTransaction(snapshot, assertScript.ToArray().Concat(script).ToArray(),
-                                attributes, cosigners, balances_gas, OracleWalletBehaviour.OracleWithoutAssert);
+                            script = assertScript.ToArray().Concat(script).ToArray();
+                            oracle = OracleWalletBehaviour.OracleWithoutAssert;
+                            goto Start;
                         }
                     }
                 }
