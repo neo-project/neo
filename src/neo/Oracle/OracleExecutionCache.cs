@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.SmartContract;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,6 +31,29 @@ namespace Neo.Oracle
         public long FilterCost { get; private set; }
 
         public int Size => IO.Helper.GetVarSize(Count) + _cache.Values.Sum(u => u.Size);
+
+        /// <summary>
+        /// Hash
+        /// </summary>
+        public UInt160 Hash
+        {
+            get
+            {
+                using (var stream = new MemoryStream())
+                {
+                    foreach (var entry in _cache)
+                    {
+                        // Request Hash
+                        stream.Write(entry.Key.ToArray());
+
+                        // Response Hash
+                        stream.Write(entry.Value.Hash.ToArray());
+                    }
+
+                    return stream.ToArray().ToScriptHash();
+                }
+            }
+        }
 
         /// <summary>
         /// Constructor for oracles

@@ -1,3 +1,4 @@
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
@@ -13,6 +14,24 @@ namespace Neo.SmartContract
         public static class Oracle
         {
             public static readonly uint Neo_Oracle_Get = Register("Neo.Oracle.Get", Oracle_Get, 0, TriggerType.Application, CallFlags.None);
+            public static readonly uint Neo_Oracle_Hash = Register("Neo.Oracle.Hash", Oracle_Hash, 0, TriggerType.Application, CallFlags.None);
+
+            /// <summary>
+            /// Oracle Get the hash of the current OracleFlow [Request/Response]
+            /// </summary>
+            private static bool Oracle_Hash(ApplicationEngine engine)
+            {
+                if (engine.OracleCache == null)
+                {
+                    engine.Push(StackItem.Null);
+                }
+                else
+                {
+                    engine.Push(engine.OracleCache.Hash.ToArray());
+                }
+
+                return true;
+            }
 
             /// <summary>
             /// Oracle Get
