@@ -303,18 +303,17 @@ namespace Neo.Wallets
         private Transaction MakeTransaction(StoreView snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
         {
             OracleExecutionCache oracleCache = null;
-            Dictionary<OracleRequest, OracleResponse> oracleQueries = null;
+            List<OracleRequest> oracleRequests = null;
 
             if (oracle != OracleWalletBehaviour.WithoutOracle)
             {
                 // Wee need the full request in order to duplicate the call for asserts
 
-                oracleQueries = new Dictionary<OracleRequest, OracleResponse>();
+                oracleRequests = new List<OracleRequest>();
                 oracleCache = new OracleExecutionCache((request) =>
                 {
-                    var response = OracleService.Process(request);
-                    oracleQueries[request] = response;
-                    return response;
+                    oracleRequests.Add(request);
+                    return OracleService.Process(request);
                 });
             }
 
@@ -351,7 +350,7 @@ namespace Neo.Wallets
                             tx.SystemFee -= remainder;
                     }
 
-                    if (oracleQueries.Count > 0)
+                    if (oracleRequests.Count > 0)
                     {
                         // Change the Transaction type because it's an oracle request
 
@@ -361,42 +360,27 @@ namespace Neo.Wallets
 
                             var assertScript = new ScriptBuilder();
 
-                            foreach (var oracleCall in oracleQueries)
+                            foreach (var oracleRequest in oracleRequests)
                             {
                                 // Do the request
 
-                                if (oracleCall.Key is OracleHttpsRequest https)
+                                if (oracleRequest is OracleHttpsRequest https)
                                 {
                                     assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL, https.Filter?.ContractHash, https.Filter?.FilterMethod);
+                                    assertScript.Emit(OpCode.DROP);
                                 }
                                 else
                                 {
                                     throw new NotImplementedException();
                                 }
-
-                                // TODO: This could be improved with concat and SHA256
-
-                                // Unpack the result in 3 items [RequestHash,Error,Result]
-                                assertScript.Emit(OpCode.UNPACK);
-
-                                // Assert Result
-
-                                assertScript.EmitPush(oracleCall.Value.Result);
-                                assertScript.Emit(OpCode.EQUAL);
-                                assertScript.Emit(OpCode.ASSERT);
-
-                                // Assert Error
-
-                                assertScript.EmitPush(oracleCall.Value.Error);
-                                assertScript.Emit(OpCode.NUMEQUAL);
-                                assertScript.Emit(OpCode.ASSERT);
-
-                                // Assert RequestHash
-
-                                assertScript.EmitPush(oracleCall.Value.RequestHash.ToArray());
-                                assertScript.Emit(OpCode.EQUAL);
-                                assertScript.Emit(OpCode.ASSERT);
                             }
+
+                            // Check that the hash of the whole responses are exactly the same
+
+                            assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
+                            assertScript.EmitPush(oracleCache.Hash.ToArray());
+                            assertScript.Emit(OpCode.EQUAL);
+                            assertScript.Emit(OpCode.ASSERT);
 
                             // Concat two scripts [OracleAsserts+Script]
 
