@@ -360,18 +360,21 @@ namespace Neo.Wallets
 
                         foreach (var oracleRequest in oracleRequests)
                         {
-                            // Do the request
+                            // Do the request in order to cache the result
 
                             if (oracleRequest is OracleHttpsRequest https)
                             {
-                                assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL, https.Filter?.ContractHash, https.Filter?.FilterMethod);
-                                assertScript.Emit(OpCode.DROP);
+                                assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod);
                             }
                             else
                             {
                                 throw new NotImplementedException();
                             }
                         }
+
+                        // Clear the stack
+
+                        assertScript.Emit(OpCode.CLEAR);
 
                         // Check that the hash of the whole responses are exactly the same
 
@@ -385,7 +388,7 @@ namespace Neo.Wallets
                         script = assertScript.ToArray().Concat(script).ToArray();
                         oracle = OracleWalletBehaviour.OracleWithoutAssert;
 
-                        // We need to remove new oracle calls
+                        // We need to remove new oracle calls (OracleService.Process)
 
                         oracleCache = new OracleExecutionCache(oracleCache.Responses);
 
