@@ -350,44 +350,47 @@ namespace Neo.Wallets
                             tx.SystemFee -= remainder;
                     }
 
-                    if (oracleRequests.Count > 0)
+                    // Change the Transaction type because it's an oracle request
+
+                    if (oracleRequests.Count > 0 && oracle == OracleWalletBehaviour.OracleWithAssert)
                     {
-                        // Change the Transaction type because it's an oracle request
+                        // If we want the same result for accept the response, we need to create asserts at the begining of the script
 
-                        if (oracle == OracleWalletBehaviour.OracleWithAssert)
+                        var assertScript = new ScriptBuilder();
+
+                        foreach (var oracleRequest in oracleRequests)
                         {
-                            // If we want the same result for accept the response, we need to create asserts at the begining of the script
+                            // Do the request
 
-                            var assertScript = new ScriptBuilder();
-
-                            foreach (var oracleRequest in oracleRequests)
+                            if (oracleRequest is OracleHttpsRequest https)
                             {
-                                // Do the request
-
-                                if (oracleRequest is OracleHttpsRequest https)
-                                {
-                                    assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL, https.Filter?.ContractHash, https.Filter?.FilterMethod);
-                                    assertScript.Emit(OpCode.DROP);
-                                }
-                                else
-                                {
-                                    throw new NotImplementedException();
-                                }
+                                assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL, https.Filter?.ContractHash, https.Filter?.FilterMethod);
+                                assertScript.Emit(OpCode.DROP);
                             }
-
-                            // Check that the hash of the whole responses are exactly the same
-
-                            assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
-                            assertScript.EmitPush(oracleCache.Hash.ToArray());
-                            assertScript.Emit(OpCode.EQUAL);
-                            assertScript.Emit(OpCode.ASSERT);
-
-                            // Concat two scripts [OracleAsserts+Script]
-
-                            script = assertScript.ToArray().Concat(script).ToArray();
-                            oracle = OracleWalletBehaviour.OracleWithoutAssert;
-                            goto Start;
+                            else
+                            {
+                                throw new NotImplementedException();
+                            }
                         }
+
+                        // Check that the hash of the whole responses are exactly the same
+
+                        assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
+                        assertScript.EmitPush(oracleCache.Hash.ToArray());
+                        assertScript.Emit(OpCode.EQUAL);
+                        assertScript.Emit(OpCode.ASSERT);
+
+                        // Concat two scripts [OracleAsserts+Script]
+
+                        script = assertScript.ToArray().Concat(script).ToArray();
+                        oracle = OracleWalletBehaviour.OracleWithoutAssert;
+
+                        // We need to remove new oracle calls
+
+                        oracleCache = new OracleExecutionCache(oracleCache.Responses);
+
+                        // We need to compute the gas again with the right script
+                        goto Start;
                     }
                 }
 
