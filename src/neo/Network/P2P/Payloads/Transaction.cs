@@ -263,19 +263,18 @@ namespace Neo.Network.P2P.Payloads
 
         bool IInventory.Verify(StoreView snapshot)
         {
-            return VerifyStateDependent(snapshot, BigInteger.Zero) == VerifyResult.Succeed
-                && VerifyStateIndependent(snapshot) == VerifyResult.Succeed;
+            return Verify(snapshot, BigInteger.Zero) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return VerifyResult.InsufficientFunds;
-            else return VerifyResult.Succeed;
+            VerifyResult result = VerifyStateDependent(snapshot, totalSenderFeeFromPool);
+            if (result != VerifyResult.Succeed) return result;
+            result = VerifyForEachBlockStateIndependent(snapshot);
+            return result;
         }
 
-        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot)
+        public virtual VerifyResult VerifyForEachBlockStateIndependent(StoreView snapshot)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
@@ -291,9 +290,17 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
+        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
+            if (balance < fee) return VerifyResult.InsufficientFunds;
+            else return VerifyResult.Succeed;
+        }
+
         public virtual VerifyResult VerifyStateIndependent(StoreView snapshot)
         {
-            VerifyResult result = VerifyForEachBlock(snapshot);
+            VerifyResult result = VerifyForEachBlockStateIndependent(snapshot);
             if (result != VerifyResult.Succeed) return result;
             int size = Size;
             if (size > MaxTransactionSize) return VerifyResult.Invalid;
@@ -301,6 +308,14 @@ namespace Neo.Network.P2P.Payloads
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
+        }
+
+        public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            VerifyResult result = VerifyStateDependent(snapshot, totalSenderFeeFromPool);
+            if (result != VerifyResult.Succeed) return result;
+            result = VerifyStateIndependent(snapshot);
+            return result;
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
