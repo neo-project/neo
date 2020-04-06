@@ -10,6 +10,8 @@ namespace Neo.Oracle
 {
     public class OracleExecutionCache : IEnumerable<KeyValuePair<UInt160, OracleResponse>>, ISerializable
     {
+        private OracleResponse[] _entries;
+
         /// <summary>
         /// Results (OracleRequest.Hash/OracleResponse)
         /// </summary>
@@ -23,7 +25,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Count
         /// </summary>
-        public int Count => _cache.Count;
+        public int Count => _entries.Length;
 
         /// <summary>
         /// Filter Cost
@@ -33,9 +35,11 @@ namespace Neo.Oracle
         /// <summary>
         /// Responses
         /// </summary>
-        public OracleResponse[] Responses => _cache.Values.ToArray();
+        public OracleResponse[] Responses => _entries.ToArray();
 
-        public int Size => IO.Helper.GetVarSize(Count) + _cache.Values.Sum(u => u.Size);
+        public int Size => IO.Helper.GetVarSize(Count) + _entries.Sum(u => u.Size);
+
+        private UInt160 _hash;
 
         /// <summary>
         /// Hash
@@ -44,6 +48,8 @@ namespace Neo.Oracle
         {
             get
             {
+                if (_hash != null) return _hash;
+
                 using (var stream = new MemoryStream())
                 {
                     foreach (var entry in _cache)
@@ -55,8 +61,10 @@ namespace Neo.Oracle
                         stream.Write(entry.Value.Hash.ToArray());
                     }
 
-                    return stream.ToArray().ToScriptHash();
+                    _hash = stream.ToArray().ToScriptHash();
                 }
+
+                return _hash;
             }
         }
 
@@ -74,6 +82,7 @@ namespace Neo.Oracle
         /// </summary>
         public OracleExecutionCache()
         {
+            _hash = null;
             FilterCost = 0;
         }
 
@@ -83,8 +92,11 @@ namespace Neo.Oracle
         /// <param name="results">Results</param>
         public OracleExecutionCache(params OracleResponse[] results)
         {
-            _oracle = null;
             FilterCost = 0;
+
+            _hash = null;
+            _oracle = null;
+            _entries = results;
 
             foreach (var result in results)
             {
@@ -133,17 +145,18 @@ namespace Neo.Oracle
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(_cache.Values.ToArray());
+            writer.Write(_entries.ToArray());
         }
 
         public void Deserialize(BinaryReader reader)
         {
-            var results = reader.ReadSerializableArray<OracleResponse>(byte.MaxValue);
-
             FilterCost = 0;
+            _hash = null;
+
+            _entries = reader.ReadSerializableArray<OracleResponse>(byte.MaxValue);
             _cache.Clear();
 
-            foreach (var result in results)
+            foreach (var result in _entries)
             {
                 _cache[result.RequestHash] = result;
                 FilterCost += result.FilterCost;
