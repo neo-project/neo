@@ -22,14 +22,14 @@ namespace Neo.Oracle
         public UInt160 RequestHash { get; set; }
 
         /// <summary>
-        /// Error
-        /// </summary>
-        public OracleResultError Error { get; set; }
-
-        /// <summary>
         /// Result
         /// </summary>
         public byte[] Result { get; set; }
+
+        /// <summary>
+        /// Error
+        /// </summary>
+        public bool Error => Result == null;
 
         /// <summary>
         /// Filter cost paid by Oracle and must be claimed to the user
@@ -69,13 +69,9 @@ namespace Neo.Oracle
         /// <returns>OracleResult</returns>
         public static OracleResponse CreateError(UInt160 requestHash, OracleResultError error, long filterCost = 0)
         {
-            return new OracleResponse()
-            {
-                RequestHash = requestHash,
-                Error = error,
-                Result = new byte[0],
-                FilterCost = filterCost
-            };
+            // TODO: We should log the error if we want, but in order to reduce the indeterminism, we will only say that the download was unsuccessful
+
+            return CreateResult(requestHash, (byte[])null, filterCost);
         }
 
         /// <summary>
@@ -102,7 +98,6 @@ namespace Neo.Oracle
             return new OracleResponse()
             {
                 RequestHash = requestHash,
-                Error = OracleResultError.None,
                 Result = result,
                 FilterCost = filterCost
             };
@@ -111,10 +106,19 @@ namespace Neo.Oracle
         public void SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(RequestHash);
-            writer.Write((byte)Error);
-            if (Error == OracleResultError.None)
-                writer.WriteVarBytes(Result);
             writer.Write(FilterCost);
+
+            if (Result != null)
+            {
+                writer.Write((byte)0x01);
+                writer.WriteVarBytes(Result);
+            }
+            else
+            {
+                // Error result
+
+                writer.Write((byte)0x00);
+            }
         }
 
         public void Serialize(BinaryWriter writer)
@@ -125,10 +129,19 @@ namespace Neo.Oracle
         public void DeserializeUnsigned(BinaryReader reader)
         {
             RequestHash = reader.ReadSerializable<UInt160>();
-            Error = (OracleResultError)reader.ReadByte();
-            Result = Error == OracleResultError.None ? reader.ReadVarBytes(ushort.MaxValue) : new byte[0];
             FilterCost = reader.ReadInt64();
             if (FilterCost < 0) throw new FormatException(nameof(FilterCost));
+
+            if (reader.ReadByte() == 0x01)
+            {
+                Result = reader.ReadVarBytes(ushort.MaxValue);
+            }
+            else
+            {
+                // Error result
+
+                Result = null;
+            }
         }
 
         public void Deserialize(BinaryReader reader)
@@ -150,8 +163,7 @@ namespace Neo.Oracle
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {
                 new ByteString(RequestHash.ToArray()),
-                new Integer((byte)Error),
-                new ByteString(Result)
+                Result != null ? new ByteString(Result) : StackItem.Null
             });
         }
     }

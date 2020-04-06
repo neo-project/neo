@@ -78,7 +78,7 @@ namespace Neo.UnitTests.Oracle
 
             Assert.AreEqual(2, req.Counter);
             Assert.AreEqual(1, cache.Count);
-            Assert.AreEqual(OracleResultError.None, ret.Error);
+            Assert.IsFalse(ret.Error);
             CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, ret.Result);
 
             // Test cached
@@ -87,7 +87,7 @@ namespace Neo.UnitTests.Oracle
 
             Assert.AreEqual(2, req.Counter);
             Assert.AreEqual(1, cache.Count);
-            Assert.AreEqual(OracleResultError.None, ret.Error);
+            Assert.IsFalse(ret.Error);
             CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, ret.Result);
 
             // Check collection
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.Oracle
             var array = cache.ToArray();
             Assert.AreEqual(1, array.Length);
             Assert.AreEqual(req.Hash, array[0].Key);
-            Assert.AreEqual(OracleResultError.None, array[0].Value.Error);
+            Assert.IsFalse(array[0].Value.Error);
             CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, array[0].Value.Result);
         }
 
@@ -118,8 +118,8 @@ namespace Neo.UnitTests.Oracle
             var array = cache.ToArray();
             Assert.AreEqual(1, array.Length);
             Assert.AreEqual(initReq.Hash, array[0].Key);
-            Assert.AreEqual(OracleResultError.ServerError, array[0].Value.Error);
-            CollectionAssert.AreEqual(Array.Empty<byte>(), array[0].Value.Result);
+            Assert.IsTrue(array[0].Value.Error);
+            Assert.AreEqual(null, array[0].Value.Result);
 
             // Test without cache
 

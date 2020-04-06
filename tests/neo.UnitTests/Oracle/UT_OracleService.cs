@@ -1,6 +1,5 @@
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -195,7 +194,7 @@ namespace Neo.UnitTests.Oracle
             Assert.AreEqual(1, response.ExecutionResult.Count);
 
             var entry = response.ExecutionResult.First();
-            Assert.AreEqual(OracleResultError.None, entry.Value.Error);
+            Assert.IsFalse(entry.Value.Error);
             Assert.AreEqual("pong", Encoding.UTF8.GetString(entry.Value.Result));
             Assert.AreEqual(tx.Hash, response.UserTxHash);
 
@@ -317,8 +316,8 @@ namespace Neo.UnitTests.Oracle
 
             OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(5);
 
-            Assert.AreEqual(OracleResultError.Timeout, response.Error);
-            Assert.IsTrue(response.Result.Length == 0);
+            Assert.IsTrue(response.Error);
+            Assert.IsTrue(response.Result == null);
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
 
@@ -332,7 +331,7 @@ namespace Neo.UnitTests.Oracle
 
             response = OracleService.Process(request);
 
-            Assert.AreEqual(OracleResultError.None, response.Error);
+            Assert.IsFalse(response.Error);
             Assert.AreEqual("pong", Encoding.UTF8.GetString(response.Result));
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
@@ -347,8 +346,8 @@ namespace Neo.UnitTests.Oracle
 
             response = OracleService.Process(request);
 
-            Assert.AreEqual(OracleResultError.ResponseError, response.Error);
-            Assert.IsTrue(response.Result.Length == 0);
+            Assert.IsTrue(response.Error);
+            Assert.IsTrue(response.Result == null);
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
 
@@ -357,8 +356,8 @@ namespace Neo.UnitTests.Oracle
             OracleService.HTTPSProtocol.AllowPrivateHost = false;
             response = OracleService.Process(request);
 
-            Assert.AreEqual(OracleResultError.PolicyError, response.Error);
-            Assert.IsTrue(response.Result.Length == 0);
+            Assert.IsTrue(response.Error);
+            Assert.IsTrue(response.Result == null);
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
         }
@@ -375,10 +374,10 @@ namespace Neo.UnitTests.Oracle
             var request = new ErrorRequest();
             var response = OracleService.Process(request);
 
-            Assert.AreEqual(OracleResultError.ProtocolError, response.Error);
-            CollectionAssert.AreEqual(new byte[0], response.Result);
+            Assert.IsTrue(response.Error);
+            Assert.AreEqual(null, response.Result);
             Assert.AreEqual(request.Hash, response.RequestHash);
-            Assert.AreEqual("0x6d53b08489400de6e2d3bf0edfd1385e14dbde68", response.Hash.ToString());
+            Assert.AreEqual("0xe62b56e4b43b01411403058ba53fc5e6dbdf8fba", response.Hash.ToString());
         }
     }
 }

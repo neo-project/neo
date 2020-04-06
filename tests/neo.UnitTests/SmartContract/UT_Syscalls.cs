@@ -131,10 +131,8 @@ namespace Neo.UnitTests.SmartContract
 
                     Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
 
-                    var type = array[1] as PrimitiveType;
-                    var response = array[2] as ByteString;
-
-                    Assert.AreEqual((int)OracleResultError.None, type.GetBigInteger());
+                    Assert.IsTrue(array[1] is ByteString);
+                    var response = array[1] as ByteString;
                     Assert.AreEqual("MyResponse", response.GetString());
                 }
             }
@@ -156,12 +154,7 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(1, engine.ResultStack.Count);
 
                     Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
-
-                    var type = array[1] as PrimitiveType;
-                    var response = array[2] as ByteString;
-
-                    Assert.AreEqual((int)OracleResultError.FilterError, type.GetBigInteger());
-                    Assert.AreEqual("", response.GetString());
+                    Assert.IsTrue(array[1] is Null);
                 }
             }
 
