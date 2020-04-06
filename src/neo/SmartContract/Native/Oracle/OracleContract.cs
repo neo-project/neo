@@ -76,7 +76,9 @@ namespace Neo.SmartContract.Native.Oracle
         public OracleExecutionCache ConsumeOracleResponse(StoreView snapshot, UInt256 txHash)
         {
             StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
-            StorageItem storage = snapshot.Storages.GetAndChange(key);
+            StorageItem storage = snapshot.Storages.TryGet(key);
+            if (storage == null) return null;
+
             OracleExecutionCache ret = storage.Value.AsSerializable<OracleExecutionCache>();
 
             // It should be cached by the ApplicationEngine so we can save space removing it

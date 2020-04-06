@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.SmartContract;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,7 +30,41 @@ namespace Neo.Oracle
         /// </summary>
         public long FilterCost { get; private set; }
 
+        /// <summary>
+        /// Responses
+        /// </summary>
+        public OracleResponse[] Responses => _cache.Values.ToArray();
+
         public int Size => IO.Helper.GetVarSize(Count) + _cache.Values.Sum(u => u.Size);
+
+        private UInt160 _hash;
+
+        /// <summary>
+        /// Hash
+        /// </summary>
+        public UInt160 Hash
+        {
+            get
+            {
+                if (_hash != null) return _hash;
+
+                using (var stream = new MemoryStream())
+                {
+                    foreach (var entry in _cache)
+                    {
+                        // Request Hash
+                        stream.Write(entry.Key.ToArray());
+
+                        // Response Hash
+                        stream.Write(entry.Value.Hash.ToArray());
+                    }
+
+                    _hash = stream.ToArray().ToScriptHash();
+                }
+
+                return _hash;
+            }
+        }
 
         /// <summary>
         /// Constructor for oracles
@@ -45,6 +80,7 @@ namespace Neo.Oracle
         /// </summary>
         public OracleExecutionCache()
         {
+            _hash = null;
             FilterCost = 0;
         }
 
@@ -54,8 +90,10 @@ namespace Neo.Oracle
         /// <param name="results">Results</param>
         public OracleExecutionCache(params OracleResponse[] results)
         {
-            _oracle = null;
             FilterCost = 0;
+
+            _hash = null;
+            _oracle = null;
 
             foreach (var result in results)
             {
@@ -109,12 +147,13 @@ namespace Neo.Oracle
 
         public void Deserialize(BinaryReader reader)
         {
-            var results = reader.ReadSerializableArray<OracleResponse>(byte.MaxValue);
-
             FilterCost = 0;
+            _hash = null;
+
+            var entries = reader.ReadSerializableArray<OracleResponse>(byte.MaxValue);
             _cache.Clear();
 
-            foreach (var result in results)
+            foreach (var result in entries)
             {
                 _cache[result.RequestHash] = result;
                 FilterCost += result.FilterCost;
