@@ -108,7 +108,7 @@ namespace Neo.SmartContract
 
                 if (engine.OracleCache.TryGet(request, out var response))
                 {
-                    engine.Push(response.ToStackItem(engine.ReferenceCounter));
+                    engine.Push(response.Result ?? StackItem.Null);
                     return true;
                 }
 

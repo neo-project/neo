@@ -129,10 +129,7 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(1, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
-
-                    Assert.IsTrue(array[1] is ByteString);
-                    var response = array[1] as ByteString;
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var response));
                     Assert.AreEqual("MyResponse", response.GetString());
                 }
             }
@@ -153,8 +150,7 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(1, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<VM.Types.Array>(out var array));
-                    Assert.IsTrue(array[1] is Null);
+                    Assert.IsTrue(engine.ResultStack.TryPop<Null>(out var isNull));
                 }
             }
 

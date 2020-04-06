@@ -255,10 +255,7 @@ namespace Neo.UnitTests.Oracle
                 byte[] script;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    // self-transfer of 1e-8 GAS
-                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, $"https://127.0.0.1:{port}/ping", null, null);
-                    sb.Emit(OpCode.UNPACK);
                     script = sb.ToArray();
                 }
 

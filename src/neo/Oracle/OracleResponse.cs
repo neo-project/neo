@@ -3,16 +3,13 @@ using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract;
-using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Text;
 
 namespace Neo.Oracle
 {
-    public class OracleResponse : IInteroperable, IVerifiable
+    public class OracleResponse : IVerifiable
     {
         private UInt160 _hash;
 
@@ -152,19 +149,6 @@ namespace Neo.Oracle
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             return new UInt160[] { new UInt160(Crypto.Hash160(this.GetHashData())) };
-        }
-
-        /// <summary>
-        /// Get Stack item for IInteroperable
-        /// </summary>
-        /// <returns>StackItem</returns>
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
-        {
-            return new VM.Types.Array(referenceCounter, new StackItem[]
-            {
-                new ByteString(RequestHash.ToArray()),
-                Result != null ? new ByteString(Result) : StackItem.Null
-            });
         }
     }
 }
