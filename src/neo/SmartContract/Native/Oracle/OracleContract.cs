@@ -48,15 +48,14 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
-        /// Oracle Response Only
+        /// Set Oracle Response Only
         /// </summary>
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "transactionHash", "oracleResponse" })]
         private StackItem SetOracleResponse(ApplicationEngine engine, Array args)
         {
             if (args.Count != 2) return false;
 
-            StoreView snapshot = engine.Snapshot;
-            UInt160 account = GetOracleMultiSigAddress(snapshot);
+            UInt160 account = GetOracleMultiSigAddress(engine.Snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
 
             // This only can be called by the oracle's multi signature
@@ -64,18 +63,17 @@ namespace Neo.SmartContract.Native.Oracle
             var txHash = args[0].GetSpan().AsSerializable<UInt256>();
             var response = args[1].GetSpan().AsSerializable<OracleExecutionCache>();
 
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()), () => new StorageItem());
             storage.Value = IO.Helper.ToArray(response);
-
             return false;
         }
 
         /// <summary>
-        /// Get Oracle Response
+        /// Consume Oracle Response
         /// </summary>
         /// <param name="snapshot">Snapshot</param>
         /// <param name="txHash">Transaction Hash</param>
-        public OracleExecutionCache GetOracleResponse(StoreView snapshot, UInt256 txHash)
+        public OracleExecutionCache ConsumeOracleResponse(StoreView snapshot, UInt256 txHash)
         {
             StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
             StorageItem storage = snapshot.Storages.GetAndChange(key);
@@ -84,7 +82,6 @@ namespace Neo.SmartContract.Native.Oracle
             // It should be cached by the ApplicationEngine so we can save space removing it
 
             snapshot.Storages.Delete(key);
-
             return ret;
         }
 

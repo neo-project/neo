@@ -28,7 +28,7 @@ namespace Neo.SmartContract
                     {
                         // Read Oracle Response
 
-                        engine.OracleCache = NativeContract.Oracle.GetOracleResponse(engine.Snapshot, tx.Hash);
+                        engine.OracleCache = NativeContract.Oracle.ConsumeOracleResponse(engine.Snapshot, tx.Hash);
 
                         // If it doesn't exist, fault
 
