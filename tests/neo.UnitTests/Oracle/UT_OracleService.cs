@@ -1,15 +1,19 @@
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
+using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using System;
 using System.IO;
@@ -214,6 +218,77 @@ namespace Neo.UnitTests.Oracle
                 NetworkFee = 1_000_000,
                 SystemFee = 1_000_000,
             };
+        }
+
+        [TestMethod]
+        public void TestOracleTx()
+        {
+            var port = 8443;
+            using var server = CreateServer(port);
+
+            var wallet = TestUtils.GenerateTestWallet();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // no password on this wallet
+            using (var unlock = wallet.Unlock(""))
+            {
+                var acc = wallet.CreateAccount();
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = new Nep5AccountState().ToByteArray()
+                });
+
+                entry.Value = new Nep5AccountState()
+                {
+                    Balance = 10000 * NativeContract.GAS.Factor
+                }
+                .ToByteArray();
+
+                snapshot.Commit();
+
+                // Manually creating script
+
+                byte[] script;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    // self-transfer of 1e-8 GAS
+                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    sb.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, $"https://127.0.0.1:{port}/ping", null, null);
+                    sb.Emit(OpCode.UNPACK);
+                    script = sb.ToArray();
+                }
+
+                // WithoutOracle
+
+                Assert.ThrowsException<InvalidOperationException>(() =>
+                {
+                    _ = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], new Cosigner[0], oracle: OracleWalletBehaviour.WithoutOracle);
+                });
+
+                // OracleWithoutAssert
+
+                var txWithout = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], new Cosigner[0], oracle: OracleWalletBehaviour.OracleWithoutAssert);
+
+                Assert.IsNotNull(txWithout);
+                Assert.IsNull(txWithout.Witnesses);
+
+                // OracleWithoutAssert
+
+                var txWith = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], new Cosigner[0], oracle: OracleWalletBehaviour.OracleWithAssert);
+
+                Assert.IsNotNull(txWith);
+                Assert.IsNull(txWith.Witnesses);
+
+                // Check that has more fee and the script is longer
+
+                Assert.IsTrue(txWith.Script.Length > txWithout.Script.Length);
+                Assert.IsTrue(txWith.NetworkFee > txWithout.NetworkFee);
+            }
         }
 
         [TestMethod]
