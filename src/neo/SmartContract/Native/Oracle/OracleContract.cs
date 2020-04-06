@@ -48,34 +48,41 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
-        /// Oracle Response Only
+        /// Set Oracle Response Only
         /// </summary>
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "transactionHash", "oracleResponse" })]
         private StackItem SetOracleResponse(ApplicationEngine engine, Array args)
         {
-            // TODO: Check witness oracle contract
+            if (args.Count != 2) return false;
+
+            UInt160 account = GetOracleMultiSigAddress(engine.Snapshot);
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
+
             // This only can be called by the oracle's multi signature
 
             var txHash = args[0].GetSpan().AsSerializable<UInt256>();
             var response = args[1].GetSpan().AsSerializable<OracleExecutionCache>();
 
-            // TODO: Store or memory?
-
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()), () => new StorageItem());
             storage.Value = IO.Helper.ToArray(response);
-
             return false;
         }
 
         /// <summary>
-        /// Get Oracle Response
+        /// Consume Oracle Response
         /// </summary>
         /// <param name="snapshot">Snapshot</param>
         /// <param name="txHash">Transaction Hash</param>
-        public OracleExecutionCache GetOracleResponse(StoreView snapshot, UInt256 txHash)
+        public OracleExecutionCache ConsumeOracleResponse(StoreView snapshot, UInt256 txHash)
         {
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()));
-            return storage.Value.AsSerializable<OracleExecutionCache>();
+            StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
+            StorageItem storage = snapshot.Storages.GetAndChange(key);
+            OracleExecutionCache ret = storage.Value.AsSerializable<OracleExecutionCache>();
+
+            // It should be cached by the ApplicationEngine so we can save space removing it
+
+            snapshot.Storages.Delete(key);
+            return ret;
         }
 
         /// <summary>
