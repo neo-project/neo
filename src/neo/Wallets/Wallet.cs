@@ -324,8 +324,7 @@ namespace Neo.Wallets
             {
                 Transaction tx = new Transaction
                 {
-                    Version = 0,
-                    //TODO: x.Version = TransactionType.Oracle; <- if oracleQueries.Count != 0
+                    Version = oracleCache?.Count > 0 ? TransactionVersion.OracleRequest : TransactionVersion.Transaction,
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,

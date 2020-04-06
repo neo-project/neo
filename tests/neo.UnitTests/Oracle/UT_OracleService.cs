@@ -276,6 +276,7 @@ namespace Neo.UnitTests.Oracle
 
                 Assert.IsNotNull(txWithout);
                 Assert.IsNull(txWithout.Witnesses);
+                Assert.AreEqual(TransactionVersion.OracleRequest, txWithout.Version);
 
                 // OracleWithoutAssert
 
@@ -283,6 +284,7 @@ namespace Neo.UnitTests.Oracle
 
                 Assert.IsNotNull(txWith);
                 Assert.IsNull(txWith.Witnesses);
+                Assert.AreEqual(TransactionVersion.OracleRequest, txWith.Version);
 
                 // Check that has more fee and the script is longer
 
