@@ -41,7 +41,7 @@ namespace Neo.Network.P2P
 
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(Blockchain.Singleton.Height)
+                new FullNodeCapability(Blockchain.Singleton.Height, Blockchain.Singleton.MemPool.Count)
             };
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
@@ -202,18 +202,26 @@ namespace Neo.Network.P2P
         private void OnVersionPayload(VersionPayload version)
         {
             Version = version;
+            bool queryPool = false;
+
             foreach (NodeCapability capability in version.Capabilities)
             {
                 switch (capability)
                 {
                     case FullNodeCapability fullNodeCapability:
-                        IsFullNode = true;
-                        LastBlockIndex = fullNodeCapability.StartHeight;
-                        break;
+                        {
+                            IsFullNode = true;
+                            LastBlockIndex = fullNodeCapability.StartHeight;
+                            // If we have less or equal tx than the remote note, we should ask for his TX
+                            queryPool = Blockchain.Singleton.MemPool.Count <= fullNodeCapability.MemPoolCount;
+                            break;
+                        }
                     case ServerCapability serverCapability:
-                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
-                            ListenerTcpPort = serverCapability.Port;
-                        break;
+                        {
+                            if (serverCapability.Type == NodeCapabilityType.TcpServer)
+                                ListenerTcpPort = serverCapability.Port;
+                            break;
+                        }
                 }
             }
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
@@ -227,6 +235,10 @@ namespace Neo.Network.P2P
                 return;
             }
             SendMessage(Message.Create(MessageCommand.Verack));
+            if (queryPool)
+            {
+                SendMessage(Message.Create(MessageCommand.Mempool));
+            }
         }
 
         protected override void PostStop()
