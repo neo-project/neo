@@ -41,7 +41,7 @@ namespace Neo.Network.P2P
 
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(Blockchain.Singleton.Height, Blockchain.Singleton.MemPool.Count)
+                new FullNodeCapability(Blockchain.Singleton.Height)
             };
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
@@ -202,7 +202,6 @@ namespace Neo.Network.P2P
         private void OnVersionPayload(VersionPayload version)
         {
             Version = version;
-            bool queryPool = false;
 
             foreach (NodeCapability capability in version.Capabilities)
             {
@@ -212,8 +211,6 @@ namespace Neo.Network.P2P
                         {
                             IsFullNode = true;
                             LastBlockIndex = fullNodeCapability.StartHeight;
-                            // If we have less or equal tx than the remote note, we should ask for his TX
-                            queryPool = Blockchain.Singleton.MemPool.Count <= fullNodeCapability.MemPoolCount;
                             break;
                         }
                     case ServerCapability serverCapability:
@@ -235,7 +232,7 @@ namespace Neo.Network.P2P
                 return;
             }
             SendMessage(Message.Create(MessageCommand.Verack));
-            if (queryPool)
+            if (IsFullNode)
             {
                 SendMessage(Message.Create(MessageCommand.Mempool));
             }
