@@ -13,7 +13,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestGeneratorAndDispose()
         {
-            ByteArrayWrapper arrayWrapper = new ByteArrayWrapper(new ByteArray(new byte[0]));
+            ByteArrayWrapper arrayWrapper = new ByteArrayWrapper(new ByteString(new byte[0]));
             Assert.IsNotNull(arrayWrapper);
             Action action = () => arrayWrapper.Dispose();
             action.Should().NotThrow<Exception>();
