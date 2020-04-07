@@ -124,7 +124,7 @@ namespace Neo.Plugins
                 {
                     config = new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
                 }
-                catch (FormatException e)
+                catch (FormatException)
                 {
                     remainingTimes--;
                     Thread.Sleep(10);
