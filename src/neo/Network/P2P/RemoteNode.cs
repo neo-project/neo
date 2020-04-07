@@ -197,30 +197,31 @@ namespace Neo.Network.P2P
             verack = true;
             system.TaskManager.Tell(new TaskManager.Register { Version = Version });
             CheckMessageQueue();
+
+            if (IsFullNode)
+            {
+                SendMessage(Message.Create(MessageCommand.Mempool));
+            }
         }
 
         private void OnVersionPayload(VersionPayload version)
         {
             Version = version;
-
             foreach (NodeCapability capability in version.Capabilities)
             {
                 switch (capability)
                 {
                     case FullNodeCapability fullNodeCapability:
-                        {
-                            IsFullNode = true;
-                            LastBlockIndex = fullNodeCapability.StartHeight;
-                            break;
-                        }
+                        IsFullNode = true;
+                        LastBlockIndex = fullNodeCapability.StartHeight;
+                        break;
                     case ServerCapability serverCapability:
-                        {
-                            if (serverCapability.Type == NodeCapabilityType.TcpServer)
-                                ListenerTcpPort = serverCapability.Port;
-                            break;
-                        }
+                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
+                            ListenerTcpPort = serverCapability.Port;
+                        break;
                 }
             }
+
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
                 Disconnect(true);
@@ -232,10 +233,6 @@ namespace Neo.Network.P2P
                 return;
             }
             SendMessage(Message.Create(MessageCommand.Verack));
-            if (IsFullNode)
-            {
-                SendMessage(Message.Create(MessageCommand.Mempool));
-            }
         }
 
         protected override void PostStop()
