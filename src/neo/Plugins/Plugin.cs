@@ -118,7 +118,7 @@ namespace Neo.Plugins
         {
             IConfigurationSection config = null;
             int remainingTimes = 3;
-            while (config == null || remainingTimes <= 0)
+            while (config == null && remainingTimes <= 0)
             {
                 try
                 {
