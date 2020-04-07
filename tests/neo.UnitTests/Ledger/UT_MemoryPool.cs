@@ -102,7 +102,7 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
             UInt160 sender = UInt160.Zero;
-            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns((StoreView snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyForEachBlockStateIndependent(It.IsAny<StoreView>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns((StoreView snapshot, BigInteger amount) => NativeContract.GAS.BalanceOf(snapshot, sender) >= amount + fee ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
