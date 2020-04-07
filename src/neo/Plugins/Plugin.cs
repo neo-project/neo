@@ -116,7 +116,21 @@ namespace Neo.Plugins
 
         protected IConfigurationSection GetConfiguration()
         {
-            return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
+            IConfigurationSection config = null;
+            int remainingTimes = 3;
+            while (config == null || remainingTimes <= 0)
+            {
+                try
+                {
+                    config = new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
+                }
+                catch (FormatException e)
+                {
+                    remainingTimes--;
+                    Thread.Sleep(10);
+                }
+            }
+            return config;
         }
 
         private static void LoadPlugin(Assembly assembly)
