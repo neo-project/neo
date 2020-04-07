@@ -118,7 +118,7 @@ namespace Neo.Plugins
         {
             IConfigurationSection config = null;
             int remainingTimes = 3;
-            while (config == null && remainingTimes <= 0)
+            while (remainingTimes > 0)
             {
                 try
                 {
@@ -129,6 +129,7 @@ namespace Neo.Plugins
                     remainingTimes--;
                     Thread.Sleep(10);
                 }
+                if (config != null) break;
             }
             return config;
         }
