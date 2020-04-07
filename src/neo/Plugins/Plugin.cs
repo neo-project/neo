@@ -131,6 +131,7 @@ namespace Neo.Plugins
                 }
                 if (config != null) break;
             }
+            if (config == null) throw new FormatException();
             return config;
         }
 
