@@ -214,6 +214,11 @@ namespace Neo.Network.P2P
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
+        protected override void TcpConnectSuccess(IActorRef connection)
+        {
+            connection.Tell(new RemoteNode.SendVersion());
+        }
+
         public static Props Props(NeoSystem system)
         {
             return Akka.Actor.Props.Create(() => new LocalNode(system));
