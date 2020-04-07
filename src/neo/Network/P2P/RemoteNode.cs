@@ -221,7 +221,6 @@ namespace Neo.Network.P2P
                         break;
                 }
             }
-
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
                 Disconnect(true);
