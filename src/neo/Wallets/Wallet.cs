@@ -255,7 +255,7 @@ namespace Neo.Wallets
                             foreach (var (account, value) in balances_used)
                             {
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
-                                sb.Emit(OpCode.THROWIFNOT);
+                                sb.Emit(OpCode.ASSERT);
                             }
                         }
                         if (assetId.Equals(NativeContract.GAS.Hash))
@@ -319,15 +319,6 @@ namespace Neo.Wallets
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
-                    if (tx.SystemFee > 0)
-                    {
-                        long d = (long)NativeContract.GAS.Factor;
-                        long remainder = tx.SystemFee % d;
-                        if (remainder > 0)
-                            tx.SystemFee += d - remainder;
-                        else if (remainder < 0)
-                            tx.SystemFee -= remainder;
-                    }
                 }
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
