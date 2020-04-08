@@ -95,7 +95,7 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
                     "5b22366b4139757552614430373634585358466c706674686b436b5954702f6e34623878715057476c6a6659303d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c302c224141414141414141414141414141414141414141414141414141413d222c315d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
@@ -194,11 +194,11 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(5, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var m) && m.GetString() == "{\"key\":\"dmFsdWU=\"}");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var n) && n.GetString() == "null");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var s) && s.GetString() == "\"dGVzdA==\"");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var b) && b.GetString() == "true");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteArray>(out var i) && i.GetString() == "5");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var m) && m.GetString() == "{\"key\":\"dmFsdWU=\"}");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var n) && n.GetString() == "null");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var s) && s.GetString() == "\"dGVzdA==\"");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var b) && b.GetString() == "true");
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var i) && i.GetString() == "5");
                 }
             }
 
@@ -259,7 +259,7 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteArray));
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
                     @"5b225c75303032426b53415959527a4c4b69685a676464414b50596f754655737a63544d7867445a6572584a3172784c37303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
