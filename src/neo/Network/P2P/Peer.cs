@@ -205,7 +205,7 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="remote">The remote endpoint of TCP connection.</param>
         /// <param name="local">The local endpoint of TCP connection.</param>
-        protected void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
+        private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
@@ -226,11 +226,13 @@ namespace Neo.Network.P2P
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
-                TcpConnectSuccess(connection);
+                OnTcpConnected(connection);
             }
         }
 
-        protected abstract void TcpConnectSuccess(IActorRef connection);
+        protected virtual void OnTcpConnected(IActorRef connection)
+        {
+        }
 
         /// <summary>
         /// Will be triggered when a Tcp.CommandFailed message is received.
