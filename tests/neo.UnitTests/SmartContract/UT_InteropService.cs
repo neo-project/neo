@@ -471,7 +471,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Blockchain.GetContract).Should().BeTrue();
             var stackItems = ((VM.Types.Array)engine.CurrentContext.EvaluationStack.Pop()).ToArray();
             stackItems.Length.Should().Be(3);
-            stackItems[0].GetType().Should().Be(typeof(ByteArray));
+            stackItems[0].GetType().Should().Be(typeof(ByteString));
             stackItems[0].GetSpan().ToHexString().Should().Be(state.Script.ToHexString());
             stackItems[1].ToBoolean().Should().BeFalse();
             stackItems[2].ToBoolean().Should().BeFalse();

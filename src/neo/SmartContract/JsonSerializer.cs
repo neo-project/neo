@@ -27,7 +27,7 @@ namespace Neo.SmartContract
                     {
                         return array.Select(p => Serialize(p)).ToArray();
                     }
-                case ByteArray buffer:
+                case ByteString buffer:
                     {
                         return Convert.ToBase64String(buffer.GetSpan());
                     }
@@ -87,7 +87,7 @@ namespace Neo.SmartContract
                     case JsonTokenType.EndArray:
                         writer.WriteEndArray();
                         break;
-                    case ByteArray buffer:
+                    case ByteString buffer:
                         writer.WriteStringValue(Convert.ToBase64String(buffer.GetSpan()));
                         break;
                     case Integer num:
