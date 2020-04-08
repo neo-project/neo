@@ -172,7 +172,6 @@ namespace Neo.Network.P2P.Payloads
             Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
             if (SystemFee < 0) throw new FormatException();
-            if (SystemFee % NativeContract.GAS.Factor != 0) throw new FormatException();
             NetworkFee = reader.ReadInt64();
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
