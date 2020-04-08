@@ -37,10 +37,10 @@ namespace Neo.SmartContract
             private static bool Contract_Create(ApplicationEngine engine)
             {
                 if (!engine.TryPop(out ReadOnlySpan<byte> script)) return false;
-                if (script.Length > MaxLength) return false;
+                if (script.Length == 0 || script.Length > MaxLength) return false;
 
                 if (!engine.TryPop(out ReadOnlySpan<byte> manifest)) return false;
-                if (manifest.Length > ContractManifest.MaxLength) return false;
+                if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength) return false;
 
                 UInt160 hash = script.ToScriptHash();
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
@@ -70,7 +70,7 @@ namespace Neo.SmartContract
                 if (!item0.IsNull)
                 {
                     ReadOnlySpan<byte> script = item0.GetSpan();
-                    if (script.Length > MaxLength) return false;
+                    if (script.Length == 0 || script.Length > MaxLength) return false;
                     UInt160 hash_new = script.ToScriptHash();
                     if (hash_new.Equals(engine.CurrentScriptHash)) return false;
                     if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
@@ -87,7 +87,7 @@ namespace Neo.SmartContract
                 if (!item1.IsNull)
                 {
                     ReadOnlySpan<byte> manifest = item1.GetSpan();
-                    if (manifest.Length > ContractManifest.MaxLength) return false;
+                    if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength) return false;
                     contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                     contract.Manifest = ContractManifest.Parse(manifest);
                     if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
