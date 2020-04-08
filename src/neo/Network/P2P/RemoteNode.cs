@@ -145,13 +145,14 @@ namespace Neo.Network.P2P
                     OnPingPayload(payload);
                     break;
                 case SendVersion _:
-                    OnSendVersion();
+                    //OnSendVersion();
                     break;
             }
         }
 
-        private void OnSendVersion()
+        protected override void PreStart()
         {
+            base.PreStart();
             var capabilities = new List<NodeCapability>
             {
                 new FullNodeCapability(Blockchain.Singleton.Height)
