@@ -15,8 +15,8 @@ namespace Neo.Network.P2P
 {
     public class RemoteNode : Connection
     {
+        internal class StartProtocol { }
         internal class Relay { public IInventory Inventory; }
-        internal class SendVersion { }
 
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
@@ -144,24 +144,10 @@ namespace Neo.Network.P2P
                 case PingPayload payload:
                     OnPingPayload(payload);
                     break;
-                case SendVersion _:
-                    //OnSendVersion();
+                case StartProtocol _:
+                    OnStartProtocol();
                     break;
             }
-        }
-
-        protected override void PreStart()
-        {
-            base.PreStart();
-            var capabilities = new List<NodeCapability>
-            {
-                new FullNodeCapability(Blockchain.Singleton.Height)
-            };
-
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
-
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         private void OnPingPayload(PingPayload payload)
@@ -198,6 +184,20 @@ namespace Neo.Network.P2P
         private void OnSetFilter(BloomFilter filter)
         {
             bloom_filter = filter;
+        }
+
+        private void OnStartProtocol()
+        {
+            base.PreStart();
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(Blockchain.Singleton.Height)
+            };
+
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
+
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         private void OnVerack()

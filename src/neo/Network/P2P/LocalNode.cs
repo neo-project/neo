@@ -215,7 +215,7 @@ namespace Neo.Network.P2P
 
         protected override void OnTcpConnected(IActorRef connection)
         {
-            connection.Tell(new RemoteNode.SendVersion());
+            connection.Tell(new RemoteNode.StartProtocol());
         }
 
         public static Props Props(NeoSystem system)
