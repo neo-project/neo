@@ -28,8 +28,24 @@ namespace Neo.Cryptography
                 }
             }))
             {
-                return ecdsa.SignData(message, HashAlgorithmName.SHA256);
+                return ecdsa.SignData(SafeMessage(message), HashAlgorithmName.SHA256);
             }
+        }
+
+        /// <summary>
+        /// Append the network magic before sign it
+        /// </summary>
+        /// <param name="message">Message</param>
+        /// <returns>Magic+Message</returns>
+        private static byte[] SafeMessage(ReadOnlySpan<byte> message)
+        {
+            var magic = BitConverter.GetBytes(ProtocolSettings.Default.Magic);
+
+            var networkMsg = new byte[message.Length + 4];
+            magic.CopyTo(networkMsg, 0);
+
+            message.ToArray().CopyTo(networkMsg, 4);
+            return networkMsg;
         }
 
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey)
@@ -63,7 +79,7 @@ namespace Neo.Cryptography
                 }
             }))
             {
-                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+                return ecdsa.VerifyData(SafeMessage(message), signature, HashAlgorithmName.SHA256);
             }
         }
     }
