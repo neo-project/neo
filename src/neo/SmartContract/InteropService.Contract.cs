@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -99,9 +100,30 @@ namespace Neo.SmartContract
 
             private static bool Contract_Destroy(ApplicationEngine engine)
             {
+                if (!engine.TryPop(out StackItem sendTo)) return false;
+
                 UInt160 hash = engine.CurrentScriptHash;
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
                 if (contract == null) return true;
+
+                // Send funds
+
+                UInt160 sendToHash = new UInt160(sendTo.GetSpan());
+                if (engine.Snapshot.Contracts.TryGet(sendToHash)?.Payable == false) return false;
+
+                var balance = NativeContract.NEO.BalanceOf(engine.Snapshot, sendToHash);
+                if (balance > 0)
+                {
+                    NativeContract.NEO.Transfer(engine, hash, sendToHash, balance);
+                }
+                balance = NativeContract.GAS.BalanceOf(engine.Snapshot, sendToHash);
+                if (balance > 0)
+                {
+                    NativeContract.GAS.Transfer(engine, hash, sendToHash, balance);
+                }
+
+                // Destroy states
+
                 engine.Snapshot.Contracts.Delete(hash);
                 if (contract.HasStorage)
                     foreach (var (key, _) in engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
