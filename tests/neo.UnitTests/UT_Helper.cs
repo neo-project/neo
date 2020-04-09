@@ -257,21 +257,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestConcat()
-        {
-            var a = new byte[] { 0x01 };
-            var b = new byte[] { 0x02 };
-            a = a.Concat(b);
-            Assert.AreEqual(2, a.Length);
-
-            a = null;
-            Assert.AreEqual(b, a.Concat(b));
-
-            b = null;
-            Assert.AreEqual(0, a.Concat(b).Length);
-        }
-
-        [TestMethod]
         public void TestAdd()
         {
             var a = "ab".HexToBytes();

@@ -311,17 +311,6 @@ namespace Neo
             }
         }
 
-        public static byte[] Concat(this byte[] a, byte[] b)
-        {
-            if (a is null && b is null) return Array.Empty<byte>();
-            if (a is null) return b;
-            if (b is null) return a;
-            var result = new byte[a.Length + b.Length];
-            a.CopyTo(result, 0);
-            b.CopyTo(result, a.Length);
-            return result;
-        }
-
         public static byte[] CommonPrefix(this byte[] a, byte[] b)
         {
             if (a is null || b is null) return Array.Empty<byte>();

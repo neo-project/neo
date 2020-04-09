@@ -1,5 +1,6 @@
 using Neo.IO.Json;
 using Neo.Persistence;
+using static Neo.Helper;
 using System;
 
 namespace Neo.Trie.MPT
@@ -162,7 +163,7 @@ namespace Neo.Trie.MPT
                             }
                             if (extensionNode.Next is ExtensionNode sn)
                             {
-                                extensionNode.Key = extensionNode.Key.Concat(sn.Key);
+                                extensionNode.Key = Concat(extensionNode.Key, sn.Key);
                                 extensionNode.Next = sn.Next;
                             }
                             extensionNode.SetDirty();
@@ -209,7 +210,7 @@ namespace Neo.Trie.MPT
                         }
                         if (lastChild is ExtensionNode exNode)
                         {
-                            exNode.Key = childrenIndexes.Concat(exNode.Key);
+                            exNode.Key = Concat(childrenIndexes, exNode.Key);
                             exNode.SetDirty();
                             db.Put(exNode);
                             node = exNode;
