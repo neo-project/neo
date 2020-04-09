@@ -12,16 +12,9 @@ namespace Neo.SmartContract
 
             private static bool Binary_Serialize(ApplicationEngine engine)
             {
-                byte[] serialized;
-                try
-                {
-                    serialized = BinarySerializer.Serialize(engine.CurrentContext.EvaluationStack.Pop(), engine.MaxItemSize);
-                }
-                catch
-                {
-                    return false;
-                }
-                engine.CurrentContext.EvaluationStack.Push(serialized);
+                if (!engine.TryPop(out StackItem item)) return false;
+                byte[] serialized = BinarySerializer.Serialize(item, engine.MaxItemSize);
+                engine.Push(serialized);
                 return true;
             }
 
