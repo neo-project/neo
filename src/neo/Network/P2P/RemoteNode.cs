@@ -7,24 +7,22 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
 namespace Neo.Network.P2P
 {
-    public class RemoteNode : Connection
+    public partial class RemoteNode : Connection
     {
         internal class Relay { public IInventory Inventory; }
 
         private readonly NeoSystem system;
-        private readonly IActorRef protocol;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
         private ByteString msg_buffer = ByteString.Empty;
-        private BloomFilter bloom_filter;
         private bool ack = true;
-        private bool verack = false;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public int ListenerTcpPort { get; private set; } = 0;
@@ -36,7 +34,6 @@ namespace Neo.Network.P2P
             : base(connection, remote, local)
         {
             this.system = system;
-            this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
             var capabilities = new List<NodeCapability>
@@ -124,7 +121,7 @@ namespace Neo.Network.P2P
             msg_buffer = msg_buffer.Concat(data);
 
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
-                protocol.Tell(message);
+                OnMessage(message);
         }
 
         protected override void OnReceive(object message)
@@ -132,6 +129,9 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
+                case Timer _:
+                    RefreshPendingKnownHashes();
+                    break;
                 case Message msg:
                     EnqueueMessage(msg);
                     break;
@@ -141,27 +141,6 @@ namespace Neo.Network.P2P
                 case Relay relay:
                     OnRelay(relay.Inventory);
                     break;
-                case VersionPayload payload:
-                    OnVersionPayload(payload);
-                    break;
-                case MessageCommand.Verack:
-                    OnVerack();
-                    break;
-                case ProtocolHandler.SetFilter setFilter:
-                    OnSetFilter(setFilter.Filter);
-                    break;
-                case PingPayload payload:
-                    OnPingPayload(payload);
-                    break;
-            }
-        }
-
-        private void OnPingPayload(PingPayload payload)
-        {
-            if (payload.LastBlockIndex > LastBlockIndex)
-            {
-                LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
 
@@ -187,50 +166,9 @@ namespace Neo.Network.P2P
             EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
-        private void OnSetFilter(BloomFilter filter)
-        {
-            bloom_filter = filter;
-        }
-
-        private void OnVerack()
-        {
-            verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Version = Version });
-            CheckMessageQueue();
-        }
-
-        private void OnVersionPayload(VersionPayload version)
-        {
-            Version = version;
-            foreach (NodeCapability capability in version.Capabilities)
-            {
-                switch (capability)
-                {
-                    case FullNodeCapability fullNodeCapability:
-                        IsFullNode = true;
-                        LastBlockIndex = fullNodeCapability.StartHeight;
-                        break;
-                    case ServerCapability serverCapability:
-                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
-                            ListenerTcpPort = serverCapability.Port;
-                        break;
-                }
-            }
-            if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
-            {
-                Disconnect(true);
-                return;
-            }
-            if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == version.Nonce))
-            {
-                Disconnect(true);
-                return;
-            }
-            SendMessage(Message.Create(MessageCommand.Verack));
-        }
-
         protected override void PostStop()
         {
+            timer.CancelIfNotNull();
             LocalNode.Singleton.RemoteNodes.TryRemove(Self, out _);
             base.PostStop();
         }
@@ -244,15 +182,6 @@ namespace Neo.Network.P2P
         {
             ack = false;
             SendData(ByteString.FromBytes(message.ToArray()));
-        }
-
-        protected override SupervisorStrategy SupervisorStrategy()
-        {
-            return new OneForOneStrategy(ex =>
-            {
-                Disconnect(true);
-                return Directive.Stop;
-            }, loggingEnabled: false);
         }
 
         private Message TryParseMessage()
@@ -273,10 +202,39 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
+                case Message msg:
+                    switch (msg.Command)
+                    {
+                        case MessageCommand.Consensus:
+                        case MessageCommand.FilterAdd:
+                        case MessageCommand.FilterClear:
+                        case MessageCommand.FilterLoad:
+                        case MessageCommand.Verack:
+                        case MessageCommand.Version:
+                        case MessageCommand.Alert:
+                            return true;
+                        default:
+                            return false;
+                    }
                 case Tcp.ConnectionClosed _:
-                case Connection.Timer _:
+                case Connection.Close _:
                 case Connection.Ack _:
                     return true;
+                default:
+                    return false;
+            }
+        }
+
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        {
+            if (!(message is Message msg)) return false;
+            switch (msg.Command)
+            {
+                case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
+                case MessageCommand.GetHeaders:
+                case MessageCommand.Mempool:
+                    return queue.OfType<Message>().Any(p => p.Command == msg.Command);
                 default:
                     return false;
             }
