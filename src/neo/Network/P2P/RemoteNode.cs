@@ -162,7 +162,6 @@ namespace Neo.Network.P2P
 
         private void OnStartProtocol()
         {
-            base.PreStart();
             var capabilities = new List<NodeCapability>
             {
                 new FullNodeCapability(Blockchain.Singleton.Height)
