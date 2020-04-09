@@ -92,7 +92,7 @@ namespace Neo.UnitTests.Trie.MPT
             var mpt = new MPTTrie(rootHash, mptdb.GetSnapshot(), 0);
             var result = mpt.TryGet("acae".HexToBytes(), out byte[] value);
             Assert.IsTrue(result);
-            Assert.IsTrue(Encoding.ASCII.GetBytes("hello").Equal(value));
+            Assert.IsTrue(MemoryExtensions.SequenceEqual<byte>(Encoding.ASCII.GetBytes("hello"), (value)));
         }
 
         [TestMethod]
