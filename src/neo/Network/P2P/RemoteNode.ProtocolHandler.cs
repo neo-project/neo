@@ -276,10 +276,10 @@ namespace Neo.Network.P2P
         {
             if (inventory is Block block)
             {
-                system.SyncManager.Tell(block, Context.Parent);
+                system.SyncManager.Tell(block);
                 return;
             }
-            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
+            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
             pendingKnownHashes.Remove(inventory.Hash);
             knownHashes.Add(inventory.Hash);
@@ -326,7 +326,8 @@ namespace Neo.Network.P2P
         private void OnVerackMessageReceived()
         {
             verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Version = Version });
+            system.TaskManager.Tell(new TaskManager.Register { Node = this });
+            system.SyncManager.Tell(new SyncManager.Register { Node = this });
             CheckMessageQueue();
         }
 
@@ -376,7 +377,7 @@ namespace Neo.Network.P2P
             if (payload.LastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                system.SyncManager.Tell(new SyncManager.StartSync { });
             }
         }
     }
