@@ -56,12 +56,12 @@ namespace Neo.SmartContract.Native
                     ReturnType = attribute.ReturnType,
                     Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
                 });
-                if (attribute.SafeMethod) safeMethods.Add(name);
+                if (!attribute.CallFlags.HasFlag(CallFlags.AllowModifyStates)) safeMethods.Add(name);
                 methods.Add(name, new ContractMethodMetadata
                 {
                     Delegate = (Func<ApplicationEngine, Array, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, Array, StackItem>), this),
                     Price = attribute.Price,
-                    RequiredCallFlags = attribute.SafeMethod ? CallFlags.None : CallFlags.AllowModifyStates
+                    RequiredCallFlags = attribute.CallFlags
                 });
             }
             this.Manifest.Abi.Methods = descriptors.ToArray();
@@ -114,7 +114,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Boolean)]
+        [ContractMethod(0, ContractParameterType.Boolean, CallFlags = CallFlags.AllowModifyStates)]
         protected StackItem OnPersist(ApplicationEngine engine, Array args)
         {
             if (engine.Trigger != TriggerType.System) return false;
@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards", SafeMethod = true)]
+        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards", CallFlags = CallFlags.None)]
         protected StackItem SupportedStandardsMethod(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, SupportedStandards.Select(p => (StackItem)p));
