@@ -49,8 +49,8 @@ namespace Neo.Trie.MPT
                 Hash = null;
                 return;
             }
-            if (len != UInt256.Length) throw new System.InvalidOperationException("Invalid hash bytes");
-            Hash = new UInt256(reader.ReadBytes((int)len));
+            if (len != UInt256.Length) throw new InvalidOperationException("Invalid hash bytes");
+            Hash = new UInt256(reader.ReadFixedBytes((int)len));
         }
 
         public override JObject ToJson()
