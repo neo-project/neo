@@ -114,7 +114,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Boolean, CallFlags = CallFlags.AllowModifyStates)]
+        [ContractMethod(0, ContractParameterType.Boolean, CallFlags.AllowModifyStates)]
         protected StackItem OnPersist(ApplicationEngine engine, Array args)
         {
             if (engine.Trigger != TriggerType.System) return false;
@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards", CallFlags = CallFlags.None)]
+        [ContractMethod(0, ContractParameterType.Array, CallFlags.None, Name = "supportedStandards")]
         protected StackItem SupportedStandardsMethod(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, SupportedStandards.Select(p => (StackItem)p));

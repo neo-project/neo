@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, CallFlags = CallFlags.AllowStates)]
+        [ContractMethod(0_03000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" })]
         private StackItem UnclaimedGas(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native.Tokens
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
-        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" }, CallFlags = CallFlags.AllowModifyStates)]
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
         private StackItem RegisterValidator(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" }, CallFlags = CallFlags.AllowModifyStates)]
+        [ContractMethod(5_00000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
         private StackItem Vote(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
@@ -193,7 +193,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags = CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetRegisteredValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
@@ -209,7 +209,7 @@ namespace Neo.SmartContract.Native.Tokens
             ));
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags = CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
@@ -234,7 +234,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags = CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetNextBlockValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
