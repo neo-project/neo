@@ -1,6 +1,5 @@
 using Akka.Actor;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
@@ -213,6 +212,11 @@ namespace Neo.Network.P2P
         }
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
+
+        protected override void OnTcpConnected(IActorRef connection)
+        {
+            connection.Tell(new RemoteNode.StartProtocol());
+        }
 
         public static Props Props(NeoSystem system)
         {
