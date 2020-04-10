@@ -257,23 +257,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestAdd()
-        {
-            var a = "ab".HexToBytes();
-            byte b = 0x0c;
-            a = a.Add(b);
-            Assert.AreEqual("ab0c", a.ToHexString());
-
-            a = new byte[0];
-            a = a.Add(b);
-            Assert.AreEqual(1, a.Length);
-            Assert.AreEqual("0c", a.ToHexString());
-
-            a = null;
-            Assert.AreEqual("0c", a.Add(b).ToHexString());
-        }
-
-        [TestMethod]
         public void TestCommonPrefix()
         {
             var a = "1234abcd".HexToBytes();

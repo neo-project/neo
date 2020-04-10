@@ -326,14 +326,6 @@ namespace Neo
             return a[..i];
         }
 
-        public static byte[] Add(this byte[] a, byte b)
-        {
-            var len = a is null ? 0 : a.Length;
-            Array.Resize<byte>(ref a, len + 1);
-            a[len] = b;
-            return a;
-        }
-
         public static byte[] ToNibbles(this byte[] path)
         {
             if (path is null) return Array.Empty<byte>();

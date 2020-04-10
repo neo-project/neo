@@ -1,6 +1,7 @@
 using Neo.IO.Json;
 using Neo.Persistence;
 using System;
+using System.Collections.Generic;
 using static Neo.Helper;
 
 namespace Neo.Trie.MPT
@@ -182,13 +183,13 @@ namespace Neo.Trie.MPT
                             result = TryDelete(ref branchNode.Children[path[0]], path[1..]);
                         }
                         if (!result) return false;
-                        var childrenIndexes = Array.Empty<byte>();
+                        List<byte> childrenIndexes = new List<byte>();
                         for (int i = 0; i < BranchNode.ChildCount; i++)
                         {
                             if (branchNode.Children[i] is HashNode hn && hn.IsEmptyNode) continue;
-                            childrenIndexes = childrenIndexes.Add((byte)i);
+                            childrenIndexes.Add((byte)i);
                         }
-                        if (childrenIndexes.Length > 1)
+                        if (childrenIndexes.Count > 1)
                         {
                             branchNode.SetDirty();
                             db.Put(branchNode);
@@ -208,19 +209,20 @@ namespace Neo.Trie.MPT
                         }
                         if (lastChild is ExtensionNode exNode)
                         {
-                            exNode.Key = Concat(childrenIndexes, exNode.Key);
+                            exNode.Key = Concat(childrenIndexes.ToArray(), exNode.Key);
                             exNode.SetDirty();
                             db.Put(exNode);
                             node = exNode;
-                            return true;
                         }
-                        var newNode = new ExtensionNode()
+                        else
                         {
-                            Key = childrenIndexes,
-                            Next = lastChild,
-                        };
-                        node = newNode;
-                        db.Put(node);
+                            node = new ExtensionNode()
+                            {
+                                Key = childrenIndexes.ToArray(),
+                                Next = lastChild,
+                            };
+                            db.Put(node);
+                        }
                         return true;
                     }
                 case HashNode hashNode:
