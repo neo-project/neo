@@ -123,6 +123,7 @@ namespace Neo.Trie.MPT
                         }
                         var new_node = Resolve(hashNode);
                         if (new_node is null) return false;
+                        node = new_node;
                         return Put(ref node, path, val);
                     }
                 default:
