@@ -33,8 +33,6 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.lastTaskIndex = Blockchain.Singleton.Height;
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         protected override void OnReceive(object message)
