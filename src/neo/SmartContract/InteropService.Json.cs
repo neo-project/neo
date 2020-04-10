@@ -1,5 +1,6 @@
 using Neo.IO.Json;
-using Neo.VM;
+using Neo.VM.Types;
+using System;
 
 namespace Neo.SmartContract
 {
@@ -12,33 +13,18 @@ namespace Neo.SmartContract
 
             private static bool Json_Serialize(ApplicationEngine engine)
             {
-                var item = engine.CurrentContext.EvaluationStack.Pop();
-                try
-                {
-                    var json = JsonSerializer.SerializeToByteArray(item, engine.MaxItemSize);
-                    engine.CurrentContext.EvaluationStack.Push(json);
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
+                if (!engine.TryPop(out StackItem item)) return false;
+                byte[] json = JsonSerializer.SerializeToByteArray(item, engine.MaxItemSize);
+                engine.Push(json);
+                return true;
             }
 
             private static bool Json_Deserialize(ApplicationEngine engine)
             {
-                var json = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
-                try
-                {
-                    var obj = JObject.Parse(json, 10);
-                    var item = JsonSerializer.Deserialize(obj, engine.ReferenceCounter);
-                    engine.CurrentContext.EvaluationStack.Push(item);
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
+                if (!engine.TryPop(out ReadOnlySpan<byte> json)) return false;
+                StackItem item = JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.ReferenceCounter);
+                engine.Push(item);
+                return true;
             }
         }
     }
