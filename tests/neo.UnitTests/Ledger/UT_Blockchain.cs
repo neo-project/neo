@@ -134,8 +134,6 @@ namespace Neo.UnitTests.Ledger
 
                 var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
 
-                system.ActorSystem.EventStream.Subscribe(senderProbe, typeof(Blockchain.RelayResult));
-
                 senderProbe.Send(system.Blockchain, tx);
                 senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
 
