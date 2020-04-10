@@ -27,25 +27,22 @@ namespace Neo.SmartContract
 
             private static long GetStoragePrice(EvaluationStack stack, StoreView snapshot)
             {
-                var key = stack.Peek(1);
-                var value = stack.Peek(2);
-                var newDataSize = value.IsNull ? 0 : value.GetByteLength();
-                if (!(stack.Peek() is InteropInterface _interface))
-                    throw new InvalidOperationException();
-
-                StorageContext context = _interface.GetInterface<StorageContext>();
+                StorageContext context = ((InteropInterface)stack.Peek(0)).GetInterface<StorageContext>();
+                ReadOnlySpan<byte> key = stack.Peek(1).GetSpan();
+                ReadOnlySpan<byte> value = stack.Peek(2).GetSpan();
+                int newDataSize;
                 StorageKey skey = new StorageKey
                 {
                     Id = context.Id,
-                    Key = key.GetSpan().ToArray()
+                    Key = key.ToArray()
                 };
                 var skeyValue = snapshot.Storages.TryGet(skey);
                 if (skeyValue is null)
-                    newDataSize += key.GetByteLength();
-                else if (newDataSize <= skeyValue.Value.Length)
+                    newDataSize = key.Length + value.Length;
+                else if (value.Length <= skeyValue.Value.Length)
                     newDataSize = 1;
                 else
-                    newDataSize -= skeyValue.Value.Length;
+                    newDataSize = value.Length - skeyValue.Value.Length;
                 return newDataSize * GasPerByte;
             }
 

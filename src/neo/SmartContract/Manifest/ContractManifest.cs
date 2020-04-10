@@ -1,6 +1,6 @@
 using Neo.IO;
 using Neo.IO.Json;
-using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -117,7 +117,9 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractManifest</returns>
-        public static ContractManifest Parse(string json) => FromJson(JObject.Parse(json));
+        public static ContractManifest Parse(ReadOnlySpan<byte> json) => FromJson(JObject.Parse(json));
+
+        internal static ContractManifest Parse(string json) => FromJson(JObject.Parse(json));
 
         /// <summary
         /// To json
