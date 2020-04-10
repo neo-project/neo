@@ -1,7 +1,7 @@
 using Neo.IO.Json;
 using Neo.Persistence;
-using static Neo.Helper;
 using System;
+using static Neo.Helper;
 
 namespace Neo.Trie.MPT
 {
@@ -43,7 +43,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            var result = Put(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), val);
+                            var result = Put(ref extensionNode.Next, path[extensionNode.Key.Length..], val);
                             if (result)
                             {
                                 extensionNode.SetDirty();
@@ -52,13 +52,13 @@ namespace Neo.Trie.MPT
                             return result;
                         }
                         var prefix = extensionNode.Key.CommonPrefix(path);
-                        var pathRemain = path.Skip(prefix.Length);
-                        var keyRemain = extensionNode.Key.Skip(prefix.Length);
+                        var pathRemain = path[prefix.Length..];
+                        var keyRemain = extensionNode.Key[prefix.Length..];
                         var son = new BranchNode();
                         MPTNode grandSon1 = HashNode.EmptyNode();
                         MPTNode grandSon2 = HashNode.EmptyNode();
 
-                        Put(ref grandSon1, keyRemain.Skip(1), extensionNode.Next);
+                        Put(ref grandSon1, keyRemain[1..], extensionNode.Next);
                         son.Children[keyRemain[0]] = grandSon1;
 
                         if (pathRemain.Length == 0)
@@ -68,7 +68,7 @@ namespace Neo.Trie.MPT
                         }
                         else
                         {
-                            Put(ref grandSon2, pathRemain.Skip(1), val);
+                            Put(ref grandSon2, pathRemain[1..], val);
                             son.Children[pathRemain[0]] = grandSon2;
                         }
                         db.Put(son);
@@ -90,14 +90,14 @@ namespace Neo.Trie.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        var result = false;
+                        bool result;
                         if (path.Length == 0)
                         {
                             result = Put(ref branchNode.Children[BranchNode.ChildCount - 1], path, val);
                         }
                         else
                         {
-                            result = Put(ref branchNode.Children[path[0]], path.Skip(1), val);
+                            result = Put(ref branchNode.Children[path[0]], path[1..], val);
                         }
                         if (result)
                         {
@@ -152,7 +152,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            var result = TryDelete(ref extensionNode.Next, path.Skip(extensionNode.Key.Length));
+                            var result = TryDelete(ref extensionNode.Next, path[extensionNode.Key.Length..]);
                             if (!result) return false;
                             if (extensionNode.Next is HashNode hashNode && hashNode.IsEmptyNode)
                             {
@@ -172,14 +172,14 @@ namespace Neo.Trie.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        var result = false;
+                        bool result;
                         if (path.Length == 0)
                         {
                             result = TryDelete(ref branchNode.Children[BranchNode.ChildCount - 1], path);
                         }
                         else
                         {
-                            result = TryDelete(ref branchNode.Children[path[0]], path.Skip(1));
+                            result = TryDelete(ref branchNode.Children[path[0]], path[1..]);
                         }
                         if (!result) return false;
                         var childrenIndexes = Array.Empty<byte>();

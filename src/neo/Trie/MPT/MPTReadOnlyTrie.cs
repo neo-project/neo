@@ -64,13 +64,13 @@ namespace Neo.Trie.MPT
                         {
                             return TryGet(ref branchNode.Children[16], path, out value);
                         }
-                        return TryGet(ref branchNode.Children[path[0]], path.Skip(1), out value);
+                        return TryGet(ref branchNode.Children[path[0]], path[1..], out value);
                     }
                 case ExtensionNode extensionNode:
                     {
                         if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            return TryGet(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), out value);
+                            return TryGet(ref extensionNode.Next, path[extensionNode.Key.Length..], out value);
                         }
                         break;
                     }
@@ -119,14 +119,14 @@ namespace Neo.Trie.MPT
                         {
                             return GetProof(ref branchNode.Children[16], path, set);
                         }
-                        return GetProof(ref branchNode.Children[path[0]], path.Skip(1), set);
+                        return GetProof(ref branchNode.Children[path[0]], path[1..], set);
                     }
                 case ExtensionNode extensionNode:
                     {
                         if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
                             set.Add(extensionNode.Encode());
-                            return GetProof(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), set);
+                            return GetProof(ref extensionNode.Next, path[extensionNode.Key.Length..], set);
                         }
                         break;
                     }

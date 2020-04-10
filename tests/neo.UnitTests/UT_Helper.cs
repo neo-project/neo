@@ -274,23 +274,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestSkip()
-        {
-            var s = "abcd01".HexToBytes();
-            s = s.Skip(2);
-            Assert.AreEqual("01", s.ToHexString());
-
-            s = new byte[] { 0x01 };
-            s = s.Skip(1);
-            Assert.AreEqual(0, s.Length);
-            s = s.Skip(2);
-            Assert.AreEqual(0, s.Length);
-
-            s = null;
-            Assert.AreEqual(0, s.Skip(1).Length);
-        }
-
-        [TestMethod]
         public void TestCommonPrefix()
         {
             var a = "1234abcd".HexToBytes();

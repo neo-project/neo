@@ -326,17 +326,6 @@ namespace Neo
             return a[..i];
         }
 
-        public static byte[] Skip(this byte[] a, int count)
-        {
-            if (a is null) return Array.Empty<byte>();
-            var len = a.Length - count;
-            if (len > 0)
-            {
-                return a[count..];
-            }
-            return Array.Empty<byte>();
-        }
-
         public static byte[] Add(this byte[] a, byte b)
         {
             var len = a is null ? 0 : a.Length;
