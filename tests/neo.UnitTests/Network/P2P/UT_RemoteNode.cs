@@ -31,8 +31,6 @@ namespace Neo.UnitTests.Network.P2P
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
-            connectionTestProbe.ExpectMsg<Tcp.Write>();
-
             var msg = Message.Create(MessageCommand.Version, new VersionPayload
             {
                 UserAgent = "".PadLeft(1024, '0'),
@@ -57,8 +55,6 @@ namespace Neo.UnitTests.Network.P2P
         {
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
-
-            connectionTestProbe.ExpectMsg<Tcp.Write>();
 
             var msg = Message.Create(MessageCommand.Version, new VersionPayload()
             {
