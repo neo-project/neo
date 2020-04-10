@@ -68,10 +68,9 @@ namespace Neo.Trie.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        var prefix = extensionNode.Key.CommonPrefix(path);
-                        if (prefix.Length == extensionNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            return TryGet(ref extensionNode.Next, path.Skip(prefix.Length), out value);
+                            return TryGet(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), out value);
                         }
                         break;
                     }
@@ -124,11 +123,10 @@ namespace Neo.Trie.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        var prefix = extensionNode.Key.CommonPrefix(path);
-                        if (prefix.Length == extensionNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
                             set.Add(extensionNode.Encode());
-                            return GetProof(ref extensionNode.Next, path.Skip(prefix.Length), set);
+                            return GetProof(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), set);
                         }
                         break;
                     }

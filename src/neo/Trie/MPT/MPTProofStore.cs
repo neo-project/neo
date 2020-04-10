@@ -1,9 +1,7 @@
 using Neo.Cryptography;
-using Neo.IO;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.Trie.MPT
 {
@@ -29,7 +27,7 @@ namespace Neo.Trie.MPT
         {
             foreach (var pair in store)
             {
-                if (prefix is null || pair.Key.CommonPrefix(prefix).Length == prefix.Length)
+                if (prefix is null || pair.Key.AsSpan().StartsWith(prefix))
                 {
                     yield return (pair.Key, pair.Value);
                 }

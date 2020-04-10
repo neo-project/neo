@@ -151,10 +151,9 @@ namespace Neo.Trie.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        var prefix = extensionNode.Key.CommonPrefix(path);
-                        if (prefix.Length == extensionNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            var result = TryDelete(ref extensionNode.Next, path.Skip(prefix.Length));
+                            var result = TryDelete(ref extensionNode.Next, path.Skip(extensionNode.Key.Length));
                             if (!result) return false;
                             if (extensionNode.Next is HashNode hashNode && hashNode.IsEmptyNode)
                             {
