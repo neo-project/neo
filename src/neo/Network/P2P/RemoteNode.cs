@@ -16,6 +16,7 @@ namespace Neo.Network.P2P
 {
     public partial class RemoteNode : Connection
     {
+        internal class StartProtocol { }
         internal class Relay { public IInventory Inventory; }
         internal NodeSession session = new NodeSession();
 
@@ -36,16 +37,6 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
-
-            var capabilities = new List<NodeCapability>
-            {
-                new FullNodeCapability(Blockchain.Singleton.Height)
-            };
-
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
-
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         /// <summary>
@@ -142,6 +133,9 @@ namespace Neo.Network.P2P
                 case Relay relay:
                     OnRelay(relay.Inventory);
                     break;
+                case StartProtocol _:
+                    OnStartProtocol();
+                    break;
             }
         }
 
@@ -165,6 +159,19 @@ namespace Neo.Network.P2P
                     return;
             }
             EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
+        }
+
+        private void OnStartProtocol()
+        {
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(Blockchain.Singleton.Height)
+            };
+
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
+
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         protected override void PostStop()
