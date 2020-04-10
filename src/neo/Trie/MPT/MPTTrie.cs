@@ -41,10 +41,9 @@ namespace Neo.Trie.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        var prefix = extensionNode.Key.CommonPrefix(path);
-                        if (prefix.Length == extensionNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            var result = Put(ref extensionNode.Next, path.Skip(prefix.Length), val);
+                            var result = Put(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), val);
                             if (result)
                             {
                                 extensionNode.SetDirty();
@@ -52,7 +51,7 @@ namespace Neo.Trie.MPT
                             }
                             return result;
                         }
-
+                        var prefix = extensionNode.Key.CommonPrefix(path);
                         var pathRemain = path.Skip(prefix.Length);
                         var keyRemain = extensionNode.Key.Skip(prefix.Length);
                         var son = new BranchNode();
