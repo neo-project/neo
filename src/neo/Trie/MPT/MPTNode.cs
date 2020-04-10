@@ -98,7 +98,6 @@ namespace Neo.Trie.MPT
                 if (ms != null)
                     ms.Dispose();
             }
-
         }
 
         public abstract void DecodeSpecific(BinaryReader reader);

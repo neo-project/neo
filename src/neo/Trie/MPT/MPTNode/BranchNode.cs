@@ -11,7 +11,7 @@ namespace Neo.Trie.MPT
         public BranchNode()
         {
             nType = NodeType.BranchNode;
-            for (int i = 0; i < Children.Length; i++)
+            for (int i = 0; i < ChildCount; i++)
             {
                 Children[i] = HashNode.EmptyNode();
             }
@@ -19,7 +19,7 @@ namespace Neo.Trie.MPT
 
         public override void EncodeSpecific(BinaryWriter writer)
         {
-            for (int i = 0; i < Children.Length; i++)
+            for (int i = 0; i < ChildCount; i++)
             {
                 var hashNode = new HashNode(Children[i].GetHash());
                 hashNode.EncodeSpecific(writer);
@@ -28,7 +28,7 @@ namespace Neo.Trie.MPT
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            for (int i = 0; i < Children.Length; i++)
+            for (int i = 0; i < ChildCount; i++)
             {
                 var hashNode = new HashNode();
                 hashNode.DecodeSpecific(reader);
