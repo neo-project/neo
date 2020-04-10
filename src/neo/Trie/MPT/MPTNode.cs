@@ -55,30 +55,16 @@ namespace Neo.Trie.MPT
 
             using BinaryReader reader = new BinaryReader(new MemoryStream(data, false), Encoding.UTF8, false);
 
-            var nodeType = (NodeType)reader.ReadByte();
-            switch (nodeType)
+            var n = (NodeType)reader.ReadByte() switch
             {
-                case NodeType.BranchNode:
-                    {
-                        var n = new BranchNode();
-                        n.DecodeSpecific(reader);
-                        return n;
-                    }
-                case NodeType.ExtensionNode:
-                    {
-                        var n = new ExtensionNode();
-                        n.DecodeSpecific(reader);
-                        return n;
-                    }
-                case NodeType.LeafNode:
-                    {
-                        var n = new LeafNode();
-                        n.DecodeSpecific(reader);
-                        return n;
-                    }
-                default:
-                    throw new System.InvalidOperationException();
-            }
+                NodeType.BranchNode => (MPTNode)new BranchNode(),
+                NodeType.ExtensionNode => new ExtensionNode(),
+                NodeType.LeafNode => new LeafNode(),
+                _ => throw new System.InvalidOperationException(),
+            };
+
+            n.DecodeSpecific(reader);
+            return n;
         }
 
         public abstract void DecodeSpecific(BinaryReader reader);
