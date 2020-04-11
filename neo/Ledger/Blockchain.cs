@@ -244,13 +244,13 @@ namespace Neo.Ledger
         public bool GetStateProof(UInt256 root, StorageKey skey, out HashSet<byte[]> proof)
         {
             var trieReadOnlyDb = new TrieReadOnlyDb(Store, Prefixes.DATA_MPT);
-            var readOnlyTrie = new MPTReadOnlyTrie(root.ToArray(), trieReadOnlyDb);
+            var readOnlyTrie = new MPTReadOnlyTrie(root, trieReadOnlyDb);
             return readOnlyTrie.GetProof(skey.ToArray(), out proof);
         }
 
         public bool VerifyProof(UInt256 root, byte[] key, HashSet<byte[]> proof, out byte[] value)
         {
-            var result = MPTTrie.VerifyProof(root.ToArray(), key, proof, out value);
+            var result = MPTTrie.VerifyProof(root, key, proof, out value);
             if (result) value = value.AsSerializable<StorageItem>().Value;
             return result;
         }

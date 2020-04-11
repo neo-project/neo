@@ -226,7 +226,7 @@ namespace Neo.Consensus
 
                 byte[] hashData1 = context.MakeHeader()?.GetHashData();
                 byte[] hashData2 = context.MakeStateRoot()?.GetHashData();
-                if (hashData1 == null|| hashData2 == null)
+                if (hashData1 == null || hashData2 == null)
                 {
                     existingCommitPayload = payload;
                 }
@@ -249,9 +249,9 @@ namespace Neo.Consensus
         // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.SecondsPerBlock`
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
-           TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes*Blockchain.SecondsPerBlock * 1000.0 / context.M());
-           if (!context.WatchOnly() && !context.ViewChanging() && !context.CommitSent() && (nextDelay > TimeSpan.Zero))
-               ChangeTimer(nextDelay);
+            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * Blockchain.SecondsPerBlock * 1000.0 / context.M());
+            if (!context.WatchOnly() && !context.ViewChanging() && !context.CommitSent() && (nextDelay > TimeSpan.Zero))
+                ChangeTimer(nextDelay);
         }
 
         private void OnConsensusPayload(ConsensusPayload payload)
@@ -280,7 +280,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            context.LastSeenMessage[payload.ValidatorIndex] = (int) payload.BlockIndex;
+            context.LastSeenMessage[payload.ValidatorIndex] = (int)payload.BlockIndex;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;
@@ -419,7 +419,7 @@ namespace Neo.Consensus
             }
 
             StateRoot contextStateRoot = Blockchain.Singleton.GetStateRoot(Blockchain.Singleton.Height).StateRoot;
-            if (message.Index!= contextStateRoot.Index) return;
+            if (message.Index != contextStateRoot.Index) return;
             if (message.PreHash != contextStateRoot.PreHash)
             {
                 Log($"PreHash incorrect: {message.PreHash}", LogLevel.Warning);

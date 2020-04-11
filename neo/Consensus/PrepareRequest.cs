@@ -51,8 +51,8 @@ namespace Neo.Consensus
 
             Version = reader.ReadUInt32();
             Index = reader.ReadUInt32();
-            PreHash= reader.ReadSerializable<UInt256>();
-            StateRoot_=reader.ReadSerializable<UInt256>();
+            PreHash = reader.ReadSerializable<UInt256>();
+            StateRoot_ = reader.ReadSerializable<UInt256>();
         }
 
         public override void Serialize(BinaryWriter writer)

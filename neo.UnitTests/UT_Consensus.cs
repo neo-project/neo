@@ -114,7 +114,7 @@ namespace Neo.UnitTests
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
                 TransactionHashes = new UInt256[0],
                 MinerTransaction = minerTx, //(MinerTransaction)Transactions[TransactionHashes[0]],
-                
+
                 Version = 0,
                 Index = 1,
                 PreHash = UInt256.Zero,
@@ -249,8 +249,8 @@ namespace Neo.UnitTests
             consensusContext.CommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             using (SHA256 sha256 = SHA256.Create())
             {
-                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()),StateRootSignature= sha256.ComputeHash(testTx1.Hash.ToArray()) }, 3, new[] { (byte)'3', (byte)'4' });
-                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()),StateRootSignature= sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
+                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()), StateRootSignature = sha256.ComputeHash(testTx1.Hash.ToArray()) }, 3, new[] { (byte)'3', (byte)'4' });
+                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()), StateRootSignature = sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
             }
 
             consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
@@ -502,8 +502,8 @@ namespace Neo.UnitTests
                     Version = 0,
                     Index = 1,
                     PreHash = UInt256.Zero,
-                    StateRoot_=UInt256.Zero
-    },
+                    StateRoot_ = UInt256.Zero
+                },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {

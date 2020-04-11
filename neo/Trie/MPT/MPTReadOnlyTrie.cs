@@ -9,13 +9,13 @@ namespace Neo.Trie.MPT
         private MPTReadOnlyDb rodb;
         protected MPTNode root;
 
-        public MPTReadOnlyTrie(byte[] root, IKVReadOnlyStore store)
+        public MPTReadOnlyTrie(UInt256 root, IKVReadOnlyStore store)
         {
             if (store is null)
                 throw new System.ArgumentNullException();
 
             this.rodb = new MPTReadOnlyDb(store);
-            if (root is null || root.Length == 0)
+            if (root is null)
             {
                 this.root = HashNode.EmptyNode();
             }
@@ -25,9 +25,9 @@ namespace Neo.Trie.MPT
             }
         }
 
-        public MPTNode Resolve(byte[] hash)
+        public MPTNode Resolve(HashNode hn)
         {
-            return rodb.Node(hash);
+            return rodb.Node(hn.Hash);
         }
 
         public bool TryGet(byte[] path, out byte[] value)
@@ -40,11 +40,11 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
                         if (path.Length == 0)
                         {
-                            value = (byte[])valueNode.Value.Clone();
+                            value = (byte[])leafNode.Value.Clone();
                             return true;
                         }
                         break;
@@ -52,25 +52,24 @@ namespace Neo.Trie.MPT
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmptyNode) break;
-                        var newNode = Resolve(hashNode.Hash);
+                        var newNode = Resolve(hashNode);
                         if (newNode is null) break;
                         node = newNode;
                         return TryGet(ref node, path, out value);
                     }
-                case FullNode fullNode:
+                case BranchNode branchNode:
                     {
                         if (path.Length == 0)
                         {
-                            return TryGet(ref fullNode.Children[16], path, out value);
+                            return TryGet(ref branchNode.Children[16], path, out value);
                         }
-                        return TryGet(ref fullNode.Children[path[0]], path.Skip(1), out value);
+                        return TryGet(ref branchNode.Children[path[0]], path.Skip(1), out value);
                     }
-                case ShortNode shortNode:
+                case ExtensionNode extensionNode:
                     {
-                        var prefix = shortNode.Key.CommonPrefix(path);
-                        if (prefix.Length == shortNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            return TryGet(ref shortNode.Next, path.Skip(prefix.Length), out value);
+                            return TryGet(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), out value);
                         }
                         break;
                     }
@@ -79,7 +78,7 @@ namespace Neo.Trie.MPT
             return false;
         }
 
-        public byte[] GetRoot()
+        public UInt256 GetRoot()
         {
             return root.GetHash();
         }
@@ -95,11 +94,11 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
                         if (path.Length == 0)
                         {
-                            proof.Add(valueNode.Encode());
+                            proof.Add(leafNode.Encode());
                             return true;
                         }
                         break;
@@ -107,27 +106,26 @@ namespace Neo.Trie.MPT
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmptyNode) break;
-                        var newNode = Resolve(hashNode.Hash);
-                        if (newNode is null) break;
-                        node = newNode;
+                        var new_node = Resolve(hashNode);
+                        if (new_node is null) break;
+                        node = new_node;
                         return GetProof(ref node, path, proof);
                     }
-                case FullNode fullNode:
+                case BranchNode branchNode:
                     {
-                        proof.Add(fullNode.Encode());
+                        proof.Add(branchNode.Encode());
                         if (path.Length == 0)
                         {
-                            return GetProof(ref fullNode.Children[16], path, proof);
+                            return GetProof(ref branchNode.Children[16], path, proof);
                         }
-                        return GetProof(ref fullNode.Children[path[0]], path.Skip(1), proof);
+                        return GetProof(ref branchNode.Children[path[0]], path.Skip(1), proof);
                     }
-                case ShortNode shortNode:
+                case ExtensionNode extensionNode:
                     {
-                        var prefix = shortNode.Key.CommonPrefix(path);
-                        if (prefix.Length == shortNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            proof.Add(shortNode.Encode());
-                            return GetProof(ref shortNode.Next, path.Skip(prefix.Length), proof);
+                            proof.Add(extensionNode.Encode());
+                            return GetProof(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), proof);
                         }
                         break;
                     }
@@ -135,7 +133,7 @@ namespace Neo.Trie.MPT
             return false;
         }
 
-        public static bool VerifyProof(byte[] root, byte[] path, HashSet<byte[]> proof, out byte[] value)
+        public static bool VerifyProof(UInt256 root, byte[] path, HashSet<byte[]> proof, out byte[] value)
         {
             var store = new MPTProofStore(proof);
             var trie = new MPTReadOnlyTrie(root, store);

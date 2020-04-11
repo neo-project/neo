@@ -1,5 +1,5 @@
 using Neo.IO.Json;
-using Neo.Persistence;
+using Neo;
 using System;
 
 namespace Neo.Trie.MPT
@@ -8,8 +8,8 @@ namespace Neo.Trie.MPT
     {
         public static uint Version = 0;
         private MPTDb db;
-        
-        public MPTTrie(byte[] root, IKVStore store) : base(root, store)
+
+        public MPTTrie(UInt256 root, IKVStore store) : base(root, store)
         {
             this.db = new MPTDb(store);
         }
@@ -21,7 +21,7 @@ namespace Neo.Trie.MPT
             {
                 return TryDelete(ref root, path);
             }
-            var n = new ValueNode(value);
+            var n = new LeafNode(value);
             return Put(ref root, path, n);
         }
 
@@ -29,9 +29,9 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
-                        if (path.Length == 0 && val is ValueNode v)
+                        if (path.Length == 0 && val is LeafNode v)
                         {
                             node = v;
                             db.Put(node);
@@ -39,33 +39,32 @@ namespace Neo.Trie.MPT
                         }
                         return false;
                     }
-                case ShortNode shortNode:
+                case ExtensionNode extensionNode:
                     {
-                        var prefix = shortNode.Key.CommonPrefix(path);
-                        if (prefix.Length == shortNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            var result = Put(ref shortNode.Next, path.Skip(prefix.Length), val);
+                            var result = Put(ref extensionNode.Next, path.Skip(extensionNode.Key.Length), val);
                             if (result)
                             {
-                                shortNode.ResetFlag();
-                                db.Put(shortNode);
+                                extensionNode.SetDirty();
+                                db.Put(extensionNode);
                             }
                             return result;
                         }
-
+                        var prefix = extensionNode.Key.CommonPrefix(path);
                         var pathRemain = path.Skip(prefix.Length);
-                        var keyRemain = shortNode.Key.Skip(prefix.Length);
-                        var son = new FullNode();
+                        var keyRemain = extensionNode.Key.Skip(prefix.Length);
+                        var son = new BranchNode();
                         MPTNode grandSon1 = HashNode.EmptyNode();
                         MPTNode grandSon2 = HashNode.EmptyNode();
 
-                        Put(ref grandSon1, keyRemain.Skip(1), shortNode.Next);
+                        Put(ref grandSon1, keyRemain.Skip(1), extensionNode.Next);
                         son.Children[keyRemain[0]] = grandSon1;
 
                         if (pathRemain.Length == 0)
                         {
                             Put(ref grandSon2, pathRemain, val);
-                            son.Children[FullNode.CHILD_COUNT - 1] = grandSon2;
+                            son.Children[BranchNode.ChildCount - 1] = grandSon2;
                         }
                         else
                         {
@@ -75,13 +74,13 @@ namespace Neo.Trie.MPT
                         db.Put(son);
                         if (prefix.Length > 0)
                         {
-                            var extensionNode = new ShortNode()
+                            var exNode = new ExtensionNode()
                             {
                                 Key = prefix,
                                 Next = son,
                             };
-                            db.Put(extensionNode);
-                            node = extensionNode;
+                            db.Put(exNode);
+                            node = exNode;
                         }
                         else
                         {
@@ -89,21 +88,21 @@ namespace Neo.Trie.MPT
                         }
                         return true;
                     }
-                case FullNode fullNode:
+                case BranchNode branchNode:
                     {
                         var result = false;
                         if (path.Length == 0)
                         {
-                            result = Put(ref fullNode.Children[FullNode.CHILD_COUNT - 1], path, val);
+                            result = Put(ref branchNode.Children[BranchNode.ChildCount - 1], path, val);
                         }
                         else
                         {
-                            result = Put(ref fullNode.Children[path[0]], path.Skip(1), val);
+                            result = Put(ref branchNode.Children[path[0]], path.Skip(1), val);
                         }
                         if (result)
                         {
-                            fullNode.ResetFlag();
-                            db.Put(fullNode);
+                            branchNode.SetDirty();
+                            db.Put(branchNode);
                         }
                         return result;
                     }
@@ -111,17 +110,19 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode)
                         {
-                            var newNode = new ShortNode()
+                            var exNode = new ExtensionNode()
                             {
                                 Key = path,
                                 Next = val,
                             };
-                            node = newNode;
-                            if (val is ValueNode) db.Put(val);
-                            db.Put(newNode);
+                            node = exNode;
+                            if (!(val is HashNode)) db.Put(val);
+                            db.Put(exNode);
                             return true;
                         }
-                        node = Resolve(hashNode.Hash);
+                        var new_node = Resolve(hashNode);
+                        if (new_node is null) return false;
+                        node = new_node;
                         return Put(ref node, path, val);
                     }
                 default:
@@ -139,7 +140,7 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case ValueNode valueNode:
+                case LeafNode leafNode:
                     {
                         if (path.Length == 0)
                         {
@@ -148,74 +149,73 @@ namespace Neo.Trie.MPT
                         }
                         return false;
                     }
-                case ShortNode shortNode:
+                case ExtensionNode extensionNode:
                     {
-                        var prefix = shortNode.Key.CommonPrefix(path);
-                        if (prefix.Length == shortNode.Key.Length)
+                        if (path.AsSpan().StartsWith(extensionNode.Key))
                         {
-                            var result = TryDelete(ref shortNode.Next, path.Skip(prefix.Length));
+                            var result = TryDelete(ref extensionNode.Next, path.Skip(extensionNode.Key.Length));
                             if (!result) return false;
-                            if (shortNode.Next is HashNode hashNode && hashNode.IsEmptyNode)
+                            if (extensionNode.Next is HashNode hashNode && hashNode.IsEmptyNode)
                             {
-                                node = shortNode.Next;
+                                node = extensionNode.Next;
                                 return true;
                             }
-                            if (shortNode.Next is ShortNode sn)
+                            if (extensionNode.Next is ExtensionNode en)
                             {
-                                shortNode.Key = shortNode.Key.Concat(sn.Key);
-                                shortNode.Next = sn.Next;
+                                extensionNode.Key = extensionNode.Key.Concat(en.Key);
+                                extensionNode.Next = en.Next;
                             }
-                            shortNode.ResetFlag();
-                            db.Put(shortNode);
+                            extensionNode.SetDirty();
+                            db.Put(extensionNode);
                             return true;
                         }
                         return false;
                     }
-                case FullNode fullNode:
+                case BranchNode branchNode:
                     {
                         var result = false;
                         if (path.Length == 0)
                         {
-                            result = TryDelete(ref fullNode.Children[FullNode.CHILD_COUNT - 1], path);
+                            result = TryDelete(ref branchNode.Children[BranchNode.ChildCount - 1], path);
                         }
                         else
                         {
-                            result = TryDelete(ref fullNode.Children[path[0]], path.Skip(1));
+                            result = TryDelete(ref branchNode.Children[path[0]], path.Skip(1));
                         }
                         if (!result) return false;
                         var childrenIndexes = Array.Empty<byte>();
-                        for (int i = 0; i < FullNode.CHILD_COUNT; i++)
+                        for (int i = 0; i < BranchNode.ChildCount; i++)
                         {
-                            if (fullNode.Children[i] is HashNode hn && hn.IsEmptyNode) continue;
+                            if (branchNode.Children[i] is HashNode hn && hn.IsEmptyNode) continue;
                             childrenIndexes = childrenIndexes.Add((byte)i);
                         }
                         if (childrenIndexes.Length > 1)
                         {
-                            fullNode.ResetFlag();
-                            db.Put(fullNode);
+                            branchNode.SetDirty();
+                            db.Put(branchNode);
                             return true;
                         }
                         var lastChildIndex = childrenIndexes[0];
-                        var lastChild = fullNode.Children[lastChildIndex];
-                        if (lastChildIndex == FullNode.CHILD_COUNT - 1)
+                        var lastChild = branchNode.Children[lastChildIndex];
+                        if (lastChildIndex == BranchNode.ChildCount - 1)
                         {
                             node = lastChild;
                             return true;
                         }
                         if (lastChild is HashNode hashNode)
                         {
-                            lastChild = Resolve(hashNode.Hash);
+                            lastChild = Resolve(hashNode);
                             if (lastChild is null) throw new System.ArgumentNullException("Invalid hash node");
                         }
-                        if (lastChild is ShortNode shortNode)
+                        if (lastChild is ExtensionNode exNode)
                         {
-                            shortNode.Key = childrenIndexes.Concat(shortNode.Key);
-                            shortNode.ResetFlag();
-                            db.Put(shortNode);
-                            node = shortNode;
+                            exNode.Key = Helper.Concat(childrenIndexes, exNode.Key);
+                            exNode.SetDirty();
+                            db.Put(exNode);
+                            node = exNode;
                             return true;
                         }
-                        var newNode = new ShortNode()
+                        var newNode = new ExtensionNode()
                         {
                             Key = childrenIndexes,
                             Next = lastChild,
@@ -230,7 +230,9 @@ namespace Neo.Trie.MPT
                         {
                             return true;
                         }
-                        node = Resolve(hashNode.Hash);
+                        var new_node = Resolve(hashNode);
+                        if (new_node is null) return false;
+                        node = new_node;
                         return TryDelete(ref node, path);
                     }
                 default:

@@ -175,7 +175,7 @@ namespace Neo.SmartContract
         /// <param name="engine">r, s, v, messageHash</param>
         /// <returns></returns>
         private bool Ecrecover(ExecutionEngine engine)
-        {          
+        {
             var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().ToArray());
             var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().ToArray());
             bool v = engine.CurrentContext.EvaluationStack.Pop().GetBoolean();
@@ -188,7 +188,7 @@ namespace Neo.SmartContract
             catch
             {
                 engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x00 });
-            }                      
+            }
             return true;
         }
 

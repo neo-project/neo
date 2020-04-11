@@ -39,16 +39,16 @@ namespace Neo.Persistence.LevelDB
             batch.Put(StoreKey(key), value);
         }
 
-        public byte[] GetRoot()
+        public UInt256 GetRoot()
         {
             var result = db.TryGet(options, StoreKey(ROOT_KEY), out Slice value);
-            return result ? value.ToArray() : null;
+            return result ? new UInt256(value.ToArray()) : null;
         }
 
-        public void PutRoot(byte[] root)
+        public void PutRoot(UInt256 root)
         {
-            if (root is null || root.Length == 0 ) return;
-            batch.Put(StoreKey(ROOT_KEY), root);
-        }       
+            if (root is null) return;
+            batch.Put(StoreKey(ROOT_KEY), root.ToArray());
+        }
     }
 }

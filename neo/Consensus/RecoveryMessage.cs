@@ -79,7 +79,7 @@ namespace Neo.Consensus
                 {
                     ViewNumber = p.ViewNumber,
                     Signature = p.Signature,
-                    StateRootSignature=p.StateRootSignature
+                    StateRootSignature = p.StateRootSignature
                 },
                 Witness = new Witness
                 {

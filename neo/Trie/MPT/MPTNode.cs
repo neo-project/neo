@@ -6,61 +6,53 @@ using System.Text;
 
 namespace Neo.Trie.MPT
 {
-    public enum NodeType
+    public abstract class MPTNode
     {
-        FullNode = 0x00,
-        ShortNode = 0x01,
-        HashNode = 0x02,
-        ValueNode = 0x03,
-    }
+        private UInt256 hash;
+        public bool Dirty { get; private set; }
+        protected NodeType nType;
 
-    public class NodeFlag
-    {
-        public byte[] Hash;
-        public bool Dirty;
+        protected virtual UInt256 GenHash()
+        {
+            return new UInt256(Crypto.Default.Hash256(this.Encode()));
+        }
 
-        public NodeFlag()
+        public virtual UInt256 GetHash()
+        {
+            if (!Dirty && !(hash is null)) return hash;
+            hash = GenHash();
+            Dirty = false;
+            return hash;
+        }
+
+        public void SetDirty()
         {
             Dirty = true;
         }
-    }
 
-    public abstract class MPTNode
-    {
-        public NodeFlag Flag;
-        protected NodeType nType;
-
-        protected virtual byte[] GenHash()
-        {
-            return Crypto.Default.Hash256(this.Encode());
-        }
-
-        public virtual byte[] GetHash()
-        {
-            if (!Flag.Dirty && Flag.Hash.Length > 0) return Flag.Hash;
-            Flag.Hash = GenHash();
-            Flag.Dirty = false;
-            return (byte[])Flag.Hash.Clone();
-        }
-
-        public void ResetFlag()
-        {
-            Flag = new NodeFlag();
-        }
         public MPTNode()
         {
-            Flag = new NodeFlag();
+            Dirty = true;
         }
 
         public byte[] Encode()
         {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            MemoryStream ms = null;
+            try
             {
-                writer.Write((byte)nType);
-                EncodeSpecific(writer);
-                writer.Flush();
-                return ms.ToArray();
+                ms = new MemoryStream();
+                using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+                {
+                    writer.Write((byte)nType);
+                    EncodeSpecific(writer);
+                    writer.Flush();
+                    return ms.ToArray();
+                }
+            }
+            finally
+            {
+                if (ms != null)
+                    ms.Dispose();
             }
         }
 
@@ -71,33 +63,42 @@ namespace Neo.Trie.MPT
             if (data is null || data.Length == 0)
                 return null;
 
-            using (MemoryStream ms = new MemoryStream(data, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            MemoryStream ms = null;
+            try
             {
-                var nodeType = (NodeType)reader.ReadByte();
-                switch (nodeType)
+                ms = new MemoryStream(data, false);
+                using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
                 {
-                    case NodeType.FullNode:
-                        {
-                            var n = new FullNode();
-                            n.DecodeSpecific(reader);
-                            return n;
-                        }
-                    case NodeType.ShortNode:
-                        {
-                            var n = new ShortNode();
-                            n.DecodeSpecific(reader);
-                            return n;
-                        }
-                    case NodeType.ValueNode:
-                        {
-                            var n = new ValueNode();
-                            n.DecodeSpecific(reader);
-                            return n;
-                        }
-                    default:
-                        throw new System.InvalidOperationException();
+                    var nodeType = (NodeType)reader.ReadByte();
+                    switch (nodeType)
+                    {
+                        case NodeType.BranchNode:
+                            {
+                                var n = new BranchNode();
+                                n.DecodeSpecific(reader);
+                                return n;
+                            }
+                        case NodeType.ExtensionNode:
+                            {
+                                var n = new ExtensionNode();
+                                n.DecodeSpecific(reader);
+                                return n;
+                            }
+                        case NodeType.LeafNode:
+                            {
+                                var n = new LeafNode();
+                                n.DecodeSpecific(reader);
+                                return n;
+                            }
+                        default:
+                            throw new System.InvalidOperationException();
+                    }
                 }
+            }
+            finally
+            {
+                if (ms != null)
+                    ms.Dispose();
             }
         }
 

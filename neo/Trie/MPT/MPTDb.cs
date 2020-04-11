@@ -16,7 +16,7 @@ namespace Neo.Trie.MPT
             {
                 throw new System.InvalidOperationException("Means nothing to store HashNode");
             }
-            store.Put(node.GetHash(), node.Encode());
+            store.Put(node.GetHash().ToArray(), node.Encode());
         }
     }
 }

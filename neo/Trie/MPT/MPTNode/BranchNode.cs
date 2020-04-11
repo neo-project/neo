@@ -4,16 +4,16 @@ using System.IO;
 
 namespace Neo.Trie.MPT
 {
-    public class FullNode : MPTNode
+    public class BranchNode : MPTNode
     {
-        public const int CHILD_COUNT = 17;
-        public MPTNode[] Children = new MPTNode[CHILD_COUNT];
+        public const int ChildCount = 17;
+        public MPTNode[] Children = new MPTNode[ChildCount];
 
 
-        public FullNode()
+        public BranchNode()
         {
-            nType = NodeType.FullNode;
-            for (int i = 0; i < Children.Length; i++)
+            nType = NodeType.BranchNode;
+            for (int i = 0; i < ChildCount; i++)
             {
                 Children[i] = HashNode.EmptyNode();
             }
@@ -21,7 +21,7 @@ namespace Neo.Trie.MPT
 
         public override void EncodeSpecific(BinaryWriter writer)
         {
-            for (int i = 0; i < Children.Length; i++)
+            for (int i = 0; i < ChildCount; i++)
             {
                 var hashNode = new HashNode(Children[i].GetHash());
                 hashNode.EncodeSpecific(writer);
@@ -30,7 +30,7 @@ namespace Neo.Trie.MPT
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            for (int i = 0; i < Children.Length; i++)
+            for (int i = 0; i < ChildCount; i++)
             {
                 var hashNode = new HashNode();
                 hashNode.DecodeSpecific(reader);
@@ -41,7 +41,7 @@ namespace Neo.Trie.MPT
         public override JObject ToJson()
         {
             var jarr = new JArray();
-            for (int i = 0; i < CHILD_COUNT; i++)
+            for (int i = 0; i < ChildCount; i++)
             {
                 jarr.Add(Children[i].ToJson());
             }

@@ -6,7 +6,7 @@ namespace Neo.Trie
     {
         bool TryGet(byte[] path, out byte[] value);
 
-        byte[] GetRoot();
+        UInt256 GetRoot();
 
         bool GetProof(byte[] path, out HashSet<byte[]> proof);
     }
