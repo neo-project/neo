@@ -1,11 +1,15 @@
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.SmartContract;
 using System.IO;
 
 namespace Neo.Trie.MPT
 {
     public class LeafNode : MPTNode
     {
+        //the max size when store StorageItem
+        public const int MaxValueLength = 3 + InteropService.Storage.MaxValueSize + sizeof(bool);
+
         public byte[] Value;
 
         public LeafNode()

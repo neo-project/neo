@@ -20,6 +20,8 @@ namespace Neo.Trie.MPT
             var path = key.ToNibbles();
             if (ExtensionNode.MaxKeyLength < path.Length)
                 return false;
+            if (LeafNode.MaxValueLength < value.Length)
+                return false;
             if (value.Length == 0)
                 return TryDelete(ref root, path);
             var n = new LeafNode(value);
