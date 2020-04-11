@@ -16,6 +16,8 @@ namespace Neo.SmartContract
     {
         public static class Contract
         {
+            public const int MaxLength = 1024 * 1024;
+
             public static readonly InteropDescriptor Create = Register("System.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Update = Register("System.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
@@ -36,11 +38,11 @@ namespace Neo.SmartContract
 
             private static bool Contract_Create(ApplicationEngine engine)
             {
-                byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-                if (script.Length > 1024 * 1024) return false;
+                if (!engine.TryPop(out ReadOnlySpan<byte> script)) return false;
+                if (script.Length == 0 || script.Length > MaxLength) return false;
 
-                var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
-                if (manifest.Length > ContractManifest.MaxLength) return false;
+                if (!engine.TryPop(out ReadOnlySpan<byte> manifest)) return false;
+                if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength) return false;
 
                 UInt160 hash = script.ToScriptHash();
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
@@ -48,44 +50,46 @@ namespace Neo.SmartContract
                 contract = new ContractState
                 {
                     Id = engine.Snapshot.ContractId.GetAndChange().NextId++,
-                    Script = script,
+                    Script = script.ToArray(),
                     Manifest = ContractManifest.Parse(manifest)
                 };
 
                 if (!contract.Manifest.IsValid(hash)) return false;
 
                 engine.Snapshot.Contracts.Add(hash, contract);
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
+                engine.Push(StackItem.FromInterface(contract));
                 return true;
             }
 
             private static bool Contract_Update(ApplicationEngine engine)
             {
-                byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-                if (script.Length > 1024 * 1024) return false;
-                var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
-                if (manifest.Length > ContractManifest.MaxLength) return false;
+                if (!engine.TryPop(out StackItem item0)) return false;
+                if (!engine.TryPop(out StackItem item1)) return false;
 
                 var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
                 if (contract is null) return false;
 
-                if (script.Length > 0)
+                if (!item0.IsNull)
                 {
+                    ReadOnlySpan<byte> script = item0.GetSpan();
+                    if (script.Length == 0 || script.Length > MaxLength) return false;
                     UInt160 hash_new = script.ToScriptHash();
                     if (hash_new.Equals(engine.CurrentScriptHash)) return false;
                     if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
                     contract = new ContractState
                     {
                         Id = contract.Id,
-                        Script = script,
+                        Script = script.ToArray(),
                         Manifest = contract.Manifest
                     };
                     contract.Manifest.Abi.Hash = hash_new;
                     engine.Snapshot.Contracts.Add(hash_new, contract);
                     engine.Snapshot.Contracts.Delete(engine.CurrentScriptHash);
                 }
-                if (manifest.Length > 0)
+                if (!item1.IsNull)
                 {
+                    ReadOnlySpan<byte> manifest = item1.GetSpan();
+                    if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength) return false;
                     contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                     contract.Manifest = ContractManifest.Parse(manifest);
                     if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;

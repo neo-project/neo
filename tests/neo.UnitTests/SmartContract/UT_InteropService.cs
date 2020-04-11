@@ -338,10 +338,10 @@ namespace Neo.UnitTests.SmartContract
                 .Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(new byte[1024 * 1024 * 2]); //Larger than MaxItemSize
-            InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => InteropService.Invoke(engine, InteropService.Binary.Serialize));
 
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new object()));  //NotSupportedException
-            InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeFalse();
+            Assert.ThrowsException<NotSupportedException>(() => InteropService.Invoke(engine, InteropService.Binary.Serialize));
         }
 
         [TestMethod]
