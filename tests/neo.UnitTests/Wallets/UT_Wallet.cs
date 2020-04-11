@@ -21,6 +21,11 @@ namespace Neo.UnitTests.Wallets
 
         Dictionary<UInt160, WalletAccount> accounts = new Dictionary<UInt160, WalletAccount>();
 
+        public override bool ChangePassword(string oldPassword, string newPassword)
+        {
+            throw new NotImplementedException();
+        }
+
         public override bool Contains(UInt160 scriptHash)
         {
             return accounts.ContainsKey(scriptHash);
