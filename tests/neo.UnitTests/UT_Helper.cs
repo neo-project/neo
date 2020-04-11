@@ -19,12 +19,7 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new TestVerifiable();
             byte[] res = verifiable.GetHashData();
-            res.Length.Should().Be(8);
-            byte[] requiredData = new byte[] { 7, 116, 101, 115, 116, 83, 116, 114 };
-            for (int i = 0; i < requiredData.Length; i++)
-            {
-                res[i].Should().Be(requiredData[i]);
-            }
+            res.ToHexString().Should().Be("4e454f000774657374537472");
         }
 
         [TestMethod]
