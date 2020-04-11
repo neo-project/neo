@@ -145,9 +145,8 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actor)
         {
-            if (!nodes.TryGetValue(actor, out RemoteNode remoteNode))
+            if (!nodes.Remove(actor, out RemoteNode remoteNode))
                 return;
-            nodes.Remove(actor);
             foreach (UInt256 hash in remoteNode.session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
         }

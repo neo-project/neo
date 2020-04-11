@@ -127,7 +127,7 @@ namespace Neo.Network.P2P
             {
                 foreach (KeyValuePair<uint, DateTime> kvp in node.session.IndexTasks)
                 {
-                    if (DateTime.UtcNow - kvp.Value > SyncTimeout)
+                    if (TimeProvider.Current.UtcNow - kvp.Value > SyncTimeout)
                     {
                         node.session.IndexTasks.Remove(kvp.Key);
                         node.session.TimeoutTimes++;
@@ -163,7 +163,7 @@ namespace Neo.Network.P2P
                 return false;
             }
             NodeSession session = remoteNode.Value.session;
-            session.IndexTasks.Add(index, DateTime.UtcNow);
+            session.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
             remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(index, 1)));
             failedTasks.Remove(index);
             return true;
