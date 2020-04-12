@@ -30,9 +30,9 @@ namespace Neo.Trie.MPT
             return rodb.Node(hn.Hash);
         }
 
-        public bool TryGet(byte[] path, out byte[] value)
+        public bool TryGet(byte[] key, out byte[] value)
         {
-            path = path.ToNibbles();
+            var path = key.ToNibbles();
             return TryGet(ref root, path, out value);
         }
 
@@ -83,10 +83,10 @@ namespace Neo.Trie.MPT
             return root.GetHash();
         }
 
-        public bool GetProof(byte[] path, out HashSet<byte[]> proof)
+        public bool GetProof(byte[] key, out HashSet<byte[]> proof)
         {
             proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-            path = path.ToNibbles();
+            var path = key.ToNibbles();
             return GetProof(ref root, path, proof);
         }
 

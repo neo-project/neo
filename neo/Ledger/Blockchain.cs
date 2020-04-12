@@ -847,8 +847,7 @@ namespace Neo.Ledger
             using (Snapshot snapshot = GetSnapshot())
             {
                 var trie_db = new TrieReadOnlyDb(Store, Prefixes.DATA_MPT);
-                var root = trie_db.GetRoot();
-                var current_root = root is null || root.Length == 0 ? UInt256.Zero : new UInt256(root);
+                var current_root = trie_db.GetRoot();
                 var current_index = snapshot.Height;
                 var pre_hash = UInt256.Zero;
                 var consensus = UInt160.Zero;

@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Trie;
 using Neo.Trie.MPT;
 using System;
+using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 
@@ -113,7 +114,7 @@ namespace Neo.UnitTests.Trie.MPT
             var mpt = new MPTTrie(rootHash, mptdb);
             var result = mpt.TryGet("acae".HexToBytes(), out byte[] value);
             Assert.IsTrue(result);
-            Assert.IsTrue(Encoding.ASCII.GetBytes("hello").Equal(value));
+            Assert.IsTrue(Encoding.ASCII.GetBytes("hello").SequenceEqual(value));
         }
 
         [TestMethod]

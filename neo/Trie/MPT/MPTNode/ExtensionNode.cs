@@ -7,6 +7,8 @@ namespace Neo.Trie.MPT
 {
     public class ExtensionNode : MPTNode
     {
+        //max StorageKey lenght
+        public const int MaxKeyLength = 1125;
         public byte[] Key;
         public MPTNode Next;
 

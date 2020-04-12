@@ -24,9 +24,10 @@ namespace Neo.Ledger
             return store.Get(prefix, key);
         }
 
-        public byte[] GetRoot()
+        public UInt256 GetRoot()
         {
-            return Get(ROOT_KEY);
+            var result = Get(ROOT_KEY);
+            return result is null ? UInt256.Zero : new UInt256(result);
         }
     }
 }
