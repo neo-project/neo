@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols.Https;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -215,7 +216,7 @@ namespace Neo.Oracle
             {
                 // Send oracle result
 
-                var responseTx = CreateResponseTransaction(oracle, tx);
+                var responseTx = CreateResponseTransaction(snapshot, oracle, tx);
                 Sign(responseTx, out var signature);
 
                 var response = new OracleServiceResponse()
@@ -238,27 +239,35 @@ namespace Neo.Oracle
         /// Create Oracle response transaction
         /// We need to create a deterministic TX for this result/oracleRequest
         /// </summary>
+        /// <param name="snapshot">Snapshot</param>
         /// <param name="oracle">Oracle</param>
         /// <param name="requestTx">Request Hash</param>
         /// <returns>Transaction</returns>
-        public static Transaction CreateResponseTransaction(OracleExecutionCache oracle, Transaction requestTx)
+        public static Transaction CreateResponseTransaction(StoreView snapshot, OracleExecutionCache oracle, Transaction requestTx)
         {
+            var sender = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
             using ScriptBuilder script = new ScriptBuilder();
 
             script.EmitAppCall(NativeContract.Oracle.Hash, "setOracleResponse", requestTx.Hash, oracle.ToArray());
 
             return new Transaction()
             {
-                Attributes = new TransactionAttribute[]
-                {
-                    // DependsOn = hash
-                },
-                Cosigners = new Cosigner[0],
-                NetworkFee = 1_000_000, // TODO: Define fee
-                SystemFee = 1_000_000,
-                Sender = UInt160.Zero, // <- OracleSender
+                Version = TransactionVersion.OracleResponse,
+                Sender = sender,
                 Nonce = requestTx.Nonce,
                 ValidUntilBlock = requestTx.ValidUntilBlock,
+                OracleRequestTx = requestTx.Hash,
+                Cosigners = new Cosigner[]
+                {
+                    new Cosigner()
+                    {
+                        Account = sender,
+                        AllowedContracts = new UInt160[]{ NativeContract.Oracle.Hash },
+                        Scopes = WitnessScope.CustomContracts
+                    }
+                },
+                NetworkFee = 1_000_000, // TODO: Define fee
+                SystemFee = 1_000_000,  // TODO: Define fee
                 Witnesses = new Witness[0],
                 Script = script.ToArray()
             };

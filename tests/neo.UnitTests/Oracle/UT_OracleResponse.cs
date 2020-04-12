@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Oracle
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 
             requestB = CreateDefault();
-            requestB.Error = OracleResultError.FilterError;
+            requestB.Result = null;
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
         }
 
@@ -45,7 +45,6 @@ namespace Neo.UnitTests.Oracle
         {
             return new OracleResponse()
             {
-                Error = OracleResultError.None,
                 RequestHash = UInt160.Parse("0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Result = new byte[] { 0x01, 0x02, 0x03 }
             };

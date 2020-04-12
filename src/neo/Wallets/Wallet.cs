@@ -324,8 +324,7 @@ namespace Neo.Wallets
             {
                 Transaction tx = new Transaction
                 {
-                    Version = 0,
-                    //TODO: x.Version = TransactionType.Oracle; <- if oracleQueries.Count != 0
+                    Version = oracleCache?.Count > 0 ? TransactionVersion.OracleRequest : TransactionVersion.Transaction,
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,
@@ -352,48 +351,55 @@ namespace Neo.Wallets
 
                     // Change the Transaction type because it's an oracle request
 
-                    if (oracleRequests.Count > 0 && oracle == OracleWalletBehaviour.OracleWithAssert)
+                    if (oracleRequests.Count > 0)
                     {
-                        // If we want the same result for accept the response, we need to create asserts at the begining of the script
-
-                        var assertScript = new ScriptBuilder();
-
-                        foreach (var oracleRequest in oracleRequests)
+                        if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
-                            // Do the request in order to cache the result
+                            // If we want the same result for accept the response, we need to create asserts at the begining of the script
 
-                            if (oracleRequest is OracleHttpsRequest https)
+                            var assertScript = new ScriptBuilder();
+
+                            foreach (var oracleRequest in oracleRequests)
                             {
-                                assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod);
+                                // Do the request in order to cache the result
+
+                                if (oracleRequest is OracleHttpsRequest https)
+                                {
+                                    assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod);
+                                }
+                                else
+                                {
+                                    throw new NotImplementedException();
+                                }
                             }
-                            else
-                            {
-                                throw new NotImplementedException();
-                            }
+
+                            // Clear the stack
+
+                            assertScript.Emit(OpCode.CLEAR);
+
+                            // Check that the hash of the whole responses are exactly the same
+
+                            assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
+                            assertScript.EmitPush(oracleCache.Hash.ToArray());
+                            assertScript.Emit(OpCode.EQUAL);
+                            assertScript.Emit(OpCode.ASSERT);
+
+                            // Concat two scripts [OracleAsserts+Script]
+
+                            script = assertScript.ToArray().Concat(script).ToArray();
+                            oracle = OracleWalletBehaviour.OracleWithoutAssert;
+
+                            // We need to remove new oracle calls (OracleService.Process)
+
+                            oracleCache = new OracleExecutionCache(oracleCache.Responses);
+
+                            // We need to compute the gas again with the right script
+                            goto Start;
                         }
-
-                        // Clear the stack
-
-                        assertScript.Emit(OpCode.CLEAR);
-
-                        // Check that the hash of the whole responses are exactly the same
-
-                        assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
-                        assertScript.EmitPush(oracleCache.Hash.ToArray());
-                        assertScript.Emit(OpCode.EQUAL);
-                        assertScript.Emit(OpCode.ASSERT);
-
-                        // Concat two scripts [OracleAsserts+Script]
-
-                        script = assertScript.ToArray().Concat(script).ToArray();
-                        oracle = OracleWalletBehaviour.OracleWithoutAssert;
-
-                        // We need to remove new oracle calls (OracleService.Process)
-
-                        oracleCache = new OracleExecutionCache(oracleCache.Responses);
-
-                        // We need to compute the gas again with the right script
-                        goto Start;
+                        else
+                        {
+                            tx.Version = TransactionVersion.OracleRequest;
+                        }
                     }
                 }
 
