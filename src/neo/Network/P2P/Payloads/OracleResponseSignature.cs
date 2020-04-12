@@ -11,19 +11,60 @@ namespace Neo.Network.P2P.Payloads
     public class OracleResponseSignature : ISerializable
     {
         private const byte ResponseSignatureType = 0x01;
+        private UInt256 transactionRequestHash;
+        private UInt256 oracleExecutionCacheHash;
+        private ECPoint oraclePub;
+        /// <summary>
+        /// Signature for the oracle response tx for this public key
+        /// </summary>
+        private byte[] signature;
 
-        public UInt256 TransactionRequestHash;
-        public UInt256 OracleExecutionCacheHash;
-        public ECPoint OraclePub;
-        // Signature for the oracle response tx for this public key
-        public byte[] Signature;
+        public UInt256 TransactionRequestHash
+        {
+            get => transactionRequestHash;
+            set { transactionRequestHash = value; _hash = null; _size = 0; }
+        }
 
-        public int Size =>
-            sizeof(byte) +      //Type=0x01=OracleResponseSignature
-            UInt256.Length +    //Transaction Hash
-            UInt256.Length +    //OracleExecutionCache Hash
-            OraclePub.Size +    //Oracle Public key
-            Signature.GetVarSize();       //Oracle Validator Signature
+        public UInt256 OracleExecutionCacheHash
+        {
+            get => oracleExecutionCacheHash;
+            set { oracleExecutionCacheHash = value; _hash = null; _size = 0; }
+        }
+
+        public ECPoint OraclePub
+        {
+            get => oraclePub;
+            set { oraclePub = value; _hash = null; _size = 0; }
+        }
+
+        public byte[] Signature
+        {
+            get => signature;
+            set
+            {
+                if (value.Length != 64) throw new ArgumentException();
+                signature = value;
+                _hash = null;
+                _size = 0;
+            }
+        }
+
+        private int _size;
+        public int Size
+        {
+            get
+            {
+                if (_size == 0)
+                {
+                    _size = sizeof(byte) +      //Type
+                        UInt256.Length +        //Transaction Hash
+                        UInt256.Length +        //OracleExecutionCache Hash
+                        OraclePub.Size +        //Oracle Public key
+                        Signature.GetVarSize(); //Oracle Validator Signature
+                }
+                return _size;
+            }
+        }
 
         private UInt256 _hash = null;
         public UInt256 Hash
