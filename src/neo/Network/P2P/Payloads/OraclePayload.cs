@@ -40,10 +40,9 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_size == 0)
                 {
-                    _size = sizeof(byte) +  //Type
-                        Data.GetVarSize() + //Data
-                        OraclePub.Size +    //Oracle Public key
-                        Witness.Size;       //Witness
+                    _size = Data.GetVarSize() + //Data
+                        OraclePub.Size +        //Oracle Public key
+                        Witness.Size;           //Witness
                 }
                 return _size;
             }
@@ -95,7 +94,6 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public OracleResponseSignature GetDeserializedOracleSignature()
-        //public T GetDeserializedOracleSignature<T>() where T : OracleResponseSignature
         {
             return OracleSignature;
         }
@@ -125,10 +123,6 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
-            //ECPoint[] validators = NativeContract.Oracle.GetOracleValidators(snapshot);
-            //if (validators.Length <= OracleValidatorIndex)
-            //    throw new InvalidOperationException();
-            //return new[] { Contract.CreateSignatureRedeemScript(validators[OracleValidatorIndex]).ToScriptHash() };
             return new[] { Contract.CreateSignatureRedeemScript(OraclePub).ToScriptHash() };
         }
 

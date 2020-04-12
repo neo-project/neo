@@ -49,10 +49,10 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_size == 0)
                 {
-                    _size = sizeof(byte) +      //Type
-                        UInt256.Length +        //Transaction Hash
-                        UInt256.Length +        //OracleExecutionCache Hash
-                        Signature.GetVarSize(); //Oracle Validator Signature
+                    _size = sizeof(byte) +  //Type
+                        UInt256.Length +    //Transaction Hash
+                        UInt256.Length +    //OracleExecutionCache Hash
+                        Signature.Length;   //Oracle Validator Signature
                 }
                 return _size;
             }
