@@ -11,39 +11,39 @@ namespace Neo.Network.P2P.Payloads
     public class OracleResponseSignature : ISerializable
     {
         private const byte ResponseSignatureType = 0x01;
-        private UInt256 transactionRequestHash;
-        private UInt256 oracleExecutionCacheHash;
-        private ECPoint oraclePub;
+
+        private UInt256 _transactionRequestHash;
+        public UInt256 TransactionRequestHash
+        {
+            get => _transactionRequestHash;
+            set { _transactionRequestHash = value; _hash = null; _size = 0; }
+        }
+
+        private UInt256 _oracleExecutionCacheHash;
+        public UInt256 OracleExecutionCacheHash
+        {
+            get => _oracleExecutionCacheHash;
+            set { _oracleExecutionCacheHash = value; _hash = null; _size = 0; }
+        }
+
+        //private ECPoint _oraclePub;
+        //public ECPoint OraclePub
+        //{
+        //    get => _oraclePub;
+        //    set { _oraclePub = value; _hash = null; _size = 0; }
+        //}
+
         /// <summary>
         /// Signature for the oracle response tx for this public key
         /// </summary>
-        private byte[] signature;
-
-        public UInt256 TransactionRequestHash
-        {
-            get => transactionRequestHash;
-            set { transactionRequestHash = value; _hash = null; _size = 0; }
-        }
-
-        public UInt256 OracleExecutionCacheHash
-        {
-            get => oracleExecutionCacheHash;
-            set { oracleExecutionCacheHash = value; _hash = null; _size = 0; }
-        }
-
-        public ECPoint OraclePub
-        {
-            get => oraclePub;
-            set { oraclePub = value; _hash = null; _size = 0; }
-        }
-
+        private byte[] _signature;
         public byte[] Signature
         {
-            get => signature;
+            get => _signature;
             set
             {
                 if (value.Length != 64) throw new ArgumentException();
-                signature = value;
+                _signature = value;
                 _hash = null;
                 _size = 0;
             }
@@ -59,7 +59,7 @@ namespace Neo.Network.P2P.Payloads
                     _size = sizeof(byte) +      //Type
                         UInt256.Length +        //Transaction Hash
                         UInt256.Length +        //OracleExecutionCache Hash
-                        OraclePub.Size +        //Oracle Public key
+                        //OraclePub.Size +        //Oracle Public key
                         Signature.GetVarSize(); //Oracle Validator Signature
                 }
                 return _size;
@@ -89,7 +89,7 @@ namespace Neo.Network.P2P.Payloads
         {
             TransactionRequestHash = reader.ReadSerializable<UInt256>();
             OracleExecutionCacheHash = reader.ReadSerializable<UInt256>();
-            OraclePub = reader.ReadSerializable<ECPoint>();
+            //OraclePub = reader.ReadSerializable<ECPoint>();
             Signature = reader.ReadFixedBytes(64);
         }
 
@@ -114,7 +114,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(ResponseSignatureType);
             writer.Write(TransactionRequestHash);
             writer.Write(OracleExecutionCacheHash);
-            writer.Write(OraclePub);
+            //writer.Write(OraclePub);
             writer.Write(Signature);
         }
     }

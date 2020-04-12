@@ -12,27 +12,25 @@ namespace Neo.Network.P2P.Payloads
 {
     public class OraclePayload : IVerifiable
     {
-        private byte[] data;
-        //public uint OracleValidatorIndex;
-        private ECPoint oraclePub;
-        private Witness witness;
-
+        private byte[] _data;
         public byte[] Data
         {
-            get => data;
-            set { data = value; _hash = null; _size = 0; }
+            get => _data;
+            set { _data = value; _hash = null; _size = 0; }
         }
 
+        private ECPoint _oraclePub;
         public ECPoint OraclePub
         {
-            get => oraclePub;
-            set { oraclePub = value; _hash = null; _size = 0; }
+            get => _oraclePub;
+            set { _oraclePub = value; _hash = null; _size = 0; }
         }
 
+        private Witness _witness;
         public Witness Witness
         {
-            get => witness;
-            set { witness = value; _hash = null; _size = 0; }
+            get => _witness;
+            set { _witness = value; _hash = null; _size = 0; }
         }
 
         private int _size;
