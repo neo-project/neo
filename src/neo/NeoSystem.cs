@@ -75,12 +75,14 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
         {
+            if (Consensus != null) return;
             Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
         public void StartOracle(Wallet wallet)
         {
+            if (Oracle != null) return;
             Oracle = ActorSystem.ActorOf(OracleService.Props(this.LocalNode, wallet));
             Oracle.Tell(new OracleService.StartMessage(), Blockchain);
         }
