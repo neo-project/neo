@@ -4,7 +4,7 @@ using Neo.Trie.MPT;
 namespace Neo.UnitTests.Trie.MPTH
 {
     [TestClass]
-    public class UT_Helper
+    public class UT_MPTHelper
     {
         [TestMethod]
         public void TestConcat()
