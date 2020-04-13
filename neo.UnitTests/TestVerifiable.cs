@@ -40,7 +40,7 @@ namespace Neo.UnitTests
 
         public void SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write((string) testStr);
+            writer.Write((string)testStr);
         }
     }
 }

@@ -79,7 +79,7 @@ namespace Neo.UnitTests
             StorageKey newSk = new StorageKey();
             newSk.ScriptHash = val;
             newSk.Key = keyVal;
-            uut.ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x88)); 
+            uut.ScriptHash = new UInt160(TestUtils.GetByteArray(20, 0x88));
             uut.Key = keyVal;
 
             uut.Equals(newSk).Should().BeFalse();
@@ -95,7 +95,7 @@ namespace Neo.UnitTests
             newSk.ScriptHash = val;
             newSk.Key = keyVal;
             uut.ScriptHash = val;
-            uut.Key = TestUtils.GetByteArray(10, 0x88); 
+            uut.Key = TestUtils.GetByteArray(10, 0x88);
 
             uut.Equals(newSk).Should().BeFalse();
         }

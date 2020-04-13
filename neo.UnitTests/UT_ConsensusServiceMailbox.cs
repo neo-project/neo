@@ -13,7 +13,7 @@ using Neo.Consensus;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_ConsensusServiceMailbox  : TestKit
+    public class UT_ConsensusServiceMailbox : TestKit
     {
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
@@ -42,10 +42,10 @@ namespace Neo.UnitTests
             uut.IsHighPriority(new ConsensusService.SetViewNumber()).Should().Be(true);
             uut.IsHighPriority(new ConsensusService.Timer()).Should().Be(true);
             uut.IsHighPriority(new Blockchain.PersistCompleted()).Should().Be(true);
-            
+
             // any random object should not have priority
             object obj = null;
-            uut.IsHighPriority(obj).Should().Be(false);   
+            uut.IsHighPriority(obj).Should().Be(false);
         }
     }
 }

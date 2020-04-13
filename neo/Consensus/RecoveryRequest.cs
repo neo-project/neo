@@ -13,7 +13,7 @@ namespace Neo.Consensus
 
         public override int Size => base.Size
             + sizeof(uint); //Timestamp
-        
+
         public RecoveryRequest() : base(ConsensusMessageType.RecoveryRequest) { }
 
         public override void Deserialize(BinaryReader reader)

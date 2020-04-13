@@ -75,7 +75,7 @@ namespace Neo.UnitTests
             for (int testRuns = 0; testRuns < 30; testRuns++)
             {
                 var tx1 = GenerateMockTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, new Fixed8(netFeeSatoshiFixed), sizeFixed);
-                var tx2 = GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(0x79,new Fixed8(netFeeSatoshiFixed), sizeFixed);
+                var tx2 = GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(0x79, new Fixed8(netFeeSatoshiFixed), sizeFixed);
 
                 PoolItem pitem1 = new PoolItem(tx1.Object);
                 PoolItem pitem2 = new PoolItem(tx2.Object);
@@ -88,8 +88,8 @@ namespace Neo.UnitTests
             }
 
             // equal hashes should be equal
-            var tx3 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
-            var tx4 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx3 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] { 0x13, 0x37 });
+            var tx4 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] { 0x13, 0x37 });
             PoolItem pitem3 = new PoolItem(tx3.Object);
             PoolItem pitem4 = new PoolItem(tx4.Object);
 
@@ -102,8 +102,8 @@ namespace Neo.UnitTests
         {
             int sizeFixed = 500;
             int netFeeSatoshiFixed = 10;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] { 0x13, 0x37 });
+            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] { 0x13, 0x37 });
 
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
@@ -150,7 +150,7 @@ namespace Neo.UnitTests
         }
 
         // Generate Mock InvocationTransaction with different sizes and prices
-        public static Mock<InvocationTransaction> MockGenerateInvocationTx(Fixed8 networkFee, int size, byte[] overrideScriptBytes=null)
+        public static Mock<InvocationTransaction> MockGenerateInvocationTx(Fixed8 networkFee, int size, byte[] overrideScriptBytes = null)
         {
             var mockTx = new Mock<InvocationTransaction>();
             mockTx.CallBase = true;
