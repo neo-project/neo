@@ -1,0 +1,33 @@
+name: .NET Core Test
+
+on:
+  push:
+    branches: neox-2.x
+  pull_request:
+
+env:
+  DOTNET_VERSION: 2.1.202
+
+jobs:
+
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Check format
+      run: |
+        dotnet tool install --tool-path ./ dotnet-format
+        ./dotnet-format --check --dry-run -v diagnostic
+    - name: Test
+      run: |
+        find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
+        dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
