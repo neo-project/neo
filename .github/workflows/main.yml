@@ -2,7 +2,7 @@ name: .NET Core Test
 
 on:
   push:
-    branches: neox-2.x
+    branches: master-2.x
   pull_request:
 
 env:
