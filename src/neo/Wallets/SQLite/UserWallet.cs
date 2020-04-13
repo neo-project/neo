@@ -170,10 +170,10 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public bool ChangePassword(string password_old, string password_new)
+        public override bool ChangePassword(string oldPassword, string newPassword)
         {
-            if (!VerifyPassword(password_old)) return false;
-            byte[] passwordKey = password_new.ToAesKey();
+            if (!VerifyPassword(oldPassword)) return false;
+            byte[] passwordKey = newPassword.ToAesKey();
             try
             {
                 SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
