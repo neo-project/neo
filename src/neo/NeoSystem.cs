@@ -2,6 +2,7 @@ using Akka.Actor;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
+using Neo.Oracle;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
@@ -17,11 +18,14 @@ namespace Neo
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
             $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}" +
-            $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
+            $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}" +
+            $"oracle-service-mailbox {{ mailbox-type: \"{typeof(OracleService.OracleServiceMailbox).AssemblyQualifiedName}\" }}"
+            );
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
+        public IActorRef Oracle { get; private set; }
 
         private readonly IStore store;
         private ChannelsConfig start_message = null;
@@ -73,6 +77,12 @@ namespace Neo
         {
             Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
+        }
+
+        public void StartOracle(Wallet wallet)
+        {
+            Oracle = ActorSystem.ActorOf(OracleService.Props(this.LocalNode, wallet));
+            Oracle.Tell(new OracleService.StartMessage(), Blockchain);
         }
 
         public void StartNode(ChannelsConfig config)

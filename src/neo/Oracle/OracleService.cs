@@ -1,5 +1,7 @@
 using Akka.Actor;
+using Akka.Configuration;
 using Neo.IO;
+using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols.Https;
@@ -19,6 +21,8 @@ namespace Neo.Oracle
 {
     public class OracleService : UntypedActor
     {
+        internal class StartMessage { }
+
         private const long MaxGasFilter = 1_000_000;
 
         /// <summary>
@@ -93,6 +97,11 @@ namespace Neo.Oracle
         {
             switch (message)
             {
+                case StartMessage start:
+                    {
+                        Start();
+                        break;
+                    }
                 case Transaction tx:
                     {
                         // TODO: Check that it's a oracleTx
@@ -379,5 +388,26 @@ namespace Neo.Oracle
         }
 
         #endregion
+
+        public static Props Props(IActorRef localNode, Wallet wallet)
+        {
+            return Akka.Actor.Props.Create(() => new OracleService(localNode, wallet)).WithMailbox("oracle-service-mailbox");
+        }
+
+        internal class OracleServiceMailbox : PriorityMailbox
+        {
+            public OracleServiceMailbox(Settings settings, Config config) : base(settings, config) { }
+
+            internal protected override bool IsHighPriority(object message)
+            {
+                switch (message)
+                {
+                    case Transaction _:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        }
     }
 }
