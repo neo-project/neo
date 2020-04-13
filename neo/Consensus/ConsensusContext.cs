@@ -19,7 +19,7 @@ namespace Neo.Consensus
         public uint StateRootVersion { get; set; }
         public uint StateRootIndex { get; set; }
         public UInt256 StateRootPreHash { get; set; }
-        public UInt256 StateRootStateRoot_ { get; set; }
+        public UInt256 StateRootRoot { get; set; }
 
         /// <summary>
         /// Prefix for saving consensus state.
@@ -106,7 +106,7 @@ namespace Neo.Consensus
             if (reader.ReadUInt32() != StateRootVersion) throw new FormatException();
             if (reader.ReadUInt32() != StateRootIndex) throw new FormatException();
             StateRootPreHash = reader.ReadSerializable<UInt256>();
-            StateRootStateRoot_ = reader.ReadSerializable<UInt256>();
+            StateRootRoot = reader.ReadSerializable<UInt256>();
 
             if (reader.ReadUInt32() != Version) throw new FormatException();
             if (reader.ReadUInt32() != BlockIndex) throw new InvalidOperationException();
@@ -193,7 +193,7 @@ namespace Neo.Consensus
                 Version = StateRootVersion,
                 Index = StateRootIndex,
                 PreHash = StateRootPreHash,
-                StateRoot_ = StateRootStateRoot_
+                Root = StateRootRoot
             };
         }
 
@@ -262,7 +262,7 @@ namespace Neo.Consensus
                 Version = StateRootVersion,
                 Index = StateRootIndex,
                 PreHash = StateRootPreHash,
-                StateRoot_ = StateRootStateRoot_
+                Root = StateRootRoot
             });
         }
 
@@ -291,7 +291,7 @@ namespace Neo.Consensus
                     Version = StateRootVersion,
                     Index = StateRootIndex,
                     PreHash = StateRootPreHash,
-                    StateRoot_ = StateRootStateRoot_
+                    Root = StateRootRoot
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -365,7 +365,7 @@ namespace Neo.Consensus
             StateRootVersion = 0;
             StateRootIndex = Snapshot.Height;
             StateRootPreHash = UInt256.Zero;
-            StateRootStateRoot_ = UInt256.Zero;
+            StateRootRoot = UInt256.Zero;
         }
 
         public void Save()
@@ -378,7 +378,7 @@ namespace Neo.Consensus
             writer.Write(StateRootVersion);
             writer.Write(StateRootIndex);
             writer.Write(StateRootPreHash);
-            writer.Write(StateRootStateRoot_);
+            writer.Write(StateRootRoot);
 
             writer.Write(Version);
             writer.Write(BlockIndex);
@@ -463,7 +463,7 @@ namespace Neo.Consensus
             StateRootVersion = stateRoot.Version;
             StateRootIndex = stateRoot.Index;
             StateRootPreHash = stateRoot.PreHash;
-            StateRootStateRoot_ = stateRoot.StateRoot_;
+            StateRootRoot = stateRoot.Root;
         }
 
         private static ulong GetNonce()

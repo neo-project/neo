@@ -477,7 +477,7 @@ namespace Neo.Ledger
                         break;
                     }
                     var local_state = snapshot.StateRoots.GetAndChange(state_root_verifying.Index);
-                    if (local_state.StateRoot.StateRoot_ == state_root_verifying.StateRoot_ && local_state.StateRoot.PreHash == state_root_verifying.PreHash)
+                    if (local_state.StateRoot.Root == state_root_verifying.Root && local_state.StateRoot.PreHash == state_root_verifying.PreHash)
                     {
                         StateHeight = state_root_verifying.Index;
                         if (state_root_verifying.Index + 3 > HeaderHeight)
@@ -862,7 +862,7 @@ namespace Neo.Ledger
                     Version = MPTTrie.Version,
                     Index = current_index,
                     PreHash = pre_hash,
-                    StateRoot_ = current_root,
+                    Root = current_root,
                 };
                 var stateRootState = new StateRootState
                 {

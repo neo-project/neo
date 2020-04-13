@@ -425,9 +425,9 @@ namespace Neo.Consensus
                 Log($"PreHash incorrect: {message.PreHash}", LogLevel.Warning);
                 return;
             }
-            if (message.StateRoot_ != contextStateRoot.StateRoot_)
+            if (message.Root != contextStateRoot.Root)
             {
-                Log($"StateRoot incorrect: {message.StateRoot_} local:{contextStateRoot.StateRoot_}", LogLevel.Warning);
+                Log($"StateRoot incorrect: {message.Root} local:{contextStateRoot.Root}", LogLevel.Warning);
                 return;
             }
 
@@ -438,7 +438,7 @@ namespace Neo.Consensus
             context.StateRootVersion = message.Version;
             context.StateRootIndex = message.Index;
             context.StateRootPreHash = message.PreHash;
-            context.StateRootStateRoot_ = message.StateRoot_;
+            context.StateRootRoot = message.Root;
 
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;

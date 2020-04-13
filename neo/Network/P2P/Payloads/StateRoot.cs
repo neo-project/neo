@@ -15,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Version;
         public uint Index;
         public UInt256 PreHash;
-        public UInt256 StateRoot_;
+        public UInt256 Root;
         public Witness Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.StateRoot;
@@ -46,7 +46,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +          //Version
             sizeof(uint) +          //Index 
             PreHash.Size +          //PrevHash
-            StateRoot_.Size +       //StateRoot
+            Root.Size +       //StateRoot
             1 +                     //Witness array count
             Witness.Size;           //Witness   
 
@@ -63,7 +63,7 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadUInt32();
             Index = reader.ReadUInt32();
             PreHash = reader.ReadSerializable<UInt256>();
-            StateRoot_ = reader.ReadSerializable<UInt256>();
+            Root = reader.ReadSerializable<UInt256>();
         }
 
         public void Serialize(BinaryWriter writer)
@@ -77,7 +77,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Version);
             writer.Write(Index);
             writer.Write(PreHash);
-            writer.Write(StateRoot_);
+            writer.Write(Root);
         }
 
         public bool Verify(Snapshot snapshot)
@@ -102,7 +102,7 @@ namespace Neo.Network.P2P.Payloads
             json["version"] = Version;
             json["index"] = Index;
             json["prehash"] = PreHash.ToString();
-            json["stateroot"] = StateRoot_.ToString();
+            json["stateroot"] = Root.ToString();
             json["witness"] = Witness is null ? new JObject() : Witness.ToJson();
             return json;
         }
