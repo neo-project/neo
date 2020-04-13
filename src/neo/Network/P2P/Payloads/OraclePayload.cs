@@ -61,7 +61,7 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public Witness[] Witnesses
+        public Witness[] IVerifiable.Witnesses
         {
             get => new[] { Witness };
             set

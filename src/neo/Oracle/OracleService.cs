@@ -13,6 +13,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +33,7 @@ namespace Neo.Oracle
         private long _isStarted = 0;
         private CancellationTokenSource _cancel;
         private readonly IActorRef _localNode;
-        private readonly Wallet _wallet;
+        private readonly KeyPair[] _accounts;
 
         /// <summary>
         /// Number of threads for processing the oracle
@@ -57,21 +58,14 @@ namespace Neo.Oracle
         #endregion
 
         /// <summary>
-        /// Akka message
-        /// </summary>
-        public class OracleServiceResponse
-        {
-            public OracleExecutionCache ExecutionResult;
-
-            public UInt256 UserTxHash;
-            public byte[] OracleResponseScript;
-            public byte[] OracleResponseSignature;
-        }
-
-        /// <summary>
         /// Oracle
         /// </summary>
         public Func<OracleRequest, OracleResponse> Oracle { get; }
+
+        /// <summary>
+        /// Oracle pool
+        /// </summary>
+        public OraclePool Pool { get; }
 
         /// <summary>
         /// Is started
@@ -87,7 +81,24 @@ namespace Neo.Oracle
         {
             Oracle = Process;
             _localNode = localNode;
-            _wallet = wallet;
+
+            // Find oracle account
+
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            var oracles = NativeContract.Oracle.GetOracleValidators(snapshot)
+                .Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash());
+
+            _accounts = wallet?.GetAccounts()
+                .Where(u => u.HasKey && !u.Lock && oracles.Contains(u.ScriptHash))
+                .Select(u => u.GetKey())
+                .ToArray();
+
+            if (_accounts.Length == 0)
+            {
+                throw new ArgumentException(nameof(wallet));
+            }
+
+            Pool = new OraclePool(Blockchain.Singleton.MemPool, Self, localNode, 30_000);
         }
 
         /// <summary>
@@ -223,20 +234,36 @@ namespace Neo.Oracle
 
             if (engine.Execute() == VMState.HALT)
             {
-                // Send oracle result
+                // Create deterministic oracle response
 
                 var responseTx = CreateResponseTransaction(snapshot, oracle, tx);
-                Sign(responseTx, out var signature);
 
-                var response = new OracleServiceResponse()
+                foreach (var keyPair in _accounts)
                 {
-                    ExecutionResult = oracle,
-                    UserTxHash = tx.Hash,
-                    OracleResponseScript = responseTx.Script,
-                    OracleResponseSignature = signature
-                };
+                    // Sign the transaction
 
-                _localNode.Tell(response);
+                    Sign(responseTx, keyPair, out var signature);
+
+                    // Create the payload
+
+                    var response = new OraclePayload()
+                    {
+                        OraclePub = keyPair.PublicKey,
+                        OracleSignature = new OracleResponseSignature()
+                        {
+                            OracleExecutionCacheHash = oracle.Hash,
+                            Signature = signature,
+                            TransactionRequestHash = tx.Hash
+                        }
+                    };
+
+                    if (Pool.TryAddOracleResponse(snapshot, response, responseTx))
+                    {
+                        // Send my signature by P2P
+
+                        _localNode.Tell(response);
+                    }
+                }
             }
             else
             {
@@ -286,8 +313,9 @@ namespace Neo.Oracle
         /// Sign
         /// </summary>
         /// <param name="tx">Transaction</param>
-        /// <returns>Signature</returns>
-        private void Sign(Transaction tx, out byte[] signature)
+        /// <param name="account">Account</param>
+        /// <param name="signature">Signature</param>
+        private void Sign(Transaction tx, KeyPair account, out byte[] signature)
         {
             // Sign the transaction and extract the signature of this oracle
 
