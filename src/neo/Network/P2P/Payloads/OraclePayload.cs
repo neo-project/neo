@@ -61,12 +61,9 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        Witness[] IVerifiable.Witnesses
+        public Witness[] Witnesses
         {
-            get
-            {
-                return new[] { Witness };
-            }
+            get => new[] { Witness };
             set
             {
                 if (value.Length != 1) throw new ArgumentException();
