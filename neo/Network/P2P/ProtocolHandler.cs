@@ -94,6 +94,15 @@ namespace Neo.Network.P2P
                 case "consensus":
                     OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
+                case "stateroot":
+                    OnInventoryReceived(msg.GetPayload<StateRoot>());
+                    break;
+                case "getsts":
+                    OnGetStateRootsReceived(msg.GetPayload<GetStateRootsPayload>());
+                    break;
+                case "sts":
+                    OnStateRootsReceived(msg.GetPayload<StateRootsPayload>());
+                    break;
                 case "filteradd":
                     OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
@@ -153,6 +162,30 @@ namespace Neo.Network.P2P
             {
                 EndPoints = payload.AddressList.Select(p => p.EndPoint)
             });
+        }
+
+        private void OnGetStateRootsReceived(GetStateRootsPayload payload)
+        {
+            var start = payload.StartIndex;
+            var end = Math.Min(payload.EndIndex, start + StateRootsPayload.MaxStateRootsCount - 1);
+            var state_roots = new List<StateRoot>();
+            for (uint i = start; i <= end; i++)
+            {
+                var state = Blockchain.Singleton.GetStateRoot(i);
+                if (state.Flag == StateRootVerifyFlag.Verified)
+                {
+                    state_roots.Add(state.StateRoot);
+                    continue;
+                }
+                break;
+            }
+            Context.Parent.Tell(Message.Create("sts", StateRootsPayload.Create(state_roots)));
+        }
+
+        private void OnStateRootsReceived(StateRootsPayload payload)
+        {
+            if (payload.StateRoots.Length == 0) return;
+            system.Blockchain.Tell(payload.StateRoots, Context.Parent);
         }
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)
@@ -275,6 +308,12 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
+            if (inventory.InventoryType == InventoryType.StateRoot && !knownHashes.Contains(inventory.Hash))
+            {
+                knownHashes.Add(inventory.Hash);
+                system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+                return;
+            }
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
             if (inventory is MinerTransaction) return;
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });

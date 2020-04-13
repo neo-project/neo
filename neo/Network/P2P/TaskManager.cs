@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
+using Neo.Cryptography;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
@@ -9,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Neo.Network.P2P
 {
@@ -19,6 +21,7 @@ namespace Neo.Network.P2P
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
+        public class StateRootTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
 
@@ -41,8 +44,10 @@ namespace Neo.Network.P2P
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private readonly UInt256 HeaderTaskHash = UInt256.Zero;
+        private readonly UInt256 StateRootTaskHash = new UInt256(Crypto.Default.Hash256(Encoding.ASCII.GetBytes("SyncStateRoot")));
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
-
+        private bool HashStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
+        private uint state_root_task_index;
         public TaskManager(NeoSystem system)
         {
             this.system = system;
@@ -54,6 +59,15 @@ namespace Neo.Network.P2P
                 return;
             session.Tasks.Remove(HeaderTaskHash);
             DecrementGlobalTask(HeaderTaskHash);
+            RequestTasks(session);
+        }
+
+        private void OnStateRootTaskCompleted()
+        {
+            if (!sessions.TryGetValue(Sender, out TaskSession session))
+                return;
+            session.Tasks.Remove(StateRootTaskHash);
+            DecrementGlobalTask(StateRootTaskHash);
             RequestTasks(session);
         }
 
@@ -106,6 +120,9 @@ namespace Neo.Network.P2P
                     break;
                 case HeaderTaskCompleted _:
                     OnHeaderTaskCompleted();
+                    break;
+                case StateRootTaskCompleted _:
+                    OnStateRootTaskCompleted();
                     break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
@@ -264,6 +281,24 @@ namespace Neo.Network.P2P
                     && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
             {
                 session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
+            }
+            if (!HashStateRootTask)
+            {
+                var state_height = Math.Max(Blockchain.Singleton.StateHeight, ProtocolSettings.Default.StateRootEnableIndex - 1);
+                var height = Blockchain.Singleton.Height;
+                if (state_height + 2 < height)
+                {
+                    var state = Blockchain.Singleton.GetStateRoot(state_height + 1);
+                    if (state.Flag == StateRootVerifyFlag.Unverified)
+                    {
+                        var start_index = state_height + 1;
+                        var end_index = Math.Min(height, state_height + 200);
+                        state_root_task_index = end_index;
+                        session.Tasks[StateRootTaskHash] = DateTime.UtcNow;
+                        IncrementGlobalTask(StateRootTaskHash);
+                        session.RemoteNode.Tell(Message.Create("getsts", GetStateRootsPayload.Create(start_index, end_index)));
+                    }
+                }
             }
         }
     }
