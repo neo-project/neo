@@ -85,6 +85,16 @@ namespace Neo.Oracle
         }
 
         /// <summary>
+        /// Clear
+        /// </summary>
+        public void Clear()
+        {
+            _cache.Clear();
+            _hash = null;
+            FilterCost = 0;
+        }
+
+        /// <summary>
         /// Constructor for cached results
         /// </summary>
         /// <param name="results">Results</param>

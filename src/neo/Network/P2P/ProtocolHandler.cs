@@ -138,8 +138,7 @@ namespace Neo.Network.P2P
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
                 case MessageCommand.Oracle:
-                    system.Oracle?.Tell((OraclePayload)msg.Payload);
-                    Context.Parent.Tell(msg);
+                    OnOracleReceived((OraclePayload)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
@@ -150,6 +149,19 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
+        }
+
+        private void OnOracleReceived(OraclePayload payload)
+        {
+            // Verify
+
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            if (payload.Verify(snapshot)) return;
+
+            // Send to oracle and relay it
+
+            system.Oracle?.Tell(payload);
+            Context.Parent.Tell(Message.Create(MessageCommand.Oracle, payload));
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)

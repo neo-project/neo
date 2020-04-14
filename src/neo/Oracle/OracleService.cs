@@ -159,10 +159,15 @@ namespace Neo.Oracle
 
         #endregion
 
+        // TODO: Fees
+
         private const long MaxGasFilter = 1_000_000;
+        private const long TxNetworkFee = 1_000_000;
+        private const long TxSystemFee = 1_000_000;
 
         private long _isStarted = 0;
         private Contract _lastContract;
+        private readonly MemoryPool _memPool;
         private readonly IActorRef _localNode;
         private CancellationTokenSource _cancel;
         private readonly (Contract Contract, KeyPair Key)[] _accounts;
@@ -213,11 +218,6 @@ namespace Neo.Oracle
         public int PendingCapacity { get; }
 
         /// <summary>
-        /// MemoryPool
-        /// </summary>
-        public MemoryPool MemPool { get; }
-
-        /// <summary>
         /// Total requests in the pool.
         /// </summary>
         public int PendingRequestCount => _pendingOracleRequest.Count;
@@ -241,8 +241,8 @@ namespace Neo.Oracle
         public OracleService(IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory)
         {
             Oracle = Process;
-            MemPool = Blockchain.Singleton.MemPool;
-            PendingCapacity = MemPool.Capacity;
+            _memPool = Blockchain.Singleton.MemPool;
+            PendingCapacity = _memPool.Capacity;
             _localNode = localNode;
             _snapshotFactory = snapshotFactory ?? new Func<SnapshotView>(() => Blockchain.Singleton.GetSnapshot());
 
@@ -345,6 +345,7 @@ namespace Neo.Oracle
 
                                     // TODO: Send it to mempool?
 
+                                    _memPool.TryAdd(tx.Hash, tx);
                                     break;
                                 }
                         }
@@ -440,7 +441,8 @@ namespace Neo.Oracle
                 if (engine.Execute() != VMState.HALT)
                 {
                     // TODO: If the request TX will FAULT?
-                    // oracle.Clear();
+
+                    oracle.Clear();
                 }
             }
 
@@ -501,12 +503,16 @@ namespace Neo.Oracle
 
             return new Transaction()
             {
+                Witnesses = new Witness[0],
                 Attributes = new TransactionAttribute[0],
                 Version = TransactionVersion.OracleResponse,
-                Sender = sender,
-                Nonce = requestTx.Nonce,
                 ValidUntilBlock = requestTx.ValidUntilBlock,
                 OracleRequestTx = requestTx.Hash,
+                Script = script.ToArray(),
+                NetworkFee = TxNetworkFee,
+                SystemFee = TxSystemFee,
+                Nonce = requestTx.Nonce,
+                Sender = sender,
                 Cosigners = new Cosigner[]
                 {
                     new Cosigner()
@@ -515,27 +521,23 @@ namespace Neo.Oracle
                         AllowedContracts = new UInt160[]{ NativeContract.Oracle.Hash },
                         Scopes = WitnessScope.CustomContracts
                     }
-                },
-                NetworkFee = 1_000_000, // TODO: Define fee
-                SystemFee = 1_000_000,  // TODO: Define fee
-                Witnesses = new Witness[0],
-                Script = script.ToArray()
+                }
             };
         }
 
         #region Sorts
 
-        private int SortRequest(KeyValuePair<UInt256, RequestItem> a, KeyValuePair<UInt256, RequestItem> b)
+        private static int SortRequest(KeyValuePair<UInt256, RequestItem> a, KeyValuePair<UInt256, RequestItem> b)
         {
             return a.Value.CompareTo(b.Value);
         }
 
-        private int SortEnqueuedRequest(KeyValuePair<UInt256, Transaction> a, KeyValuePair<UInt256, Transaction> b)
+        private static int SortEnqueuedRequest(KeyValuePair<UInt256, Transaction> a, KeyValuePair<UInt256, Transaction> b)
         {
             return a.Value.FeePerByte.CompareTo(b.Value.FeePerByte);
         }
 
-        private int SortResponse(KeyValuePair<UInt256, ResponseCollection> a, KeyValuePair<UInt256, ResponseCollection> b)
+        private static int SortResponse(KeyValuePair<UInt256, ResponseCollection> a, KeyValuePair<UInt256, ResponseCollection> b)
         {
             return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
         }
@@ -581,8 +583,8 @@ namespace Neo.Oracle
 
                         _pendingOracleRequest.TryRemove(response.Data.TransactionRequestHash, out _);
 
-                        MemPool.TryAdd(request.ResponseTransaction.Hash, request.ResponseTransaction);
-                        MemPool.TryAdd(request.RequestTransaction.Hash, request.RequestTransaction);
+                        _memPool.TryAdd(request.ResponseTransaction.Hash, request.ResponseTransaction);
+                        _memPool.TryAdd(request.RequestTransaction.Hash, request.RequestTransaction);
                     }
 
                     return true;
@@ -720,6 +722,8 @@ namespace Neo.Oracle
 
         #endregion
 
+        #region Akka
+
         public static Props Props(IActorRef localNode, Wallet wallet)
         {
             return Akka.Actor.Props.Create(() => new OracleService(localNode, wallet, null)).WithMailbox("oracle-service-mailbox");
@@ -731,14 +735,14 @@ namespace Neo.Oracle
 
             internal protected override bool IsHighPriority(object message)
             {
-                switch (message)
+                return message switch
                 {
-                    case Transaction _:
-                        return true;
-                    default:
-                        return false;
-                }
+                    Transaction _ => true,
+                    _ => false,
+                };
             }
         }
+
+        #endregion
     }
 }
