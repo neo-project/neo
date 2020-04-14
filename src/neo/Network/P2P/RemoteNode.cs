@@ -8,22 +8,22 @@ using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
 namespace Neo.Network.P2P
 {
-    public class RemoteNode : Connection
+    public partial class RemoteNode : Connection
     {
+        internal class StartProtocol { }
         internal class Relay { public IInventory Inventory; }
 
         private readonly NeoSystem system;
-        private readonly IActorRef protocol;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
         private ByteString msg_buffer = ByteString.Empty;
-        private BloomFilter bloom_filter;
         private bool ack = true;
         private bool verack = false;
         private bool isWaitingForDisconnect = false;
@@ -38,19 +38,7 @@ namespace Neo.Network.P2P
             : base(connection, remote, local)
         {
             this.system = system;
-            this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
-            Context.Watch(this.protocol);
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
-
-            var capabilities = new List<NodeCapability>
-            {
-                new FullNodeCapability(Blockchain.Singleton.Height)
-            };
-
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
-
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         /// <summary>
@@ -132,9 +120,8 @@ namespace Neo.Network.P2P
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
-
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
-                protocol.Tell(message);
+                OnMessage(message);
         }
 
         protected override void OnReceive(object message)
@@ -142,6 +129,9 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
+                case Timer _:
+                    RefreshPendingKnownHashes();
+                    break;
                 case Message msg:
                     EnqueueMessage(msg);
                     break;
@@ -151,30 +141,12 @@ namespace Neo.Network.P2P
                 case Relay relay:
                     OnRelay(relay.Inventory);
                     break;
-                case VersionPayload payload:
-                    OnVersionPayload(payload);
-                    break;
-                case MessageCommand.Verack:
-                    OnVerack();
-                    break;
-                case ProtocolHandler.SetFilter setFilter:
-                    OnSetFilter(setFilter.Filter);
-                    break;
-                case PingPayload payload:
-                    OnPingPayload(payload);
+                case StartProtocol _:
+                    OnStartProtocol();
                     break;
                 case Terminated child:
                     Context.Stop(Self);
                     break;
-            }
-        }
-
-        private void OnPingPayload(PingPayload payload)
-        {
-            if (payload.LastBlockIndex > LastBlockIndex)
-            {
-                LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
 
@@ -200,50 +172,22 @@ namespace Neo.Network.P2P
             EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
-        private void OnSetFilter(BloomFilter filter)
+        private void OnStartProtocol()
         {
-            bloom_filter = filter;
-        }
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(Blockchain.Singleton.Height)
+            };
 
-        private void OnVerack()
-        {
-            verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Version = Version });
-            CheckMessageQueue();
-        }
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
 
-        private void OnVersionPayload(VersionPayload version)
-        {
-            Version = version;
-            foreach (NodeCapability capability in version.Capabilities)
-            {
-                switch (capability)
-                {
-                    case FullNodeCapability fullNodeCapability:
-                        IsFullNode = true;
-                        LastBlockIndex = fullNodeCapability.StartHeight;
-                        break;
-                    case ServerCapability serverCapability:
-                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
-                            ListenerTcpPort = serverCapability.Port;
-                        break;
-                }
-            }
-            if (version.Magic != ProtocolSettings.Default.Magic)
-            {
-                DisconnectWithReason(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
-                return;
-            }
-            if (LocalNode.Singleton.CheckDuplicateNonce(Self, this))
-            {
-                DisconnectWithReason(DisconnectReason.DuplicateNonce);
-                return;
-            }
-            SendMessage(Message.Create(MessageCommand.Verack));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         protected override void PostStop()
         {
+            timer.CancelIfNotNull();
             LocalNode.Singleton.RemoteNodes.TryRemove(Self, out _);
             base.PostStop();
         }
@@ -257,15 +201,6 @@ namespace Neo.Network.P2P
         {
             ack = false;
             SendData(ByteString.FromBytes(message.ToArray()));
-        }
-
-        protected override SupervisorStrategy SupervisorStrategy()
-        {
-            return new OneForOneStrategy(ex =>
-            {
-                Disconnect(true);
-                return Directive.Stop;
-            }, loggingEnabled: false);
         }
 
         private Message TryParseMessage()
@@ -303,10 +238,39 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
+                case Message msg:
+                    switch (msg.Command)
+                    {
+                        case MessageCommand.Consensus:
+                        case MessageCommand.FilterAdd:
+                        case MessageCommand.FilterClear:
+                        case MessageCommand.FilterLoad:
+                        case MessageCommand.Verack:
+                        case MessageCommand.Version:
+                        case MessageCommand.Alert:
+                            return true;
+                        default:
+                            return false;
+                    }
                 case Tcp.ConnectionClosed _:
-                case Connection.Timer _:
+                case Connection.Close _:
                 case Connection.Ack _:
                     return true;
+                default:
+                    return false;
+            }
+        }
+
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        {
+            if (!(message is Message msg)) return false;
+            switch (msg.Command)
+            {
+                case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
+                case MessageCommand.GetHeaders:
+                case MessageCommand.Mempool:
+                    return queue.OfType<Message>().Any(p => p.Command == msg.Command);
                 default:
                     return false;
             }

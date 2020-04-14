@@ -1,7 +1,6 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
@@ -301,6 +300,11 @@ namespace Neo.Network.P2P
             var payload = DisconnectPayload.Create(reason, data);
             var message = Message.Create(MessageCommand.Disconnect, payload);
             return message;
+        }
+
+        protected override void OnTcpConnected(IActorRef connection)
+        {
+            connection.Tell(new RemoteNode.StartProtocol());
         }
 
         public static Props Props(NeoSystem system)

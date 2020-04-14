@@ -338,10 +338,10 @@ namespace Neo.UnitTests.SmartContract
                 .Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
 
             engine.CurrentContext.EvaluationStack.Push(new byte[1024 * 1024 * 2]); //Larger than MaxItemSize
-            InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => InteropService.Invoke(engine, InteropService.Binary.Serialize));
 
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new object()));  //NotSupportedException
-            InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeFalse();
+            Assert.ThrowsException<NotSupportedException>(() => InteropService.Invoke(engine, InteropService.Binary.Serialize));
         }
 
         [TestMethod]
@@ -471,7 +471,7 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Blockchain.GetContract).Should().BeTrue();
             var stackItems = ((VM.Types.Array)engine.CurrentContext.EvaluationStack.Pop()).ToArray();
             stackItems.Length.Should().Be(3);
-            stackItems[0].GetType().Should().Be(typeof(ByteArray));
+            stackItems[0].GetType().Should().Be(typeof(ByteString));
             stackItems[0].GetSpan().ToHexString().Should().Be(state.Script.ToHexString());
             stackItems[1].ToBoolean().Should().BeFalse();
             stackItems[2].ToBoolean().Should().BeFalse();
@@ -859,6 +859,45 @@ namespace Neo.UnitTests.SmartContract
             InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
 
+        }
+
+        [TestMethod]
+        public void TestContract_CreateStandardAccount()
+        {
+            var engine = GetEngine(true, true);
+            byte[] data = "024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
+
+            engine.CurrentContext.EvaluationStack.Push(data);
+            InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Parse("0x2c847208959ec1cc94dd13bfe231fa622a404a8a").ToArray());
+
+            data = "064b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Invalid point encoding 6");
+
+            data = "024b817ef37f2fc3d4a33fe36687e599f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Incorrect length for compressed encoding");
+
+            data = "02ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            Assert.ThrowsException<ArgumentException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("x value too large in field element");
+
+            data = "020fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            Assert.ThrowsException<ArithmeticException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Invalid point compression");
+
+            data = "044b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Incorrect length for uncompressed/hybrid encoding");
+
+            data = "04ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            Assert.ThrowsException<ArgumentException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("x value too large in field element");
+
+            data = "040fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
+            engine.CurrentContext.EvaluationStack.Push(data);
+            Assert.ThrowsException<ArgumentException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("x value too large in field element");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)

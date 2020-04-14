@@ -11,14 +11,12 @@ using System.Net;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    [NotReRunnable]
-    public class UT_RemoteNode : TestKit
+    public partial class UT_RemoteNode : TestKit
     {
         private static NeoSystem testBlockchain;
 
         public UT_RemoteNode()
-            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
-                $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}")
+            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}")
         {
         }
 
@@ -34,9 +32,7 @@ namespace Neo.UnitTests.Network.P2P
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
-            connectionTestProbe.ExpectMsg<Tcp.Write>();
-
-            var payload = new VersionPayload()
+            var msg = Message.Create(MessageCommand.Version, new VersionPayload
             {
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
@@ -47,10 +43,10 @@ namespace Neo.UnitTests.Network.P2P
                 {
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
                 }
-            };
+            });
 
             var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActor, payload);
+            testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
 
             var tcpWrite = connectionTestProbe.ExpectMsg<Tcp.Write>();
             Message message = tcpWrite.Data.ToArray().AsSerializable<Message>();
@@ -69,9 +65,7 @@ namespace Neo.UnitTests.Network.P2P
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
-            connectionTestProbe.ExpectMsg<Tcp.Write>();
-
-            var payload = new VersionPayload()
+            var msg = Message.Create(MessageCommand.Version, new VersionPayload()
             {
                 UserAgent = "Unit Test".PadLeft(1024, '0'),
                 Nonce = 1,
@@ -82,10 +76,10 @@ namespace Neo.UnitTests.Network.P2P
                 {
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
                 }
-            };
+            });
 
             var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActor, payload);
+            testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
 
             var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
 
@@ -110,21 +104,24 @@ namespace Neo.UnitTests.Network.P2P
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
                 }
             };
+            var tcpData = new Tcp.Received((ByteString)Message.Create(MessageCommand.Version, payload).ToArray());
 
             // send to remote node A
             var remoteNodeActorA = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbeA, Remote, null));
+            remoteNodeActorA.Tell(new RemoteNode.StartProtocol());
             connectionTestProbeA.ExpectMsg<Tcp.Write>(); // remote node A will send version message
 
             var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActorA, payload);
+            testProbe.Send(remoteNodeActorA, tcpData);
 
             // set remote node B with the same address
             var connectionTestProbeB = CreateTestProbe();
             var remoteNodeActorB = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbeB, Remote, null));
+            remoteNodeActorB.Tell(new RemoteNode.StartProtocol());
             connectionTestProbeB.ExpectMsg<Tcp.Write>();    // remote node B will send version message
 
             var testProbeB = CreateTestProbe();
-            testProbeB.Send(remoteNodeActorB, payload); // send a version message to remote node B, and B will disconnect with `DuplicateConnection`
+            testProbeB.Send(remoteNodeActorB, tcpData); // send a version message to remote node B, and B will disconnect with `DuplicateConnection`
 
             var tcpWrite = connectionTestProbeB.ExpectMsg<Tcp.Write>();
             var message = tcpWrite.Data.ToArray().AsSerializable<Message>();

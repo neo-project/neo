@@ -180,6 +180,7 @@ namespace Neo.VM
             {
                 PrimitiveType p => p.Size,
                 Buffer b => b.Size,
+                Null _ => 0,
                 _ => throw new ArgumentException(),
             };
         }
@@ -260,7 +261,7 @@ namespace Neo.VM
                         Value = item.ToBoolean()
                     };
                     break;
-                case ByteArray array:
+                case ByteString array:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,

@@ -232,6 +232,11 @@ namespace Neo.Network.P2P
             Context.Watch(connection);
             Sender.Tell(new Tcp.Register(connection));
             ConnectedPeers.TryAdd(connection, remote);
+            OnTcpConnected(connection);
+        }
+
+        protected virtual void OnTcpConnected(IActorRef connection)
+        {
         }
 
         /// <summary>

@@ -10,6 +10,7 @@ namespace Neo.Network.P2P
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
+                writer.Write(ProtocolSettings.Default.Magic);
                 verifiable.SerializeUnsigned(writer);
                 writer.Flush();
                 return ms.ToArray();
