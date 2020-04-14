@@ -422,6 +422,17 @@ namespace Neo.Ledger
             VerifyResult reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
             if (reason != VerifyResult.Succeed) return reason;
             if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
+
+            switch (transaction.Version)
+            {
+                case TransactionVersion.OracleRequest:
+                case TransactionVersion.OracleResponse:
+                    {
+                        system.Oracle?.Tell(transaction);
+                        break;
+                    }
+            }
+
             return VerifyResult.Succeed;
         }
 

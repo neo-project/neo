@@ -167,7 +167,7 @@ namespace Neo.Oracle
 
         private long _isStarted = 0;
         private Contract _lastContract;
-        private readonly MemoryPool _memPool;
+        private readonly NeoSystem _system;
         private readonly IActorRef _localNode;
         private CancellationTokenSource _cancel;
         private readonly (Contract Contract, KeyPair Key)[] _accounts;
@@ -215,7 +215,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
         /// </summary>
-        public int PendingCapacity { get; }
+        public int PendingCapacity => _pendingOracleRequest.Capacity;
 
         /// <summary>
         /// Total requests in the pool.
@@ -235,14 +235,14 @@ namespace Neo.Oracle
         /// <summary>
         /// Constructor
         /// </summary>
+        /// <param name="system">System</param>
         /// <param name="localNode">Local node</param>
         /// <param name="wallet">Wallet</param>
         /// <param name="snapshotFactory">Snapshot factory</param>
-        public OracleService(IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory)
+        public OracleService(NeoSystem system, IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory)
         {
             Oracle = Process;
-            _memPool = Blockchain.Singleton.MemPool;
-            PendingCapacity = _memPool.Capacity;
+            _system = system;
             _localNode = localNode;
             _snapshotFactory = snapshotFactory ?? new Func<SnapshotView>(() => Blockchain.Singleton.GetSnapshot());
 
@@ -343,9 +343,6 @@ namespace Neo.Oracle
                                         ReverifyPendingResponses(snapshot, tx.OracleRequestTx);
                                     }
 
-                                    // TODO: Send it to mempool?
-
-                                    _memPool.TryAdd(tx.Hash, tx);
                                     break;
                                 }
                         }
@@ -582,9 +579,10 @@ namespace Neo.Oracle
                         // Done! Send to mem pool
 
                         _pendingOracleRequest.TryRemove(response.Data.TransactionRequestHash, out _);
+                        _system.Blockchain.Tell(request.ResponseTransaction);
 
-                        _memPool.TryAdd(request.ResponseTransaction.Hash, request.ResponseTransaction);
-                        _memPool.TryAdd(request.RequestTransaction.Hash, request.RequestTransaction);
+                        // Request should be already there
+                        //_system.Blockchain.Tell(request.RequestTransaction);
                     }
 
                     return true;
@@ -724,9 +722,9 @@ namespace Neo.Oracle
 
         #region Akka
 
-        public static Props Props(IActorRef localNode, Wallet wallet)
+        public static Props Props(NeoSystem system, IActorRef localNode, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new OracleService(localNode, wallet, null)).WithMailbox("oracle-service-mailbox");
+            return Akka.Actor.Props.Create(() => new OracleService(system, localNode, wallet, null)).WithMailbox("oracle-service-mailbox");
         }
 
         internal class OracleServiceMailbox : PriorityMailbox

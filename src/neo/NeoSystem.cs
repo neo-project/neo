@@ -83,7 +83,7 @@ namespace Neo
         public void StartOracle(Wallet wallet)
         {
             if (Oracle != null) return;
-            Oracle = ActorSystem.ActorOf(OracleService.Props(this.LocalNode, wallet));
+            Oracle = ActorSystem.ActorOf(OracleService.Props(this, this.LocalNode, wallet));
             Oracle.Tell(new OracleService.StartMessage(), Blockchain);
         }
 

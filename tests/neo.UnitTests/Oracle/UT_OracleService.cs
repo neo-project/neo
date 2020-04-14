@@ -188,7 +188,7 @@ namespace Neo.UnitTests.Oracle
         {
             TestProbe subscriber = CreateTestProbe();
 
-            var service = new OracleService(subscriber, _wallet, MockedSnapshotFactory);
+            var service = new OracleService(TestBlockchain.TheNeoSystem, subscriber, _wallet, MockedSnapshotFactory);
             Assert.IsFalse(service.IsStarted);
             service.Start();
             Assert.IsTrue(service.IsStarted);
@@ -204,7 +204,7 @@ namespace Neo.UnitTests.Oracle
             OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             TestProbe subscriber = CreateTestProbe();
-            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(subscriber, _wallet, MockedSnapshotFactory));
+            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(TestBlockchain.TheNeoSystem, subscriber, _wallet, MockedSnapshotFactory));
 
             service.UnderlyingActor.Start();
 
