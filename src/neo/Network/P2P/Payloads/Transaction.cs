@@ -324,6 +324,20 @@ namespace Neo.Network.P2P.Payloads
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
+
+            if (Version == TransactionVersion.OracleResponse)
+            {
+                // Oracle response only can be signed by oracle nodes
+
+                var hashes = GetScriptHashesForVerifying(snapshot);
+
+                if (hashes.Length != 1 || hashes[0] != NativeContract.Oracle.GetOracleMultiSigAddress(snapshot))
+                {
+                    return VerifyResult.Invalid;
+                }
+            }
+
+
             return VerifyResult.Succeed;
         }
 
