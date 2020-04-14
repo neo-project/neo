@@ -1,5 +1,4 @@
-﻿using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
