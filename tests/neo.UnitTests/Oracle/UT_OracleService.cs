@@ -189,9 +189,9 @@ namespace Neo.UnitTests.Oracle
 
             // Receive response
 
-            var response = subscriber.ExpectMsg<OracleService.OracleServiceResponse>(TimeSpan.FromSeconds(10));
-            Assert.AreEqual(0, response.OracleResponseSignature.Length);
-            Assert.AreEqual(1, response.ExecutionResult.Count);
+            var response = subscriber.ExpectMsg<OraclePayload>(TimeSpan.FromSeconds(10));
+            Assert.AreEqual(0, response.OracleSignature.Signature.Length);
+            Assert.AreEqual(1, response.Data.Length);
 
             var entry = response.ExecutionResult.First();
             Assert.IsFalse(entry.Value.Error);

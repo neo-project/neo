@@ -15,6 +15,8 @@ namespace Neo.Ledger
 
         public event EventHandler<KeyValuePair<TKey, TValue>> OnTrimEnd;
 
+        private readonly object _lock = new object();
+
         /// <summary>
         /// Count
         /// </summary>
@@ -22,7 +24,7 @@ namespace Neo.Ledger
         {
             get
             {
-                lock (_sortedValues)
+                lock (_lock)
                 {
                     return _sortedValues.Count;
                 }
@@ -50,7 +52,7 @@ namespace Neo.Ledger
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            lock (_sortedValues)
+            lock (_lock)
             {
                 return _keys.TryGetValue(key, out value);
             }
@@ -58,7 +60,7 @@ namespace Neo.Ledger
 
         public bool TryRemove(TKey key, out TValue value)
         {
-            lock (_sortedValues)
+            lock (_lock)
             {
                 if (_keys.Remove(key, out value))
                 {
@@ -72,7 +74,7 @@ namespace Neo.Ledger
 
         public bool TryAdd(TKey key, TValue value)
         {
-            lock (_sortedValues)
+            lock (_lock)
             {
                 if (_keys.TryAdd(key, value))
                 {
@@ -105,6 +107,36 @@ namespace Neo.Ledger
             return false;
         }
 
+        public void Clear()
+        {
+            lock (_lock)
+            {
+                _sortedValues.Clear();
+                _keys.Clear();
+            }
+        }
+
+        public bool TryPop(out TValue value)
+        {
+            lock (_lock)
+            {
+                if (_sortedValues.Count > 0)
+                {
+                    Sort();
+
+                    var entry = _sortedValues[0];
+                    _sortedValues.RemoveAt(0);
+                    _keys.Remove(entry.Key);
+
+                    value = entry.Value;
+                    return true;
+                }
+            }
+
+            value = default;
+            return false;
+        }
+
         #region Get sorted list
 
         /// <summary>
@@ -122,7 +154,7 @@ namespace Neo.Ledger
         {
             KeyValuePair<TKey, TValue>[] array;
 
-            lock (_sortedValues)
+            lock (_lock)
             {
                 Sort();
                 array = _sortedValues.ToArray();
