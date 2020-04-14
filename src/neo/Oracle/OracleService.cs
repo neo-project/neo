@@ -127,6 +127,7 @@ namespace Neo.Oracle
         private readonly IActorRef _localNode;
         private CancellationTokenSource _cancel;
         private readonly (Contract Contract, KeyPair Key)[] _accounts;
+        private readonly Func<SnapshotView> _snapshotFactory;
 
         /// <summary>
         /// Number of threads for processing the oracle
@@ -197,16 +198,18 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="localNode">Local node</param>
         /// <param name="wallet">Wallet</param>
-        public OracleService(IActorRef localNode, Wallet wallet)
+        /// <param name="snapshotFactory">Snapshot factory</param>
+        public OracleService(IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory)
         {
             Oracle = Process;
             MemPool = Blockchain.Singleton.MemPool;
             PendingCapacity = MemPool.Capacity;
             _localNode = localNode;
+            _snapshotFactory = snapshotFactory ?? new Func<SnapshotView>(() => Blockchain.Singleton.GetSnapshot());
 
             // Find oracle account
 
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            using var snapshot = _snapshotFactory();
             var oracles = NativeContract.Oracle.GetOracleValidators(snapshot)
                 .Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash());
 
@@ -251,7 +254,7 @@ namespace Neo.Oracle
                     }
                 case Transaction tx:
                     {
-                        using var snapshot = Blockchain.Singleton.GetSnapshot();
+                        using var snapshot = _snapshotFactory();
                         var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
 
                         switch (tx.Version)
@@ -387,7 +390,7 @@ namespace Neo.Oracle
         private void ProcessRequestTransaction(Transaction tx)
         {
             var oracle = new OracleExecutionCache(Process);
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            using var snapshot = _snapshotFactory();
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
             {
                 engine.LoadScript(tx.Script);
@@ -677,7 +680,7 @@ namespace Neo.Oracle
 
         public static Props Props(IActorRef localNode, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new OracleService(localNode, wallet)).WithMailbox("oracle-service-mailbox");
+            return Akka.Actor.Props.Create(() => new OracleService(localNode, wallet, null)).WithMailbox("oracle-service-mailbox");
         }
 
         internal class OracleServiceMailbox : PriorityMailbox

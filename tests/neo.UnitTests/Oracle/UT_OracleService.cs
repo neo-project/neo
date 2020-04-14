@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -18,6 +17,8 @@ using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -32,10 +33,33 @@ namespace Neo.UnitTests.Oracle
     [TestClass]
     public class UT_OracleService : TestKit
     {
+        private WalletAccount _account;
+        private NEP6Wallet _wallet;
+
         [TestInitialize]
         public void Init()
         {
+            _wallet = TestUtils.GenerateTestWallet();
+            using var unlockA = _wallet.Unlock("123");
+            _account = _wallet.CreateAccount();
+
             TestBlockchain.InitializeMockNeoSystem();
+        }
+
+        SnapshotView MockedSnapshotFactory()
+        {
+            // TODO: Mock blockchain is not possible
+
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            foreach (var cn in Blockchain.StandbyValidators)
+            {
+                var key = NativeContract.Oracle.CreateStorageKey(OracleContract.Prefix_Validator, cn);
+                var value = snapshot.Storages.GetOrAdd(key, () => new StorageItem() { IsConstant = false });
+                value.Value = _account.GetKey().PublicKey.ToArray();
+            }
+
+            return snapshot;
         }
 
         public static IWebHost CreateServer(int port)
@@ -163,7 +187,7 @@ namespace Neo.UnitTests.Oracle
         {
             TestProbe subscriber = CreateTestProbe();
 
-            var service = new OracleService(subscriber, null);
+            var service = new OracleService(subscriber, _wallet, MockedSnapshotFactory);
             Assert.IsFalse(service.IsStarted);
             service.Start();
             Assert.IsTrue(service.IsStarted);
@@ -179,25 +203,7 @@ namespace Neo.UnitTests.Oracle
             OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             TestProbe subscriber = CreateTestProbe();
-
-            var wallet = TestUtils.GenerateTestWallet();
-            using var unlockA = wallet.Unlock("123");
-            var account = wallet.CreateAccount();
-
-            // TODO: Mock blockchain is not possible
-
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            foreach (var cn in Blockchain.StandbyValidators)
-            {
-                var key = NativeContract.Oracle.CreateStorageKey(OracleContract.Prefix_Validator, cn);
-                var value = snapshot.Storages.GetOrAdd(key, () => new StorageItem() { IsConstant = false });
-                value.Value = account.GetKey().PublicKey.ToArray();
-            }
-
-            snapshot.Commit();
-
-            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(subscriber, wallet));
+            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(subscriber, _wallet, MockedSnapshotFactory));
 
             service.UnderlyingActor.Start();
 
@@ -214,7 +220,7 @@ namespace Neo.UnitTests.Oracle
 
             var response = subscriber.ExpectMsg<OraclePayload>(TimeSpan.FromSeconds(10));
             Assert.AreEqual(117, response.Data.Length);
-            Assert.AreEqual(account.GetKey().PublicKey, response.OraclePub);
+            Assert.AreEqual(_account.GetKey().PublicKey, response.OraclePub);
 
             Assert.IsNotNull(response.OracleSignature);
             // pong
