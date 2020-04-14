@@ -27,7 +27,7 @@ namespace Neo.Trie.MPT
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            Value = reader.ReadVarBytes();
+            Value = reader.ReadVarBytes(ushort.MaxValue);
         }
 
         public override JObject ToJson()

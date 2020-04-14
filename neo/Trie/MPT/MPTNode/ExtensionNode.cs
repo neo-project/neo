@@ -7,7 +7,7 @@ namespace Neo.Trie.MPT
 {
     public class ExtensionNode : MPTNode
     {
-        //max StorageKey lenght
+        //Max StorageKey length
         public const int MaxKeyLength = 1125;
         public byte[] Key;
         public MPTNode Next;
@@ -26,7 +26,7 @@ namespace Neo.Trie.MPT
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            Key = reader.ReadVarBytes();
+            Key = reader.ReadVarBytes(MaxKeyLength);
             var hashNode = new HashNode();
             hashNode.DecodeSpecific(reader);
             Next = hashNode;

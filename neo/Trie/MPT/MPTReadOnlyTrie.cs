@@ -6,7 +6,7 @@ namespace Neo.Trie.MPT
 {
     public class MPTReadOnlyTrie
     {
-        private MPTReadOnlyDb rodb;
+        private readonly MPTReadOnlyDb rodb;
         protected MPTNode root;
 
         public MPTReadOnlyTrie(UInt256 root, IKVReadOnlyStore store)
