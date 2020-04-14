@@ -313,7 +313,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
