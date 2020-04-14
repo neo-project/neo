@@ -726,21 +726,7 @@ namespace Neo.Oracle
 
         public static Props Props(NeoSystem system, IActorRef localNode, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new OracleService(system, localNode, wallet, null, ProtocolSettings.Default.MemoryPoolMaxTransactions)).WithMailbox("oracle-service-mailbox");
-        }
-
-        internal class OracleServiceMailbox : PriorityMailbox
-        {
-            public OracleServiceMailbox(Settings settings, Config config) : base(settings, config) { }
-
-            internal protected override bool IsHighPriority(object message)
-            {
-                return message switch
-                {
-                    Transaction _ => true,
-                    _ => false,
-                };
-            }
+            return Akka.Actor.Props.Create(() => new OracleService(system, localNode, wallet, null, ProtocolSettings.Default.MemoryPoolMaxTransactions));
         }
 
         #endregion
