@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace Neo.IO
@@ -7,19 +6,42 @@ namespace Neo.IO
     {
         public static readonly ByteArrayEqualityComparer Default = new ByteArrayEqualityComparer();
 
-        public bool Equals(byte[] a, byte[] b)
+        public unsafe bool Equals(byte[] x, byte[] y)
         {
-            if (a.Length != b.Length) return false;
-            for (int i = 0; i < a.Length; i++)
+            if (ReferenceEquals(x, y)) return true;
+            if (x is null || y is null) return false;
+            int len = x.Length;
+            if (len != y.Length) return false;
+            if (len == 0) return true;
+            fixed (byte* xp = x, yp = y)
             {
-                if (a[i] != b[i]) return false;
+                long* xlp = (long*)xp, ylp = (long*)yp;
+                for (; len >= 8; len -= 8)
+                {
+                    if (*xlp != *ylp) return false;
+                    xlp++;
+                    ylp++;
+                }
+                byte* xbp = (byte*)xlp, ybp = (byte*)ylp;
+                for (; len > 0; len--)
+                {
+                    if (*xbp != *ybp) return false;
+                    xbp++;
+                    ybp++;
+                }
             }
             return true;
         }
 
-        public int GetHashCode(byte[] a)
+        public int GetHashCode(byte[] obj)
         {
-            return a.ToInt32(0);
+            unchecked
+            {
+                int hash = 17;
+                foreach (byte element in obj)
+                    hash = hash * 31 + element;
+                return hash;
+            }
         }
     }
 }
