@@ -81,7 +81,7 @@ namespace Neo.Cryptography.ECC
             return p;
         }
 
-        public static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
+        private static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
         {
             ECFieldElement x = new ECFieldElement(X1, curve);
             ECFieldElement alpha = x * (x.Square() + curve.A) + curve.B;
