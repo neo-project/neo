@@ -110,8 +110,9 @@ namespace Neo.Oracle
             public ECPoint OraclePub => Msg.OraclePub;
             public UInt160 Hash => Msg.Hash;
 
-            internal ResponseItem(OraclePayload payload, Transaction responseTx) : base(null)
+            internal ResponseItem(OraclePayload payload, Transaction responseTx) : base(responseTx)
             {
+                Msg = payload;
                 Data = payload.OracleSignature;
                 ResponseTx = responseTx;
             }
@@ -124,7 +125,7 @@ namespace Neo.Oracle
         private long _isStarted = 0;
         private Contract _lastContract;
         private readonly IActorRef _localNode;
-        private readonly KeyPair[] _accounts;
+        private (Contract Contract, KeyPair Key)[] _accounts;
         private CancellationTokenSource _cancel;
 
         /// <summary>
@@ -205,18 +206,18 @@ namespace Neo.Oracle
 
             // Find oracle account
 
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            using var snapshot = GetSnapshot();
             var oracles = NativeContract.Oracle.GetOracleValidators(snapshot)
                 .Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash());
 
             _accounts = wallet?.GetAccounts()
                 .Where(u => u.HasKey && !u.Lock && oracles.Contains(u.ScriptHash))
-                .Select(u => u.GetKey())
+                .Select(u => (u.Contract, u.GetKey()))
                 .ToArray();
 
             if (_accounts.Length == 0)
             {
-                throw new ArgumentException(nameof(wallet));
+                throw new ArgumentException("The wallet doesn't have any of the expected accounts");
             }
 
             _queue = new SortedConcurrentDictionary<UInt256, Transaction>
@@ -237,6 +238,14 @@ namespace Neo.Oracle
         }
 
         /// <summary>
+        /// For UT
+        /// </summary>
+        internal virtual SnapshotView GetSnapshot()
+        {
+            return Blockchain.Singleton.GetSnapshot();
+        }
+
+        /// <summary>
         /// Receive AKKA Messages
         /// </summary>
         protected override void OnReceive(object message)
@@ -250,7 +259,7 @@ namespace Neo.Oracle
                     }
                 case Transaction tx:
                     {
-                        using var snapshot = Blockchain.Singleton.GetSnapshot();
+                        using var snapshot = GetSnapshot();
                         var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
 
                         switch (tx.Version)
@@ -271,7 +280,6 @@ namespace Neo.Oracle
                                     if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(contract, tx)))
                                     {
                                         ReverifyPendingResponses(snapshot, tx.Hash);
-                                        //Self.Tell(tx);
                                     }
 
                                     // Process oracle - Pop one item if it's needed
@@ -387,31 +395,33 @@ namespace Neo.Oracle
         private void ProcessRequestTransaction(Transaction tx)
         {
             var oracle = new OracleExecutionCache(Process);
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
-            using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
-            engine.LoadScript(tx.Script);
-
-            if (engine.Execute() != VMState.HALT)
+            using var snapshot = GetSnapshot();
+            using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
             {
-                // TODO: If the request TX will FAULT?
-                // oracle.Clear();
+                engine.LoadScript(tx.Script);
+
+                if (engine.Execute() != VMState.HALT)
+                {
+                    // TODO: If the request TX will FAULT?
+                    // oracle.Clear();
+                }
             }
 
             // Create deterministic oracle response
 
             var responseTx = CreateResponseTransaction(snapshot, oracle, tx);
 
-            foreach (var keyPair in _accounts)
+            foreach (var account in _accounts)
             {
                 // Sign the transaction
 
-                var signature = responseTx.Sign(keyPair);
+                var signature = responseTx.Sign(account.Key);
 
                 // Create the payload
 
                 var response = new OraclePayload()
                 {
-                    OraclePub = keyPair.PublicKey,
+                    OraclePub = account.Key.PublicKey,
                     OracleSignature = new OracleResponseSignature()
                     {
                         OracleExecutionCacheHash = oracle.Hash,
@@ -420,11 +430,19 @@ namespace Neo.Oracle
                     }
                 };
 
-                if (TryAddOracleResponse(snapshot, response, responseTx))
-                {
-                    // Send my signature by P2P
+                signature = response.Sign(account.Key);
 
-                    _localNode.Tell(response);
+                var signPayload = new ContractParametersContext(response);
+                if (signPayload.AddSignature(account.Contract, account.Key.PublicKey, signature) && signPayload.Completed)
+                {
+                    response.Witness = signPayload.GetWitnesses()[0];
+
+                    if (TryAddOracleResponse(snapshot, response, responseTx))
+                    {
+                        // Send my signature by P2P
+
+                        _localNode.Tell(response);
+                    }
                 }
             }
         }
@@ -446,6 +464,7 @@ namespace Neo.Oracle
 
             return new Transaction()
             {
+                Attributes = new TransactionAttribute[0],
                 Version = TransactionVersion.OracleResponse,
                 Sender = sender,
                 Nonce = requestTx.Nonce,

@@ -21,10 +21,10 @@ namespace Neo.SmartContract.Native.Oracle
 
         public override int Id => -4;
 
-        private const byte Prefix_Validator = 24;
-        private const byte Prefix_Config = 25;
-        private const byte Prefix_PerRequestFee = 26;
-        private const byte Prefix_OracleResponse = 27;
+        internal const byte Prefix_Validator = 24;
+        internal const byte Prefix_Config = 25;
+        internal const byte Prefix_PerRequestFee = 26;
+        internal const byte Prefix_OracleResponse = 27;
 
         public OracleContract()
         {
