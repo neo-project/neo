@@ -13,12 +13,17 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => StateRoots.GetVarSize();
 
-        public static StateRootsPayload Create(IEnumerable<StateRoot> state_roots)
+        public static IEnumerable<StateRootsPayload> Create(IEnumerable<StateRoot> state_roots)
         {
-            return new StateRootsPayload
+            while (state_roots.Any())
             {
-                StateRoots = state_roots.ToArray()
-            };
+                var payload = new StateRootsPayload
+                {
+                    StateRoots = state_roots.Take(MaxStateRootsCount).ToArray()
+                };
+                yield return payload;
+                state_roots = state_roots.Skip(MaxStateRootsCount);
+            }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
