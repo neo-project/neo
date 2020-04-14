@@ -4,6 +4,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle.Protocols.Https;
 using Neo.Persistence;
@@ -223,6 +224,8 @@ namespace Neo.Oracle
                 throw new ArgumentException("The wallet doesn't have any of the expected accounts");
             }
 
+            // Create queue for pending request that should be processed
+
             _queue = new SortedConcurrentDictionary<UInt256, Transaction>
                 (
                 Comparer<KeyValuePair<UInt256, Transaction>>.Create(SortEnqueuedRequest), PendingCapacity
@@ -313,7 +316,8 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// Move one transaction from _orderedPool to _asyncPool
+        /// Move one transaction from the sorted queue to _asyncPool, this will ensure that the threads process the
+        /// transactions according to the priority
         /// </summary>
         private void PopTransaction()
         {
@@ -436,7 +440,7 @@ namespace Neo.Oracle
                     {
                         // Send my signature by P2P
 
-                        _localNode.Tell(response);
+                        _localNode.Tell(Message.Create(MessageCommand.Oracle, response));
                     }
                 }
             }

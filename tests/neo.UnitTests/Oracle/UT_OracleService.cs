@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
@@ -218,7 +219,10 @@ namespace Neo.UnitTests.Oracle
 
             // Receive response
 
-            var response = subscriber.ExpectMsg<OraclePayload>(TimeSpan.FromSeconds(10));
+            var responseMsg = subscriber.ExpectMsg<Message>(TimeSpan.FromSeconds(10));
+            Assert.AreEqual(MessageCommand.Oracle, responseMsg.Command);
+
+            var response = responseMsg.Payload as OraclePayload;
             Assert.AreEqual(117, response.Data.Length);
             Assert.AreEqual(_account.GetKey().PublicKey, response.OraclePub);
 
