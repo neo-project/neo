@@ -26,7 +26,7 @@ namespace Neo.Trie.MPT
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            Key = reader.ReadVarBytes();
+            Key = reader.ReadVarBytes(MaxKeyLength);
             var hashNode = new HashNode();
             hashNode.DecodeSpecific(reader);
             Next = hashNode;
