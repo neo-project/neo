@@ -38,6 +38,7 @@ namespace Neo.Oracle
             // Response
 
             public readonly Contract Contract;
+            public UInt160 ExpectedResultHash;
             public Transaction ResponseTransaction;
             private ContractParametersContext ResponseContext;
 
@@ -66,7 +67,17 @@ namespace Neo.Oracle
                     // Oracle service could attach the real TX
 
                     ResponseTransaction = response.ResponseTx;
+                    ExpectedResultHash = response.ResultHash;
                     ResponseContext = new ContractParametersContext(response.ResponseTx);
+                }
+                else
+                {
+                    if (response.ResultHash != ExpectedResultHash)
+                    {
+                        // Unexpected result
+
+                        return false;
+                    }
                 }
 
                 // TODO: Check duplicate call
@@ -78,22 +89,48 @@ namespace Neo.Oracle
         private class ResponseCollection : IEnumerable<ResponseItem>
         {
             public readonly DateTime Timestamp;
-            public readonly IDictionary<UInt160, ResponseItem> Items = new ConcurrentDictionary<UInt160, ResponseItem>();
+            public readonly SortedConcurrentDictionary<UInt160, ResponseItem> Items;
 
             public ResponseCollection(ResponseItem item)
             {
                 Timestamp = item.Timestamp;
+                Items = new SortedConcurrentDictionary<UInt160, ResponseItem>
+                    (
+                    Comparer<KeyValuePair<UInt160, ResponseItem>>.Create(Sort), 1_000
+                    );
+
                 Add(item);
+            }
+
+            private int Sort(KeyValuePair<UInt160, ResponseItem> a, KeyValuePair<UInt160, ResponseItem> b)
+            {
+                // Sort by if it's mine or not
+
+                int av = a.Value.ResponseTx != null ? 1 : 0;
+                int bv = b.Value.ResponseTx != null ? 1 : 0;
+
+                int ret = av.CompareTo(bv);
+
+                if (ret == 0)
+                {
+                    // Sort by time
+
+                    return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
+                }
+
+                return ret;
             }
 
             public bool Add(ResponseItem item)
             {
-                return Items.TryAdd(item.Hash, item);
+                // Prevent duplicate messages
+
+                return Items.TryAdd(item.MsgHash, item);
             }
 
             public IEnumerator<ResponseItem> GetEnumerator()
             {
-                return (IEnumerator<ResponseItem>)Items.Values.ToArray().GetEnumerator();
+                return (IEnumerator<ResponseItem>)Items.Select(u => u.Value).ToArray().GetEnumerator();
             }
 
             IEnumerator IEnumerable.GetEnumerator()
@@ -109,7 +146,8 @@ namespace Neo.Oracle
             public readonly Transaction ResponseTx;
 
             public ECPoint OraclePub => Msg.OraclePub;
-            public UInt160 Hash => Msg.Hash;
+            public UInt160 MsgHash => Msg.Hash;
+            public UInt160 ResultHash => Data.OracleExecutionCacheHash;
 
             internal ResponseItem(OraclePayload payload, Transaction responseTx) : base(responseTx)
             {
@@ -581,7 +619,7 @@ namespace Neo.Oracle
 
             // Order by Transaction
 
-            foreach (var entry in collection.OrderByDescending(a => a.ResponseTx != null ? 1 : 0))
+            foreach (var entry in collection)
             {
                 TryAddOracleResponse(snapshot, entry);
             }
