@@ -9,7 +9,6 @@ namespace Neo.Trie.MPT
         public const int ChildCount = 17;
         public MPTNode[] Children = new MPTNode[ChildCount];
 
-
         public BranchNode()
         {
             nType = NodeType.BranchNode;
