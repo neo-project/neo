@@ -360,7 +360,8 @@ namespace Neo.Network.P2P
 
         private void OnMemPoolMessageReceived()
         {
-            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions(snapshot).Select(p => p.Hash).ToArray()))
                 Context.Parent.Tell(Message.Create(MessageCommand.Inv, payload));
         }
 

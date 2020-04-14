@@ -168,12 +168,15 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerable<Transaction> GetVerifiedTransactions()
+        public IEnumerable<Transaction> GetVerifiedTransactions(StoreView snapshot)
         {
             _txRwLock.EnterReadLock();
             try
             {
-                return _unsortedTransactions.Select(p => p.Value.Tx).ToArray();
+                return _unsortedTransactions
+                    .Where(u => u.Value.IsReady(snapshot))
+                    .Select(p => p.Value.Tx)
+                    .ToArray();
             }
             finally
             {
@@ -196,12 +199,16 @@ namespace Neo.Ledger
             }
         }
 
-        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
+        public IEnumerable<Transaction> GetSortedVerifiedTransactions(StoreView snapshot)
         {
             _txRwLock.EnterReadLock();
             try
             {
-                return _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
+                return _sortedTransactions
+                    .Reverse()
+                    .Where(u => u.IsReady(snapshot))
+                    .Select(p => p.Tx)
+                    .ToArray();
             }
             finally
             {
@@ -238,7 +245,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedTransactions)
+                unsortedTxPool = ReferenceEquals(sortedPool, _unverifiedSortedTransactions)
                    ? _unverifiedTransactions : _unsortedTransactions;
             }
         }

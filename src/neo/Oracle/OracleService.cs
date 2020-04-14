@@ -239,7 +239,8 @@ namespace Neo.Oracle
         /// <param name="localNode">Local node</param>
         /// <param name="wallet">Wallet</param>
         /// <param name="snapshotFactory">Snapshot factory</param>
-        public OracleService(NeoSystem system, IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory)
+        /// <param name="capacity">Capacity</param>
+        public OracleService(NeoSystem system, IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory, int capacity)
         {
             Oracle = Process;
             _system = system;
@@ -266,18 +267,18 @@ namespace Neo.Oracle
 
             _queue = new SortedConcurrentDictionary<UInt256, Transaction>
                 (
-                Comparer<KeyValuePair<UInt256, Transaction>>.Create(SortEnqueuedRequest), PendingCapacity
+                Comparer<KeyValuePair<UInt256, Transaction>>.Create(SortEnqueuedRequest), capacity
                 );
 
             // Create internal collections for pending request/responses
 
             _pendingOracleRequest = new SortedConcurrentDictionary<UInt256, RequestItem>
                 (
-                Comparer<KeyValuePair<UInt256, RequestItem>>.Create(SortRequest), PendingCapacity
+                Comparer<KeyValuePair<UInt256, RequestItem>>.Create(SortRequest), capacity
                 );
             _pendingOracleResponses = new SortedConcurrentDictionary<UInt256, ResponseCollection>
                 (
-                Comparer<KeyValuePair<UInt256, ResponseCollection>>.Create(SortResponse), PendingCapacity
+                Comparer<KeyValuePair<UInt256, ResponseCollection>>.Create(SortResponse), capacity
                 );
         }
 
@@ -581,8 +582,9 @@ namespace Neo.Oracle
                         _pendingOracleRequest.TryRemove(response.Data.TransactionRequestHash, out _);
                         _system.Blockchain.Tell(request.ResponseTransaction);
 
-                        // Request should be already there
-                        //_system.Blockchain.Tell(request.RequestTransaction);
+                        // Request should be already there, but it could be removed because the mempool was full during the process
+
+                        _system.Blockchain.Tell(request.RequestTransaction);
                     }
 
                     return true;
@@ -724,7 +726,7 @@ namespace Neo.Oracle
 
         public static Props Props(NeoSystem system, IActorRef localNode, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new OracleService(system, localNode, wallet, null)).WithMailbox("oracle-service-mailbox");
+            return Akka.Actor.Props.Create(() => new OracleService(system, localNode, wallet, null, ProtocolSettings.Default.MemoryPoolMaxTransactions)).WithMailbox("oracle-service-mailbox");
         }
 
         internal class OracleServiceMailbox : PriorityMailbox

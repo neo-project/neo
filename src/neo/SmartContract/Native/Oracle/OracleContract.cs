@@ -69,6 +69,17 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
+        /// Check if the response it's already stored
+        /// </summary>
+        /// <param name="snapshot">Snapshot</param>
+        /// <param name="txHash">Transaction Hash</param>
+        public bool ExistResponseFor(StoreView snapshot, UInt256 txHash)
+        {
+            StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
+            return snapshot.Storages.TryGet(key) != null;
+        }
+
+        /// <summary>
         /// Consume Oracle Response
         /// </summary>
         /// <param name="snapshot">Snapshot</param>

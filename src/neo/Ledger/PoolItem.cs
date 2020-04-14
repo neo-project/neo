@@ -1,4 +1,6 @@
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract.Native;
 using System;
 
 namespace Neo.Ledger
@@ -31,6 +33,28 @@ namespace Neo.Ledger
             Tx = tx;
             Timestamp = TimeProvider.Current.UtcNow;
             LastBroadcastTimestamp = Timestamp;
+        }
+
+        public bool IsReady(StoreView snapshot)
+        {
+            if (Tx.Version == TransactionVersion.OracleRequest)
+            {
+                if (NativeContract.Oracle.ExistResponseFor(snapshot, Tx.Hash))
+                {
+                    // The response it's waiting to be consumed
+
+                    return true;
+                }
+                else
+                {
+                    // TODO: This could be improved if we want to include the request and the response in the same block
+                    // TODO: It's not required the DependsOn attribute, but it could be used for optimize this step
+
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public int CompareTo(Transaction otherTx)
