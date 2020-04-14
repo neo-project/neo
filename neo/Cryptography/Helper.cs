@@ -1,5 +1,6 @@
 ﻿using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Org.BouncyCastle.Crypto.Digests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -89,6 +90,15 @@ namespace Neo.Cryptography
             Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
             Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
             return Base58.Encode(buffer);
+        }
+
+        public static byte[] Keccak256(this byte[] value)
+        {
+            var digest = new KeccakDigest(256);
+            byte[] hash = new byte[digest.GetDigestSize()];
+            digest.BlockUpdate(value, 0, value.Length);
+            digest.DoFinal(hash, 0);
+            return hash;
         }
 
         public static byte[] RIPEMD160(this IEnumerable<byte> value)
