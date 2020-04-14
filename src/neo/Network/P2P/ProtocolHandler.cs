@@ -137,6 +137,10 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
+                case MessageCommand.Oracle:
+                    system.Oracle?.Tell((OraclePayload)msg.Payload);
+                    Context.Parent.Tell(msg);
+                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
