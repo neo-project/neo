@@ -337,7 +337,6 @@ namespace Neo.Network.P2P.Payloads
                 }
             }
 
-
             return VerifyResult.Succeed;
         }
 

@@ -328,24 +328,6 @@ namespace Neo.Oracle
 
                                     break;
                                 }
-                            case TransactionVersion.OracleResponse:
-                                {
-                                    var hashes = tx.GetScriptHashesForVerifying(snapshot);
-
-                                    if (hashes.Length != 1 || hashes[0] != contract.ScriptHash)
-                                    {
-                                        break;
-                                    }
-
-                                    // We should receive only this transactions P2P, never from OracleService
-
-                                    if (tx.VerifyWitnesses(snapshot, 200_000_000))
-                                    {
-                                        ReverifyPendingResponses(snapshot, tx.OracleRequestTx);
-                                    }
-
-                                    break;
-                                }
                         }
                         break;
                     }

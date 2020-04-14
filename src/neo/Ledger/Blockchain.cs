@@ -423,14 +423,11 @@ namespace Neo.Ledger
             if (reason != VerifyResult.Succeed) return reason;
             if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
 
-            switch (transaction.Version)
+            if (transaction.Version == TransactionVersion.OracleRequest)
             {
-                case TransactionVersion.OracleRequest:
-                case TransactionVersion.OracleResponse:
-                    {
-                        system.Oracle?.Tell(transaction);
-                        break;
-                    }
+                // Oracle Service only need the OracleRequests
+
+                system.Oracle?.Tell(transaction);
             }
 
             return VerifyResult.Succeed;
