@@ -1,8 +1,6 @@
 using Akka.Actor;
-using Akka.Configuration;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -14,7 +12,6 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -179,14 +176,9 @@ namespace Neo.Oracle
         private readonly Task[] _oracleTasks = new Task[4]; // TODO: Set this
 
         /// <summary>
-        /// _oracleTasks will consume from this pool
+        /// Sorted Queue for oracle tasks
         /// </summary>
-        private readonly BlockingCollection<Transaction> _asyncPool = new BlockingCollection<Transaction>();
-
-        /// <summary>
-        /// Queue
-        /// </summary>
-        private readonly SortedConcurrentDictionary<UInt256, Transaction> _queue;
+        private readonly SortedBlockingCollection<UInt256, Transaction> _queue;
 
         #region Protocols
 
@@ -265,7 +257,7 @@ namespace Neo.Oracle
 
             // Create queue for pending request that should be processed
 
-            _queue = new SortedConcurrentDictionary<UInt256, Transaction>
+            _queue = new SortedBlockingCollection<UInt256, Transaction>
                 (
                 Comparer<KeyValuePair<UInt256, Transaction>>.Create(SortEnqueuedRequest), capacity
                 );
@@ -321,28 +313,12 @@ namespace Neo.Oracle
 
                                     // Process oracle - Pop one item if it's needed
 
-                                    if (_queue.TryAdd(tx.Hash, tx) && _asyncPool.Count <= 0)
-                                    {
-                                        PopTransaction();
-                                    }
-
+                                    _queue.Add(tx.Hash, tx);
                                     break;
                                 }
                         }
                         break;
                     }
-            }
-        }
-
-        /// <summary>
-        /// Move one transaction from the sorted queue to _asyncPool, this will ensure that the threads process the
-        /// transactions according to the priority
-        /// </summary>
-        private void PopTransaction()
-        {
-            if (_queue.TryPop(out var entry))
-            {
-                _asyncPool.Add(entry);
             }
         }
 
@@ -361,10 +337,9 @@ namespace Neo.Oracle
             {
                 _oracleTasks[x] = new Task(() =>
                 {
-                    foreach (var tx in _asyncPool.GetConsumingEnumerable(_cancel.Token))
+                    foreach (var tx in _queue.GetConsumingEnumerable(_cancel.Token))
                     {
                         ProcessRequestTransaction(tx);
-                        PopTransaction();
                     }
                 },
                 _cancel.Token);
@@ -399,11 +374,6 @@ namespace Neo.Oracle
             _queue.Clear();
             _pendingOracleRequest.Clear();
             _pendingOracleResponses.Clear();
-
-            while (_asyncPool.Count > 0)
-            {
-                _asyncPool.TryTake(out _);
-            }
         }
 
         /// <summary>
