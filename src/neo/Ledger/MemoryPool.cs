@@ -173,8 +173,9 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
+                var oracle = new PoolItem.OracleState();
                 return _unsortedTransactions
-                    .Where(u => u.Value.IsReady(snapshot))
+                    .Where(u => u.Value.IsReady(snapshot, oracle))
                     .Select(p => p.Value.Tx)
                     .ToArray();
             }
@@ -204,9 +205,10 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
+                var oracle = new PoolItem.OracleState();
                 return _sortedTransactions
                     .Reverse()
-                    .Where(u => u.IsReady(snapshot))
+                    .Where(u => u.IsReady(snapshot, oracle))
                     .Select(p => p.Tx)
                     .ToArray();
             }

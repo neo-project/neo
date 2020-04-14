@@ -2,6 +2,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Ledger
 {
@@ -35,23 +36,45 @@ namespace Neo.Ledger
             LastBroadcastTimestamp = Timestamp;
         }
 
-        public bool IsReady(StoreView snapshot)
+        internal class OracleState
         {
-            if (Tx.Version == TransactionVersion.OracleRequest)
+            public HashSet<UInt256> AllowedRequests = new HashSet<UInt256>();
+        }
+
+        public bool IsReady(StoreView snapshot, OracleState oracle)
+        {
+            switch (Tx.Version)
             {
-                if (NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
-                {
-                    // The response it's waiting to be consumed
+                case TransactionVersion.OracleRequest:
+                    {
+                        if (oracle.AllowedRequests.Contains(Tx.Hash))
+                        {
+                            // The response was already fetched, we can put request and response in the same block
 
-                    return true;
-                }
-                else
-                {
-                    // TODO: This could be improved if we want to include the request and the response in the same block
-                    // TODO: It's not required the DependsOn attribute, but it could be used for optimize this step
+                            return true;
+                        }
+                        else
+                        {
+                            if (NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
+                            {
+                                // The response it's waiting to be consumed (block+n)
 
-                    return false;
-                }
+                                return true;
+                            }
+                            else
+                            {
+                                // If the response it's in the pool it's located after the request
+                                // TODO: We can order the pool first for OracleResponses
+
+                                return false;
+                            }
+                        }
+                    }
+                case TransactionVersion.OracleResponse:
+                    {
+                        oracle.AllowedRequests.Add(Tx.OracleRequestTx);
+                        break;
+                    }
             }
 
             return true;
