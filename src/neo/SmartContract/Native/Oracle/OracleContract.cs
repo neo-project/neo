@@ -73,7 +73,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// </summary>
         /// <param name="snapshot">Snapshot</param>
         /// <param name="txHash">Transaction Hash</param>
-        public bool ExistResponseFor(StoreView snapshot, UInt256 txHash)
+        public bool ContainsResponse(StoreView snapshot, UInt256 txHash)
         {
             StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
             return snapshot.Storages.TryGet(key) != null;

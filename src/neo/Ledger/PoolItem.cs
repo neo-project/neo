@@ -39,7 +39,7 @@ namespace Neo.Ledger
         {
             if (Tx.Version == TransactionVersion.OracleRequest)
             {
-                if (NativeContract.Oracle.ExistResponseFor(snapshot, Tx.Hash))
+                if (NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
                 {
                     // The response it's waiting to be consumed
 
