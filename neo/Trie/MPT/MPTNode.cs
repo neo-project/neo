@@ -37,14 +37,13 @@ namespace Neo.Trie.MPT
 
         public byte[] Encode()
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8, true);
-
-            writer.Write((byte)nType);
-            EncodeSpecific(writer);
-            writer.Flush();
-
-            return ms.ToArray();
+            using (BinaryWriter writer = new BinaryWriter(new MemoryStream(), Encoding.UTF8, true))
+            {
+                writer.Write((byte)nType);
+                EncodeSpecific(writer);
+                writer.Flush();
+                return ((MemoryStream)writer.BaseStream).ToArray();
+            }
         }
 
         public abstract void EncodeSpecific(BinaryWriter writer);
@@ -54,32 +53,33 @@ namespace Neo.Trie.MPT
             if (data is null || data.Length == 0)
                 return null;
 
-            using BinaryReader reader = new BinaryReader(new MemoryStream(data, false), Encoding.UTF8);
-
-            var nodeType = (NodeType)reader.ReadByte();
             MPTNode node;
-            switch (nodeType)
+            using (BinaryReader reader = new BinaryReader(new MemoryStream(data, false), Encoding.UTF8))
             {
-                case NodeType.BranchNode:
-                    {
-                        node = new BranchNode();
-                        break;
-                    }
-                case NodeType.ExtensionNode:
-                    {
-                        node = new ExtensionNode();
-                        break;
-                    }
-                case NodeType.LeafNode:
-                    {
-                        node = new LeafNode();
-                        break;
-                    }
-                default:
-                    throw new System.InvalidOperationException();
-            }
+                var nodeType = (NodeType)reader.ReadByte();
+                switch (nodeType)
+                {
+                    case NodeType.BranchNode:
+                        {
+                            node = new BranchNode();
+                            break;
+                        }
+                    case NodeType.ExtensionNode:
+                        {
+                            node = new ExtensionNode();
+                            break;
+                        }
+                    case NodeType.LeafNode:
+                        {
+                            node = new LeafNode();
+                            break;
+                        }
+                    default:
+                        throw new System.InvalidOperationException();
+                }
 
-            node.DecodeSpecific(reader);
+                node.DecodeSpecific(reader);
+            }
             return node;
         }
 
