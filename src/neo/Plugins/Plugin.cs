@@ -66,7 +66,19 @@ namespace Neo.Plugins
             switch (GetExtension(e.Name))
             {
                 case ".json":
-                    Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath)?.Configure();
+                    Plugin plugin = Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath);
+                    if (plugin != null)
+                    {
+                        try
+                        {
+                            plugin.Configure();
+                            plugin.Log($"Reload plugin configuration succeeded", LogLevel.Error);
+                        }
+                        catch (FormatException ex)
+                        {
+                            plugin.Log($"Failed to reload plugin configuration: {ex.Message}", LogLevel.Error);
+                        }
+                    }
                     break;
                 case ".dll":
                     if (e.ChangeType != WatcherChangeTypes.Created) return;
