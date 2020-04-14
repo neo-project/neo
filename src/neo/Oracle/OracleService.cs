@@ -125,8 +125,8 @@ namespace Neo.Oracle
         private long _isStarted = 0;
         private Contract _lastContract;
         private readonly IActorRef _localNode;
-        private (Contract Contract, KeyPair Key)[] _accounts;
         private CancellationTokenSource _cancel;
+        private readonly (Contract Contract, KeyPair Key)[] _accounts;
 
         /// <summary>
         /// Number of threads for processing the oracle
@@ -206,7 +206,7 @@ namespace Neo.Oracle
 
             // Find oracle account
 
-            using var snapshot = GetSnapshot();
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
             var oracles = NativeContract.Oracle.GetOracleValidators(snapshot)
                 .Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash());
 
@@ -238,14 +238,6 @@ namespace Neo.Oracle
         }
 
         /// <summary>
-        /// For UT
-        /// </summary>
-        internal virtual SnapshotView GetSnapshot()
-        {
-            return Blockchain.Singleton.GetSnapshot();
-        }
-
-        /// <summary>
         /// Receive AKKA Messages
         /// </summary>
         protected override void OnReceive(object message)
@@ -259,7 +251,7 @@ namespace Neo.Oracle
                     }
                 case Transaction tx:
                     {
-                        using var snapshot = GetSnapshot();
+                        using var snapshot = Blockchain.Singleton.GetSnapshot();
                         var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
 
                         switch (tx.Version)
@@ -395,7 +387,7 @@ namespace Neo.Oracle
         private void ProcessRequestTransaction(Transaction tx)
         {
             var oracle = new OracleExecutionCache(Process);
-            using var snapshot = GetSnapshot();
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
             {
                 engine.LoadScript(tx.Script);
@@ -542,10 +534,10 @@ namespace Neo.Oracle
                     {
                         // Done! Send to mem pool
 
+                        _pendingOracleRequest.TryRemove(response.Data.TransactionRequestHash, out _);
+
                         MemPool.TryAdd(request.ResponseTransaction.Hash, request.ResponseTransaction);
                         MemPool.TryAdd(request.RequestTransaction.Hash, request.RequestTransaction);
-
-                        _pendingOracleRequest.TryRemove(response.Data.TransactionRequestHash, out _);
                     }
 
                     return true;

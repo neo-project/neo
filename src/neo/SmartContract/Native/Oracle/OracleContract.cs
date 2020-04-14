@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native.Oracle
                 ECPoint delegatePubKey = snapshot.Storages.TryGet(key)?.Value.AsSerializable<ECPoint>();
                 if (delegatePubKey != null) { oraclePubKeys[index] = delegatePubKey; }
             }
-            return oraclePubKeys;
+            return oraclePubKeys.Distinct().ToArray();
         }
 
         /// <summary>

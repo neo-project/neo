@@ -184,27 +184,20 @@ namespace Neo.UnitTests.Oracle
             using var unlockA = wallet.Unlock("123");
             var account = wallet.CreateAccount();
 
-            var mockService = new Mock<OracleService>(subscriber, wallet)
+            // TODO: Mock blockchain is not possible
+
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            foreach (var cn in Blockchain.StandbyValidators)
             {
-                CallBase = true
-            };
-            mockService.Setup(tp => tp.GetSnapshot()).Returns(() =>
-            {
-                // Mock Oracle without alter other tests
+                var key = NativeContract.Oracle.CreateStorageKey(OracleContract.Prefix_Validator, cn);
+                var value = snapshot.Storages.GetOrAdd(key, () => new StorageItem() { IsConstant = false });
+                value.Value = account.GetKey().PublicKey.ToArray();
+            }
 
-                var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Commit();
 
-                foreach (var cn in Blockchain.StandbyValidators)
-                {
-                    var key = NativeContract.Oracle.CreateStorageKey(OracleContract.Prefix_Validator, cn);
-                    var value = snapshot.Storages.GetOrAdd(key, () => new StorageItem() { IsConstant = false });
-                    value.Value = account.GetKey().PublicKey.ToArray();
-                }
-
-                return snapshot;
-            });
-
-            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => mockService.Object);
+            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(subscriber, wallet));
 
             service.UnderlyingActor.Start();
 
@@ -220,13 +213,13 @@ namespace Neo.UnitTests.Oracle
             // Receive response
 
             var response = subscriber.ExpectMsg<OraclePayload>(TimeSpan.FromSeconds(10));
-            Assert.AreEqual(0, response.OracleSignature.Signature.Length);
-            Assert.AreEqual(1, response.Data.Length);
+            Assert.AreEqual(117, response.Data.Length);
+            Assert.AreEqual(account.GetKey().PublicKey, response.OraclePub);
 
             Assert.IsNotNull(response.OracleSignature);
-            //var entry = response.ExecutionResult.First();
-            //Assert.IsFalse(entry.Value.Error);
-            //Assert.AreEqual("pong", Encoding.UTF8.GetString(entry.Value.Result));
+            // pong
+            Assert.AreEqual("0x6f458eea71a0b63d3e9efc8cc54608e14d89a5cd", response.OracleSignature.OracleExecutionCacheHash.ToString());
+            Assert.AreEqual(64, response.OracleSignature.Signature.Length);
             Assert.AreEqual(tx.Hash, response.OracleSignature.TransactionRequestHash);
 
             service.UnderlyingActor.Stop();
