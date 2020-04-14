@@ -337,7 +337,7 @@ namespace Neo.Network.P2P
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)
-       {
+        {
             Version = payload;
             foreach (NodeCapability capability in payload.Capabilities)
             {
