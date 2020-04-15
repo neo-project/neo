@@ -41,7 +41,7 @@ namespace Neo.Oracle
 
             public bool IsCompleted => ResponseContext?.Completed == true;
 
-            internal RequestItem(Contract contract, Transaction requestTx) : base(requestTx)
+            public RequestItem(Contract contract, Transaction requestTx) : base(requestTx)
             {
                 Contract = contract;
                 RequestTransaction = requestTx;
@@ -49,23 +49,23 @@ namespace Neo.Oracle
 
             public bool AddSignature(ResponseItem response)
             {
-                if (response.Data.TransactionRequestHash != RequestTransaction.Hash)
+                if (response.TransactionRequestHash != RequestTransaction.Hash)
                 {
                     return false;
                 }
 
                 if (ResponseTransaction == null)
                 {
-                    if (response.ResponseTx == null)
+                    if (response.Tx == null)
                     {
                         return false;
                     }
 
                     // Oracle service could attach the real TX
 
-                    ResponseTransaction = response.ResponseTx;
+                    ResponseTransaction = response.Tx;
                     ExpectedResultHash = response.ResultHash;
-                    ResponseContext = new ContractParametersContext(response.ResponseTx);
+                    ResponseContext = new ContractParametersContext(response.Tx);
                 }
                 else
                 {
@@ -77,19 +77,20 @@ namespace Neo.Oracle
                     }
                 }
 
-                return ResponseContext.AddSignature(Contract, response.OraclePub, response.Data.Signature) == true;
+                return ResponseContext.AddSignature(Contract, response.OraclePub, response.Signature) == true;
             }
         }
 
         private class ResponseCollection : IEnumerable<ResponseItem>
         {
             public readonly DateTime Timestamp;
-            public readonly SortedConcurrentDictionary<UInt160, ResponseItem> Items;
+
+            private readonly SortedConcurrentDictionary<UInt160, ResponseItem> _items;
 
             public ResponseCollection(ResponseItem item)
             {
                 Timestamp = item.Timestamp;
-                Items = new SortedConcurrentDictionary<UInt160, ResponseItem>
+                _items = new SortedConcurrentDictionary<UInt160, ResponseItem>
                     (
                     Comparer<KeyValuePair<UInt160, ResponseItem>>.Create(Sort), 1_000
                     );
@@ -101,8 +102,8 @@ namespace Neo.Oracle
             {
                 // Sort by if it's mine or not
 
-                int av = a.Value.ResponseTx != null ? 1 : 0;
-                int bv = b.Value.ResponseTx != null ? 1 : 0;
+                int av = a.Value.Tx != null ? 1 : 0;
+                int bv = b.Value.Tx != null ? 1 : 0;
 
                 int ret = av.CompareTo(bv);
 
@@ -120,12 +121,12 @@ namespace Neo.Oracle
             {
                 // Prevent duplicate messages
 
-                return Items.TryAdd(item.MsgHash, item);
+                return _items.TryAdd(item.MsgHash, item);
             }
 
             public IEnumerator<ResponseItem> GetEnumerator()
             {
-                return (IEnumerator<ResponseItem>)Items.Select(u => u.Value).ToArray().GetEnumerator();
+                return (IEnumerator<ResponseItem>)_items.Select(u => u.Value).ToArray().GetEnumerator();
             }
 
             IEnumerator IEnumerable.GetEnumerator()
@@ -136,19 +137,24 @@ namespace Neo.Oracle
 
         private class ResponseItem : PoolItem
         {
-            public readonly OraclePayload Msg;
-            public readonly OracleResponseSignature Data;
-            public readonly Transaction ResponseTx;
+            private readonly OraclePayload Msg;
+            private readonly OracleResponseSignature Data;
 
             public ECPoint OraclePub => Msg.OraclePub;
             public UInt160 MsgHash => Msg.Hash;
+            public byte[] Signature => Data.Signature;
             public UInt160 ResultHash => Data.OracleExecutionCacheHash;
+            public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
 
-            internal ResponseItem(OraclePayload payload, Transaction responseTx) : base(responseTx)
+            public ResponseItem(OraclePayload payload, Transaction responseTx) : base(responseTx)
             {
                 Msg = payload;
                 Data = payload.OracleSignature;
-                ResponseTx = responseTx;
+            }
+
+            public bool Verify(StoreView snapshot)
+            {
+                return Msg.Verify(snapshot);
             }
         }
 
@@ -513,14 +519,14 @@ namespace Neo.Oracle
         /// <returns>True if it was added</returns>
         private bool TryAddOracleResponse(StoreView snapshot, ResponseItem response)
         {
-            if (!response.Msg.Verify(snapshot))
+            if (!response.Verify(snapshot))
             {
                 return false;
             }
 
             // Find the request tx
 
-            if (_pendingOracleRequest.TryGetValue(response.Data.TransactionRequestHash, out var request))
+            if (_pendingOracleRequest.TryGetValue(response.TransactionRequestHash, out var request))
             {
                 // Append the signature if it's possible
 
@@ -530,7 +536,7 @@ namespace Neo.Oracle
                     {
                         // Done! Send to mem pool
 
-                        _pendingOracleRequest.TryRemove(response.Data.TransactionRequestHash, out _);
+                        _pendingOracleRequest.TryRemove(response.TransactionRequestHash, out _);
                         _system.Blockchain.Tell(request.ResponseTransaction);
 
                         // Request should be already there, but it could be removed because the mempool was full during the process
@@ -544,7 +550,7 @@ namespace Neo.Oracle
 
             // Save this payload for check it later
 
-            if (_pendingOracleResponses.TryGetValue(response.Data.TransactionRequestHash, out var collection, new ResponseCollection(response)))
+            if (_pendingOracleResponses.TryGetValue(response.TransactionRequestHash, out var collection, new ResponseCollection(response)))
             {
                 if (collection != null)
                 {
