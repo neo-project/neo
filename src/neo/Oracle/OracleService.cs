@@ -133,6 +133,8 @@ namespace Neo.Oracle
                     if (prev.Timestamp > item.Timestamp) return false;
 
                     if (!prev.IsMine && item.IsMine) MineCount++;
+                    else if (prev.IsMine && !item.IsMine) MineCount--;
+
                     _items.Set(item.OraclePub, item);
                     return true;
                 }
@@ -528,7 +530,20 @@ namespace Neo.Oracle
 
         private static int SortEnqueuedRequest(KeyValuePair<UInt256, Transaction> a, KeyValuePair<UInt256, Transaction> b)
         {
-            return a.Value.FeePerByte.CompareTo(b.Value.FeePerByte);
+            var otherTx = b.Value;
+            if (otherTx == null) return 1;
+
+            // Fees sorted ascending
+
+            var tx = a.Value;
+            int ret = tx.FeePerByte.CompareTo(otherTx.FeePerByte);
+            if (ret != 0) return ret;
+            ret = tx.NetworkFee.CompareTo(otherTx.NetworkFee);
+            if (ret != 0) return ret;
+
+            // Transaction hash sorted descending
+
+            return otherTx.Hash.CompareTo(tx.Hash);
         }
 
         private static int SortResponse(KeyValuePair<UInt256, ResponseCollection> a, KeyValuePair<UInt256, ResponseCollection> b)
