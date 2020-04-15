@@ -134,6 +134,8 @@ namespace Neo.SmartContract
 
             private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, string method, Array args, CallFlags flags)
             {
+                if (method.StartsWith('_')) return false;
+
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
                 if (contract is null) return false;
 
@@ -174,6 +176,10 @@ namespace Neo.SmartContract
                         context_new.EvaluationStack.Push(args[i]);
                     context_new.InstructionPointer = md.Offset;
                 }
+
+                md = contract.Manifest.Abi.GetMethod("_initialize");
+                if (md != null) engine.LoadClonedContext(md.Offset);
+
                 return true;
             }
 
