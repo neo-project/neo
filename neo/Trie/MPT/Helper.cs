@@ -38,14 +38,6 @@ namespace Neo.Trie.MPT
             return result;
         }
 
-        public static byte[] Add(this byte[] a, byte b)
-        {
-            var result = new byte[a.Length + 1];
-            a.CopyTo(result, 0);
-            result[a.Length] = b;
-            return result;
-        }
-
         public static byte[] ToNibbles(this byte[] path)
         {
             if (path is null) return Array.Empty<byte>();
