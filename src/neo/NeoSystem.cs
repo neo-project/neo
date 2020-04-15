@@ -81,8 +81,16 @@ namespace Neo
         public void StartOracle(Wallet wallet, byte numberOfTasks = 4)
         {
             if (Oracle != null) return;
+            if (numberOfTasks == 0) throw new ArgumentException("The task count must be greater than 0");
             Oracle = ActorSystem.ActorOf(OracleService.Props(this, this.LocalNode, wallet));
             Oracle.Tell(new OracleService.StartMessage() { NumberOfTasks = numberOfTasks }, Blockchain);
+        }
+
+        public void StopOracle()
+        {
+            if (Oracle == null) return;
+            Oracle.Tell(new OracleService.StopMessage(), Blockchain);
+            Oracle = null;
         }
 
         public void StartNode(ChannelsConfig config)

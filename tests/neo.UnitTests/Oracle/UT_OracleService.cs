@@ -210,7 +210,7 @@ namespace Neo.UnitTests.Oracle
 
             // Send start
 
-            service.Tell(new OracleService.StartMessage());
+            service.Tell(new OracleService.StartMessage() { NumberOfTasks = 1 });
 
             // Send tx
 

@@ -25,6 +25,7 @@ namespace Neo.Oracle
         #region Sub classes
 
         internal class StartMessage { public byte NumberOfTasks = 4; }
+        internal class StopMessage { }
 
         private class RequestItem : PoolItem
         {
@@ -290,6 +291,11 @@ namespace Neo.Oracle
                 case StartMessage start:
                     {
                         Start(start.NumberOfTasks);
+                        break;
+                    }
+                case StopMessage _:
+                    {
+                        Stop();
                         break;
                     }
                 case OraclePayload msg:
