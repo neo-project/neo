@@ -62,7 +62,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.Length == 0)
                         {
-                            return TryGet(ref branchNode.Children[16], path, out value);
+                            return TryGet(ref branchNode.Children[BranchNode.ChildCount - 1], path, out value);
                         }
                         return TryGet(ref branchNode.Children[path[0]], path[1..], out value);
                     }
@@ -117,7 +117,7 @@ namespace Neo.Trie.MPT
                         set.Add(branchNode.Encode());
                         if (path.Length == 0)
                         {
-                            return GetProof(ref branchNode.Children[16], path, set);
+                            return GetProof(ref branchNode.Children[BranchNode.ChildCount - 1], path, set);
                         }
                         return GetProof(ref branchNode.Children[path[0]], path[1..], set);
                     }
