@@ -34,16 +34,15 @@ namespace Neo.Oracle
 
             // Response
 
-            public readonly Contract Contract;
+            public Contract Contract;
             public UInt160 ExpectedResultHash;
             public Transaction ResponseTransaction;
             private ContractParametersContext ResponseContext;
 
             public bool IsCompleted => ResponseContext?.Completed == true;
 
-            public RequestItem(Contract contract, Transaction requestTx) : base(requestTx)
+            public RequestItem(Transaction requestTx) : base(requestTx)
             {
-                Contract = contract;
                 RequestTransaction = requestTx;
             }
 
@@ -56,13 +55,14 @@ namespace Neo.Oracle
 
                 if (ResponseTransaction == null)
                 {
-                    if (response.Tx == null)
+                    if (response.Tx == null || response.Contract == null)
                     {
                         return false;
                     }
 
                     // Oracle service could attach the real TX
 
+                    Contract = response.Contract;
                     ResponseTransaction = response.Tx;
                     ExpectedResultHash = response.ResultHash;
                     ResponseContext = new ContractParametersContext(response.Tx);
@@ -140,14 +140,16 @@ namespace Neo.Oracle
             private readonly OraclePayload Msg;
             private readonly OracleResponseSignature Data;
 
+            public readonly Contract Contract;
             public ECPoint OraclePub => Msg.OraclePub;
             public UInt160 MsgHash => Msg.Hash;
             public byte[] Signature => Data.Signature;
             public UInt160 ResultHash => Data.OracleExecutionCacheHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
 
-            public ResponseItem(OraclePayload payload, Transaction responseTx) : base(responseTx)
+            public ResponseItem(OraclePayload payload, Contract contract = null, Transaction responseTx = null) : base(responseTx)
             {
+                Contract = contract;
                 Msg = payload;
                 Data = payload.OracleSignature;
             }
@@ -290,27 +292,27 @@ namespace Neo.Oracle
                         Start(start.NumberOfTasks);
                         break;
                     }
+                case OraclePayload msg:
+                    {
+                        using var snapshot = _snapshotFactory();
+                        var response = new ResponseItem(msg);
+
+                        if (!response.Verify(snapshot)) return;
+
+                        TryAddOracleResponse(snapshot, response);
+                        break;
+                    }
                 case Transaction tx:
                     {
                         using var snapshot = _snapshotFactory();
-                        var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
 
                         // We only need to take care about the requests
 
                         if (tx.Version == TransactionVersion.OracleRequest)
                         {
-                            // Check the cached contract
-
-                            if (_lastContract?.ScriptHash != contract.ScriptHash)
-                            {
-                                // Reduce the memory load using the same Contract class
-
-                                _lastContract = contract;
-                            }
-
                             // If it's an OracleRequest and it's new, tell it to OracleService
 
-                            if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(contract, tx)))
+                            if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(tx)))
                             {
                                 ReverifyPendingResponses(snapshot, tx.Hash);
                             }
@@ -401,9 +403,22 @@ namespace Neo.Oracle
                 }
             }
 
+            // Check the oracle contract
+
+            var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
+
+            // Check the cached contract
+
+            if (_lastContract?.ScriptHash != contract.ScriptHash)
+            {
+                // Reduce the memory load using the same Contract class
+
+                _lastContract = contract;
+            }
+
             // Create deterministic oracle response
 
-            var responseTx = CreateResponseTransaction(snapshot, oracle, tx);
+            var responseTx = CreateResponseTransaction(oracle, contract, tx);
 
             foreach (var account in _accounts)
             {
@@ -431,7 +446,7 @@ namespace Neo.Oracle
                 {
                     response.Witness = signPayload.GetWitnesses()[0];
 
-                    if (TryAddOracleResponse(snapshot, response, responseTx))
+                    if (TryAddOracleResponse(snapshot, response, contract, responseTx))
                     {
                         // Send my signature by P2P
 
@@ -445,13 +460,12 @@ namespace Neo.Oracle
         /// Create Oracle response transaction
         /// We need to create a deterministic TX for this result/oracleRequest
         /// </summary>
-        /// <param name="snapshot">Snapshot</param>
         /// <param name="oracle">Oracle</param>
+        /// <param name="contract">Contract</param>
         /// <param name="requestTx">Request Hash</param>
         /// <returns>Transaction</returns>
-        public static Transaction CreateResponseTransaction(StoreView snapshot, OracleExecutionCache oracle, Transaction requestTx)
+        public static Transaction CreateResponseTransaction(OracleExecutionCache oracle, Contract contract, Transaction requestTx)
         {
-            var sender = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
             using ScriptBuilder script = new ScriptBuilder();
 
             script.EmitAppCall(NativeContract.Oracle.Hash, "setOracleResponse", requestTx.Hash, IO.Helper.ToArray(oracle));
@@ -467,12 +481,12 @@ namespace Neo.Oracle
                 NetworkFee = TxNetworkFee,
                 SystemFee = TxSystemFee,
                 Nonce = requestTx.Nonce,
-                Sender = sender,
+                Sender = contract.ScriptHash,
                 Cosigners = new Cosigner[]
                 {
                     new Cosigner()
                     {
-                        Account = sender,
+                        Account = contract.ScriptHash,
                         AllowedContracts = new UInt160[]{ NativeContract.Oracle.Hash },
                         Scopes = WitnessScope.CustomContracts
                     }
@@ -504,11 +518,12 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="snapshot">Snapshot</param>
         /// <param name="oracle">Oracle</param>
+        /// <param name="contract">Contract</param>
         /// <param name="responseTx">Response TX (from OracleService)</param>
         /// <returns>True if it was added</returns>
-        internal bool TryAddOracleResponse(StoreView snapshot, OraclePayload oracle, Transaction responseTx)
+        internal bool TryAddOracleResponse(StoreView snapshot, OraclePayload oracle, Contract contract, Transaction responseTx)
         {
-            return TryAddOracleResponse(snapshot, new ResponseItem(oracle, responseTx));
+            return TryAddOracleResponse(snapshot, new ResponseItem(oracle, contract, responseTx));
         }
 
         /// <summary>
