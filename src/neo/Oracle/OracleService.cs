@@ -295,11 +295,7 @@ namespace Neo.Oracle
                 case OraclePayload msg:
                     {
                         using var snapshot = _snapshotFactory();
-                        var response = new ResponseItem(msg);
-
-                        if (!response.Verify(snapshot)) return;
-
-                        TryAddOracleResponse(snapshot, response);
+                        TryAddOracleResponse(snapshot, new ResponseItem(msg));
                         break;
                     }
                 case Transaction tx:
