@@ -159,7 +159,7 @@ namespace Neo.Plugins
 
         protected void Log(string message, LogLevel level = LogLevel.Info)
         {
-            Utility.Log($"{nameof(Plugin)}\\{Name}", level, message);
+            Utility.Log($"{nameof(Plugin)}{PathSeparator}{Name}", level, message);
         }
 
         protected virtual bool OnMessage(object message)

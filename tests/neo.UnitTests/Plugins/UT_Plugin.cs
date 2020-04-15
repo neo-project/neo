@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Plugins;
 using System;
+using System.IO;
 
 namespace Neo.UnitTests.Plugins
 {
@@ -38,7 +39,7 @@ namespace Neo.UnitTests.Plugins
         {
             var lp = new TestLogPlugin();
             lp.LogMessage("Hello");
-            lp.Output.Should().Be("Plugin\\TestLogPlugin_Info_Hello");
+            lp.Output.Should().Be($"Plugin{Path.PathSeparator}TestLogPlugin_Info_Hello");
         }
 
         [TestMethod]
