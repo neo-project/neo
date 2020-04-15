@@ -45,16 +45,17 @@ namespace Neo.UnitTests.SmartContract
                 // Add return
 
                 script.EmitPush(true);
+                script.Emit(OpCode.RET);
 
                 // Mock contract
 
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.Contracts.Delete(scriptHash2);
-                snapshot.Contracts.Add(scriptHash2, new Neo.Ledger.ContractState()
+                snapshot.Contracts.Add(scriptHash2, new ContractState()
                 {
                     Script = script.ToArray(),
-                    Manifest = ContractManifest.CreateDefault(scriptHash2),
+                    Manifest = TestUtils.CreateDefaultManifest(scriptHash2, "test"),
                 });
             }
 
@@ -87,7 +88,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test");
+                script.EmitAppCall(scriptHash2, "test", 2, 1);
 
                 // Drop return
 
@@ -113,13 +114,13 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[1], scriptHash2, "test");
+                AssertNotification(array[1], scriptHash2, 2);
                 AssertNotification(array[0], currentScriptHash, 13);
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual("test", engine.Notifications[1].State.GetString());
+                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
                 Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());
@@ -137,7 +138,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test");
+                script.EmitAppCall(scriptHash2, "test", 2, 1);
 
                 // Drop return
 
@@ -163,12 +164,12 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[0], scriptHash2, "test");
+                AssertNotification(array[0], scriptHash2, 2);
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual("test", engine.Notifications[1].State.GetString());
+                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
                 Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());
@@ -236,15 +237,14 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Manifest = ContractManifest.CreateDefault(scriptA.ToArray().ToScriptHash()),
+                Manifest = TestUtils.CreateDefaultManifest(scriptA.ToArray().ToScriptHash(), "test"),
                 Script = scriptA.ToArray()
             };
-
             engine = GetEngine(true, true, false);
             engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitAppCall(contract.ScriptHash, "");
+            scriptB.EmitAppCall(contract.ScriptHash, "test", 0, 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -736,10 +736,11 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_Call()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var state = TestUtils.GetContract();
+            var state = TestUtils.GetContract("method");
             state.Manifest.Features = ContractFeatures.HasStorage;
             byte[] method = Encoding.UTF8.GetBytes("method");
-            byte[] args = new byte[0];
+            var args = new VM.Types.Array { 0, 1 };
+
             snapshot.Contracts.Add(state.ScriptHash, state);
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
@@ -748,8 +749,8 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(method);
             engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
             InteropService.Invoke(engine, InteropService.Contract.Call).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(method.ToHexString());
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(args.ToHexString());
+            engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
+            engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
             engine.CurrentContext.EvaluationStack.Push(args);
@@ -774,12 +775,12 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            var state = TestUtils.GetContract();
+            var state = TestUtils.GetContract("method");
             state.Manifest.Features = ContractFeatures.HasStorage;
             snapshot.Contracts.Add(state.ScriptHash, state);
 
             byte[] method = Encoding.UTF8.GetBytes("method");
-            byte[] args = new byte[0];
+            var args = new VM.Types.Array { 0, 1 };
 
             foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
             {
@@ -791,8 +792,8 @@ namespace Neo.UnitTests.SmartContract
                 engine.CurrentContext.EvaluationStack.Push(method);
                 engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
                 InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeTrue();
-                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(method.ToHexString());
-                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(args.ToHexString());
+                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
+                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
                 // Contract doesn't exists
 
@@ -809,8 +810,8 @@ namespace Neo.UnitTests.SmartContract
                 engine.CurrentContext.EvaluationStack.Push(method);
                 engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
                 InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeTrue();
-                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(method.ToHexString());
-                engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(args.ToHexString());
+                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
+                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
                 // Check rights
 
