@@ -37,7 +37,7 @@ namespace Neo.Trie.MPT
 
         public byte[] Encode()
         {
-            using (BinaryWriter writer = new BinaryWriter(new MemoryStream(), Encoding.UTF8, true))
+            using (BinaryWriter writer = new BinaryWriter(new MemoryStream(), Encoding.UTF8, false))
             {
                 writer.Write((byte)nType);
                 EncodeSpecific(writer);
