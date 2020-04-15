@@ -47,7 +47,7 @@ namespace Neo.Oracle
                 RequestTransaction = requestTx;
             }
 
-            public bool AddSinature(ResponseItem response)
+            public bool AddSignature(ResponseItem response)
             {
                 if (response.Data.TransactionRequestHash != RequestTransaction.Hash)
                 {
@@ -525,7 +525,7 @@ namespace Neo.Oracle
             {
                 // Append the signature if it's possible
 
-                if (request.AddSinature(response))
+                if (request.AddSignature(response))
                 {
                     if (request.IsCompleted)
                     {
