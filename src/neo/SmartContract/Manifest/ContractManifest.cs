@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Max length for a valid Contract Manifest
         /// </summary>
-        public const int MaxLength = 2048;
+        public const int MaxLength = 4096;
 
         /// <summary>
         /// Serialized size
