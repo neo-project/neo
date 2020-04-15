@@ -38,7 +38,7 @@ namespace Neo.UnitTests.Plugins
         {
             var lp = new TestLogPlugin();
             lp.LogMessage("Hello");
-            lp.Output.Should().Be("Plugin:TestLogPlugin_Info_Hello");
+            lp.Output.Should().Be("Plugin\\TestLogPlugin_Info_Hello");
         }
 
         [TestMethod]
