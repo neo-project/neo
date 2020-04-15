@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!base.Initialize(engine)) return false;
             if (TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
-            UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
+            UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
             Mint(engine, account, 30_000_000 * Factor);
             return true;
         }
