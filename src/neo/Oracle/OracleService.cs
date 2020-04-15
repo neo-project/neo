@@ -77,8 +77,6 @@ namespace Neo.Oracle
                     }
                 }
 
-                // TODO: Check duplicate call
-
                 return ResponseContext.AddSignature(Contract, response.OraclePub, response.Data.Signature) == true;
             }
         }
@@ -391,7 +389,7 @@ namespace Neo.Oracle
 
                 if (engine.Execute() != VMState.HALT)
                 {
-                    // TODO: If the request TX will FAULT?
+                    // TODO: If the request TX will FAULT we can save space removing the downloaded data
 
                     oracle.Clear();
                 }
@@ -602,10 +600,8 @@ namespace Neo.Oracle
                     _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
                 };
             }
-            catch (Exception e)
+            catch
             {
-                Console.WriteLine(e.ToString()); // TODO: remove this when fix UT
-
                 return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
             }
         }
