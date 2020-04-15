@@ -9,7 +9,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -25,8 +24,7 @@ namespace Neo.SmartContract.Native.Tokens
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
 
-        private const byte Prefix_Validator = 33;
-        private const byte Prefix_ValidatorsCount = 15;
+        private const byte Prefix_Candidate = 33;
         private const byte Prefix_NextValidators = 14;
 
         internal NeoToken()
@@ -43,18 +41,13 @@ namespace Neo.SmartContract.Native.Tokens
         {
             DistributeGas(engine, account, state);
             if (amount.IsZero) return;
-            if (state.Votes.Length == 0) return;
-            foreach (ECPoint pubkey in state.Votes)
+            if (state.VoteTo != null)
             {
-                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
-                ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
+                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
                 state_validator.Votes += amount;
                 storage_validator.Value = state_validator.ToByteArray();
             }
-            StorageItem storage_count = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount));
-            ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
-            state_count.Votes[state.Votes.Length - 1] += amount;
-            storage_count.Value = state_count.ToByteArray();
         }
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, AccountState state)
@@ -101,10 +94,19 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!base.Initialize(engine)) return false;
             if (base.TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
-            UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
-            Mint(engine, account, TotalAmount);
-            foreach (ECPoint pubkey in Blockchain.StandbyValidators)
-                RegisterValidator(engine.Snapshot, pubkey);
+            BigInteger amount = TotalAmount;
+            for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
+            {
+                ECPoint pubkey = Blockchain.StandbyCommittee[i];
+                RegisterCandidate(engine.Snapshot, pubkey);
+                BigInteger balance = TotalAmount / 2 / (Blockchain.ValidatorsCount * 2 + (Blockchain.CommitteeMembersCount - Blockchain.ValidatorsCount));
+                if (i < Blockchain.ValidatorsCount) balance *= 2;
+                UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+                Mint(engine, account, balance);
+                Vote(engine.Snapshot, account, pubkey);
+                amount -= balance;
+            }
+            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), amount);
             return true;
         }
 
@@ -133,20 +135,51 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
-        private StackItem RegisterValidator(ApplicationEngine engine, Array args)
+        private StackItem RegisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
-            return RegisterValidator(engine.Snapshot, pubkey);
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                return false;
+            return RegisterCandidate(engine.Snapshot, pubkey);
         }
 
-        private bool RegisterValidator(StoreView snapshot, ECPoint pubkey)
+        private bool RegisterCandidate(StoreView snapshot, ECPoint pubkey)
         {
-            StorageKey key = CreateStorageKey(Prefix_Validator, pubkey);
-            if (snapshot.Storages.TryGet(key) != null) return false;
-            snapshot.Storages.Add(key, new StorageItem
+            StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
+            StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
-                Value = new ValidatorState().ToByteArray()
+                Value = new CandidateState().ToByteArray()
             });
+            CandidateState state = CandidateState.FromByteArray(item.Value);
+            state.Registered = true;
+            item.Value = state.ToByteArray();
+            return true;
+        }
+
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
+        private StackItem UnregisterCandidate(ApplicationEngine engine, Array args)
+        {
+            ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                return false;
+            return UnregisterCandidate(engine.Snapshot, pubkey);
+        }
+
+        private bool UnregisterCandidate(StoreView snapshot, ECPoint pubkey)
+        {
+            StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
+            if (snapshot.Storages.TryGet(key) is null) return true;
+            StorageItem item = snapshot.Storages.GetAndChange(key);
+            CandidateState state = CandidateState.FromByteArray(item.Value);
+            if (state.Votes.IsZero)
+            {
+                snapshot.Storages.Delete(key);
+            }
+            else
+            {
+                state.Registered = false;
+                item.Value = state.ToByteArray();
+            }
             return true;
         }
 
@@ -154,39 +187,37 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem Vote(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
-            ECPoint[] pubkeys = ((Array)args[1]).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToArray();
+            ECPoint voteTo = args[1].IsNull ? null : args[1].GetSpan().AsSerializable<ECPoint>();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
+            return Vote(engine.Snapshot, account, voteTo);
+        }
+
+        private bool Vote(StoreView snapshot, UInt160 account, ECPoint voteTo)
+        {
             StorageKey key_account = CreateAccountKey(account);
-            if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
-            StorageItem storage_account = engine.Snapshot.Storages.GetAndChange(key_account);
+            if (snapshot.Storages.TryGet(key_account) is null) return false;
+            StorageItem storage_account = snapshot.Storages.GetAndChange(key_account);
             AccountState state_account = new AccountState(storage_account.Value);
-            foreach (ECPoint pubkey in state_account.Votes)
+            if (state_account.VoteTo != null)
             {
-                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
-                ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
+                StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray());
+                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
+                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
                 state_validator.Votes -= state_account.Balance;
-                storage_validator.Value = state_validator.ToByteArray();
+                if (!state_validator.Registered && state_validator.Votes.IsZero)
+                    snapshot.Storages.Delete(key);
+                else
+                    storage_validator.Value = state_validator.ToByteArray();
             }
-            pubkeys = pubkeys.Distinct().Where(p => engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Validator, p.ToArray())) != null).ToArray();
-            if (pubkeys.Length != state_account.Votes.Length)
-            {
-                StorageItem storage_count = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount), () => new StorageItem
-                {
-                    Value = new ValidatorsCountState().ToByteArray()
-                });
-                ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
-                if (state_account.Votes.Length > 0)
-                    state_count.Votes[state_account.Votes.Length - 1] -= state_account.Balance;
-                if (pubkeys.Length > 0)
-                    state_count.Votes[pubkeys.Length - 1] += state_account.Balance;
-                storage_count.Value = state_count.ToByteArray();
-            }
-            state_account.Votes = pubkeys;
+            state_account.VoteTo = voteTo;
             storage_account.Value = state_account.ToByteArray();
-            foreach (ECPoint pubkey in state_account.Votes)
+            if (voteTo != null)
             {
-                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
-                ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
+                StorageKey key = CreateStorageKey(Prefix_Candidate, voteTo.ToArray());
+                if (snapshot.Storages.TryGet(key) is null) return false;
+                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
+                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
+                if (!state_validator.Registered) return false;
                 state_validator.Votes += state_account.Balance;
                 storage_validator.Value = state_validator.ToByteArray();
             }
@@ -194,19 +225,19 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
-        private StackItem GetRegisteredValidators(ApplicationEngine engine, Array args)
+        private StackItem GetCandidates(ApplicationEngine engine, Array args)
         {
-            return new Array(engine.ReferenceCounter, GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
+            return new Array(engine.ReferenceCounter, GetCandidates(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
         }
 
-        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(StoreView snapshot)
+        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetCandidates(StoreView snapshot)
         {
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Validator });
+            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Candidate });
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
-                ValidatorState.FromByteArray(p.Value.Value).Votes
-            ));
+                CandidateState.FromByteArray(p.Value.Value)
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
@@ -217,21 +248,23 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetValidators(StoreView snapshot)
         {
-            StorageItem storage_count = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
-            if (storage_count is null) return Blockchain.StandbyValidators;
-            ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
-            int count = (int)state_count.Votes.Select((p, i) => new
-            {
-                Count = i,
-                Votes = p
-            }).Where(p => p.Votes.Sign > 0).ToArray().WeightedFilter(0.25, 0.75, p => p.Votes, (p, w) => new
-            {
-                p.Count,
-                Weight = w
-            }).WeightedAverage(p => p.Count, p => p.Weight);
-            count = Math.Max(count, Blockchain.StandbyValidators.Length);
-            HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
-            return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot, Blockchain.ValidatorsCount).OrderBy(p => p).ToArray();
+        }
+
+        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        private StackItem GetCommittee(ApplicationEngine engine, Array args)
+        {
+            return new Array(engine.ReferenceCounter, GetCommittee(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
+        }
+
+        public ECPoint[] GetCommittee(StoreView snapshot)
+        {
+            return GetCommitteeMembers(snapshot, Blockchain.CommitteeMembersCount).OrderBy(p => p).ToArray();
+        }
+
+        private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot, int count)
+        {
+            return GetCandidates(snapshot).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count);
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
@@ -250,11 +283,10 @@ namespace Neo.SmartContract.Native.Tokens
         public class AccountState : Nep5AccountState
         {
             public uint BalanceHeight;
-            public ECPoint[] Votes;
+            public ECPoint VoteTo;
 
             public AccountState()
             {
-                this.Votes = new ECPoint[0];
             }
 
             public AccountState(byte[] data)
@@ -266,66 +298,36 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 base.FromStruct(@struct);
                 BalanceHeight = (uint)@struct[1].GetBigInteger();
-                Votes = @struct[2].GetSpan().AsSerializableArray<ECPoint>(Blockchain.MaxValidators);
+                VoteTo = @struct[2].IsNull ? null : @struct[2].GetSpan().AsSerializable<ECPoint>();
             }
 
             protected override Struct ToStruct()
             {
                 Struct @struct = base.ToStruct();
                 @struct.Add(BalanceHeight);
-                @struct.Add(Votes.ToByteArray());
+                @struct.Add(VoteTo?.ToArray() ?? StackItem.Null);
                 return @struct;
             }
         }
 
-        internal class ValidatorState
+        internal class CandidateState
         {
+            public bool Registered = true;
             public BigInteger Votes;
 
-            public static ValidatorState FromByteArray(byte[] data)
+            public static CandidateState FromByteArray(byte[] data)
             {
-                return new ValidatorState
+                Struct @struct = (Struct)BinarySerializer.Deserialize(data, 16, 32);
+                return new CandidateState
                 {
-                    Votes = new BigInteger(data)
+                    Registered = @struct[0].ToBoolean(),
+                    Votes = @struct[1].GetBigInteger()
                 };
             }
 
             public byte[] ToByteArray()
             {
-                return Votes.ToByteArrayStandard();
-            }
-        }
-
-        internal class ValidatorsCountState
-        {
-            public BigInteger[] Votes = new BigInteger[Blockchain.MaxValidators];
-
-            public static ValidatorsCountState FromByteArray(byte[] data)
-            {
-                using (MemoryStream ms = new MemoryStream(data, false))
-                using (BinaryReader r = new BinaryReader(ms))
-                {
-                    BigInteger[] votes = new BigInteger[(int)r.ReadVarInt(Blockchain.MaxValidators)];
-                    for (int i = 0; i < votes.Length; i++)
-                        votes[i] = new BigInteger(r.ReadVarBytes());
-                    return new ValidatorsCountState
-                    {
-                        Votes = votes
-                    };
-                }
-            }
-
-            public byte[] ToByteArray()
-            {
-                using (MemoryStream ms = new MemoryStream())
-                using (BinaryWriter w = new BinaryWriter(ms))
-                {
-                    w.WriteVarInt(Votes.Length);
-                    foreach (BigInteger vote in Votes)
-                        w.WriteVarBytes(vote.ToByteArrayStandard());
-                    w.Flush();
-                    return ms.ToArray();
-                }
+                return BinarySerializer.Serialize(new Struct { Registered, Votes }, 32);
             }
         }
     }
