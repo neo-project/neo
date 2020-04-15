@@ -103,25 +103,6 @@ namespace Neo.Oracle
                 Add(item);
             }
 
-            private int Sort(KeyValuePair<ECPoint, ResponseItem> a, KeyValuePair<ECPoint, ResponseItem> b)
-            {
-                // Sort by if it's mine or not
-
-                int av = a.Value.Tx != null ? 1 : 0;
-                int bv = b.Value.Tx != null ? 1 : 0;
-
-                int ret = av.CompareTo(bv);
-
-                if (ret == 0)
-                {
-                    // Sort by time
-
-                    return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
-                }
-
-                return ret;
-            }
-
             public bool Add(ResponseItem item)
             {
                 // Prevent duplicate messages using the publicKey as key
@@ -522,6 +503,21 @@ namespace Neo.Oracle
         }
 
         #region Sorts
+
+        private static int Sort(KeyValuePair<ECPoint, ResponseItem> a, KeyValuePair<ECPoint, ResponseItem> b)
+        {
+            // Sort by if it's mine or not
+
+            int av = a.Value.IsMine ? 1 : 0;
+            int bv = b.Value.IsMine ? 1 : 0;
+            int ret = av.CompareTo(bv);
+
+            if (ret != 0) return ret;
+
+            // Sort by time
+
+            return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
+        }
 
         private static int SortRequest(KeyValuePair<UInt256, RequestItem> a, KeyValuePair<UInt256, RequestItem> b)
         {
