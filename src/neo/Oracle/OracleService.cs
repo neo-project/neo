@@ -24,7 +24,7 @@ namespace Neo.Oracle
     {
         #region Sub classes
 
-        internal class StartMessage { }
+        internal class StartMessage { public byte NumberOfTasks = 4; }
 
         private class RequestItem : PoolItem
         {
@@ -173,7 +173,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Number of threads for processing the oracle
         /// </summary>
-        private readonly Task[] _oracleTasks = new Task[4]; // TODO: Set this
+        private Task[] _oracleTasks;
 
         /// <summary>
         /// Sorted Queue for oracle tasks
@@ -281,9 +281,9 @@ namespace Neo.Oracle
         {
             switch (message)
             {
-                case StartMessage _:
+                case StartMessage start:
                     {
-                        Start();
+                        Start(start.NumberOfTasks);
                         break;
                     }
                 case Transaction tx:
@@ -291,32 +291,31 @@ namespace Neo.Oracle
                         using var snapshot = _snapshotFactory();
                         var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
 
-                        switch (tx.Version)
+                        // We only need to take care about the requests
+
+                        if (tx.Version == TransactionVersion.OracleRequest)
                         {
-                            case TransactionVersion.OracleRequest:
-                                {
-                                    // Check the cached contract
+                            // Check the cached contract
 
-                                    if (_lastContract?.ScriptHash != contract.ScriptHash)
-                                    {
-                                        // Reduce the memory load using the same Contract class
+                            if (_lastContract?.ScriptHash != contract.ScriptHash)
+                            {
+                                // Reduce the memory load using the same Contract class
 
-                                        _lastContract = contract;
-                                    }
+                                _lastContract = contract;
+                            }
 
-                                    // If it's an OracleRequest and it's new, tell it to OracleService
+                            // If it's an OracleRequest and it's new, tell it to OracleService
 
-                                    if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(contract, tx)))
-                                    {
-                                        ReverifyPendingResponses(snapshot, tx.Hash);
-                                    }
+                            if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(contract, tx)))
+                            {
+                                ReverifyPendingResponses(snapshot, tx.Hash);
+                            }
 
-                                    // Process oracle - Pop one item if it's needed
+                            // Add it to the oracle processing queue
 
-                                    _queue.Add(tx.Hash, tx);
-                                    break;
-                                }
+                            _queue.Add(tx.Hash, tx);
                         }
+
                         break;
                     }
             }
@@ -325,13 +324,15 @@ namespace Neo.Oracle
         /// <summary>
         /// Start oracle
         /// </summary>
-        public void Start()
+        /// <param name="numberOfTasks">Number of tasks</param>
+        public void Start(byte numberOfTasks = 4)
         {
             if (Interlocked.Exchange(ref _isStarted, 1) != 0) return;
 
             // Create tasks
 
             _cancel = new CancellationTokenSource();
+            _oracleTasks = new Task[numberOfTasks];
 
             for (int x = 0; x < _oracleTasks.Length; x++)
             {
@@ -363,11 +364,11 @@ namespace Neo.Oracle
             {
                 try { _oracleTasks[x].Wait(); } catch { }
                 try { _oracleTasks[x].Dispose(); } catch { }
-                _oracleTasks[x] = null;
             }
 
             _cancel.Dispose();
             _cancel = null;
+            _oracleTasks = null;
 
             // Clean queue
 

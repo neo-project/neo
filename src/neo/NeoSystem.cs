@@ -78,11 +78,11 @@ namespace Neo
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
-        public void StartOracle(Wallet wallet)
+        public void StartOracle(Wallet wallet, byte numberOfTasks = 4)
         {
             if (Oracle != null) return;
             Oracle = ActorSystem.ActorOf(OracleService.Props(this, this.LocalNode, wallet));
-            Oracle.Tell(new OracleService.StartMessage(), Blockchain);
+            Oracle.Tell(new OracleService.StartMessage() { NumberOfTasks = numberOfTasks }, Blockchain);
         }
 
         public void StartNode(ChannelsConfig config)
