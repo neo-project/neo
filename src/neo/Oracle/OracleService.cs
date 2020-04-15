@@ -86,20 +86,24 @@ namespace Neo.Oracle
         {
             public readonly DateTime Timestamp;
 
-            private readonly SortedConcurrentDictionary<UInt160, ResponseItem> _items;
+            private readonly SortedConcurrentDictionary<ECPoint, ResponseItem> _items;
+
+            public int Count => _items.Count;
+
+            public int MineCount { get; private set; }
 
             public ResponseCollection(ResponseItem item)
             {
                 Timestamp = item.Timestamp;
-                _items = new SortedConcurrentDictionary<UInt160, ResponseItem>
+                _items = new SortedConcurrentDictionary<ECPoint, ResponseItem>
                     (
-                    Comparer<KeyValuePair<UInt160, ResponseItem>>.Create(Sort), 1_000
+                    Comparer<KeyValuePair<ECPoint, ResponseItem>>.Create(Sort), 1_000
                     );
 
                 Add(item);
             }
 
-            private int Sort(KeyValuePair<UInt160, ResponseItem> a, KeyValuePair<UInt160, ResponseItem> b)
+            private int Sort(KeyValuePair<ECPoint, ResponseItem> a, KeyValuePair<ECPoint, ResponseItem> b)
             {
                 // Sort by if it's mine or not
 
@@ -120,9 +124,26 @@ namespace Neo.Oracle
 
             public bool Add(ResponseItem item)
             {
-                // Prevent duplicate messages
+                // Prevent duplicate messages using the publicKey as key
 
-                return _items.TryAdd(item.MsgHash, item);
+                if (_items.TryGetValue(item.OraclePub, out var prev))
+                {
+                    // If it's new, replace it
+
+                    if (prev.Timestamp > item.Timestamp) return false;
+
+                    if (!prev.IsMine && item.IsMine) MineCount++;
+                    _items.Set(item.OraclePub, item);
+                    return true;
+                }
+
+                if (_items.TryAdd(item.OraclePub, item))
+                {
+                    if (item.IsMine) MineCount++;
+                    return true;
+                }
+
+                return false;
             }
 
             public IEnumerator<ResponseItem> GetEnumerator()
@@ -147,9 +168,11 @@ namespace Neo.Oracle
             public byte[] Signature => Data.Signature;
             public UInt160 ResultHash => Data.OracleExecutionCacheHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
+            public bool IsMine { get; }
 
             public ResponseItem(OraclePayload payload, Contract contract = null, Transaction responseTx = null) : base(responseTx)
             {
+                IsMine = responseTx != null && contract != null;
                 Contract = contract;
                 Msg = payload;
                 Data = payload.OracleSignature;
@@ -510,6 +533,18 @@ namespace Neo.Oracle
 
         private static int SortResponse(KeyValuePair<UInt256, ResponseCollection> a, KeyValuePair<UInt256, ResponseCollection> b)
         {
+            // Sort by number of signatures
+
+            var comp = a.Value.Count.CompareTo(b.Value.Count);
+            if (comp != 0) return comp;
+
+            // Sort by if has my signature or not
+
+            comp = a.Value.MineCount.CompareTo(b.Value.MineCount);
+            if (comp != 0) return comp;
+
+            // Sort by age
+
             return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
         }
 

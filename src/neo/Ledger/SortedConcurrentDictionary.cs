@@ -135,6 +135,15 @@ namespace Neo.Ledger
             return false;
         }
 
+        public void Set(TKey key, TValue value)
+        {
+            lock (_lock)
+            {
+                TryRemove(key, out _);
+                TryAdd(key, value);
+            }
+        }
+
         public void Clear()
         {
             lock (_lock)
