@@ -66,15 +66,11 @@ namespace Neo.Plugins
             switch (GetExtension(e.Name))
             {
                 case ".json":
-                    Plugin plugin = Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath);
-                    if (plugin != null)
+                    try
                     {
-                        try
-                        {
-                            plugin.Configure();
-                        }
-                        catch (FormatException) { }
+                        Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath)?.Configure();
                     }
+                    catch (FormatException) { }
                     break;
                 case ".dll":
                     if (e.ChangeType != WatcherChangeTypes.Created) return;
