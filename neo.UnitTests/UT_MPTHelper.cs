@@ -16,20 +16,6 @@ namespace Neo.UnitTests.Trie.MPTH
         }
 
         [TestMethod]
-        public void TestAdd()
-        {
-            var a = "ab".HexToBytes();
-            byte b = 0x0c;
-            a = a.Add(b);
-            Assert.AreEqual("ab0c", a.ToHexString());
-
-            a = new byte[0];
-            a = a.Add(b);
-            Assert.AreEqual(1, a.Length);
-            Assert.AreEqual("0c", a.ToHexString());
-        }
-
-        [TestMethod]
         public void TestSkip()
         {
             var s = "abcd01".HexToBytes();
