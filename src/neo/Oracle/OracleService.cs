@@ -323,11 +323,11 @@ namespace Neo.Oracle
                             if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(tx)))
                             {
                                 ReverifyPendingResponses(snapshot, tx.Hash);
+
+                                // Add it to the oracle processing queue
+
+                                _queue.Add(tx.Hash, tx);
                             }
-
-                            // Add it to the oracle processing queue
-
-                            _queue.Add(tx.Hash, tx);
                         }
 
                         break;
@@ -609,6 +609,12 @@ namespace Neo.Oracle
 
                     return true;
                 }
+            }
+            else
+            {
+                // Ask for the request tx because it's not in my pool
+
+                _localNode.Tell(Message.Create(MessageCommand.GetData, InvPayload.Create(InventoryType.TX, response.TransactionRequestHash)));
             }
 
             // Save this payload for check it later
