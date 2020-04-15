@@ -262,10 +262,6 @@ namespace Neo.VM
                 case Pointer pointer:
                     json["value"] = pointer.Position;
                     break;
-                case Null _:
-                    json["value"] = JObject.Null;
-                    break;
-                default: throw new InvalidOperationException();
             }
             return json;
         }
