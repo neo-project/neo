@@ -72,12 +72,8 @@ namespace Neo.Plugins
                         try
                         {
                             plugin.Configure();
-                            plugin.Log($"Reload plugin configuration succeeded", LogLevel.Error);
                         }
-                        catch (FormatException ex)
-                        {
-                            plugin.Log($"Failed to reload plugin configuration: {ex.Message}", LogLevel.Error);
-                        }
+                        catch (FormatException) { }
                     }
                     break;
                 case ".dll":
