@@ -50,6 +50,12 @@ namespace Neo.Ledger
             _keys = new Dictionary<TKey, TValue>();
         }
 
+        /// <summary>
+        /// Try to get a value
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <param name="value">Value</param>
+        /// <returns>True if was found</returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
             lock (_lock)
@@ -57,6 +63,28 @@ namespace Neo.Ledger
                 return _keys.TryGetValue(key, out value);
             }
         }
+
+        /// <summary>
+        /// Try to get value and add new one if not found
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <param name="value">Value</param>
+        /// <param name="add">New value if it was not found</param>
+        /// <returns>True if was getted or added</returns>
+        public bool TryGetValue(TKey key, out TValue value, TValue add)
+        {
+            lock (_lock)
+            {
+                if (!_keys.TryGetValue(key, out value))
+                {
+                    value = default;
+                    return TryAdd(key, add);
+                }
+            }
+
+            return true;
+        }
+
 
         public bool TryRemove(TKey key, out TValue value)
         {

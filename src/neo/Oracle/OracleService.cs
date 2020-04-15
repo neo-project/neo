@@ -546,16 +546,21 @@ namespace Neo.Oracle
 
             // Save this payload for check it later
 
-            if (_pendingOracleResponses.TryGetValue(response.Data.TransactionRequestHash, out var collection))
+            if (_pendingOracleResponses.TryGetValue(response.Data.TransactionRequestHash, out var collection, new ResponseCollection(response)))
             {
-                return collection.Add(response);
-            }
-            else
-            {
-                // TODO: This could not be thread-safe (lock?)
+                if (collection != null)
+                {
+                    // It was getted
 
-                return _pendingOracleResponses.TryAdd(response.Data.TransactionRequestHash, new ResponseCollection(response));
+                    return collection.Add(response);
+                }
+
+                // It was added
+
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
