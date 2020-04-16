@@ -169,6 +169,15 @@ namespace Neo.Oracle
 
         #endregion
 
+        #region Protocols
+
+        /// <summary>
+        /// HTTPS protocol
+        /// </summary>
+        internal static OracleHttpsProtocol HTTPSProtocol { get; } = new OracleHttpsProtocol();
+
+        #endregion
+
         // TODO: Fees
 
         private const long MaxGasFilter = 1_000_000;
@@ -192,15 +201,6 @@ namespace Neo.Oracle
         /// Sorted Queue for oracle tasks
         /// </summary>
         private readonly SortedBlockingCollection<UInt256, Transaction> _queue;
-
-        #region Protocols
-
-        /// <summary>
-        /// HTTPS protocol
-        /// </summary>
-        internal static OracleHttpsProtocol HTTPSProtocol { get; } = new OracleHttpsProtocol();
-
-        #endregion
 
         /// <summary>
         /// Oracle
@@ -312,8 +312,6 @@ namespace Neo.Oracle
                     }
                 case Transaction tx:
                     {
-                        using var snapshot = _snapshotFactory();
-
                         // We only need to take care about the requests
 
                         if (tx.Version == TransactionVersion.OracleRequest)
@@ -322,6 +320,8 @@ namespace Neo.Oracle
 
                             if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(tx)))
                             {
+                                using var snapshot = _snapshotFactory();
+
                                 ReverifyPendingResponses(snapshot, tx.Hash);
 
                                 // Add it to the oracle processing queue
@@ -502,65 +502,6 @@ namespace Neo.Oracle
             };
         }
 
-        #region Sorts
-
-        private static int Sort(KeyValuePair<ECPoint, ResponseItem> a, KeyValuePair<ECPoint, ResponseItem> b)
-        {
-            // Sort by if it's mine or not
-
-            int av = a.Value.IsMine ? 1 : 0;
-            int bv = b.Value.IsMine ? 1 : 0;
-            int ret = av.CompareTo(bv);
-
-            if (ret != 0) return ret;
-
-            // Sort by time
-
-            return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
-        }
-
-        private static int SortRequest(KeyValuePair<UInt256, RequestItem> a, KeyValuePair<UInt256, RequestItem> b)
-        {
-            return a.Value.CompareTo(b.Value);
-        }
-
-        private static int SortEnqueuedRequest(KeyValuePair<UInt256, Transaction> a, KeyValuePair<UInt256, Transaction> b)
-        {
-            var otherTx = b.Value;
-            if (otherTx == null) return 1;
-
-            // Fees sorted ascending
-
-            var tx = a.Value;
-            int ret = tx.FeePerByte.CompareTo(otherTx.FeePerByte);
-            if (ret != 0) return ret;
-            ret = tx.NetworkFee.CompareTo(otherTx.NetworkFee);
-            if (ret != 0) return ret;
-
-            // Transaction hash sorted descending
-
-            return otherTx.Hash.CompareTo(tx.Hash);
-        }
-
-        private static int SortResponse(KeyValuePair<UInt256, ResponseCollection> a, KeyValuePair<UInt256, ResponseCollection> b)
-        {
-            // Sort by number of signatures
-
-            var comp = a.Value.Count.CompareTo(b.Value.Count);
-            if (comp != 0) return comp;
-
-            // Sort by if has my signature or not
-
-            comp = a.Value.MineCount.CompareTo(b.Value.MineCount);
-            if (comp != 0) return comp;
-
-            // Sort by age
-
-            return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
-        }
-
-        #endregion
-
         /// <summary>
         /// Try add oracle response payload
         /// </summary>
@@ -657,6 +598,65 @@ namespace Neo.Oracle
                 TryAddOracleResponse(snapshot, entry);
             }
         }
+
+        #region Sorts
+
+        private static int Sort(KeyValuePair<ECPoint, ResponseItem> a, KeyValuePair<ECPoint, ResponseItem> b)
+        {
+            // Sort by if it's mine or not
+
+            int av = a.Value.IsMine ? 1 : 0;
+            int bv = b.Value.IsMine ? 1 : 0;
+            int ret = av.CompareTo(bv);
+
+            if (ret != 0) return ret;
+
+            // Sort by time
+
+            return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
+        }
+
+        private static int SortRequest(KeyValuePair<UInt256, RequestItem> a, KeyValuePair<UInt256, RequestItem> b)
+        {
+            return a.Value.CompareTo(b.Value);
+        }
+
+        private static int SortEnqueuedRequest(KeyValuePair<UInt256, Transaction> a, KeyValuePair<UInt256, Transaction> b)
+        {
+            var otherTx = b.Value;
+            if (otherTx == null) return 1;
+
+            // Fees sorted ascending
+
+            var tx = a.Value;
+            int ret = tx.FeePerByte.CompareTo(otherTx.FeePerByte);
+            if (ret != 0) return ret;
+            ret = tx.NetworkFee.CompareTo(otherTx.NetworkFee);
+            if (ret != 0) return ret;
+
+            // Transaction hash sorted descending
+
+            return otherTx.Hash.CompareTo(tx.Hash);
+        }
+
+        private static int SortResponse(KeyValuePair<UInt256, ResponseCollection> a, KeyValuePair<UInt256, ResponseCollection> b)
+        {
+            // Sort by number of signatures
+
+            var comp = a.Value.Count.CompareTo(b.Value.Count);
+            if (comp != 0) return comp;
+
+            // Sort by if has my signature or not
+
+            comp = a.Value.MineCount.CompareTo(b.Value.MineCount);
+            if (comp != 0) return comp;
+
+            // Sort by age
+
+            return a.Value.Timestamp.CompareTo(b.Value.Timestamp);
+        }
+
+        #endregion
 
         #region Public Static methods
 
