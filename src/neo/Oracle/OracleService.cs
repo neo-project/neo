@@ -13,6 +13,7 @@ using Neo.Wallets;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -78,7 +79,18 @@ namespace Neo.Oracle
                     }
                 }
 
-                return ResponseContext.AddSignature(Contract, response.OraclePub, response.Signature) == true;
+                if (ResponseContext.AddSignature(Contract, response.OraclePub, response.Signature) == true)
+                {
+                    if (ResponseContext.Completed)
+                    {
+                        // Append the witness to the response TX
+
+                        ResponseTransaction.Witnesses = ResponseContext.GetWitnesses();
+                    }
+                    return true;
+                }
+
+                return false;
             }
         }
 
@@ -167,6 +179,32 @@ namespace Neo.Oracle
             }
         }
 
+        private class AllowWitness : IVerifiable
+        {
+            public Witness[] Witnesses
+            {
+                get => throw new NotImplementedException();
+                set => throw new NotImplementedException();
+            }
+            public int Size => throw new NotImplementedException();
+            public void Deserialize(BinaryReader reader) => throw new NotImplementedException();
+            public void DeserializeUnsigned(BinaryReader reader) => throw new NotImplementedException();
+            public void Serialize(BinaryWriter writer) => throw new NotImplementedException();
+            public void SerializeUnsigned(BinaryWriter writer) => throw new NotImplementedException();
+
+            private readonly Contract _contract;
+
+            public AllowWitness(Contract contract)
+            {
+                _contract = contract;
+            }
+
+            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
+            {
+                return new UInt160[] { _contract.ScriptHash };
+            }
+        }
+
         #endregion
 
         #region Protocols
@@ -180,9 +218,8 @@ namespace Neo.Oracle
 
         // TODO: Fees
 
-        private const long MaxGasFilter = 1_000_000;
-        private const long TxNetworkFee = 1_000_000;
-        private const long TxSystemFee = 1_000_000;
+        private const long MaxGasFilter = 10_000_000;
+        private const long TxNetworkFee = 10_000_000;
 
         private long _isStarted = 0;
         private Contract _lastContract;
@@ -345,6 +382,8 @@ namespace Neo.Oracle
 
             // Create tasks
 
+            Log("OnStart");
+
             _cancel = new CancellationTokenSource();
             _oracleTasks = new Task[numberOfTasks];
 
@@ -372,6 +411,8 @@ namespace Neo.Oracle
         {
             if (Interlocked.Exchange(ref _isStarted, 0) != 1) return;
 
+            Log("OnStop");
+
             _cancel.Cancel();
 
             for (int x = 0; x < _oracleTasks.Length; x++)
@@ -391,12 +432,19 @@ namespace Neo.Oracle
             _pendingResponses.Clear();
         }
 
+        private void Log(string message, LogLevel level = LogLevel.Info)
+        {
+            Utility.Log(nameof(OracleService), level, message);
+        }
+
         /// <summary>
         /// Process request transaction
         /// </summary>
         /// <param name="tx">Transaction</param>
         private void ProcessRequestTransaction(Transaction tx)
         {
+            Log($"Process request tx: {tx.Hash}");
+
             var oracle = new OracleExecutionCache(Process);
             using var snapshot = _snapshotFactory();
             using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
@@ -426,13 +474,13 @@ namespace Neo.Oracle
 
             // Create deterministic oracle response
 
-            var responseTx = CreateResponseTransaction(oracle, contract, tx);
+            var responseTx = CreateResponseTransaction(snapshot, oracle, contract, tx);
 
             foreach (var account in _accounts)
             {
                 // Sign the transaction
 
-                var signature = responseTx.Sign(account.Key);
+                var signatureTx = responseTx.Sign(account.Key);
 
                 // Create the payload
 
@@ -442,15 +490,15 @@ namespace Neo.Oracle
                     OracleSignature = new OracleResponseSignature()
                     {
                         OracleExecutionCacheHash = oracle.Hash,
-                        Signature = signature,
+                        Signature = signatureTx,
                         TransactionRequestHash = tx.Hash
                     }
                 };
 
-                signature = response.Sign(account.Key);
-
+                var signatureMsg = response.Sign(account.Key);
                 var signPayload = new ContractParametersContext(response);
-                if (signPayload.AddSignature(account.Contract, account.Key.PublicKey, signature) && signPayload.Completed)
+
+                if (signPayload.AddSignature(account.Contract, response.OraclePub, signatureMsg) && signPayload.Completed)
                 {
                     response.Witness = signPayload.GetWitnesses()[0];
 
@@ -468,28 +516,48 @@ namespace Neo.Oracle
         /// Create Oracle response transaction
         /// We need to create a deterministic TX for this result/oracleRequest
         /// </summary>
+        /// <param name="snapshot">Snapshot</param>
         /// <param name="oracle">Oracle</param>
         /// <param name="contract">Contract</param>
         /// <param name="requestTx">Request Hash</param>
         /// <returns>Transaction</returns>
-        public static Transaction CreateResponseTransaction(OracleExecutionCache oracle, Contract contract, Transaction requestTx)
+        public static Transaction CreateResponseTransaction(SnapshotView snapshot, OracleExecutionCache oracle, Contract contract, Transaction requestTx)
         {
             using ScriptBuilder script = new ScriptBuilder();
-
             script.EmitAppCall(NativeContract.Oracle.Hash, "setOracleResponse", requestTx.Hash, IO.Helper.ToArray(oracle));
+
+            // Send only the required gas
+
+            long systemFee = TxNetworkFee;
+
+            //using (var engine = ApplicationEngine.Run
+            //    (
+            //        script.ToArray(), snapshot.Clone(),
+            //        new AllowWitness(contract), null, true, 0, null
+            //    ))
+            //{
+            //    if (engine.State != VMState.HALT)
+            //    {
+            //        // This should never happend
+
+            //        throw new ApplicationException();
+            //    }
+
+            //    systemFee = engine.GasConsumed;
+            //}
 
             return new Transaction()
             {
-                Witnesses = new Witness[0],
-                Attributes = new TransactionAttribute[0],
                 Version = TransactionVersion.OracleResponse,
                 ValidUntilBlock = requestTx.ValidUntilBlock,
+                Attributes = new TransactionAttribute[0],
                 OracleRequestTx = requestTx.Hash,
+                Sender = contract.ScriptHash,
+                Witnesses = new Witness[0],
                 Script = script.ToArray(),
                 NetworkFee = TxNetworkFee,
-                SystemFee = TxSystemFee,
                 Nonce = requestTx.Nonce,
-                Sender = contract.ScriptHash,
+                SystemFee = systemFee,
                 Cosigners = new Cosigner[]
                 {
                     new Cosigner()
@@ -528,6 +596,8 @@ namespace Neo.Oracle
                 return false;
             }
 
+            Log($"Received oracle signature for {response.TransactionRequestHash} from {response.OraclePub.ToString()}");
+
             // Find the request tx
 
             if (_pendingRequests.TryGetValue(response.TransactionRequestHash, out var request))
@@ -538,6 +608,8 @@ namespace Neo.Oracle
                 {
                     if (request.IsCompleted)
                     {
+                        Log($"Send response tx: {request.ResponseTransaction.Hash}");
+
                         // Done! Send to mem pool
 
                         _pendingRequests.TryRemove(response.TransactionRequestHash, out _);
@@ -588,16 +660,14 @@ namespace Neo.Oracle
         {
             // If the response is pending, we should process it now
 
-            if (!_pendingResponses.TryRemove(requestTx, out var collection))
+            if (_pendingResponses.TryRemove(requestTx, out var collection))
             {
-                return;
-            }
+                // Order by Transaction
 
-            // Order by Transaction
-
-            foreach (var entry in collection)
-            {
-                TryAddOracleResponse(snapshot, entry);
+                foreach (var entry in collection)
+                {
+                    TryAddOracleResponse(snapshot, entry);
+                }
             }
         }
 

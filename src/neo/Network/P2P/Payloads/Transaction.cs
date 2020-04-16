@@ -331,7 +331,9 @@ namespace Neo.Network.P2P.Payloads
 
                 var hashes = GetScriptHashesForVerifying(snapshot);
 
-                if (hashes.Length != 1 || hashes[0] != NativeContract.Oracle.GetOracleMultiSigAddress(snapshot))
+                if (hashes.Length != 1 ||
+                    hashes[0] != NativeContract.Oracle.GetOracleMultiSigAddress(snapshot) ||
+                    hashes[0] != Sender)
                 {
                     return VerifyResult.Invalid;
                 }
