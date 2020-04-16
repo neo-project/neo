@@ -502,7 +502,7 @@ namespace Neo.Oracle
                 {
                     response.Witness = signPayload.GetWitnesses()[0];
 
-                    if (TryAddOracleResponse(snapshot, response, contract, responseTx))
+                    if (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx)))
                     {
                         // Send my signature by P2P
 
@@ -578,19 +578,6 @@ namespace Neo.Oracle
             tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
 
             return tx;
-        }
-
-        /// <summary>
-        /// Try add oracle response payload
-        /// </summary>
-        /// <param name="snapshot">Snapshot</param>
-        /// <param name="oracle">Oracle</param>
-        /// <param name="contract">Contract</param>
-        /// <param name="responseTx">Response TX (from OracleService)</param>
-        /// <returns>True if it was added</returns>
-        internal bool TryAddOracleResponse(StoreView snapshot, OraclePayload oracle, Contract contract, Transaction responseTx)
-        {
-            return TryAddOracleResponse(snapshot, new ResponseItem(oracle, contract, responseTx));
         }
 
         /// <summary>
