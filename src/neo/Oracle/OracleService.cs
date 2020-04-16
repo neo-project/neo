@@ -200,7 +200,7 @@ namespace Neo.Oracle
         /// <summary>
         /// Sorted Queue for oracle tasks
         /// </summary>
-        private readonly SortedBlockingCollection<UInt256, Transaction> _queue;
+        private readonly SortedBlockingCollection<UInt256, Transaction> _processingQueue;
 
         /// <summary>
         /// Oracle
@@ -210,27 +210,27 @@ namespace Neo.Oracle
         /// <summary>
         /// Pending user Transactions
         /// </summary>
-        private readonly SortedConcurrentDictionary<UInt256, RequestItem> _pendingOracleRequest;
+        private readonly SortedConcurrentDictionary<UInt256, RequestItem> _pendingRequests;
 
         /// <summary>
         /// Pending oracle response Transactions
         /// </summary>
-        private readonly SortedConcurrentDictionary<UInt256, ResponseCollection> _pendingOracleResponses;
+        private readonly SortedConcurrentDictionary<UInt256, ResponseCollection> _pendingResponses;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
         /// </summary>
-        public int PendingCapacity => _pendingOracleRequest.Capacity;
+        public int PendingCapacity => _pendingRequests.Capacity;
 
         /// <summary>
         /// Total requests in the pool.
         /// </summary>
-        public int PendingRequestCount => _pendingOracleRequest.Count;
+        public int PendingRequestCount => _pendingRequests.Count;
 
         /// <summary>
         /// Total responses in the pool.
         /// </summary>
-        public int PendingResponseCount => _pendingOracleResponses.Count;
+        public int PendingResponseCount => _pendingResponses.Count;
 
         /// <summary>
         /// Is started
@@ -270,18 +270,18 @@ namespace Neo.Oracle
 
             // Create queue for pending request that should be processed
 
-            _queue = new SortedBlockingCollection<UInt256, Transaction>
+            _processingQueue = new SortedBlockingCollection<UInt256, Transaction>
                 (
                 Comparer<KeyValuePair<UInt256, Transaction>>.Create(SortEnqueuedRequest), capacity
                 );
 
             // Create internal collections for pending request/responses
 
-            _pendingOracleRequest = new SortedConcurrentDictionary<UInt256, RequestItem>
+            _pendingRequests = new SortedConcurrentDictionary<UInt256, RequestItem>
                 (
                 Comparer<KeyValuePair<UInt256, RequestItem>>.Create(SortRequest), capacity
                 );
-            _pendingOracleResponses = new SortedConcurrentDictionary<UInt256, ResponseCollection>
+            _pendingResponses = new SortedConcurrentDictionary<UInt256, ResponseCollection>
                 (
                 Comparer<KeyValuePair<UInt256, ResponseCollection>>.Create(SortResponse), capacity
                 );
@@ -318,7 +318,7 @@ namespace Neo.Oracle
                         {
                             // If it's an OracleRequest and it's new, tell it to OracleService
 
-                            if (_pendingOracleRequest.TryAdd(tx.Hash, new RequestItem(tx)))
+                            if (_pendingRequests.TryAdd(tx.Hash, new RequestItem(tx)))
                             {
                                 using var snapshot = _snapshotFactory();
 
@@ -326,7 +326,7 @@ namespace Neo.Oracle
 
                                 // Add it to the oracle processing queue
 
-                                _queue.Add(tx.Hash, tx);
+                                _processingQueue.Add(tx.Hash, tx);
                             }
                         }
 
@@ -352,7 +352,7 @@ namespace Neo.Oracle
             {
                 _oracleTasks[x] = new Task(() =>
                 {
-                    foreach (var tx in _queue.GetConsumingEnumerable(_cancel.Token))
+                    foreach (var tx in _processingQueue.GetConsumingEnumerable(_cancel.Token))
                     {
                         ProcessRequestTransaction(tx);
                     }
@@ -386,9 +386,9 @@ namespace Neo.Oracle
 
             // Clean queue
 
-            _queue.Clear();
-            _pendingOracleRequest.Clear();
-            _pendingOracleResponses.Clear();
+            _processingQueue.Clear();
+            _pendingRequests.Clear();
+            _pendingResponses.Clear();
         }
 
         /// <summary>
@@ -530,7 +530,7 @@ namespace Neo.Oracle
 
             // Find the request tx
 
-            if (_pendingOracleRequest.TryGetValue(response.TransactionRequestHash, out var request))
+            if (_pendingRequests.TryGetValue(response.TransactionRequestHash, out var request))
             {
                 // Append the signature if it's possible
 
@@ -540,7 +540,9 @@ namespace Neo.Oracle
                     {
                         // Done! Send to mem pool
 
-                        _pendingOracleRequest.TryRemove(response.TransactionRequestHash, out _);
+                        _pendingRequests.TryRemove(response.TransactionRequestHash, out _);
+                        _pendingResponses.TryRemove(response.TransactionRequestHash, out _);
+
                         _system.Blockchain.Tell(request.ResponseTransaction);
 
                         // Request should be already there, but it could be removed because the mempool was full during the process
@@ -560,7 +562,7 @@ namespace Neo.Oracle
 
             // Save this payload for check it later
 
-            if (_pendingOracleResponses.TryGetValue(response.TransactionRequestHash, out var collection, new ResponseCollection(response)))
+            if (_pendingResponses.TryGetValue(response.TransactionRequestHash, out var collection, new ResponseCollection(response)))
             {
                 if (collection != null)
                 {
@@ -586,7 +588,7 @@ namespace Neo.Oracle
         {
             // If the response is pending, we should process it now
 
-            if (!_pendingOracleResponses.TryRemove(requestTx, out var collection))
+            if (!_pendingResponses.TryRemove(requestTx, out var collection))
             {
                 return;
             }
