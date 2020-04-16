@@ -2,6 +2,7 @@ using Akka.Actor;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
+using Neo.Oracle;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
@@ -22,6 +23,7 @@ namespace Neo
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
+        public IActorRef Oracle { get; private set; }
 
         private readonly IStore store;
         private ChannelsConfig start_message = null;
@@ -71,8 +73,24 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
         {
+            if (Consensus != null) return;
             Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
+        }
+
+        public void StartOracle(Wallet wallet, byte numberOfTasks = 4)
+        {
+            if (Oracle != null) return;
+            if (numberOfTasks == 0) throw new ArgumentException("The task count must be greater than 0");
+            Oracle = ActorSystem.ActorOf(OracleService.Props(this, this.LocalNode, wallet));
+            Oracle.Tell(new OracleService.StartMessage() { NumberOfTasks = numberOfTasks }, Blockchain);
+        }
+
+        public void StopOracle()
+        {
+            if (Oracle == null) return;
+            Oracle.Tell(new OracleService.StopMessage(), Blockchain);
+            Oracle = null;
         }
 
         public void StartNode(ChannelsConfig config)

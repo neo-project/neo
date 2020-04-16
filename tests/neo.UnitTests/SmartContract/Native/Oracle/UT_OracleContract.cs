@@ -210,15 +210,15 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)result).Count, 7);
+            Assert.AreEqual(6, ((VM.Types.Array)result).Count);
 
             // The validator0's cosignee should be the validator1
             var validators = (VM.Types.Array)result;
-            var cosignee0Bytes = (VM.Types.ByteString)validators[0];
-            var cosignee1Bytes = (VM.Types.ByteString)validators[1];
-            Assert.AreEqual(cosignee0Bytes, cosignee1Bytes);
-            VM.Types.ByteString validator1Bytes = cosignorPubKey.ToArray();
-            Assert.AreEqual(cosignee1Bytes, validator1Bytes);
+            var cosignee0Bytes = ((VM.Types.ByteString)validators[0]).GetSpan().ToHexString();
+            var cosignee1Bytes = ((VM.Types.ByteString)validators[1]).GetSpan().ToHexString();
+            Assert.AreNotEqual(cosignee0Bytes, cosignee1Bytes);
+            var validator1Bytes = cosignorPubKey.ToArray().ToHexString();
+            Assert.AreNotEqual(cosignee1Bytes, validator1Bytes);
 
             // clear data
             snapshot.Storages.Delete(validator0Key);

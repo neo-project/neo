@@ -6,14 +6,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -28,10 +34,33 @@ namespace Neo.UnitTests.Oracle
     [TestClass]
     public class UT_OracleService : TestKit
     {
+        private WalletAccount _account;
+        private NEP6Wallet _wallet;
+
         [TestInitialize]
         public void Init()
         {
+            _wallet = TestUtils.GenerateTestWallet();
+            using var unlockA = _wallet.Unlock("123");
+            _account = _wallet.CreateAccount();
+
             TestBlockchain.InitializeMockNeoSystem();
+        }
+
+        SnapshotView MockedSnapshotFactory()
+        {
+            // TODO: Mock blockchain is not possible
+
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            foreach (var cn in Blockchain.StandbyValidators)
+            {
+                var key = NativeContract.Oracle.CreateStorageKey(OracleContract.Prefix_Validator, cn);
+                var value = snapshot.Storages.GetOrAdd(key, () => new StorageItem() { IsConstant = false });
+                value.Value = _account.GetKey().PublicKey.ToArray();
+            }
+
+            return snapshot;
         }
 
         public static IWebHost CreateServer(int port)
@@ -159,7 +188,7 @@ namespace Neo.UnitTests.Oracle
         {
             TestProbe subscriber = CreateTestProbe();
 
-            var service = new OracleService(subscriber, null);
+            var service = new OracleService(TestBlockchain.TheNeoSystem, subscriber, _wallet, MockedSnapshotFactory, 10);
             Assert.IsFalse(service.IsStarted);
             service.Start();
             Assert.IsTrue(service.IsStarted);
@@ -175,12 +204,13 @@ namespace Neo.UnitTests.Oracle
             OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             TestProbe subscriber = CreateTestProbe();
-
-            var wallet = TestUtils.GenerateTestWallet();
-            TestActorRef<OracleService> service = ActorOfAsTestActorRef<OracleService>(
-                Akka.Actor.Props.Create(() => new OracleService(subscriber, wallet)));
+            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(TestBlockchain.TheNeoSystem, subscriber, _wallet, MockedSnapshotFactory, 10));
 
             service.UnderlyingActor.Start();
+
+            // Send start
+
+            service.Tell(new OracleService.StartMessage() { NumberOfTasks = 1 });
 
             // Send tx
 
@@ -189,14 +219,18 @@ namespace Neo.UnitTests.Oracle
 
             // Receive response
 
-            var response = subscriber.ExpectMsg<OracleService.OracleServiceResponse>(TimeSpan.FromSeconds(10));
-            Assert.AreEqual(0, response.OracleResponseSignature.Length);
-            Assert.AreEqual(1, response.ExecutionResult.Count);
+            var responseMsg = subscriber.ExpectMsg<Message>(TimeSpan.FromSeconds(10));
+            Assert.AreEqual(MessageCommand.Oracle, responseMsg.Command);
 
-            var entry = response.ExecutionResult.First();
-            Assert.IsFalse(entry.Value.Error);
-            Assert.AreEqual("pong", Encoding.UTF8.GetString(entry.Value.Result));
-            Assert.AreEqual(tx.Hash, response.UserTxHash);
+            var response = responseMsg.Payload as OraclePayload;
+            Assert.AreEqual(117, response.Data.Length);
+            Assert.AreEqual(_account.GetKey().PublicKey, response.OraclePub);
+
+            Assert.IsNotNull(response.OracleSignature);
+            // pong
+            Assert.AreEqual("0x6f458eea71a0b63d3e9efc8cc54608e14d89a5cd", response.OracleSignature.OracleExecutionCacheHash.ToString());
+            Assert.AreEqual(64, response.OracleSignature.Signature.Length);
+            Assert.AreEqual(tx.Hash, response.OracleSignature.TransactionRequestHash);
 
             service.UnderlyingActor.Stop();
             OracleService.HTTPSProtocol.AllowPrivateHost = false;
@@ -209,6 +243,7 @@ namespace Neo.UnitTests.Oracle
 
             return new Transaction()
             {
+                Version = TransactionVersion.OracleRequest,
                 Attributes = new TransactionAttribute[0],
                 Cosigners = new Cosigner[0],
                 Script = script.ToArray(),

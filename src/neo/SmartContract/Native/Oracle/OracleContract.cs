@@ -21,10 +21,10 @@ namespace Neo.SmartContract.Native.Oracle
 
         public override int Id => -4;
 
-        private const byte Prefix_Validator = 24;
-        private const byte Prefix_Config = 25;
-        private const byte Prefix_PerRequestFee = 26;
-        private const byte Prefix_OracleResponse = 27;
+        internal const byte Prefix_Validator = 24;
+        internal const byte Prefix_Config = 25;
+        internal const byte Prefix_PerRequestFee = 26;
+        internal const byte Prefix_OracleResponse = 27;
 
         public OracleContract()
         {
@@ -69,6 +69,17 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
+        /// Check if the response it's already stored
+        /// </summary>
+        /// <param name="snapshot">Snapshot</param>
+        /// <param name="txHash">Transaction Hash</param>
+        public bool ContainsResponse(StoreView snapshot, UInt256 txHash)
+        {
+            StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
+            return snapshot.Storages.TryGet(key) != null;
+        }
+
+        /// <summary>
         /// Consume Oracle Response
         /// </summary>
         /// <param name="snapshot">Snapshot</param>
@@ -99,7 +110,7 @@ namespace Neo.SmartContract.Native.Oracle
             StoreView snapshot = engine.Snapshot;
             ECPoint consignorPubKey = args[0].GetSpan().AsSerializable<ECPoint>();
             ECPoint consigneePubKey = args[1].GetSpan().AsSerializable<ECPoint>();
-            ECPoint[] cnPubKeys = NativeContract.NEO.GetValidators(snapshot);
+            ECPoint[] cnPubKeys = NEO.GetValidators(snapshot);
             if (!cnPubKeys.Contains(consignorPubKey)) return false;
             UInt160 account = Contract.CreateSignatureRedeemScript(consignorPubKey).ToScriptHash();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
@@ -141,7 +152,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <returns>Authorized Oracle validator</returns>
         public ECPoint[] GetOracleValidators(StoreView snapshot)
         {
-            ECPoint[] cnPubKeys = NativeContract.NEO.GetValidators(snapshot);
+            ECPoint[] cnPubKeys = NEO.GetValidators(snapshot);
             ECPoint[] oraclePubKeys = new ECPoint[cnPubKeys.Length];
             System.Array.Copy(cnPubKeys, oraclePubKeys, cnPubKeys.Length);
             for (int index = 0; index < oraclePubKeys.Length; index++)
@@ -151,7 +162,7 @@ namespace Neo.SmartContract.Native.Oracle
                 ECPoint delegatePubKey = snapshot.Storages.TryGet(key)?.Value.AsSerializable<ECPoint>();
                 if (delegatePubKey != null) { oraclePubKeys[index] = delegatePubKey; }
             }
-            return oraclePubKeys;
+            return oraclePubKeys.Distinct().ToArray();
         }
 
         /// <summary>
@@ -177,14 +188,24 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
+        /// Create a Oracle multisignature contract
+        /// </summary>
+        /// <param name="snapshot">snapshot</param>
+        /// <returns>Oracle multisignature address</returns>
+        public Contract GetOracleMultiSigContract(StoreView snapshot)
+        {
+            ECPoint[] oracleValidators = GetOracleValidators(snapshot);
+            return Contract.CreateMultiSigContract(oracleValidators.Length - (oracleValidators.Length - 1) / 3, oracleValidators);
+        }
+
+        /// <summary>
         /// Create a Oracle multisignature address
         /// </summary>
         /// <param name="snapshot">snapshot</param>
         /// <returns>Oracle multisignature address</returns>
         public UInt160 GetOracleMultiSigAddress(StoreView snapshot)
         {
-            ECPoint[] oracleValidators = GetOracleValidators(snapshot);
-            return Contract.CreateMultiSigRedeemScript(oracleValidators.Length - (oracleValidators.Length - 1) / 3, oracleValidators).ToScriptHash();
+            return GetOracleMultiSigContract(snapshot).ScriptHash;
         }
 
         /// <summary>

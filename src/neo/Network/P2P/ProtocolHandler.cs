@@ -137,6 +137,9 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
+                case MessageCommand.Oracle:
+                    OnOracleReceived((OraclePayload)msg.Payload);
+                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
@@ -146,6 +149,19 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
+        }
+
+        private void OnOracleReceived(OraclePayload payload)
+        {
+            // Verify
+
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            if (payload.Verify(snapshot)) return;
+
+            // Send to oracle and relay it
+
+            system.Oracle?.Tell(payload);
+            Context.Parent.Tell(Message.Create(MessageCommand.Oracle, payload));
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
@@ -344,7 +360,8 @@ namespace Neo.Network.P2P
 
         private void OnMemPoolMessageReceived()
         {
-            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions(snapshot).Select(p => p.Hash).ToArray()))
                 Context.Parent.Tell(Message.Create(MessageCommand.Inv, payload));
         }
 

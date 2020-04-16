@@ -48,20 +48,20 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        private UInt256 _hash = null;
-        public UInt256 Hash
+        private UInt160 _hash = null;
+        public UInt160 Hash
         {
             get
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt256(Crypto.Hash256(this.GetHashData()));
+                    _hash = new UInt160(Crypto.Hash160(this.GetHashData()));
                 }
                 return _hash;
             }
         }
 
-        public Witness[] Witnesses
+        Witness[] IVerifiable.Witnesses
         {
             get => new[] { Witness };
             set
