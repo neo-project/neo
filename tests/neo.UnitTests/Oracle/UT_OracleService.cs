@@ -49,7 +49,7 @@ namespace Neo.UnitTests.Oracle
 
         SnapshotView MockedSnapshotFactory()
         {
-            // TODO: Mock blockchain is not possible
+            // Mock blockchain is not possible
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
 

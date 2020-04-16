@@ -219,7 +219,6 @@ namespace Neo.Oracle
         // TODO: Fees
 
         private const long MaxGasFilter = 10_000_000;
-        private const long TxNetworkFee = 10_000_000;
 
         private long _isStarted = 0;
         private Contract _lastContract;
@@ -382,7 +381,7 @@ namespace Neo.Oracle
 
             // Create tasks
 
-            Log("OnStart");
+            Log($"OnStart: tasks={numberOfTasks}");
 
             _cancel = new CancellationTokenSource();
             _oracleTasks = new Task[numberOfTasks];
@@ -432,7 +431,7 @@ namespace Neo.Oracle
             _pendingResponses.Clear();
         }
 
-        private void Log(string message, LogLevel level = LogLevel.Info)
+        private static void Log(string message, LogLevel level = LogLevel.Info)
         {
             Utility.Log(nameof(OracleService), level, message);
         }
@@ -443,7 +442,7 @@ namespace Neo.Oracle
         /// <param name="tx">Transaction</param>
         private void ProcessRequestTransaction(Transaction tx)
         {
-            Log($"Process request tx: {tx.Hash}");
+            Log($"Process request tx: hash={tx.Hash}");
 
             var oracle = new OracleExecutionCache(Process);
             using var snapshot = _snapshotFactory();
@@ -453,9 +452,10 @@ namespace Neo.Oracle
 
                 if (engine.Execute() != VMState.HALT)
                 {
-                    // TODO: If the request TX will FAULT we can save space removing the downloaded data
+                    // If the request TX will FAULT we can save space removing the downloaded data
+                    // But user paid for it, maybe it will not fault during OnPerists
 
-                    oracle.Clear();
+                    // oracle.Clear();
                 }
             }
 
@@ -526,27 +526,28 @@ namespace Neo.Oracle
             using ScriptBuilder script = new ScriptBuilder();
             script.EmitAppCall(NativeContract.Oracle.Hash, "setOracleResponse", requestTx.Hash, IO.Helper.ToArray(oracle));
 
-            // Send only the required gas
+            // Calculate system fee
 
-            long systemFee = TxNetworkFee;
+            long systemFee;
+            using (var engine = ApplicationEngine.Run
+            (
+                script.ToArray(), snapshot.Clone(),
+                new AllowWitness(contract), null, true, 0, null
+            ))
+            {
+                if (engine.State != VMState.HALT)
+                {
+                    // This should never happend
 
-            //using (var engine = ApplicationEngine.Run
-            //    (
-            //        script.ToArray(), snapshot.Clone(),
-            //        new AllowWitness(contract), null, true, 0, null
-            //    ))
-            //{
-            //    if (engine.State != VMState.HALT)
-            //    {
-            //        // This should never happend
+                    throw new ApplicationException();
+                }
 
-            //        throw new ApplicationException();
-            //    }
+                systemFee = engine.GasConsumed;
+            }
 
-            //    systemFee = engine.GasConsumed;
-            //}
+            // Generate tx
 
-            return new Transaction()
+            var tx = new Transaction()
             {
                 Version = TransactionVersion.OracleResponse,
                 ValidUntilBlock = requestTx.ValidUntilBlock,
@@ -555,7 +556,7 @@ namespace Neo.Oracle
                 Sender = contract.ScriptHash,
                 Witnesses = new Witness[0],
                 Script = script.ToArray(),
-                NetworkFee = TxNetworkFee,
+                NetworkFee = 0,
                 Nonce = requestTx.Nonce,
                 SystemFee = systemFee,
                 Cosigners = new Cosigner[]
@@ -568,6 +569,15 @@ namespace Neo.Oracle
                     }
                 }
             };
+
+            // Calculate network fee
+
+            int size = tx.Size;
+
+            tx.NetworkFee += Wallet.CalculateNetworkFee(contract.Script, ref size);
+            tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
+
+            return tx;
         }
 
         /// <summary>
@@ -596,7 +606,7 @@ namespace Neo.Oracle
                 return false;
             }
 
-            Log($"Received oracle signature for {response.TransactionRequestHash} from {response.OraclePub.ToString()}");
+            Log($"Received oracle signature: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}");
 
             // Find the request tx
 
@@ -608,13 +618,12 @@ namespace Neo.Oracle
                 {
                     if (request.IsCompleted)
                     {
-                        Log($"Send response tx: {request.ResponseTransaction.Hash}");
+                        Log($"Send response tx: hash={request.ResponseTransaction.Hash}");
 
                         // Done! Send to mem pool
 
                         _pendingRequests.TryRemove(response.TransactionRequestHash, out _);
                         _pendingResponses.TryRemove(response.TransactionRequestHash, out _);
-
                         _system.Blockchain.Tell(request.ResponseTransaction);
 
                         // Request should be already there, but it could be removed because the mempool was full during the process

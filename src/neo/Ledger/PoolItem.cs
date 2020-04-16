@@ -64,7 +64,7 @@ namespace Neo.Ledger
                             else
                             {
                                 // If the response it's in the pool it's located after the request
-                                // TODO: We can order the pool first for OracleResponses
+                                // We can sort the pool by OracleResponses, but it's not needed
 
                                 return false;
                             }
