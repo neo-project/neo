@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Max length for a valid Contract Manifest
         /// </summary>
-        public const int MaxLength = 2048;
+        public const int MaxLength = 4096;
 
         /// <summary>
         /// Serialized size
@@ -63,31 +63,6 @@ namespace Neo.SmartContract.Manifest
         /// Custom user data
         /// </summary>
         public JObject Extra { get; set; }
-
-        /// <summary>
-        /// Create Default Contract manifest
-        /// </summary>
-        /// <param name="hash">Hash</param>
-        /// <returns>Return default manifest for this contract</returns>
-        public static ContractManifest CreateDefault(UInt160 hash)
-        {
-            return new ContractManifest()
-            {
-                Permissions = new[] { ContractPermission.DefaultPermission },
-                Abi = new ContractAbi()
-                {
-                    Hash = hash,
-                    EntryPoint = ContractMethodDescriptor.DefaultEntryPoint,
-                    Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
-                },
-                Features = ContractFeatures.NoProperty,
-                Groups = new ContractGroup[0],
-                SafeMethods = WildcardContainer<string>.Create(),
-                Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = null,
-            };
-        }
 
         /// <summary>
         /// Return true if is allowed
