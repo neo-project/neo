@@ -1,11 +1,9 @@
 using FluentAssertions;
-using Neo.Network.P2P.Payloads;
+using Neo.Oracle;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 
@@ -13,34 +11,6 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
-        internal class ManualWitness : IVerifiable
-        {
-            private readonly UInt160[] _hashForVerify;
-
-            public Witness[] Witnesses
-            {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
-            }
-
-            public int Size => 0;
-
-            public ManualWitness(params UInt160[] hashForVerify)
-            {
-                _hashForVerify = hashForVerify ?? new UInt160[0];
-            }
-
-            public void Deserialize(BinaryReader reader) { }
-
-            public void DeserializeUnsigned(BinaryReader reader) { }
-
-            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot) => _hashForVerify;
-
-            public void Serialize(BinaryWriter writer) { }
-
-            public void SerializeUnsigned(BinaryWriter writer) { }
-        }
-
         public static bool Transfer(this NativeContract contract, StoreView snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
         {
             var engine = new ApplicationEngine(TriggerType.Application,

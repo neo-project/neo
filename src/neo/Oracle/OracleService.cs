@@ -13,7 +13,6 @@ using Neo.Wallets;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -34,12 +33,12 @@ namespace Neo.Oracle
 
             public readonly Transaction RequestTransaction;
 
-            // Response
+            // Proposal
 
-            public Contract Contract;
-            public UInt160 ExpectedResultHash;
-            public Transaction ResponseTransaction;
+            private ResponseItem Proposal;
             private ContractParametersContext ResponseContext;
+
+            public Transaction ResponseTransaction => Proposal?.Tx;
 
             public bool IsCompleted => ResponseContext?.Completed == true;
 
@@ -55,23 +54,21 @@ namespace Neo.Oracle
                     return false;
                 }
 
-                if (ResponseTransaction == null)
+                if (Proposal == null)
                 {
-                    if (response.Tx == null || response.Contract == null)
+                    if (!response.IsMine)
                     {
                         return false;
                     }
 
                     // Oracle service could attach the real TX
 
-                    Contract = response.Contract;
-                    ResponseTransaction = response.Tx;
-                    ExpectedResultHash = response.ResultHash;
+                    Proposal = response;
                     ResponseContext = new ContractParametersContext(response.Tx);
                 }
                 else
                 {
-                    if (response.ResultHash != ExpectedResultHash)
+                    if (response.ResultHash != Proposal.ResultHash)
                     {
                         // Unexpected result
 
@@ -79,13 +76,13 @@ namespace Neo.Oracle
                     }
                 }
 
-                if (ResponseContext.AddSignature(Contract, response.OraclePub, response.Signature) == true)
+                if (ResponseContext.AddSignature(Proposal.Contract, response.OraclePub, response.Signature) == true)
                 {
                     if (ResponseContext.Completed)
                     {
                         // Append the witness to the response TX
 
-                        ResponseTransaction.Witnesses = ResponseContext.GetWitnesses();
+                        Proposal.Tx.Witnesses = ResponseContext.GetWitnesses();
                     }
                     return true;
                 }
@@ -176,32 +173,6 @@ namespace Neo.Oracle
             public bool Verify(StoreView snapshot)
             {
                 return Msg.Verify(snapshot);
-            }
-        }
-
-        private class AllowWitness : IVerifiable
-        {
-            public Witness[] Witnesses
-            {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
-            }
-            public int Size => throw new NotImplementedException();
-            public void Deserialize(BinaryReader reader) => throw new NotImplementedException();
-            public void DeserializeUnsigned(BinaryReader reader) => throw new NotImplementedException();
-            public void Serialize(BinaryWriter writer) => throw new NotImplementedException();
-            public void SerializeUnsigned(BinaryWriter writer) => throw new NotImplementedException();
-
-            private readonly Contract _contract;
-
-            public AllowWitness(Contract contract)
-            {
-                _contract = contract;
-            }
-
-            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
-            {
-                return new UInt160[] { _contract.ScriptHash };
             }
         }
 
@@ -431,6 +402,11 @@ namespace Neo.Oracle
             _pendingResponses.Clear();
         }
 
+        /// <summary>
+        /// Log
+        /// </summary>
+        /// <param name="message">Message</param>
+        /// <param name="level">Log level</param>
         private static void Log(string message, LogLevel level = LogLevel.Info)
         {
             Utility.Log(nameof(OracleService), level, message);
@@ -521,7 +497,7 @@ namespace Neo.Oracle
         /// <param name="contract">Contract</param>
         /// <param name="requestTx">Request Hash</param>
         /// <returns>Transaction</returns>
-        public static Transaction CreateResponseTransaction(SnapshotView snapshot, OracleExecutionCache oracle, Contract contract, Transaction requestTx)
+        private static Transaction CreateResponseTransaction(SnapshotView snapshot, OracleExecutionCache oracle, Contract contract, Transaction requestTx)
         {
             using ScriptBuilder script = new ScriptBuilder();
             script.EmitAppCall(NativeContract.Oracle.Hash, "setOracleResponse", requestTx.Hash, IO.Helper.ToArray(oracle));
@@ -532,7 +508,7 @@ namespace Neo.Oracle
             using (var engine = ApplicationEngine.Run
             (
                 script.ToArray(), snapshot.Clone(),
-                new AllowWitness(contract), null, true, 0, null
+                new ManualWitness(contract.ScriptHash), null, true, 0, null
             ))
             {
                 if (engine.State != VMState.HALT)
