@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.VM;
 using Neo.VM.Types;
 
@@ -13,27 +16,49 @@ namespace Neo.SmartContract
         private readonly long gas_amount;
         private long gas_consumed = 0;
         private readonly bool testMode;
-        private readonly bool traceMode;
+        private readonly System.Action<VMState, IList<ITraceDebugSink.StackFrame>> traceDebugSink;
         private readonly Snapshot snapshot;
 
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;
 
-        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false, bool traceMode = false)
+        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false, System.Action<VMState, IList<ITraceDebugSink.StackFrame>> traceDebugSink = null)
             : base(container, Cryptography.Crypto.Default, snapshot, new NeoService(trigger, snapshot))
         {
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
-            this.traceMode = traceMode;
+            this.traceDebugSink = traceDebugSink;
             this.snapshot = snapshot;
         }
 
         protected override void Trace()
         {
-            if (traceMode)
+            if (traceDebugSink != null)
             {
-                ;   
+                DoTrace();   
             }
+        }
+
+        private void DoTrace()
+        {
+            var frames = new List<ITraceDebugSink.StackFrame>(InvocationStack.Count);
+
+            for (var index = 0; index < InvocationStack.Count; index++)
+            {
+                var context = InvocationStack.Peek(index);
+
+                var variables = context.AltStack.Count > 0
+                    ? (Neo.VM.Types.Array)context.AltStack.Peek(0)
+                    : null;
+                var storages = snapshot.Storages.Find()
+                    .Where(s => s.Key.ScriptHash == new UInt160(context.ScriptHash));
+
+                var stackFrame = new ITraceDebugSink.StackFrame(index, new UInt160(context.ScriptHash),
+                    context.InstructionPointer, variables, storages);
+                frames.Add(stackFrame);
+            }
+
+            traceDebugSink(State, frames);
         }
 
         private bool CheckDynamicInvoke()

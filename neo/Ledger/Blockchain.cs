@@ -580,23 +580,32 @@ namespace Neo.Ledger
                             break;
 #pragma warning restore CS0612
                         case InvocationTransaction tx_invocation:
-                            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas, traceMode: true))
                             {
-                                engine.LoadScript(tx_invocation.Script);
-                                engine.Execute();
-                                if (!engine.State.HasFlag(VMState.FAULT))
+                                // For now, only support a first trace debug plugin that returns true to ShouldTrace
+                                var plugin = Plugin.TraceDebugPlugins
+                                    .Where(p => p.ShouldTrace(block.Header, tx_invocation))
+                                    .FirstOrDefault();
+
+                                using var sink = plugin != null ? plugin.GetSink(block.Header, tx_invocation) : null;
+ 
+                                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas, traceDebugSink: sink.Trace))
                                 {
-                                    engine.Service.Commit();
+                                    engine.LoadScript(tx_invocation.Script);
+                                    engine.Execute();
+                                    if (!engine.State.HasFlag(VMState.FAULT))
+                                    {
+                                        engine.Service.Commit();
+                                    }
+                                    execution_results.Add(new ApplicationExecutionResult
+                                    {
+                                        Trigger = TriggerType.Application,
+                                        ScriptHash = tx_invocation.Script.ToScriptHash(),
+                                        VMState = engine.State,
+                                        GasConsumed = engine.GasConsumed,
+                                        Stack = engine.ResultStack.ToArray(),
+                                        Notifications = engine.Service.Notifications.ToArray()
+                                    });
                                 }
-                                execution_results.Add(new ApplicationExecutionResult
-                                {
-                                    Trigger = TriggerType.Application,
-                                    ScriptHash = tx_invocation.Script.ToScriptHash(),
-                                    VMState = engine.State,
-                                    GasConsumed = engine.GasConsumed,
-                                    Stack = engine.ResultStack.ToArray(),
-                                    Notifications = engine.Service.Notifications.ToArray()
-                                });
                             }
                             break;
                     }
