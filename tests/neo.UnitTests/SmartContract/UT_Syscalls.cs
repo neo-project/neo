@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
-                Version = 0x06,
+                Version = TransactionVersion.Transaction,
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
                 Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
             };
@@ -251,7 +251,7 @@ namespace Neo.UnitTests.SmartContract
                     SystemFee = 0x03,
                     Nonce = 0x04,
                     ValidUntilBlock = 0x05,
-                    Version = 0x06,
+                    Version = TransactionVersion.Transaction,
                     Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
                     Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
                 };
@@ -263,7 +263,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b226770564846625133316969517a614f4c7a33523546394d6256715932596b7a5164324461785536677154303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
+                    @"5b2262533635577a41363155363855585367426930466f4d767068356e4b4954566175507867782f6b515070303d222c302c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }

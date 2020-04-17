@@ -2,6 +2,8 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Oracle;
+using Neo.Oracle.Protocols.Https;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -210,7 +212,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
+        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
         {
             UInt160[] accounts;
             if (from is null)
@@ -275,11 +277,11 @@ namespace Neo.Wallets
                              Account = new UInt160(p.ToArray())
                          }).ToArray();
 
-                return MakeTransaction(snapshot, script, new TransactionAttribute[0], cosigners, balances_gas);
+                return MakeTransaction(snapshot, script, new TransactionAttribute[0], cosigners, balances_gas, oracle);
             }
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -295,18 +297,35 @@ namespace Neo.Wallets
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas);
+                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas, oracle);
             }
         }
 
-        private Transaction MakeTransaction(StoreView snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(StoreView snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
         {
+            OracleExecutionCache oracleCache = null;
+            List<OracleRequest> oracleRequests = null;
+
+            if (oracle != OracleWalletBehaviour.WithoutOracle)
+            {
+                // Wee need the full request in order to duplicate the call for asserts
+
+                oracleRequests = new List<OracleRequest>();
+                oracleCache = new OracleExecutionCache((request) =>
+                {
+                    oracleRequests.Add(request);
+                    return OracleService.Process(request);
+                });
+            }
+
+        Start:
+
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
             {
                 Transaction tx = new Transaction
                 {
-                    Version = 0,
+                    Version = oracleCache?.Count > 0 ? TransactionVersion.OracleRequest : TransactionVersion.Transaction,
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,
@@ -314,12 +333,66 @@ namespace Neo.Wallets
                     Attributes = attributes,
                     Cosigners = cosigners
                 };
+
                 // will try to execute 'transfer' script to check if it works
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true, oracle: oracleCache))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
+
+                    // Change the Transaction type because it's an oracle request
+
+                    if (oracleRequests.Count > 0)
+                    {
+                        if (oracle == OracleWalletBehaviour.OracleWithAssert)
+                        {
+                            // If we want the same result for accept the response, we need to create asserts at the begining of the script
+
+                            var assertScript = new ScriptBuilder();
+
+                            foreach (var oracleRequest in oracleRequests)
+                            {
+                                // Do the request in order to cache the result
+
+                                if (oracleRequest is OracleHttpsRequest https)
+                                {
+                                    assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod);
+                                }
+                                else
+                                {
+                                    throw new NotImplementedException();
+                                }
+                            }
+
+                            // Clear the stack
+
+                            assertScript.Emit(OpCode.CLEAR);
+
+                            // Check that the hash of the whole responses are exactly the same
+
+                            assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
+                            assertScript.EmitPush(oracleCache.Hash.ToArray());
+                            assertScript.Emit(OpCode.EQUAL);
+                            assertScript.Emit(OpCode.ASSERT);
+
+                            // Concat two scripts [OracleAsserts+Script]
+
+                            script = assertScript.ToArray().Concat(script).ToArray();
+                            oracle = OracleWalletBehaviour.OracleWithoutAssert;
+
+                            // We need to remove new oracle calls (OracleService.Process)
+
+                            oracleCache = new OracleExecutionCache(oracleCache.Responses);
+
+                            // We need to compute the gas again with the right script
+                            goto Start;
+                        }
+                        else
+                        {
+                            tx.Version = TransactionVersion.OracleRequest;
+                        }
+                    }
                 }
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);

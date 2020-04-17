@@ -27,7 +27,6 @@ namespace Neo.Ledger
 
         private readonly NeoSystem _system;
 
-        //
         /// <summary>
         /// Guarantees consistency of the pool data structures.
         ///
@@ -169,16 +168,34 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerable<Transaction> GetVerifiedTransactions()
+        public IEnumerable<Transaction> GetVerifiedTransactions(StoreView snapshot)
         {
+            Transaction[] ret;
+            var oracle = new PoolItem.DelayState();
+
             _txRwLock.EnterReadLock();
             try
             {
-                return _unsortedTransactions.Select(p => p.Value.Tx).ToArray();
+                ret = _unsortedTransactions
+                    .Where(u => u.Value.IsReady(snapshot, oracle))
+                    .Select(p => p.Value.Tx)
+                    .ToArray();
             }
             finally
             {
                 _txRwLock.ExitReadLock();
+            }
+
+            // Fetch transactions
+
+            foreach (var tx in ret)
+            {
+                yield return tx;
+            }
+            foreach (var delayed in oracle.Delayed)
+            {
+                if (oracle.Allowed.Contains(delayed.Hash))
+                    yield return delayed;
             }
         }
 
@@ -197,16 +214,35 @@ namespace Neo.Ledger
             }
         }
 
-        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
+        public IEnumerable<Transaction> GetSortedVerifiedTransactions(StoreView snapshot)
         {
+            Transaction[] ret;
+            var oracle = new PoolItem.DelayState();
+
             _txRwLock.EnterReadLock();
             try
             {
-                return _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
+                ret = _sortedTransactions
+                    .Reverse()
+                    .Where(u => u.IsReady(snapshot, oracle))
+                    .Select(p => p.Tx)
+                    .ToArray();
             }
             finally
             {
                 _txRwLock.ExitReadLock();
+            }
+
+            // Fetch transactions
+
+            foreach (var tx in ret)
+            {
+                yield return tx;
+            }
+            foreach (var delayed in oracle.Delayed)
+            {
+                if (oracle.Allowed.Contains(delayed.Hash))
+                    yield return delayed;
             }
         }
 
@@ -239,7 +275,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedTransactions)
+                unsortedTxPool = ReferenceEquals(sortedPool, _unverifiedSortedTransactions)
                    ? _unverifiedTransactions : _unsortedTransactions;
             }
         }

@@ -283,7 +283,7 @@ namespace Neo.Consensus
             Span<byte> buffer = stackalloc byte[sizeof(ulong)];
             random.NextBytes(buffer);
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer);
-            EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
+            EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions(Snapshot));
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
 
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest

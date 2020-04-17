@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         private const int MaxCosigners = 16;
 
-        private byte version;
+        private TransactionVersion version;
         private uint nonce;
         private UInt160 sender;
         private long sysfee;
@@ -40,9 +40,10 @@ namespace Neo.Network.P2P.Payloads
         private Cosigner[] cosigners;
         private byte[] script;
         private Witness[] witnesses;
+        private UInt256 oracleRequestTx;
 
         public const int HeaderSize =
-            sizeof(byte) +  //Version
+            sizeof(TransactionVersion) +  //Version
             sizeof(uint) +  //Nonce
             20 +            //Sender
             sizeof(long) +  //SystemFee
@@ -59,6 +60,12 @@ namespace Neo.Network.P2P.Payloads
         {
             get => cosigners;
             set { cosigners = value; _hash = null; _size = 0; }
+        }
+
+        public UInt256 OracleRequestTx
+        {
+            get => oracleRequestTx;
+            set { oracleRequestTx = value; _hash = null; _size = 0; }
         }
 
         /// <summary>
@@ -121,6 +128,11 @@ namespace Neo.Network.P2P.Payloads
                         Cosigners.GetVarSize() +    //Cosigners
                         Script.GetVarSize() +       //Script
                         Witnesses.GetVarSize();     //Witnesses
+
+                    if (Version == TransactionVersion.OracleResponse)
+                    {
+                        _size += UInt256.Length;
+                    }
                 }
                 return _size;
             }
@@ -141,7 +153,7 @@ namespace Neo.Network.P2P.Payloads
             set { validUntilBlock = value; _hash = null; }
         }
 
-        public byte Version
+        public TransactionVersion Version
         {
             get => version;
             set { version = value; _hash = null; }
@@ -166,8 +178,8 @@ namespace Neo.Network.P2P.Payloads
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
-            Version = reader.ReadByte();
-            if (Version > 0) throw new FormatException();
+            Version = (TransactionVersion)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(TransactionVersion), Version)) throw new FormatException();
             Nonce = reader.ReadUInt32();
             Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
@@ -181,6 +193,7 @@ namespace Neo.Network.P2P.Payloads
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
+            OracleRequestTx = Version == TransactionVersion.OracleResponse ? reader.ReadSerializable<UInt256>() : null;
         }
 
         public bool Equals(Transaction other)
@@ -215,7 +228,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Version);
+            writer.Write((byte)Version);
             writer.Write(Nonce);
             writer.Write(Sender);
             writer.Write(SystemFee);
@@ -224,6 +237,10 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Attributes);
             writer.Write(Cosigners);
             writer.WriteVarBytes(Script);
+            if (Version == TransactionVersion.OracleResponse)
+            {
+                writer.Write(OracleRequestTx);
+            }
         }
 
         public JObject ToJson()
@@ -231,7 +248,7 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
-            json["version"] = Version;
+            json["version"] = (byte)Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
             json["sys_fee"] = SystemFee.ToString();
@@ -241,13 +258,18 @@ namespace Neo.Network.P2P.Payloads
             json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
+            if (Version == TransactionVersion.OracleResponse)
+            {
+                json["oracle_response_tx"] = OracleRequestTx.ToString();
+            }
             return json;
         }
 
         public static Transaction FromJson(JObject json)
         {
             Transaction tx = new Transaction();
-            tx.Version = byte.Parse(json["version"].AsString());
+            tx.Version = (TransactionVersion)byte.Parse(json["version"].AsString());
+            if (!Enum.IsDefined(typeof(TransactionVersion), tx.Version)) throw new FormatException();
             tx.Nonce = uint.Parse(json["nonce"].AsString());
             tx.Sender = json["sender"].AsString().ToScriptHash();
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
@@ -257,6 +279,14 @@ namespace Neo.Network.P2P.Payloads
             tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
             tx.Script = Convert.FromBase64String(json["script"].AsString());
             tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
+            if (tx.Version == TransactionVersion.OracleResponse)
+            {
+                tx.OracleRequestTx = UInt256.Parse(json["oracle_response_tx"].AsString());
+            }
+            else
+            {
+                tx.OracleRequestTx = null;
+            }
             return tx;
         }
 
@@ -293,6 +323,21 @@ namespace Neo.Network.P2P.Payloads
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
+
+            if (Version == TransactionVersion.OracleResponse)
+            {
+                // Oracle response only can be signed by oracle nodes
+
+                var hashes = GetScriptHashesForVerifying(snapshot);
+
+                if (hashes.Length != 1 ||
+                    hashes[0] != NativeContract.Oracle.GetOracleMultiSigAddress(snapshot) ||
+                    hashes[0] != Sender)
+                {
+                    return VerifyResult.Invalid;
+                }
+            }
+
             return VerifyResult.Succeed;
         }
 

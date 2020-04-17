@@ -1,5 +1,8 @@
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract.Native;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Ledger
 {
@@ -31,6 +34,52 @@ namespace Neo.Ledger
             Tx = tx;
             Timestamp = TimeProvider.Current.UtcNow;
             LastBroadcastTimestamp = Timestamp;
+        }
+
+        internal class DelayState
+        {
+            public HashSet<UInt256> Allowed = new HashSet<UInt256>();
+            public HashSet<Transaction> Delayed = new HashSet<Transaction>();
+        }
+
+        public bool IsReady(StoreView snapshot, DelayState state)
+        {
+            switch (Tx.Version)
+            {
+                case TransactionVersion.OracleRequest:
+                    {
+                        if (state.Allowed.Remove(Tx.Hash))
+                        {
+                            // The response was already fetched, we can put request and response in the same block
+
+                            return true;
+                        }
+                        else
+                        {
+                            if (NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
+                            {
+                                // The response it's waiting to be consumed (block+n)
+
+                                return true;
+                            }
+                            else
+                            {
+                                // If the response it's in the pool it's located after the request
+                                // We save the request in order to put after the response
+
+                                state.Delayed.Add(Tx);
+                                return false;
+                            }
+                        }
+                    }
+                case TransactionVersion.OracleResponse:
+                    {
+                        state.Allowed.Add(Tx.OracleRequestTx);
+                        break;
+                    }
+            }
+
+            return true;
         }
 
         public int CompareTo(Transaction otherTx)

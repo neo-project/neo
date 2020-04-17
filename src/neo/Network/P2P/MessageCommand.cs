@@ -40,6 +40,8 @@ namespace Neo.Network.P2P
         Block = 0x2c,
         [ReflectionCache(typeof(ConsensusPayload))]
         Consensus = 0x2d,
+        [ReflectionCache(typeof(OraclePayload))]
+        Oracle = 0x2e,
         Reject = 0x2f,
 
         //SPV protocol
@@ -52,6 +54,6 @@ namespace Neo.Network.P2P
         MerkleBlock = 0x38,
 
         //others
-        Alert = 0x40,
+        Alert = 0x40
     }
 }

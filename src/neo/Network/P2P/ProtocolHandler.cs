@@ -1,8 +1,10 @@
 using Akka.Actor;
+using Akka.Configuration;
 using Neo.Cryptography;
+using Neo.IO;
+using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
-using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
@@ -15,9 +17,11 @@ using System.Net;
 
 namespace Neo.Network.P2P
 {
-    partial class RemoteNode
+    internal class ProtocolHandler : UntypedActor
     {
-        private class Timer { }
+        public class SetFilter { public BloomFilter Filter; }
+        internal class Timer { }
+
         private class PendingKnownHashesCollection : KeyedCollection<UInt256, (UInt256, DateTime)>
         {
             protected override UInt256 GetKeyForItem((UInt256, DateTime) item)
@@ -26,9 +30,11 @@ namespace Neo.Network.P2P
             }
         }
 
-        private readonly PendingKnownHashesCollection pendingKnownHashes = new PendingKnownHashesCollection();
-        private readonly HashSetCache<UInt256> knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
-        private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+        private readonly NeoSystem system;
+        private readonly PendingKnownHashesCollection pendingKnownHashes;
+        private readonly HashSetCache<UInt256> knownHashes;
+        private readonly HashSetCache<UInt256> sentHashes;
+        private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
 
@@ -37,12 +43,33 @@ namespace Neo.Network.P2P
 
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
+        public ProtocolHandler(NeoSystem system)
+        {
+            this.system = system;
+            this.pendingKnownHashes = new PendingKnownHashesCollection();
+            this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+            this.sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+        }
+
+        protected override void OnReceive(object message)
+        {
+            switch (message)
+            {
+                case Message msg:
+                    OnMessage(msg);
+                    break;
+                case Timer _:
+                    OnTimer();
+                    break;
+            }
+        }
+
         private void OnMessage(Message msg)
         {
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnP2PMessage(msg))
                     return;
-            if (Version == null)
+            if (version == null)
             {
                 if (msg.Command != MessageCommand.Version)
                     throw new ProtocolViolationException();
@@ -134,17 +161,20 @@ namespace Neo.Network.P2P
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)
         {
-            bloom_filter?.Add(payload.Data);
+            if (bloom_filter != null)
+                bloom_filter.Add(payload.Data);
         }
 
         private void OnFilterClearMessageReceived()
         {
             bloom_filter = null;
+            Context.Parent.Tell(new SetFilter { Filter = null });
         }
 
         private void OnFilterLoadMessageReceived(FilterLoadPayload payload)
         {
             bloom_filter = new BloomFilter(payload.Filter.Length * 8, payload.K, payload.Tweak, payload.Filter);
+            Context.Parent.Tell(new SetFilter { Filter = bloom_filter });
         }
 
         /// <summary>
@@ -162,7 +192,7 @@ namespace Neo.Network.P2P
                 .Take(AddrPayload.MaxCountToSend);
             NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
             if (networkAddresses.Length == 0) return;
-            EnqueueMessage(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
+            Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
 
         /// <summary>
@@ -189,7 +219,7 @@ namespace Neo.Network.P2P
                 hashes.Add(hash);
             }
             if (hashes.Count == 0) return;
-            EnqueueMessage(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
+            Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
         private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
@@ -202,12 +232,12 @@ namespace Neo.Network.P2P
 
                 if (bloom_filter == null)
                 {
-                    EnqueueMessage(Message.Create(MessageCommand.Block, block));
+                    Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
                 }
                 else
                 {
                     BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                    EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                    Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                 }
             }
         }
@@ -228,7 +258,7 @@ namespace Neo.Network.P2P
                     case InventoryType.TX:
                         Transaction tx = Blockchain.Singleton.GetTransaction(hash);
                         if (tx != null)
-                            EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
+                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, tx));
                         break;
                     case InventoryType.Block:
                         Block block = Blockchain.Singleton.GetBlock(hash);
@@ -236,22 +266,22 @@ namespace Neo.Network.P2P
                         {
                             if (bloom_filter == null)
                             {
-                                EnqueueMessage(Message.Create(MessageCommand.Block, block));
+                                Context.Parent.Tell(Message.Create(MessageCommand.Block, block));
                             }
                             else
                             {
                                 BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                                EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                                Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                             }
                         }
                         break;
                     case InventoryType.Consensus:
                         if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryConsensus))
-                            EnqueueMessage(Message.Create(MessageCommand.Consensus, inventoryConsensus));
+                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventoryConsensus));
                         break;
                     case InventoryType.Oracle:
                         if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryOracle))
-                            EnqueueMessage(Message.Create(MessageCommand.Oracle, inventoryOracle));
+                            Context.Parent.Tell(Message.Create(MessageCommand.Oracle, inventoryOracle));
                         break;
                 }
             }
@@ -281,18 +311,18 @@ namespace Neo.Network.P2P
                 headers.Add(header);
             }
             if (headers.Count == 0) return;
-            EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
+            Context.Parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
         private void OnHeadersMessageReceived(HeadersPayload payload)
         {
             if (payload.Headers.Length == 0) return;
-            system.Blockchain.Tell(payload.Headers);
+            system.Blockchain.Tell(payload.Headers, Context.Parent);
         }
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
+            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
             pendingKnownHashes.Remove(inventory.Hash);
             knownHashes.Add(inventory.Hash);
@@ -316,62 +346,48 @@ namespace Neo.Network.P2P
             if (hashes.Length == 0) return;
             foreach (UInt256 hash in hashes)
                 pendingKnownHashes.Add((hash, DateTime.UtcNow));
-            system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
+            system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) }, Context.Parent);
         }
 
         private void OnMemPoolMessageReceived()
         {
             using var snapshot = Blockchain.Singleton.GetSnapshot();
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions(snapshot).Select(p => p.Hash).ToArray()))
-                EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
+                Context.Parent.Tell(Message.Create(MessageCommand.Inv, payload));
         }
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+            Context.Parent.Tell(payload);
+            Context.Parent.Tell(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
+            Context.Parent.Tell(payload);
         }
 
         private void OnVerackMessageReceived()
         {
             verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Version = Version });
-            CheckMessageQueue();
+            Context.Parent.Tell(MessageCommand.Verack);
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)
         {
-            Version = payload;
-            foreach (NodeCapability capability in payload.Capabilities)
-            {
-                switch (capability)
-                {
-                    case FullNodeCapability fullNodeCapability:
-                        IsFullNode = true;
-                        LastBlockIndex = fullNodeCapability.StartHeight;
-                        break;
-                    case ServerCapability serverCapability:
-                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
-                            ListenerTcpPort = serverCapability.Port;
-                        break;
-                }
-            }
-            if (payload.Nonce == LocalNode.Nonce || payload.Magic != ProtocolSettings.Default.Magic)
-            {
-                Disconnect(true);
-                return;
-            }
-            if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == payload.Nonce))
-            {
-                Disconnect(true);
-                return;
-            }
-            SendMessage(Message.Create(MessageCommand.Verack));
+            version = payload;
+            Context.Parent.Tell(payload);
+        }
+
+        private void OnTimer()
+        {
+            RefreshPendingKnownHashes();
+        }
+
+        protected override void PostStop()
+        {
+            timer.CancelIfNotNull();
+            base.PostStop();
         }
 
         private void RefreshPendingKnownHashes()
@@ -385,12 +401,50 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void UpdateLastBlockIndex(PingPayload payload)
+        public static Props Props(NeoSystem system)
         {
-            if (payload.LastBlockIndex > LastBlockIndex)
+            return Akka.Actor.Props.Create(() => new ProtocolHandler(system)).WithMailbox("protocol-handler-mailbox");
+        }
+    }
+
+    internal class ProtocolHandlerMailbox : PriorityMailbox
+    {
+        public ProtocolHandlerMailbox(Settings settings, Config config)
+            : base(settings, config)
+        {
+        }
+
+        internal protected override bool IsHighPriority(object message)
+        {
+            if (!(message is Message msg)) return false;
+            switch (msg.Command)
             {
-                LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                case MessageCommand.Consensus:
+                case MessageCommand.FilterAdd:
+                case MessageCommand.FilterClear:
+                case MessageCommand.FilterLoad:
+                case MessageCommand.Verack:
+                case MessageCommand.Version:
+                case MessageCommand.Alert:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        {
+            if (message is ProtocolHandler.Timer) return false;
+            if (!(message is Message msg)) return true;
+            switch (msg.Command)
+            {
+                case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
+                case MessageCommand.GetHeaders:
+                case MessageCommand.Mempool:
+                    return queue.OfType<Message>().Any(p => p.Command == msg.Command);
+                default:
+                    return false;
             }
         }
     }
