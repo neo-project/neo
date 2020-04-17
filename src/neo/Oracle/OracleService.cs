@@ -201,8 +201,8 @@ namespace Neo.Oracle
 
         private long _isStarted = 0;
         private Contract _lastContract;
-        private readonly NeoSystem _system;
         private readonly IActorRef _localNode;
+        private readonly IActorRef _taskManager;
         private CancellationTokenSource _cancel;
         private readonly (Contract Contract, KeyPair Key)[] _accounts;
         private readonly Func<SnapshotView> _snapshotFactory;
@@ -255,16 +255,16 @@ namespace Neo.Oracle
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="system">System</param>
         /// <param name="localNode">Local node</param>
+        /// <param name="taskManager">Task manager</param>
         /// <param name="wallet">Wallet</param>
         /// <param name="snapshotFactory">Snapshot factory</param>
         /// <param name="capacity">Capacity</param>
-        public OracleService(NeoSystem system, IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory, int capacity)
+        public OracleService(IActorRef localNode, IActorRef taskManager, Wallet wallet, Func<SnapshotView> snapshotFactory, int capacity)
         {
             Oracle = Process;
-            _system = system;
             _localNode = localNode;
+            _taskManager = taskManager;
             _snapshotFactory = snapshotFactory ?? new Func<SnapshotView>(() => Blockchain.Singleton.GetSnapshot());
 
             // Find oracle account
@@ -624,7 +624,10 @@ namespace Neo.Oracle
             {
                 // Ask for the request tx because it's not in my pool
 
-                _localNode.Tell(Message.Create(MessageCommand.GetData, InvPayload.Create(InventoryType.TX, response.TransactionRequestHash)));
+                _taskManager.Tell(new TaskManager.RestartTasks
+                {
+                    Payload = InvPayload.Create(InventoryType.TX, response.TransactionRequestHash)
+                });
             }
 
             // Save this payload for check it later
@@ -820,9 +823,9 @@ namespace Neo.Oracle
 
         #region Akka
 
-        public static Props Props(NeoSystem system, IActorRef localNode, Wallet wallet)
+        public static Props Props(IActorRef localNode, IActorRef taskManager, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new OracleService(system, localNode, wallet, null, ProtocolSettings.Default.MemoryPoolMaxTransactions));
+            return Akka.Actor.Props.Create(() => new OracleService(localNode, taskManager, wallet, null, ProtocolSettings.Default.MemoryPoolMaxTransactions));
         }
 
         #endregion
