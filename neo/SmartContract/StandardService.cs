@@ -21,6 +21,9 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
+        internal event EventHandler<NotifyEventArgs> LocalNotify;
+        internal event EventHandler<LogEventArgs> LocalLog;
+
         protected readonly TriggerType Trigger;
         protected readonly Snapshot Snapshot;
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
@@ -185,6 +188,7 @@ namespace Neo.SmartContract
             StackItem state = engine.CurrentContext.EvaluationStack.Pop();
             NotifyEventArgs notification = new NotifyEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), state);
             Notify?.Invoke(this, notification);
+            LocalNotify?.Invoke(this, notification);
             notifications.Add(notification);
             return true;
         }
@@ -192,7 +196,9 @@ namespace Neo.SmartContract
         protected bool Runtime_Log(ExecutionEngine engine)
         {
             string message = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            Log?.Invoke(this, new LogEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), message));
+            var eventArgs = new LogEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), message);
+            Log?.Invoke(this, eventArgs);
+            LocalLog?.Invoke(this, eventArgs);
             return true;
         }
 

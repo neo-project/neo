@@ -590,12 +590,19 @@ namespace Neo.Ledger
  
                                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas, traceDebugSink: sink.Trace))
                                 {
+                                    if (sink != null)
+                                    {
+                                        engine.Service.LocalNotify += (_, args) => sink.Notify(args);
+                                        engine.Service.LocalLog += (_, args) => sink.Log(args);
+                                    }
+
                                     engine.LoadScript(tx_invocation.Script);
                                     engine.Execute();
                                     if (!engine.State.HasFlag(VMState.FAULT))
                                     {
                                         engine.Service.Commit();
                                     }
+                                    sink?.Results(engine.State, engine.GasConsumed, engine.ResultStack);
                                     execution_results.Add(new ApplicationExecutionResult
                                     {
                                         Trigger = TriggerType.Application,
