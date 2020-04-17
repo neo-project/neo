@@ -465,17 +465,11 @@ namespace Neo.Oracle
                 using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
                 engine.LoadScript(tx.Script);
 
-                if (engine.Execute() != VMState.HALT)
+                if (engine.Execute() != VMState.HALT && engine.GasLeft == 0)
                 {
                     // If the TX request FAULT, we can save space by deleting the downloaded data
                     // but the user paid it, maybe it won't fail during OnPerist
-
-                    // oracle.Clear();
-                }
-
-                if (tx.SystemFee < Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0) + oracle.FilterCost)
-                {
-                    // The fee of the request is not enough
+                    // But if the FAULT it's because of GAS we should force an error.
 
                     oracle.Clear();
                     forceError = true;
