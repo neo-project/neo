@@ -512,7 +512,7 @@ namespace Neo.Oracle
             using (var engine = ApplicationEngine.Run
             (
                 script.ToArray(), snapshot.Clone(),
-                new ManualWitness(contract.ScriptHash), null, true, 0, null
+                new ManualWitness(contract.ScriptHash), testMode: true
             ))
             {
                 if (engine.State != VMState.HALT)
