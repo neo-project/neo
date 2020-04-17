@@ -176,6 +176,14 @@ namespace Neo.Oracle
             }
         }
 
+        private enum OracleResponseResult : byte
+        {
+            Invalid,
+            Merged,
+            Duplicated,
+            RelayedTx
+        }
+
         #endregion
 
         #region Protocols
@@ -480,13 +488,17 @@ namespace Neo.Oracle
                 {
                     response.Witness = signPayload.GetWitnesses()[0];
 
-                    if (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx)))
+                    switch (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx)))
                     {
-                        // Send my signature by P2P
+                        case OracleResponseResult.Merged:
+                            {
+                                // Send my signature by P2P
 
-                        Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
+                                Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
 
-                        _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
+                                _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
+                                break;
+                            }
                     }
                 }
             }
@@ -566,13 +578,13 @@ namespace Neo.Oracle
         /// <param name="snapshot">Snapshot</param>
         /// <param name="response">Response</param>
         /// <returns>True if it was added</returns>
-        private bool TryAddOracleResponse(StoreView snapshot, ResponseItem response)
+        private OracleResponseResult TryAddOracleResponse(StoreView snapshot, ResponseItem response)
         {
             if (!response.Verify(snapshot))
             {
                 Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}", LogLevel.Error);
 
-                return false;
+                return OracleResponseResult.Invalid;
             }
 
             if (!response.IsMine)
@@ -601,9 +613,11 @@ namespace Neo.Oracle
                         // Request should be already there, but it could be removed because the mempool was full during the process
 
                         _localNode.Tell(new LocalNode.Relay { Inventory = request.RequestTransaction });
+
+                        return OracleResponseResult.RelayedTx;
                     }
 
-                    return true;
+                    return OracleResponseResult.Merged;
                 }
             }
             else
@@ -621,15 +635,15 @@ namespace Neo.Oracle
                 {
                     // It was getted
 
-                    return collection.Add(response);
+                    return collection.Add(response) ? OracleResponseResult.Merged : OracleResponseResult.Duplicated;
                 }
 
                 // It was added
 
-                return true;
+                return OracleResponseResult.Merged;
             }
 
-            return false;
+            return OracleResponseResult.Duplicated;
         }
 
         /// <summary>
