@@ -22,12 +22,12 @@ namespace Neo.Trie.MPT
 
         public override void EncodeSpecific(BinaryWriter writer)
         {
-            writer.WriteVarBytes(Value);
+            writer.WriteBytesWithGrouping(Value);
         }
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            Value = reader.ReadVarBytes(ushort.MaxValue);
+            Value = reader.ReadBytesWithGrouping();
         }
 
         public override JObject ToJson()
