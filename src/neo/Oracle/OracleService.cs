@@ -472,6 +472,14 @@ namespace Neo.Oracle
 
                     // oracle.Clear();
                 }
+
+                if (tx.SystemFee < Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0) + oracle.FilterCost)
+                {
+                    // The fee of the request is not enough
+
+                    oracle.Clear();
+                    forceError = true;
+                }
             }
 
             // Check the oracle contract and update the cached one

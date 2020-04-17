@@ -32,11 +32,40 @@ namespace Neo.SmartContract.Native.Tokens
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;
+
+            long oracleFee = 0;
+            long networkFee = 0;
+
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
-                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+            {
+                networkFee += tx.NetworkFee;
+
+                switch (tx.Version)
+                {
+                    case TransactionVersion.OracleRequest:
+                    case TransactionVersion.OracleResponse:
+                        {
+                            oracleFee += tx.SystemFee;
+                            Burn(engine, tx.Sender, tx.NetworkFee);
+                            break;
+                        }
+                    default:
+                        {
+                            Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                            break;
+                        }
+                }
+            }
+
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
-            Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
+            Mint(engine, primary, networkFee);
+
+            if (oracleFee > 0)
+            {
+                primary = Oracle.GetOracleMultiSigAddress(engine.Snapshot);
+                Mint(engine, primary, oracleFee);
+            }
             return true;
         }
     }
