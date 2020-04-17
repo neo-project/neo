@@ -1,16 +1,16 @@
-using Neo.IO;
-using System.IO;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Persistence;
-using System;
-using System.Linq;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class OraclePayload : IVerifiable
+    public class OraclePayload : IInventory
     {
         private byte[] _data;
         public byte[] Data
@@ -48,14 +48,14 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        private UInt160 _hash = null;
-        public UInt160 Hash
+        private UInt256 _hash = null;
+        public UInt256 Hash
         {
             get
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt160(Crypto.Hash160(this.GetHashData()));
+                    _hash = new UInt256(Crypto.Hash256(this.GetHashData()));
                 }
                 return _hash;
             }
@@ -90,6 +90,8 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
+        public InventoryType InventoryType => InventoryType.Oracle;
+
         public OracleResponseSignature GetDeserializedOracleSignature()
         {
             return OracleSignature;
@@ -98,7 +100,10 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(reader);
-            Witness = reader.ReadSerializable<Witness>();
+
+            var witness = reader.ReadSerializableArray<Witness>(1);
+            if (witness.Length != 1) throw new FormatException();
+            Witness = witness[0];
         }
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
@@ -114,7 +119,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Data);
+            writer.WriteVarBytes(Data);
             writer.Write(OraclePub);
         }
 

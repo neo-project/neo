@@ -94,6 +94,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.Consensus:
                     OnInventoryReceived((ConsensusPayload)msg.Payload);
                     break;
+                case MessageCommand.Oracle:
+                    OnInventoryReceived((OraclePayload)msg.Payload);
+                    break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
                     break;
@@ -137,9 +140,6 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
-                case MessageCommand.Oracle:
-                    OnOracleReceived((OraclePayload)msg.Payload);
-                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
@@ -149,19 +149,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
-        }
-
-        private void OnOracleReceived(OraclePayload payload)
-        {
-            // Verify
-
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
-            if (payload.Verify(snapshot)) return;
-
-            // Send to oracle and relay it
-
-            system.Oracle?.Tell(payload);
-            Context.Parent.Tell(Message.Create(MessageCommand.Oracle, payload));
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
@@ -289,8 +276,12 @@ namespace Neo.Network.P2P
                         }
                         break;
                     case InventoryType.Consensus:
-                        if (Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus))
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryConsensus))
                             Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventoryConsensus));
+                        break;
+                    case InventoryType.Oracle:
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryOracle))
+                            Context.Parent.Tell(Message.Create(MessageCommand.Oracle, inventoryOracle));
                         break;
                 }
             }

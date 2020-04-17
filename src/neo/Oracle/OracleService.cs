@@ -13,7 +13,6 @@ using Neo.Wallets;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -34,12 +33,12 @@ namespace Neo.Oracle
 
             public readonly Transaction RequestTransaction;
 
-            // Response
+            // Proposal
 
-            public Contract Contract;
-            public UInt160 ExpectedResultHash;
-            public Transaction ResponseTransaction;
+            private ResponseItem Proposal;
             private ContractParametersContext ResponseContext;
+
+            public Transaction ResponseTransaction => Proposal?.Tx;
 
             public bool IsCompleted => ResponseContext?.Completed == true;
 
@@ -55,23 +54,21 @@ namespace Neo.Oracle
                     return false;
                 }
 
-                if (ResponseTransaction == null)
+                if (Proposal == null)
                 {
-                    if (response.Tx == null || response.Contract == null)
+                    if (!response.IsMine)
                     {
                         return false;
                     }
 
                     // Oracle service could attach the real TX
 
-                    Contract = response.Contract;
-                    ResponseTransaction = response.Tx;
-                    ExpectedResultHash = response.ResultHash;
+                    Proposal = response;
                     ResponseContext = new ContractParametersContext(response.Tx);
                 }
                 else
                 {
-                    if (response.ResultHash != ExpectedResultHash)
+                    if (response.ResultHash != Proposal.ResultHash)
                     {
                         // Unexpected result
 
@@ -79,13 +76,13 @@ namespace Neo.Oracle
                     }
                 }
 
-                if (ResponseContext.AddSignature(Contract, response.OraclePub, response.Signature) == true)
+                if (ResponseContext.AddSignature(Proposal.Contract, response.OraclePub, response.Signature) == true)
                 {
                     if (ResponseContext.Completed)
                     {
                         // Append the witness to the response TX
 
-                        ResponseTransaction.Witnesses = ResponseContext.GetWitnesses();
+                        Proposal.Tx.Witnesses = ResponseContext.GetWitnesses();
                     }
                     return true;
                 }
@@ -159,7 +156,7 @@ namespace Neo.Oracle
 
             public readonly Contract Contract;
             public ECPoint OraclePub => Msg.OraclePub;
-            public UInt160 MsgHash => Msg.Hash;
+            public UInt256 MsgHash => Msg.Hash;
             public byte[] Signature => Data.Signature;
             public UInt160 ResultHash => Data.OracleExecutionCacheHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
@@ -179,32 +176,6 @@ namespace Neo.Oracle
             }
         }
 
-        private class AllowWitness : IVerifiable
-        {
-            public Witness[] Witnesses
-            {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
-            }
-            public int Size => throw new NotImplementedException();
-            public void Deserialize(BinaryReader reader) => throw new NotImplementedException();
-            public void DeserializeUnsigned(BinaryReader reader) => throw new NotImplementedException();
-            public void Serialize(BinaryWriter writer) => throw new NotImplementedException();
-            public void SerializeUnsigned(BinaryWriter writer) => throw new NotImplementedException();
-
-            private readonly Contract _contract;
-
-            public AllowWitness(Contract contract)
-            {
-                _contract = contract;
-            }
-
-            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
-            {
-                return new UInt160[] { _contract.ScriptHash };
-            }
-        }
-
         #endregion
 
         #region Protocols
@@ -219,7 +190,6 @@ namespace Neo.Oracle
         // TODO: Fees
 
         private const long MaxGasFilter = 10_000_000;
-        private const long TxNetworkFee = 10_000_000;
 
         private long _isStarted = 0;
         private Contract _lastContract;
@@ -382,7 +352,7 @@ namespace Neo.Oracle
 
             // Create tasks
 
-            Log("OnStart");
+            Log($"OnStart: tasks={numberOfTasks}");
 
             _cancel = new CancellationTokenSource();
             _oracleTasks = new Task[numberOfTasks];
@@ -432,7 +402,12 @@ namespace Neo.Oracle
             _pendingResponses.Clear();
         }
 
-        private void Log(string message, LogLevel level = LogLevel.Info)
+        /// <summary>
+        /// Log
+        /// </summary>
+        /// <param name="message">Message</param>
+        /// <param name="level">Log level</param>
+        private static void Log(string message, LogLevel level = LogLevel.Info)
         {
             Utility.Log(nameof(OracleService), level, message);
         }
@@ -443,7 +418,7 @@ namespace Neo.Oracle
         /// <param name="tx">Transaction</param>
         private void ProcessRequestTransaction(Transaction tx)
         {
-            Log($"Process request tx: {tx.Hash}");
+            Log($"Process request tx: hash={tx.Hash}");
 
             var oracle = new OracleExecutionCache(Process);
             using var snapshot = _snapshotFactory();
@@ -453,9 +428,10 @@ namespace Neo.Oracle
 
                 if (engine.Execute() != VMState.HALT)
                 {
-                    // TODO: If the request TX will FAULT we can save space removing the downloaded data
+                    // If the request TX will FAULT we can save space removing the downloaded data
+                    // But user paid for it, maybe it will not fault during OnPerists
 
-                    oracle.Clear();
+                    // oracle.Clear();
                 }
             }
 
@@ -475,6 +451,8 @@ namespace Neo.Oracle
             // Create deterministic oracle response
 
             var responseTx = CreateResponseTransaction(snapshot, oracle, contract, tx);
+
+            Log($"Generated response tx: requestHash={tx.Hash} responseHash={responseTx.Hash}");
 
             foreach (var account in _accounts)
             {
@@ -502,11 +480,13 @@ namespace Neo.Oracle
                 {
                     response.Witness = signPayload.GetWitnesses()[0];
 
-                    if (TryAddOracleResponse(snapshot, response, contract, responseTx))
+                    if (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx)))
                     {
                         // Send my signature by P2P
 
-                        _localNode.Tell(Message.Create(MessageCommand.Oracle, response));
+                        Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
+
+                        _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
                     }
                 }
             }
@@ -521,32 +501,33 @@ namespace Neo.Oracle
         /// <param name="contract">Contract</param>
         /// <param name="requestTx">Request Hash</param>
         /// <returns>Transaction</returns>
-        public static Transaction CreateResponseTransaction(SnapshotView snapshot, OracleExecutionCache oracle, Contract contract, Transaction requestTx)
+        private static Transaction CreateResponseTransaction(SnapshotView snapshot, OracleExecutionCache oracle, Contract contract, Transaction requestTx)
         {
             using ScriptBuilder script = new ScriptBuilder();
             script.EmitAppCall(NativeContract.Oracle.Hash, "setOracleResponse", requestTx.Hash, IO.Helper.ToArray(oracle));
 
-            // Send only the required gas
+            // Calculate system fee
 
-            long systemFee = TxNetworkFee;
+            long systemFee;
+            using (var engine = ApplicationEngine.Run
+            (
+                script.ToArray(), snapshot.Clone(),
+                new ManualWitness(contract.ScriptHash), null, true, 0, null
+            ))
+            {
+                if (engine.State != VMState.HALT)
+                {
+                    // This should never happend
 
-            //using (var engine = ApplicationEngine.Run
-            //    (
-            //        script.ToArray(), snapshot.Clone(),
-            //        new AllowWitness(contract), null, true, 0, null
-            //    ))
-            //{
-            //    if (engine.State != VMState.HALT)
-            //    {
-            //        // This should never happend
+                    throw new ApplicationException();
+                }
 
-            //        throw new ApplicationException();
-            //    }
+                systemFee = engine.GasConsumed;
+            }
 
-            //    systemFee = engine.GasConsumed;
-            //}
+            // Generate tx
 
-            return new Transaction()
+            var tx = new Transaction()
             {
                 Version = TransactionVersion.OracleResponse,
                 ValidUntilBlock = requestTx.ValidUntilBlock,
@@ -555,7 +536,7 @@ namespace Neo.Oracle
                 Sender = contract.ScriptHash,
                 Witnesses = new Witness[0],
                 Script = script.ToArray(),
-                NetworkFee = TxNetworkFee,
+                NetworkFee = 0,
                 Nonce = requestTx.Nonce,
                 SystemFee = systemFee,
                 Cosigners = new Cosigner[]
@@ -568,19 +549,15 @@ namespace Neo.Oracle
                     }
                 }
             };
-        }
 
-        /// <summary>
-        /// Try add oracle response payload
-        /// </summary>
-        /// <param name="snapshot">Snapshot</param>
-        /// <param name="oracle">Oracle</param>
-        /// <param name="contract">Contract</param>
-        /// <param name="responseTx">Response TX (from OracleService)</param>
-        /// <returns>True if it was added</returns>
-        internal bool TryAddOracleResponse(StoreView snapshot, OraclePayload oracle, Contract contract, Transaction responseTx)
-        {
-            return TryAddOracleResponse(snapshot, new ResponseItem(oracle, contract, responseTx));
+            // Calculate network fee
+
+            int size = tx.Size;
+
+            tx.NetworkFee += Wallet.CalculateNetworkFee(contract.Script, ref size);
+            tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
+
+            return tx;
         }
 
         /// <summary>
@@ -593,10 +570,15 @@ namespace Neo.Oracle
         {
             if (!response.Verify(snapshot))
             {
+                Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}", LogLevel.Error);
+
                 return false;
             }
 
-            Log($"Received oracle signature for {response.TransactionRequestHash} from {response.OraclePub.ToString()}");
+            if (!response.IsMine)
+            {
+                Log($"Received oracle signature: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}");
+            }
 
             // Find the request tx
 
@@ -608,18 +590,17 @@ namespace Neo.Oracle
                 {
                     if (request.IsCompleted)
                     {
-                        Log($"Send response tx: {request.ResponseTransaction.Hash}");
+                        Log($"Send response tx: oracle={response.OraclePub.ToString()} hash={request.ResponseTransaction.Hash}");
 
                         // Done! Send to mem pool
 
                         _pendingRequests.TryRemove(response.TransactionRequestHash, out _);
                         _pendingResponses.TryRemove(response.TransactionRequestHash, out _);
-
-                        _system.Blockchain.Tell(request.ResponseTransaction);
+                        _localNode.Tell(new LocalNode.Relay { Inventory = request.ResponseTransaction });
 
                         // Request should be already there, but it could be removed because the mempool was full during the process
 
-                        _system.Blockchain.Tell(request.RequestTransaction);
+                        _localNode.Tell(new LocalNode.Relay { Inventory = request.RequestTransaction });
                     }
 
                     return true;

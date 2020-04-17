@@ -49,7 +49,7 @@ namespace Neo.UnitTests.Oracle
 
         SnapshotView MockedSnapshotFactory()
         {
-            // TODO: Mock blockchain is not possible
+            // Mock blockchain is not possible
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
@@ -219,18 +219,23 @@ namespace Neo.UnitTests.Oracle
 
             // Receive response
 
-            var responseMsg = subscriber.ExpectMsg<Message>(TimeSpan.FromSeconds(10));
-            Assert.AreEqual(MessageCommand.Oracle, responseMsg.Command);
+            var responseMsg = subscriber.ExpectMsg<LocalNode.Relay>(TimeSpan.FromSeconds(10));
+            Assert.IsInstanceOfType(responseMsg.Inventory, typeof(Transaction));
 
-            var response = responseMsg.Payload as OraclePayload;
-            Assert.AreEqual(117, response.Data.Length);
-            Assert.AreEqual(_account.GetKey().PublicKey, response.OraclePub);
+            var response = responseMsg.Inventory as Transaction;
 
-            Assert.IsNotNull(response.OracleSignature);
-            // pong
-            Assert.AreEqual("0x6f458eea71a0b63d3e9efc8cc54608e14d89a5cd", response.OracleSignature.OracleExecutionCacheHash.ToString());
-            Assert.AreEqual(64, response.OracleSignature.Signature.Length);
-            Assert.AreEqual(tx.Hash, response.OracleSignature.TransactionRequestHash);
+            Assert.AreEqual(TransactionVersion.OracleResponse, response.Version);
+            Assert.AreEqual(tx.Hash, response.OracleRequestTx);
+
+            //var response = responseMsg.Inventory as OraclePayload;
+            //Assert.AreEqual(117, response.Data.Length);
+            //Assert.AreEqual(_account.GetKey().PublicKey, response.OraclePub);
+
+            //Assert.IsNotNull(response.OracleSignature);
+            //// pong
+            //Assert.AreEqual("0x6f458eea71a0b63d3e9efc8cc54608e14d89a5cd", response.OracleSignature.OracleExecutionCacheHash.ToString());
+            //Assert.AreEqual(64, response.OracleSignature.Signature.Length);
+            //Assert.AreEqual(tx.Hash, response.OracleSignature.TransactionRequestHash);
 
             service.UnderlyingActor.Stop();
             OracleService.HTTPSProtocol.AllowPrivateHost = false;
