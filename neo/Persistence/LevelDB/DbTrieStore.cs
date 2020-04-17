@@ -1,8 +1,7 @@
 using Neo.IO.Data.LevelDB;
 using Neo.Trie;
 using Neo.Trie.MPT;
-using System;
-using System.Text;
+using Neo.Ledger;
 
 namespace Neo.Persistence.LevelDB
 {
@@ -13,12 +12,12 @@ namespace Neo.Persistence.LevelDB
         private readonly WriteBatch batch;
         private readonly byte prefix;
 
-        private readonly byte[] ROOT_KEY = Encoding.ASCII.GetBytes("CURRENT_ROOT");
+        private readonly byte[] ROOT_KEY = Blockchain.GenesisBlock.Hash.ToArray();
 
         public DbTrieStore(DB db, ReadOptions options, WriteBatch batch, byte prefix)
         {
             this.db = db;
-            this.options = options;
+            this.options = options ?? ReadOptions.Default;
             this.batch = batch;
             this.prefix = prefix;
         }
