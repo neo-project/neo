@@ -94,6 +94,15 @@ namespace Neo.SmartContract
                     contract.Manifest = ContractManifest.Parse(manifest);
                     if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
                     if (!contract.HasStorage && engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any()) return false;
+                    if (script.Length <= 0)
+                    {
+                        // Don't allow abi changes without change the script
+
+                        if (oldAbi.ToJson() != contract.Manifest.Abi.ToJson())
+                        {
+                            return false;
+                        }
+                    }
                 }
 
                 return true;
