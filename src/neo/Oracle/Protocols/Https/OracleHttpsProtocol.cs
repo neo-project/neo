@@ -4,6 +4,7 @@ using Neo.SmartContract.Native.Oracle;
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -139,12 +140,12 @@ namespace Neo.Oracle.Protocols.Https
 
             // Filter
 
-            if (!OracleService.FilterResponse(ret, request.Filter, out string filteredStr, out var gasCost))
+            if (!OracleService.FilterResponse(Encoding.UTF8.GetBytes(ret), request.Filter, out var output, out var gasCost))
             {
                 return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError, gasCost);
             }
 
-            return OracleResponse.CreateResult(request.Hash, filteredStr, gasCost);
+            return OracleResponse.CreateResult(request.Hash, output, gasCost);
         }
 
         internal static bool IsInternal(IPHostEntry entry)

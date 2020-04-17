@@ -14,7 +14,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -461,6 +460,8 @@ namespace Neo.Oracle
 
             if (!forceError)
             {
+                // If we want to force the error we don't need to process the transaction
+
                 using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
                 engine.LoadScript(tx.Script);
 
@@ -779,32 +780,6 @@ namespace Neo.Oracle
             {
                 return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
             }
-        }
-
-        /// <summary>
-        /// Filter response
-        /// </summary>
-        /// <param name="input">Input</param>
-        /// <param name="filter">Filter</param>
-        /// <param name="result">Result</param>
-        /// <returns>True if was filtered</returns>
-        public static bool FilterResponse(string input, OracleFilter filter, out string result, out long gasCost)
-        {
-            if (filter == null)
-            {
-                result = input;
-                gasCost = 0;
-                return true;
-            }
-
-            if (FilterResponse(Encoding.UTF8.GetBytes(input), filter, out var bufferResult, out gasCost))
-            {
-                result = Encoding.UTF8.GetString(bufferResult);
-                return true;
-            }
-
-            result = null;
-            return false;
         }
 
         /// <summary>
