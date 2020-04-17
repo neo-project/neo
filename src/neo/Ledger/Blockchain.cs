@@ -62,7 +62,7 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
+        internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
         public IStore Store { get; }
@@ -299,6 +299,7 @@ namespace Neo.Ledger
                     Block block => OnNewBlock(block),
                     Transaction transaction => OnNewTransaction(transaction),
                     ConsensusPayload payload => OnNewConsensus(payload),
+                    OraclePayload payload => OnNewOracle(payload),
                     _ => VerifyResult.Unknown
                 }
             };
@@ -390,7 +391,15 @@ namespace Neo.Ledger
         {
             if (!payload.Verify(currentSnapshot)) return VerifyResult.Invalid;
             system.Consensus?.Tell(payload);
-            ConsensusRelayCache.Add(payload);
+            RelayCache.Add(payload);
+            return VerifyResult.Succeed;
+        }
+
+        private VerifyResult OnNewOracle(OraclePayload payload)
+        {
+            if (!payload.Verify(currentSnapshot)) return VerifyResult.Invalid;
+            system.Oracle?.Tell(payload);
+            RelayCache.Add(payload);
             return VerifyResult.Succeed;
         }
 
@@ -467,6 +476,9 @@ namespace Neo.Ledger
                     break;
                 case ConsensusPayload payload:
                     OnInventory(payload);
+                    break;
+                case OraclePayload oracle:
+                    OnInventory(oracle);
                     break;
                 case Idle _:
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))

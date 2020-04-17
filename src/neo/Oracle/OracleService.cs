@@ -156,7 +156,7 @@ namespace Neo.Oracle
 
             public readonly Contract Contract;
             public ECPoint OraclePub => Msg.OraclePub;
-            public UInt160 MsgHash => Msg.Hash;
+            public UInt256 MsgHash => Msg.Hash;
             public byte[] Signature => Data.Signature;
             public UInt160 ResultHash => Data.OracleExecutionCacheHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
@@ -486,7 +486,7 @@ namespace Neo.Oracle
 
                         Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
 
-                        _localNode.Tell(Message.Create(MessageCommand.Oracle, response));
+                        _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
                     }
                 }
             }
