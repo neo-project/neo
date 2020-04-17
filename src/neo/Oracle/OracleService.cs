@@ -9,6 +9,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Collections;
@@ -801,10 +802,9 @@ namespace Neo.Oracle
             // Execute
 
             using var engine = new ApplicationEngine(TriggerType.Application, null, null, MaxGasFilter, false, null);
-
             engine.LoadScript(script.ToArray(), CallFlags.None);
 
-            if (engine.Execute() != VMState.HALT || engine.ResultStack.Count != 1)
+            if (engine.Execute() != VMState.HALT || !engine.ResultStack.TryPop(out PrimitiveType ret))
             {
                 result = null;
                 gasCost = engine.GasConsumed;
@@ -813,7 +813,7 @@ namespace Neo.Oracle
 
             // Extract the filtered item
 
-            result = engine.ResultStack.Pop().GetSpan().ToArray();
+            result = ret.GetSpan().ToArray();
             gasCost = engine.GasConsumed;
             return true;
         }
