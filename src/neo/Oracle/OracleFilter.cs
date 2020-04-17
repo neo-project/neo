@@ -11,5 +11,10 @@ namespace Neo.Oracle
         /// You need a specific method for your filters
         /// </summary>
         public string FilterMethod;
+
+        /// <summary>
+        /// Filter args
+        /// </summary>
+        public string FilterArgs;
     }
 }

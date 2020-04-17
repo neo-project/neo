@@ -188,7 +188,7 @@ namespace Neo.UnitTests.Oracle
         {
             TestProbe subscriber = CreateTestProbe();
 
-            var service = new OracleService(TestBlockchain.TheNeoSystem, subscriber, _wallet, MockedSnapshotFactory, 10);
+            var service = new OracleService(subscriber, null, _wallet, MockedSnapshotFactory, 10);
             Assert.IsFalse(service.IsStarted);
             service.Start();
             Assert.IsTrue(service.IsStarted);
@@ -204,7 +204,7 @@ namespace Neo.UnitTests.Oracle
             OracleService.HTTPSProtocol.AllowPrivateHost = true;
 
             TestProbe subscriber = CreateTestProbe();
-            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(TestBlockchain.TheNeoSystem, subscriber, _wallet, MockedSnapshotFactory, 10));
+            TestActorRef<OracleService> service = ActorOfAsTestActorRef(() => new OracleService(subscriber, null, _wallet, MockedSnapshotFactory, 10));
 
             service.UnderlyingActor.Start();
 
@@ -295,7 +295,7 @@ namespace Neo.UnitTests.Oracle
                 byte[] script;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    sb.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, $"https://127.0.0.1:{port}/ping", null, null);
+                    sb.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, $"https://127.0.0.1:{port}/ping", null, null, null);
                     script = sb.ToArray();
                 }
 

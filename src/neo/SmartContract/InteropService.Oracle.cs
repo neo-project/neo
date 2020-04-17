@@ -64,6 +64,7 @@ namespace Neo.SmartContract
                 if (!engine.TryPop(out string urlItem) || !Uri.TryCreate(urlItem, UriKind.Absolute, out var url)) return false;
                 if (!engine.TryPop(out StackItem filterContractItem)) return false;
                 if (!engine.TryPop(out StackItem filterMethodItem)) return false;
+                if (!engine.TryPop(out StackItem filterArgsItem)) return false;
 
                 // Create filter
 
@@ -72,12 +73,14 @@ namespace Neo.SmartContract
                 if (!filterContractItem.IsNull)
                 {
                     if (filterContractItem is PrimitiveType filterContract &&
-                        filterMethodItem is PrimitiveType filterMethod)
+                        filterMethodItem is PrimitiveType filterMethod &&
+                        filterArgsItem is PrimitiveType filterArgs)
                     {
                         filter = new OracleFilter()
                         {
                             ContractHash = new UInt160(filterContract.Span),
-                            FilterMethod = Encoding.UTF8.GetString(filterMethod.Span)
+                            FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
+                            FilterArgs = Encoding.UTF8.GetString(filterArgs.Span)
                         };
                     }
                     else

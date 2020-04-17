@@ -357,7 +357,7 @@ namespace Neo.Wallets
 
                                 if (oracleRequest is OracleHttpsRequest https)
                                 {
-                                    assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod);
+                                    assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod, https.Filter?.FilterArgs);
                                 }
                                 else
                                 {

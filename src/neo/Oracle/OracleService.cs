@@ -14,7 +14,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,7 +38,7 @@ namespace Neo.Oracle
             private ContractParametersContext ResponseContext;
 
             public Transaction ResponseTransaction => Proposal?.Tx;
-
+            public bool IsErrorResponse => Proposal?.IsError == true;
             public bool IsCompleted => ResponseContext?.Completed == true;
 
             public RequestItem(Transaction requestTx) : base(requestTx)
@@ -88,6 +87,15 @@ namespace Neo.Oracle
                 }
 
                 return false;
+            }
+
+            /// <summary>
+            /// Clear responses
+            /// </summary>
+            public void CleanResponses()
+            {
+                Proposal = null;
+                ResponseContext = null;
             }
         }
 
@@ -161,9 +169,11 @@ namespace Neo.Oracle
             public UInt160 ResultHash => Data.OracleExecutionCacheHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
             public bool IsMine { get; }
+            public bool IsError { get; }
 
-            public ResponseItem(OraclePayload payload, Contract contract = null, Transaction responseTx = null) : base(responseTx)
+            public ResponseItem(OraclePayload payload, Contract contract = null, Transaction responseTx = null, bool isError = false) : base(responseTx)
             {
+                IsError = isError;
                 IsMine = responseTx != null && contract != null;
                 Contract = contract;
                 Msg = payload;
@@ -174,6 +184,14 @@ namespace Neo.Oracle
             {
                 return Msg.Verify(snapshot);
             }
+        }
+
+        private enum OracleResponseResult : byte
+        {
+            Invalid,
+            Merged,
+            Duplicated,
+            RelayedTx
         }
 
         #endregion
@@ -193,11 +211,12 @@ namespace Neo.Oracle
 
         private long _isStarted = 0;
         private Contract _lastContract;
-        private readonly NeoSystem _system;
         private readonly IActorRef _localNode;
+        private readonly IActorRef _taskManager;
         private CancellationTokenSource _cancel;
         private readonly (Contract Contract, KeyPair Key)[] _accounts;
         private readonly Func<SnapshotView> _snapshotFactory;
+        private static readonly TimeSpan TimeoutInterval = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Number of threads for processing the oracle
@@ -247,16 +266,16 @@ namespace Neo.Oracle
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="system">System</param>
         /// <param name="localNode">Local node</param>
+        /// <param name="taskManager">Task manager</param>
         /// <param name="wallet">Wallet</param>
         /// <param name="snapshotFactory">Snapshot factory</param>
         /// <param name="capacity">Capacity</param>
-        public OracleService(NeoSystem system, IActorRef localNode, Wallet wallet, Func<SnapshotView> snapshotFactory, int capacity)
+        public OracleService(IActorRef localNode, IActorRef taskManager, Wallet wallet, Func<SnapshotView> snapshotFactory, int capacity)
         {
             Oracle = Process;
-            _system = system;
             _localNode = localNode;
+            _taskManager = taskManager;
             _snapshotFactory = snapshotFactory ?? new Func<SnapshotView>(() => Blockchain.Singleton.GetSnapshot());
 
             // Find oracle account
@@ -311,6 +330,21 @@ namespace Neo.Oracle
                         Stop();
                         break;
                     }
+                case TaskManager.Timer _:
+                    {
+                        // Create error response because there are no agreement
+
+                        foreach (var request in _pendingRequests
+                            .Where(u => !u.Value.IsErrorResponse && DateTime.UtcNow - u.Value.Timestamp > TimeoutInterval)
+                            .ToArray()
+                            )
+                        {
+                            _pendingResponses.TryRemove(request.Key, out _);
+                            request.Value.CleanResponses();
+                            ProcessRequestTransaction(request.Value.RequestTransaction, true);
+                        }
+                        break;
+                    }
                 case OraclePayload msg:
                     {
                         using var snapshot = _snapshotFactory();
@@ -363,7 +397,7 @@ namespace Neo.Oracle
                 {
                     foreach (var tx in _processingQueue.GetConsumingEnumerable(_cancel.Token))
                     {
-                        ProcessRequestTransaction(tx);
+                        ProcessRequestTransaction(tx, false);
                     }
                 },
                 _cancel.Token);
@@ -416,30 +450,33 @@ namespace Neo.Oracle
         /// Process request transaction
         /// </summary>
         /// <param name="tx">Transaction</param>
-        private void ProcessRequestTransaction(Transaction tx)
+        /// <param name="forceError">Force error</param>
+        private void ProcessRequestTransaction(Transaction tx, bool forceError)
         {
-            Log($"Process request tx: hash={tx.Hash}");
+            Log($"Process request tx: hash={tx.Hash} forceError={forceError}");
 
-            var oracle = new OracleExecutionCache(Process);
             using var snapshot = _snapshotFactory();
-            using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
+            var oracle = new OracleExecutionCache(Process);
+
+            if (!forceError)
             {
+                // If we want to force the error we don't need to process the transaction
+
+                using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
                 engine.LoadScript(tx.Script);
 
                 if (engine.Execute() != VMState.HALT)
                 {
-                    // If the request TX will FAULT we can save space removing the downloaded data
-                    // But user paid for it, maybe it will not fault during OnPerists
+                    // If the TX request FAULT, we can save space by deleting the downloaded data
+                    // but the user paid it, maybe it won't fail during OnPerist
 
                     // oracle.Clear();
                 }
             }
 
-            // Check the oracle contract
+            // Check the oracle contract and update the cached one
 
             var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
-
-            // Check the cached contract
 
             if (_lastContract?.ScriptHash != contract.ScriptHash)
             {
@@ -456,11 +493,7 @@ namespace Neo.Oracle
 
             foreach (var account in _accounts)
             {
-                // Sign the transaction
-
-                var signatureTx = responseTx.Sign(account.Key);
-
-                // Create the payload
+                // Create the payload with the signed transction
 
                 var response = new OraclePayload()
                 {
@@ -468,7 +501,7 @@ namespace Neo.Oracle
                     OracleSignature = new OracleResponseSignature()
                     {
                         OracleExecutionCacheHash = oracle.Hash,
-                        Signature = signatureTx,
+                        Signature = responseTx.Sign(account.Key),
                         TransactionRequestHash = tx.Hash
                     }
                 };
@@ -480,13 +513,17 @@ namespace Neo.Oracle
                 {
                     response.Witness = signPayload.GetWitnesses()[0];
 
-                    if (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx)))
+                    switch (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx, forceError)))
                     {
-                        // Send my signature by P2P
+                        case OracleResponseResult.Merged:
+                            {
+                                // Send my signature by P2P
 
-                        Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
+                                Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
 
-                        _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
+                                _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
+                                break;
+                            }
                     }
                 }
             }
@@ -566,13 +603,13 @@ namespace Neo.Oracle
         /// <param name="snapshot">Snapshot</param>
         /// <param name="response">Response</param>
         /// <returns>True if it was added</returns>
-        private bool TryAddOracleResponse(StoreView snapshot, ResponseItem response)
+        private OracleResponseResult TryAddOracleResponse(StoreView snapshot, ResponseItem response)
         {
             if (!response.Verify(snapshot))
             {
                 Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}", LogLevel.Error);
 
-                return false;
+                return OracleResponseResult.Invalid;
             }
 
             if (!response.IsMine)
@@ -601,16 +638,21 @@ namespace Neo.Oracle
                         // Request should be already there, but it could be removed because the mempool was full during the process
 
                         _localNode.Tell(new LocalNode.Relay { Inventory = request.RequestTransaction });
+
+                        return OracleResponseResult.RelayedTx;
                     }
 
-                    return true;
+                    return OracleResponseResult.Merged;
                 }
             }
             else
             {
                 // Ask for the request tx because it's not in my pool
 
-                _localNode.Tell(Message.Create(MessageCommand.GetData, InvPayload.Create(InventoryType.TX, response.TransactionRequestHash)));
+                _taskManager.Tell(new TaskManager.RestartTasks
+                {
+                    Payload = InvPayload.Create(InventoryType.TX, response.TransactionRequestHash)
+                });
             }
 
             // Save this payload for check it later
@@ -621,15 +663,15 @@ namespace Neo.Oracle
                 {
                     // It was getted
 
-                    return collection.Add(response);
+                    return collection.Add(response) ? OracleResponseResult.Merged : OracleResponseResult.Duplicated;
                 }
 
                 // It was added
 
-                return true;
+                return OracleResponseResult.Merged;
             }
 
-            return false;
+            return OracleResponseResult.Duplicated;
         }
 
         /// <summary>
@@ -740,32 +782,6 @@ namespace Neo.Oracle
         /// <param name="input">Input</param>
         /// <param name="filter">Filter</param>
         /// <param name="result">Result</param>
-        /// <returns>True if was filtered</returns>
-        public static bool FilterResponse(string input, OracleFilter filter, out string result, out long gasCost)
-        {
-            if (filter == null)
-            {
-                result = input;
-                gasCost = 0;
-                return true;
-            }
-
-            if (FilterResponse(Encoding.UTF8.GetBytes(input), filter, out var bufferResult, out gasCost))
-            {
-                result = Encoding.UTF8.GetString(bufferResult);
-                return true;
-            }
-
-            result = null;
-            return false;
-        }
-
-        /// <summary>
-        /// Filter response
-        /// </summary>
-        /// <param name="input">Input</param>
-        /// <param name="filter">Filter</param>
-        /// <param name="result">Result</param>
         /// <param name="gasCost">Gas cost</param>
         /// <returns>True if was filtered</returns>
         public static bool FilterResponse(byte[] input, OracleFilter filter, out byte[] result, out long gasCost)
@@ -780,7 +796,7 @@ namespace Neo.Oracle
             // Prepare the execution
 
             using ScriptBuilder script = new ScriptBuilder();
-            script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, input, (byte)CallFlags.None);
+            script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, new object[] { input, filter.FilterArgs }, (byte)CallFlags.None);
 
             // Execute
 
@@ -806,9 +822,9 @@ namespace Neo.Oracle
 
         #region Akka
 
-        public static Props Props(NeoSystem system, IActorRef localNode, Wallet wallet)
+        public static Props Props(IActorRef localNode, IActorRef taskManager, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new OracleService(system, localNode, wallet, null, ProtocolSettings.Default.MemoryPoolMaxTransactions));
+            return Akka.Actor.Props.Create(() => new OracleService(localNode, taskManager, wallet, null, ProtocolSettings.Default.MemoryPoolMaxTransactions));
         }
 
         #endregion
