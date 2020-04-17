@@ -170,11 +170,13 @@ namespace Neo.Ledger
 
         public IEnumerable<Transaction> GetVerifiedTransactions(StoreView snapshot)
         {
+            Transaction[] ret;
+            var oracle = new PoolItem.DelayState();
+
             _txRwLock.EnterReadLock();
             try
             {
-                var oracle = new PoolItem.OracleState();
-                return _unsortedTransactions
+                ret = _unsortedTransactions
                     .Where(u => u.Value.IsReady(snapshot, oracle))
                     .Select(p => p.Value.Tx)
                     .ToArray();
@@ -182,6 +184,18 @@ namespace Neo.Ledger
             finally
             {
                 _txRwLock.ExitReadLock();
+            }
+
+            // Fetch transactions
+
+            foreach (var tx in ret)
+            {
+                yield return tx;
+            }
+            foreach (var delayed in oracle.Delayed)
+            {
+                if (oracle.Allowed.Contains(delayed.Hash))
+                    yield return delayed;
             }
         }
 
@@ -202,11 +216,13 @@ namespace Neo.Ledger
 
         public IEnumerable<Transaction> GetSortedVerifiedTransactions(StoreView snapshot)
         {
+            Transaction[] ret;
+            var oracle = new PoolItem.DelayState();
+
             _txRwLock.EnterReadLock();
             try
             {
-                var oracle = new PoolItem.OracleState();
-                return _sortedTransactions
+                ret = _sortedTransactions
                     .Reverse()
                     .Where(u => u.IsReady(snapshot, oracle))
                     .Select(p => p.Tx)
@@ -215,6 +231,18 @@ namespace Neo.Ledger
             finally
             {
                 _txRwLock.ExitReadLock();
+            }
+
+            // Fetch transactions
+
+            foreach (var tx in ret)
+            {
+                yield return tx;
+            }
+            foreach (var delayed in oracle.Delayed)
+            {
+                if (oracle.Allowed.Contains(delayed.Hash))
+                    yield return delayed;
             }
         }
 

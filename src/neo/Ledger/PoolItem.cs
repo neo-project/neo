@@ -36,18 +36,19 @@ namespace Neo.Ledger
             LastBroadcastTimestamp = Timestamp;
         }
 
-        internal class OracleState
+        internal class DelayState
         {
-            public HashSet<UInt256> AllowedRequests = new HashSet<UInt256>();
+            public HashSet<UInt256> Allowed = new HashSet<UInt256>();
+            public HashSet<Transaction> Delayed = new HashSet<Transaction>();
         }
 
-        public bool IsReady(StoreView snapshot, OracleState oracle)
+        public bool IsReady(StoreView snapshot, DelayState state)
         {
             switch (Tx.Version)
             {
                 case TransactionVersion.OracleRequest:
                     {
-                        if (oracle.AllowedRequests.Contains(Tx.Hash))
+                        if (state.Allowed.Remove(Tx.Hash))
                         {
                             // The response was already fetched, we can put request and response in the same block
 
@@ -64,15 +65,16 @@ namespace Neo.Ledger
                             else
                             {
                                 // If the response it's in the pool it's located after the request
-                                // We can sort the pool by OracleResponses, but it's not needed
+                                // We save the request in order to put after the response
 
+                                state.Delayed.Add(Tx);
                                 return false;
                             }
                         }
                     }
                 case TransactionVersion.OracleResponse:
                     {
-                        oracle.AllowedRequests.Add(Tx.OracleRequestTx);
+                        state.Allowed.Add(Tx.OracleRequestTx);
                         break;
                     }
             }
