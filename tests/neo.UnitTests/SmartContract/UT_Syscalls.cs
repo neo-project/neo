@@ -118,6 +118,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
+                script.EmitPush("MyFilterArgs");
                 script.EmitPush("MyFilter");
                 script.EmitPush(UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray());
                 script.EmitPush("https://google.com");
@@ -139,6 +140,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
+                script.EmitPush("MyFilterArgs");
                 script.EmitPush("WrongFilter");
                 script.EmitPush(UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray());
                 script.EmitPush("https://google.com");
@@ -159,6 +161,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
+                script.Emit(OpCode.PUSHNULL);
                 script.Emit(OpCode.PUSHNULL);
                 script.Emit(OpCode.PUSHNULL);
                 script.EmitPush("http://google.com");

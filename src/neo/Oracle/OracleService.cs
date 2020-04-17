@@ -796,7 +796,7 @@ namespace Neo.Oracle
             // Prepare the execution
 
             using ScriptBuilder script = new ScriptBuilder();
-            script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, input, (byte)CallFlags.None);
+            script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, new object[] { input, filter.FilterArgs }, (byte)CallFlags.None);
 
             // Execute
 

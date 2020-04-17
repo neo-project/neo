@@ -295,7 +295,7 @@ namespace Neo.UnitTests.Oracle
                 byte[] script;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    sb.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, $"https://127.0.0.1:{port}/ping", null, null);
+                    sb.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, $"https://127.0.0.1:{port}/ping", null, null, null);
                     script = sb.ToArray();
                 }
 
