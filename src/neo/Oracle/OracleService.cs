@@ -467,18 +467,16 @@ namespace Neo.Oracle
 
                 if (engine.Execute() != VMState.HALT)
                 {
-                    // If the request TX will FAULT we can save space removing the downloaded data
-                    // But user paid for it, maybe it will not fault during OnPerists
+                    // If the TX request FAULT, we can save space by deleting the downloaded data
+                    // but the user paid it, maybe it won't fail during OnPerist
 
                     // oracle.Clear();
                 }
             }
 
-            // Check the oracle contract
+            // Check the oracle contract and update the cached one
 
             var contract = NativeContract.Oracle.GetOracleMultiSigContract(snapshot);
-
-            // Check the cached contract
 
             if (_lastContract?.ScriptHash != contract.ScriptHash)
             {
@@ -495,11 +493,7 @@ namespace Neo.Oracle
 
             foreach (var account in _accounts)
             {
-                // Sign the transaction
-
-                var signatureTx = responseTx.Sign(account.Key);
-
-                // Create the payload
+                // Create the payload with the signed transction
 
                 var response = new OraclePayload()
                 {
@@ -507,7 +501,7 @@ namespace Neo.Oracle
                     OracleSignature = new OracleResponseSignature()
                     {
                         OracleExecutionCacheHash = oracle.Hash,
-                        Signature = signatureTx,
+                        Signature = responseTx.Sign(account.Key),
                         TransactionRequestHash = tx.Hash
                     }
                 };
