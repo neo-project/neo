@@ -1,8 +1,6 @@
-using Neo.Cryptography;
 using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Neo.Network.P2P.Payloads
@@ -15,14 +13,14 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 TransactionRequestHash
         {
             get => _transactionRequestHash;
-            set { _transactionRequestHash = value; _hash = null; _size = 0; }
+            set { _transactionRequestHash = value; _size = 0; }
         }
 
         private UInt160 _oracleExecutionCacheHash;
         public UInt160 OracleExecutionCacheHash
         {
             get => _oracleExecutionCacheHash;
-            set { _oracleExecutionCacheHash = value; _hash = null; _size = 0; }
+            set { _oracleExecutionCacheHash = value; _size = 0; }
         }
 
         /// <summary>
@@ -36,7 +34,6 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (value.Length != 64) throw new ArgumentException();
                 _signature = value;
-                _hash = null;
                 _size = 0;
             }
         }
@@ -54,19 +51,6 @@ namespace Neo.Network.P2P.Payloads
                         Signature.Length;   //Oracle Validator Signature
                 }
                 return _size;
-            }
-        }
-
-        private UInt256 _hash = null;
-        public UInt256 Hash
-        {
-            get
-            {
-                if (_hash == null)
-                {
-                    _hash = new UInt256(Crypto.Hash256(this.ToArray()));
-                }
-                return _hash;
             }
         }
 
