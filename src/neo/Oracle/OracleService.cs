@@ -596,11 +596,11 @@ namespace Neo.Oracle
 
                         _pendingRequests.TryRemove(response.TransactionRequestHash, out _);
                         _pendingResponses.TryRemove(response.TransactionRequestHash, out _);
-                        _system.Blockchain.Tell(request.ResponseTransaction);
+                        _localNode.Tell(new LocalNode.Relay { Inventory = request.ResponseTransaction });
 
                         // Request should be already there, but it could be removed because the mempool was full during the process
 
-                        _system.Blockchain.Tell(request.RequestTransaction);
+                        _localNode.Tell(new LocalNode.Relay { Inventory = request.RequestTransaction });
                     }
 
                     return true;
