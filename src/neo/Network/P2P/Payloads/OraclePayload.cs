@@ -114,7 +114,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Data);
+            writer.WriteVarBytes(Data);
             writer.Write(OraclePub);
         }
 

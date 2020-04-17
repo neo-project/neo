@@ -161,7 +161,7 @@ namespace Neo.Network.P2P
             // Send to oracle and relay it
 
             system.Oracle?.Tell(payload);
-            Context.Parent.Tell(Message.Create(MessageCommand.Oracle, payload));
+            system.LocalNode.Tell(Message.Create(MessageCommand.Oracle, payload));
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)

@@ -452,6 +452,8 @@ namespace Neo.Oracle
 
             var responseTx = CreateResponseTransaction(snapshot, oracle, contract, tx);
 
+            Log($"Generated response tx: requestHash={tx.Hash} responseHash={responseTx.Hash}");
+
             foreach (var account in _accounts)
             {
                 // Sign the transaction
@@ -481,6 +483,8 @@ namespace Neo.Oracle
                     if (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx)))
                     {
                         // Send my signature by P2P
+
+                        Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
 
                         _localNode.Tell(Message.Create(MessageCommand.Oracle, response));
                     }
@@ -566,10 +570,14 @@ namespace Neo.Oracle
         {
             if (!response.Verify(snapshot))
             {
+                Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}", LogLevel.Warning);
                 return false;
             }
 
-            Log($"Received oracle signature: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}");
+            if (!response.IsMine)
+            {
+                Log($"Received oracle signature: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}");
+            }
 
             // Find the request tx
 
@@ -581,7 +589,7 @@ namespace Neo.Oracle
                 {
                     if (request.IsCompleted)
                     {
-                        Log($"Send response tx: hash={request.ResponseTransaction.Hash}");
+                        Log($"Send response tx: oracle={response.OraclePub.ToString()} hash={request.ResponseTransaction.Hash}");
 
                         // Done! Send to mem pool
 
