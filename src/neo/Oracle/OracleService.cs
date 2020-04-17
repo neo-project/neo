@@ -39,7 +39,7 @@ namespace Neo.Oracle
             private ContractParametersContext ResponseContext;
 
             public Transaction ResponseTransaction => Proposal?.Tx;
-
+            public bool IsErrorResponse => Proposal?.IsError == true;
             public bool IsCompleted => ResponseContext?.Completed == true;
 
             public RequestItem(Transaction requestTx) : base(requestTx)
@@ -88,6 +88,15 @@ namespace Neo.Oracle
                 }
 
                 return false;
+            }
+
+            /// <summary>
+            /// Clear responses
+            /// </summary>
+            public void CleanResponses()
+            {
+                Proposal = null;
+                ResponseContext = null;
             }
         }
 
@@ -161,9 +170,11 @@ namespace Neo.Oracle
             public UInt160 ResultHash => Data.OracleExecutionCacheHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
             public bool IsMine { get; }
+            public bool IsError { get; }
 
-            public ResponseItem(OraclePayload payload, Contract contract = null, Transaction responseTx = null) : base(responseTx)
+            public ResponseItem(OraclePayload payload, Contract contract = null, Transaction responseTx = null, bool isError = false) : base(responseTx)
             {
+                IsError = isError;
                 IsMine = responseTx != null && contract != null;
                 Contract = contract;
                 Msg = payload;
@@ -206,6 +217,7 @@ namespace Neo.Oracle
         private CancellationTokenSource _cancel;
         private readonly (Contract Contract, KeyPair Key)[] _accounts;
         private readonly Func<SnapshotView> _snapshotFactory;
+        private static readonly TimeSpan TimeoutInterval = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Number of threads for processing the oracle
@@ -319,6 +331,21 @@ namespace Neo.Oracle
                         Stop();
                         break;
                     }
+                case TaskManager.Timer _:
+                    {
+                        // Create error response because there are no agreement
+
+                        foreach (var request in _pendingRequests
+                            .Where(u => !u.Value.IsErrorResponse && DateTime.UtcNow - u.Value.Timestamp > TimeoutInterval)
+                            .ToArray()
+                            )
+                        {
+                            _pendingResponses.TryRemove(request.Key, out _);
+                            request.Value.CleanResponses();
+                            ProcessRequestTransaction(request.Value.RequestTransaction, true);
+                        }
+                        break;
+                    }
                 case OraclePayload msg:
                     {
                         using var snapshot = _snapshotFactory();
@@ -371,7 +398,7 @@ namespace Neo.Oracle
                 {
                     foreach (var tx in _processingQueue.GetConsumingEnumerable(_cancel.Token))
                     {
-                        ProcessRequestTransaction(tx);
+                        ProcessRequestTransaction(tx, false);
                     }
                 },
                 _cancel.Token);
@@ -424,14 +451,17 @@ namespace Neo.Oracle
         /// Process request transaction
         /// </summary>
         /// <param name="tx">Transaction</param>
-        private void ProcessRequestTransaction(Transaction tx)
+        /// <param name="forceError">Force error</param>
+        private void ProcessRequestTransaction(Transaction tx, bool forceError)
         {
-            Log($"Process request tx: hash={tx.Hash}");
+            Log($"Process request tx: hash={tx.Hash} forceError={forceError}");
 
-            var oracle = new OracleExecutionCache(Process);
             using var snapshot = _snapshotFactory();
-            using (var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle))
+            var oracle = new OracleExecutionCache(Process);
+
+            if (!forceError)
             {
+                using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
                 engine.LoadScript(tx.Script);
 
                 if (engine.Execute() != VMState.HALT)
@@ -488,7 +518,7 @@ namespace Neo.Oracle
                 {
                     response.Witness = signPayload.GetWitnesses()[0];
 
-                    switch (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx)))
+                    switch (TryAddOracleResponse(snapshot, new ResponseItem(response, contract, responseTx, forceError)))
                     {
                         case OracleResponseResult.Merged:
                             {

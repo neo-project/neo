@@ -197,7 +197,10 @@ namespace Neo.Ledger
                 array = _sortedValues.ToArray();
             }
 
-            return (IEnumerator<KeyValuePair<TKey, TValue>>)array.GetEnumerator();
+            foreach(var entry in array)
+            {
+                yield return entry;
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

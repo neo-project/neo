@@ -20,7 +20,7 @@ namespace Neo.Network.P2P
         public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
-        private class Timer { }
+        public class Timer { }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
@@ -207,6 +207,8 @@ namespace Neo.Network.P2P
                     }
             foreach (TaskSession session in sessions.Values)
                 RequestTasks(session);
+
+            system.Oracle?.Tell(new Timer());
         }
 
         protected override void PostStop()
