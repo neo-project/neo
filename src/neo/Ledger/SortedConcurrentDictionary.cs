@@ -197,7 +197,7 @@ namespace Neo.Ledger
                 array = _sortedValues.ToArray();
             }
 
-            foreach(var entry in array)
+            foreach (var entry in array)
             {
                 yield return entry;
             }
