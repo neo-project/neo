@@ -156,7 +156,7 @@ namespace Neo.Network.P2P
             // Verify
 
             using var snapshot = Blockchain.Singleton.GetSnapshot();
-            if (payload.Verify(snapshot)) return;
+            if (!payload.Verify(snapshot)) return;
 
             // Send to oracle and relay it
 

@@ -570,7 +570,8 @@ namespace Neo.Oracle
         {
             if (!response.Verify(snapshot))
             {
-                Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}", LogLevel.Warning);
+                Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}", LogLevel.Error);
+
                 return false;
             }
 
