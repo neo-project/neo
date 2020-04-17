@@ -60,7 +60,7 @@ namespace Neo.IO.Caching
 
         protected abstract void AddInternal(TKey key, TValue value);
 
-        public void Commit()
+        public virtual void Commit()
         {
             foreach (Trackable trackable in GetChangeSet())
                 switch (trackable.State)
