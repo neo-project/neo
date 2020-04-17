@@ -51,7 +51,6 @@ namespace Neo.Oracle.Protocols.Https
                 }
 
                 writer.Flush();
-
                 return stream.ToArray();
             }
         }
