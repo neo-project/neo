@@ -465,7 +465,7 @@ namespace Neo.Oracle
                 using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
                 engine.LoadScript(tx.Script);
 
-                if (engine.Execute() != VMState.HALT && engine.GasLeft == 0)
+                if (engine.Execute() != VMState.HALT && engine.GasLeft <= 0)
                 {
                     // If the TX request FAULT, we can save space by deleting the downloaded data
                     // but the user paid it, maybe it won't fail during OnPerist
