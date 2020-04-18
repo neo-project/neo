@@ -81,6 +81,11 @@ namespace Neo.Network.P2P.Payloads
             return Equals(obj as Block);
         }
 
+        void IInteroperable.FromStackItem(StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
