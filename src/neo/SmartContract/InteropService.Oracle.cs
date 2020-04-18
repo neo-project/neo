@@ -109,8 +109,12 @@ namespace Neo.SmartContract
 
                 // Execute the oracle request
 
-                if (engine.OracleCache.TryGet(request, out var response))
+                if (engine.OracleCache.TryGet(request, out var response, out var cached))
                 {
+                    // Add the gas filter cost
+
+                    if (!cached && !engine.AddGas(response.FilterCost)) return false;
+
                     engine.Push(response.Result ?? StackItem.Null);
                     return true;
                 }

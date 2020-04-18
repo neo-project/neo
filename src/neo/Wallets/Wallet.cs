@@ -340,7 +340,6 @@ namespace Neo.Wallets
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0) +
-                        oracleCache.FilterCost +
                         (oracleCache.Size * NativeContract.Policy.GetFeePerByte(snapshot)); // We should pay for the response extra cost of
 
                     // Change the Transaction type because it's an oracle request
