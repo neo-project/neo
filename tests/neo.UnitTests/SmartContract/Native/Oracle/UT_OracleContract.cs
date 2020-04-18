@@ -130,7 +130,7 @@ namespace Neo.UnitTests.Oracle
                     (https.Filter.ContractHash != UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff") ||
                     https.Filter.FilterMethod != "MyFilter"))
                 {
-                    return OracleResponse.CreateError(UInt160.Zero, OracleResultError.FilterError);
+                    return OracleResponse.CreateError(UInt160.Zero);
                 }
 
                 if (https.URL.ToString() == "https://google.com/" && https.Method == HttpMethod.GET)
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.Oracle
                 }
             }
 
-            return OracleResponse.CreateError(UInt160.Zero, OracleResultError.PolicyError);
+            return OracleResponse.CreateError(UInt160.Zero);
         }
 
         [TestMethod]

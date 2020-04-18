@@ -164,7 +164,6 @@ namespace Neo.Oracle
 
             public readonly Contract Contract;
             public ECPoint OraclePub => Msg.OraclePub;
-            public UInt256 MsgHash => Msg.Hash;
             public byte[] Signature => Data.Signature;
             public UInt256 TransactionResponseHash => Data.TransactionResponseHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
@@ -287,7 +286,7 @@ namespace Neo.Oracle
 
             if (_accounts.Length == 0)
             {
-                throw new ArgumentException("The wallet doesn't have any of the expected accounts");
+                throw new ArgumentException("The wallet doesn't have any oracle accounts");
             }
 
             // Create queue for pending request that should be processed
@@ -448,7 +447,7 @@ namespace Neo.Oracle
         /// <param name="forceError">Force error</param>
         private void ProcessRequestTransaction(Transaction tx, bool forceError)
         {
-            Log($"Process request tx: hash={tx.Hash} forceError={forceError}");
+            Log($"Process oracle request: requestTx={tx.Hash} forceError={forceError}");
 
             using var snapshot = _snapshotFactory();
             var oracle = new OracleExecutionCache(Process);
@@ -497,7 +496,7 @@ namespace Neo.Oracle
 
             var responseTx = CreateResponseTransaction(snapshot, oracle, contract, tx);
 
-            Log($"Generated response tx: requestHash={tx.Hash} responseHash={responseTx.Hash}");
+            Log($"Generated response tx: requestTx={tx.Hash} responseTx={responseTx.Hash}");
 
             foreach (var account in _accounts)
             {
@@ -527,7 +526,7 @@ namespace Neo.Oracle
                             {
                                 // Send my signature by P2P
 
-                                Log($"Send oracle signature: oracle={response.OraclePub.ToString()} request={tx.Hash} response={response.Hash}");
+                                Log($"Send oracle signature: oracle={response.OraclePub.ToString()} requestTx={tx.Hash} responseTx={response.Hash}");
 
                                 _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
                                 break;
@@ -615,14 +614,14 @@ namespace Neo.Oracle
         {
             if (!response.Verify(snapshot))
             {
-                Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}", LogLevel.Error);
+                Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} requestTx={response.TransactionRequestHash} responseTx={response.TransactionRequestHash}", LogLevel.Error);
 
                 return OracleResponseResult.Invalid;
             }
 
             if (!response.IsMine)
             {
-                Log($"Received oracle signature: oracle={response.OraclePub.ToString()} request={response.TransactionRequestHash} response={response.MsgHash}");
+                Log($"Received oracle signature: oracle={response.OraclePub.ToString()} requestTx={response.TransactionRequestHash} responseTx={response.TransactionRequestHash}");
             }
 
             // Find the request tx
@@ -635,7 +634,7 @@ namespace Neo.Oracle
                 {
                     if (request.IsCompleted)
                     {
-                        Log($"Send response tx: oracle={response.OraclePub.ToString()} hash={request.ResponseTransaction.Hash}");
+                        Log($"Send response tx: oracle={response.OraclePub.ToString()} responseTx={request.ResponseTransaction.Hash}");
 
                         // Done! Send to mem pool
 
@@ -772,12 +771,12 @@ namespace Neo.Oracle
                 return request switch
                 {
                     OracleHttpsRequest https => HTTPSProtocol.Process(https),
-                    _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
+                    _ => OracleResponse.CreateError(request.Hash),
                 };
             }
             catch
             {
-                return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
+                return OracleResponse.CreateError(request.Hash);
             }
         }
 

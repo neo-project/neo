@@ -98,7 +98,7 @@ namespace Neo.UnitTests.Oracle
                 Method = HttpMethod.GET
             };
 
-            var initRes = OracleResponse.CreateError(initReq.Hash, OracleResultError.ServerError);
+            var initRes = OracleResponse.CreateError(initReq.Hash);
             var cache = new OracleExecutionCache(initRes);
 
             Assert.AreEqual(1, cache.Count);

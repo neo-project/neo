@@ -69,7 +69,8 @@ namespace Neo.Oracle.Protocols.Https
             {
                 // Don't allow private host in order to prevent SSRF
 
-                return OracleResponse.CreateError(request.Hash, OracleResultError.PolicyError);
+                LogError(request.URL, "PolicyError");
+                return OracleResponse.CreateError(request.Hash);
             }
 
             Task<HttpResponseMessage> result;
@@ -87,24 +88,10 @@ namespace Neo.Oracle.Protocols.Https
                         result = client.GetAsync(request.URL);
                         break;
                     }
-                //case HttpMethod.POST:
-                //    {
-                //        result = client.PostAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
-                //        break;
-                //    }
-                //case HttpMethod.PUT:
-                //    {
-                //        result = client.PutAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
-                //        break;
-                //    }
-                //case HttpMethod.DELETE:
-                //    {
-                //        result = client.DeleteAsync(httpRequest.URL);
-                //        break;
-                //    }
                 default:
                     {
-                        return OracleResponse.CreateError(request.Hash, OracleResultError.PolicyError);
+                        LogError(request.URL, "PolicyError");
+                        return OracleResponse.CreateError(request.Hash);
                     }
             }
 
@@ -112,14 +99,16 @@ namespace Neo.Oracle.Protocols.Https
             {
                 // Timeout
 
-                return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
+                LogError(request.URL, "Timeout");
+                return OracleResponse.CreateError(request.Hash);
             }
 
             if (!result.Result.IsSuccessStatusCode)
             {
                 // Error with response
 
-                return OracleResponse.CreateError(request.Hash, OracleResultError.ResponseError);
+                LogError(request.URL, "ResponseError");
+                return OracleResponse.CreateError(request.Hash);
             }
 
             string ret;
@@ -129,7 +118,8 @@ namespace Neo.Oracle.Protocols.Https
             {
                 // Timeout
 
-                return OracleResponse.CreateError(request.Hash, OracleResultError.Timeout);
+                LogError(request.URL, "Timeout");
+                return OracleResponse.CreateError(request.Hash);
             }
             else
             {
@@ -142,10 +132,21 @@ namespace Neo.Oracle.Protocols.Https
 
             if (!OracleFilter.Filter(request.Filter, Encoding.UTF8.GetBytes(ret), out var output, out var gasCost))
             {
-                return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError, gasCost);
+                LogError(request.URL, "FilterError");
+                return OracleResponse.CreateError(request.Hash, gasCost);
             }
 
             return OracleResponse.CreateResult(request.Hash, output, gasCost);
+        }
+
+        /// <summary>
+        /// Log
+        /// </summary>
+        /// <param name="url">Url</param>
+        /// <param name="error">Error</param>
+        private static void LogError(Uri url, string error)
+        {
+            Utility.Log(nameof(OracleHttpsProtocol), LogLevel.Error, $"{error} at {url.ToString()}");
         }
 
         internal static bool IsInternal(IPHostEntry entry)

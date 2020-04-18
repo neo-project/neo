@@ -51,7 +51,7 @@ namespace Neo.SmartContract
             return disposable;
         }
 
-        public bool AddGas(long gas)
+        internal bool AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
