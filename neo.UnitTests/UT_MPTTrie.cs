@@ -158,8 +158,8 @@ namespace Neo.UnitTests.Trie.MPT
             b.Children[9] = l2;
 
             r1.Next = v1;
-            Assert.AreEqual("0xe2c39220dcd0503e89bd8865d07b905132a1ff8f6065185f46063280b7f394ce", r1.GetHash().ToString());
-            Assert.AreEqual("0x8bd128c986167bb193071111d3dd797ff87b72b3f64bbc4fae22e569be64dccd", r.GetHash().ToString());
+            Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", r1.GetHash().ToString());
+            Assert.AreEqual("0x93e8e1ffe2f83dd92fca67330e273bcc811bf64b8f8d9d1b25d5e7366b47d60d", r.GetHash().ToString());
 
             var mpt = new MPTTrie(rootHash, mptdb);
             var result = true;
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             result = mpt.TryDelete("acae".HexToBytes());
             Assert.IsTrue(result);
-            Assert.AreEqual("0xe2c39220dcd0503e89bd8865d07b905132a1ff8f6065185f46063280b7f394ce", mpt.GetRoot().ToString());
+            Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", mpt.GetRoot().ToString());
         }
 
         [TestMethod]
