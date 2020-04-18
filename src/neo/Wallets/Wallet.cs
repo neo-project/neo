@@ -357,7 +357,7 @@ namespace Neo.Wallets
 
                                 if (oracleRequest is OracleHttpsRequest https)
                                 {
-                                    assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod, https.Filter?.FilterArgs);
+                                    assertScript.EmitAppCall(NativeContract.Oracle.Hash, "get", https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod, https.Filter?.FilterArgs);
                                 }
                                 else
                                 {
@@ -371,7 +371,7 @@ namespace Neo.Wallets
 
                             // Check that the hash of the whole responses are exactly the same
 
-                            assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
+                            assertScript.EmitAppCall(NativeContract.Oracle.Hash, "getHash");
                             assertScript.EmitPush(oracleCache.Hash.ToArray());
                             assertScript.Emit(OpCode.EQUAL);
                             assertScript.Emit(OpCode.ASSERT);
@@ -407,7 +407,7 @@ namespace Neo.Wallets
 
                                 if (oracleRequest is OracleHttpsRequest https)
                                 {
-                                    assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod);
+                                    assertScript.EmitAppCall(NativeContract.Oracle.Hash, "get", https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod, https.Filter?.FilterArgs);
                                 }
                                 else
                                 {
@@ -421,7 +421,7 @@ namespace Neo.Wallets
 
                             // Check that the hash of the whole responses are exactly the same
 
-                            assertScript.EmitSysCall(InteropService.Oracle.Neo_Oracle_Hash);
+                            assertScript.EmitAppCall(NativeContract.Oracle.Hash, "getHash");
                             assertScript.EmitPush(oracleCache.Hash.ToArray());
                             assertScript.Emit(OpCode.EQUAL);
                             assertScript.Emit(OpCode.ASSERT);
