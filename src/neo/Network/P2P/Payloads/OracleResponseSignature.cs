@@ -16,11 +16,11 @@ namespace Neo.Network.P2P.Payloads
             set { _transactionRequestHash = value; _size = 0; }
         }
 
-        private UInt160 _oracleExecutionCacheHash;
-        public UInt160 OracleExecutionCacheHash
+        private UInt256 _transactionResponseHash;
+        public UInt256 TransactionResponseHash
         {
-            get => _oracleExecutionCacheHash;
-            set { _oracleExecutionCacheHash = value; _size = 0; }
+            get => _transactionResponseHash;
+            set { _transactionResponseHash = value; _size = 0; }
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Neo.Network.P2P.Payloads
                 {
                     _size = sizeof(byte) +  //Type
                         UInt256.Length +    //Transaction Hash
-                        UInt160.Length +    //OracleExecutionCache Hash
+                        UInt256.Length +    //OracleExecutionCache Hash
                         Signature.Length;   //Oracle Validator Signature
                 }
                 return _size;
@@ -63,7 +63,7 @@ namespace Neo.Network.P2P.Payloads
         private void DeserializeWithoutType(BinaryReader reader)
         {
             TransactionRequestHash = reader.ReadSerializable<UInt256>();
-            OracleExecutionCacheHash = reader.ReadSerializable<UInt160>();
+            TransactionResponseHash = reader.ReadSerializable<UInt256>();
             Signature = reader.ReadFixedBytes(64);
         }
 
@@ -87,7 +87,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(ResponseSignatureType);
             writer.Write(TransactionRequestHash);
-            writer.Write(OracleExecutionCacheHash);
+            writer.Write(TransactionResponseHash);
             writer.Write(Signature);
         }
     }

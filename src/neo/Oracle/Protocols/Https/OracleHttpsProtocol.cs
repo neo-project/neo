@@ -140,7 +140,7 @@ namespace Neo.Oracle.Protocols.Https
 
             // Filter
 
-            if (!OracleService.FilterResponse(Encoding.UTF8.GetBytes(ret), request.Filter, out var output, out var gasCost))
+            if (!OracleFilter.Filter(request.Filter, Encoding.UTF8.GetBytes(ret), out var output, out var gasCost))
             {
                 return OracleResponse.CreateError(request.Hash, OracleResultError.FilterError, gasCost);
             }

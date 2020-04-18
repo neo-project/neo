@@ -9,7 +9,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Collections;
@@ -68,7 +67,7 @@ namespace Neo.Oracle
                 }
                 else
                 {
-                    if (response.ResultHash != Proposal.ResultHash)
+                    if (response.TransactionResponseHash != Proposal.TransactionResponseHash)
                     {
                         // Unexpected result
 
@@ -167,7 +166,7 @@ namespace Neo.Oracle
             public ECPoint OraclePub => Msg.OraclePub;
             public UInt256 MsgHash => Msg.Hash;
             public byte[] Signature => Data.Signature;
-            public UInt160 ResultHash => Data.OracleExecutionCacheHash;
+            public UInt256 TransactionResponseHash => Data.TransactionResponseHash;
             public UInt256 TransactionRequestHash => Data.TransactionRequestHash;
             public bool IsMine { get; }
             public bool IsError { get; }
@@ -205,10 +204,6 @@ namespace Neo.Oracle
         internal static OracleHttpsProtocol HTTPSProtocol { get; } = new OracleHttpsProtocol();
 
         #endregion
-
-        // TODO: Fees
-
-        private const long MaxGasFilter = 10_000_000;
 
         private long _isStarted = 0;
         private Contract _lastContract;
@@ -501,7 +496,7 @@ namespace Neo.Oracle
                     OraclePub = account.Key.PublicKey,
                     OracleSignature = new OracleResponseSignature()
                     {
-                        OracleExecutionCacheHash = oracle.Hash,
+                        TransactionResponseHash = responseTx.Hash,
                         Signature = responseTx.Sign(account.Key),
                         TransactionRequestHash = tx.Hash
                     }
@@ -775,47 +770,6 @@ namespace Neo.Oracle
             {
                 return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
             }
-        }
-
-        /// <summary>
-        /// Filter response
-        /// </summary>
-        /// <param name="input">Input</param>
-        /// <param name="filter">Filter</param>
-        /// <param name="result">Result</param>
-        /// <param name="gasCost">Gas cost</param>
-        /// <returns>True if was filtered</returns>
-        public static bool FilterResponse(byte[] input, OracleFilter filter, out byte[] result, out long gasCost)
-        {
-            if (filter == null)
-            {
-                result = input;
-                gasCost = 0;
-                return true;
-            }
-
-            // Prepare the execution
-
-            using ScriptBuilder script = new ScriptBuilder();
-            script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, new object[] { input, filter.FilterArgs }, (byte)CallFlags.None);
-
-            // Execute
-
-            using var engine = new ApplicationEngine(TriggerType.Application, null, null, MaxGasFilter, false, null);
-            engine.LoadScript(script.ToArray(), CallFlags.None);
-
-            if (engine.Execute() != VMState.HALT || !engine.ResultStack.TryPop(out PrimitiveType ret))
-            {
-                result = null;
-                gasCost = engine.GasConsumed;
-                return false;
-            }
-
-            // Extract the filtered item
-
-            result = ret.GetSpan().ToArray();
-            gasCost = engine.GasConsumed;
-            return true;
         }
 
         #endregion
