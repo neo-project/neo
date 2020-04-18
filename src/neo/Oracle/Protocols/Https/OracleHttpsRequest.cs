@@ -43,8 +43,7 @@ namespace Neo.Oracle.Protocols.Https
                 if (Filter != null)
                 {
                     writer.Write(0x01);
-                    writer.Write(Filter.ContractHash);
-                    writer.WriteVarString(Filter.FilterMethod);
+                    writer.Write(Filter);
                 }
                 else
                 {
@@ -52,7 +51,6 @@ namespace Neo.Oracle.Protocols.Https
                 }
 
                 writer.Flush();
-
                 return stream.ToArray();
             }
         }
