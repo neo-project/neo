@@ -335,7 +335,6 @@ namespace Neo.Oracle
                             .ToArray()
                             )
                         {
-                            _pendingResponses.TryRemove(request.Key, out _);
                             request.Value.CleanResponses();
                             ProcessRequestTransaction(request.Value.RequestTransaction, true);
                         }
@@ -479,6 +478,12 @@ namespace Neo.Oracle
                 // Reduce the memory load using the same Contract class
 
                 _lastContract = contract;
+            }
+            else
+            {
+                // Use the same cached object in order to save memory in the pools
+
+                contract = _lastContract;
             }
 
             // Create deterministic oracle response
@@ -714,20 +719,17 @@ namespace Neo.Oracle
 
         private static int SortEnqueuedRequest(KeyValuePair<UInt256, Transaction> a, KeyValuePair<UInt256, Transaction> b)
         {
-            var otherTx = b.Value;
-            if (otherTx == null) return 1;
-
             // Fees sorted ascending
 
             var tx = a.Value;
-            int ret = tx.FeePerByte.CompareTo(otherTx.FeePerByte);
+            int ret = tx.FeePerByte.CompareTo(b.Value.FeePerByte);
             if (ret != 0) return ret;
-            ret = tx.NetworkFee.CompareTo(otherTx.NetworkFee);
+            ret = tx.NetworkFee.CompareTo(b.Value.NetworkFee);
             if (ret != 0) return ret;
 
             // Transaction hash sorted descending
 
-            return otherTx.Hash.CompareTo(tx.Hash);
+            return b.Value.Hash.CompareTo(tx.Hash);
         }
 
         private static int SortResponse(KeyValuePair<UInt256, ResponseCollection> a, KeyValuePair<UInt256, ResponseCollection> b)
