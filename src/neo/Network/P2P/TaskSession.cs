@@ -14,15 +14,14 @@ namespace Neo.Network.P2P
         public readonly Dictionary<UInt256, DateTime> Tasks = new Dictionary<UInt256, DateTime>();
         public readonly HashSet<UInt256> AvailableTasks = new HashSet<UInt256>();
 
-        public bool IsFullNode { get; }
         public bool HasTask => Tasks.Count > 0;
         public uint StartHeight { get; }
         public uint LastBlockIndex { get; set; }
-        public bool AskedForMemPool { get; set; }
+        public bool ShouldAskForMemPool { get; set; }
 
         public TaskSession(IActorRef node, VersionPayload version)
         {
-            this.IsFullNode = version.Capabilities.OfType<FullNodeCapability>().Any();
+            this.ShouldAskForMemPool = version.Capabilities.OfType<FullNodeCapability>().Any();
             this.RemoteNode = node;
             this.Version = version;
             this.StartHeight = version.Capabilities
