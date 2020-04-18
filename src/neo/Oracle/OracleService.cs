@@ -465,7 +465,12 @@ namespace Neo.Oracle
                 using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
                 engine.LoadScript(tx.Script);
 
-                if (engine.Execute() != VMState.HALT && engine.GasLeft <= 0)
+                // User must pay pay for the response extra cost in order to reduce the size of the oracle response
+
+                var extraFeeCost = (oracle.Size * NativeContract.Policy.GetFeePerByte(snapshot));
+                engine.Execute();
+
+                if (engine.GasLeft < extraFeeCost)
                 {
                     // If the TX request FAULT, we can save space by deleting the downloaded data
                     // but the user paid it, maybe it won't fail during OnPerist
