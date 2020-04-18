@@ -339,13 +339,16 @@ namespace Neo.Wallets
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
-                    tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0) +
-                        (oracleCache.Size * NativeContract.Policy.GetFeePerByte(snapshot)); // We should pay for the response extra cost
+                    tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
 
                     // Change the Transaction type because it's an oracle request
 
-                    if (oracleRequests.Count > 0)
+                    if (oracleRequests?.Count > 0)
                     {
+                        // We should pay for the response extra cost
+
+                        tx.SystemFee += (oracleCache.Size * NativeContract.Policy.GetFeePerByte(snapshot));
+
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
                             // If we want the same result for accept the response, we need to create asserts at the begining of the script
@@ -393,12 +396,9 @@ namespace Neo.Wallets
                         {
                             tx.Version = TransactionVersion.OracleRequest;
                         }
-                    }
 
-                    // Change the Transaction type because it's an oracle request
+                        // Change the Transaction type because it's an oracle request
 
-                    if (oracleRequests.Count > 0)
-                    {
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
                             // If we want the same result for accept the response, we need to create asserts at the begining of the script
