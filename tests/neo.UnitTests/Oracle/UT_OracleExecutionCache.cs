@@ -62,22 +62,20 @@ namespace Neo.UnitTests.Oracle
                 URL = new Uri("https://google.es"),
                 Method = HttpMethod.GET
             };
-            Assert.IsTrue(cache.TryGet(req, out var ret, out var cached));
+            Assert.IsTrue(cache.TryGet(req, out var ret));
 
             Assert.AreEqual(2, req.Counter);
             Assert.AreEqual(1, cache.Count);
             Assert.IsFalse(ret.Error);
-            Assert.IsFalse(cached);
             CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, ret.Result);
 
             // Test cached
 
-            Assert.IsTrue(cache.TryGet(req, out ret, out cached));
+            Assert.IsTrue(cache.TryGet(req, out ret));
 
             Assert.AreEqual(2, req.Counter);
             Assert.AreEqual(1, cache.Count);
             Assert.IsFalse(ret.Error);
-            Assert.IsTrue(cached);
             CollectionAssert.AreEqual(new byte[] { 0x02, 0x00, 0x00, 0x00 }, ret.Result);
 
             // Check collection
@@ -118,16 +116,14 @@ namespace Neo.UnitTests.Oracle
                 URL = new Uri("https://google.es/?p=1"),
                 Method = HttpMethod.GET
             }
-            , out var ret, out var cached));
+            , out var ret));
 
-            Assert.IsFalse(cached);
             Assert.IsNull(ret);
 
             // Test cached
 
-            Assert.IsTrue(cache.TryGet(initReq, out ret, out cached));
+            Assert.IsTrue(cache.TryGet(initReq, out ret));
             Assert.IsNotNull(ret);
-            Assert.IsTrue(cached);
             Assert.AreEqual(1, cache.Count);
             Assert.IsTrue(ReferenceEquals(ret, initRes));
         }

@@ -335,7 +335,7 @@ namespace Neo.SmartContract.Native.Oracle
                 {
                     // Read Oracle Response
 
-                    engine.OracleCache = NativeContract.Oracle.ConsumeOracleResponse(engine.Snapshot, tx.Hash);
+                    engine.OracleCache = Oracle.ConsumeOracleResponse(engine.Snapshot, tx.Hash);
 
                     // If it doesn't exist, fault
 
@@ -398,11 +398,11 @@ namespace Neo.SmartContract.Native.Oracle
 
             // Execute the oracle request
 
-            if (engine.OracleCache.TryGet(request, out var response, out var cached))
+            if (engine.OracleCache.TryGet(request, out var response))
             {
                 // Add the gas filter cost
 
-                if (!cached && !engine.AddGas(response.FilterCost)) return false;
+                if (!engine.AddGas(response.FilterCostOnce())) return false;
 
                 return response.Result ?? StackItem.Null;
             }
