@@ -156,7 +156,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
         private StackItem UnregisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
@@ -251,7 +251,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetCommitteeMembers(snapshot, Blockchain.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetCommittee(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetCommittee(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
