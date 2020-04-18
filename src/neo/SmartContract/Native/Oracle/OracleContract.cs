@@ -393,7 +393,7 @@ namespace Neo.SmartContract.Native.Oracle
                         };
                         break;
                     }
-                default: throw new ArgumentException($"The scheme '{url.Scheme}' it's not allowed");
+                default: throw new ArgumentException($"The scheme '{url.Scheme}' is not allowed");
             }
 
             // Execute the oracle request
