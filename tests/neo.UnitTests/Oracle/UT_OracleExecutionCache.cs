@@ -125,7 +125,7 @@ namespace Neo.UnitTests.Oracle
             Assert.IsTrue(cache.TryGet(initReq, out ret));
             Assert.IsNotNull(ret);
             Assert.AreEqual(1, cache.Count);
-            Assert.IsTrue(ReferenceEquals(ret, initRes));
+            Assert.AreEqual(ret.Hash, initRes.Hash);
         }
     }
 }
