@@ -765,12 +765,12 @@ namespace Neo.Oracle
                 return request switch
                 {
                     OracleHttpsRequest https => HTTPSProtocol.Process(https),
-                    _ => OracleResponse.CreateError(request.Hash, OracleResultError.ProtocolError),
+                    _ => OracleResponse.CreateError(request.Hash),
                 };
             }
             catch
             {
-                return OracleResponse.CreateError(request.Hash, OracleResultError.ServerError);
+                return OracleResponse.CreateError(request.Hash);
             }
         }
 

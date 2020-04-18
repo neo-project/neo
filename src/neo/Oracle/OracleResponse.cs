@@ -1,15 +1,12 @@
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Network.P2P;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using System;
 using System.IO;
 using System.Text;
 
 namespace Neo.Oracle
 {
-    public class OracleResponse : IVerifiable
+    public class OracleResponse : ISerializable
     {
         private UInt160 _hash;
 
@@ -42,7 +39,7 @@ namespace Neo.Oracle
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt160(Crypto.Hash160(this.GetHashData()));
+                    _hash = new UInt160(Crypto.Hash160(this.ToArray()));
                 }
 
                 return _hash;
@@ -51,23 +48,14 @@ namespace Neo.Oracle
 
         public int Size => UInt160.Length + sizeof(byte) + Result.GetVarSize() + sizeof(long);
 
-        public Witness[] Witnesses
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
-
         /// <summary>
         /// Create error result
         /// </summary>
         /// <param name="requestHash">Request Id</param>
-        /// <param name="error">Error</param>
         /// <param name="filterCost">Gas cost</param>
         /// <returns>OracleResult</returns>
-        public static OracleResponse CreateError(UInt160 requestHash, OracleResultError error, long filterCost = 0)
+        public static OracleResponse CreateError(UInt160 requestHash, long filterCost = 0)
         {
-            // TODO: We should log the error if we want, but in order to reduce the indeterminism, we will only say that the download was unsuccessful
-
             return CreateResult(requestHash, (byte[])null, filterCost);
         }
 
@@ -100,7 +88,7 @@ namespace Neo.Oracle
             };
         }
 
-        public void SerializeUnsigned(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
             writer.Write(RequestHash);
             writer.Write(FilterCost);
@@ -118,12 +106,7 @@ namespace Neo.Oracle
             }
         }
 
-        public void Serialize(BinaryWriter writer)
-        {
-            SerializeUnsigned(writer);
-        }
-
-        public void DeserializeUnsigned(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
             RequestHash = reader.ReadSerializable<UInt160>();
             FilterCost = reader.ReadInt64();
@@ -139,16 +122,6 @@ namespace Neo.Oracle
 
                 Result = null;
             }
-        }
-
-        public void Deserialize(BinaryReader reader)
-        {
-            DeserializeUnsigned(reader);
-        }
-
-        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
-        {
-            return new UInt160[] { new UInt160(Crypto.Hash160(this.GetHashData())) };
         }
     }
 }

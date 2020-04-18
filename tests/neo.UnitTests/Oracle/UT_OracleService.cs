@@ -414,7 +414,7 @@ namespace Neo.UnitTests.Oracle
             Assert.IsTrue(response.Error);
             Assert.AreEqual(null, response.Result);
             Assert.AreEqual(request.Hash, response.RequestHash);
-            Assert.AreEqual("0x465885f2e323d8c1f33abde501f623a40533d5ec", response.Hash.ToString());
+            Assert.AreEqual("0xe62b56e4b43b01411403058ba53fc5e6dbdf8fba", response.Hash.ToString());
         }
     }
 }
