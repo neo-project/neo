@@ -88,21 +88,6 @@ namespace Neo.Oracle.Protocols.Https
                         result = client.GetAsync(request.URL);
                         break;
                     }
-                //case HttpMethod.POST:
-                //    {
-                //        result = client.PostAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
-                //        break;
-                //    }
-                //case HttpMethod.PUT:
-                //    {
-                //        result = client.PutAsync(httpRequest.URL, new ByteArrayContent(httpRequest.Body));
-                //        break;
-                //    }
-                //case HttpMethod.DELETE:
-                //    {
-                //        result = client.DeleteAsync(httpRequest.URL);
-                //        break;
-                //    }
                 default:
                     {
                         LogError(request.URL, "PolicyError");
