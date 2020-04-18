@@ -19,7 +19,8 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
             requestB.Filter = new Neo.Oracle.OracleFilter()
             {
                 ContractHash = UInt160.Zero,
-                FilterMethod = ""
+                FilterMethod = "",
+                FilterArgs = ""
             };
             Assert.AreNotEqual(requestA.Hash, requestB.Hash);
 

@@ -244,7 +244,7 @@ namespace Neo.UnitTests.Oracle
         private Transaction CreateTx(string url, OracleFilter filter)
         {
             using ScriptBuilder script = new ScriptBuilder();
-            script.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, url, filter?.ContractHash, filter?.FilterMethod);
+            script.EmitAppCall(NativeContract.Oracle.Hash, "get", url, filter?.ContractHash, filter?.FilterMethod, filter?.FilterArgs);
 
             return new Transaction()
             {
@@ -295,7 +295,7 @@ namespace Neo.UnitTests.Oracle
                 byte[] script;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    sb.EmitSysCall(InteropService.Oracle.Neo_Oracle_Get, $"https://127.0.0.1:{port}/ping", null, null, null);
+                    sb.EmitAppCall(NativeContract.Oracle.Hash, "get", $"https://127.0.0.1:{port}/ping", null, null, null);
                     script = sb.ToArray();
                 }
 
