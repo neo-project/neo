@@ -225,7 +225,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
-        private StackItem GetRegisteredValidators(ApplicationEngine engine, Array args)
+        private StackItem GetCandidates(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetCandidates(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
         }
