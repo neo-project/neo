@@ -1,5 +1,4 @@
 using Neo.IO.Json;
-using Neo;
 using System;
 using System.Collections.Generic;
 
@@ -18,7 +17,9 @@ namespace Neo.Trie.MPT
         public bool Put(byte[] key, byte[] value)
         {
             if (key.Length > ExtensionNode.MaxKeyLength)
-                throw new System.ArgumentOutOfRangeException("key out of mpt limit");
+                throw new ArgumentOutOfRangeException("key out of mpt limit");
+            if (value.Length > LeafNode.MaxValueLength)
+                throw new ArgumentOutOfRangeException("value out of mpt limit");
             var path = key.ToNibbles();
             if (value.Length == 0)
             {
@@ -32,7 +33,7 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case LeafNode leafNode:
+                case LeafNode _:
                     {
                         if (path.Length == 0 && val is LeafNode v)
                         {
@@ -93,7 +94,7 @@ namespace Neo.Trie.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        var result = false;
+                        bool result;
                         if (path.Length == 0)
                         {
                             result = Put(ref branchNode.Children[BranchNode.ChildCount - 1], path, val);
@@ -143,7 +144,7 @@ namespace Neo.Trie.MPT
         {
             switch (node)
             {
-                case LeafNode leafNode:
+                case LeafNode _:
                     {
                         if (path.Length == 0)
                         {
@@ -176,7 +177,7 @@ namespace Neo.Trie.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        var result = false;
+                        bool result;
                         if (path.Length == 0)
                         {
                             result = TryDelete(ref branchNode.Children[BranchNode.ChildCount - 1], path);

@@ -1,4 +1,3 @@
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using System.IO;
@@ -7,6 +6,7 @@ namespace Neo.Trie.MPT
 {
     public class LeafNode : MPTNode
     {
+        public const int MaxValueLength = 1024 * 1024;
         public byte[] Value;
 
         public LeafNode()
@@ -22,12 +22,12 @@ namespace Neo.Trie.MPT
 
         public override void EncodeSpecific(BinaryWriter writer)
         {
-            writer.WriteBytesWithGrouping(Value);
+            writer.WriteVarBytes(Value);
         }
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            Value = reader.ReadBytesWithGrouping();
+            Value = reader.ReadVarBytes(MaxValueLength);
         }
 
         public override JObject ToJson()
