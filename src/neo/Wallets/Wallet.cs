@@ -343,7 +343,7 @@ namespace Neo.Wallets
 
                     // Change the Transaction type because it's an oracle request
 
-                    if (oracleRequests.Count > 0)
+                    if (oracleRequests?.Count > 0)
                     {
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
@@ -392,12 +392,9 @@ namespace Neo.Wallets
                         {
                             tx.Version = TransactionVersion.OracleRequest;
                         }
-                    }
 
-                    // Change the Transaction type because it's an oracle request
+                        // Change the Transaction type because it's an oracle request
 
-                    if (oracleRequests.Count > 0)
-                    {
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
                             // If we want the same result for accept the response, we need to create asserts at the begining of the script
