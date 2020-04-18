@@ -1,7 +1,9 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
+using Neo.Oracle.Protocols.Https;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -293,6 +295,115 @@ namespace Neo.SmartContract.Native.Oracle
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_PerRequestFee));
             if (storage is null) return 0;
             return BitConverter.ToInt32(storage.Value);
+        }
+
+        /// <summary>
+        /// Oracle get the hash of the current OracleFlow [Request/Response]
+        /// </summary>
+        [ContractMethod(0_01000000, ContractParameterType.Boolean, SafeMethod = true)]
+        private StackItem GetHash(ApplicationEngine engine, Array args)
+        {
+            if (engine.OracleCache == null)
+            {
+                return StackItem.Null;
+            }
+            else
+            {
+                return engine.OracleCache.Hash.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Oracle Get
+        ///     string url, [UInt160 filter], [string filterMethod], [string filterArgs]
+        /// </summary>
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray,
+            ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray, ContractParameterType.String, ContractParameterType.String },
+            ParameterNames = new[] { "url", "filterContract", "filterMethod", "filterArgs" })]
+        private StackItem Get(ApplicationEngine engine, Array args)
+        {
+            if (args.Count != 4)
+            {
+                throw new ArgumentException($"Provided arguments must be 4 instead of {args.Count}");
+            }
+
+            if (engine.OracleCache == null)
+            {
+                // We should enter here only during OnPersist with the OracleRequestTx
+
+                if (engine.ScriptContainer is Transaction tx)
+                {
+                    // Read Oracle Response
+
+                    engine.OracleCache = NativeContract.Oracle.ConsumeOracleResponse(engine.Snapshot, tx.Hash);
+
+                    // If it doesn't exist, fault
+
+                    if (engine.OracleCache == null)
+                    {
+                        throw new ArgumentException();
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
+            }
+            if (!(args[0] is PrimitiveType urlItem) || !Uri.TryCreate(urlItem.GetString(), UriKind.Absolute, out var url) ||
+                !(args[1] is StackItem filterContractItem) ||
+                !(args[2] is StackItem filterMethodItem) ||
+                !(args[3] is StackItem filterArgsItem)
+                ) throw new ArgumentException();
+
+            // Create filter
+
+            OracleFilter filter = null;
+
+            if (!filterContractItem.IsNull)
+            {
+                if (filterContractItem is PrimitiveType filterContract &&
+                    filterMethodItem is PrimitiveType filterMethod &&
+                    filterArgsItem is PrimitiveType filterArgs)
+                {
+                    filter = new OracleFilter()
+                    {
+                        ContractHash = new UInt160(filterContract.Span),
+                        FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
+                        FilterArgs = Encoding.UTF8.GetString(filterArgs.Span)
+                    };
+                }
+                else
+                {
+                    throw new ArgumentException("If the filter it's defined, the values can't be null");
+                }
+            }
+
+            // Create request
+
+            OracleRequest request;
+            switch (url.Scheme.ToLowerInvariant())
+            {
+                case "https":
+                    {
+                        request = new OracleHttpsRequest()
+                        {
+                            Method = HttpMethod.GET,
+                            URL = url,
+                            Filter = filter
+                        };
+                        break;
+                    }
+                default: throw new ArgumentException($"The scheme '{url.Scheme}' it's not allowed");
+            }
+
+            // Execute the oracle request
+
+            if (engine.OracleCache.TryGet(request, out var response))
+            {
+                return response.Result ?? StackItem.Null;
+            }
+
+            throw new ArgumentException();
         }
     }
 }

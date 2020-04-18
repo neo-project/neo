@@ -5,16 +5,17 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
+using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Wallets;
 using Neo.VM;
+using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Numerics;
-using static Neo.UnitTests.Extensions.Nep5NativeContractExtensions;
 
 namespace Neo.UnitTests.Oracle
 {
@@ -63,6 +64,82 @@ namespace Neo.UnitTests.Oracle
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
             Assert.AreEqual(result, 1000);
+        }
+
+        [TestMethod]
+        public void Neo_Oracle_Get()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Good
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitAppCall(NativeContract.Oracle.Hash, "get", "https://google.com", UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray(), "MyFilter", "MyFilterArgs");
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true, new OracleExecutionCache(Oracle)))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(1, engine.ResultStack.Count);
+
+                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var response));
+                    Assert.AreEqual("MyResponse", response.GetString());
+                }
+            }
+
+            // Wrong Filter
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitAppCall(NativeContract.Oracle.Hash, "get", "https://google.com", UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray(), "WrongFilter", "MyFilterArgs");
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true, new OracleExecutionCache(Oracle)))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(1, engine.ResultStack.Count);
+
+                    Assert.IsTrue(engine.ResultStack.TryPop<Null>(out var isNull));
+                }
+            }
+
+            // Wrong schema
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitAppCall(NativeContract.Oracle.Hash, "get", "http://google.com", null, null, null);
+
+                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true, new OracleExecutionCache(Oracle)))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                    Assert.AreEqual(0, engine.ResultStack.Count);
+                }
+            }
+        }
+
+        private OracleResponse Oracle(OracleRequest arg)
+        {
+            if (arg is OracleHttpsRequest https)
+            {
+                if (https.Filter != null &&
+                    (https.Filter.ContractHash != UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff") ||
+                    https.Filter.FilterMethod != "MyFilter"))
+                {
+                    return OracleResponse.CreateError(UInt160.Zero, OracleResultError.FilterError);
+                }
+
+                if (https.URL.ToString() == "https://google.com/" && https.Method == HttpMethod.GET)
+                {
+                    return OracleResponse.CreateResult(UInt160.Zero, "MyResponse", 0);
+                }
+            }
+
+            return OracleResponse.CreateError(UInt160.Zero, OracleResultError.PolicyError);
         }
 
         [TestMethod]
