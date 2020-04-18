@@ -333,7 +333,6 @@ namespace Neo.Network.P2P
         {
             verack = true;
             system.TaskManager.Tell(new TaskManager.Register { Version = Version });
-
             CheckMessageQueue();
         }
 
