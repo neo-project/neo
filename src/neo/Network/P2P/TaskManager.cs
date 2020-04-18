@@ -271,6 +271,12 @@ namespace Neo.Network.P2P
             else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
                     && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
             {
+                if (session.IsFullNode && !session.AskedForMemPool)
+                {
+                    session.AskedForMemPool = true;
+                    session.RemoteNode.Tell(Message.Create(MessageCommand.Mempool));
+                }
+
                 session.RemoteNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
             }
         }
