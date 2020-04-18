@@ -30,7 +30,6 @@ namespace Neo.Network.P2P
         private readonly HashSetCache<UInt256> knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
         private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
         private bool verack = false;
-        private bool memPoolWasSent = false;
         private BloomFilter bloom_filter;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
@@ -315,14 +314,6 @@ namespace Neo.Network.P2P
 
         private void OnMemPoolMessageReceived()
         {
-            if (memPoolWasSent)
-            {
-                Disconnect(true);
-                return;
-            }
-
-            memPoolWasSent = true;
-
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
                 EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
         }
