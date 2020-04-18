@@ -58,6 +58,17 @@ namespace Neo.SmartContract.Native.Tokens
 
             if (oracleFee > 0)
             {
+                primary = Oracle.GetOracleMultiSigAddress(engine.Snapshot);
+
+                if (BalanceOf(engine.Snapshot, primary) < 10_0000_0000)
+                {
+                    // In order to have funds for make transfers we need to ensure
+                    // that the oracle multi signature have enough gas
+
+                    Mint(engine, primary, oracleFee);
+                    return true;
+                }
+
                 // Distribute oracle fee
 
                 validators = Oracle.GetOracleValidators(engine.Snapshot);
