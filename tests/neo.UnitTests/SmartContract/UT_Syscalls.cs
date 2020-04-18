@@ -3,8 +3,10 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
@@ -97,7 +99,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    "5b22366b4139757552614430373634585358466c706674686b436b5954702f6e34623878715057476c6a6659303d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c302c224141414141414141414141414141414141414141414141414141413d222c315d");
+                    "5b2261564e62466b35384f51717547373870747154766561762f48677941566a72634e41434d4e59705c7530303242366f6f3d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c302c224141414141414141414141414141414141414141414141414141413d222c315d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // Clean
@@ -261,7 +263,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b225c75303032426b53415959527a4c4b69685a676464414b50596f754655737a63544d7867445a6572584a3172784c37303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
+                    @"5b226770564846625133316969517a614f4c7a33523546394d6256715932596b7a5164324461785536677154303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }
@@ -340,6 +342,9 @@ namespace Neo.UnitTests.SmartContract
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractA.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractB.ScriptHash.ToArray()));
                 contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractC.ScriptHash.ToArray()));
+                contractA.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
+                contractB.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
+                contractC.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
                 contracts.Add(contractA.ScriptHash, contractA);
                 contracts.Add(contractB.ScriptHash, contractB);
                 contracts.Add(contractC.ScriptHash, contractC);
@@ -349,16 +354,16 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Contract.Call, contractA.ScriptHash.ToArray(), "dummyMain", 0);
-                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", 0);
-                script.EmitSysCall(InteropService.Contract.Call, contractB.ScriptHash.ToArray(), "dummyMain", 0);
-                script.EmitSysCall(InteropService.Contract.Call, contractC.ScriptHash.ToArray(), "dummyMain", 0);
+                script.EmitAppCall(contractA.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractC.ScriptHash, "dummyMain", 0, 1);
 
                 // Execute
 
                 var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
 
                 // Check the results
 

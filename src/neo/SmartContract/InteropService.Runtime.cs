@@ -53,7 +53,7 @@ namespace Neo.SmartContract
                             }
                             break;
                         case PrimitiveType primitive:
-                            size += primitive.GetByteLength();
+                            size += primitive.Size;
                             break;
                         case Null _:
                             break;
@@ -65,7 +65,7 @@ namespace Neo.SmartContract
                                 items_checked.Add(map);
                                 foreach (var pair in map)
                                 {
-                                    size += pair.Key.GetByteLength();
+                                    size += pair.Key.Size;
                                     items_unchecked.Enqueue(pair.Value);
                                 }
                             }

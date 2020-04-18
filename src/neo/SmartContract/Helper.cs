@@ -1,7 +1,9 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -122,6 +124,11 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
+        public static UInt160 ToScriptHash(this ReadOnlySpan<byte> script)
+        {
+            return new UInt160(Crypto.Hash160(script));
+        }
+
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
@@ -138,19 +145,25 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
+                int offset;
                 byte[] verification = verifiable.Witnesses[i].VerificationScript;
                 if (verification.Length == 0)
                 {
-                    verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
-                    if (verification is null) return false;
+                    ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
+                    if (cs is null) return false;
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
+                    if (md is null) return false;
+                    verification = cs.Script;
+                    offset = md.Offset;
                 }
                 else
                 {
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+                    offset = 0;
                 }
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
                 {
-                    engine.LoadScript(verification, CallFlags.ReadOnly);
+                    engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;

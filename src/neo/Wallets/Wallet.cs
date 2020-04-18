@@ -23,6 +23,7 @@ namespace Neo.Wallets
         public abstract string Name { get; }
         public abstract Version Version { get; }
 
+        public abstract bool ChangePassword(string oldPassword, string newPassword);
         public abstract bool Contains(UInt160 scriptHash);
         public abstract WalletAccount CreateAccount(byte[] privateKey);
         public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);
@@ -319,15 +320,6 @@ namespace Neo.Wallets
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
-                    if (tx.SystemFee > 0)
-                    {
-                        long d = (long)NativeContract.GAS.Factor;
-                        long remainder = tx.SystemFee % d;
-                        if (remainder > 0)
-                            tx.SystemFee += d - remainder;
-                        else if (remainder < 0)
-                            tx.SystemFee -= remainder;
-                    }
                 }
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
