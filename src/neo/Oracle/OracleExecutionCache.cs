@@ -107,7 +107,13 @@ namespace Neo.Oracle
 
             foreach (var result in results)
             {
-                _cache[result.RequestHash] = result;
+                _cache[result.RequestHash] = new OracleResponse()
+                {
+                    FilterCost = result.FilterCost,
+                    Result = result.Result,
+                    RequestHash = result.RequestHash,
+                    // We don't want to copy if the filter was consumed or not
+                };
                 FilterCost += result.FilterCost;
             }
         }
@@ -117,7 +123,7 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="request">Request</param>
         /// <param name="result">Result</param>
-        /// <returns></returns>
+        /// <returns>Return true if was readed</returns>
         public bool TryGet(OracleRequest request, out OracleResponse result)
         {
             if (_cache.TryGetValue(request.Hash, out result))

@@ -171,13 +171,13 @@ namespace Neo.Ledger
         public IEnumerable<Transaction> GetVerifiedTransactions(StoreView snapshot)
         {
             Transaction[] ret;
-            var oracle = new PoolItem.DelayState();
+            var state = new PoolItem.DelayState();
 
             _txRwLock.EnterReadLock();
             try
             {
                 ret = _unsortedTransactions
-                    .Where(u => u.Value.IsReady(snapshot, oracle))
+                    .Where(u => u.Value.IsReady(snapshot, state))
                     .Select(p => p.Value.Tx)
                     .ToArray();
             }
@@ -192,9 +192,9 @@ namespace Neo.Ledger
             {
                 yield return tx;
             }
-            foreach (var delayed in oracle.Delayed)
+            foreach (var delayed in state.Delayed)
             {
-                if (oracle.Allowed.Contains(delayed.Hash))
+                if (state.Allowed.Contains(delayed.Hash))
                     yield return delayed;
             }
         }
@@ -217,14 +217,14 @@ namespace Neo.Ledger
         public IEnumerable<Transaction> GetSortedVerifiedTransactions(StoreView snapshot)
         {
             Transaction[] ret;
-            var oracle = new PoolItem.DelayState();
+            var state = new PoolItem.DelayState();
 
             _txRwLock.EnterReadLock();
             try
             {
                 ret = _sortedTransactions
                     .Reverse()
-                    .Where(u => u.IsReady(snapshot, oracle))
+                    .Where(u => u.IsReady(snapshot, state))
                     .Select(p => p.Tx)
                     .ToArray();
             }
@@ -239,9 +239,9 @@ namespace Neo.Ledger
             {
                 yield return tx;
             }
-            foreach (var delayed in oracle.Delayed)
+            foreach (var delayed in state.Delayed)
             {
-                if (oracle.Allowed.Contains(delayed.Hash))
+                if (state.Allowed.Contains(delayed.Hash))
                     yield return delayed;
             }
         }

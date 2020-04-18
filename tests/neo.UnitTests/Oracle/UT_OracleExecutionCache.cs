@@ -21,18 +21,6 @@ namespace Neo.UnitTests.Oracle
             return OracleResponse.CreateResult(arg.Hash, BitConverter.GetBytes(http.Counter), 0);
         }
 
-        UInt256 _txHash;
-
-        [TestInitialize]
-        public void Init()
-        {
-            var rand = new Random();
-            var data = new byte[32];
-            rand.NextBytes(data);
-
-            _txHash = new UInt256(data);
-        }
-
         [TestMethod]
         public void TestEnumerator()
         {
@@ -108,7 +96,7 @@ namespace Neo.UnitTests.Oracle
                 Method = HttpMethod.GET
             };
 
-            var initRes = OracleResponse.CreateError(initReq.Hash, OracleResultError.ServerError);
+            var initRes = OracleResponse.CreateError(initReq.Hash);
             var cache = new OracleExecutionCache(initRes);
 
             Assert.AreEqual(1, cache.Count);
