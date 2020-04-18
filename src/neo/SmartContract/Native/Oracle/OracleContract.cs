@@ -48,30 +48,6 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
-        /// Distribute reward
-        /// </summary>
-        [ContractMethod(0_03000000, ContractParameterType.Integer)]
-        private StackItem DistributeRewards(ApplicationEngine engine, Array args)
-        {
-            var account = GetOracleMultiSigAddress(engine.Snapshot);
-            var validators = GetOracleValidators(engine.Snapshot);
-            var balance = GAS.BalanceOf(engine.Snapshot, account);
-            var amount = balance / validators.Length;
-
-            foreach (var validator in validators)
-            {
-                // Transfer check the oracle's multi signature
-
-                if (!GAS.Transfer(engine, account, Contract.CreateSignatureRedeemScript(validator).ToScriptHash(), amount))
-                {
-                    return false;
-                }
-            }
-
-            return amount;
-        }
-
-        /// <summary>
         /// Set Oracle Response Only
         /// </summary>
         [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "transactionHash", "oracleResponse" })]

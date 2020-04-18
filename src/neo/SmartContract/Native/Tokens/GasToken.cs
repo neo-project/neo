@@ -39,6 +39,7 @@ namespace Neo.SmartContract.Native.Tokens
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
                 networkFee += tx.NetworkFee;
+                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
 
                 switch (tx.Version)
                 {
@@ -46,12 +47,6 @@ namespace Neo.SmartContract.Native.Tokens
                     case TransactionVersion.OracleResponse:
                         {
                             oracleFee += tx.SystemFee;
-                            Burn(engine, tx.Sender, tx.NetworkFee);
-                            break;
-                        }
-                    default:
-                        {
-                            Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                             break;
                         }
                 }
@@ -63,8 +58,17 @@ namespace Neo.SmartContract.Native.Tokens
 
             if (oracleFee > 0)
             {
-                primary = Oracle.GetOracleMultiSigAddress(engine.Snapshot);
-                Mint(engine, primary, oracleFee);
+                // Distribute oracle fee
+
+                validators = Oracle.GetOracleValidators(engine.Snapshot);
+                var amount = oracleFee / validators.Length;
+
+                foreach (var validator in validators)
+                {
+                    // Transfer check the oracle's multi signature
+
+                    Mint(engine, Contract.CreateSignatureRedeemScript(validator).ToScriptHash(), amount);
+                }
             }
             return true;
         }
