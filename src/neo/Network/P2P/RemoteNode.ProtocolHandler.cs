@@ -333,6 +333,12 @@ namespace Neo.Network.P2P
         {
             verack = true;
             system.TaskManager.Tell(new TaskManager.Register { Version = Version });
+
+            if (IsFullNode)
+            {
+                SendMessage(Message.Create(MessageCommand.Mempool));
+            }
+
             CheckMessageQueue();
         }
 

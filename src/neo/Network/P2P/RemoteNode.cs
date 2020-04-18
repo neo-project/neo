@@ -171,11 +171,6 @@ namespace Neo.Network.P2P
             if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
 
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
-
-            if (IsFullNode)
-            {
-                SendMessage(Message.Create(MessageCommand.Mempool));
-            }
         }
 
         protected override void PostStop()
