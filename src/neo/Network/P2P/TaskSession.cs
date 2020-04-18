@@ -21,12 +21,12 @@ namespace Neo.Network.P2P
 
         public TaskSession(IActorRef node, VersionPayload version)
         {
-            this.ShouldAskForMemPool = version.Capabilities.OfType<FullNodeCapability>().Any();
+            var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
+
+            this.ShouldAskForMemPool = fullNode != null;
             this.RemoteNode = node;
             this.Version = version;
-            this.StartHeight = version.Capabilities
-                .OfType<FullNodeCapability>()
-                .FirstOrDefault()?.StartHeight ?? 0;
+            this.StartHeight = fullNode?.StartHeight ?? 0;
             this.LastBlockIndex = this.StartHeight;
         }
     }
