@@ -117,17 +117,20 @@ namespace Neo.Oracle
         /// </summary>
         /// <param name="request">Request</param>
         /// <param name="result">Result</param>
-        /// <returns></returns>
-        public bool TryGet(OracleRequest request, out OracleResponse result)
+        /// <param name="cached">Cached</param>
+        /// <returns>Return true if was readed</returns>
+        public bool TryGet(OracleRequest request, out OracleResponse result, out bool cached)
         {
             if (_cache.TryGetValue(request.Hash, out result))
             {
+                cached = true;
                 return true;
             }
 
             // Not found inside the cache, invoke it
 
             result = _oracle?.Invoke(request);
+            cached = false;
 
             if (result != null)
             {
