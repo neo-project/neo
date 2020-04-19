@@ -24,6 +24,8 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor GetCallFlags = Register("System.Contract.GetCallFlags", Contract_GetCallFlags, 0_00030000, TriggerType.All, CallFlags.None);
+
             /// <summary>
             /// Calculate corresponding account scripthash for given public key
             /// Warning: check first that input public key is valid, before creating the script.
@@ -34,6 +36,13 @@ namespace Neo.SmartContract
             {
                 int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
                 return Storage.GasPerByte * size;
+            }
+
+            private static bool Contract_GetCallFlags(ApplicationEngine engine)
+            {
+                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                engine.Push((int)state.CallFlags);
+                return true;
             }
 
             private static bool Contract_Create(ApplicationEngine engine)
