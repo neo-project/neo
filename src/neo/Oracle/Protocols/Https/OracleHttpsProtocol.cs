@@ -2,6 +2,7 @@ using Neo.Ledger;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -15,9 +16,9 @@ namespace Neo.Oracle.Protocols.Https
         private long _lastHeight = -1;
 
         /// <summary>
-        /// Timeout
+        /// Config
         /// </summary>
-        public TimeSpan TimeOut { get; internal set; }
+        public HttpConfig Config { get; internal set; }
 
         /// <summary>
         /// Allow private host
@@ -47,13 +48,10 @@ namespace Neo.Oracle.Protocols.Https
 
             // Load the configuration
 
-            ushort seconds;
             using (var snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                seconds = (ushort)NativeContract.Oracle.GetConfig(snapshot, HttpConfig.Timeout).ToBigInteger();
+                Config = NativeContract.Oracle.GetHttpConfig(snapshot);
             }
-
-            TimeOut = TimeSpan.FromMilliseconds(seconds);
         }
 
         // <summary>
@@ -81,6 +79,8 @@ namespace Neo.Oracle.Protocols.Https
             };
             using var client = new HttpClient(handler);
 
+            client.DefaultRequestHeaders.Add("Accept", string.Join(",", Config.AllowedFormats));
+
             switch (request.Method)
             {
                 case HttpMethod.GET:
@@ -95,7 +95,7 @@ namespace Neo.Oracle.Protocols.Https
                     }
             }
 
-            if (!result.Wait(TimeOut))
+            if (!result.Wait(Config.TimeOut))
             {
                 // Timeout
 
@@ -111,10 +111,18 @@ namespace Neo.Oracle.Protocols.Https
                 return OracleResponse.CreateError(request.Hash);
             }
 
+            if (!Config.AllowedFormats.Contains(result.Result.Content.Headers.ContentType.MediaType))
+            {
+                // Error with the ContentType
+
+                LogError(request.URL, "ContentType it's not allowed");
+                return OracleResponse.CreateError(request.Hash);
+            }
+
             string ret;
             var taskRet = result.Result.Content.ReadAsStringAsync();
 
-            if (!taskRet.Wait(TimeOut))
+            if (!taskRet.Wait(Config.TimeOut))
             {
                 // Timeout
 

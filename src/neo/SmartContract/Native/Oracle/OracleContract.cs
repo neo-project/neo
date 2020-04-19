@@ -38,9 +38,9 @@ namespace Neo.SmartContract.Native.Oracle
             if (!base.Initialize(engine)) return false;
             if (GetPerRequestFee(engine.Snapshot) != 0) return false;
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Timeout)), new StorageItem
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Key)), new StorageItem
             {
-                Value = new ByteString(BitConverter.GetBytes(5000)).GetSpan().ToArray()
+                Value = new HttpConfig().ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
@@ -243,7 +243,7 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         /// <summary>
-        /// Get HttpConfig
+        /// Get Config
         /// </summary>
         /// <param name="snapshot">snapshot</param>
         /// <param name="key">key</param>
@@ -252,6 +252,16 @@ namespace Neo.SmartContract.Native.Oracle
         {
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
             return storage.Value;
+        }
+
+        /// <summary>
+        /// Get HttpConfig
+        /// </summary>
+        /// <param name="snapshot">snapshot</param>
+        /// <returns>value</returns>
+        public HttpConfig GetHttpConfig(StoreView snapshot)
+        {
+            return GetConfig(snapshot, HttpConfig.Key).Span.AsSerializable<HttpConfig>();
         }
 
         /// <summary>
