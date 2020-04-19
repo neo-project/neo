@@ -334,17 +334,31 @@ namespace Neo.Wallets
                     Cosigners = cosigners
                 };
 
+                if (oracleCache != null)
+                {
+                    // We need to reset if we already consumed the fiter price
+                    // otherwise we can have a wrong gas computation
+
+                    foreach (var entry in oracleCache.Responses)
+                    {
+                        entry.ResetFilterCostOnce();
+                    }
+                }
+
                 // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true, oracle: oracleCache))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
+
                     tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
 
                     // Change the Transaction type because it's an oracle request
 
                     if (oracleRequests?.Count > 0)
                     {
+                        tx.Version = TransactionVersion.OracleRequest;
+
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
                             // If we want the same result for accept the response, we need to create asserts at the begining of the script
@@ -387,10 +401,6 @@ namespace Neo.Wallets
 
                             // We need to compute the gas again with the right script
                             goto Start;
-                        }
-                        else
-                        {
-                            tx.Version = TransactionVersion.OracleRequest;
                         }
 
                         // Change the Transaction type because it's an oracle request
@@ -437,10 +447,6 @@ namespace Neo.Wallets
 
                             // We need to compute the gas again with the right script
                             goto Start;
-                        }
-                        else
-                        {
-                            tx.Version = TransactionVersion.OracleRequest;
                         }
                     }
                 }
