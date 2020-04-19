@@ -13,7 +13,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
 using Neo.Persistence;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
@@ -21,10 +20,12 @@ using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Security.Authentication;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,30 +64,40 @@ namespace Neo.UnitTests.Oracle
             return snapshot;
         }
 
+        private static X509Certificate2 buildSelfSignedServerCertificate(string certificateName)
+        {
+            SubjectAlternativeNameBuilder sanBuilder = new SubjectAlternativeNameBuilder();
+            sanBuilder.AddIpAddress(IPAddress.Loopback);
+            sanBuilder.AddIpAddress(IPAddress.IPv6Loopback);
+            sanBuilder.AddDnsName("localhost");
+            sanBuilder.AddDnsName(Environment.MachineName);
+
+            X500DistinguishedName distinguishedName = new X500DistinguishedName($"CN={certificateName}");
+
+            using RSA rsa = RSA.Create(2048);
+            var request = new CertificateRequest(distinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+            request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DataEncipherment | X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature, false));
+            request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false));
+            request.CertificateExtensions.Add(sanBuilder.Build());
+
+            var certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)), new DateTimeOffset(DateTime.UtcNow.AddDays(3650)));
+            //certificate.FriendlyName = certificateName;
+
+            return new X509Certificate2(certificate.Export(X509ContentType.Pfx, "pass"), "pass", X509KeyStorageFlags.MachineKeySet);
+        }
+
         public static IWebHost CreateServer(int port)
         {
             var server = new WebHostBuilder().UseKestrel(options =>
              {
                  options.Listen(IPAddress.Any, port, listenOptions =>
                  {
-                     if (File.Exists("UT-cert.pfx"))
+                     listenOptions.UseHttps(buildSelfSignedServerCertificate("neo"), c =>
                      {
-                         listenOptions.UseHttps("UT-cert.pfx", "123", https =>
-                         {
-                             https.CheckCertificateRevocation = false;
-                             https.SslProtocols = System.Security.Authentication.SslProtocols.None;
-                         });
-                     }
-                     else if (File.Exists("../../../UT-cert.pfx"))
-                     {
-                         // Unix doesn't copy to the output dir
-
-                         listenOptions.UseHttps("../../../UT-cert.pfx", "123", https =>
-                         {
-                             https.CheckCertificateRevocation = false;
-                             https.SslProtocols = System.Security.Authentication.SslProtocols.None;
-                         });
-                     }
+                         c.CheckCertificateRevocation = false;
+                         c.SslProtocols = SslProtocols.None;
+                     });
                  });
              })
             .Configure(app =>
