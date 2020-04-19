@@ -8,6 +8,7 @@ using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Wallets;
 using Neo.VM;
@@ -205,14 +206,15 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new ContractParameter(ContractParameterType.String) { Value = "HttpTimeout" });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new ContractParameter(ContractParameterType.String) { Value = HttpConfig.Key });
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
-            Assert.AreEqual(result.GetBigInteger(), 5000);
+            result.Should().BeOfType(typeof(ByteString));
+            var cfg = result.GetSpan().AsSerializable<HttpConfig>();
+            Assert.AreEqual(cfg.TimeOut, 5000);
         }
 
         [TestMethod]
@@ -224,8 +226,8 @@ namespace Neo.UnitTests.Oracle
 
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
-            var key = "HttpTimeout";
-            var value = BitConverter.GetBytes(12345);
+            var key = HttpConfig.Key;
+            var value = new HttpConfig() { TimeOut = 12345 }.ToArray();
 
             // Set (wrong witness)
             var script = new ScriptBuilder();
