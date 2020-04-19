@@ -359,13 +359,12 @@ namespace Neo.SmartContract.Native.Oracle
 
             OracleFilter filter;
 
-            if (filterContractItem is PrimitiveType filterContract &&
-                filterMethodItem is PrimitiveType filterMethod &&
+            if (filterMethodItem is PrimitiveType filterMethod &&
                 filterArgsItem is PrimitiveType filterArgs)
             {
                 filter = new OracleFilter()
                 {
-                    ContractHash = filterContractItem.IsNull ? engine.CurrentScriptHash : new UInt160(filterContract.Span),
+                    ContractHash = filterContractItem is PrimitiveType filterContract ? new UInt160(filterContract.Span) : engine.CallingScriptHash,
                     FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
                     FilterArgs = Encoding.UTF8.GetString(filterArgs.Span)
                 };

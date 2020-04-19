@@ -3,6 +3,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -153,7 +154,7 @@ namespace Neo.SmartContract
                     }
                 case JNumber num:
                     {
-                        if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
+                        if ((num.Value % 1) != 0) return num.Value.ToString("0.0000", CultureInfo.InvariantCulture);
 
                         return (BigInteger)num.Value;
                     }
