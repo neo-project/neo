@@ -20,7 +20,6 @@ using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
@@ -83,9 +82,9 @@ namespace Neo.UnitTests.Oracle
             request.CertificateExtensions.Add(sanBuilder.Build());
 
             var certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)), new DateTimeOffset(DateTime.UtcNow.AddDays(3650)));
-            certificate.FriendlyName = certificateName;
+            //certificate.FriendlyName = certificateName;
 
-            return new X509Certificate2(certificate.Export(X509ContentType.Pfx, "WeNeedASaf3rPassword"), "WeNeedASaf3rPassword", X509KeyStorageFlags.MachineKeySet);
+            return new X509Certificate2(certificate.Export(X509ContentType.Pfx, "pass"), "pass", X509KeyStorageFlags.MachineKeySet);
         }
 
         public static IWebHost CreateServer(int port)
@@ -97,7 +96,7 @@ namespace Neo.UnitTests.Oracle
                      listenOptions.UseHttps(buildSelfSignedServerCertificate("neo"), c =>
                      {
                          c.CheckCertificateRevocation = false;
-                         c.SslProtocols = SslProtocols.None;// Tls12 | SslProtocols.Tls11 | SslProtocols.Tls;
+                         c.SslProtocols = SslProtocols.None;
                      });
                  });
              })
