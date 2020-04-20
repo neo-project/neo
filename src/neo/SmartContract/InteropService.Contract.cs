@@ -134,11 +134,12 @@ namespace Neo.SmartContract
                 if (!engine.TryPop(out ReadOnlySpan<byte> contractHash)) return false;
                 if (!engine.TryPop(out string method)) return false;
                 if (!engine.TryPop(out Array args)) return false;
-                if (!engine.TryPop(out int flags)) return false;
+                if (!engine.TryPop(out int flagsValue)) return false;
 
-                if (!Enum.IsDefined(typeof(CallFlags), (CallFlags)flags)) return false;
+                CallFlags flags = (CallFlags)flagsValue;
+                if ((flags & ~CallFlags.All) != 0) return false;
 
-                return Contract_CallEx(engine, new UInt160(contractHash), method, args, (CallFlags)flags);
+                return Contract_CallEx(engine, new UInt160(contractHash), method, args, flags);
             }
 
             private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, string method, Array args, CallFlags flags)
