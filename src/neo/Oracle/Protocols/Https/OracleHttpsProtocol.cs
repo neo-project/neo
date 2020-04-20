@@ -79,7 +79,7 @@ namespace Neo.Oracle.Protocols.Https
             };
             using var client = new HttpClient(handler);
 
-            client.DefaultRequestHeaders.Add("Accept", string.Join(",", Config.AllowedFormats));
+            client.DefaultRequestHeaders.Add("Accept", string.Join(",", HttpConfig.AllowedFormats));
 
             switch (request.Method)
             {
@@ -111,7 +111,7 @@ namespace Neo.Oracle.Protocols.Https
                 return OracleResponse.CreateError(request.Hash);
             }
 
-            if (!Config.AllowedFormats.Contains(result.Result.Content.Headers.ContentType.MediaType))
+            if (!HttpConfig.AllowedFormats.Contains(result.Result.Content.Headers.ContentType.MediaType))
             {
                 // Error with the ContentType
 
