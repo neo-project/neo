@@ -36,6 +36,7 @@ namespace Neo.Ledger
         public static readonly byte ValidatorsCount = ProtocolSettings.Default.ValidatorsCount;
         public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
         public static readonly ECPoint[] StandbyValidators = StandbyCommittee[..ValidatorsCount];
+        private static UInt256 lastBlockhash = null;
 
         public static readonly Block GenesisBlock = new Block
         {
@@ -367,6 +368,7 @@ namespace Neo.Ledger
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
                 }
+                block_cache.Add(block.Hash, block);
             }
             else
             {
@@ -430,7 +432,8 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
+            if (lastBlockhash != null) block_cache.Remove(lastBlockhash);
+            lastBlockhash = block.Hash;
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
