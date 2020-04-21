@@ -331,7 +331,7 @@ namespace Neo.Ledger
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
                     return VerifyResult.Invalid;
             }
-            block_cache[block.Hash] = block;
+            block_cache.TryAdd(block.Hash, block);
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
