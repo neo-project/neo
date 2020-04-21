@@ -66,7 +66,6 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
-        private UInt256 lastBlockhash = null;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -432,8 +431,7 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            if (lastBlockhash != null) block_cache.Remove(lastBlockhash);
-            lastBlockhash = block.Hash;
+            block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
