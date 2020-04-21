@@ -17,7 +17,7 @@ namespace Neo.Ledger
         public StateRootVerifyFlag Flag;
         public StateRoot StateRoot;
 
-        public override int Size => base.Size + sizeof(StateRootVerifyFlag) + StateRoot.Size;
+        public override int Size => base.Size + sizeof(bool) + StateRoot.Size;
 
         StateRootState ICloneable<StateRootState>.Clone()
         {
