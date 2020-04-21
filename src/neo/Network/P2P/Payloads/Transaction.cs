@@ -208,6 +208,11 @@ namespace Neo.Network.P2P.Payloads
             return Equals(obj as Transaction);
         }
 
+        void IInteroperable.FromStackItem(StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
