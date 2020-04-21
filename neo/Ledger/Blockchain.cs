@@ -519,8 +519,8 @@ namespace Neo.Ledger
         {
             foreach (StateRoot root in roots)
             {
-                if (root.Index < Math.Max(StateHeight, ProtocolSettings.Default.StateRootEnableIndex)) continue;
-                if (root.Index != Math.Max(StateHeight + 1, ProtocolSettings.Default.StateRootEnableIndex))
+                if (root.Index < Math.Max(StateHeight, StateRootEnableIndex)) continue;
+                if (root.Index != Math.Max(StateHeight + 1, StateRootEnableIndex))
                     throw new InvalidOperationException();
                 using (Snapshot snapshot = GetSnapshot())
                 {
