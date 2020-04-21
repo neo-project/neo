@@ -1,9 +1,9 @@
-using Neo.IO;
-using System.IO;
+using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native.Oracle
 {
-    public class HttpConfig : ISerializable
+    public class HttpConfig : IInteroperable
     {
         public const string Key = "HttpConfig";
 
@@ -18,16 +18,19 @@ namespace Neo.SmartContract.Native.Oracle
 
         #endregion
 
-        public int Size => sizeof(int) + AllowedFormats.GetVarSize();
-
-        public void Deserialize(BinaryReader reader)
+        public void FromStackItem(StackItem stackItem)
         {
-            TimeOut = reader.ReadInt32();
+            var array = (VM.Types.Array)stackItem;
+
+            TimeOut = (int)array[0].GetBigInteger();
         }
 
-        public void Serialize(BinaryWriter writer)
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            writer.Write(TimeOut);
+            return new VM.Types.Array(referenceCounter)
+            {
+                TimeOut
+            };
         }
     }
 }
