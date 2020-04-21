@@ -44,7 +44,7 @@ namespace Neo.Network.P2P
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private readonly UInt256 HeaderTaskHash = UInt256.Zero;
-        private readonly UInt256 StateRootTaskHash = new UInt256(Crypto.Default.Hash256(Encoding.ASCII.GetBytes("SyncStateRoot")));
+        private readonly UInt256 StateRootTaskHash = Blockchain.GenesisBlock.Hash;
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
         private bool HashStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
         public TaskManager(NeoSystem system)
