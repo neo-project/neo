@@ -367,11 +367,11 @@ namespace Neo.Ledger
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
                 }
-                block_cache.Add(block.Hash, block);
+                block_cache[block.Hash] = block;
             }
             else
             {
-                block_cache.Add(block.Hash, block);
+                block_cache[block.Hash] = block;
                 if (block.Index + 100 >= header_index.Count)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
