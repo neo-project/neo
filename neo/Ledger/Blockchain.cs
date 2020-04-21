@@ -550,7 +550,7 @@ namespace Neo.Ledger
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             var index = Math.Max(StateHeight + 1, StateRootEnableIndex);
-            if (GetStateRoot(index).Flag == StateRootVerifyFlag.Unverified && state_root_cache.ContainsKey(index))
+            if (GetStateRoot(index)?.Flag == StateRootVerifyFlag.Unverified && state_root_cache.ContainsKey(index))
             {
                 state_root_cache.TryGetValue(index, out StateRoot state_root);
                 state_root_cache.Remove(index);
