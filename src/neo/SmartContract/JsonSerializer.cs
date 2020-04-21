@@ -154,7 +154,7 @@ namespace Neo.SmartContract
                     }
                 case JNumber num:
                     {
-                        if ((num.Value % 1) != 0) return num.Value.ToString("0.0000", CultureInfo.InvariantCulture);
+                        if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
 
                         return (BigInteger)num.Value;
                     }
