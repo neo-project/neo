@@ -354,15 +354,10 @@ namespace Neo.UnitTests.Oracle
 
             // Fake balance
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
-            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-            {
-                Value = new Nep5AccountState().ToByteArray()
-            });
-            entry.Value = new Nep5AccountState()
+            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()
             {
                 Balance = 1000000 * NativeContract.GAS.Factor
-            }
-            .ToByteArray();
+            }));
 
             snapshot.Commit();
 
