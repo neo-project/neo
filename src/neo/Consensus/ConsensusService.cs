@@ -28,6 +28,9 @@ namespace Neo.Consensus
         private readonly IActorRef taskManager;
         private ICancelable timer_token;
         private DateTime block_received_time;
+        private TimeSpan block_received_gap;
+        private TimeSpan block_span = Blockchain.TimePerBlock;
+
         private bool started = false;
 
         /// <summary>
@@ -174,11 +177,17 @@ namespace Neo.Consensus
                 }
                 else
                 {
+                    if (block_received_gap > Blockchain.TimePerBlock / 3 && block_received_gap < Blockchain.TimePerBlock * 2)
+                    {
+                        block_span = (8 * block_span + 3 * (2 * Blockchain.TimePerBlock - block_received_gap)) / 11.0;
+                    }
                     TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
-                    if (span >= Blockchain.TimePerBlock)
+                    if (span >= block_span)
                         ChangeTimer(TimeSpan.Zero);
                     else
-                        ChangeTimer(Blockchain.TimePerBlock - span);
+                    {
+                        ChangeTimer(block_span - span);
+                    }
                 }
             }
             else
@@ -308,7 +317,9 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
-            block_received_time = TimeProvider.Current.UtcNow;
+            DateTime now = TimeProvider.Current.UtcNow;
+            block_received_gap = now - block_received_time;
+            block_received_time = now;
             knownHashes.Clear();
             InitializeConsensus(0);
         }
