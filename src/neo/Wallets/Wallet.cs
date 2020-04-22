@@ -23,6 +23,7 @@ namespace Neo.Wallets
         public abstract string Name { get; }
         public abstract Version Version { get; }
 
+        public abstract bool ChangePassword(string oldPassword, string newPassword);
         public abstract bool Contains(UInt160 scriptHash);
         public abstract WalletAccount CreateAccount(byte[] privateKey);
         public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);

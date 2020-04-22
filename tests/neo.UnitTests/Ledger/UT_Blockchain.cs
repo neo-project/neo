@@ -70,13 +70,13 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetCurrentBlockHash()
         {
-            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0x533c27382aea08712a9d2ba24b0afc0d19020d633458c89d2ce7ac11a987a75d"));
+            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0xc9387b803c8b4c6c1f69f6c876ed7848482c414b0225eb2a3a5395af39425455"));
         }
 
         [TestMethod]
         public void TestGetCurrentHeaderHash()
         {
-            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0x533c27382aea08712a9d2ba24b0afc0d19020d633458c89d2ce7ac11a987a75d"));
+            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0xc9387b803c8b4c6c1f69f6c876ed7848482c414b0225eb2a3a5395af39425455"));
         }
 
         [TestMethod]
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlockHash()
         {
-            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0x533c27382aea08712a9d2ba24b0afc0d19020d633458c89d2ce7ac11a987a75d"));
+            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0xc9387b803c8b4c6c1f69f6c876ed7848482c414b0225eb2a3a5395af39425455"));
             Blockchain.Singleton.GetBlockHash(10).Should().BeNull();
         }
 
@@ -113,16 +113,9 @@ namespace Neo.UnitTests.Ledger
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 100_000_000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -133,8 +126,6 @@ namespace Neo.UnitTests.Ledger
                 // Make transaction
 
                 var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
-
-                system.ActorSystem.EventStream.Subscribe(senderProbe, typeof(Blockchain.RelayResult));
 
                 senderProbe.Send(system.Blockchain, tx);
                 senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);

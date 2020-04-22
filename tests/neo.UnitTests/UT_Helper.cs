@@ -4,7 +4,6 @@ using Neo.Network.P2P;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -19,12 +18,7 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new TestVerifiable();
             byte[] res = verifiable.GetHashData();
-            res.Length.Should().Be(8);
-            byte[] requiredData = new byte[] { 7, 116, 101, 115, 116, 83, 116, 114 };
-            for (int i = 0; i < requiredData.Length; i++)
-            {
-                res[i].Should().Be(requiredData[i]);
-            }
+            res.ToHexString().Should().Be("4e454f000774657374537472");
         }
 
         [TestMethod]
@@ -123,154 +117,5 @@ namespace Neo.UnitTests
             var endPoint2 = new IPEndPoint(addr2, 8888);
             endPoint2.Unmap().Should().Be(endPoint);
         }
-
-        [TestMethod]
-        public void TestWeightedAverage()
-        {
-            var foo1 = new Foo
-            {
-                Value = 1,
-                Weight = 2
-            };
-            var foo2 = new Foo
-            {
-                Value = 2,
-                Weight = 3
-            };
-            var list = new List<Foo>
-            {
-                foo1,foo2
-            };
-            list.WeightedAverage(p => p.Value, p => p.Weight).Should().Be(new BigInteger(1));
-
-            var foo3 = new Foo
-            {
-                Value = 1,
-                Weight = 0
-            };
-            var foo4 = new Foo
-            {
-                Value = 2,
-                Weight = 0
-            };
-            var list2 = new List<Foo>
-            {
-                foo3, foo4
-            };
-            list2.WeightedAverage(p => p.Value, p => p.Weight).Should().Be(BigInteger.Zero);
-        }
-
-        [TestMethod]
-        public void WeightFilter()
-        {
-            var w1 = new Woo
-            {
-                Value = 1
-            };
-            var w2 = new Woo
-            {
-                Value = 2
-            };
-            var list = new List<Woo>
-            {
-                w1, w2
-            };
-            var ret = list.WeightedFilter(0.3, 0.6, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            });
-            var sum = BigInteger.Zero;
-            foreach (Result res in ret)
-            {
-                sum = BigInteger.Add(res.Weight, sum);
-            }
-            sum.Should().Be(BigInteger.Zero);
-
-            var w3 = new Woo
-            {
-                Value = 3
-            };
-
-            var list2 = new List<Woo>
-            {
-                w1, w2, w3
-            };
-            var ret2 = list2.WeightedFilter(0.3, 0.4, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            });
-            sum = BigInteger.Zero;
-            foreach (Result res in ret2)
-            {
-                sum = BigInteger.Add(res.Weight, sum);
-            }
-            sum.Should().Be(BigInteger.Zero);
-
-            CheckArgumentOutOfRangeException(-1, 0.4, p => p.Value, list2);
-
-            CheckArgumentOutOfRangeException(0.2, 1.4, p => p.Value, list2);
-
-            CheckArgumentOutOfRangeException(0.8, 0.3, p => p.Value, list2);
-
-            CheckArgumentOutOfRangeException(0.3, 0.8, p => p.Value, list2);
-
-            CheckArgumentNullException(0.3, 0.6, null, list2);
-
-            CheckArgumentNullException(0.3, 0.4, p => p.Value, null);
-
-            list2.WeightedFilter(0.3, 0.3, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight).Should().Be(0);
-
-
-            var list3 = new List<Woo>();
-            list3.WeightedFilter(0.3, 0.6, p => p.Value, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight).Should().Be(0);
-
-        }
-
-        private static void CheckArgumentOutOfRangeException(double start, double end, Func<Woo, BigInteger> func, List<Woo> list)
-        {
-            Action action = () => list.WeightedFilter(start, end, func, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action.Should().Throw<ArgumentOutOfRangeException>();
-        }
-
-        private static void CheckArgumentNullException(double start, double end, Func<Woo, BigInteger> func, List<Woo> list)
-        {
-            Action action = () => list.WeightedFilter(start, end, func, (p, w) => new Result
-            {
-                Info = p,
-                Weight = w
-            }).WeightedAverage(p => p.Weight, p => p.Weight);
-            action.Should().Throw<ArgumentNullException>();
-        }
-    }
-
-    class Foo
-    {
-        public int Weight { set; get; }
-        public int Value { set; get; }
-    }
-
-    class Woo
-    {
-        public int Value { set; get; }
-    }
-
-    class Result
-    {
-        public Woo Info { set; get; }
-        public BigInteger Weight { set; get; }
     }
 }
