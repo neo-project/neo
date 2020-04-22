@@ -357,25 +357,25 @@ namespace Neo.SmartContract.Native.Oracle
 
             // Create filter
 
-            OracleFilter filter = null;
+            OracleFilter filter;
 
-            if (!filterContractItem.IsNull)
+            if (filterMethodItem is PrimitiveType filterMethod)
             {
-                if (filterContractItem is PrimitiveType filterContract &&
-                    filterMethodItem is PrimitiveType filterMethod &&
-                    filterArgsItem is PrimitiveType filterArgs)
+                filter = new OracleFilter()
                 {
-                    filter = new OracleFilter()
-                    {
-                        ContractHash = new UInt160(filterContract.Span),
-                        FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
-                        FilterArgs = Encoding.UTF8.GetString(filterArgs.Span)
-                    };
-                }
-                else
+                    ContractHash = filterContractItem is PrimitiveType filterContract ? new UInt160(filterContract.Span) : engine.CallingScriptHash,
+                    FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
+                    FilterArgs = filterArgsItem is PrimitiveType filterArgs ? Encoding.UTF8.GetString(filterArgs.Span) : ""
+                };
+            }
+            else
+            {
+                if (!filterMethodItem.IsNull)
                 {
                     throw new ArgumentException("If the filter it's defined, the values can't be null");
                 }
+
+                filter = null;
             }
 
             // Create request

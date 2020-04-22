@@ -63,6 +63,7 @@ namespace Neo.Oracle.Protocols.Https
         /// <returns>Oracle result</returns>
         public OracleResponse Process(OracleHttpsRequest request)
         {
+            Log($"Downloading HTTPS request: url={request.URL.ToString()} method={request.Method}", LogLevel.Debug);
             LoadConfig();
 
             if (!AllowPrivateHost && IsInternal(Dns.GetHostEntry(request.URL.Host)))
@@ -140,13 +141,23 @@ namespace Neo.Oracle.Protocols.Https
         }
 
         /// <summary>
-        /// Log
+        /// Log error
         /// </summary>
         /// <param name="url">Url</param>
         /// <param name="error">Error</param>
         private static void LogError(Uri url, string error)
         {
-            Utility.Log(nameof(OracleHttpsProtocol), LogLevel.Error, $"{error} at {url.ToString()}");
+            Log($"{error} at {url.ToString()}", LogLevel.Error);
+        }
+
+        /// <summary>
+        /// Log
+        /// </summary>
+        /// <param name="line">Line</param>
+        /// <param name="level">Level</param>
+        private static void Log(string line, LogLevel level)
+        {
+            Utility.Log(nameof(OracleHttpsProtocol), level, line);
         }
 
         internal static bool IsInternal(IPHostEntry entry)
