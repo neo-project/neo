@@ -370,6 +370,11 @@ namespace Neo.SmartContract.Native.Oracle
             }
             else
             {
+                if (!filterMethodItem.IsNull)
+                {
+                    throw new ArgumentException("If the filter it's defined, the values can't be null");
+                }
+
                 filter = null;
             }
 
