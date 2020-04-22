@@ -128,13 +128,12 @@ namespace Neo.UnitTests.Oracle
         private static async Task ProcessAsync(HttpContext context)
         {
             var response = "";
-            context.Response.ContentType = "text/plain";
+            context.Response.ContentType = "application/json";
 
             switch (context.Request.Path.Value)
             {
                 case "/json":
                     {
-                        context.Response.ContentType = "application/json";
                         response =
 @"{
   'Stores': [
@@ -171,12 +170,17 @@ namespace Neo.UnitTests.Oracle
                     }
                 case "/ping":
                     {
-                        response = "pong";
+                        response = "\"pong\"";
+                        break;
+                    }
+                case "/text":
+                    {
+                        context.Response.ContentType = "text/plain";
                         break;
                     }
                 case "/timeout":
                     {
-                        Thread.Sleep((int)(OracleService.HTTPSProtocol.TimeOut.TotalMilliseconds + 250));
+                        Thread.Sleep((int)(OracleService.HTTPSProtocol.Config.TimeOut + 250));
                         break;
                     }
                 case "/error":
@@ -345,7 +349,7 @@ namespace Neo.UnitTests.Oracle
 
             // Timeout
 
-            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(2);
+            OracleService.HTTPSProtocol.Config.TimeOut = (int)TimeSpan.FromSeconds(2).TotalMilliseconds;
 
             var request = new OracleHttpsRequest()
             {
@@ -355,7 +359,7 @@ namespace Neo.UnitTests.Oracle
 
             var response = OracleService.Process(request);
 
-            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(5);
+            OracleService.HTTPSProtocol.Config.TimeOut = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
 
             Assert.IsTrue(response.Error);
             Assert.IsTrue(response.Result == null);
@@ -373,16 +377,31 @@ namespace Neo.UnitTests.Oracle
             response = OracleService.Process(request);
 
             Assert.IsFalse(response.Error);
-            Assert.AreEqual("pong", Encoding.UTF8.GetString(response.Result));
+            Assert.AreEqual("\"pong\"", Encoding.UTF8.GetString(response.Result));
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
 
-            // Error
+            // Error 404
 
             request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
                 URL = new Uri($"https://127.0.0.1:{port}/error")
+            };
+
+            response = OracleService.Process(request);
+
+            Assert.IsTrue(response.Error);
+            Assert.IsTrue(response.Result == null);
+            Assert.AreEqual(request.Hash, response.RequestHash);
+            Assert.AreNotEqual(UInt160.Zero, response.Hash);
+
+            // Error ContentType
+
+            request = new OracleHttpsRequest()
+            {
+                Method = HttpMethod.GET,
+                URL = new Uri($"https://127.0.0.1:{port}/text")
             };
 
             response = OracleService.Process(request);
