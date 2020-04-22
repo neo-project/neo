@@ -61,6 +61,14 @@ namespace Neo.Oracle
         }
 
         /// <summary>
+        /// Reset the _alreadyPayed flag
+        /// </summary>
+        public void ResetFilterCostOnce()
+        {
+            _alreadyPayed = false;
+        }
+
+        /// <summary>
         /// Create error result
         /// </summary>
         /// <param name="requestHash">Request Id</param>

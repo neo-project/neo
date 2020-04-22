@@ -1,4 +1,6 @@
 using Neo.IO;
+using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -65,10 +67,14 @@ namespace Neo.Oracle
             using ScriptBuilder script = new ScriptBuilder();
             script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, new object[] { input, filter.FilterArgs }, (byte)CallFlags.None);
 
+            // CallEx will require the snapshot for get the script
+
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+
             // Execute
 
-            using var engine = new ApplicationEngine(TriggerType.Application, null, null, MaxGasFilter, false, null);
-            engine.LoadScript(script.ToArray(), CallFlags.None);
+            using var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, MaxGasFilter, false, null);
+            engine.LoadScript(script.ToArray(), CallFlags.AllowCall);
 
             if (engine.Execute() != VMState.HALT || !engine.ResultStack.TryPop(out PrimitiveType ret))
             {
