@@ -19,6 +19,7 @@
         public const byte IX_ValidatorsCount = 0x90;
         public const byte IX_CurrentBlock = 0xc0;
         public const byte IX_CurrentHeader = 0xc1;
+        public const byte IX_CurrentStateRoot = 0xc2;
 
         public const byte SYS_Version = 0xf0;
 
