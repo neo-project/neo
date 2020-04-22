@@ -2,6 +2,7 @@ using Neo.Ledger;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -15,9 +16,9 @@ namespace Neo.Oracle.Protocols.Https
         private long _lastHeight = -1;
 
         /// <summary>
-        /// Timeout
+        /// Config
         /// </summary>
-        public TimeSpan TimeOut { get; internal set; }
+        public HttpConfig Config { get; internal set; }
 
         /// <summary>
         /// Allow private host
@@ -47,13 +48,10 @@ namespace Neo.Oracle.Protocols.Https
 
             // Load the configuration
 
-            ushort seconds;
             using (var snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                seconds = (ushort)NativeContract.Oracle.GetConfig(snapshot, HttpConfig.Timeout).ToBigInteger();
+                Config = NativeContract.Oracle.GetHttpConfig(snapshot);
             }
-
-            TimeOut = TimeSpan.FromMilliseconds(seconds);
         }
 
         // <summary>
@@ -63,6 +61,7 @@ namespace Neo.Oracle.Protocols.Https
         /// <returns>Oracle result</returns>
         public OracleResponse Process(OracleHttpsRequest request)
         {
+            Log($"Downloading HTTPS request: url={request.URL.ToString()} method={request.Method}", LogLevel.Debug);
             LoadConfig();
 
             if (!AllowPrivateHost && IsInternal(Dns.GetHostEntry(request.URL.Host)))
@@ -81,6 +80,8 @@ namespace Neo.Oracle.Protocols.Https
             };
             using var client = new HttpClient(handler);
 
+            client.DefaultRequestHeaders.Add("Accept", string.Join(",", HttpConfig.AllowedFormats));
+
             switch (request.Method)
             {
                 case HttpMethod.GET:
@@ -95,7 +96,7 @@ namespace Neo.Oracle.Protocols.Https
                     }
             }
 
-            if (!result.Wait(TimeOut))
+            if (!result.Wait(Config.TimeOut))
             {
                 // Timeout
 
@@ -111,10 +112,18 @@ namespace Neo.Oracle.Protocols.Https
                 return OracleResponse.CreateError(request.Hash);
             }
 
+            if (!HttpConfig.AllowedFormats.Contains(result.Result.Content.Headers.ContentType.MediaType))
+            {
+                // Error with the ContentType
+
+                LogError(request.URL, "ContentType it's not allowed");
+                return OracleResponse.CreateError(request.Hash);
+            }
+
             string ret;
             var taskRet = result.Result.Content.ReadAsStringAsync();
 
-            if (!taskRet.Wait(TimeOut))
+            if (!taskRet.Wait(Config.TimeOut))
             {
                 // Timeout
 
@@ -140,13 +149,23 @@ namespace Neo.Oracle.Protocols.Https
         }
 
         /// <summary>
-        /// Log
+        /// Log error
         /// </summary>
         /// <param name="url">Url</param>
         /// <param name="error">Error</param>
         private static void LogError(Uri url, string error)
         {
-            Utility.Log(nameof(OracleHttpsProtocol), LogLevel.Error, $"{error} at {url.ToString()}");
+            Log($"{error} at {url.ToString()}", LogLevel.Error);
+        }
+
+        /// <summary>
+        /// Log
+        /// </summary>
+        /// <param name="line">Line</param>
+        /// <param name="level">Level</param>
+        private static void Log(string line, LogLevel level)
+        {
+            Utility.Log(nameof(OracleHttpsProtocol), level, line);
         }
 
         internal static bool IsInternal(IPHostEntry entry)

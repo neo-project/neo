@@ -38,10 +38,8 @@ namespace Neo.SmartContract.Native.Oracle
             if (!base.Initialize(engine)) return false;
             if (GetPerRequestFee(engine.Snapshot) != 0) return false;
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Timeout)), new StorageItem
-            {
-                Value = new ByteString(BitConverter.GetBytes(5000)).GetSpan().ToArray()
-            });
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config,
+                Encoding.UTF8.GetBytes(HttpConfig.Key)), new StorageItem(new HttpConfig(), false));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
                 Value = BitConverter.GetBytes(1000)
@@ -222,11 +220,21 @@ namespace Neo.SmartContract.Native.Oracle
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            string key = args[0].GetString();
-            ByteString value = args[1].GetSpan().ToArray();
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
-            storage.Value = value.GetSpan().ToArray();
-            return true;
+
+            switch (args[0].GetString())
+            {
+                case HttpConfig.Key:
+                    {
+                        var newCfg = new HttpConfig();
+                        newCfg.FromStackItem(args[1]);
+
+                        StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Key)));
+                        var config = storage.GetInteroperable<HttpConfig>();
+                        config.TimeOut = newCfg.TimeOut;
+                        return true;
+                    }
+            }
+            return false;
         }
 
         /// <summary>
@@ -237,21 +245,26 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0_01000000, ContractParameterType.Array, ParameterTypes = new[] { ContractParameterType.String }, ParameterNames = new[] { "configKey" })]
         private StackItem GetConfig(ApplicationEngine engine, Array args)
         {
-            StoreView snapshot = engine.Snapshot;
-            string key = args[0].GetString();
-            return GetConfig(snapshot, key);
+            switch (args[0].GetString())
+            {
+                case HttpConfig.Key:
+                    {
+                        return GetHttpConfig(engine.Snapshot).ToStackItem(engine.ReferenceCounter);
+                    }
+            }
+
+            return false;
         }
 
         /// <summary>
         /// Get HttpConfig
         /// </summary>
         /// <param name="snapshot">snapshot</param>
-        /// <param name="key">key</param>
         /// <returns>value</returns>
-        public ByteString GetConfig(StoreView snapshot, string key)
+        public HttpConfig GetHttpConfig(StoreView snapshot)
         {
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(key)));
-            return storage.Value;
+            var storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Key)));
+            return storage.GetInteroperable<HttpConfig>();
         }
 
         /// <summary>
@@ -357,25 +370,25 @@ namespace Neo.SmartContract.Native.Oracle
 
             // Create filter
 
-            OracleFilter filter = null;
+            OracleFilter filter;
 
-            if (!filterContractItem.IsNull)
+            if (filterMethodItem is PrimitiveType filterMethod)
             {
-                if (filterContractItem is PrimitiveType filterContract &&
-                    filterMethodItem is PrimitiveType filterMethod &&
-                    filterArgsItem is PrimitiveType filterArgs)
+                filter = new OracleFilter()
                 {
-                    filter = new OracleFilter()
-                    {
-                        ContractHash = new UInt160(filterContract.Span),
-                        FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
-                        FilterArgs = Encoding.UTF8.GetString(filterArgs.Span)
-                    };
-                }
-                else
+                    ContractHash = filterContractItem is PrimitiveType filterContract ? new UInt160(filterContract.Span) : engine.CallingScriptHash,
+                    FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
+                    FilterArgs = filterArgsItem is PrimitiveType filterArgs ? Encoding.UTF8.GetString(filterArgs.Span) : ""
+                };
+            }
+            else
+            {
+                if (!filterMethodItem.IsNull)
                 {
                     throw new ArgumentException("If the filter it's defined, the values can't be null");
                 }
+
+                filter = null;
             }
 
             // Create request

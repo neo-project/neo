@@ -116,6 +116,12 @@ namespace Neo.VM
                 case byte[] data:
                     sb.EmitPush(data);
                     break;
+                case object[] data:
+                    for (int i = data.Length - 1; i >= 0; i--)
+                        sb.EmitPush(data[i]);
+                    sb.EmitPush(data.Length);
+                    sb.Emit(OpCode.PACK);
+                    break;
                 case string data:
                     sb.EmitPush(data);
                     break;
@@ -156,7 +162,7 @@ namespace Neo.VM
                     sb.Emit(OpCode.PUSHNULL);
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException(obj.GetType().FullName);
             }
             return sb;
         }

@@ -8,6 +8,7 @@ using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Wallets;
 using Neo.VM;
@@ -205,14 +206,18 @@ namespace Neo.UnitTests.Oracle
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new ContractParameter(ContractParameterType.String) { Value = "HttpTimeout" });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new ContractParameter(ContractParameterType.String) { Value = HttpConfig.Key });
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
-            Assert.AreEqual(result.GetBigInteger(), 5000);
+            result.Should().BeOfType(typeof(VM.Types.Array));
+
+            var cfg = new HttpConfig();
+            cfg.FromStackItem(result);
+
+            Assert.AreEqual(cfg.TimeOut, 5000);
         }
 
         [TestMethod]
@@ -224,12 +229,12 @@ namespace Neo.UnitTests.Oracle
 
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             var from = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
-            var key = "HttpTimeout";
-            var value = BitConverter.GetBytes(12345);
+            var key = HttpConfig.Key;
+            var value = new HttpConfig() { TimeOut = 12345 };
 
             // Set (wrong witness)
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "setConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setConfig", new object[] { key, new object[] { value.TimeOut } });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(null), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -241,7 +246,7 @@ namespace Neo.UnitTests.Oracle
             // Set good
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "setConfig", new ContractParameter(ContractParameterType.String) { Value = key }, new ContractParameter(ContractParameterType.ByteArray) { Value = value });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "setConfig", new object[] { key, new object[] { value.TimeOut } });
             engine = new ApplicationEngine(TriggerType.Application, new ManualWitness(from), snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
@@ -253,14 +258,15 @@ namespace Neo.UnitTests.Oracle
             // Get
 
             script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new ContractParameter(ContractParameterType.String) { Value = key });
+            script.EmitAppCall(NativeContract.Oracle.Hash, "getConfig", new object[] { key });
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
-            Assert.AreEqual(result.GetBigInteger(), new BigInteger(value));
+            result.Should().BeOfType(typeof(VM.Types.Array));
+            var array = (VM.Types.Array)result;
+            Assert.AreEqual(array[0].GetBigInteger(), new BigInteger(value.TimeOut));
         }
 
         [TestMethod]
@@ -352,16 +358,11 @@ namespace Neo.UnitTests.Oracle
 
             // Fake balance
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
-            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-            {
-                Value = new Nep5AccountState().ToByteArray()
-            });
-            entry.Value = new Nep5AccountState()
+            var balance = new Nep5AccountState()
             {
                 Balance = 1000000 * NativeContract.GAS.Factor
-            }
-            .ToByteArray();
-
+            };
+            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(balance));
             snapshot.Commit();
 
             // Fake an nonexist validator in delegatedOracleValidators

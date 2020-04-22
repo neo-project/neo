@@ -13,7 +13,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Oracle;
 using Neo.Oracle.Protocols.Https;
 using Neo.Persistence;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
@@ -21,10 +20,12 @@ using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Security.Authentication;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,30 +64,40 @@ namespace Neo.UnitTests.Oracle
             return snapshot;
         }
 
+        private static X509Certificate2 buildSelfSignedServerCertificate(string certificateName)
+        {
+            SubjectAlternativeNameBuilder sanBuilder = new SubjectAlternativeNameBuilder();
+            sanBuilder.AddIpAddress(IPAddress.Loopback);
+            sanBuilder.AddIpAddress(IPAddress.IPv6Loopback);
+            sanBuilder.AddDnsName("localhost");
+            sanBuilder.AddDnsName(Environment.MachineName);
+
+            X500DistinguishedName distinguishedName = new X500DistinguishedName($"CN={certificateName}");
+
+            using RSA rsa = RSA.Create(2048);
+            var request = new CertificateRequest(distinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+            request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DataEncipherment | X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature, false));
+            request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false));
+            request.CertificateExtensions.Add(sanBuilder.Build());
+
+            var certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)), new DateTimeOffset(DateTime.UtcNow.AddDays(3650)));
+            //certificate.FriendlyName = certificateName;
+
+            return new X509Certificate2(certificate.Export(X509ContentType.Pfx, "pass"), "pass", X509KeyStorageFlags.MachineKeySet);
+        }
+
         public static IWebHost CreateServer(int port)
         {
             var server = new WebHostBuilder().UseKestrel(options =>
              {
                  options.Listen(IPAddress.Any, port, listenOptions =>
                  {
-                     if (File.Exists("UT-cert.pfx"))
+                     listenOptions.UseHttps(buildSelfSignedServerCertificate("neo"), c =>
                      {
-                         listenOptions.UseHttps("UT-cert.pfx", "123", https =>
-                         {
-                             https.CheckCertificateRevocation = false;
-                             https.SslProtocols = System.Security.Authentication.SslProtocols.None;
-                         });
-                     }
-                     else if (File.Exists("../../../UT-cert.pfx"))
-                     {
-                         // Unix doesn't copy to the output dir
-
-                         listenOptions.UseHttps("../../../UT-cert.pfx", "123", https =>
-                         {
-                             https.CheckCertificateRevocation = false;
-                             https.SslProtocols = System.Security.Authentication.SslProtocols.None;
-                         });
-                     }
+                         c.CheckCertificateRevocation = false;
+                         c.SslProtocols = SslProtocols.None;
+                     });
                  });
              })
             .Configure(app =>
@@ -117,13 +128,12 @@ namespace Neo.UnitTests.Oracle
         private static async Task ProcessAsync(HttpContext context)
         {
             var response = "";
-            context.Response.ContentType = "text/plain";
+            context.Response.ContentType = "application/json";
 
             switch (context.Request.Path.Value)
             {
                 case "/json":
                     {
-                        context.Response.ContentType = "application/json";
                         response =
 @"{
   'Stores': [
@@ -160,12 +170,17 @@ namespace Neo.UnitTests.Oracle
                     }
                 case "/ping":
                     {
-                        response = "pong";
+                        response = "\"pong\"";
+                        break;
+                    }
+                case "/text":
+                    {
+                        context.Response.ContentType = "text/plain";
                         break;
                     }
                 case "/timeout":
                     {
-                        Thread.Sleep((int)(OracleService.HTTPSProtocol.TimeOut.TotalMilliseconds + 250));
+                        Thread.Sleep((int)(OracleService.HTTPSProtocol.Config.TimeOut + 250));
                         break;
                     }
                 case "/error":
@@ -276,17 +291,10 @@ namespace Neo.UnitTests.Oracle
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
-
-                entry.Value = new Nep5AccountState()
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()
                 {
                     Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                }));
 
                 snapshot.Commit();
 
@@ -341,7 +349,7 @@ namespace Neo.UnitTests.Oracle
 
             // Timeout
 
-            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(2);
+            OracleService.HTTPSProtocol.Config.TimeOut = (int)TimeSpan.FromSeconds(2).TotalMilliseconds;
 
             var request = new OracleHttpsRequest()
             {
@@ -351,7 +359,7 @@ namespace Neo.UnitTests.Oracle
 
             var response = OracleService.Process(request);
 
-            OracleService.HTTPSProtocol.TimeOut = TimeSpan.FromSeconds(5);
+            OracleService.HTTPSProtocol.Config.TimeOut = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
 
             Assert.IsTrue(response.Error);
             Assert.IsTrue(response.Result == null);
@@ -369,16 +377,31 @@ namespace Neo.UnitTests.Oracle
             response = OracleService.Process(request);
 
             Assert.IsFalse(response.Error);
-            Assert.AreEqual("pong", Encoding.UTF8.GetString(response.Result));
+            Assert.AreEqual("\"pong\"", Encoding.UTF8.GetString(response.Result));
             Assert.AreEqual(request.Hash, response.RequestHash);
             Assert.AreNotEqual(UInt160.Zero, response.Hash);
 
-            // Error
+            // Error 404
 
             request = new OracleHttpsRequest()
             {
                 Method = HttpMethod.GET,
                 URL = new Uri($"https://127.0.0.1:{port}/error")
+            };
+
+            response = OracleService.Process(request);
+
+            Assert.IsTrue(response.Error);
+            Assert.IsTrue(response.Result == null);
+            Assert.AreEqual(request.Hash, response.RequestHash);
+            Assert.AreNotEqual(UInt160.Zero, response.Hash);
+
+            // Error ContentType
+
+            request = new OracleHttpsRequest()
+            {
+                Method = HttpMethod.GET,
+                URL = new Uri($"https://127.0.0.1:{port}/text")
             };
 
             response = OracleService.Process(request);
