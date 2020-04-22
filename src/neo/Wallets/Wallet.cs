@@ -359,7 +359,8 @@ namespace Neo.Wallets
                     {
                         // We should pay for the response extra cost
 
-                        tx.SystemFee += (oracleCache.Size * NativeContract.Policy.GetFeePerByte(snapshot));
+                        tx.SystemFee += NativeContract.Oracle.GetPerRequestFee(snapshot) +
+                            (oracleCache.Size * NativeContract.Policy.GetFeePerByte(snapshot));
                         tx.Version = TransactionVersion.OracleRequest;
 
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)

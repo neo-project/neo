@@ -456,7 +456,8 @@ namespace Neo.Oracle
             {
                 // If we want to force the error we don't need to process the transaction
 
-                using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, tx.SystemFee, false, oracle);
+                var fee = tx.SystemFee - NativeContract.Oracle.GetPerRequestFee(snapshot);
+                using var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, fee, false, oracle);
                 engine.LoadScript(tx.Script);
 
                 // User must pay pay for the response extra cost in order to reduce the size of the oracle response
