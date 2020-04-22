@@ -44,9 +44,8 @@ namespace Neo.SmartContract.Native.Tokens
             if (state.VoteTo != null)
             {
                 StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
-                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
+                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes += amount;
-                storage_validator.Value = state_validator.ToByteArray();
             }
         }
 
@@ -55,7 +54,6 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);
-            engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
         }
 
         private BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
@@ -130,7 +128,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
-            AccountState state = new AccountState(storage.Value);
+            AccountState state = storage.GetInteroperable<AccountState>();
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
@@ -146,13 +144,9 @@ namespace Neo.SmartContract.Native.Tokens
         private bool RegisterCandidate(StoreView snapshot, ECPoint pubkey)
         {
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
-            StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem
-            {
-                Value = new CandidateState().ToByteArray()
-            });
-            CandidateState state = CandidateState.FromByteArray(item.Value);
+            StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem(new CandidateState()));
+            CandidateState state = item.GetInteroperable<CandidateState>();
             state.Registered = true;
-            item.Value = state.ToByteArray();
             return true;
         }
 
@@ -170,16 +164,11 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
             if (snapshot.Storages.TryGet(key) is null) return true;
             StorageItem item = snapshot.Storages.GetAndChange(key);
-            CandidateState state = CandidateState.FromByteArray(item.Value);
+            CandidateState state = item.GetInteroperable<CandidateState>();
             if (state.Votes.IsZero)
-            {
                 snapshot.Storages.Delete(key);
-            }
             else
-            {
                 state.Registered = false;
-                item.Value = state.ToByteArray();
-            }
             return true;
         }
 
@@ -197,29 +186,25 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key_account = CreateAccountKey(account);
             if (snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = snapshot.Storages.GetAndChange(key_account);
-            AccountState state_account = new AccountState(storage_account.Value);
+            AccountState state_account = storage_account.GetInteroperable<AccountState>();
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray());
                 StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
-                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
+                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes -= state_account.Balance;
                 if (!state_validator.Registered && state_validator.Votes.IsZero)
                     snapshot.Storages.Delete(key);
-                else
-                    storage_validator.Value = state_validator.ToByteArray();
             }
             state_account.VoteTo = voteTo;
-            storage_account.Value = state_account.ToByteArray();
             if (voteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, voteTo.ToArray());
                 if (snapshot.Storages.TryGet(key) is null) return false;
                 StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
-                CandidateState state_validator = CandidateState.FromByteArray(storage_validator.Value);
+                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 if (!state_validator.Registered) return false;
                 state_validator.Votes += state_account.Balance;
-                storage_validator.Value = state_validator.ToByteArray();
             }
             return true;
         }
@@ -236,7 +221,7 @@ namespace Neo.SmartContract.Native.Tokens
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
-                CandidateState.FromByteArray(p.Value.Value)
+                p.Value.GetInteroperable<CandidateState>()
             )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
         }
 
@@ -285,49 +270,38 @@ namespace Neo.SmartContract.Native.Tokens
             public uint BalanceHeight;
             public ECPoint VoteTo;
 
-            public AccountState()
+            public override void FromStackItem(StackItem stackItem)
             {
-            }
-
-            public AccountState(byte[] data)
-                : base(data)
-            {
-            }
-
-            protected override void FromStruct(Struct @struct)
-            {
-                base.FromStruct(@struct);
+                base.FromStackItem(stackItem);
+                Struct @struct = (Struct)stackItem;
                 BalanceHeight = (uint)@struct[1].GetBigInteger();
                 VoteTo = @struct[2].IsNull ? null : @struct[2].GetSpan().AsSerializable<ECPoint>();
             }
 
-            protected override Struct ToStruct()
+            public override StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                Struct @struct = base.ToStruct();
+                Struct @struct = (Struct)base.ToStackItem(referenceCounter);
                 @struct.Add(BalanceHeight);
                 @struct.Add(VoteTo?.ToArray() ?? StackItem.Null);
                 return @struct;
             }
         }
 
-        internal class CandidateState
+        internal class CandidateState : IInteroperable
         {
             public bool Registered = true;
             public BigInteger Votes;
 
-            public static CandidateState FromByteArray(byte[] data)
+            public void FromStackItem(StackItem stackItem)
             {
-                Struct @struct = (Struct)BinarySerializer.Deserialize(data, 16, 32);
-                return new CandidateState
-                {
-                    Registered = @struct[0].ToBoolean(),
-                    Votes = @struct[1].GetBigInteger()
-                };
+                Struct @struct = (Struct)stackItem;
+                Registered = @struct[0].ToBoolean();
+                Votes = @struct[1].GetBigInteger();
             }
 
-            public byte[] ToByteArray()
+            public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                return BinarySerializer.Serialize(new Struct { Registered, Votes }, 32);
+                return new Struct(referenceCounter) { Registered, Votes };
             }
         }
     }
