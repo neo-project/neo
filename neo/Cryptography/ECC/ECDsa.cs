@@ -104,5 +104,51 @@ namespace Neo.Cryptography.ECC
             BigInteger v = point.X.Value.Mod(curve.N);
             return v.Equals(r);
         }
+
+        public static ECPoint KeyRecover(ECCurve curve, BigInteger r, BigInteger s, byte[] msg, bool IsEven, bool doChecks)
+        {
+            // calculate h
+            BigInteger h = (curve.Q + 1 + 2 * (BigInteger)Math.Sqrt((double)curve.Q)) / curve.N;
+            BigInteger e;
+            ECPoint Q = new ECPoint();
+            int messageBitLength;
+
+            for (int j = 0; j <= h; j++)
+            {
+                // step 1.1 x = (n * i) + r
+                BigInteger Rx = curve.N * j + r;
+                if (Rx > curve.Q) break;
+
+                // step 1.2 and 1.3 get point R
+                ECPoint R;
+                if (IsEven)
+                {
+                    R = ECPoint.DecompressPoint(0, Rx, curve);
+                }
+                else
+                {
+                    R = ECPoint.DecompressPoint(1, Rx, curve);
+                }
+                if (doChecks)
+                {
+                    if (ECPoint.Multiply(R, curve.N) != curve.Infinity)
+                        continue;
+                }
+
+                // step 1.5 compute e
+                messageBitLength = msg.Length * 8;
+                e = new BigInteger(msg.Reverse().Concat(new byte[1]).ToArray());
+                if (curve.N.GetBitLength() < messageBitLength)
+                {
+                    e >>= messageBitLength - curve.N.GetBitLength();
+                }
+
+                // step 1.6 Q = r^-1 (sR-eG)
+                BigInteger invr = r.ModInverse(curve.N);
+                ECPoint t0 = ECPoint.Multiply(R, s) - ECPoint.Multiply(curve.G, e);
+                Q = ECPoint.Multiply(t0, invr);
+            }
+            return Q;
+        }
     }
 }
