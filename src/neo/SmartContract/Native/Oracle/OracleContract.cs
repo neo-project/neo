@@ -365,8 +365,7 @@ namespace Neo.SmartContract.Native.Oracle
                 {
                     ContractHash = filterContractItem is PrimitiveType filterContract ? new UInt160(filterContract.Span) : engine.CallingScriptHash,
                     FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
-                    FilterArgs = filterArgsItem is PrimitiveType filterArgs ? Encoding.UTF8.GetString(filterArgs.Span) : "",
-
+                    FilterArgs = filterArgsItem is PrimitiveType filterArgs ? Encoding.UTF8.GetString(filterArgs.Span) : ""
                 };
             }
             else

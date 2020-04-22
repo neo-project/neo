@@ -162,7 +162,7 @@ namespace Neo.VM
                     sb.Emit(OpCode.PUSHNULL);
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException(obj.GetType().FullName);
             }
             return sb;
         }
