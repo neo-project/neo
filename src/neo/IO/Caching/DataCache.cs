@@ -219,7 +219,7 @@ namespace Neo.IO.Caching
                 {
                     if (trackable.State == TrackState.Deleted)
                     {
-                        if (factory == null) throw new KeyNotFoundException();
+                        if (factory == null) return null;
                         trackable.Item = factory();
                         trackable.State = TrackState.Changed;
                     }
@@ -237,7 +237,7 @@ namespace Neo.IO.Caching
                     };
                     if (trackable.Item == null)
                     {
-                        if (factory == null) throw new KeyNotFoundException();
+                        if (factory == null) return null;
                         trackable.Item = factory();
                         trackable.State = TrackState.Added;
                     }
