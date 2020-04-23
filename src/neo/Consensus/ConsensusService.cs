@@ -177,7 +177,7 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    // Too long (if changeview happens during consensus) or too short (which will occur during synchronization)
+                    // Too long (if changeview happens during consensus) or too short (which will occur during synchronization) 
                     // consensus period will be filtered. Only normal consensus should be taken into account.
                     if (block_received_gap > Blockchain.TimePerBlock / 3 && block_received_gap < Blockchain.TimePerBlock * 2)
                     {
