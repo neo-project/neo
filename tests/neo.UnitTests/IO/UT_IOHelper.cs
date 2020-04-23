@@ -286,45 +286,6 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestReadBytesWithGrouping()
-        {
-            for (int i = 0; i < 2; i++)
-            {
-                if (i == 0)
-                {
-                    byte[] caseArray = new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA};
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
-                    Neo.IO.Helper.WriteBytesWithGrouping(writer, caseArray);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
-                    byte[] result = Neo.IO.Helper.ReadBytesWithGrouping(reader);
-                    Assert.AreEqual(Encoding.Default.GetString(caseArray), Encoding.Default.GetString(result));
-                }
-                else
-                {
-                    byte[] caseArray = new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
-                                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x11};
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
-                    writer.Write(caseArray);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
-                    Action action = () => Neo.IO.Helper.ReadBytesWithGrouping(reader);
-                    action.Should().Throw<FormatException>();
-                }
-            }
-        }
-
-        [TestMethod]
         public void TestReadFixedString()
         {
             MemoryStream stream = new MemoryStream();
@@ -472,28 +433,6 @@ namespace Neo.UnitTests.IO
                                                                          0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
-        }
-
-
-        [TestMethod]
-        public void TestWriteBytesWithGrouping()
-        {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            Neo.IO.Helper.WriteBytesWithGrouping(writer, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA});
-            stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
-            stream.Read(byteArray, 0, (int)stream.Length);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
-                                                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x04}), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
