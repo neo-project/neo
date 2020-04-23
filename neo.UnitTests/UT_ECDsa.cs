@@ -15,10 +15,10 @@ namespace Neo.Cryptography.ECC.Tests
         private ECDsa ecdsa;
 
 
-        public static byte[] generatekey(int privateKeyLength) 
+        public static byte[] generatekey(int privateKeyLength)
         {
             byte[] privateKey = new byte[privateKeyLength];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create()) 
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(privateKey);
             }
@@ -29,7 +29,7 @@ namespace Neo.Cryptography.ECC.Tests
         public void KeyRecoverTest()
         {
             byte[] privateKey = generatekey(32);
-            ECPoint publickey= ECCurve.Secp256k1.G * privateKey;
+            ECPoint publickey = ECCurve.Secp256k1.G * privateKey;
             ecdsa = new ECDsa(privateKey, ECCurve.Secp256k1);
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
             BigInteger[] signatures = ecdsa.GenerateSignature(message);
@@ -37,7 +37,7 @@ namespace Neo.Cryptography.ECC.Tests
             ECPoint recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], signatures[1], message, true, true);
             ECPoint recoverKey2 = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], signatures[1], message, false, true);
             //due to generated signature does not have Ytilde.
-            Assert.IsTrue(recoverKey.Equals(publickey)||recoverKey2.Equals(publickey));
+            Assert.IsTrue(recoverKey.Equals(publickey) || recoverKey2.Equals(publickey));
 
             //wrong key part
             var r = new System.Numerics.BigInteger(generatekey(32));
@@ -47,7 +47,7 @@ namespace Neo.Cryptography.ECC.Tests
                 Assert.IsFalse(recoverKey.Equals(publickey));
             }
             //wrong key may cause exception in decompresspoint
-            catch {}
+            catch { }
 
             try
             {
@@ -56,7 +56,7 @@ namespace Neo.Cryptography.ECC.Tests
                 Assert.IsFalse(recoverKey.Equals(publickey));
             }
             //wrong key may cause exception in decompresspoint
-            catch {}
+            catch { }
         }
     }
 }
