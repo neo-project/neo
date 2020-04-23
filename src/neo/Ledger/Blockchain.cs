@@ -66,6 +66,7 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
+        public Boolean isPersisting = false;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -472,6 +473,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
+            isPersisting = true;
             using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
@@ -542,6 +544,7 @@ namespace Neo.Ledger
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
+            isPersisting = false;
         }
 
         protected override void PostStop()

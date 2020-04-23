@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
+using System.Threading;
 
 namespace Neo.Network.P2P
 {
@@ -107,6 +108,10 @@ namespace Neo.Network.P2P
                     OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
+                    while (Blockchain.Singleton.isPersisting)
+                    {
+                        Thread.Sleep(50);
+                    }
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
