@@ -1,6 +1,6 @@
 using Neo.IO;
 using Neo.IO.Json;
-using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Max length for a valid Contract Manifest
         /// </summary>
-        public const int MaxLength = 2048;
+        public const int MaxLength = 4096;
 
         /// <summary>
         /// Serialized size
@@ -65,31 +65,6 @@ namespace Neo.SmartContract.Manifest
         public JObject Extra { get; set; }
 
         /// <summary>
-        /// Create Default Contract manifest
-        /// </summary>
-        /// <param name="hash">Hash</param>
-        /// <returns>Return default manifest for this contract</returns>
-        public static ContractManifest CreateDefault(UInt160 hash)
-        {
-            return new ContractManifest()
-            {
-                Permissions = new[] { ContractPermission.DefaultPermission },
-                Abi = new ContractAbi()
-                {
-                    Hash = hash,
-                    EntryPoint = ContractMethodDescriptor.DefaultEntryPoint,
-                    Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
-                },
-                Features = ContractFeatures.NoProperty,
-                Groups = new ContractGroup[0],
-                SafeMethods = WildcardContainer<string>.Create(),
-                Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = null,
-            };
-        }
-
-        /// <summary>
         /// Return true if is allowed
         /// </summary>
         /// <param name="manifest">Manifest</param>
@@ -117,7 +92,9 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractManifest</returns>
-        public static ContractManifest Parse(string json) => FromJson(JObject.Parse(json));
+        public static ContractManifest Parse(ReadOnlySpan<byte> json) => FromJson(JObject.Parse(json));
+
+        internal static ContractManifest Parse(string json) => FromJson(JObject.Parse(json));
 
         /// <summary
         /// To json

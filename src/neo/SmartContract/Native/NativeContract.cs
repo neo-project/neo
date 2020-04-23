@@ -17,10 +17,11 @@ namespace Neo.SmartContract.Native
 {
     public abstract class NativeContract
     {
-        private static readonly List<NativeContract> contracts = new List<NativeContract>();
+        private static readonly List<NativeContract> contractsList = new List<NativeContract>();
+        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
-        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
@@ -42,7 +43,6 @@ namespace Neo.SmartContract.Native
                 this.Script = sb.ToArray();
             }
             this.Hash = Script.ToScriptHash();
-            this.Manifest = ContractManifest.CreateDefault(this.Hash);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             List<string> safeMethods = new List<string>();
             foreach (MethodInfo method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
@@ -64,9 +64,23 @@ namespace Neo.SmartContract.Native
                     RequiredCallFlags = attribute.SafeMethod ? CallFlags.None : CallFlags.AllowModifyStates
                 });
             }
-            this.Manifest.Abi.Methods = descriptors.ToArray();
-            this.Manifest.SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray());
-            contracts.Add(this);
+            this.Manifest = new ContractManifest
+            {
+                Permissions = new[] { ContractPermission.DefaultPermission },
+                Abi = new ContractAbi()
+                {
+                    Hash = Hash,
+                    Events = new ContractEventDescriptor[0],
+                    Methods = descriptors.ToArray()
+                },
+                Features = ContractFeatures.NoProperty,
+                Groups = new ContractGroup[0],
+                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
+                Trusts = WildcardContainer<UInt160>.Create(),
+                Extra = null,
+            };
+            contractsList.Add(this);
+            contractsDictionary.Add(Hash, this);
         }
 
         protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
@@ -100,6 +114,11 @@ namespace Neo.SmartContract.Native
             StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
+        }
+
+        public static bool IsNative(UInt160 hash)
+        {
+            return contractsDictionary.ContainsKey(hash);
         }
 
         internal long GetPrice(EvaluationStack stack, StoreView snapshot)

@@ -107,16 +107,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -184,16 +177,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -302,16 +288,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -395,16 +374,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -489,16 +461,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -586,16 +551,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 // Make transaction
                 // Manually creating script
@@ -644,16 +602,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -743,16 +694,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 // Make transaction
                 // Manually creating script
@@ -806,7 +750,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(2, hashes.Length);
-            Assert.AreNotEqual(RelayResultReason.Succeed, txSimple.VerifyForEachBlock(snapshot, BigInteger.Zero));
+            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyForEachBlock(snapshot, BigInteger.Zero));
         }
 
         [TestMethod]
@@ -1001,16 +945,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
-                {
-                    Value = new Nep5AccountState().ToByteArray()
-                });
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
 
-                entry.Value = new Nep5AccountState()
-                {
-                    Balance = 10000 * NativeContract.GAS.Factor
-                }
-                .ToByteArray();
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -1097,7 +1034,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x11e3ee692015f0cd3cb8b6db7a4fc37568540f020cb9ca497a9917c81f20b62f");
+            jObj["hash"].AsString().Should().Be("0x8b86429eb984728752552ee8d69536d36ab985bbe383c6a6eeb2100f6f29b81b");
             jObj["size"].AsNumber().Should().Be(83);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);

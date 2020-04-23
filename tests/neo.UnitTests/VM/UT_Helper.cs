@@ -27,6 +27,27 @@ namespace Neo.UnitTests.VMT
         }
 
         [TestMethod]
+        public void TestToJson()
+        {
+            var item = new VM.Types.Array();
+            item.Add(5);
+            item.Add("hello world");
+            item.Add(new byte[] { 1, 2, 3 });
+            item.Add(true);
+
+            Assert.AreEqual("{\"type\":\"Integer\",\"value\":\"5\"}", item[0].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"}", item[1].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"AQID\"}", item[2].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"Boolean\",\"value\":true}", item[3].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"Array\",\"value\":[{\"type\":\"Integer\",\"value\":\"5\"},{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"},{\"type\":\"ByteString\",\"value\":\"AQID\"},{\"type\":\"Boolean\",\"value\":true}]}", item.ToJson().ToString());
+
+            var item2 = new VM.Types.Map();
+            item2[1] = new Pointer(new Script(new byte[0]), 0);
+
+            Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString());
+        }
+
+        [TestMethod]
         public void TestEmitAppCall1()
         {
             //format:(byte)0x10+(byte)OpCode.NEWARRAY+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
@@ -518,7 +539,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParameter2ByteArray()
         {
-            StackItem item = new VM.Types.ByteArray(new byte[] { 0x00 });
+            StackItem item = new VM.Types.ByteString(new byte[] { 0x00 });
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.ByteArray, parameter.Type);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00 }), Encoding.Default.GetString((byte[])parameter.Value));

@@ -69,7 +69,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
                 Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                act.Should().Throw<InvalidOperationException>();
+                act.Should().Throw<InvalidCastException>();
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
@@ -82,7 +82,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
                 Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                act.Should().Throw<InvalidOperationException>();
+                act.Should().Throw<InvalidCastException>();
             }
         }
 

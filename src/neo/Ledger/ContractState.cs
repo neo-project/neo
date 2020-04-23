@@ -58,6 +58,11 @@ namespace Neo.Ledger
             Manifest = replica.Manifest.Clone();
         }
 
+        void IInteroperable.FromStackItem(StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Id);

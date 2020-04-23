@@ -6,27 +6,13 @@ namespace Neo.SmartContract.Manifest
 {
     public class ContractMethodDescriptor : ContractEventDescriptor
     {
-        /// <summary>
-        /// Default entry point
-        /// </summary>
-        public static readonly ContractMethodDescriptor DefaultEntryPoint = new ContractMethodDescriptor()
+        private int _offset;
+
+        public int Offset
         {
-            Name = "Main",
-            Parameters = new ContractParameterDefinition[]
-            {
-                new ContractParameterDefinition()
-                {
-                        Name = "operation",
-                        Type = ContractParameterType.String
-                },
-                new ContractParameterDefinition()
-                {
-                        Name = "args",
-                        Type = ContractParameterType.Array
-                }
-            },
-            ReturnType = ContractParameterType.Any
-        };
+            get => _offset;
+            set => _offset = value >= 0 ? value : throw new FormatException();
+        }
 
         /// <summary>
         /// Returntype indicates the return type of the method. It can be one of the following values: 
@@ -40,6 +26,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Name = Name,
                 Parameters = Parameters.Select(p => p.Clone()).ToArray(),
+                Offset = Offset,
                 ReturnType = ReturnType
             };
         }
@@ -55,6 +42,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
+                Offset = (int)json["offset"].AsNumber(),
                 ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returnType"].AsString()),
             };
         }
@@ -62,6 +50,7 @@ namespace Neo.SmartContract.Manifest
         public override JObject ToJson()
         {
             var json = base.ToJson();
+            json["offset"] = Offset;
             json["returnType"] = ReturnType.ToString();
             return json;
         }
