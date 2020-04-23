@@ -30,7 +30,7 @@ namespace Neo.Ledger
         public DateTime LastBroadcastTimestamp;
 
         /// <summary>
-        /// Check if already was found the oracle response in the storage
+        /// check if oracle response was already found in storage
         /// </summary>
         private bool _responseExists;
 
