@@ -507,6 +507,10 @@ namespace Neo.Ledger
                         {
                             engine.Snapshot.Commit();
                         }
+                        else
+                        {
+                            clonedSnapshot = snapshot.Clone();
+                        }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
