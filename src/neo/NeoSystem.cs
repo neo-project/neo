@@ -16,7 +16,8 @@ namespace Neo
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
-            $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
+            $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}" +
+            $"customDispatcher {{ type: \"ForkJoinDispatcher\", throughput = 100, executor = fork-join-executor, dedicated-thread-pool{{thread-count = 2, deadlock-timeout = 3s, threadtype = foreground}} }}");
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         internal IActorRef TaskManager { get; }
@@ -32,9 +33,9 @@ namespace Neo
             this.store = string.IsNullOrEmpty(storageEngine) || storageEngine == nameof(MemoryStore)
                 ? new MemoryStore()
                 : Plugin.Storages[storageEngine].GetStore();
-            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
-            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
-            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store).WithDispatcher("customDispatcher"));
+            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this).WithDispatcher("akka.actor.default-dispatcher"));
+            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this).WithDispatcher("akka.actor.default-dispatcher"));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnPluginsLoaded();
         }
@@ -70,7 +71,7 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
         {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet).WithDispatcher("customDispatcher"));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 

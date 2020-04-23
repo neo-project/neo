@@ -225,7 +225,7 @@ namespace Neo.Network.P2P
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(system, connection, remote, local);
+            return RemoteNode.Props(system, connection, remote, local).WithDispatcher("akka.actor.default-dispatcher");
         }
     }
 }
