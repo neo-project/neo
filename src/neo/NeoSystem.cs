@@ -85,11 +85,12 @@ namespace Neo
             Oracle.Tell(new OracleService.StartMessage() { NumberOfTasks = numberOfTasks }, Blockchain);
         }
 
-        public void StopOracle()
+        public bool StopOracle()
         {
-            if (Oracle == null) return;
+            if (Oracle == null) return false;
             Oracle.Tell(new OracleService.StopMessage(), Blockchain);
             Oracle = null;
+            return true;
         }
 
         public void StartNode(ChannelsConfig config)
