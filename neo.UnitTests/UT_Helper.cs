@@ -1,8 +1,12 @@
-﻿using FluentAssertions;
+﻿using System.Numerics;
+using System.Globalization;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.SmartContract;
+using Neo.Cryptography;
 using Neo.Wallets;
+using Neo.Cryptography.ECC;
 
 namespace Neo.UnitTests
 {
@@ -38,5 +42,13 @@ namespace Neo.UnitTests
             res.Should().Be(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
         }
 
+        [TestMethod()]
+        public void Keccak256Test()
+        {
+            byte[] messageA = System.Text.Encoding.Default.GetBytes("HelloWorld");
+            byte[] messageB = System.Text.Encoding.Default.GetBytes("HiWorld");
+            Assert.IsFalse(messageA.Keccak256().Equals(messageB.Keccak256()));
+            Assert.IsTrue(messageA.Keccak256().Length == 32 && messageB.Keccak256().Length == 32);
+        }
     }
 }

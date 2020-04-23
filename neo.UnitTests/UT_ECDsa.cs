@@ -1,10 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
-using Neo.Wallets;
-using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 using System.Numerics;
 
 namespace Neo.Cryptography.ECC.Tests
