@@ -488,6 +488,7 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
+                StoreView clonedSnapshot = snapshot.Clone();
                 foreach (Transaction tx in block.Transactions)
                 {
                     var state = new TransactionState
@@ -498,7 +499,7 @@ namespace Neo.Ledger
 
                     snapshot.Transactions.Add(tx.Hash, state);
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
