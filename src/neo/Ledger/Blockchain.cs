@@ -505,7 +505,7 @@ namespace Neo.Ledger
                         state.VMState = engine.Execute();
                         if (state.VMState == VMState.HALT)
                         {
-                            engine.Snapshot.Commit();
+                            clonedSnapshot.Commit();
                         }
                         else
                         {
