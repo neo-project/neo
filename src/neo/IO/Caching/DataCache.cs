@@ -16,6 +16,7 @@ namespace Neo.IO.Caching
         }
 
         private readonly Dictionary<TKey, Trackable> dictionary = new Dictionary<TKey, Trackable>();
+        private readonly HashSet<TKey> nonexistentKeySet = new HashSet<TKey>();
 
         public TValue this[TKey key]
         {
@@ -36,6 +37,7 @@ namespace Neo.IO.Caching
                             Item = GetInternal(key),
                             State = TrackState.None
                         };
+                        nonexistentKeySet.Remove(key);
                         dictionary.Add(key, trackable);
                     }
                     return trackable.Item;
@@ -112,8 +114,13 @@ namespace Neo.IO.Caching
                 }
                 else
                 {
+                    if (nonexistentKeySet.Contains(key)) return;
                     TValue item = TryGetInternal(key);
-                    if (item == null) return;
+                    if (item == null)
+                    {
+                        nonexistentKeySet.Add(key);
+                        return;
+                    }
                     dictionary.Add(key, new Trackable
                     {
                         Key = key,
@@ -230,14 +237,19 @@ namespace Neo.IO.Caching
                 }
                 else
                 {
+                    bool nonexistanceChecked = nonexistentKeySet.Contains(key);
                     trackable = new Trackable
                     {
                         Key = key,
-                        Item = TryGetInternal(key)
+                        Item = nonexistanceChecked ? null : TryGetInternal(key)
                     };
                     if (trackable.Item == null)
                     {
-                        if (factory == null) return null;
+                        if (factory == null)
+                        {
+                            if (!nonexistanceChecked) nonexistentKeySet.Add(key);
+                            return null;
+                        }
                         trackable.Item = factory();
                         trackable.State = TrackState.Added;
                     }
@@ -245,6 +257,7 @@ namespace Neo.IO.Caching
                     {
                         trackable.State = TrackState.Changed;
                     }
+                    if (nonexistanceChecked) nonexistentKeySet.Remove(key);
                     dictionary.Add(key, trackable);
                 }
                 return trackable.Item;
@@ -265,10 +278,11 @@ namespace Neo.IO.Caching
                 }
                 else
                 {
+                    bool nonexistanceChecked = nonexistentKeySet.Contains(key);
                     trackable = new Trackable
                     {
                         Key = key,
-                        Item = TryGetInternal(key)
+                        Item = nonexistanceChecked ? null : TryGetInternal(key)
                     };
                     if (trackable.Item == null)
                     {
@@ -279,6 +293,7 @@ namespace Neo.IO.Caching
                     {
                         trackable.State = TrackState.None;
                     }
+                    if (nonexistanceChecked) nonexistentKeySet.Remove(key);
                     dictionary.Add(key, trackable);
                 }
                 return trackable.Item;
@@ -294,8 +309,13 @@ namespace Neo.IO.Caching
                     if (trackable.State == TrackState.Deleted) return null;
                     return trackable.Item;
                 }
+                if (nonexistentKeySet.Contains(key)) return null;
                 TValue value = TryGetInternal(key);
-                if (value == null) return null;
+                if (value == null)
+                {
+                    nonexistentKeySet.Add(key);
+                    return null;
+                }
                 dictionary.Add(key, new Trackable
                 {
                     Key = key,
