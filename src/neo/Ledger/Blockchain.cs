@@ -270,7 +270,7 @@ namespace Neo.Ledger
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
         {
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
-            MemPool.InvalidateAllTransactions();
+            MemPool.InvalidateAllTransactions(currentSnapshot);
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)

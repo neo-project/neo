@@ -29,11 +29,17 @@ namespace Neo.Ledger
         /// </summary>
         public DateTime LastBroadcastTimestamp;
 
+        /// <summary>
+        /// Check if already was found the oracle response in the storage
+        /// </summary>
+        private bool _responseExists;
+
         internal PoolItem(Transaction tx)
         {
             Tx = tx;
             Timestamp = TimeProvider.Current.UtcNow;
             LastBroadcastTimestamp = Timestamp;
+            _responseExists = false;
         }
 
         internal class DelayState
@@ -42,7 +48,17 @@ namespace Neo.Ledger
             public HashSet<Transaction> Delayed = new HashSet<Transaction>();
         }
 
-        public bool IsReady(StoreView snapshot, DelayState state)
+        public void CheckOracleResponse(StoreView snapshot)
+        {
+            if (!_responseExists &&
+                Tx.Version == TransactionVersion.OracleRequest &&
+                NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
+            {
+                _responseExists = true;
+            }
+        }
+
+        public bool IsReady(DelayState state)
         {
             switch (Tx.Version)
             {
@@ -56,7 +72,7 @@ namespace Neo.Ledger
                         }
                         else
                         {
-                            if (NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
+                            if (_responseExists)
                             {
                                 // The response it's waiting to be consumed (block+n)
 

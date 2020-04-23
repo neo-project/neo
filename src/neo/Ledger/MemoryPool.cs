@@ -168,7 +168,7 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerable<Transaction> GetVerifiedTransactions(StoreView snapshot)
+        public IEnumerable<Transaction> GetVerifiedTransactions()
         {
             Transaction[] ret;
             var state = new PoolItem.DelayState();
@@ -177,7 +177,7 @@ namespace Neo.Ledger
             try
             {
                 ret = _unsortedTransactions
-                    .Where(u => u.Value.IsReady(snapshot, state))
+                    .Where(u => u.Value.IsReady(state))
                     .Select(p => p.Value.Tx)
                     .ToArray();
             }
@@ -214,7 +214,7 @@ namespace Neo.Ledger
             }
         }
 
-        public IEnumerable<Transaction> GetSortedVerifiedTransactions(StoreView snapshot)
+        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
         {
             Transaction[] ret;
             var state = new PoolItem.DelayState();
@@ -224,7 +224,7 @@ namespace Neo.Ledger
             {
                 ret = _sortedTransactions
                     .Reverse()
-                    .Where(u => u.IsReady(snapshot, state))
+                    .Where(u => u.IsReady(state))
                     .Select(p => p.Tx)
                     .ToArray();
             }
@@ -369,12 +369,13 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void InvalidateVerifiedTransactions()
+        internal void InvalidateVerifiedTransactions(StoreView snapshot)
         {
             foreach (PoolItem item in _sortedTransactions)
             {
                 if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
                     _unverifiedSortedTransactions.Add(item);
+                item.CheckOracleResponse(snapshot);
             }
 
             // Clear the verified transactions now, since they all must be reverified.
@@ -399,7 +400,7 @@ namespace Neo.Ledger
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions
-                InvalidateVerifiedTransactions();
+                InvalidateVerifiedTransactions(snapshot);
 
                 if (policyChanged)
                 {
@@ -429,12 +430,12 @@ namespace Neo.Ledger
                 _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
-        internal void InvalidateAllTransactions()
+        internal void InvalidateAllTransactions(StoreView snapshot)
         {
             _txRwLock.EnterWriteLock();
             try
             {
-                InvalidateVerifiedTransactions();
+                InvalidateVerifiedTransactions(snapshot);
             }
             finally
             {
