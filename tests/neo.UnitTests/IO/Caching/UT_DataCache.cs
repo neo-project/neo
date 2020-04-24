@@ -225,6 +225,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
             myDataCache.InnerDict[new MyKey("key3")].Should().Be(new MyValue("value4"));
+            myDataCache.Commit();
         }
 
         [TestMethod]
@@ -244,6 +245,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Delete(new MyKey("key2"));
             myDataCache.Commit();
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
+            myDataCache.Commit();
         }
 
         [TestMethod]
@@ -261,6 +263,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.TryGet(new MyKey("key2")).Should().BeNull();
             myDataCache.InnerDict.ContainsKey(new MyKey("key1")).Should().BeFalse();
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
+            myDataCache.Commit();
         }
 
         [TestMethod]

@@ -80,12 +80,15 @@ namespace Neo.IO.Caching
                 {
                     case TrackState.Added:
                         AddInternal(trackable.Key, trackable.Item);
+                        trackable.State = TrackState.None;
                         break;
                     case TrackState.Changed:
                         UpdateInternal(trackable.Key, trackable.Item);
+                        trackable.State = TrackState.None;
                         break;
                     case TrackState.Deleted:
                         DeleteInternal(trackable.Key);
+                        dictionary.Remove(trackable.Key);
                         break;
                 }
         }
