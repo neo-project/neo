@@ -51,12 +51,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, AccountState state)
         {
-            BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
+            BigInteger gas = CalculateBonus(state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);
         }
 
-        private BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
+        private BigInteger CalculateBonus(BigInteger value, uint start, uint end)
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             AccountState state = storage.GetInteroperable<AccountState>();
-            return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
+            return CalculateBonus(state.Balance, state.BalanceHeight, end);
         }
 
         [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]

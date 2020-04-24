@@ -84,7 +84,7 @@ namespace Neo.Network.P2P
             foreach (UInt256 hash in hashes)
             {
                 IncrementGlobalTask(hash);
-                session.Tasks[hash] = DateTime.UtcNow;
+                session.Tasks[hash] = TimeProvider.Current.UtcNow;
             }
 
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
@@ -200,11 +200,9 @@ namespace Neo.Network.P2P
         {
             foreach (TaskSession session in sessions.Values)
                 foreach (var task in session.Tasks.ToArray())
-                    if (DateTime.UtcNow - task.Value > TaskTimeout)
-                    {
-                        if (session.Tasks.Remove(task.Key))
-                            DecrementGlobalTask(task.Key);
-                    }
+                    if (TimeProvider.Current.UtcNow - task.Value > TaskTimeout &&
+                        session.Tasks.Remove(task.Key))
+                        DecrementGlobalTask(task.Key);
             foreach (TaskSession session in sessions.Values)
                 RequestTasks(session);
         }
@@ -239,7 +237,7 @@ namespace Neo.Network.P2P
                     }
                     session.AvailableTasks.Remove(hashes);
                     foreach (UInt256 hash in hashes)
-                        session.Tasks[hash] = DateTime.UtcNow;
+                        session.Tasks[hash] = TimeProvider.Current.UtcNow;
                     foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
                         session.RemoteNode.Tell(Message.Create(MessageCommand.GetData, group));
                     return;
@@ -250,7 +248,7 @@ namespace Neo.Network.P2P
             // If not HeaderTask pending to be processed it should ask for more Blocks
             if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.LastBlockIndex)
             {
-                session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
+                session.Tasks[HeaderTaskHash] = TimeProvider.Current.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
             }

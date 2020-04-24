@@ -20,7 +20,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         // This limits maximum number of AllowedContracts or AllowedGroups here
-        private int MaxSubitems = 16;
+        private const int MaxSubitems = 16;
 
         public int Size =>
             /*Account*/             UInt160.Length +

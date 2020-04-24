@@ -4,7 +4,7 @@ namespace Neo.Wallets.NEP6
 {
     internal class WalletLocker : IDisposable
     {
-        private NEP6Wallet wallet;
+        private readonly NEP6Wallet wallet;
 
         public WalletLocker(NEP6Wallet wallet)
         {

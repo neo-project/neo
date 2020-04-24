@@ -145,7 +145,7 @@ namespace Neo.Cryptography
         internal static byte[] ToArray(this SecureString s)
         {
             if (s == null)
-                throw new NullReferenceException();
+                throw new ArgumentNullException();
             if (s.Length == 0)
                 return Array.Empty<byte>();
             List<byte> result = new List<byte>();

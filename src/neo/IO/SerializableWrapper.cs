@@ -7,7 +7,7 @@ namespace Neo.IO
         where T : unmanaged
     {
         private static unsafe readonly int ValueSize = sizeof(T);
-        private T value;
+        private readonly T value;
 
         public SerializableWrapper()
         {

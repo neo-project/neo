@@ -10,7 +10,7 @@ namespace Neo.Network.P2P
     public abstract class Connection : UntypedActor
     {
         internal class Close { public bool Abort; }
-        internal class Ack : Tcp.Event { public static Ack Instance = new Ack(); }
+        internal class Ack : Tcp.Event { public readonly static Ack Instance = new Ack(); }
 
         /// <summary>
         /// connection initial timeout (in seconds) before any package has been accepted

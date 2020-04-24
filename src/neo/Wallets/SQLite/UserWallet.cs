@@ -100,12 +100,9 @@ namespace Neo.Wallets.SQLite
         {
             lock (accounts)
             {
-                if (accounts.TryGetValue(account.ScriptHash, out UserWalletAccount account_old))
+                if (accounts.TryGetValue(account.ScriptHash, out UserWalletAccount account_old) && account.Contract == null)
                 {
-                    if (account.Contract == null)
-                    {
-                        account.Contract = account_old.Contract;
-                    }
+                    account.Contract = account_old.Contract;
                 }
                 accounts[account.ScriptHash] = account;
             }

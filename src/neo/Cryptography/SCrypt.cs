@@ -255,7 +255,7 @@ namespace Neo.Cryptography
             var mac = new HMACSHA256(password);
 
             /* 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen) */
-            PBKDF2_SHA256(mac, password, salt, salt.Length, 1, Ba, p * 128 * r);
+            PBKDF2_SHA256(mac, salt, salt.Length, 1, Ba, p * 128 * r);
 
             fixed (byte* B = Ba)
             fixed (void* V = Va)
@@ -270,12 +270,12 @@ namespace Neo.Cryptography
             }
 
             /* 5: DK <-- PBKDF2(P, B, 1, dkLen) */
-            PBKDF2_SHA256(mac, password, Ba, p * 128 * r, 1, buf, buf.Length);
+            PBKDF2_SHA256(mac, Ba, p * 128 * r, 1, buf, buf.Length);
 
             return buf;
         }
 
-        private static void PBKDF2_SHA256(HMACSHA256 mac, byte[] password, byte[] salt, int saltLength, long iterationCount, byte[] derivedKey, int derivedKeyLength)
+        private static void PBKDF2_SHA256(HMACSHA256 mac, byte[] salt, int saltLength, long iterationCount, byte[] derivedKey, int derivedKeyLength)
         {
             if (derivedKeyLength > (Math.Pow(2, 32) - 1) * 32)
             {

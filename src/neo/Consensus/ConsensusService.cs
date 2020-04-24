@@ -426,15 +426,15 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.SendersFeeMonitor = new SendersFeeMonitor();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
-                if (context.PreparationPayloads[i] != null)
-                    if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
-                        context.PreparationPayloads[i] = null;
+                if (context.PreparationPayloads[i] != null &&
+                    !context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
+                    context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.EnsureHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
-                if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
-                        context.CommitPayloads[i] = null;
+                if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber &&
+                    !Crypto.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    context.CommitPayloads[i] = null;
 
             if (context.TransactionHashes.Length == 0)
             {

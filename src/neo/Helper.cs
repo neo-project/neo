@@ -68,7 +68,7 @@ namespace Neo
             for (int x = 0; x < 8; x++)
                 if ((b[w] & 1 << x) > 0)
                     return x + w * 8;
-            throw new Exception();
+            throw new ArgumentException();
         }
 
         internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
@@ -201,14 +201,6 @@ namespace Neo
         {
             if (i.IsZero) return Array.Empty<byte>();
             return i.ToByteArray();
-        }
-
-        public static string ToHexString(this byte[] value)
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in value)
-                sb.AppendFormat("{0:x2}", b);
-            return sb.ToString();
         }
 
         public static string ToHexString(this byte[] value, bool reverse = false)

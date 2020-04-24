@@ -216,7 +216,7 @@ namespace Neo.UnitTests.Cryptography
 
             SecureString nullString = null;
             Action action = () => nullString.ToArray();
-            action.Should().Throw<NullReferenceException>();
+            action.Should().Throw<ArgumentNullException>();
 
             var zeroString = new SecureString();
             var result = zeroString.ToArray();
