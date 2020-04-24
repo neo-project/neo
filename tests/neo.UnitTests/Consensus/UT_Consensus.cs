@@ -292,10 +292,10 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nBasic commits Signatures verification");
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
             var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData);
-            Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
-            Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false)).Should().BeFalse();
-            Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6].EncodePoint(false)).Should().BeFalse();
-            Crypto.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6].EncodePoint(false)).Should().BeTrue();
+            Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false), Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
+            Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0].EncodePoint(false), Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
+            Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6].EncodePoint(false), Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
+            Crypto.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6].EncodePoint(false), Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeTrue();
             Console.WriteLine("\n==========================");
 
             Console.WriteLine("\n==========================");

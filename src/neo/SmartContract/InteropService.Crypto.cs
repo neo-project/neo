@@ -48,15 +48,15 @@ namespace Neo.SmartContract
 
             private static bool Crypto_ECDsaSecp256r1Verify(ApplicationEngine engine)
             {
-                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Curve.Secp256r1);
+                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Secp256r1);
             }
 
             private static bool Crypto_ECDsaSecp256k1Verify(ApplicationEngine engine)
             {
-                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Curve.Secp256k1);
+                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Secp256k1);
             }
 
-            private static bool Crypto_ECDsaVerify(ApplicationEngine engine, Cryptography.ECC.ECCurve.Curve curve)
+            private static bool Crypto_ECDsaVerify(ApplicationEngine engine, Cryptography.ECC.ECCurve curve)
             {
                 StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
                 ReadOnlySpan<byte> message = item0 switch
@@ -80,15 +80,15 @@ namespace Neo.SmartContract
 
             private static bool Crypto_ECDsaSecp256r1CheckMultiSig(ApplicationEngine engine)
             {
-                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Curve.Secp256r1);
+                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Secp256r1);
             }
 
             private static bool Crypto_ECDsaSecp256k1CheckMultiSig(ApplicationEngine engine)
             {
-                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Curve.Secp256k1);
+                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Secp256k1);
             }
 
-            private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine, Cryptography.ECC.ECCurve.Curve curve)
+            private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine, Cryptography.ECC.ECCurve curve)
             {
                 StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
                 ReadOnlySpan<byte> message = item0 switch
