@@ -298,7 +298,7 @@ namespace Neo.UnitTests.Wallets
             }, UInt160.Zero);
             action.Should().Throw<ArgumentException>();
 
-            /*action = () => wallet.MakeTransaction(new TransferOutput[]
+            action = () => wallet.MakeTransaction(new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -307,7 +307,7 @@ namespace Neo.UnitTests.Wallets
                      Value = new BigDecimal(1,8)
                 }
             }, account.ScriptHash);
-            action.Should().Throw<InvalidOperationException>();*/
+            action.Should().Throw<InvalidOperationException>();
 
             action = () => wallet.MakeTransaction(new TransferOutput[]
             {
