@@ -34,7 +34,7 @@ namespace Neo.Cryptography.ECC.Tests
             {
                 v = true;
             }
-            else 
+            else
             {
                 v = false;
             }
@@ -51,7 +51,7 @@ namespace Neo.Cryptography.ECC.Tests
             catch { }
             s = new System.Numerics.BigInteger(generatekey(32));
             try
-            {                
+            {
                 recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], s, message, true, true);
                 Assert.IsFalse(recoverKey.Equals(publickey));
             }
