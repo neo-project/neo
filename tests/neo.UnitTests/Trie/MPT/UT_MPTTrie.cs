@@ -242,5 +242,18 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             Assert.AreEqual(value.ToHexString(), "abcd");
         }
+
+        [TestMethod]
+        public void TestAddLongerKey()
+        {
+            var store = new MemoryStore();
+            var snapshot = store.GetSnapshot();
+            var mpt = new MPTTrie(null, snapshot, 0);
+            var result = mpt.Put(new byte[] { 0xab }, new byte[] { 0x01 });
+            Assert.IsTrue(result);
+            result = mpt.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x02 });
+            Assert.IsTrue(result);
+            Assert.AreEqual("", mpt.ToJson());
+        }
     }
 }

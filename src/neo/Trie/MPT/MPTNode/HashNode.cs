@@ -56,7 +56,10 @@ namespace Neo.Trie.MPT
         public override JObject ToJson()
         {
             var json = new JObject();
-            json["hash"] = Hash.ToString();
+            if (!this.IsEmptyNode)
+            {
+                json["hash"] = Hash.ToString();
+            }
             return json;
         }
     }

@@ -34,10 +34,19 @@ namespace Neo.Trie.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length == 0 && val is LeafNode v)
+                        if (val is LeafNode v)
                         {
-                            node = v;
-                            db.Put(node);
+                            if (path.Length == 0)
+                            {
+                                node = v;
+                                db.Put(node);
+                                return true;
+                            }
+                            var branch = new BranchNode();
+                            branch.Children[BranchNode.ChildCount - 1] = leafNode;
+                            Put(ref branch.Children[path[0]], path[1..], v);
+                            db.Put(branch);
+                            node = branch;
                             return true;
                         }
                         return false;
@@ -120,7 +129,7 @@ namespace Neo.Trie.MPT
                                 Next = val,
                             };
                             node = newNode;
-                            if (!(val is HashNode)) db.Put(val);
+                            if (val is LeafNode) db.Put(val);
                             db.Put(node);
                             return true;
                         }
