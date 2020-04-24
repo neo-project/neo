@@ -253,7 +253,6 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             result = mpt.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x02 });
             Assert.IsTrue(result);
-            Assert.AreEqual("", mpt.ToJson());
         }
     }
 }
