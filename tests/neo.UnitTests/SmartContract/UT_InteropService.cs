@@ -262,6 +262,15 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestContract_GetCallFlags()
+        {
+            var engine = GetEngine();
+            InteropService.Invoke(engine, InteropService.Contract.GetCallFlags).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger()
+                .Should().Be(((int)CallFlags.All));
+        }
+
+        [TestMethod]
         public void TestRuntime_Platform()
         {
             var engine = GetEngine();
