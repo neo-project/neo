@@ -349,7 +349,7 @@ namespace Neo.Oracle
                     {
                         // We only need to take care about the requests
 
-                        if (tx.Version == TransactionVersion.OracleRequest)
+                        if (tx.Version.HasFlag(TransactionVersion.OracleRequest))
                         {
                             // If it's an OracleRequest and it's new, tell it to OracleService
 

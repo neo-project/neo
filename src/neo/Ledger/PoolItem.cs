@@ -51,7 +51,7 @@ namespace Neo.Ledger
         public void CheckOracleResponse(StoreView snapshot)
         {
             if (!_responseExists &&
-                Tx.Version == TransactionVersion.OracleRequest &&
+                Tx.Version.HasFlag(TransactionVersion.OracleRequest) &&
                 NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
             {
                 _responseExists = true;
@@ -60,39 +60,36 @@ namespace Neo.Ledger
 
         public bool IsReady(DelayState state)
         {
-            switch (Tx.Version)
+            if (Tx.Version.HasFlag(TransactionVersion.OracleResponse))
             {
-                case TransactionVersion.OracleRequest:
+                state.Allowed.Add(Tx.OracleRequestTx);
+            }
+
+            if (Tx.Version.HasFlag(TransactionVersion.OracleResponse))
+            {
+                if (state.Allowed.Remove(Tx.Hash))
+                {
+                    // The response was already fetched, we can put request and response in the same block
+
+                    return true;
+                }
+                else
+                {
+                    if (_responseExists)
                     {
-                        if (state.Allowed.Remove(Tx.Hash))
-                        {
-                            // The response was already fetched, we can put request and response in the same block
+                        // The response it's waiting to be consumed (block+n)
 
-                            return true;
-                        }
-                        else
-                        {
-                            if (_responseExists)
-                            {
-                                // The response it's waiting to be consumed (block+n)
-
-                                return true;
-                            }
-                            else
-                            {
-                                // If the response it's in the pool it's located after the request
-                                // We save the request in order to put after the response
-
-                                state.Delayed.Add(Tx);
-                                return false;
-                            }
-                        }
+                        return true;
                     }
-                case TransactionVersion.OracleResponse:
+                    else
                     {
-                        state.Allowed.Add(Tx.OracleRequestTx);
-                        break;
+                        // If the response it's in the pool it's located after the request
+                        // We save the request in order to put after the response
+
+                        state.Delayed.Add(Tx);
+                        return false;
                     }
+                }
             }
 
             return true;

@@ -129,7 +129,7 @@ namespace Neo.Network.P2P.Payloads
                         Script.GetVarSize() +       //Script
                         Witnesses.GetVarSize();     //Witnesses
 
-                    if (Version == TransactionVersion.OracleResponse)
+                    if (Version.HasFlag(TransactionVersion.OracleResponse))
                     {
                         _size += UInt256.Length;
                     }
@@ -193,7 +193,7 @@ namespace Neo.Network.P2P.Payloads
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
-            OracleRequestTx = Version == TransactionVersion.OracleResponse ? reader.ReadSerializable<UInt256>() : null;
+            OracleRequestTx = Version.HasFlag(TransactionVersion.OracleResponse) ? reader.ReadSerializable<UInt256>() : null;
         }
 
         public bool Equals(Transaction other)
@@ -242,7 +242,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Attributes);
             writer.Write(Cosigners);
             writer.WriteVarBytes(Script);
-            if (Version == TransactionVersion.OracleResponse)
+            if (Version.HasFlag(TransactionVersion.OracleResponse))
             {
                 writer.Write(OracleRequestTx);
             }
@@ -263,7 +263,7 @@ namespace Neo.Network.P2P.Payloads
             json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
-            if (Version == TransactionVersion.OracleResponse)
+            if (Version.HasFlag(TransactionVersion.OracleResponse))
             {
                 json["oracle_response_tx"] = OracleRequestTx.ToString();
             }
@@ -284,7 +284,7 @@ namespace Neo.Network.P2P.Payloads
             tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
             tx.Script = Convert.FromBase64String(json["script"].AsString());
             tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
-            if (tx.Version == TransactionVersion.OracleResponse)
+            if (tx.Version.HasFlag(TransactionVersion.OracleResponse))
             {
                 tx.OracleRequestTx = UInt256.Parse(json["oracle_response_tx"].AsString());
             }
@@ -329,7 +329,7 @@ namespace Neo.Network.P2P.Payloads
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
 
-            if (Version == TransactionVersion.OracleResponse)
+            if (Version.HasFlag(TransactionVersion.OracleResponse))
             {
                 // Oracle response only can be signed by oracle nodes
 
