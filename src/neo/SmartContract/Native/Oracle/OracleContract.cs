@@ -98,10 +98,7 @@ namespace Neo.SmartContract.Native.Oracle
 
             // Pay for the filter
 
-            foreach (var entry in ret)
-            {
-                if (!engine.AddGas(entry.Value.FilterCost)) throw new ArgumentException("OutOfGas");
-            }
+            if (!engine.AddGas(ret.FilterCost)) throw new ArgumentException("OutOfGas");
 
             return ret;
         }
