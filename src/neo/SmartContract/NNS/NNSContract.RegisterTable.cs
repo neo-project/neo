@@ -9,15 +9,20 @@ namespace Neo.SmartContract.NNS
     {
         public class RegisterTable
         {
-            public UInt160 Owner { get; }
-            public ulong TTL { get; }
-            public Resolver resolver { get; }
+            public UInt160 Owner { set; get; }
 
-            public RegisterTable(UInt160 owner, ulong ttl)
+            public UInt160 Admin { set; get; }
+            public string Name { get; }
+            public ulong TTL { set; get; }
+            public Resolver Resolver { set; get; }
+
+            public RegisterTable(string name, UInt160 owner, UInt160 admin, ulong ttl)
             {
-                this.Owner = owner;
+                this.Owner = admin;
                 this.TTL = ttl;
+                Resolver = new Resolver(name, owner, admin);
             }
+
         }
     }
 }
