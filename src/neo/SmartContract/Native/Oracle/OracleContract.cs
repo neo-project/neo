@@ -96,6 +96,8 @@ namespace Neo.SmartContract.Native.Oracle
 
             engine.Snapshot.Storages.Delete(key);
 
+            // Pay for the filter
+
             foreach (var entry in ret)
             {
                 if (!engine.AddGas(entry.Value.FilterCost)) throw new ArgumentException("OutOfGas");
