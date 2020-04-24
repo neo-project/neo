@@ -49,6 +49,7 @@ namespace Neo.UnitTests
             byte[] messageB = System.Text.Encoding.Default.GetBytes("HiWorld");
             Assert.IsFalse(messageA.Keccak256().Equals(messageB.Keccak256()));
             Assert.IsTrue(messageA.Keccak256().Length == 32 && messageB.Keccak256().Length == 32);
+            Assert.IsTrue(messageA.Keccak256().ToHexString() == "7c5ea36004851c764c44143b1dcb59679b11c9a68e5f41497f6cf3d480715331");
         }
     }
 }

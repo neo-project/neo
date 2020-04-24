@@ -9,7 +9,6 @@ namespace Neo.Cryptography.ECC.Tests
     {
         private ECDsa ecdsa;
 
-
         public static byte[] generatekey(int privateKeyLength)
         {
             byte[] privateKey = new byte[privateKeyLength];
@@ -28,26 +27,32 @@ namespace Neo.Cryptography.ECC.Tests
             ecdsa = new ECDsa(privateKey, ECCurve.Secp256k1);
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
             BigInteger[] signatures = ecdsa.GenerateSignature(message);
-
-            ECPoint recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], signatures[1], message, true, true);
-            ECPoint recoverKey2 = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], signatures[1], message, false, true);
-            //due to generated signature does not have Ytilde.
-            Assert.IsTrue(recoverKey.Equals(publickey) || recoverKey2.Equals(publickey));
-
+            BigInteger r = signatures[0];
+            BigInteger s = signatures[1];
+            bool v;
+            if (signatures[2] == 0)
+            {
+                v = true;
+            }
+            else 
+            {
+                v = false;
+            }
+            ECPoint recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, r, s, message, v, true);
+            Assert.IsTrue(recoverKey.Equals(publickey));
             //wrong key part
-            var r = new System.Numerics.BigInteger(generatekey(32));
+            r = new System.Numerics.BigInteger(generatekey(32));
             try
             {
-                recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, r, signatures[1], message, publickey.Y.Value.IsEven, true);
+                recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, r, signatures[1], message, true, true);
                 Assert.IsFalse(recoverKey.Equals(publickey));
             }
             //wrong key may cause exception in decompresspoint
             catch { }
-
+            s = new System.Numerics.BigInteger(generatekey(32));
             try
-            {
-                var s = new System.Numerics.BigInteger(generatekey(32));
-                recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], s, message, publickey.Y.Value.IsEven, true);
+            {                
+                recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], s, message, true, true);
                 Assert.IsFalse(recoverKey.Equals(publickey));
             }
             //wrong key may cause exception in decompresspoint
