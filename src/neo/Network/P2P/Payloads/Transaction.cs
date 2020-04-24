@@ -179,7 +179,7 @@ namespace Neo.Network.P2P.Payloads
         public void DeserializeUnsigned(BinaryReader reader)
         {
             Version = (TransactionVersion)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(TransactionVersion), Version)) throw new FormatException();
+            if ((Version & ~TransactionVersion.All) != 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
             Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
@@ -274,7 +274,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Transaction tx = new Transaction();
             tx.Version = (TransactionVersion)byte.Parse(json["version"].AsString());
-            if (!Enum.IsDefined(typeof(TransactionVersion), tx.Version)) throw new FormatException();
+            if ((tx.Version & ~TransactionVersion.All) != 0) throw new FormatException();
             tx.Nonce = uint.Parse(json["nonce"].AsString());
             tx.Sender = json["sender"].AsString().ToScriptHash();
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
