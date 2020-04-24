@@ -262,5 +262,16 @@ namespace Neo.UnitTests.Trie.MPT
             result = MPTTrie.VerifyProof(rootHash, "ac01".HexToBytes(), proof, out byte[] value);
             Assert.IsTrue(result);
         }
+
+        [TestMethod]
+        public void TestAddLongerKey()
+        {
+            var store = new MemoryStore();
+            var mpt = new MPTTrie(null, store);
+            var result = mpt.Put(new byte[] { 0xab }, new byte[] { 0x01 });
+            Assert.IsTrue(result);
+            result = mpt.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x02 });
+            Assert.IsTrue(result);
+        }
     }
 }
