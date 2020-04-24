@@ -56,12 +56,12 @@ namespace Neo.SmartContract.Native
                     ReturnType = attribute.ReturnType,
                     Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
                 });
-                if (!attribute.CallFlags.HasFlag(CallFlags.AllowModifyStates)) safeMethods.Add(name);
+                if (!attribute.RequiredCallFlags.HasFlag(CallFlags.AllowModifyStates)) safeMethods.Add(name);
                 methods.Add(name, new ContractMethodMetadata
                 {
                     Delegate = (Func<ApplicationEngine, Array, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, Array, StackItem>), this),
                     Price = attribute.Price,
-                    RequiredCallFlags = attribute.CallFlags
+                    RequiredCallFlags = attribute.RequiredCallFlags
                 });
             }
             this.Manifest = new ContractManifest
