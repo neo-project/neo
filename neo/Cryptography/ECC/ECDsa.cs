@@ -67,7 +67,7 @@ namespace Neo.Cryptography.ECC
                 }
                 while (s.Sign == 0);
             }
-            return new BigInteger[] { r, s, id};
+            return new BigInteger[] { r, s, id };
         }
 
         private static ECPoint SumOfTwoMultiplies(ECPoint P, BigInteger k, ECPoint Q, BigInteger l)
