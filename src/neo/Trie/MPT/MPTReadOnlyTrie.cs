@@ -107,9 +107,9 @@ namespace Neo.Trie.MPT
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmptyNode) break;
-                        var new_node = Resolve(hashNode);
-                        if (new_node is null) break;
-                        node = new_node;
+                        var newNode = Resolve(hashNode);
+                        if (newNode is null) break;
+                        node = newNode;
                         return GetProof(ref node, path, set);
                     }
                 case BranchNode branchNode:
