@@ -19,7 +19,7 @@ namespace Neo.SmartContract
 
             public static readonly InteropDescriptor Platform = Register("System.Runtime.Platform", Runtime_Platform, 0_00000250, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 0_00000250, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250, TriggerType.Application, CallFlags.None);
+            public static readonly InteropDescriptor GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250, TriggerType.Application, CallFlags.AllowStates);
             public static readonly InteropDescriptor GetScriptContainer = Register("System.Runtime.GetScriptContainer", Runtime_GetScriptContainer, 0_00000250, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", Runtime_GetExecutingScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", Runtime_GetCallingScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
