@@ -348,11 +348,7 @@ namespace Neo.Wallets
                     {
                         // Increase filter cost
 
-                        foreach (var entry in oracleCache.Responses)
-                        {
-                            tx.SystemFee += entry.FilterCost;
-                        }
-
+                        tx.SystemFee += oracleCache.FilterCost;
                         tx.Version = TransactionVersion.OracleRequest;
 
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
