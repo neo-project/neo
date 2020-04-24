@@ -82,19 +82,25 @@ namespace Neo.SmartContract.Native.Oracle
         /// <summary>
         /// Consume Oracle Response
         /// </summary>
-        /// <param name="snapshot">Snapshot</param>
+        /// <param name="engine">Engine</param>
         /// <param name="txHash">Transaction Hash</param>
-        public OracleExecutionCache ConsumeOracleResponse(StoreView snapshot, UInt256 txHash)
+        public OracleExecutionCache ConsumeOracleResponse(ApplicationEngine engine, UInt256 txHash)
         {
             StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
-            StorageItem storage = snapshot.Storages.TryGet(key);
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage == null) return null;
 
             OracleExecutionCache ret = storage.Value.AsSerializable<OracleExecutionCache>();
 
             // It should be cached by the ApplicationEngine so we can save space removing it
 
-            snapshot.Storages.Delete(key);
+            engine.Snapshot.Storages.Delete(key);
+
+            foreach (var entry in ret)
+            {
+                if (!engine.AddGas(entry.Value.FilterCost)) throw new ArgumentException("OutOfGas");
+            }
+
             return ret;
         }
 
@@ -348,7 +354,7 @@ namespace Neo.SmartContract.Native.Oracle
                 {
                     // Read Oracle Response
 
-                    engine.OracleCache = Oracle.ConsumeOracleResponse(engine.Snapshot, tx.Hash);
+                    engine.OracleCache = Oracle.ConsumeOracleResponse(engine, tx.Hash);
 
                     // If it doesn't exist, fault
 
@@ -414,8 +420,6 @@ namespace Neo.SmartContract.Native.Oracle
             if (engine.OracleCache.TryGet(request, out var response))
             {
                 // Add the gas filter cost
-
-                if (!engine.AddGas(response.FilterCostOnce())) return false;
 
                 return response.Result ?? StackItem.Null;
             }
