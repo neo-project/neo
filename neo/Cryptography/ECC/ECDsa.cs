@@ -39,7 +39,7 @@ namespace Neo.Cryptography.ECC
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
             BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
-            BigInteger r, s, id;
+            BigInteger r, s, isEven;
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 do
@@ -53,7 +53,7 @@ namespace Neo.Cryptography.ECC
                         }
                         while (k.Sign == 0 || k.CompareTo(curve.N) >= 0);
                         ECPoint p = ECPoint.Multiply(curve.G, k);
-                        id = p.Y.Value & 1;
+                        isEven = p.Y.Value & 1;
                         BigInteger x = p.X.Value;
                         r = x.Mod(curve.N);
                     }
@@ -62,12 +62,12 @@ namespace Neo.Cryptography.ECC
                     if (s > curve.N / 2)
                     {
                         s = curve.N - s;
-                        id = id ^ 1;
+                        isEven = isEven ^ 1;
                     }
                 }
                 while (s.Sign == 0);
             }
-            return new BigInteger[] { r, s, id };
+            return new BigInteger[] { r, s, isEven };
         }
 
         private static ECPoint SumOfTwoMultiplies(ECPoint P, BigInteger k, ECPoint Q, BigInteger l)

@@ -101,8 +101,9 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
             Register("Neo.Iterator.Concat", Iterator_Concat, 1);
-            Register("Neo.Cryptography.Keccak256", Keccak256, 1);
-            Register("Neo.Cryptography.Ecrecover", Ecrecover, 1);
+            Register("Neo.Cryptography.Keccak256", Keccak256, 20);
+            Register("Neo.Cryptography.Secp256k1Recover", Secp256k1Recover, 100);
+            Register("Neo.Cryptography.Secp256r1Recover", Secp256r1Recover, 100);
 
             #region Aliases
             Register("Neo.Iterator.Next", Enumerator_Next, 1);
@@ -174,7 +175,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">r, s, v, messageHash</param>
         /// <returns></returns>
-        private bool Ecrecover(ExecutionEngine engine)
+        private bool Secp256k1Recover(ExecutionEngine engine)
         {
             var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
             var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
@@ -187,7 +188,25 @@ namespace Neo.SmartContract
             }
             catch
             {
-                engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x00 });
+                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+            }
+            return true;
+        }
+
+        private bool Secp256r1Recover(ExecutionEngine engine)
+        {
+            var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
+            var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
+            bool v = engine.CurrentContext.EvaluationStack.Pop().GetBoolean();
+            byte[] messageHash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            try
+            {
+                ECPoint point = ECDsa.KeyRecover(ECCurve.Secp256r1, r, s, messageHash, v, true);
+                engine.CurrentContext.EvaluationStack.Push(point.EncodePoint(false).Skip(1).ToArray());
+            }
+            catch
+            {
+                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
             }
             return true;
         }
