@@ -16,10 +16,10 @@ namespace Neo.SmartContract
         {
             public static readonly InteropDescriptor SHA256 = Register("Neo.Crypto.SHA256", Crypto_SHA256, 0_01000000, TriggerType.All, CallFlags.None);
 
-            public static readonly InteropDescriptor ECDsaSecp256r1Verify = Register("Neo.Crypto.ECDsa.Secp256r1.Verify", Crypto_ECDsaSecp256r1Verify, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor ECDsaSecp256k1Verify = Register("Neo.Crypto.ECDsa.Secp256k1.Verify", Crypto_ECDsaSecp256k1Verify, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor ECDsaSecp256r1CheckMultiSig = Register("Neo.Crypto.ECDsa.Secp256r1.CheckMultiSig", Crypto_ECDsaSecp256r1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor ECDsaSecp256k1CheckMultiSig = Register("Neo.Crypto.ECDsa.Secp256k1.CheckMultiSig", Crypto_ECDsaSecp256k1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor VerifyWithECDsaSecp256r1 = Register("Neo.Crypto.ECDsa.Secp256r1.Verify", Crypto_ECDsaSecp256r1Verify, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor VerifyWithECDsaSecp256k1 = Register("Neo.Crypto.ECDsa.Secp256k1.Verify", Crypto_ECDsaSecp256k1Verify, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.ECDsa.Secp256r1.CheckMultiSig", Crypto_ECDsaSecp256r1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.ECDsa.Secp256k1.CheckMultiSig", Crypto_ECDsaSecp256k1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
 
             private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack, StoreView snapshot)
             {
@@ -29,7 +29,7 @@ namespace Neo.SmartContract
                 if (item is Array array) n = array.Count;
                 else n = (int)item.GetBigInteger();
                 if (n < 1) return 0;
-                return ECDsaSecp256r1Verify.Price * n;
+                return VerifyWithECDsaSecp256r1.Price * n;
             }
 
             private static bool Crypto_SHA256(ApplicationEngine engine)

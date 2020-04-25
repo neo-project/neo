@@ -391,7 +391,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));
             engine.CurrentContext.EvaluationStack.Push(message);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaSecp256r1Verify).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             byte[] wrongkey = pubkey.EncodePoint(false);
@@ -399,7 +399,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(wrongkey);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(engine.ScriptContainer));
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaSecp256r1Verify).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Peek().ToBoolean().Should().BeFalse();
         }
 
