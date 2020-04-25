@@ -33,30 +33,56 @@ namespace Neo.Cryptography
             }
         }
 
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
+        {
+            if (pubkey.Curve == ECC.ECCurve.Secp256r1)
+            {
+                byte[] buffer = pubkey.EncodePoint(false);
+                using (var ecdsa = ECDsa.Create(new ECParameters
+                {
+                    Curve = ECCurve.NamedCurves.nistP256,
+                    Q = new ECPoint
+                    {
+                        X = buffer[1..33],
+                        Y = buffer[33..]
+                    }
+                }))
+                {
+                    return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+                }
+            }
+            else
+            {
+                var r = new BigInteger(signature[..32], true, true);
+                var s = new BigInteger(signature[32..], true, true);
+
+                return pubkey.Curve.VerifySignature(message.Sha256(), pubkey, r, s);
+            }
+        }
+
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve)
         {
-            if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
-            {
-                try
-                {
-                    pubkey = ECC.ECPoint.DecodePoint(pubkey, curve).EncodePoint(false).AsSpan(1);
-                }
-                catch
-                {
-                    return false;
-                }
-            }
-            else if (pubkey.Length == 65 && pubkey[0] == 0x04)
-            {
-                pubkey = pubkey[1..];
-            }
-            else if (pubkey.Length != 64)
-            {
-                throw new ArgumentException();
-            }
-
             if (curve == ECC.ECCurve.Secp256r1)
             {
+                if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
+                {
+                    try
+                    {
+                        pubkey = ECC.ECPoint.DecodePoint(pubkey, curve).EncodePoint(false).AsSpan(1);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
+                else if (pubkey.Length == 65 && pubkey[0] == 0x04)
+                {
+                    pubkey = pubkey[1..];
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
                 using (var ecdsa = ECDsa.Create(new ECParameters
                 {
                     Curve = ECCurve.NamedCurves.nistP256,
@@ -72,9 +98,9 @@ namespace Neo.Cryptography
             }
             else
             {
-                var publicKey = ECC.ECPoint.FromBytes(pubkey.ToArray(), curve);
-                var r = new BigInteger(signature[..32].ToArray(), true, true);
-                var s = new BigInteger(signature[32..].ToArray(), true, true);
+                var publicKey = ECC.ECPoint.DecodePoint(pubkey, curve);
+                var r = new BigInteger(signature[..32], true, true);
+                var s = new BigInteger(signature[32..], true, true);
 
                 return curve.VerifySignature(message.Sha256(), publicKey, r, s);
             }

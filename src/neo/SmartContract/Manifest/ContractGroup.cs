@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool IsValid(UInt160 hash)
         {
-            return Crypto.VerifySignature(hash.ToArray(), Signature, PubKey.EncodePoint(false), Cryptography.ECC.ECCurve.Secp256r1);
+            return Crypto.VerifySignature(hash.ToArray(), Signature, PubKey);
         }
 
         public virtual JObject ToJson()

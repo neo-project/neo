@@ -44,9 +44,7 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
             byte[] signature = Crypto.Sign(message, key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
-            Crypto.VerifySignature(message, signature, key.PublicKey.EncodePoint(false), Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeTrue();
-            Crypto.VerifySignature(message, signature, key.PublicKey.EncodePoint(false).Skip(1).ToArray(), Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeTrue();
-            Crypto.VerifySignature(message, signature, key.PublicKey.EncodePoint(false).Skip(1).ToArray(), Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeTrue();
+            Crypto.VerifySignature(message, signature, key.PublicKey).Should().BeTrue();
 
             byte[] wrongKey = new byte[33];
             wrongKey[0] = 0x02;
@@ -57,7 +55,7 @@ namespace Neo.UnitTests.Cryptography
             Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
 
             wrongKey = new byte[36];
-            Action action = () => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
+            Action action = () => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
             action.Should().Throw<ArgumentException>();
         }
 
