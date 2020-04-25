@@ -57,11 +57,9 @@ namespace Neo.Cryptography
 
             if (curve == ECC.ECCurve.Secp256r1)
             {
-                var ncurve = ECCurve.NamedCurves.nistP256;
-
                 using (var ecdsa = ECDsa.Create(new ECParameters
                 {
-                    Curve = ncurve,
+                    Curve = ECCurve.NamedCurves.nistP256,
                     Q = new ECPoint
                     {
                         X = pubkey[..32].ToArray(),
@@ -72,7 +70,7 @@ namespace Neo.Cryptography
                     return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
                 }
             }
-            else if (curve == ECC.ECCurve.Secp256k1)
+            else
             {
                 var publicKey = ECC.ECPoint.FromBytes(pubkey.ToArray(), curve);
                 var r = new BigInteger(signature[..32].ToArray(), true, true);
@@ -80,8 +78,6 @@ namespace Neo.Cryptography
 
                 return curve.VerifySignature(message.Sha256(), publicKey, r, s);
             }
-
-            return false;
         }
     }
 }
