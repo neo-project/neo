@@ -53,10 +53,10 @@ namespace Neo.Cryptography
             }
             else
             {
+                var ecdsa = new ECC.ECDsa(pubkey);
                 var r = new BigInteger(signature[..32], true, true);
                 var s = new BigInteger(signature[32..], true, true);
-
-                return pubkey.Curve.VerifySignature(message.Sha256(), pubkey, r, s);
+                return ecdsa.VerifySignature(message.Sha256(), r, s);
             }
         }
 
@@ -98,11 +98,10 @@ namespace Neo.Cryptography
             }
             else
             {
-                var publicKey = ECC.ECPoint.DecodePoint(pubkey, curve);
+                var ecdsa = new ECC.ECDsa(ECC.ECPoint.DecodePoint(pubkey, curve));
                 var r = new BigInteger(signature[..32], true, true);
                 var s = new BigInteger(signature[32..], true, true);
-
-                return curve.VerifySignature(message.Sha256(), publicKey, r, s);
+                return ecdsa.VerifySignature(message.Sha256(), r, s);
             }
         }
     }
