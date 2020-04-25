@@ -9,7 +9,6 @@ namespace Neo.Oracle
     public class OracleResponse : ISerializable
     {
         private UInt160 _hash;
-        private bool _alreadyPayed;
 
         /// <summary>
         /// Request hash
@@ -48,25 +47,6 @@ namespace Neo.Oracle
         }
 
         public int Size => UInt160.Length + sizeof(byte) + Result.GetVarSize() + sizeof(long);
-
-        /// <summary>
-        /// Filter cost that it could be consumed only once
-        /// </summary>
-        public long FilterCostOnce()
-        {
-            if (_alreadyPayed) return 0;
-
-            _alreadyPayed = true;
-            return FilterCost;
-        }
-
-        /// <summary>
-        /// Reset the _alreadyPayed flag
-        /// </summary>
-        public void ResetFilterCostOnce()
-        {
-            _alreadyPayed = false;
-        }
 
         /// <summary>
         /// Create error result

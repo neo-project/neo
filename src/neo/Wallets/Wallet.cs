@@ -334,17 +334,6 @@ namespace Neo.Wallets
                     Cosigners = cosigners
                 };
 
-                if (oracleCache != null)
-                {
-                    // We need to reset if we already consumed the fiter price
-                    // otherwise we can have a wrong gas computation
-
-                    foreach (var entry in oracleCache.Responses)
-                    {
-                        entry.ResetFilterCostOnce();
-                    }
-                }
-
                 // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true, oracle: oracleCache))
                 {
@@ -357,6 +346,9 @@ namespace Neo.Wallets
 
                     if (oracleRequests?.Count > 0)
                     {
+                        // Increase filter cost
+
+                        tx.SystemFee += oracleCache.FilterCost;
                         tx.Version = TransactionVersion.OracleRequest;
 
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
