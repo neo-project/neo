@@ -35,7 +35,6 @@ namespace Neo.UnitTests.IO.Caching
 
             cloneCache.Commit();
             myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
-            cloneCache.Commit();
         }
 
         [TestMethod]
@@ -47,7 +46,6 @@ namespace Neo.UnitTests.IO.Caching
 
             cloneCache.TryGet(new MyKey("key1")).Should().BeNull();
             myDataCache.TryGet(new MyKey("key1")).Should().BeNull();
-            cloneCache.Commit();
         }
 
         [TestMethod]
@@ -124,7 +122,6 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache[new MyKey("key2")].Should().Be(new MyValue("value_new_2"));
             cloneCache[new MyKey("key3")].Should().Be(new MyValue("value_new_3"));
             myDataCache[new MyKey("key2")].Should().Be(new MyValue("value_new_2"));
-            cloneCache.Commit();
         }
     }
 }
