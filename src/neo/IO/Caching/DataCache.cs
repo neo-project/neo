@@ -75,6 +75,7 @@ namespace Neo.IO.Caching
         /// </summary>
         public void Commit()
         {
+            LinkedList<TKey> deletedItem = new LinkedList<TKey>();
             foreach (Trackable trackable in GetChangeSet())
                 switch (trackable.State)
                 {
@@ -88,9 +89,13 @@ namespace Neo.IO.Caching
                         break;
                     case TrackState.Deleted:
                         DeleteInternal(trackable.Key);
-                        dictionary.Remove(trackable.Key);
+                        deletedItem.AddFirst(trackable.Key);
                         break;
                 }
+            foreach (TKey key in deletedItem)
+            {
+                dictionary.Remove(key);
+            }
         }
 
         public DataCache<TKey, TValue> CreateSnapshot()
