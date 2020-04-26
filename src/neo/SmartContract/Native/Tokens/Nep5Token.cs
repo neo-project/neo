@@ -70,15 +70,10 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account), () => new StorageItem
-            {
-                Value = new TState().ToByteArray()
-            });
-            TState state = new TState();
-            state.FromByteArray(storage.Value);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account), () => new StorageItem(new TState()));
+            TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
-            storage.Value = state.ToByteArray();
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
             {
                 Value = BigInteger.Zero.ToByteArrayStandard()
@@ -95,19 +90,13 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
             StorageKey key = CreateAccountKey(account);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
-            TState state = new TState();
-            state.FromByteArray(storage.Value);
+            TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
             OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
-            {
                 engine.Snapshot.Storages.Delete(key);
-            }
             else
-            {
                 state.Balance -= amount;
-                storage.Value = state.ToByteArray();
-            }
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
@@ -115,25 +104,25 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount }));
         }
 
-        [ContractMethod(0, ContractParameterType.String, Name = "name", SafeMethod = true)]
+        [ContractMethod(0, ContractParameterType.String, CallFlags.None, Name = "name")]
         protected StackItem NameMethod(ApplicationEngine engine, Array args)
         {
             return Name;
         }
 
-        [ContractMethod(0, ContractParameterType.String, Name = "symbol", SafeMethod = true)]
+        [ContractMethod(0, ContractParameterType.String, CallFlags.None, Name = "symbol")]
         protected StackItem SymbolMethod(ApplicationEngine engine, Array args)
         {
             return Symbol;
         }
 
-        [ContractMethod(0, ContractParameterType.Integer, Name = "decimals", SafeMethod = true)]
+        [ContractMethod(0, ContractParameterType.Integer, CallFlags.None, Name = "decimals")]
         protected StackItem DecimalsMethod(ApplicationEngine engine, Array args)
         {
             return (uint)Decimals;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         protected StackItem TotalSupply(ApplicationEngine engine, Array args)
         {
             return TotalSupply(engine.Snapshot);
@@ -146,7 +135,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
             return BalanceOf(engine.Snapshot, new UInt160(args[0].GetSpan()));
@@ -156,11 +145,10 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
-            Nep5AccountState state = new Nep5AccountState(storage.Value);
-            return state.Balance;
+            return storage.GetInteroperable<TState>().Balance;
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
+        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
         protected StackItem Transfer(ApplicationEngine engine, Array args)
         {
             UInt160 from = new UInt160(args[0].GetSpan());
@@ -177,21 +165,19 @@ namespace Neo.SmartContract.Native.Tokens
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
             StorageKey key_from = CreateAccountKey(from);
-            StorageItem storage_from = engine.Snapshot.Storages.TryGet(key_from);
+            StorageItem storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
             if (amount.IsZero)
             {
                 if (storage_from != null)
                 {
-                    TState state_from = new TState();
-                    state_from.FromByteArray(storage_from.Value);
+                    TState state_from = storage_from.GetInteroperable<TState>();
                     OnBalanceChanging(engine, from, state_from, amount);
                 }
             }
             else
             {
                 if (storage_from is null) return false;
-                TState state_from = new TState();
-                state_from.FromByteArray(storage_from.Value);
+                TState state_from = storage_from.GetInteroperable<TState>();
                 if (state_from.Balance < amount) return false;
                 if (from.Equals(to))
                 {
@@ -201,25 +187,14 @@ namespace Neo.SmartContract.Native.Tokens
                 {
                     OnBalanceChanging(engine, from, state_from, -amount);
                     if (state_from.Balance == amount)
-                    {
                         engine.Snapshot.Storages.Delete(key_from);
-                    }
                     else
-                    {
                         state_from.Balance -= amount;
-                        storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
-                        storage_from.Value = state_from.ToByteArray();
-                    }
                     StorageKey key_to = CreateAccountKey(to);
-                    StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
-                    {
-                        Value = new TState().ToByteArray()
-                    });
-                    TState state_to = new TState();
-                    state_to.FromByteArray(storage_to.Value);
+                    StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem(new TState()));
+                    TState state_to = storage_to.GetInteroperable<TState>();
                     OnBalanceChanging(engine, to, state_to, amount);
                     state_to.Balance += amount;
-                    storage_to.Value = state_to.ToByteArray();
                 }
             }
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount }));
