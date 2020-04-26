@@ -7,69 +7,19 @@ using System.Linq;
 
 namespace Neo.Network.P2P
 {
-    internal class SyncManager : UntypedActor
+    partial class TaskManager : UntypedActor
     {
-        public class Register { public RemoteNode Node; }
         public class PersistedBlockIndex { public uint PersistedIndex; }
         public class InvalidBlockIndex { public uint InvalidIndex; }
         public class StartSync { }
-        private class Timer { }
 
-        private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan SyncTimeout = TimeSpan.FromMinutes(1);
-
-        private readonly Dictionary<IActorRef, RemoteNode> nodes = new Dictionary<IActorRef, RemoteNode>();
         private readonly Dictionary<uint, RemoteNode> receivedBlockIndex = new Dictionary<uint, RemoteNode>();
-        private readonly NeoSystem system;
-        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private readonly List<uint> failedTasks = new List<uint>();
 
         private const int MaxTasksCount = 50;
         private const int PingCoolingOffPeriod = 60; // in secconds.
 
         private uint lastTaskIndex = 0;
-
-        public SyncManager(NeoSystem system)
-        {
-            this.system = system;
-            this.lastTaskIndex = Blockchain.Singleton.Height;
-        }
-
-        protected override void OnReceive(object message)
-        {
-            switch (message)
-            {
-                case Register register:
-                    OnRegister(register.Node);
-                    break;
-                case Block block:
-                    OnReceiveBlock(block);
-                    break;
-                case Blockchain.PersistCompleted persistBlock:
-                    OnReceivePersistedBlockIndex(persistBlock.Block.Index);
-                    break;
-                case Blockchain.RelayResult rr:
-                    if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
-                        OnReceiveInvalidBlockIndex(invalidBlock.Index);
-                    break;
-                case StartSync _:
-                    RequestSync();
-                    break;
-                case Timer _:
-                    OnTimer();
-                    break;
-                case Terminated terminated:
-                    OnTerminated(terminated.ActorRef);
-                    break;
-            }
-        }
-
-        private void OnRegister(RemoteNode node)
-        {
-            Context.Watch(Sender);
-            nodes.Add(Sender, node);
-            RequestSync();
-        }
 
         private void OnReceiveBlock(Block block)
         {
@@ -121,33 +71,6 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnTimer()
-        {
-            foreach (var node in nodes.Values)
-            {
-                foreach (KeyValuePair<uint, DateTime> kvp in node.session.IndexTasks)
-                {
-                    if (TimeProvider.Current.UtcNow - kvp.Value > SyncTimeout)
-                    {
-                        node.session.IndexTasks.Remove(kvp.Key);
-                        node.session.TimeoutTimes++;
-                        AssignTask(kvp.Key, node.session);
-                    }
-                }
-            }
-            RequestSync();
-        }
-
-        private void OnTerminated(IActorRef actor)
-        {
-            if (!nodes.TryGetValue(Sender, out RemoteNode remoteNode))
-                return;
-            NodeSession session = remoteNode.session;
-            foreach (uint index in session.IndexTasks.Keys)
-                AssignTask(index, session);
-            nodes.Remove(actor);
-        }
-
         private bool AssignTask(uint index, NodeSession filterSession = null)
         {
             if (index <= Blockchain.Singleton.Height || nodes.Values.Any(p => p.session != filterSession && p.session.IndexTasks.ContainsKey(index)))
@@ -181,17 +104,6 @@ namespace Neo.Network.P2P
                     node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
                 }
             }
-        }
-
-        protected override void PostStop()
-        {
-            timer.CancelIfNotNull();
-            base.PostStop();
-        }
-
-        public static Props Props(NeoSystem system)
-        {
-            return Akka.Actor.Props.Create(() => new SyncManager(system));
         }
     }
 }

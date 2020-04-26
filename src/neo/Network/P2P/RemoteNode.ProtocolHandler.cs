@@ -276,7 +276,7 @@ namespace Neo.Network.P2P
         {
             if (inventory is Block block)
             {
-                system.SyncManager.Tell(block);
+                system.TaskManager.Tell(block);
                 return;
             }
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
@@ -327,7 +327,6 @@ namespace Neo.Network.P2P
         {
             verack = true;
             system.TaskManager.Tell(new TaskManager.Register { Node = this });
-            system.SyncManager.Tell(new SyncManager.Register { Node = this });
             CheckMessageQueue();
         }
 
@@ -377,7 +376,7 @@ namespace Neo.Network.P2P
             if (payload.LastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = payload.LastBlockIndex;
-                system.SyncManager.Tell(new SyncManager.StartSync { });
+                system.TaskManager.Tell(new TaskManager.StartSync { });
             }
         }
     }

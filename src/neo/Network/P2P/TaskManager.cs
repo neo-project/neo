@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P
 {
-    internal class TaskManager : UntypedActor
+    internal partial class TaskManager : UntypedActor
     {
         public class Register { public RemoteNode Node; }
         public class NewTasks { public InvPayload Payload; }
@@ -38,6 +38,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+            this.lastTaskIndex = Blockchain.Singleton.Height;
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -83,6 +85,19 @@ namespace Neo.Network.P2P
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
                     break;
+                case Block block:
+                    OnReceiveBlock(block);
+                    break;
+                case Blockchain.PersistCompleted persistBlock:
+                    OnReceivePersistedBlockIndex(persistBlock.Block.Index);
+                    break;
+                case Blockchain.RelayResult rr:
+                    if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
+                        OnReceiveInvalidBlockIndex(invalidBlock.Index);
+                    break;
+                case StartSync _:
+                    RequestSync();
+                    break;
                 case Timer _:
                     OnTimer();
                     break;
@@ -96,6 +111,7 @@ namespace Neo.Network.P2P
         {
             Context.Watch(Sender);
             nodes.Add(Sender, node);
+            RequestSync();
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -145,10 +161,15 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actor)
         {
-            if (!nodes.Remove(actor, out RemoteNode remoteNode))
+            if (!nodes.TryGetValue(actor, out RemoteNode remoteNode))
                 return;
-            foreach (UInt256 hash in remoteNode.session.InvTasks.Keys)
+            NodeSession session = remoteNode.session;
+            foreach (uint index in session.IndexTasks.Keys)
+                AssignTask(index, session);
+
+            foreach (UInt256 hash in session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
+            nodes.Remove(actor);
         }
 
         private void OnTimer()
@@ -157,12 +178,25 @@ namespace Neo.Network.P2P
             {
                 NodeSession session = node.session;
                 foreach (var task in session.InvTasks.ToArray())
+                {
                     if (DateTime.UtcNow - task.Value > TaskTimeout)
                     {
                         if (session.InvTasks.Remove(task.Key))
                             DecrementGlobalTask(task.Key);
                     }
+                }
+
+                foreach (KeyValuePair<uint, DateTime> kvp in session.IndexTasks)
+                {
+                    if (TimeProvider.Current.UtcNow - kvp.Value > TaskTimeout)
+                    {
+                        session.IndexTasks.Remove(kvp.Key);
+                        session.TimeoutTimes++;
+                        AssignTask(kvp.Key, session);
+                    }
+                }
             }
+            RequestSync();
         }
 
         protected override void PostStop()

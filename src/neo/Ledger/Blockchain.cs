@@ -325,9 +325,9 @@ namespace Neo.Ledger
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
                 block_cache_unverified.Remove(block.Index);
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height + 1)));
                 Persist(block);
                 SaveHeaderHashList();
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
