@@ -16,11 +16,11 @@ namespace Neo.SmartContract
             public const int MaxKeySize = 64;
             public const int MaxValueSize = ushort.MaxValue;
 
-            public static readonly InteropDescriptor GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor AsReadOnly = Register("System.Storage.AsReadOnly", Storage_AsReadOnly, 0_00000400, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor Get = Register("System.Storage.Get", Storage_Get, 0_01000000, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor Find = Register("System.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application, CallFlags.None);
+            public static readonly InteropDescriptor GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor AsReadOnly = Register("System.Storage.AsReadOnly", Storage_AsReadOnly, 0_00000400, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor Get = Register("System.Storage.Get", Storage_Get, 0_01000000, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor Find = Register("System.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application, CallFlags.AllowStates);
             public static readonly InteropDescriptor Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 1 * GasPerByte, TriggerType.Application, CallFlags.AllowModifyStates);
