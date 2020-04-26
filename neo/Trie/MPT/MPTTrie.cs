@@ -121,21 +121,29 @@ namespace Neo.Trie.MPT
                     }
                 case HashNode hashNode:
                     {
+                        MPTNode newNode;
                         if (hashNode.IsEmptyNode)
                         {
-                            var exNode = new ExtensionNode()
+                            if (path.Length == 0)
                             {
-                                Key = path,
-                                Next = val,
-                            };
-                            node = exNode;
-                            if (!(val is HashNode)) db.Put(val);
-                            db.Put(exNode);
+                                newNode = val;
+                            }
+                            else
+                            {
+                                newNode = new ExtensionNode()
+                                {
+                                    Key = path,
+                                    Next = val,
+                                };
+                                db.Put(newNode);
+                            }
+                            node = newNode;
+                            if (val is LeafNode) db.Put(val);
                             return true;
                         }
-                        var new_node = Resolve(hashNode);
-                        if (new_node is null) return false;
-                        node = new_node;
+                        newNode = Resolve(hashNode);
+                        if (newNode is null) return false;
+                        node = newNode;
                         return Put(ref node, path, val);
                     }
                 default:
