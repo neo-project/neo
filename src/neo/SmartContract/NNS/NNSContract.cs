@@ -10,6 +10,7 @@ using System.Text;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 using Neo.Cryptography;
+using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract.NNS
 {
@@ -20,6 +21,8 @@ namespace Neo.SmartContract.NNS
         public string Name => "NNS";
         public string Symbol => "nns";
         public byte Decimals => 0;
+        public const string DomainRegex = @"^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62}){1,3}$";
+        public const string RootRegex = @"^[a-zA-Z]{0,62}$";
 
         protected const byte Prefix_Domain = 23;
         protected const byte Prefix_Record = 24;
@@ -37,12 +40,26 @@ namespace Neo.SmartContract.NNS
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            
+
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Admin), new StorageItem
             {
                 Value = new UInt160[0].ToByteArray()
             });
             return true;
+        }
+
+        public static bool IsDomain(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            Regex regex = new Regex(DomainRegex);
+            return regex.Match(name).Success;
+        }
+
+        public static bool IsRootDomain(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            Regex regex = new Regex(RootRegex);
+            return regex.Match(name).Success;
         }
 
         //注册域名
@@ -55,6 +72,37 @@ namespace Neo.SmartContract.NNS
             UInt160 admin = new UInt160(args[2].GetSpan());
             uint ttl = (uint)args[3].GetBigInteger();
             // TODO: verify format, get root or first level domain check witness
+            if (IsRootDomain(name) && !CheckValidators(engine))
+            {
+                return false;
+            }
+
+            if (IsDomain(name))
+            {
+                var levels = name.Split(".");
+
+                // Register first level
+                if (levels.Length == 2)
+                {
+                    // check owner of root
+                    string root = levels[^1];
+
+                }
+                else
+                {
+                    // check owner of first level
+                    UInt256 firstLevel = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(levels[^2])));
+                    var domainInfo = GetDomainInfo(engine, firstLevel);
+                    if (domainInfo is null) return false;
+                    if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Owner) &&
+                        !InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Admin))
+                        return false;
+                }
+
+                // TOTD: 
+
+                return false;
+            }
 
             StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
             StorageItem storage = engine.Snapshot.Storages[key];
@@ -72,6 +120,14 @@ namespace Neo.SmartContract.NNS
                 UpdateOwnerShip(engine, name, owner);
             }
             return true;
+        }
+
+        private DomainInfo GetDomainInfo(ApplicationEngine engine, UInt256 nameHash)
+        {
+            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
+            if (storage is null) return null;
+            return storage.Value.AsSerializable<DomainInfo>();
         }
 
         //更新一级域名有效期，任何人都可以调用该接口 
@@ -99,9 +155,9 @@ namespace Neo.SmartContract.NNS
         {
             //TODO: 验证委员会多签
             UInt160 address = new UInt160(args[0].GetSpan());
-            StorageKey key = CreateStorageKey(Prefix_Admin); 
+            StorageKey key = CreateStorageKey(Prefix_Admin);
             StorageItem storage = engine.Snapshot.Storages[key];
-            SortedSet<UInt160> admins = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>()); 
+            SortedSet<UInt160> admins = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!admins.Add(address)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = admins.ToByteArray();

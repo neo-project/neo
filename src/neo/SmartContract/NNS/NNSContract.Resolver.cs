@@ -20,7 +20,7 @@ namespace Neo.SmartContract.NNS
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
             string text = args[1].GetString();
-            RecordType recordType = (RecordType)BitConverter.GetBytes((uint)args[2].GetBigInteger())[0];
+            RecordType recordType = (RecordType)(byte)args[2].GetBigInteger();
             StorageKey key = CreateStorageKey(Prefix_Record, nameHash);
             StorageItem storage = engine.Snapshot.Storages[key];
             RecordInfo recordInfo = new RecordInfo { Text = text, RecordType = recordType };
