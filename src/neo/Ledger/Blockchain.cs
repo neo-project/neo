@@ -332,6 +332,7 @@ namespace Neo.Ledger
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
                     return VerifyResult.Invalid;
             }
+            block_cache.TryAdd(block.Hash, block);
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
@@ -371,7 +372,6 @@ namespace Neo.Ledger
             }
             else
             {
-                block_cache.Add(block.Hash, block);
                 if (block.Index + 100 >= header_index.Count)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
@@ -431,7 +431,7 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
+            block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
