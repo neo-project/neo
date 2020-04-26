@@ -10,7 +10,6 @@ namespace Neo.SmartContract.NNS
         public class RegisterTable
         {
             public UInt160 Owner { set; get; }
-
             public UInt160 Admin { set; get; }
             public string Name { get; }
             public ulong TTL { set; get; }

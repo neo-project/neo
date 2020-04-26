@@ -9,21 +9,21 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
+using Neo.Cryptography;
 
 namespace Neo.SmartContract.NNS
 {
-    public partial class NNSContract: NativeContract
+    public partial class NNSContract : NativeContract
     {
         public override string ServiceName => "Neo.Native.NNS";
         public override int Id => -5;
         public string Name => "NNS";
         public string Symbol => "nns";
-        public byte Decimals => 0;                                                                                                                                                                                                             
+        public byte Decimals => 0;
 
-        protected const byte Prefix_TotalSupply = 22;
-        protected const byte Prefix_RootAddress = 23;
-        protected const byte Prefix_Address = 24;
-        protected const byte Prefix_SecondAddress = 25;
+        protected const byte Prefix_Domain = 23;
+        protected const byte Prefix_Record = 24;
+        protected const byte Prefix_OwnershipMapping = 25;
         protected const byte Prefix_Admin = 26;
         protected const byte Prefix_RentalPrice = 27;
 
@@ -41,11 +41,54 @@ namespace Neo.SmartContract.NNS
             if (!GetAdmins(engine.Snapshot).Contains(engine.CallingScriptHash)) return false;
             string name = args[0].GetString();
             StorageKey key = CreateStorageKey(Prefix_RootAddress); // root
-            StorageItem storage = engine.Snapshot.Storages[key]; 
-            SortedSet<string> rootNames = new SortedSet<string>(storage.Value.AsSerializableArray<string>()); // ["org", "com"]
+            StorageItem storage = engine.Snapshot.Storages[key];
+            SortedSet<string> rootNames = new SortedSet<string>(storage.Value.AsSerializableArray<StackItem>()); // ["org", "com"]
             if (!rootNames.Add(name)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = rootNames.ToByteArray();
+            return true;
+        }
+
+        //注册域名
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "name", "owner", "admin", "ttl" })]
+        public StackItem RegisterNewName(ApplicationEngine engine, Array args)
+        {
+            string name = args[0].GetString();
+            name = name.ToLower();
+            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
+            UInt160 owner = new UInt160(args[1].GetSpan());
+            UInt160 admin = new UInt160(args[2].GetSpan());
+            uint ttl = (uint)args[3].GetBigInteger();
+            // TODO: verify format, get root or first level domain check witness
+
+            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
+            StorageItem storage = engine.Snapshot.Storages[key];
+
+            // TODO: what if ttl is expired
+            if (storage is null)
+            {
+                DomainInfo domainInfo = new DomainInfo { Admin = admin, Owner = owner, TimeToLive = ttl, Name = name };
+                engine.Snapshot.Storages.Add(key, new StorageItem
+                {
+                    Value = domainInfo.ToArray()
+                });
+
+                StorageKey ownerKey = CreateStorageKey(Prefix_OwnershipMapping, owner);
+                StorageItem ownerStorage = engine.Snapshot.Storages[ownerKey];
+                SortedSet<UInt256> nameHashes = null;
+                if (ownerStorage is null) { nameHashes = new SortedSet<UInt256>(); }
+                else
+                {
+                    nameHashes = new SortedSet<UInt256>(ownerStorage.Value.AsSerializableArray<UInt256>());
+                }
+
+                if (nameHashes.Add(nameHash))
+                {
+                    ownerStorage = engine.Snapshot.Storages.GetAndChange(key);
+                    ownerStorage.Value = nameHashes.ToByteArray();
+                }
+            }
+
             return true;
         }
 
