@@ -50,6 +50,11 @@ namespace Neo.SmartContract.NNS
             writer.Write((byte)RecordType);
             writer.WriteVarString(Text);
         }
+
+        public override string ToString()
+        {
+            return "RecordType is: " + RecordType + " and Text is: " + Text;
+        }
     }
 
     public enum RecordType : byte
