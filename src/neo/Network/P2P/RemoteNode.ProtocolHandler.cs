@@ -12,11 +12,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
-using System.Threading;
 
 namespace Neo.Network.P2P
 {
-    partial class RemoteNode
+    partial class RemoteNode : IWithUnboundedStash
     {
         private class Timer { }
         private class PendingKnownHashesCollection : KeyedCollection<UInt256, (UInt256, DateTime)>
@@ -37,6 +36,8 @@ namespace Neo.Network.P2P
         private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
 
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
+        public IStash Stash { get; set; }
+        private bool stashed = false;
 
         private void OnMessage(Message msg)
         {
@@ -108,9 +109,17 @@ namespace Neo.Network.P2P
                     OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
-                    while (Blockchain.Singleton.isPersisting)
+                    if (Blockchain.Singleton.isPersisting)
                     {
-                        Thread.Sleep(50);
+                        stashed = true;
+                        Stash.Stash();
+                        break;
+                    }
+                    else if (stashed)
+                    {
+                        Stash.UnstashAll();
+                        stashed = false;
+                        break;
                     }
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);

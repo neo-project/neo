@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Neo.IO.Actors
 {
-    internal class PriorityMessageQueue : IMessageQueue, IUnboundedMessageQueueSemantics
+    internal class PriorityMessageQueue : IMessageQueue, IUnboundedMessageQueueSemantics, IUnboundedDequeBasedMessageQueueSemantics
     {
         private readonly ConcurrentQueue<Envelope> high = new ConcurrentQueue<Envelope>();
         private readonly ConcurrentQueue<Envelope> low = new ConcurrentQueue<Envelope>();
@@ -50,6 +50,16 @@ namespace Neo.IO.Actors
                 return true;
             }
             return false;
+        }
+
+        public void EnqueueFirst(Envelope envelope)
+        {
+            Interlocked.Increment(ref idle);
+            if (envelope.Message is Idle) return;
+            if (dropper(envelope.Message, high.Concat(low).Select(p => p.Message)))
+                return;
+            ConcurrentQueue<Envelope> queue = priority_generator(envelope.Message) ? high : low;
+            queue.Prepend(envelope);
         }
     }
 }
