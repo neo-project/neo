@@ -170,11 +170,6 @@ namespace Neo.SmartContract
             #endregion
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="engine">r, s, v, messageHash</param>
-        /// <returns></returns>
         private bool Secp256k1Recover(ExecutionEngine engine)
         {
             var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
