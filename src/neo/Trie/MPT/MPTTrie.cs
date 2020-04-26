@@ -123,14 +123,21 @@ namespace Neo.Trie.MPT
                         MPTNode newNode;
                         if (hashNode.IsEmptyNode)
                         {
-                            newNode = new ExtensionNode()
+                            if (path.Length == 0)
                             {
-                                Key = path,
-                                Next = val,
-                            };
+                                newNode = val;
+                            }
+                            else
+                            {
+                                newNode = new ExtensionNode()
+                                {
+                                    Key = path,
+                                    Next = val,
+                                };
+                                db.Put(newNode);
+                            }
                             node = newNode;
                             if (val is LeafNode) db.Put(val);
-                            db.Put(node);
                             return true;
                         }
                         newNode = Resolve(hashNode);
@@ -226,16 +233,14 @@ namespace Neo.Trie.MPT
                             exNode.SetDirty();
                             db.Put(exNode);
                             node = exNode;
+                            return true;
                         }
-                        else
+                        node = new ExtensionNode()
                         {
-                            node = new ExtensionNode()
-                            {
-                                Key = childrenIndexes.ToArray(),
-                                Next = lastChild,
-                            };
-                            db.Put(node);
-                        }
+                            Key = childrenIndexes.ToArray(),
+                            Next = lastChild,
+                        };
+                        db.Put(node);
                         return true;
                     }
                 case HashNode hashNode:
