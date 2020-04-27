@@ -1,8 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.SmartContract.NNS;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Neo.SmartContract.Native;
 
 namespace Neo.SmartContract.NNS.Tests
 {
@@ -12,14 +9,14 @@ namespace Neo.SmartContract.NNS.Tests
         [TestMethod()]
         public void IsDomainTest()
         {
-            Assert.IsFalse(NNSContract.IsDomain(""));
-            Assert.IsFalse(NNSContract.IsDomain(null));
-            Assert.IsFalse(NNSContract.IsDomain("www,neo.org"));
-            Assert.IsFalse(NNSContract.IsDomain("www.hello.world.neo.org"));
-            Assert.IsTrue(NNSContract.IsDomain("www.hello.neo.org"));
-            Assert.IsTrue(NNSContract.IsDomain("www.neo.org"));
-            Assert.IsTrue(NNSContract.IsDomain("neo.org"));
-            Assert.IsTrue(NNSContract.IsDomain("bb.aa123"));
+            Assert.IsFalse(NativeContract.NNS.IsDomain(""));
+            Assert.IsFalse(NativeContract.NNS.IsDomain(null));
+            Assert.IsFalse(NativeContract.NNS.IsDomain("www,neo.org"));
+            Assert.IsFalse(NativeContract.NNS.IsDomain("www.hello.world.neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("www.hello.neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("www.neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("bb.aa123"));
         }
     }
 }

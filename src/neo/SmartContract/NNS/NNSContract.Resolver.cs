@@ -13,7 +13,7 @@ namespace Neo.SmartContract.NNS
     partial class NNSContract
     {
         // 只有admin可以调用
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "text", "recordType" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "text", "recordType" })]
         public StackItem SetText(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
@@ -38,7 +38,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.String, ParameterTypes = new[] { ContractParameterType.String}, ParameterNames = new[] { "name"})]
+        [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String}, ParameterNames = new[] { "name"})]
         public StackItem Resolve(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();

@@ -47,7 +47,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        //只有当前owner可以调用
+        //设置当前域名的admin，只有当前owner可以调用
         private bool SetAdmin(ApplicationEngine engine, string name, UInt160 admin)
         {
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
