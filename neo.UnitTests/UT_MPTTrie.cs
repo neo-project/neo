@@ -273,5 +273,22 @@ namespace Neo.UnitTests.Trie.MPT
             result = mpt.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x02 });
             Assert.IsTrue(result);
         }
+
+        [TestMethod]
+        public void TestSplitKey()
+        {
+            var store = new MemoryStore();
+            var mpt1 = new MPTTrie(null, store);
+            Assert.IsTrue(mpt1.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
+            Assert.IsTrue(mpt1.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
+            Assert.IsTrue(mpt1.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set1));
+            Assert.AreEqual(4, set1.Count);
+            var mpt2 = new MPTTrie(null, store);
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
+            Assert.IsTrue(mpt2.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set2));
+            Assert.AreEqual(4, set2.Count);
+            Assert.AreEqual(mpt1.GetRoot(), mpt2.GetRoot());
+        }
     }
 }
