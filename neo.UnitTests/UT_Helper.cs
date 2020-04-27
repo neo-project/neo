@@ -1,12 +1,8 @@
-﻿using System.Numerics;
-using System.Globalization;
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.SmartContract;
-using Neo.Cryptography;
 using Neo.Wallets;
-using Neo.Cryptography.ECC;
+using FluentAssertions;
 
 namespace Neo.UnitTests
 {
