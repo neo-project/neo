@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
@@ -20,6 +21,8 @@ namespace Neo.SmartContract.NNS
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
             string text = args[1].GetString();
             RecordType recordType = (RecordType)(byte)args[2].GetBigInteger();
+            if (recordType == RecordType.A && IsDomain(name)) return false;
+
             StorageKey key = CreateStorageKey(Prefix_Record, nameHash);
             StorageItem storage = engine.Snapshot.Storages[key];
             RecordInfo recordInfo = new RecordInfo { Text = text, RecordType = recordType };
@@ -40,15 +43,27 @@ namespace Neo.SmartContract.NNS
 
         // return the text and recordtype of the name
         [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String}, ParameterNames = new[] { "name"})]
-        public StackItem Resolve(ApplicationEngine engine, Array args)
+        private StackItem Resolve(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
+            return Resolve(engine.Snapshot, name);   
+        }
+
+        public string Resolve(StoreView snapshot, string name)
+        {
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
             StorageKey key = CreateStorageKey(Prefix_Record, nameHash);
-            StorageItem storage = engine.Snapshot.Storages[key];
-            if (storage.Value is null) return false;
+            StorageItem storage = snapshot.Storages[key];
+            if (storage is null) return "";
             RecordInfo recordInfo = storage.Value.AsSerializable<RecordInfo>();
-            return recordInfo.ToString();    
+
+            RecordType recordType = recordInfo.RecordType;
+            if (recordType == RecordType.CNAME)
+            {
+                name = recordInfo.Text;
+                Resolve(snapshot, name);
+            }
+            return recordInfo.ToString();
         }
     }
 }

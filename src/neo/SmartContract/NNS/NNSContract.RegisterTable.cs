@@ -1,22 +1,67 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.SmartContract.Native;
+using Neo.VM;
+using Neo.VM.Types;
 using System.Collections.Generic;
 using System.Text;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
     partial class NNSContract
     {
+        //set the admin of the name, only can called by the current owner
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "manager" })]
+        private StackItem SetManager(ApplicationEngine engine, Array args)
+        {
+            string name = args[0].GetString().ToLower();
+            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            UInt160 manager = new UInt160(args[1].GetSpan());
+
+            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
+            StorageItem storage = engine.Snapshot.Storages[key];
+            if (storage is null) return false;
+            DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
+            domainInfo.Manager = manager;
+            storage = engine.Snapshot.Storages.GetAndChange(key);
+            storage.Value = domainInfo.ToArray();
+            return true;
+        }
+
+        //set the TTL of the name, only can called by the current owner
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Integer}, ParameterNames = new[] { "name", "ttl"})]
+        private StackItem SetTTL(ApplicationEngine engine, Array args)
+        {
+            string name = args[0].GetString().ToLower();
+            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            ulong ttl = (ulong)args[1].GetBigInteger();
+            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
+            StorageItem storage = engine.Snapshot.Storages[key];
+            if (storage is null) return false;
+            DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
+            domainInfo.TimeToLive = ttl;
+            storage = engine.Snapshot.Storages.GetAndChange(key);
+            storage.Value = domainInfo.ToArray();
+            return true;
+        }
+
         //only can be called by the current owner
         private bool SetOwner(ApplicationEngine engine, string name, UInt160 owner)
         {
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
             StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
             StorageItem storage = engine.Snapshot.Storages[key];
-            DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
-            if (domainInfo is null) return false;
-            domainInfo.Owner = owner;
+            DomainInfo domainInfo = new DomainInfo { Owner = owner, Name = name };
+            if (storage is null)
+            {
+                engine.Snapshot.Storages.Add(key, new StorageItem
+                {
+                    Value = domainInfo.ToArray()
+                });
+                return true;
+            }
             storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = domainInfo.ToArray();
             return true;
@@ -27,37 +72,24 @@ namespace Neo.SmartContract.NNS
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
             StorageKey ownerKey = CreateStorageKey(Prefix_OwnershipMapping, owner);
             StorageItem ownerStorage = engine.Snapshot.Storages[ownerKey];
-            SortedSet<UInt256> nameHashes = null;
-            if (ownerStorage is null) { nameHashes = new SortedSet<UInt256>(); }
+            SortedSet<DomainInfo> domains = null;
+            if (ownerStorage is null) { domains = new SortedSet<DomainInfo>(); }
             else
             {
-                nameHashes = new SortedSet<UInt256>(ownerStorage.Value.AsSerializableArray<UInt256>());
+                domains = new SortedSet<DomainInfo>(ownerStorage.Value.AsSerializableArray<DomainInfo>());
             }
 
-            if (isAdded && nameHashes.Add(nameHash))
-            {
-                ownerStorage = engine.Snapshot.Storages.GetAndChange(ownerKey);
-                ownerStorage.Value = nameHashes.ToByteArray();
-            }
-            else if(!isAdded && nameHashes.Remove(nameHash))
-            {
-                ownerStorage = engine.Snapshot.Storages.GetAndChange(ownerKey);
-                ownerStorage.Value = nameHashes.ToByteArray();
-            }
-            return true;
-        }
+            DomainInfo domainInfo = engine.Snapshot.Storages[CreateStorageKey(Prefix_Domain, nameHash)].Value.AsSerializable<DomainInfo>();
 
-        //set the admin of the name, only can called by the current owner
-        private bool SetAdmin(ApplicationEngine engine, string name, UInt160 admin)
-        {
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
-            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
-            StorageItem storage = engine.Snapshot.Storages[key];
-            DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
-            if (domainInfo is null) return false;
-            domainInfo.Admin = admin;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = domainInfo.ToArray();
+            if (isAdded && domains.Add(domainInfo))
+            {
+                ownerStorage = engine.Snapshot.Storages.GetAndChange(ownerKey);
+            }
+            else if (!isAdded && domains.Remove(domainInfo))
+            {
+                ownerStorage = engine.Snapshot.Storages.GetAndChange(ownerKey);
+            }
+            ownerStorage.Value = domains.ToByteArray();
             return true;
         }
     }
