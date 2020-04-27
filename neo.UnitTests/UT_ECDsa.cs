@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security.Cryptography;
 using System.Numerics;
+using System;
 
 namespace Neo.Cryptography.ECC.Tests
 {
@@ -48,7 +49,10 @@ namespace Neo.Cryptography.ECC.Tests
                 Assert.IsFalse(recoverKey.Equals(publickey));
             }
             //wrong key may cause exception in decompresspoint
-            catch { }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.GetType() == typeof(ArithmeticException));
+            }
             s = new System.Numerics.BigInteger(generatekey(32));
             try
             {
@@ -56,7 +60,10 @@ namespace Neo.Cryptography.ECC.Tests
                 Assert.IsFalse(recoverKey.Equals(publickey));
             }
             //wrong key may cause exception in decompresspoint
-            catch { }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.GetType() == typeof(ArithmeticException));
+            }
         }
     }
 }
