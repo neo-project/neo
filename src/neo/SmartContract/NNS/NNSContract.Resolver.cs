@@ -4,7 +4,6 @@ using Neo.Ledger;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 using System.Linq;
 using System.Text;
 using Array = Neo.VM.Types.Array;

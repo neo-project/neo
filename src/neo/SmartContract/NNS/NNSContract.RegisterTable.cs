@@ -1,12 +1,8 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.SmartContract.Native;
-using Neo.VM;
-using Neo.VM.Types;
 using System.Collections.Generic;
 using System.Text;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {

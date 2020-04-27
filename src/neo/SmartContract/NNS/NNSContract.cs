@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
