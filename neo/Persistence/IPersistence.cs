@@ -21,5 +21,6 @@ namespace Neo.Persistence
         MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         MetaDataCache<HashIndexState> BlockHashIndex { get; }
         MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        MetaDataCache<HashIndexState> StateRootHashIndex { get; }
     }
 }
