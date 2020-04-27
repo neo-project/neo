@@ -92,15 +92,6 @@ namespace Neo.Cryptography
             return Base58.Encode(buffer);
         }
 
-        public static byte[] Keccak256(this byte[] value)
-        {
-            var digest = new KeccakDigest(256);
-            byte[] hash = new byte[digest.GetDigestSize()];
-            digest.BlockUpdate(value, 0, value.Length);
-            digest.DoFinal(hash, 0);
-            return hash;
-        }
-
         public static byte[] RIPEMD160(this IEnumerable<byte> value)
         {
             return _ripemd160.Value.ComputeHash(value.ToArray());

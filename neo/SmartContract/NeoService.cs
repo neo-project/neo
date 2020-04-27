@@ -101,7 +101,6 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
             Register("Neo.Iterator.Concat", Iterator_Concat, 1);
-            Register("Neo.Cryptography.Keccak256", Keccak256, 20);
             Register("Neo.Cryptography.Secp256k1Recover", Secp256k1Recover, 100);
             Register("Neo.Cryptography.Secp256r1Recover", Secp256r1Recover, 100);
 
@@ -195,13 +194,6 @@ namespace Neo.SmartContract
             {
                 engine.CurrentContext.EvaluationStack.Push(new byte[0]);
             }
-            return true;
-        }
-
-        private bool Keccak256(ExecutionEngine engine)
-        {
-            var message = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            engine.CurrentContext.EvaluationStack.Push(message.Keccak256());
             return true;
         }
 
