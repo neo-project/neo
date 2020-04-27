@@ -133,7 +133,7 @@ namespace Neo.Ledger
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
         public uint StateHeight => currentSnapshot.StateHeight;
-        private uint stateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
+        private uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
         private readonly Dictionary<uint, StateRoot> stateRootCache = new Dictionary<uint, StateRoot>();
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -441,10 +441,10 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewStateRoot(StateRoot state_root)
         {
-            if (state_root.Index < stateRootEnableIndex || state_root.Index <= StateHeight) return RelayResultReason.Invalid;
+            if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return RelayResultReason.Invalid;
             if (state_root.Witness is null) return RelayResultReason.Invalid;
             if (stateRootCache.ContainsKey(state_root.Index)) return RelayResultReason.AlreadyExists;
-            if (state_root.Index > Height || (state_root.Index > StateHeight + 1 && state_root.Index != stateRootEnableIndex))
+            if (state_root.Index > Height || (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex))
             {
                 stateRootCache.Add(state_root.Index, state_root);
                 return RelayResultReason.Succeed;
@@ -508,8 +508,8 @@ namespace Neo.Ledger
         {
             foreach (StateRoot root in roots)
             {
-                if (root.Index < Math.Max(StateHeight, stateRootEnableIndex)) continue;
-                if (root.Index != Math.Max(StateHeight + 1, stateRootEnableIndex))
+                if (root.Index < Math.Max(StateHeight, StateRootEnableIndex)) continue;
+                if (root.Index != Math.Max(StateHeight + 1, StateRootEnableIndex))
                     throw new InvalidOperationException();
                 using (Snapshot snapshot = GetSnapshot())
                 {
@@ -539,7 +539,7 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            var index = Math.Max(StateHeight + 1, stateRootEnableIndex);
+            var index = Math.Max(StateHeight + 1, StateRootEnableIndex);
             if (GetStateRoot(index)?.Flag == StateRootVerifyFlag.Unverified && stateRootCache.TryGetValue(index, out StateRoot state_root))
             {
                 stateRootCache.Remove(index);
