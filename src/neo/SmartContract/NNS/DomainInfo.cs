@@ -58,7 +58,8 @@ namespace Neo.SmartContract.NNS
     {
         A = 0x00,
         CNAME = 0x01,
-        TXT = 0x10,
-        NS = 0x11
+        TXT = 0x02,
+        NS = 0x03,
+        ERROR = 0x04
     }
 }

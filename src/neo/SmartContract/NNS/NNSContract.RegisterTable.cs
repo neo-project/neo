@@ -18,6 +18,8 @@ namespace Neo.SmartContract.NNS
         {
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            if (isExpired(engine.Snapshot, nameHash)) return false;
+
             UInt160 manager = new UInt160(args[1].GetSpan());
 
             StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
@@ -25,23 +27,6 @@ namespace Neo.SmartContract.NNS
             if (storage is null) return false;
             DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
             domainInfo.Manager = manager;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = domainInfo.ToArray();
-            return true;
-        }
-
-        //set the TTL of the name, only can called by the current owner
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Integer}, ParameterNames = new[] { "name", "ttl"})]
-        private StackItem SetTTL(ApplicationEngine engine, Array args)
-        {
-            string name = args[0].GetString().ToLower();
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
-            ulong ttl = (ulong)args[1].GetBigInteger();
-            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
-            StorageItem storage = engine.Snapshot.Storages[key];
-            if (storage is null) return false;
-            DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
-            domainInfo.TimeToLive = ttl;
             storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = domainInfo.ToArray();
             return true;
@@ -79,7 +64,7 @@ namespace Neo.SmartContract.NNS
                 domains = new SortedSet<DomainInfo>(ownerStorage.Value.AsSerializableArray<DomainInfo>());
             }
 
-            DomainInfo domainInfo = engine.Snapshot.Storages[CreateStorageKey(Prefix_Domain, nameHash)].Value.AsSerializable<DomainInfo>();
+            DomainInfo domainInfo = GetDomainInfo(engine.Snapshot, nameHash);
 
             if (isAdded && domains.Add(domainInfo))
             {

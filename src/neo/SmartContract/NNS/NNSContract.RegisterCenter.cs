@@ -151,12 +151,13 @@ namespace Neo.SmartContract.NNS
                 domainInfo.TimeToLive = ttl;
                 storage = engine.Snapshot.Storages.GetAndChange(key);
                 storage.Value = domainInfo.ToArray();
+
                 return true;
             }
             return false;
         }
 
-        // transfer ownership to the specified owner
+        // transfer ownership to the specified owner, ²»ÄÜ¿ç¼¶
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.String }, ParameterNames = new[] { "from", "to", "name" })]
         private StackItem Transfer(ApplicationEngine engine, Array args)
         {
@@ -166,7 +167,7 @@ namespace Neo.SmartContract.NNS
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
             if (IsRootDomain(name) || !IsDomain(name)) return false;
 
-            var domainInfo = GetDomainInfo(engine, nameHash);
+            var domainInfo = GetDomainInfo(engine.Snapshot, nameHash);
             if (domainInfo != null)
             {
                 UInt160 owner = domainInfo.Owner;
@@ -179,26 +180,12 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        private DomainInfo GetDomainInfo(ApplicationEngine engine, UInt256 nameHash)
+        private DomainInfo GetDomainInfo(StoreView snapshot, UInt256 nameHash)
         {
             StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
+            StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null) return null;
             return storage.Value.AsSerializable<DomainInfo>();
-        }
-
-        public bool IsDomain(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return false;
-            Regex regex = new Regex(DomainRegex);
-            return regex.Match(name).Success;
-        }
-
-        public bool IsRootDomain(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return false;
-            Regex regex = new Regex(RootRegex);
-            return regex.Match(name).Success;
         }
     }
 }
