@@ -12,7 +12,7 @@ namespace Neo.SmartContract.NNS
 {
     partial class NNSContract
     {
-        // 只有admin可以调用
+        // only can be called by the admin of the name
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "text", "recordType" })]
         public StackItem SetText(ApplicationEngine engine, Array args)
         {
@@ -38,6 +38,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
+        // return the text and recordtype of the name
         [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String}, ParameterNames = new[] { "name"})]
         public StackItem Resolve(ApplicationEngine engine, Array args)
         {

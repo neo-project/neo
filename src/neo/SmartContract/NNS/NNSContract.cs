@@ -32,13 +32,6 @@ namespace Neo.SmartContract.NNS
         protected const byte Prefix_Admin = 26;
         protected const byte Prefix_RentalPrice = 27;
 
-        private bool CheckValidators(ApplicationEngine engine)
-        {
-            UInt256 prev_hash = engine.Snapshot.PersistingBlock.PrevHash;
-            TrimmedBlock prev_block = engine.Snapshot.Blocks[prev_hash];
-            return InteropService.Runtime.CheckWitnessInternal(engine, prev_block.NextConsensus);
-        }
-
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
@@ -55,21 +48,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        public bool IsDomain(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return false;
-            Regex regex = new Regex(DomainRegex);
-            return regex.Match(name).Success;
-        }
-
-        public bool IsRootDomain(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return false;
-            Regex regex = new Regex(RootRegex);
-            return regex.Match(name).Success;
-        }
-
-        //获取根域名
+        //Get root name
         [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetRootName(ApplicationEngine engine, Array args)
         {
@@ -81,7 +60,19 @@ namespace Neo.SmartContract.NNS
             return snapshot.Storages[CreateStorageKey(Prefix_Root)].Value.AsSerializableArray<UInt256>();
         }
 
-        //注册根域名，只有admin可以调用
+        // Get Admin List
+        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
+        private StackItem GetAdmin(ApplicationEngine engine, Array args)
+        {
+            return new Array(engine.ReferenceCounter, GetAdmin(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
+        }
+
+        public ECPoint[] GetAdmin(StoreView snapshot)
+        {
+            return snapshot.Storages[CreateStorageKey(Prefix_Admin)].Value.AsSerializableArray<ECPoint>();
+        }
+
+        //register root name, only can be called by admin
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String}, ParameterNames = new[] { "name"})]
         public StackItem RegisterRootName(ApplicationEngine engine, Array args)
         {
@@ -105,7 +96,7 @@ namespace Neo.SmartContract.NNS
             return false;
         }
 
-        //注册域名
+        //register new name
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "name", "owner", "admin", "ttl" })]
         private StackItem RegisterNewName(ApplicationEngine engine, Array args)
         {
@@ -113,70 +104,47 @@ namespace Neo.SmartContract.NNS
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
             UInt160 owner = new UInt160(args[1].GetSpan());
             UInt160 admin = new UInt160(args[2].GetSpan());
-            uint ttl = (uint)args[3].GetBigInteger();
-            // verify format, verify access control for root domain
-            
-            if (IsDomain(name))
-            {
-                var levels = name.Split(".");
+            ulong ttl = (ulong)args[3].GetBigInteger();
 
-                // Register first level
-                if (levels.Length == 2)
-                {
-                    // check owner of root
-                    string root = levels[^1];
-                    UInt256 rootHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(root)));
-                    if (!GetRootName(engine.Snapshot).Contains(rootHash)) return false;
-                }
-                else
-                {
-                    // check owner of first level
-                    UInt256 firstLevel = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(levels[^2])));
-                    var domainInfo = GetDomainInfo(engine, firstLevel);
-                    if (domainInfo is null) return false;
-                    if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Owner) &&
-                        !InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Admin))
-                        return false;
-                }
+            if (IsRootDomain(name) || !IsDomain(name)) return false;
 
-                // TOTD: 
+            var levels = name.Split(".");
 
+            // check whether the root name exists 
+            string root = levels[^1];
+            UInt256 rootHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(root)));
+            if (!GetRootName(engine.Snapshot).Contains(rootHash)) return false;
+
+            // check whether the ttl of the first level is expired
+            UInt256 firstLevel = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(levels[^2])));
+            var domainInfo = GetDomainInfo(engine, firstLevel);
+            if (domainInfo != null && (TimeProvider.Current.UtcNow.ToTimestampMS() - domainInfo.TimeToLive) < 0)
                 return false;
-            }
 
             StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
             StorageItem storage = engine.Snapshot.Storages[key];
 
-            // TODO: what if ttl is expired
-
             if (storage is null)
             {
-                DomainInfo domainInfo = new DomainInfo { Admin = admin, Owner = owner, TimeToLive = ttl, Name = name };
+                domainInfo = new DomainInfo { Admin = admin, Owner = owner, TimeToLive = ttl, Name = name };
                 engine.Snapshot.Storages.Add(key, new StorageItem
                 {
                     Value = domainInfo.ToArray()
                 });
 
                 UpdateOwnerShip(engine, name, owner);
+                return true;
             }
-            return true;
+            return false;
         }
 
-        private DomainInfo GetDomainInfo(ApplicationEngine engine, UInt256 nameHash)
-        {
-            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
-            if (storage is null) return null;
-            return storage.Value.AsSerializable<DomainInfo>();
-        }
-
-        //更新一级域名有效期，任何人都可以调用该接口 
+        //update ttl of first level name, can by called by anyone
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "ttl" })]
         private StackItem RenewName(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
-            uint ttl = (uint)args[1].GetBigInteger();
+            ulong ttl = (ulong)args[1].GetBigInteger();
             if (IsDomain(name))
             {
                 StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
@@ -191,11 +159,11 @@ namespace Neo.SmartContract.NNS
             return false;
         }
 
-        // 设置管理员，委员会有权限调用
+        // set addmin, only can be called by committees
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "address" })]
         private StackItem SetAdmin(ApplicationEngine engine, Array args)
         {
-            //验证委员会多签
+            //verify multi-signature of committees
             ECPoint[] committees = NEO.GetCommittee(engine.Snapshot);
             UInt160 script = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 3, committees).ToScriptHash();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, script))
@@ -211,19 +179,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        // Get Admin List
-        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
-        private StackItem GetAdmin(ApplicationEngine engine, Array args)
-        {
-            return new Array(engine.ReferenceCounter, GetAdmin(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
-        }
-
-        public ECPoint[] GetAdmin(StoreView snapshot)
-        {
-            return snapshot.Storages[CreateStorageKey(Prefix_Admin)].Value.AsSerializableArray<ECPoint>();
-        }
-
-        // 设置租赁价格
+        // set rental price
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetRentalPrice(ApplicationEngine engine, Array args)
         {
@@ -233,7 +189,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        // 设置域名所有者owner，只有当前owner才可以调用
+        // transfer name to other owner, only can be called by the current owner
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.String }, ParameterNames = new[] { "from", "to", "name" })]
         private StackItem Transfer(ApplicationEngine engine, Array args)
         {
@@ -251,6 +207,28 @@ namespace Neo.SmartContract.NNS
             UpdateOwnerShip(engine, name, to);
             UpdateOwnerShip(engine, name, from, false);
             return true;
+        }
+
+        private DomainInfo GetDomainInfo(ApplicationEngine engine, UInt256 nameHash)
+        {
+            StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
+            if (storage is null) return null;
+            return storage.Value.AsSerializable<DomainInfo>();
+        }
+
+        public bool IsDomain(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            Regex regex = new Regex(DomainRegex);
+            return regex.Match(name).Success;
+        }
+
+        public bool IsRootDomain(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            Regex regex = new Regex(RootRegex);
+            return regex.Match(name).Success;
         }
     }
 }
