@@ -172,23 +172,15 @@ namespace Neo.SmartContract
 
         private bool Secp256k1Recover(ExecutionEngine engine)
         {
-            var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
-            var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
-            bool v = engine.CurrentContext.EvaluationStack.Pop().GetBoolean();
-            byte[] messageHash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            try
-            {
-                ECPoint point = ECDsa.KeyRecover(ECCurve.Secp256k1, r, s, messageHash, v, true);
-                engine.CurrentContext.EvaluationStack.Push(point.EncodePoint(false).Skip(1).ToArray());
-            }
-            catch
-            {
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
-            }
-            return true;
+            return EccRecover(ECCurve.Secp256k1, engine);
         }
 
         private bool Secp256r1Recover(ExecutionEngine engine)
+        {
+            return EccRecover(ECCurve.Secp256r1, engine);
+        }
+
+        private bool EccRecover(ECCurve curve, ExecutionEngine engine)
         {
             var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
             var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
@@ -196,7 +188,7 @@ namespace Neo.SmartContract
             byte[] messageHash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             try
             {
-                ECPoint point = ECDsa.KeyRecover(ECCurve.Secp256r1, r, s, messageHash, v, true);
+                ECPoint point = ECDsa.KeyRecover(curve, r, s, messageHash, v, true);
                 engine.CurrentContext.EvaluationStack.Push(point.EncodePoint(false).Skip(1).ToArray());
             }
             catch
