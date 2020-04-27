@@ -46,7 +46,7 @@ namespace Neo.Network.P2P
         private readonly UInt256 HeaderTaskHash = UInt256.Zero;
         private readonly UInt256 StateRootTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
-        private bool HashStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
+        private bool HasStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
         public TaskManager(NeoSystem system)
         {
             this.system = system;
@@ -281,7 +281,7 @@ namespace Neo.Network.P2P
             {
                 session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
             }
-            if (!HashStateRootTask)
+            if (!HasStateRootTask)
             {
                 var state_height = Math.Max(Blockchain.Singleton.StateHeight, ProtocolSettings.Default.StateRootEnableIndex - 1);
                 var height = Blockchain.Singleton.Height;

@@ -134,7 +134,7 @@ namespace Neo.Ledger
         public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
         public uint StateHeight => currentSnapshot.StateHeight;
         private uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
-        private readonly Dictionary<uint, StateRoot> state_root_cache = new Dictionary<uint, StateRoot>();
+        private readonly Dictionary<uint, StateRoot> stateRootCache = new Dictionary<uint, StateRoot>();
         private static Blockchain singleton;
         public static Blockchain Singleton
         {
@@ -443,10 +443,10 @@ namespace Neo.Ledger
         {
             if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return RelayResultReason.Invalid;
             if (state_root.Witness is null) return RelayResultReason.Invalid;
-            if (state_root_cache.ContainsKey(state_root.Index)) return RelayResultReason.AlreadyExists;
+            if (stateRootCache.ContainsKey(state_root.Index)) return RelayResultReason.AlreadyExists;
             if (state_root.Index > Height || (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex))
             {
-                state_root_cache.Add(state_root.Index, state_root);
+                stateRootCache.Add(state_root.Index, state_root);
                 return RelayResultReason.Succeed;
             }
             var state_root_to_verify = state_root;
@@ -456,13 +456,13 @@ namespace Neo.Ledger
                 state_roots_to_verify.Add(state_root_to_verify);
                 var index = state_root_to_verify.Index + 1;
                 if (index > Height) break;
-                if (!state_root_cache.TryGetValue(index, out state_root_to_verify)) break;
+                if (!stateRootCache.TryGetValue(index, out state_root_to_verify)) break;
             }
             foreach (var state_root_verifying in state_roots_to_verify)
             {
                 using (Snapshot snapshot = GetSnapshot())
                 {
-                    state_root_cache.Remove(state_root_verifying.Index);
+                    stateRootCache.Remove(state_root_verifying.Index);
                     if (!state_root_verifying.Verify(snapshot))
                     {
                         break;
@@ -540,10 +540,9 @@ namespace Neo.Ledger
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             var index = Math.Max(StateHeight + 1, StateRootEnableIndex);
-            if (GetStateRoot(index)?.Flag == StateRootVerifyFlag.Unverified && state_root_cache.ContainsKey(index))
+            if (GetStateRoot(index)?.Flag == StateRootVerifyFlag.Unverified && stateRootCache.TryGetValue(index, out StateRoot state_root))
             {
-                state_root_cache.TryGetValue(index, out StateRoot state_root);
-                state_root_cache.Remove(index);
+                stateRootCache.Remove(index);
                 Self.Tell(state_root);
             }
         }
@@ -555,8 +554,8 @@ namespace Neo.Ledger
                 case Import import:
                     OnImport(import.Blocks);
                     break;
-                case ImportRoots importr:
-                    OnImportRoots(importr.Roots);
+                case ImportRoots importRoots:
+                    OnImportRoots(importRoots.Roots);
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
