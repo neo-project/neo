@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Configuration;
 using Neo.Cryptography;
 using Neo.IO.Actors;
@@ -52,21 +52,12 @@ namespace Neo.Network.P2P
             this.system = system;
         }
 
-        private void OnHeaderTaskCompleted()
+        private void OnInternalTaskCompleted(UInt256 hash)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            session.Tasks.Remove(HeaderTaskHash);
-            DecrementGlobalTask(HeaderTaskHash);
-            RequestTasks(session);
-        }
-
-        private void OnStateRootTaskCompleted()
-        {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
-            session.Tasks.Remove(StateRootTaskHash);
-            DecrementGlobalTask(StateRootTaskHash);
+            session.Tasks.Remove(hash);
+            DecrementGlobalTask(hash);
             RequestTasks(session);
         }
 
@@ -118,10 +109,10 @@ namespace Neo.Network.P2P
                     OnTaskCompleted(completed.Hash);
                     break;
                 case HeaderTaskCompleted _:
-                    OnHeaderTaskCompleted();
+                    OnInternalTaskCompleted(HeaderTaskHash);
                     break;
                 case StateRootTaskCompleted _:
-                    OnStateRootTaskCompleted();
+                    OnInternalTaskCompleted(StateRootTaskHash);
                     break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
