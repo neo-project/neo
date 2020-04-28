@@ -25,7 +25,7 @@ namespace Neo.Cryptography.ECC.Tests
             KeyRecover(ECCurve.Secp256r1);
         }
 
-        public static void KeyRecover(ECCurve Curve) 
+        public static void KeyRecover(ECCurve Curve)
         {
             byte[] privateKey = generatekey(32);
             ECPoint publicKey = Curve.G * privateKey;
@@ -39,7 +39,7 @@ namespace Neo.Cryptography.ECC.Tests
             {
                 v = true;
             }
-            else 
+            else
             {
                 v = false;
             }
@@ -48,12 +48,12 @@ namespace Neo.Cryptography.ECC.Tests
             //wrong r part
             r = new BigInteger(generatekey(32));
             s = new BigInteger(generatekey(32));
-            try 
+            try
             {
                 recoverKey = ECDsa.KeyRecover(Curve, r, s, message, v, true);
                 Assert.IsFalse(recoverKey.Equals(publicKey));
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Assert.IsTrue(e.GetType() == typeof(ArithmeticException));
             }
