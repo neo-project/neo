@@ -14,14 +14,12 @@ namespace Neo.SmartContract.NNS
 {
     partial class NNSContract
     {
-        private static uint deepCount;
-
         // only can be called by the admin of the name
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "text", "recordType" })]
         public StackItem SetText(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            UInt256 nameHash = ComputeNameHash(name);
             if (isExpired(engine.Snapshot, nameHash)) return false;
 
             string text = args[1].GetString();
@@ -47,22 +45,21 @@ namespace Neo.SmartContract.NNS
         }
 
         // return the text and recordtype of the name
-        [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String}, ParameterNames = new[] { "name"})]
+        [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String }, ParameterNames = new[] { "name" })]
         private StackItem Resolve(ApplicationEngine engine, Array args)
         {
-            deepCount = 0;
             string name = args[0].GetString().ToLower();
-            return Resolve(engine.Snapshot, name);   
+            return Resolve(engine.Snapshot, name);
         }
-        
-        public string Resolve(StoreView snapshot, string name)
+
+        public string Resolve(StoreView snapshot, string name, int deepCount = 0)
         {
-            if (deepCount++ > 100)
+            if (deepCount++ > 100) // TBD
             {
                 return new RecordInfo { Text = "The count of domain redirection exceed 100 times", RecordType = RecordType.ERROR }.ToString();
             }
 
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            UInt256 nameHash = ComputeNameHash(name);
             if (isExpired(snapshot, nameHash))
             {
                 return new RecordInfo { Text = "TTL is expired", RecordType = RecordType.ERROR }.ToString();
@@ -77,15 +74,16 @@ namespace Neo.SmartContract.NNS
             RecordInfo recordInfo = storage.Value.AsSerializable<RecordInfo>();
 
             RecordType recordType = recordInfo.RecordType;
-            if (recordType == RecordType.CNAME)
+            switch (recordType)
             {
-                name = recordInfo.Text;
-                Resolve(snapshot, name);
-            }
-            if (recordType == RecordType.NS)
-            {
-                name = string.Join(".", name.Split(".")[1..]);
-                Resolve(snapshot, name);
+                case RecordType.CNAME:
+                    name = recordInfo.Text;
+                    Resolve(snapshot, name, deepCount);
+                    break;
+                case RecordType.NS:
+                    name = string.Join(".", name.Split(".")[1..]);
+                    Resolve(snapshot, name, deepCount);
+                    break;
             }
             return recordInfo.ToString();
         }

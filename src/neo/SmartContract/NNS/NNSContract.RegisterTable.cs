@@ -14,10 +14,10 @@ namespace Neo.SmartContract.NNS
     {
         //set the admin of the name, only can called by the current owner
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "manager" })]
-        private StackItem SetManager(ApplicationEngine engine, Array args)
+        private StackItem SetResolverManager(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            UInt256 nameHash = ComputeNameHash(name);
             if (isExpired(engine.Snapshot, nameHash)) return false;
 
             UInt160 manager = new UInt160(args[1].GetSpan());
@@ -35,7 +35,7 @@ namespace Neo.SmartContract.NNS
         //only can be called by the current owner
         private bool SetOwner(ApplicationEngine engine, string name, UInt160 owner)
         {
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            UInt256 nameHash = ComputeNameHash(name);
             StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
             StorageItem storage = engine.Snapshot.Storages[key];
             DomainInfo domainInfo = new DomainInfo { Owner = owner, Name = name };
@@ -54,7 +54,7 @@ namespace Neo.SmartContract.NNS
 
         private bool UpdateOwnerShip(ApplicationEngine engine, string name, UInt160 owner, bool isAdded = true)
         {
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
+            UInt256 nameHash = ComputeNameHash(name);
             StorageKey ownerKey = CreateStorageKey(Prefix_OwnershipMapping, owner);
             StorageItem ownerStorage = engine.Snapshot.Storages[ownerKey];
             SortedSet<DomainInfo> domains = null;

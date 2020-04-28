@@ -3,13 +3,11 @@ using Neo.Ledger;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 using Neo.Cryptography;
-using System.Text.RegularExpressions;
 using Neo.Cryptography.ECC;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -116,8 +114,8 @@ namespace Neo.SmartContract.NNS
         public StackItem RegisterRootName(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
-            
+            UInt256 nameHash = ComputeNameHash(name);
+
             if (IsRootDomain(name))
             {
                 ECPoint[] admins = GetAdmin(engine.Snapshot);
@@ -140,7 +138,7 @@ namespace Neo.SmartContract.NNS
         private StackItem RenewName(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
+            UInt256 nameHash = ComputeNameHash(name);
             ulong ttl = (ulong)args[1].GetBigInteger();
             if (IsDomain(name))
             {
@@ -157,15 +155,23 @@ namespace Neo.SmartContract.NNS
             return false;
         }
 
-        // transfer ownership to the specified owner, ���ܿ缶
+        // transfer ownership to the specified owner, 不能跨级
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.String }, ParameterNames = new[] { "from", "to", "name" })]
         private StackItem Transfer(ApplicationEngine engine, Array args)
         {
             UInt160 from = new UInt160(args[0].GetSpan());
             UInt160 to = new UInt160(args[1].GetSpan());
             string name = args[2].GetString().ToLower();
-            UInt256 nameHash = new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
+            UInt256 nameHash = ComputeNameHash(name);
             if (IsRootDomain(name) || !IsDomain(name)) return false;
+
+            // check whether the registration is cross-level 
+            string[] names = name.Split(".");
+            if (names.Length >= 5) return false;
+            string secondLevel = names.Length >= 3 ? string.Join(".", names[^3..]) : null;
+            string thirdLevel = names.Length == 4 ? name : null;
+            if (isCrossLevel(engine.Snapshot, secondLevel) || isCrossLevel(engine.Snapshot, thirdLevel))
+                return false;
 
             var domainInfo = GetDomainInfo(engine.Snapshot, nameHash);
             if (domainInfo != null)
@@ -186,6 +192,21 @@ namespace Neo.SmartContract.NNS
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null) return null;
             return storage.Value.AsSerializable<DomainInfo>();
+        }
+
+        private bool isCrossLevel(StoreView snapshot, string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            string fatherLevel = string.Join(".", name.Split(".")[1..]);
+            UInt256 nameHash = ComputeNameHash(fatherLevel);
+            var domainInfo = GetDomainInfo(snapshot, nameHash);
+            if (domainInfo is null) return true;
+            return false;               
+        }
+
+        private UInt256 ComputeNameHash(string name)
+        {
+            return new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
         }
     }
 }
