@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
+using System.Threading;
 
 namespace Neo
 {
@@ -14,7 +15,32 @@ namespace Neo
         public uint MillisecondsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
 
-        public static readonly ProtocolSettings Default = new ProtocolSettings(Utility.LoadConfig("protocol").GetSection("ProtocolConfiguration"));
+        static ProtocolSettings _default;
+
+        static bool UpdateDefault(IConfiguration configuration)
+        {
+            var settings = new ProtocolSettings(configuration.GetSection("ProtocolConfiguration"));
+            return null == Interlocked.CompareExchange(ref _default, settings, null);
+        }
+
+        public static bool Initialize(IConfiguration configuration)
+        {
+            return UpdateDefault(configuration);
+        }
+
+        public static ProtocolSettings Default
+        {
+            get
+            {
+                if (_default == null)
+                {
+                    var configuration = Utility.LoadConfig("protocol");
+                    UpdateDefault(configuration);
+                }
+
+                return _default;
+            }
+        }
 
         private ProtocolSettings(IConfigurationSection section)
         {
