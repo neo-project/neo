@@ -5,20 +5,19 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections.Generic;
-using System.Text;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
     partial class NNSContract
     {
-        //set the admin of the name, only can called by the current owner
+        //set the operator of the name, only can called by the current owner
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "manager" })]
-        private StackItem SetResolverManager(ApplicationEngine engine, Array args)
+        private StackItem SetOperator(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = ComputeNameHash(name);
-            if (isExpired(engine.Snapshot, nameHash)) return false;
+            if (IsExpired(engine.Snapshot, nameHash)) return false;
 
             UInt160 manager = new UInt160(args[1].GetSpan());
 
@@ -26,7 +25,7 @@ namespace Neo.SmartContract.NNS
             StorageItem storage = engine.Snapshot.Storages[key];
             if (storage is null) return false;
             DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
-            domainInfo.Manager = manager;
+            domainInfo.Operator = manager;
             storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = domainInfo.ToArray();
             return true;

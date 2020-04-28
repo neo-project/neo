@@ -7,7 +7,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
@@ -18,7 +17,6 @@ namespace Neo.SmartContract.NNS
         public override int Id => -5;
         public string Name => "NNS";
         public string Symbol => "nns";
-        public byte Decimals => 0;
 
         protected const byte Prefix_Root = 22;
         protected const byte Prefix_Domain = 23;
@@ -108,9 +106,7 @@ namespace Neo.SmartContract.NNS
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetRentalPrice(ApplicationEngine engine, Array args)
         {
-            ECPoint[] admins = GetAdmin(engine.Snapshot);
-            UInt160 script = Contract.CreateMultiSigRedeemScript(admins.Length - (admins.Length - 1) / 3, admins).ToScriptHash();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, script)) return false;
+            if (!IsAdminCalling(engine)) return false;
 
             long value = (long)args[0].GetBigInteger();
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RentalPrice));
@@ -121,9 +117,7 @@ namespace Neo.SmartContract.NNS
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "address" })]
         private StackItem SetReceiptAddress(ApplicationEngine engine, Array args)
         {
-            ECPoint[] admins = GetAdmin(engine.Snapshot);
-            UInt160 script = Contract.CreateMultiSigRedeemScript(admins.Length - (admins.Length - 1) / 3, admins).ToScriptHash();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, script)) return false;
+            if (!IsAdminCalling(engine)) return false;
 
             UInt160 address = new UInt160(args[0].GetSpan());
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ReceiptAddress));

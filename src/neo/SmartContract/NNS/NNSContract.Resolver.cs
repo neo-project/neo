@@ -14,13 +14,15 @@ namespace Neo.SmartContract.NNS
 {
     partial class NNSContract
     {
+        private static readonly uint MaxResolveCount = 7;
+
         // only can be called by the admin of the name
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "text", "recordType" })]
         public StackItem SetText(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = ComputeNameHash(name);
-            if (isExpired(engine.Snapshot, nameHash)) return false;
+            if (IsExpired(engine.Snapshot, nameHash)) return false;
 
             string text = args[1].GetString();
             RecordType recordType = (RecordType)(byte)args[2].GetBigInteger();
@@ -52,15 +54,15 @@ namespace Neo.SmartContract.NNS
             return Resolve(engine.Snapshot, name);
         }
 
-        public string Resolve(StoreView snapshot, string name, int deepCount = 0)
+        public string Resolve(StoreView snapshot, string name, int resolveCount = 0)
         {
-            if (deepCount++ > 100) // TBD
+            if (resolveCount++ > MaxResolveCount) // TBD
             {
                 return new RecordInfo { Text = "The count of domain redirection exceeds 100 times", RecordType = RecordType.ERROR }.ToString();
             }
 
             UInt256 nameHash = ComputeNameHash(name);
-            if (isExpired(snapshot, nameHash))
+            if (IsExpired(snapshot, nameHash))
             {
                 return new RecordInfo { Text = "TTL is expired", RecordType = RecordType.ERROR }.ToString();
             }
@@ -78,12 +80,10 @@ namespace Neo.SmartContract.NNS
             {
                 case RecordType.CNAME:
                     name = recordInfo.Text;
-                    Resolve(snapshot, name, deepCount);
-                    break;
+                    return Resolve(snapshot, name, resolveCount);
                 case RecordType.NS:
                     name = string.Join(".", name.Split(".")[1..]);
-                    Resolve(snapshot, name, deepCount);
-                    break;
+                    return Resolve(snapshot, name, resolveCount);
             }
             return recordInfo.ToString();
         }
@@ -104,10 +104,10 @@ namespace Neo.SmartContract.NNS
             return regex.Match(name).Success;
         }
 
-        public bool isExpired(StoreView snapshot, UInt256 nameHash)
+        public bool IsExpired(StoreView snapshot, UInt256 nameHash)
         {
             var domainInfo = GetDomainInfo(snapshot, nameHash);
-            return TimeProvider.Current.UtcNow.ToTimestampMS() - domainInfo.TimeToLive > 0;
+            return snapshot.Height - domainInfo.ValidUntilBlock > 0;
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Neo.SmartContract.NNS
         public RecordType RecordType { set; get; }
         public string Text { get; set; }
 
-        public int Size => 1 + Text.GetVarSize();
+        public int Size => sizeof(RecordType) + Text.GetVarSize();
 
         public void Deserialize(BinaryReader reader)
         {
@@ -35,14 +35,5 @@ namespace Neo.SmartContract.NNS
         {
             return ToJson().ToString();
         }
-    }
-
-    public enum RecordType : byte
-    {
-        A = 0x00,
-        CNAME = 0x01,
-        TXT = 0x02,
-        NS = 0x03,
-        ERROR = 0x04
     }
 }

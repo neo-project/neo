@@ -68,31 +68,37 @@ namespace Neo.SmartContract.NNS
             return Symbol;
         }
 
-        [ContractMethod(0, ContractParameterType.Integer, CallFlags.None, Name = "decimals")]
-        protected StackItem DecimalsMethod(ApplicationEngine engine, Array args)
-        {
-            return (uint)Decimals;
-        }
-
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
+        [ContractMethod(0, ContractParameterType.Integer, CallFlags.None)]
         protected StackItem TotalSupply(ApplicationEngine engine, Array args)
         {
             return 0;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
+        [ContractMethod(0, ContractParameterType.Integer, CallFlags.None, Name = "decimals")]
+        protected StackItem DecimalsMethod(ApplicationEngine engine, Array args)
+        {
+            return 0;
+        }
+
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.None, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
         protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
             return 0;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
+        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.None, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
         private StackItem OwnerOf(ApplicationEngine engine, Array args)
         {
-            return new Array(engine.ReferenceCounter, GetOwerOf(engine.Snapshot, args).Select(p => (StackItem)p.ToArray()));
+            return new Array(engine.ReferenceCounter, System.Array.Empty<StackItem>());
         }
 
-        public DomainInfo[] GetOwerOf(StoreView snapshot, Array args)
+        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
+        private StackItem TokensOf(ApplicationEngine engine, Array args)
+        {
+            return new Array(engine.ReferenceCounter, GetTokensOf(engine.Snapshot, args).Select(p => (StackItem)p.ToArray()));
+        }
+
+        public DomainInfo[] GetTokensOf(StoreView snapshot, Array args)
         {
             UInt160 owner = new UInt160(args[0].GetSpan());
             return snapshot.Storages[CreateStorageKey(Prefix_OwnershipMapping, owner)].Value.AsSerializableArray<DomainInfo>();
@@ -119,9 +125,7 @@ namespace Neo.SmartContract.NNS
 
             if (IsRootDomain(name))
             {
-                ECPoint[] admins = GetAdmin(engine.Snapshot);
-                UInt160 script = Contract.CreateMultiSigRedeemScript(admins.Length - (admins.Length - 1) / 3, admins).ToScriptHash();
-                if (!InteropService.Runtime.CheckWitnessInternal(engine, script)) return false;
+                if (!IsAdminCalling(engine)) return false;
 
                 StorageKey key = CreateStorageKey(Prefix_Root);
                 StorageItem storage = engine.Snapshot.Storages[key];
@@ -140,8 +144,8 @@ namespace Neo.SmartContract.NNS
         {
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = ComputeNameHash(name);
-            ulong ttl = (ulong)args[1].GetBigInteger();
-            ulong duration = ttl - TimeProvider.Current.UtcNow.ToTimestampMS();
+            uint validUntilBlock = (uint)args[1].GetBigInteger();
+            ulong duration = validUntilBlock - engine.Snapshot.Height;
             if (duration < 0) return false;
 
             if (!InteropService.Runtime.CheckWitnessInternal(engine, engine.CallingScriptHash)) return false;
@@ -152,7 +156,7 @@ namespace Neo.SmartContract.NNS
                 StorageItem storage = engine.Snapshot.Storages[key];
                 DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
                 if (domainInfo is null) return false;
-                domainInfo.TimeToLive = ttl;
+                domainInfo.ValidUntilBlock = validUntilBlock;
                 storage = engine.Snapshot.Storages.GetAndChange(key);
                 storage.Value = domainInfo.ToArray();
 
@@ -160,7 +164,7 @@ namespace Neo.SmartContract.NNS
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     ulong year = 365 * 24 * 60 * 60 * 1000L;
-                    BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / year;
+                    BigInteger amount = duration * Blockchain.MillisecondsPerBlock * GetRentalPrice(engine.Snapshot) / year;
                     sb.EmitAppCall(GAS.Hash, "transfer", engine.CallingScriptHash, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
                     script = sb.ToArray();
                 }
@@ -174,7 +178,7 @@ namespace Neo.SmartContract.NNS
         }
 
         // transfer ownership to the specified owner
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.String }, ParameterNames = new[] { "from", "to", "name" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.String }, ParameterNames = new[] { "from", "to", "name" })]
         private StackItem Transfer(ApplicationEngine engine, Array args)
         {
             UInt160 from = new UInt160(args[0].GetSpan());
@@ -195,12 +199,14 @@ namespace Neo.SmartContract.NNS
             if (domainInfo != null)
             {
                 UInt160 owner = domainInfo.Owner;
-                if ((TimeProvider.Current.UtcNow.ToTimestampMS() - domainInfo.TimeToLive < 0) && !owner.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
+                if ((engine.Snapshot.Height - domainInfo.ValidUntilBlock < 0) && !owner.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
                     return false;
             }
             SetOwner(engine, name, to);
             UpdateOwnerShip(engine, name, to);
             UpdateOwnerShip(engine, name, from, false);
+
+            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), 0, name }));
             return true;
         }
 
@@ -225,6 +231,14 @@ namespace Neo.SmartContract.NNS
         private UInt256 ComputeNameHash(string name)
         {
             return new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name)));
+        }
+
+        private bool IsAdminCalling(ApplicationEngine engine)
+        {
+            ECPoint[] admins = GetAdmin(engine.Snapshot);
+            UInt160 script = Contract.CreateMultiSigRedeemScript(admins.Length - (admins.Length - 1) / 3, admins).ToScriptHash();
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, script)) return false;
+            return true;
         }
     }
 }
