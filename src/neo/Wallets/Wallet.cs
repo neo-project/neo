@@ -361,8 +361,7 @@ namespace Neo.Wallets
                             }
                             .Build());
 
-                            attributes = attr.ToArray();
-                            tx.Attributes = attributes;
+                            tx.Attributes = attributes = attr.ToArray();
                         }
 
                         // Check asserts
