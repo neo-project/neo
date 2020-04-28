@@ -8,8 +8,6 @@ namespace Neo.Cryptography.ECC.Tests
     [TestClass()]
     public class UT_ECDsa
     {
-        private ECDsa ecdsa;
-
         public static byte[] generatekey(int privateKeyLength)
         {
             byte[] privateKey = new byte[privateKeyLength];
@@ -23,9 +21,15 @@ namespace Neo.Cryptography.ECC.Tests
         [TestMethod()]
         public void KeyRecoverTest()
         {
+            KeyRecover(ECCurve.Secp256k1);
+            KeyRecover(ECCurve.Secp256r1);
+        }
+
+        public static void KeyRecover(ECCurve Curve) 
+        {
             byte[] privateKey = generatekey(32);
-            ECPoint publickey = ECCurve.Secp256k1.G * privateKey;
-            ecdsa = new ECDsa(privateKey, ECCurve.Secp256k1);
+            ECPoint publicKey = Curve.G * privateKey;
+            ECDsa ecdsa = new ECDsa(privateKey, Curve);
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
             BigInteger[] signatures = ecdsa.GenerateSignature(message);
             BigInteger r = signatures[0];
@@ -35,32 +39,21 @@ namespace Neo.Cryptography.ECC.Tests
             {
                 v = true;
             }
-            else
+            else 
             {
                 v = false;
             }
-            ECPoint recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, r, s, message, v, true);
-            Assert.IsTrue(recoverKey.Equals(publickey));
-            //wrong key part
-            r = new System.Numerics.BigInteger(generatekey(32));
-            try
+            ECPoint recoverKey = ECDsa.KeyRecover(Curve, r, s, message, v, true);
+            Assert.IsTrue(recoverKey.Equals(publicKey));
+            //wrong r part
+            r = new BigInteger(generatekey(32));
+            s = new BigInteger(generatekey(32));
+            try 
             {
-                recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, r, signatures[1], message, true, true);
-                Assert.IsFalse(recoverKey.Equals(publickey));
+                recoverKey = ECDsa.KeyRecover(Curve, r, s, message, v, true);
+                Assert.IsFalse(recoverKey.Equals(publicKey));
             }
-            //wrong key may cause exception in decompresspoint
-            catch (Exception e)
-            {
-                Assert.IsTrue(e.GetType() == typeof(ArithmeticException));
-            }
-            s = new System.Numerics.BigInteger(generatekey(32));
-            try
-            {
-                recoverKey = ECDsa.KeyRecover(ECCurve.Secp256k1, signatures[0], s, message, true, true);
-                Assert.IsFalse(recoverKey.Equals(publickey));
-            }
-            //wrong key may cause exception in decompresspoint
-            catch (Exception e)
+            catch(Exception e)
             {
                 Assert.IsTrue(e.GetType() == typeof(ArithmeticException));
             }

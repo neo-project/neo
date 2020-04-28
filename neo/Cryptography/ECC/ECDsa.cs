@@ -109,6 +109,10 @@ namespace Neo.Cryptography.ECC
 
         public static ECPoint KeyRecover(ECCurve curve, BigInteger r, BigInteger s, byte[] msg, bool isEven, bool doChecks)
         {
+            if (r < BigInteger.One || s < BigInteger.One) 
+            {
+                throw new ArithmeticException("Invalid signature");
+            }
             // calculate h
             BigInteger h = (curve.Q + 1 + 2 * (BigInteger)Math.Sqrt((double)curve.Q)) / curve.N;
             BigInteger e;
