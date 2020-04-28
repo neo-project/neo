@@ -276,10 +276,10 @@ namespace Neo.Network.P2P
         {
             if (inventory is Block block)
             {
-                system.TaskManager.Tell(block);
+                system.SyncManager.Tell(block);
                 return;
             }
-            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
+            system.SyncManager.Tell(new SyncManager.TaskCompleted { Hash = inventory.Hash });
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
             pendingKnownHashes.Remove(inventory.Hash);
             knownHashes.Add(inventory.Hash);
@@ -303,7 +303,7 @@ namespace Neo.Network.P2P
             if (hashes.Length == 0) return;
             foreach (UInt256 hash in hashes)
                 pendingKnownHashes.Add((hash, DateTime.UtcNow));
-            system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
+            system.SyncManager.Tell(new SyncManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
 
         private void OnMemPoolMessageReceived()
@@ -326,7 +326,7 @@ namespace Neo.Network.P2P
         private void OnVerackMessageReceived()
         {
             verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Node = this });
+            system.SyncManager.Tell(new SyncManager.Register { Node = this });
             CheckMessageQueue();
         }
 
@@ -376,7 +376,7 @@ namespace Neo.Network.P2P
             if (payload.LastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.StartSync { });
+                system.SyncManager.Tell(new SyncManager.StartSync { });
             }
         }
     }

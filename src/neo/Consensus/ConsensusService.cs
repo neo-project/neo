@@ -25,7 +25,7 @@ namespace Neo.Consensus
 
         private readonly ConsensusContext context;
         private readonly IActorRef localNode;
-        private readonly IActorRef taskManager;
+        private readonly IActorRef syncManager;
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
@@ -46,15 +46,15 @@ namespace Neo.Consensus
         /// </summary>
         private bool isRecovering = false;
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, IStore store, Wallet wallet)
-            : this(localNode, taskManager, new ConsensusContext(wallet, store))
+        public ConsensusService(IActorRef localNode, IActorRef syncManager, IStore store, Wallet wallet)
+            : this(localNode, syncManager, new ConsensusContext(wallet, store))
         {
         }
 
-        internal ConsensusService(IActorRef localNode, IActorRef taskManager, ConsensusContext context)
+        internal ConsensusService(IActorRef localNode, IActorRef syncManager, ConsensusContext context)
         {
             this.localNode = localNode;
-            this.taskManager = taskManager;
+            this.syncManager = syncManager;
             this.context = context;
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
         }
@@ -231,8 +231,7 @@ namespace Neo.Consensus
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.VerifySignature(hashData, commit.Signature,
-                    context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+                else if (Crypto.VerifySignature(hashData, commit.Signature, context.Validators[payload.ValidatorIndex]))
                 {
                     existingCommitPayload = payload;
                     CheckCommits();
@@ -433,7 +432,7 @@ namespace Neo.Consensus
             byte[] hashData = context.EnsureHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    if (!Crypto.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i]))
                         context.CommitPayloads[i] = null;
 
             if (context.TransactionHashes.Length == 0)
@@ -464,7 +463,7 @@ namespace Neo.Consensus
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
                 UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
-                taskManager.Tell(new TaskManager.RestartTasks
+                syncManager.Tell(new SyncManager.RestartTasks
                 {
                     Payload = InvPayload.Create(InventoryType.TX, hashes)
                 });
@@ -601,9 +600,9 @@ namespace Neo.Consensus
             base.PostStop();
         }
 
-        public static Props Props(IActorRef localNode, IActorRef taskManager, IStore store, Wallet wallet)
+        public static Props Props(IActorRef localNode, IActorRef syncManager, IStore store, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
+            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, syncManager, store, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
         private void RequestChangeView(ChangeViewReason reason)

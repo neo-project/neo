@@ -62,6 +62,7 @@ namespace Neo.Ledger
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
+        private readonly Dictionary<uint, Block> block_cache = new Dictionary<uint, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
@@ -181,6 +182,8 @@ namespace Neo.Ledger
         public Block GetBlock(uint index)
         {
             if (index == 0) return GenesisBlock;
+            if (block_cache.TryGetValue(index, out Block block))
+                return block;
             UInt256 hash = GetBlockHash(index);
             if (hash == null) return null;
             return GetBlock(hash);
@@ -324,10 +327,11 @@ namespace Neo.Ledger
             {
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
+                block_cache.TryAdd(block.Index, block);
                 block_cache_unverified.Remove(block.Index);
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height + 1)));
                 Persist(block);
                 SaveHeaderHashList();
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
@@ -358,6 +362,7 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
+            block_cache.Remove(block.Index - 1);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
