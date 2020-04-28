@@ -217,8 +217,6 @@ namespace Neo.Ledger
             return Store.GetSnapshot();
         }
 
-
-
         public Transaction GetTransaction(UInt256 hash)
         {
             if (MemPool.TryGetValue(hash, out Transaction transaction))
