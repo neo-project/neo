@@ -223,8 +223,8 @@ namespace Neo.Ledger
 
         public StateRootState GetStateRoot(UInt256 block_hash)
         {
-            var index = GetBlock(block_hash).Index;
-            return GetStateRoot(index);
+            var block = GetBlock(block_hash);
+            return block is null ? null : GetStateRoot(block.Index);
         }
 
         public StateRootState GetStateRoot(uint index)
