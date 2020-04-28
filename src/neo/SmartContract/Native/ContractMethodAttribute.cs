@@ -10,12 +10,13 @@ namespace Neo.SmartContract.Native
         public ContractParameterType ReturnType { get; }
         public ContractParameterType[] ParameterTypes { get; set; } = Array.Empty<ContractParameterType>();
         public string[] ParameterNames { get; set; } = Array.Empty<string>();
-        public bool SafeMethod { get; set; } = false;
+        public CallFlags RequiredCallFlags { get; }
 
-        public ContractMethodAttribute(long price, ContractParameterType returnType)
+        public ContractMethodAttribute(long price, ContractParameterType returnType, CallFlags requiredCallFlags)
         {
             this.Price = price;
             this.ReturnType = returnType;
+            this.RequiredCallFlags = requiredCallFlags;
         }
     }
 }

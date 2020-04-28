@@ -30,10 +30,12 @@ namespace Neo.Ledger
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
-        public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
-        public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly byte CommitteeMembersCount = (byte)ProtocolSettings.Default.StandbyCommittee.Length;
+        public static readonly byte ValidatorsCount = ProtocolSettings.Default.ValidatorsCount;
+        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[..ValidatorsCount];
 
         public static readonly Block GenesisBlock = new Block
         {
@@ -329,6 +331,7 @@ namespace Neo.Ledger
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
                     return VerifyResult.Invalid;
             }
+            block_cache.TryAdd(block.Hash, block);
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
@@ -368,7 +371,6 @@ namespace Neo.Ledger
             }
             else
             {
-                block_cache.Add(block.Hash, block);
                 if (block.Index + 100 >= header_index.Count)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
@@ -428,7 +430,7 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
+            block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
