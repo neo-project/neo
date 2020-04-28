@@ -30,7 +30,7 @@ namespace Neo.UnitTests.SmartContract
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
-                Version = TransactionVersion.Transaction,
+                Version = 0,
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
                 Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
             };
@@ -249,7 +249,7 @@ namespace Neo.UnitTests.SmartContract
                     SystemFee = 0x03,
                     Nonce = 0x04,
                     ValidUntilBlock = 0x05,
-                    Version = TransactionVersion.Transaction,
+                    Version = 0,
                     Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
                     Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
                 };

@@ -325,7 +325,7 @@ namespace Neo.Wallets
             {
                 Transaction tx = new Transaction
                 {
-                    Version = oracleCache?.Count > 0 ? TransactionVersion.OracleRequest : TransactionVersion.Transaction,
+                    Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,
@@ -349,7 +349,23 @@ namespace Neo.Wallets
                         // Increase filter cost
 
                         tx.SystemFee += oracleCache.FilterCost;
-                        tx.Version = TransactionVersion.OracleRequest;
+
+                        // Append attribute
+
+                        var attr = new List<TransactionAttribute>(attributes);
+                        if (!attr.Any(u => u.Usage == TransactionAttributeUsage.Oracle))
+                        {
+                            attr.Add(new OracleAttribute()
+                            {
+                                Type = OracleAttribute.OracleAttributeType.Request
+                            }
+                            .Build());
+
+                            attributes = attr.ToArray();
+                            tx.Attributes = attributes;
+                        }
+
+                        // Check asserts
 
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
