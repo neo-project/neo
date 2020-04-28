@@ -1,3 +1,4 @@
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using System;
@@ -6,7 +7,9 @@ using static Neo.Helper;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTTrie : MPTReadOnlyTrie
+    public class MPTTrie<TKey, TValue> : MPTReadOnlyTrie<TKey, TValue>
+        where TKey : notnull, ISerializable
+        where TValue : class, ISerializable, new()
     {
         private MPTDb db;
 
@@ -15,16 +18,17 @@ namespace Neo.Trie.MPT
             this.db = new MPTDb(store, prefix);
         }
 
-        public bool Put(byte[] key, byte[] value)
+        public bool Put(TKey key, TValue value)
         {
-            var path = key.ToNibbles();
-            if (ExtensionNode.MaxKeyLength < path.Length)
+            var path = key.ToArray().ToNibbles();
+            var val = value.ToArray();
+            if (ExtensionNode.MaxKeyLength < path.Length || path.Length == 0)
                 return false;
-            if (LeafNode.MaxValueLength < value.Length)
+            if (LeafNode.MaxValueLength < val.Length)
                 return false;
-            if (value.Length == 0)
+            if (val.Length == 0)
                 return TryDelete(ref root, path);
-            var n = new LeafNode(value);
+            var n = new LeafNode(val);
             return Put(ref root, path, n);
         }
 
@@ -150,9 +154,10 @@ namespace Neo.Trie.MPT
             }
         }
 
-        public bool TryDelete(byte[] key)
+        public bool TryDelete(TKey key)
         {
-            var path = key.ToNibbles();
+            var path = key.ToArray().ToNibbles();
+            if (path.Length == 0) return false;
             return TryDelete(ref root, path);
         }
 

@@ -1,10 +1,13 @@
+using Neo.IO;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTReadOnlyTrie
+    public class MPTReadOnlyTrie<TKey, TValue>
+        where TKey : notnull, ISerializable
+        where TValue : class, ISerializable, new()
     {
         private MPTReadOnlyDb rodb;
         protected MPTNode root;
@@ -26,15 +29,17 @@ namespace Neo.Trie.MPT
             }
         }
 
-        public MPTNode Resolve(HashNode hn)
+        public MPTNode Resolve(HashNode n)
         {
-            return rodb.Node(hn.Hash);
+            return rodb.Node(n.Hash);
         }
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public TValue Get(TKey key)
         {
-            var path = key.ToNibbles();
-            return TryGet(ref root, path, out value);
+            var path = key.ToArray().ToNibbles();
+            if (path.Length == 0) return null;
+            var result = TryGet(ref root, path, out byte[] value);
+            return result ? value.AsSerializable<TValue>() : null;
         }
 
         private bool TryGet(ref MPTNode node, byte[] path, out byte[] value)
@@ -84,10 +89,11 @@ namespace Neo.Trie.MPT
             return root.GetHash();
         }
 
-        public bool GetProof(byte[] key, out HashSet<byte[]> set)
+        public bool GetProof(TKey key, out HashSet<byte[]> set)
         {
             set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-            var path = key.ToNibbles();
+            var path = key.ToArray().ToNibbles();
+            if (path.Length == 0) return false;
             return GetProof(ref root, path, set);
         }
 
@@ -134,11 +140,11 @@ namespace Neo.Trie.MPT
             return false;
         }
 
-        public static bool VerifyProof(UInt256 root, byte[] key, HashSet<byte[]> proof, out byte[] value)
+        public static TValue VerifyProof(UInt256 root, TKey key, HashSet<byte[]> proof)
         {
             var store = new MPTProofStore(proof);
-            var trie = new MPTReadOnlyTrie(root, store, 0);
-            return trie.TryGet(key, out value);
+            var trie = new MPTReadOnlyTrie<TKey, TValue>(root, store, 0);
+            return trie.Get(key);
         }
     }
 }
