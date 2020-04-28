@@ -18,8 +18,6 @@ namespace Neo.SmartContract.NNS
         public string Name => "NNS";
         public string Symbol => "nns";
         public byte Decimals => 0;
-        public const string DomainRegex = @"^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62}){1,3}$";
-        public const string RootRegex = @"^[a-zA-Z]{0,62}$";
 
         protected const byte Prefix_Root = 22;
         protected const byte Prefix_Domain = 23;

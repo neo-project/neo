@@ -91,14 +91,16 @@ namespace Neo.SmartContract.NNS
         public bool IsDomain(string name)
         {
             if (string.IsNullOrEmpty(name)) return false;
-            Regex regex = new Regex(DomainRegex);
+            string pattern = @"^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62}){1,3}$";
+            Regex regex = new Regex(pattern);
             return regex.Match(name).Success;
         }
 
         public bool IsRootDomain(string name)
         {
             if (string.IsNullOrEmpty(name)) return false;
-            Regex regex = new Regex(RootRegex);
+            string pattern = @"^[a-zA-Z]{0,62}$";
+            Regex regex = new Regex(pattern);
             return regex.Match(name).Success;
         }
 

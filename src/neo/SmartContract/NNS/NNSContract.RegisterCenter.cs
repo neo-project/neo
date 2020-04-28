@@ -16,7 +16,7 @@ namespace Neo.SmartContract.NNS
 {
     partial class NNSContract
     {
-        protected NNSContract()
+        public NNSContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
 
@@ -155,7 +155,7 @@ namespace Neo.SmartContract.NNS
             return false;
         }
 
-        // transfer ownership to the specified owner, 不能跨级
+        // transfer ownership to the specified owner
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.String }, ParameterNames = new[] { "from", "to", "name" })]
         private StackItem Transfer(ApplicationEngine engine, Array args)
         {
