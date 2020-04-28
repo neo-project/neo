@@ -56,7 +56,7 @@ namespace Neo.SmartContract.NNS
         {
             if (deepCount++ > 100) // TBD
             {
-                return new RecordInfo { Text = "The count of domain redirection exceed 100 times", RecordType = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "The count of domain redirection exceeds 100 times", RecordType = RecordType.ERROR }.ToString();
             }
 
             UInt256 nameHash = ComputeNameHash(name);

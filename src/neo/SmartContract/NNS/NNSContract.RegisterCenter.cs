@@ -11,6 +11,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using System.Numerics;
 
 namespace Neo.SmartContract.NNS
 {
@@ -140,6 +141,11 @@ namespace Neo.SmartContract.NNS
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = ComputeNameHash(name);
             ulong ttl = (ulong)args[1].GetBigInteger();
+            ulong duration = ttl - TimeProvider.Current.UtcNow.ToTimestampMS();
+            if (duration < 0) return false;
+
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, engine.CallingScriptHash)) return false;
+
             if (IsDomain(name))
             {
                 StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
@@ -149,6 +155,18 @@ namespace Neo.SmartContract.NNS
                 domainInfo.TimeToLive = ttl;
                 storage = engine.Snapshot.Storages.GetAndChange(key);
                 storage.Value = domainInfo.ToArray();
+
+                byte[] script;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    ulong year = 365 * 24 * 60 * 60 * 1000L;
+                    BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / year;
+                    sb.EmitAppCall(GAS.Hash, "transfer", engine.CallingScriptHash, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
+                    script = sb.ToArray();
+                }
+                using ApplicationEngine engine2 = ApplicationEngine.Run(script, engine.Snapshot.Clone());
+                if (engine2.State.HasFlag(VMState.FAULT))
+                    return false;
 
                 return true;
             }

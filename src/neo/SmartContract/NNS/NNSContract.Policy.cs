@@ -7,6 +7,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
@@ -35,15 +36,17 @@ namespace Neo.SmartContract.NNS
             {
                 Value = new UInt256[0].ToByteArray()
             });
-
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Admin), new StorageItem
             {
                 Value = new UInt160[0].ToByteArray()
             });
-
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_ReceiptAddress), new StorageItem
             {
                 Value = new UInt160().ToArray() //TBD
+            });
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RentalPrice), new StorageItem
+            {
+                Value = BitConverter.GetBytes(10000000000L) //TBD
             });
             return true;
         }
@@ -58,6 +61,30 @@ namespace Neo.SmartContract.NNS
         public ECPoint[] GetAdmin(StoreView snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_Admin)].Value.AsSerializableArray<ECPoint>();
+        }
+
+        // Get receipt address
+        [ContractMethod(0_01000000, ContractParameterType.Hash160, CallFlags.AllowStates)]
+        private StackItem GetReceiptAddress(ApplicationEngine engine, Array args)
+        {
+            return GetReceiptAddress(engine.Snapshot).ToArray();
+        }
+
+        public UInt160 GetReceiptAddress(StoreView snapshot)
+        {
+            return snapshot.Storages[CreateStorageKey(Prefix_ReceiptAddress)].Value.AsSerializable<UInt160>();
+        }
+
+        // Get rental price
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
+        private StackItem GetRentalPrice(ApplicationEngine engine, Array args)
+        {
+            return GetRentalPrice(engine.Snapshot);
+        }
+
+        public ulong GetRentalPrice(StoreView snapshot)
+        {
+            return BitConverter.ToUInt64(snapshot.Storages[CreateStorageKey(Prefix_RentalPrice)].Value, 0);
         }
 
         // set addmin, only can be called by committees
@@ -85,7 +112,7 @@ namespace Neo.SmartContract.NNS
             UInt160 script = Contract.CreateMultiSigRedeemScript(admins.Length - (admins.Length - 1) / 3, admins).ToScriptHash();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, script)) return false;
 
-            uint value = (uint)args[0].GetBigInteger();
+            long value = (long)args[0].GetBigInteger();
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RentalPrice));
             storage.Value = BitConverter.GetBytes(value);
             return true;
