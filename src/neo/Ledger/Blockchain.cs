@@ -498,8 +498,7 @@ namespace Neo.Ledger
                         Transaction = tx
                     };
 
-                    clonedSnapshot.Transactions.Add(tx.Hash, state);
-                    clonedSnapshot.Transactions.Commit();
+                    clonedSnapshot.Transactions.AddAndCommit(tx.Hash, state);
 
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
