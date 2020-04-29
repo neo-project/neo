@@ -17,7 +17,10 @@ namespace Neo.Network.P2P.Payloads
 
         private readonly Dictionary<TransactionAttributeUsage, TransactionAttribute> _entries;
 
-        public int Size => _entries.Count + (_entries.Values.Sum(u => u.Size));
+        public int Size =>
+            IO.Helper.GetVarSize(_entries.Count) +  // count
+            _entries.Count +                        // usages
+            _entries.Values.Sum(u => u.Size);       // entries
 
         public int Count => _entries.Count;
 

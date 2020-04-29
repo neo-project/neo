@@ -12,6 +12,7 @@ namespace Neo.Network.P2P.Payloads
         /// Maximum number of cosigners that can be contained within a transaction
         /// </summary>
         private const int MaxCosigners = 16;
+
         public override int Size => Cosigners.GetVarSize();
         public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigner;
 
