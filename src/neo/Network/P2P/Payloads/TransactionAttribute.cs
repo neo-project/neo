@@ -5,43 +5,32 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class TransactionAttribute : ISerializable
+    public abstract class TransactionAttribute : ISerializable
     {
-        public TransactionAttributeUsage Usage;
-        public byte[] Data;
-
-        public int Size => sizeof(TransactionAttributeUsage) + Data.GetVarSize();
-
-        void ISerializable.Deserialize(BinaryReader reader)
-        {
-            Usage = (TransactionAttributeUsage)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
-                throw new FormatException();
-            Data = reader.ReadVarBytes(252);
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.Write((byte)Usage);
-            writer.WriteVarBytes(Data);
-        }
+        public abstract TransactionAttributeUsage Usage { get; }
+        public abstract int Size { get; }
+        public abstract void Serialize(BinaryWriter writer);
+        public abstract void Deserialize(BinaryReader reader);
+        protected abstract JObject ToJsonValue();
 
         public JObject ToJson()
         {
-            JObject json = new JObject();
-            json["usage"] = Usage;
-            json["data"] = Convert.ToBase64String(Data);
-            return json;
+            var ret = new JObject();
+            ret["type"] = Usage;
+            ret["value"] = ToJsonValue();
+            return ret;
         }
 
         public static TransactionAttribute FromJson(JObject json)
         {
-            TransactionAttribute transactionAttribute = new TransactionAttribute();
-            transactionAttribute.Usage = (TransactionAttributeUsage)byte.Parse(json["usage"].AsString());
-            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), transactionAttribute.Usage))
-                throw new ArgumentException();
-            transactionAttribute.Data = Convert.FromBase64String(json["data"].AsString());
-            return transactionAttribute;
+            switch (Enum.Parse(typeof(TransactionAttributeUsage), json["type"].AsString()))
+            {
+                case TransactionAttributeUsage.Cosigner:
+                    {
+                        return CosignerAttribute.FromJsonValue(json["value"]);
+                    }
+                default: throw new FormatException();
+            }
         }
     }
 }

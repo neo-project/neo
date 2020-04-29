@@ -121,8 +121,7 @@ namespace Neo.UnitTests.Ledger
                 Script = overrideScriptBytes ?? new byte[0],
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
-                Attributes = new TransactionAttribute[0],
-                Cosigners = new Cosigner[0],
+                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
                 Witnesses = new[]
                 {
                     new Witness
@@ -133,7 +132,7 @@ namespace Neo.UnitTests.Ledger
                 }
             };
 
-            tx.Attributes.Length.Should().Be(0);
+            tx.Attributes.Count.Should().Be(0);
             tx.Cosigners.Length.Should().Be(0);
 
             int diff = size - tx.Size;

@@ -25,10 +25,6 @@ namespace Neo.Network.P2P.Payloads
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         private const int MaxTransactionAttributes = 16;
-        /// <summary>
-        /// Maximum number of cosigners that can be contained within a transaction
-        /// </summary>
-        private const int MaxCosigners = 16;
 
         private byte version;
         private uint nonce;
@@ -36,8 +32,7 @@ namespace Neo.Network.P2P.Payloads
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
-        private TransactionAttribute[] attributes;
-        private Cosigner[] cosigners;
+        private Dictionary<TransactionAttributeUsage, TransactionAttribute> attributes;
         private byte[] script;
         private Witness[] witnesses;
 
@@ -49,7 +44,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
-        public TransactionAttribute[] Attributes
+        public Dictionary<TransactionAttributeUsage, TransactionAttribute> Attributes
         {
             get => attributes;
             set { attributes = value; _hash = null; _size = 0; }
@@ -57,8 +52,15 @@ namespace Neo.Network.P2P.Payloads
 
         public Cosigner[] Cosigners
         {
-            get => cosigners;
-            set { cosigners = value; _hash = null; _size = 0; }
+            get
+            {
+                if (attributes.TryGetValue(TransactionAttributeUsage.Cosigner, out var attr) && attr is CosignerAttribute cosigners)
+                {
+                    return cosigners.Cosigners;
+                }
+
+                return new Cosigner[0];
+            }
         }
 
         /// <summary>
@@ -118,7 +120,6 @@ namespace Neo.Network.P2P.Payloads
                 {
                     _size = HeaderSize +
                         Attributes.GetVarSize() +   //Attributes
-                        Cosigners.GetVarSize() +    //Cosigners
                         Script.GetVarSize() +       //Script
                         Witnesses.GetVarSize();     //Witnesses
                 }
@@ -176,9 +177,23 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
-            Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
-            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
+
+            Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            var count = (int)reader.ReadVarInt(MaxTransactionAttributes);
+            for (int x = 0; x < count; x++)
+            {
+                TransactionAttributeUsage usage = (TransactionAttributeUsage)reader.ReadByte();
+                switch (usage)
+                {
+                    case TransactionAttributeUsage.Cosigner:
+                        {
+                            Attributes.Add(TransactionAttributeUsage.Cosigner, reader.ReadSerializable<CosignerAttribute>());
+                            break;
+                        }
+                    default: throw new FormatException();
+                }
+            }
+
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -208,7 +223,12 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             var hashes = new HashSet<UInt160> { Sender };
-            hashes.UnionWith(Cosigners.Select(p => p.Account));
+
+            if (Attributes.TryGetValue(TransactionAttributeUsage.Cosigner, out var attr) && attr is CosignerAttribute cosigners)
+            {
+                hashes.UnionWith(cosigners.Cosigners.Select(p => p.Account));
+            }
+
             return hashes.OrderBy(p => p).ToArray();
         }
 
@@ -226,8 +246,12 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
-            writer.Write(Attributes);
-            writer.Write(Cosigners);
+            writer.WriteVarInt(Attributes.Count);
+            foreach (var attr in Attributes)
+            {
+                writer.Write((byte)attr.Key);
+                writer.Write(attr.Value);
+            }
             writer.WriteVarBytes(Script);
         }
 
@@ -242,8 +266,13 @@ namespace Neo.Network.P2P.Payloads
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
-            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
+            json["attributes"] = Attributes.Select(p =>
+            {
+                var ret = new JObject();
+                ret["type"] = p.Key.ToString();
+                ret["value"] = p.Value.ToJson();
+                return ret;
+            }).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
@@ -258,8 +287,12 @@ namespace Neo.Network.P2P.Payloads
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
             tx.NetworkFee = long.Parse(json["net_fee"].AsString());
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
-            tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
-            tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
+            tx.Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            foreach (var entry in (JArray)json["attributes"])
+            {
+                var attr = TransactionAttribute.FromJson(entry);
+                tx.Attributes.Add(attr.Usage, attr);
+            }
             tx.Script = Convert.FromBase64String(json["script"].AsString());
             tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
             return tx;
