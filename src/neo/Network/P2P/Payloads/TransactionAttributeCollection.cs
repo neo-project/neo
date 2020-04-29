@@ -37,7 +37,6 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-
         public TransactionAttributeCollection()
         {
             _entries = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
