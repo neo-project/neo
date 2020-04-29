@@ -3,8 +3,9 @@ using Neo.IO;
 using Neo.Persistence;
 using Neo.Trie.MPT;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Neo.UnitTests.Trie.MPT
@@ -217,9 +218,9 @@ namespace Neo.UnitTests.Trie.MPT
             var result = true;
             TestValue value = mpt.Get("ac99".HexToBytes());
             Assert.IsNotNull(value);
-            result = mpt.TryDelete("ac99".HexToBytes());
+            result = mpt.Delete("ac99".HexToBytes());
             Assert.IsTrue(result);
-            result = mpt.TryDelete("acae".HexToBytes());
+            result = mpt.Delete("acae".HexToBytes());
             Assert.IsTrue(result);
             Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", mpt.GetRoot().ToString());
         }
@@ -238,7 +239,7 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsNotNull(value);
             value = mpt.Get("ac02".HexToBytes());
             Assert.IsNotNull(value);
-            result = mpt.TryDelete("ac01".HexToBytes());
+            result = mpt.Delete("ac01".HexToBytes());
             value = mpt.Get("ac02".HexToBytes());
             Assert.IsNotNull(value);
             snapshot.Commit();
@@ -259,9 +260,9 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(result);
             result = mpt.Put("ac".HexToBytes(), "ac".HexToBytes());
             Assert.IsTrue(result);
-            result = mpt.TryDelete("ac11".HexToBytes());
+            result = mpt.Delete("ac11".HexToBytes());
             Assert.IsTrue(result);
-            result = mpt.TryDelete("ac22".HexToBytes());
+            result = mpt.Delete("ac22".HexToBytes());
             Assert.IsTrue(result);
             Assert.AreEqual("{\"key\":\"0a0c\",\"next\":{\"value\":\"ac\"}}", mpt.ToJson().ToString());
         }
@@ -345,6 +346,28 @@ namespace Neo.UnitTests.Trie.MPT
             Assert.IsTrue(mpt2.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set2));
             Assert.AreEqual(4, set2.Count);
             Assert.AreEqual(mpt1.GetRoot(), mpt2.GetRoot());
+        }
+
+        [TestMethod]
+        public void TestFind()
+        {
+            var store = new MemoryStore();
+            var snapshot = store.GetSnapshot();
+            var mpt1 = new MPTTrie<TestKey, TestValue>(null, snapshot, 0);
+            var results = mpt1.Find(Array.Empty<byte>()).ToArray();
+            Assert.AreEqual(0, results.Count());
+            var mpt2 = new MPTTrie<TestKey, TestValue>(null, snapshot, 0);
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xef }, new byte[] { 0x01 }));
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xe1 }, new byte[] { 0x02 }));
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x03 }));
+            results = mpt2.Find(Array.Empty<byte>()).ToArray();
+            Assert.AreEqual(3, results.Count());
+            results = mpt2.Find(new byte[] { 0xab }).ToArray();
+            Assert.AreEqual(3, results.Count());
+            results = mpt2.Find(new byte[] { 0xab, 0xcd }).ToArray();
+            Assert.AreEqual(2, results.Count());
+            results = mpt2.Find(new byte[] { 0xac }).ToArray();
+            Assert.AreEqual(0, results.Count());
         }
     }
 }
