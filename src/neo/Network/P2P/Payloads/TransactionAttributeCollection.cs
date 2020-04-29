@@ -44,9 +44,12 @@ namespace Neo.Network.P2P.Payloads
         {
             _entries = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
 
-            foreach (var attr in attributes)
+            if (attributes != null)
             {
-                Add(attr.Usage, attr);
+                foreach (var attr in attributes)
+                {
+                    Add(attr.Usage, attr);
+                }
             }
         }
 

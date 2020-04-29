@@ -315,13 +315,8 @@ namespace Neo.Wallets
                     Script = script,
                     Sender = account,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = new TransactionAttributeCollection(),
+                    Attributes = new TransactionAttributeCollection(attributes),
                 };
-
-                foreach (var attr in attributes)
-                {
-                    tx.Attributes.Add(attr.Usage, attr);
-                }
 
                 // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))

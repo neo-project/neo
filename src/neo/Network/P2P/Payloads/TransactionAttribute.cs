@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
 
         public static TransactionAttribute FromJson(JObject json)
         {
-            switch (Enum.Parse(typeof(TransactionAttributeUsage), json["type"].AsString()))
+            switch (Enum.Parse(typeof(TransactionAttributeUsage), json["type"].AsString(), true))
             {
                 case TransactionAttributeUsage.Cosigner:
                     {
