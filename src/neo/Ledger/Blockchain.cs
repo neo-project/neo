@@ -489,7 +489,7 @@ namespace Neo.Ledger
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
-                // TODO: Handle occassions where Datacache.Delete() is called by variable snapshot
+                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
                     var state = new TransactionState
