@@ -203,12 +203,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             var hashes = new HashSet<UInt160> { Sender };
-
-            if (Attributes[TransactionAttributeUsage.Cosigner] is CosignerAttribute cosigners)
-            {
-                hashes.UnionWith(cosigners.Cosigners.Select(p => p.Account));
-            }
-
+            hashes.UnionWith(Cosigners.Select(p => p.Account));
             return hashes.OrderBy(p => p).ToArray();
         }
 
