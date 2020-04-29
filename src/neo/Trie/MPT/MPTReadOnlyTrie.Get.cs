@@ -56,5 +56,13 @@ namespace Neo.Trie.MPT
             value = Array.Empty<byte>();
             return false;
         }
+
+        public TValue this[TKey key]
+        {
+            get
+            {
+                return Get(key);
+            }
+        }
     }
 }
