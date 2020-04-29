@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction()
             };
 
-            uut.Size.Should().Be(164);
+            uut.Size.Should().Be(165);
         }
 
         [TestMethod]
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction()
             };
 
-            uut.Size.Should().Be(264);
+            uut.Size.Should().Be(267);
         }
 
         [TestMethod]
@@ -200,7 +200,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0xac84cebc5825cbe78941b301789bc43e8906bb9d86edd80cc94591088a26d9cc");
-            jObj["size"].AsNumber().Should().Be(164);
+            jObj["size"].AsNumber().Should().Be(165);
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
             jObj["merkleroot"].AsString().Should().Be("0xf616d65d5844a65476c8976a0849b9e171fa2fc4791b8327ddfcf1b44e0172bc");
@@ -215,7 +215,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
             txObj[0]["hash"].AsString().Should().Be("0x5f9b7409b6cf21fb0bf63c3890f62cccfe5fb9c3277ea33935e0a09f4255407c");
-            txObj[0]["size"].AsNumber().Should().Be(50);
+            txObj[0]["size"].AsNumber().Should().Be(51);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
             txObj[0]["net_fee"].AsString().Should().Be("0");
