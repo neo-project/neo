@@ -8,11 +8,6 @@ namespace Neo.Network.P2P.Payloads
 {
     public class CosignerAttribute : TransactionAttribute
     {
-        /// <summary>
-        /// Maximum number of cosigners that can be contained within a transaction
-        /// </summary>
-        private const int MaxCosigners = 16;
-
         public override int Size => Cosigners.GetVarSize();
         public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigner;
 
@@ -20,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override void Deserialize(BinaryReader reader)
         {
-            Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
+            Cosigners = reader.ReadSerializableArray<Cosigner>(TransactionAttributeCollection.MaxTransactionAttributes);
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
         }
 

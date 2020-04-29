@@ -13,7 +13,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
-        private const int MaxTransactionAttributes = 16;
+        public const int MaxTransactionAttributes = 16;
 
         private readonly Dictionary<TransactionAttributeUsage, TransactionAttribute> _entries;
 
