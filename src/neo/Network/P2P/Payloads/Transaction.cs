@@ -115,9 +115,9 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.Size +   //Attributes
-                        Script.GetVarSize() +       //Script
-                        Witnesses.GetVarSize();     //Witnesses
+                        Attributes.Size +       // Attributes
+                        Script.GetVarSize() +   // Script
+                        Witnesses.GetVarSize(); // Witnesses
                 }
                 return _size;
             }
