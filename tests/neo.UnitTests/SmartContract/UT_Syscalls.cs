@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
@@ -244,7 +244,7 @@ namespace Neo.UnitTests.SmartContract
                 var tx = new Transaction()
                 {
                     Script = new byte[] { 0x01 },
-                    Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                    Attributes = new TransactionAttributeCollection(),
                     NetworkFee = 0x02,
                     SystemFee = 0x03,
                     Nonce = 0x04,

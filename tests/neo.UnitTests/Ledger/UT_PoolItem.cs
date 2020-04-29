@@ -121,7 +121,7 @@ namespace Neo.UnitTests.Ledger
                 Script = overrideScriptBytes ?? new byte[0],
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 Witnesses = new[]
                 {
                     new Witness

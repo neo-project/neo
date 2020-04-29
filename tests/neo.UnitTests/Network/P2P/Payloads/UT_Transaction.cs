@@ -64,7 +64,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
-            uut.Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            uut.Attributes = new TransactionAttributeCollection();
             uut.Witnesses = new[]
             {
                 new Witness
@@ -248,7 +248,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Part I
                 Assert.AreEqual(45, Transaction.HeaderSize);
                 // Part II
-                Assert.AreEqual(1, tx.Attributes.GetVarSize());
+                Assert.AreEqual(1, tx.Attributes.Size);
                 Assert.AreEqual(0, tx.Attributes.Count);
                 Assert.AreEqual(1, tx.Cosigners.Length);
                 Assert.AreEqual(22, tx.Cosigners.GetVarSize());
@@ -735,18 +735,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>()
+                Attributes = new TransactionAttributeCollection(new CosignerAttribute()
                 {
-                    {  TransactionAttributeUsage.Cosigner, new CosignerAttribute(){
-                         Cosigners=new Cosigner[] {
+                    Cosigners = new Cosigner[] {
                             new Cosigner
                             {
                                 Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                                 Scopes = WitnessScope.Global
                             }
                         }
-                    } }
-                },
+                }),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -767,7 +765,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -814,10 +812,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>()
-                {
-                    {  TransactionAttributeUsage.Cosigner, new CosignerAttribute(){
-                         Cosigners=new Cosigner[] {
+                Attributes = new TransactionAttributeCollection(
+                    new CosignerAttribute()
+                    {
+                        Cosigners = new Cosigner[] {
                             new Cosigner
                             {
                                 Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
@@ -828,9 +826,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                                 Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
                                 Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
                             }
-                        }
-                    } }
-                },
+                    }
+                    }
+                ),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -879,16 +877,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>()
-                {
-                    {
-                        TransactionAttributeUsage.Cosigner,
+                Attributes = new TransactionAttributeCollection(
                         new CosignerAttribute()
                         {
-                            Cosigners=cosigners1 // max + 1 (should fail)
+                            Cosigners = cosigners1 // max + 1 (should fail)
                         }
-                    }
-                },
+                ),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -922,16 +916,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>()
-                {
-                    {
-                        TransactionAttributeUsage.Cosigner,
+                Attributes = new TransactionAttributeCollection(
                         new CosignerAttribute()
                         {
                             Cosigners = cosigners, // max + 1 (should fail)
                         }
-                    }
-                },
+                ),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -1042,7 +1032,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.SystemFee = 4200000000;
-            uut.Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            uut.Attributes = new TransactionAttributeCollection();
             uut.Witnesses = new[]
             {
                 new Witness

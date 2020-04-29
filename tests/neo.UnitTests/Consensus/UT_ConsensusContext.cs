@@ -98,7 +98,7 @@ namespace Neo.UnitTests.Consensus
             var r = new Random();
             var tx = new Transaction()
             {
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],

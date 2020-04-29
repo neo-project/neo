@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Ledger
             mock.Object.Script = randomBytes;
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            mock.Object.Attributes = new TransactionAttributeCollection();
             mock.Object.Witnesses = new[]
             {
                 new Witness
@@ -103,7 +103,7 @@ namespace Neo.UnitTests.Ledger
             mock.Object.Script = randomBytes;
             mock.Object.Sender = sender;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            mock.Object.Attributes = new TransactionAttributeCollection();
             mock.Object.Witnesses = new[]
             {
                 new Witness

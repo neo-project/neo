@@ -21,10 +21,6 @@ namespace Neo.Network.P2P.Payloads
     {
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
-        /// <summary>
-        /// Maximum number of attributes that can be contained within a transaction
-        /// </summary>
-        private const int MaxTransactionAttributes = 16;
 
         private byte version;
         private uint nonce;
@@ -32,7 +28,7 @@ namespace Neo.Network.P2P.Payloads
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
-        private Dictionary<TransactionAttributeUsage, TransactionAttribute> attributes;
+        private TransactionAttributeCollection attributes;
         private byte[] script;
         private Witness[] witnesses;
 
@@ -44,7 +40,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
-        public Dictionary<TransactionAttributeUsage, TransactionAttribute> Attributes
+        public TransactionAttributeCollection Attributes
         {
             get => attributes;
             set { attributes = value; _hash = null; _size = 0; }
@@ -54,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                if (attributes.TryGetValue(TransactionAttributeUsage.Cosigner, out var attr) && attr is CosignerAttribute cosigners)
+                if (attributes[TransactionAttributeUsage.Cosigner] is CosignerAttribute cosigners)
                 {
                     return cosigners.Cosigners;
                 }
@@ -119,7 +115,7 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.GetVarSize() +   //Attributes
+                        Attributes.Size +   //Attributes
                         Script.GetVarSize() +       //Script
                         Witnesses.GetVarSize();     //Witnesses
                 }
@@ -177,23 +173,7 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-
-            Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
-            var count = (int)reader.ReadVarInt(MaxTransactionAttributes);
-            for (int x = 0; x < count; x++)
-            {
-                TransactionAttributeUsage usage = (TransactionAttributeUsage)reader.ReadByte();
-                switch (usage)
-                {
-                    case TransactionAttributeUsage.Cosigner:
-                        {
-                            Attributes.Add(TransactionAttributeUsage.Cosigner, reader.ReadSerializable<CosignerAttribute>());
-                            break;
-                        }
-                    default: throw new FormatException();
-                }
-            }
-
+            Attributes = reader.ReadSerializable<TransactionAttributeCollection>();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -224,7 +204,7 @@ namespace Neo.Network.P2P.Payloads
         {
             var hashes = new HashSet<UInt160> { Sender };
 
-            if (Attributes.TryGetValue(TransactionAttributeUsage.Cosigner, out var attr) && attr is CosignerAttribute cosigners)
+            if (Attributes[TransactionAttributeUsage.Cosigner] is CosignerAttribute cosigners)
             {
                 hashes.UnionWith(cosigners.Cosigners.Select(p => p.Account));
             }
@@ -246,12 +226,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
-            writer.WriteVarInt(Attributes.Count);
-            foreach (var attr in Attributes)
-            {
-                writer.Write((byte)attr.Key);
-                writer.Write(attr.Value);
-            }
+            writer.Write(Attributes);
             writer.WriteVarBytes(Script);
         }
 
@@ -287,7 +262,7 @@ namespace Neo.Network.P2P.Payloads
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
             tx.NetworkFee = long.Parse(json["net_fee"].AsString());
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
-            tx.Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            tx.Attributes = new TransactionAttributeCollection();
             foreach (var entry in (JArray)json["attributes"])
             {
                 var attr = TransactionAttribute.FromJson(entry);

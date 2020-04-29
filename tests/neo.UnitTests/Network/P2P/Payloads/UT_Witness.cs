@@ -55,7 +55,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var data = new ContractParametersContext(new Transaction()
             {
                 Sender = multiSignContract.ScriptHash,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 NetworkFee = 0,
                 Nonce = 0,
                 Script = new byte[0],

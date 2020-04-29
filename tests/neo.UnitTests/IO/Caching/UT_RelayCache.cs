@@ -27,7 +27,7 @@ namespace Neo.UnitTests.IO.Caching
                 SystemFee = 0,
                 NetworkFee = 0,
                 ValidUntilBlock = 100,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 Script = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04 },
                 Witnesses = new Witness[0]
             };

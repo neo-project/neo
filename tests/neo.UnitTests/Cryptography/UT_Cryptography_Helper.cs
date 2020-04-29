@@ -145,7 +145,7 @@ namespace Neo.UnitTests.Cryptography
                 Script = TestUtils.GetByteArray(32, 0x42),
                 Sender = UInt160.Zero,
                 SystemFee = 4200000000,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 Witnesses = new[]
                 {
                     new Witness

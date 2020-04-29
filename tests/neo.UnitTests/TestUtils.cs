@@ -73,7 +73,7 @@ namespace Neo.UnitTests
             {
                 Script = new byte[1],
                 Sender = UInt160.Zero,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 Witnesses = new Witness[]{ new Witness
                 {
                     InvocationScript = new byte[0],
@@ -169,7 +169,7 @@ namespace Neo.UnitTests
             {
                 Script = randomBytes,
                 Sender = UInt160.Zero,
-                Attributes = new System.Collections.Generic.Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                Attributes = new TransactionAttributeCollection(),
                 Witnesses = new[]
                 {
                     new Witness

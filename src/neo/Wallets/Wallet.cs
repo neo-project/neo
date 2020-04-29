@@ -315,7 +315,7 @@ namespace Neo.Wallets
                     Script = script,
                     Sender = account,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = new Dictionary<TransactionAttributeUsage, TransactionAttribute>(),
+                    Attributes = new TransactionAttributeCollection(),
                 };
 
                 foreach (var attr in attributes)
