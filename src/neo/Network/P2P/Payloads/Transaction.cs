@@ -19,6 +19,14 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
+        [Flags]
+        private enum OracleCache : byte
+        {
+            None = 0,
+            Request = 0b00000001,
+            Response = 0b00000010,
+        }
+
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
         /// <summary>
@@ -39,7 +47,8 @@ namespace Neo.Network.P2P.Payloads
         private TransactionAttribute[] attributes;
         private Cosigner[] cosigners;
         private byte[] script;
-        private OracleAttribute oracle;
+        private OracleResponseAttribute oracleResponse;
+        private OracleCache oracleCached = OracleCache.None;
         private Witness[] witnesses;
 
         public const int HeaderSize =
@@ -53,7 +62,7 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _hash = null; oracle = null; _size = 0; }
+            set { attributes = value; _hash = null; oracleCached = OracleCache.None; _size = 0; }
         }
 
         public Cosigner[] Cosigners
@@ -167,7 +176,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
-            oracle = null;
+            oracleCached = OracleCache.None;
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
@@ -303,6 +312,13 @@ namespace Neo.Network.P2P.Payloads
 
             if (IsOracleResponse(out _))
             {
+                if (IsOracleRequest())
+                {
+                    // Don't allow request and response attributes
+
+                    return VerifyResult.Invalid;
+                }
+
                 // Oracle response only can be signed by oracle nodes
 
                 var hashes = GetScriptHashesForVerifying(snapshot);
@@ -320,28 +336,40 @@ namespace Neo.Network.P2P.Payloads
 
         #region Oracles
 
-        private void CheckOracleAttribute()
+        private void LoadOracleAttribute()
         {
-            if (oracle == null)
+            if (oracleCached != OracleCache.None)
             {
-                var attr = attributes.Where(u => u.Usage == TransactionAttributeUsage.Oracle).FirstOrDefault();
-                if (attr != null)
-                {
-                    oracle = attr.Data.AsSerializable<OracleAttribute>();
-                }
-                else
-                {
-                    oracle = new OracleAttribute() { Type = (OracleAttribute.OracleAttributeType)0xFF };
-                }
+                return;
+            }
+
+            var attr = attributes.Where(u => u.Usage == TransactionAttributeUsage.OracleRequest).FirstOrDefault();
+
+            if (attr != null)
+            {
+                oracleCached |= OracleCache.Request;
+            }
+
+            attr = attributes.Where(u => u.Usage == TransactionAttributeUsage.OracleResponse).FirstOrDefault();
+
+            if (attr != null)
+            {
+                oracleCached |= OracleCache.Response;
+                oracleResponse = attr.Data.AsSerializable<OracleResponseAttribute>();
+            }
+            else
+            {
+                oracleResponse = null;
             }
         }
 
         public bool IsOracleResponse(out UInt256 requestTx)
         {
-            CheckOracleAttribute();
-            if (oracle.Type == OracleAttribute.OracleAttributeType.Response)
+            LoadOracleAttribute();
+
+            if (oracleResponse != null)
             {
-                requestTx = oracle.RequestTx;
+                requestTx = oracleResponse.RequestTx;
                 return true;
             }
 
@@ -351,8 +379,8 @@ namespace Neo.Network.P2P.Payloads
 
         public bool IsOracleRequest()
         {
-            CheckOracleAttribute();
-            return oracle.Type == OracleAttribute.OracleAttributeType.Request;
+            LoadOracleAttribute();
+            return oracleCached.HasFlag(OracleCache.Request);
         }
 
         #endregion

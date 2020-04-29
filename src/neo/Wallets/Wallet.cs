@@ -353,14 +353,13 @@ namespace Neo.Wallets
                         // Append attribute
 
                         var attr = new List<TransactionAttribute>(attributes);
-                        if (!attr.Any(u => u.Usage == TransactionAttributeUsage.Oracle))
+                        if (!attr.Any(u => u.Usage == TransactionAttributeUsage.OracleRequest))
                         {
-                            attr.Add(new OracleAttribute()
+                            attr.Add(new TransactionAttribute()
                             {
-                                Type = OracleAttribute.OracleAttributeType.Request
-                            }
-                            .Build());
-
+                                Usage = TransactionAttributeUsage.OracleRequest,
+                                Data = Array.Empty<byte>()
+                            });
                             tx.Attributes = attributes = attr.ToArray();
                         }
 

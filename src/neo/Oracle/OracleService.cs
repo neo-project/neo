@@ -570,9 +570,8 @@ namespace Neo.Oracle
                 ValidUntilBlock = requestTx.ValidUntilBlock,
                 Attributes = new TransactionAttribute[]
                 {
-                    new OracleAttribute()
+                    new OracleResponseAttribute()
                     {
-                         Type = OracleAttribute.OracleAttributeType.Response,
                          RequestTx = requestTx.Hash,
                     }
                     .Build()

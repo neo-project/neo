@@ -266,11 +266,11 @@ namespace Neo.UnitTests.Oracle
                 Version = 0,
                 Attributes = new TransactionAttribute[]
                 {
-                    new OracleAttribute()
+                    new TransactionAttribute()
                     {
-                         Type = OracleAttribute.OracleAttributeType.Request
+                        Usage = TransactionAttributeUsage.OracleRequest,
+                        Data = Array.Empty<byte>()
                     }
-                    .Build()
                 },
                 Cosigners = new Cosigner[0],
                 Script = script.ToArray(),
