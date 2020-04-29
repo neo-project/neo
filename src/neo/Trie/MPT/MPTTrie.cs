@@ -1,9 +1,6 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
-using System;
-using System.Collections.Generic;
-using static Neo.Helper;
 
 namespace Neo.Trie.MPT
 {

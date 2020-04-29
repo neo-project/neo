@@ -1,7 +1,5 @@
 using Neo.IO;
 using Neo.Persistence;
-using System;
-using System.Collections.Generic;
 
 namespace Neo.Trie.MPT
 {
