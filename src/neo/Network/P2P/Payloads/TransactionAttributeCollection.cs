@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -91,6 +92,29 @@ namespace Neo.Network.P2P.Payloads
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _entries.GetEnumerator();
+        }
+
+        public JObject ToJson()
+        {
+            return _entries.Select(p =>
+            {
+                var ret = new JObject();
+                ret["type"] = p.Key.ToString();
+                ret["value"] = p.Value.ToJson();
+                return ret;
+            })
+            .ToArray();
+        }
+
+        public static TransactionAttributeCollection FromJson(JObject json)
+        {
+            var ret = new TransactionAttributeCollection();
+            foreach (var entry in (JArray)json["attributes"])
+            {
+                var attr = TransactionAttribute.FromJson(entry);
+                ret.Add(attr.Usage, attr);
+            }
+            return ret;
         }
     }
 }

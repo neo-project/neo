@@ -241,13 +241,7 @@ namespace Neo.Network.P2P.Payloads
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
-            json["attributes"] = Attributes.Select(p =>
-            {
-                var ret = new JObject();
-                ret["type"] = p.Key.ToString();
-                ret["value"] = p.Value.ToJson();
-                return ret;
-            }).ToArray();
+            json["attributes"] = Attributes.ToJson();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
@@ -262,12 +256,7 @@ namespace Neo.Network.P2P.Payloads
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
             tx.NetworkFee = long.Parse(json["net_fee"].AsString());
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
-            tx.Attributes = new TransactionAttributeCollection();
-            foreach (var entry in (JArray)json["attributes"])
-            {
-                var attr = TransactionAttribute.FromJson(entry);
-                tx.Attributes.Add(attr.Usage, attr);
-            }
+            tx.Attributes = TransactionAttributeCollection.FromJson(json);
             tx.Script = Convert.FromBase64String(json["script"].AsString());
             tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
             return tx;
