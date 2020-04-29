@@ -102,7 +102,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        // set rental price, only can be called by admin
+        // set rental price, only can be called by admin， 200 million blocks per year
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetRentalPrice(ApplicationEngine engine, Array args)
         {

@@ -148,24 +148,23 @@ namespace Neo.SmartContract.NNS
             ulong duration = validUntilBlock - engine.Snapshot.Height;
             if (duration < 0) return false;
 
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, engine.CallingScriptHash)) return false;
-
             if (IsDomain(name))
             {
                 StorageKey key = CreateStorageKey(Prefix_Domain, nameHash);
                 StorageItem storage = engine.Snapshot.Storages[key];
                 DomainInfo domainInfo = storage.Value.AsSerializable<DomainInfo>();
                 if (domainInfo is null) return false;
-                domainInfo.ValidUntilBlock = validUntilBlock;
+                domainInfo.TimeToLive = validUntilBlock;
                 storage = engine.Snapshot.Storages.GetAndChange(key);
                 storage.Value = domainInfo.ToArray();
+                UInt160 owner = domainInfo.Owner;
 
                 byte[] script;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    ulong year = 365 * 24 * 60 * 60 * 1000L;
-                    BigInteger amount = duration * Blockchain.MillisecondsPerBlock * GetRentalPrice(engine.Snapshot) / year;
-                    sb.EmitAppCall(GAS.Hash, "transfer", engine.CallingScriptHash, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
+                    uint blocksPerYear = 200;
+                    BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / blocksPerYear;
+                    sb.EmitAppCall(GAS.Hash, "transfer", owner, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
                     script = sb.ToArray();
                 }
                 using ApplicationEngine engine2 = ApplicationEngine.Run(script, engine.Snapshot.Clone());
@@ -178,11 +177,10 @@ namespace Neo.SmartContract.NNS
         }
 
         // transfer ownership to the specified owner
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.String }, ParameterNames = new[] { "from", "to", "name" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.String }, ParameterNames = new[] { "to", "name" })]
         private StackItem Transfer(ApplicationEngine engine, Array args)
         {
-            UInt160 from = new UInt160(args[0].GetSpan());
-            UInt160 to = new UInt160(args[1].GetSpan());
+            UInt160 to = new UInt160(args[0].GetSpan());
             string name = args[2].GetString().ToLower();
             UInt256 nameHash = ComputeNameHash(name);
             if (IsRootDomain(name) || !IsDomain(name)) return false;
@@ -196,17 +194,18 @@ namespace Neo.SmartContract.NNS
                 return false;
 
             var domainInfo = GetDomainInfo(engine.Snapshot, nameHash);
+            UInt160 owner = UInt160.Zero;
             if (domainInfo != null)
             {
-                UInt160 owner = domainInfo.Owner;
-                if ((engine.Snapshot.Height - domainInfo.ValidUntilBlock < 0) && !owner.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
+                owner = domainInfo.Owner;
+                if ((engine.Snapshot.Height - domainInfo.TimeToLive < 0) && !owner.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, owner))
                     return false;
+                UpdateOwnerShip(engine, name, owner, false);
             }
             SetOwner(engine, name, to);
             UpdateOwnerShip(engine, name, to);
-            UpdateOwnerShip(engine, name, from, false);
-
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), 0, name }));
+            
+            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", owner.ToArray(), to.ToArray(), 1, name }));
             return true;
         }
 

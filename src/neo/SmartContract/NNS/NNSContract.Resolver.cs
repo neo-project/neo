@@ -6,7 +6,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using Array = Neo.VM.Types.Array;
 
@@ -18,7 +17,7 @@ namespace Neo.SmartContract.NNS
 
         // only can be called by the admin of the name
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "text", "recordType" })]
-        public StackItem SetText(ApplicationEngine engine, Array args)
+        private StackItem SetText(ApplicationEngine engine, Array args)
         {
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = ComputeNameHash(name);
@@ -56,7 +55,7 @@ namespace Neo.SmartContract.NNS
 
         public string Resolve(StoreView snapshot, string name, int resolveCount = 0)
         {
-            if (resolveCount++ > MaxResolveCount) // TBD
+            if (resolveCount++ > MaxResolveCount) 
             {
                 return new RecordInfo { Text = "The count of domain redirection exceeds 100 times", RecordType = RecordType.ERROR }.ToString();
             }
@@ -107,7 +106,7 @@ namespace Neo.SmartContract.NNS
         public bool IsExpired(StoreView snapshot, UInt256 nameHash)
         {
             var domainInfo = GetDomainInfo(snapshot, nameHash);
-            return snapshot.Height - domainInfo.ValidUntilBlock > 0;
+            return snapshot.Height - domainInfo.TimeToLive > 0;
         }
     }
 }
