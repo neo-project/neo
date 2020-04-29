@@ -77,7 +77,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(83);
+            uut.Size.Should().Be(81);
         }
 
         [TestMethod]
@@ -248,8 +248,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Part I
                 Assert.AreEqual(45, Transaction.HeaderSize);
                 // Part II
-                Assert.AreEqual(1, tx.Attributes.Size);
-                Assert.AreEqual(0, tx.Attributes.Count);
+                Assert.AreEqual(23, tx.Attributes.Size);
+                Assert.AreEqual(1, tx.Attributes.Count);
                 Assert.AreEqual(1, tx.Cosigners.Length);
                 Assert.AreEqual(22, tx.Cosigners.GetVarSize());
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
@@ -648,7 +648,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // only a single witness should exist
                 tx.Witnesses.Length.Should().Be(1);
                 // no attributes must exist
-                tx.Attributes.Count.Should().Be(0);
+                tx.Attributes.Count.Should().Be(1);
                 // one cosigner must exist
                 tx.Cosigners.Length.Should().Be(1);
 
@@ -780,7 +780,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             "0100000000000000" + // network fee (1 satoshi)
             "04030201" + // timelimit 
             "00" + // no attributes
-            "00" + // no cosigners
             "0111" + // push1 script
             "00"); // no witnesses
 
@@ -836,7 +835,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f505000000000100000000000000040302010002090807060504030201000908070605040302010000090807060504030201000908070605040302010001011100");
+            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f50500000000010000000000000004030201018102090807060504030201000908070605040302010000090807060504030201000908070605040302010001011100");
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
@@ -1044,11 +1043,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x8b86429eb984728752552ee8d69536d36ab985bbe383c6a6eeb2100f6f29b81b");
-            jObj["size"].AsNumber().Should().Be(83);
+            jObj["hash"].AsString().Should().Be("0xfe08a23db645733a95914622ead5e738b03918680e927e00928116395e571758");
+            jObj["size"].AsNumber().Should().Be(81);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
-            ((JArray)jObj["cosigners"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
             jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
             jObj["sys_fee"].AsString().Should().Be("4200000000");
