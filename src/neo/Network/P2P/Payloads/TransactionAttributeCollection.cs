@@ -56,11 +56,14 @@ namespace Neo.Network.P2P.Payloads
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteVarInt(_entries.Count);
+            writer.WriteVarInt(_entries.Sum(u => u.Value.Count));
             foreach (var attr in _entries)
             {
-                writer.Write((byte)attr.Key);
-                writer.Write(attr.Value);
+                foreach (var entry in attr.Value)
+                {
+                    writer.Write((byte)entry.Usage);
+                    writer.Write(entry);
+                }
             }
         }
 
