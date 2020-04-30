@@ -46,16 +46,16 @@ namespace Neo.Network.P2P.Payloads
             set { attributes = value; _hash = null; _size = 0; }
         }
 
-        public Cosigner[] Cosigners
+        public CosignerAttribute[] Cosigners
         {
             get
             {
-                if (attributes[TransactionAttributeUsage.Cosigners] is CosignerAttribute cosigners)
+                if (attributes.TryGet<CosignerAttribute>(TransactionAttributeUsage.Cosigners, out var cosigners))
                 {
-                    return cosigners.Cosigners;
+                    return cosigners;
                 }
 
-                return new Cosigner[0];
+                return new CosignerAttribute[0];
             }
         }
 

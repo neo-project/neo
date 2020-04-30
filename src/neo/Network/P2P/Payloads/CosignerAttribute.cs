@@ -1,3 +1,4 @@
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using System;
@@ -8,32 +9,69 @@ namespace Neo.Network.P2P.Payloads
 {
     public class CosignerAttribute : TransactionAttribute
     {
-        public override int Size => Cosigners.GetVarSize();
+        // This limits maximum number of AllowedContracts or AllowedGroups here
+        private readonly int MaxSubitems = 16;
+
+        public UInt160 Account;
+        public WitnessScope Scopes;
+        public UInt160[] AllowedContracts;
+        public ECPoint[] AllowedGroups;
+
         public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigners;
 
-        public Cosigner[] Cosigners { get; set; }
+        public CosignerAttribute()
+        {
+            this.Scopes = WitnessScope.Global;
+        }
+
+        public override int Size =>
+            /*Account*/             UInt160.Length +
+            /*Scopes*/              sizeof(WitnessScope) +
+            /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
+            /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0);
 
         public override void Deserialize(BinaryReader reader)
         {
-            Cosigners = reader.ReadSerializableArray<Cosigner>(TransactionAttributeCollection.MaxTransactionAttributes);
-            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
+            Account = reader.ReadSerializable<UInt160>();
+            Scopes = (WitnessScope)reader.ReadByte();
+            AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
+                ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
+                : new UInt160[0];
+            AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
+                ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
+                : new ECPoint[0];
         }
 
         public override void Serialize(BinaryWriter writer)
         {
-            writer.Write(Cosigners);
+            writer.Write(Account);
+            writer.Write((byte)Scopes);
+            if (Scopes.HasFlag(WitnessScope.CustomContracts))
+                writer.Write(AllowedContracts);
+            if (Scopes.HasFlag(WitnessScope.CustomGroups))
+                writer.Write(AllowedGroups);
         }
 
         protected override JObject ToJsonValue()
         {
-            return new JArray(Cosigners.Select(u => u.ToJson()));
+            JObject json = new JObject();
+            json["account"] = Account.ToString();
+            json["scopes"] = Scopes;
+            if (Scopes.HasFlag(WitnessScope.CustomContracts))
+                json["allowedContracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
+            if (Scopes.HasFlag(WitnessScope.CustomGroups))
+                json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+            return json;
         }
 
         public static CosignerAttribute FromJsonValue(JObject json)
         {
             return new CosignerAttribute
             {
-                Cosigners = ((JArray)json).Select(u => Cosigner.FromJson(json)).ToArray()
+                Account = UInt160.Parse(json["account"].AsString()),
+                Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scopes"].AsString()),
+                AllowedContracts = ((JArray)json["allowedContracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray(),
+                AllowedGroups = ((JArray)json["allowedGroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
             };
         }
     }

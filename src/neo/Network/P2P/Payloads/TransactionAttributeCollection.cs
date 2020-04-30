@@ -8,43 +8,30 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class TransactionAttributeCollection : ISerializable, IEnumerable<KeyValuePair<TransactionAttributeUsage, TransactionAttribute>>
+    public class TransactionAttributeCollection : ISerializable, IEnumerable<KeyValuePair<TransactionAttributeUsage, List<TransactionAttribute>>>
     {
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         public const int MaxTransactionAttributes = 16;
 
-        private readonly Dictionary<TransactionAttributeUsage, TransactionAttribute> _entries;
+        private readonly Dictionary<TransactionAttributeUsage, List<TransactionAttribute>> _entries;
 
         public int Size =>
-            IO.Helper.GetVarSize(_entries.Count) +  // count
-            _entries.Count +                        // usages
-            _entries.Values.Sum(u => u.Size);       // entries
+            IO.Helper.GetVarSize(_entries.Count) +      // count
+            _entries.Count +                            // usages
+            _entries.Values.Sum(u => u.GetVarSize());   // entries
 
         public int Count => _entries.Count;
 
-        public TransactionAttribute this[TransactionAttributeUsage usage]
-        {
-            get
-            {
-                if (_entries.TryGetValue(usage, out var attr))
-                {
-                    return attr;
-                }
-
-                return null;
-            }
-        }
-
         public TransactionAttributeCollection()
         {
-            _entries = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            _entries = new Dictionary<TransactionAttributeUsage, List<TransactionAttribute>>();
         }
 
         public TransactionAttributeCollection(params TransactionAttribute[] attributes)
         {
-            _entries = new Dictionary<TransactionAttributeUsage, TransactionAttribute>();
+            _entries = new Dictionary<TransactionAttributeUsage, List<TransactionAttribute>>();
 
             if (attributes != null)
             {
@@ -53,6 +40,18 @@ namespace Neo.Network.P2P.Payloads
                     Add(attr.Usage, attr);
                 }
             }
+        }
+
+        public bool TryGet<T>(TransactionAttributeUsage usage, out T[] attr)
+        {
+            if (_entries.TryGetValue(usage, out var val))
+            {
+                attr = val.Cast<T>().ToArray();
+                return true;
+            }
+
+            attr = null;
+            return false;
         }
 
         public void Serialize(BinaryWriter writer)
@@ -76,7 +75,7 @@ namespace Neo.Network.P2P.Payloads
                 {
                     case TransactionAttributeUsage.Cosigners:
                         {
-                            _entries.Add(TransactionAttributeUsage.Cosigners, reader.ReadSerializable<CosignerAttribute>());
+                            Add(TransactionAttributeUsage.Cosigners, reader.ReadSerializable<CosignerAttribute>());
                             break;
                         }
                     default: throw new FormatException();
@@ -86,10 +85,17 @@ namespace Neo.Network.P2P.Payloads
 
         public void Add(TransactionAttributeUsage usage, TransactionAttribute attr)
         {
-            _entries.Add(usage, attr);
+            if (_entries.TryGetValue(usage, out var list))
+            {
+                list.Add(attr);
+            }
+            else
+            {
+                _entries[usage] = new List<TransactionAttribute>(new TransactionAttribute[] { attr });
+            }
         }
 
-        public IEnumerator<KeyValuePair<TransactionAttributeUsage, TransactionAttribute>> GetEnumerator()
+        public IEnumerator<KeyValuePair<TransactionAttributeUsage, List<TransactionAttribute>>> GetEnumerator()
         {
             return _entries.GetEnumerator();
         }
@@ -105,7 +111,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 var ret = new JObject();
                 ret["type"] = p.Key.ToString();
-                ret["value"] = p.Value.ToJson();
+                ret["value"] = p.Value.Select(u => u.ToJson()).ToArray();
                 return ret;
             })
             .ToArray();
