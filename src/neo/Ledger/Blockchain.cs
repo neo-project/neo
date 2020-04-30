@@ -21,6 +21,7 @@ namespace Neo.Ledger
     public sealed partial class Blockchain : UntypedActor
     {
         public partial class ApplicationExecuted { }
+        public class PersistStarted { }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
         public class ImportCompleted { }
@@ -66,7 +67,6 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
-        public bool isPersisting = false;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -473,7 +473,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            isPersisting = true;
+            Context.System.EventStream.Publish(new PersistStarted { });
             using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
@@ -544,7 +544,6 @@ namespace Neo.Ledger
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
-            isPersisting = false;
         }
 
         protected override void PostStop()

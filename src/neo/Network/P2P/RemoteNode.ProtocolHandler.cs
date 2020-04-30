@@ -37,7 +37,6 @@ namespace Neo.Network.P2P
 
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         public IStash Stash { get; set; }
-        private bool stashed = false;
 
         private void OnMessage(Message msg)
         {
@@ -109,18 +108,6 @@ namespace Neo.Network.P2P
                     OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
-                    if (Blockchain.Singleton.isPersisting)
-                    {
-                        stashed = true;
-                        Stash.Stash();
-                        break;
-                    }
-                    else if (stashed)
-                    {
-                        Stash.UnstashAll();
-                        stashed = false;
-                        break;
-                    }
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;

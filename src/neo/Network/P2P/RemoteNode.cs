@@ -36,6 +36,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistStarted));
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
         }
 
         /// <summary>
@@ -115,6 +117,20 @@ namespace Neo.Network.P2P
                 OnMessage(message);
         }
 
+        private void OnReceiveWhilePersisting(object message)
+        {
+            switch (message)
+            {
+                case Blockchain.PersistCompleted _:
+                    Become(OnReceive);
+                    Stash.UnstashAll();
+                    break;
+                default:
+                    Stash.Stash();
+                    break;
+            }
+        }
+
         protected override void OnReceive(object message)
         {
             base.OnReceive(message);
@@ -134,6 +150,9 @@ namespace Neo.Network.P2P
                     break;
                 case StartProtocol _:
                     OnStartProtocol();
+                    break;
+                case Blockchain.PersistStarted _:
+                    Become(OnReceiveWhilePersisting);
                     break;
             }
         }

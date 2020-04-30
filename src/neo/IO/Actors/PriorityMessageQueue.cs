@@ -12,13 +12,15 @@ namespace Neo.IO.Actors
     internal class PriorityMessageQueue : IMessageQueue, IUnboundedMessageQueueSemantics, IUnboundedDequeBasedMessageQueueSemantics
     {
         private readonly ConcurrentQueue<Envelope> high = new ConcurrentQueue<Envelope>();
+        private readonly ConcurrentStack<Envelope> preHigh = new ConcurrentStack<Envelope>();
         private readonly ConcurrentQueue<Envelope> low = new ConcurrentQueue<Envelope>();
+        private readonly ConcurrentStack<Envelope> preLow = new ConcurrentStack<Envelope>();
         private readonly Func<object, IEnumerable, bool> dropper;
         private readonly Func<object, bool> priority_generator;
         private int idle = 1;
 
-        public bool HasMessages => !high.IsEmpty || !low.IsEmpty;
-        public int Count => high.Count + low.Count;
+        public bool HasMessages => !preHigh.IsEmpty || !high.IsEmpty || !preLow.IsEmpty || !low.IsEmpty;
+        public int Count => preHigh.Count + high.Count + preLow.Count + low.Count;
 
         public PriorityMessageQueue(Func<object, IEnumerable, bool> dropper, Func<object, bool> priority_generator)
         {
@@ -42,7 +44,9 @@ namespace Neo.IO.Actors
 
         public bool TryDequeue(out Envelope envelope)
         {
+            if (preHigh.TryPop(out envelope)) return true;
             if (high.TryDequeue(out envelope)) return true;
+            if (preLow.TryPop(out envelope)) return true;
             if (low.TryDequeue(out envelope)) return true;
             if (Interlocked.Exchange(ref idle, 0) > 0)
             {
@@ -58,8 +62,8 @@ namespace Neo.IO.Actors
             if (envelope.Message is Idle) return;
             if (dropper(envelope.Message, high.Concat(low).Select(p => p.Message)))
                 return;
-            ConcurrentQueue<Envelope> queue = priority_generator(envelope.Message) ? high : low;
-            queue.Prepend(envelope);
+            ConcurrentStack<Envelope> queue = priority_generator(envelope.Message) ? preHigh : preLow;
+            queue.Push(envelope);
         }
     }
 }
