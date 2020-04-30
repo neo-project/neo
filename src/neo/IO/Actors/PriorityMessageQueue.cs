@@ -60,8 +60,6 @@ namespace Neo.IO.Actors
         {
             Interlocked.Increment(ref idle);
             if (envelope.Message is Idle) return;
-            if (dropper(envelope.Message, high.Concat(low).Select(p => p.Message)))
-                return;
             ConcurrentStack<Envelope> queue = priority_generator(envelope.Message) ? preHigh : preLow;
             queue.Push(envelope);
         }
