@@ -53,7 +53,7 @@ namespace Neo.Trie.MPT
                         break;
                     }
             }
-            value = Array.Empty<byte>();
+            value = null;
             return false;
         }
 
