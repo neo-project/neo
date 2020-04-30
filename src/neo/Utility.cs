@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Plugins;
 using System;
+using System.IO;
 
 namespace Neo
 {
@@ -16,7 +17,7 @@ namespace Neo
             var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
             var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
             return new ConfigurationBuilder()
-                .AddJsonFile(configFile, true)
+                .AddJsonFile(Path.Combine(Environment.CurrentDirectory, configFile), true)
                 .Build();
         }
 
