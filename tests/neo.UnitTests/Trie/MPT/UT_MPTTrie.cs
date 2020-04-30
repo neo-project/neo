@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Trie.MPT
 
         public TestKey()
         {
-
+            this.key = Array.Empty<byte>();
         }
 
         public TestKey(byte[] key)
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Trie.MPT
 
         public TestValue()
         {
-
+            this.value = Array.Empty<byte>();
         }
 
         public TestValue(byte[] value)
