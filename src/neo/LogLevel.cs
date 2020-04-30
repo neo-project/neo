@@ -2,10 +2,10 @@ namespace Neo
 {
     public enum LogLevel : byte
     {
-        Fatal,
-        Error,
-        Warning,
-        Info,
-        Debug
+        Debug = 0,
+        Info = 1,
+        Warning = 2,
+        Error = 3,
+        Fatal = 4
     }
 }
