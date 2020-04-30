@@ -275,7 +275,7 @@ namespace Neo.Wallets
                              Account = new UInt160(p.ToArray())
                          }).ToArray();
 
-                return MakeTransaction(snapshot, script, cosigners.Length == 0 ? new TransactionAttribute[0] : cosigners, balances_gas);
+                return MakeTransaction(snapshot, script, cosigners, balances_gas);
             }
         }
 
