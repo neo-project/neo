@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                if (attributes[TransactionAttributeUsage.Cosigner] is CosignerAttribute cosigners)
+                if (attributes[TransactionAttributeUsage.Cosigners] is CosignerAttribute cosigners)
                 {
                     return cosigners.Cosigners;
                 }

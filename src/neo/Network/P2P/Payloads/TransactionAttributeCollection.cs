@@ -74,9 +74,9 @@ namespace Neo.Network.P2P.Payloads
             {
                 switch ((TransactionAttributeUsage)reader.ReadByte())
                 {
-                    case TransactionAttributeUsage.Cosigner:
+                    case TransactionAttributeUsage.Cosigners:
                         {
-                            _entries.Add(TransactionAttributeUsage.Cosigner, reader.ReadSerializable<CosignerAttribute>());
+                            _entries.Add(TransactionAttributeUsage.Cosigners, reader.ReadSerializable<CosignerAttribute>());
                             break;
                         }
                     default: throw new FormatException();

@@ -9,7 +9,7 @@ namespace Neo.Network.P2P.Payloads
     public class CosignerAttribute : TransactionAttribute
     {
         public override int Size => Cosigners.GetVarSize();
-        public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigner;
+        public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigners;
 
         public Cosigner[] Cosigners { get; set; }
 
