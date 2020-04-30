@@ -114,6 +114,8 @@ namespace Neo.IO.Caching
         {
             lock (dictionary)
             {
+                changeSet.Add(key);
+
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
                     if (trackable.State == TrackState.Added)
@@ -124,7 +126,6 @@ namespace Neo.IO.Caching
                     else
                     {
                         trackable.State = TrackState.Deleted;
-                        changeSet.Add(key);
                     }
                 }
                 else
@@ -137,7 +138,6 @@ namespace Neo.IO.Caching
                         Item = item,
                         State = TrackState.Deleted
                     });
-                    changeSet.Add(key);
                 }
             }
         }
