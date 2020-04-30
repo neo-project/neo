@@ -10,7 +10,7 @@ namespace Neo.Trie.MPT
         public TValue Get(TKey key)
         {
             var path = key.ToArray().ToNibbles();
-            if (path.Length == 0) return null;
+            if (path.Length < 1) return null;
             var result = TryGet(ref root, path, out byte[] value);
             return result ? value.AsSerializable<TValue>() : null;
         }
@@ -21,7 +21,7 @@ namespace Neo.Trie.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             value = (byte[])leafNode.Value.Clone();
                             return true;
@@ -38,7 +38,7 @@ namespace Neo.Trie.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             return TryGet(ref branchNode.Children[BranchNode.ChildCount - 1], path, out value);
                         }

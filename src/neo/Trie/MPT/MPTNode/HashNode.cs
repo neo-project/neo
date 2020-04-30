@@ -44,7 +44,7 @@ namespace Neo.Trie.MPT
         public override void DecodeSpecific(BinaryReader reader)
         {
             var len = reader.ReadVarInt();
-            if (len == 0)
+            if (len < 1)
             {
                 Hash = null;
                 return;

@@ -13,7 +13,7 @@ namespace Neo.Trie.MPT
         {
             set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
             var path = key.ToArray().ToNibbles();
-            if (path.Length == 0) return false;
+            if (path.Length < 1) return false;
             return GetProof(ref root, path, set);
         }
 
@@ -23,7 +23,7 @@ namespace Neo.Trie.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             set.Add(leafNode.Encode());
                             return true;
@@ -41,7 +41,7 @@ namespace Neo.Trie.MPT
                 case BranchNode branchNode:
                     {
                         set.Add(branchNode.Encode());
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             return GetProof(ref branchNode.Children[BranchNode.ChildCount - 1], path, set);
                         }

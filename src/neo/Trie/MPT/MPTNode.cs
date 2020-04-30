@@ -50,7 +50,7 @@ namespace Neo.Trie.MPT
 
         public static MPTNode Decode(byte[] data)
         {
-            if (data is null || data.Length == 0)
+            if (data is null || data.Length < 1)
                 return null;
 
             using BinaryReader reader = new BinaryReader(new MemoryStream(data, false), Encoding.UTF8, false);

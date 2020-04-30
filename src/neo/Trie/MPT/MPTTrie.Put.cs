@@ -11,11 +11,11 @@ namespace Neo.Trie.MPT
         {
             var path = key.ToArray().ToNibbles();
             var val = value.ToArray();
-            if (ExtensionNode.MaxKeyLength < path.Length || path.Length == 0)
+            if (ExtensionNode.MaxKeyLength < path.Length || path.Length < 1)
                 return false;
             if (LeafNode.MaxValueLength < val.Length)
                 return false;
-            if (val.Length == 0)
+            if (val.Length < 1)
                 return TryDelete(ref root, path);
             var n = new LeafNode(val);
             return Put(ref root, path, n);
@@ -29,7 +29,7 @@ namespace Neo.Trie.MPT
                     {
                         if (val is LeafNode v)
                         {
-                            if (path.Length == 0)
+                            if (path.Length < 1)
                             {
                                 node = v;
                                 db.Put(node);
@@ -66,7 +66,7 @@ namespace Neo.Trie.MPT
                         Put(ref grandSon1, keyRemain[1..], extensionNode.Next);
                         son.Children[keyRemain[0]] = grandSon1;
 
-                        if (pathRemain.Length == 0)
+                        if (pathRemain.Length < 1)
                         {
                             Put(ref grandSon2, pathRemain, val);
                             son.Children[BranchNode.ChildCount - 1] = grandSon2;
@@ -96,7 +96,7 @@ namespace Neo.Trie.MPT
                 case BranchNode branchNode:
                     {
                         bool result;
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             result = Put(ref branchNode.Children[BranchNode.ChildCount - 1], path, val);
                         }
@@ -116,7 +116,7 @@ namespace Neo.Trie.MPT
                         MPTNode newNode;
                         if (hashNode.IsEmptyNode)
                         {
-                            if (path.Length == 0)
+                            if (path.Length < 1)
                             {
                                 newNode = val;
                             }

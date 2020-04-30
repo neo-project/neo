@@ -15,7 +15,7 @@ namespace Neo.Trie.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             start = leafNode;
                             return Array.Empty<byte>();
@@ -32,7 +32,7 @@ namespace Neo.Trie.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             start = branchNode;
                             return Array.Empty<byte>();
@@ -41,7 +41,7 @@ namespace Neo.Trie.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             start = extensionNode;
                             return Array.Empty<byte>();

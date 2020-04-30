@@ -12,7 +12,7 @@ namespace Neo.Trie.MPT
         public bool Delete(TKey key)
         {
             var path = key.ToArray().ToNibbles();
-            if (path.Length == 0) return false;
+            if (path.Length < 1) return false;
             return TryDelete(ref root, path);
         }
 
@@ -22,7 +22,7 @@ namespace Neo.Trie.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             node = HashNode.EmptyNode();
                             return true;
@@ -54,7 +54,7 @@ namespace Neo.Trie.MPT
                 case BranchNode branchNode:
                     {
                         bool result;
-                        if (path.Length == 0)
+                        if (path.Length < 1)
                         {
                             result = TryDelete(ref branchNode.Children[BranchNode.ChildCount - 1], path);
                         }
