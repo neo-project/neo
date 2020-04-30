@@ -30,5 +30,4 @@
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00218" />
   </ItemGroup>
 
-
 </Project>
