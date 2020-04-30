@@ -117,13 +117,9 @@ namespace Neo.IO.Caching
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
                     if (trackable.State == TrackState.Added)
-                    {
                         dictionary.Remove(key);
-                    }
                     else
-                    {
                         trackable.State = TrackState.Deleted;
-                    }
                 }
                 else
                 {
