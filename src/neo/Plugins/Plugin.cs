@@ -109,7 +109,7 @@ namespace Neo.Plugins
             }
             catch (Exception ex)
             {
-                Utility.Log(an.Name, LogLevel.Error, $"Failed to resolve assembly or its dependency: {ex.Message}");
+                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to resolve assembly or its dependency: {ex.Message}");
                 return null;
             }
         }
@@ -137,7 +137,7 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
-                    Utility.Log(type.Name, LogLevel.Error, $"Failed to initialize plugin: {ex.Message}");
+                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin: {ex.Message}");
                 }
             }
         }
