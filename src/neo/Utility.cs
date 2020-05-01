@@ -49,10 +49,5 @@ namespace Neo
             foreach (ILogPlugin plugin in Plugin.Loggers)
                 plugin.Log(source, level, message);
         }
-
-        public static void Log<T>(LogLevel level, string message)
-        {
-            Log(typeof(T).Name, level, message);
-        }
     }
 }

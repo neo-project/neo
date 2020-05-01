@@ -189,7 +189,7 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
-            Utility.Log<ConsensusService>(level, message);
+            Utility.Log(nameof(ConsensusService), level, message);
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
