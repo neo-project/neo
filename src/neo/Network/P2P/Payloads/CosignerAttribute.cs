@@ -10,7 +10,7 @@ namespace Neo.Network.P2P.Payloads
     public class CosignerAttribute : TransactionAttribute
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
-        private readonly int MaxSubitems = 16;
+        private const int MaxSubitems = 16;
 
         public UInt160 Account;
         public WitnessScope Scopes;
