@@ -12,22 +12,22 @@ namespace Neo.Network.P2P.Payloads
         public abstract int Size { get; }
         public abstract void Serialize(BinaryWriter writer);
         public abstract void Deserialize(BinaryReader reader);
-        protected abstract JObject ToJsonValue();
+        protected abstract void Serialize(JObject json);
         protected abstract void Deserialize(JObject json);
 
         public JObject ToJson()
         {
             var ret = new JObject();
-            ret["type"] = Usage;
-            ret["value"] = ToJsonValue();
+            ret["usage"] = Usage.ToString();
+            Serialize(ret);
             return ret;
         }
 
         public static TransactionAttribute FromJson(JObject json)
         {
-            var usage = (TransactionAttributeUsage)Enum.Parse(typeof(TransactionAttributeUsage), json["type"].AsString(), true);
+            var usage = (TransactionAttributeUsage)Enum.Parse(typeof(TransactionAttributeUsage), json["usage"].AsString(), true);
             var obj = (TransactionAttribute)ReflectionCache<TransactionAttributeUsage>.CreateInstance(usage);
-            obj.Deserialize(json["value"]);
+            obj.Deserialize(json);
             return obj;
         }
     }

@@ -124,20 +124,23 @@ namespace Neo.Network.P2P.Payloads
 
         public JObject ToJson()
         {
-            return _entries.Select(p =>
+            var ret = new JArray();
+
+            foreach (var entries in _entries.Values)
             {
-                var ret = new JObject();
-                ret["type"] = p.Key.ToString();
-                ret["value"] = p.Value.Select(u => u.ToJson()).ToArray();
-                return ret;
-            })
-            .ToArray();
+                foreach (var attr in entries)
+                {
+                    ret.Add(attr.ToJson());
+                }
+            }
+
+            return ret;
         }
 
         public static TransactionAttributeCollection FromJson(JObject json)
         {
             var ret = new TransactionAttributeCollection();
-            foreach (var entry in (JArray)json["attributes"])
+            foreach (var entry in (JArray)json)
             {
                 ret.Add(TransactionAttribute.FromJson(entry));
             }

@@ -60,16 +60,14 @@ namespace Neo.Network.P2P.Payloads
             AllowedGroups = ((JArray)json["allowedGroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray();
         }
 
-        protected override JObject ToJsonValue()
+        protected override void Serialize(JObject json)
         {
-            JObject json = new JObject();
             json["account"] = Account.ToString();
             json["scopes"] = Scopes;
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
                 json["allowedContracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
-            return json;
         }
     }
 }
