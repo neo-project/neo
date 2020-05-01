@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 
 namespace Neo.IO.Caching
@@ -37,6 +38,17 @@ namespace Neo.IO.Caching
         {
             if (dictionary.TryGetValue(key, out Type t))
                 return data.AsSerializable(t);
+            return null;
+        }
+
+        public static ISerializable CreateSerializable(T key, BinaryReader reader)
+        {
+            if (dictionary.TryGetValue(key, out Type t))
+            {
+                var ret = (ISerializable)Activator.CreateInstance(t);
+                ret.Deserialize(reader);
+                return ret;
+            }
             return null;
         }
     }

@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.IO;
@@ -12,6 +13,7 @@ namespace Neo.Network.P2P.Payloads
         public abstract void Serialize(BinaryWriter writer);
         public abstract void Deserialize(BinaryReader reader);
         protected abstract JObject ToJsonValue();
+        protected abstract void Deserialize(JObject json);
 
         public JObject ToJson()
         {
@@ -23,14 +25,10 @@ namespace Neo.Network.P2P.Payloads
 
         public static TransactionAttribute FromJson(JObject json)
         {
-            switch (Enum.Parse(typeof(TransactionAttributeUsage), json["type"].AsString(), true))
-            {
-                case TransactionAttributeUsage.Cosigner:
-                    {
-                        return CosignerAttribute.FromJsonValue(json["value"]);
-                    }
-                default: throw new FormatException();
-            }
+            var usage = (TransactionAttributeUsage)Enum.Parse(typeof(TransactionAttributeUsage), json["type"].AsString(), true);
+            var obj = (TransactionAttribute)ReflectionCache<TransactionAttributeUsage>.CreateInstance(usage);
+            obj.Deserialize(json["value"]);
+            return obj;
         }
     }
 }

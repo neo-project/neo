@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.Collections;
@@ -50,7 +51,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 foreach (var attr in attributes)
                 {
-                    Add(attr.Usage, attr);
+                    Add(attr);
                 }
             }
         }
@@ -87,15 +88,10 @@ namespace Neo.Network.P2P.Payloads
             var count = (int)reader.ReadVarInt(MaxTransactionAttributes);
             for (int x = 0; x < count; x++)
             {
-                switch ((TransactionAttributeUsage)reader.ReadByte())
-                {
-                    case TransactionAttributeUsage.Cosigner:
-                        {
-                            Add(TransactionAttributeUsage.Cosigner, reader.ReadSerializable<CosignerAttribute>());
-                            break;
-                        }
-                    default: throw new FormatException();
-                }
+                var usage = (TransactionAttributeUsage)reader.ReadByte();
+                var obj = ReflectionCache<TransactionAttributeUsage>.CreateSerializable(usage, reader);
+                if (!(obj is TransactionAttribute attr)) throw new FormatException();
+                Add(attr);
             }
 
             // Check duplicate cosigners
@@ -104,15 +100,15 @@ namespace Neo.Network.P2P.Payloads
             if (cosigners.Select(u => u.Account).Distinct().Count() != cosigners.Length) throw new FormatException();
         }
 
-        public void Add(TransactionAttributeUsage usage, TransactionAttribute attr)
+        public void Add(TransactionAttribute attr)
         {
-            if (_entries.TryGetValue(usage, out var list))
+            if (_entries.TryGetValue(attr.Usage, out var list))
             {
                 list.Add(attr);
             }
             else
             {
-                _entries[usage] = new List<TransactionAttribute>(new TransactionAttribute[] { attr });
+                _entries[attr.Usage] = new List<TransactionAttribute>(new TransactionAttribute[] { attr });
             }
         }
 
@@ -143,8 +139,7 @@ namespace Neo.Network.P2P.Payloads
             var ret = new TransactionAttributeCollection();
             foreach (var entry in (JArray)json["attributes"])
             {
-                var attr = TransactionAttribute.FromJson(entry);
-                ret.Add(attr.Usage, attr);
+                ret.Add(TransactionAttribute.FromJson(entry));
             }
             return ret;
         }
