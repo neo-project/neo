@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
                     return cosigners.Cast<CosignerAttribute>().ToArray();
                 }
 
-                return new CosignerAttribute[0];
+                return Array.Empty<CosignerAttribute>();
             }
         }
 
