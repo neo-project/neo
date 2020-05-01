@@ -17,7 +17,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] AllowedContracts;
         public ECPoint[] AllowedGroups;
 
-        public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigners;
+        public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigner;
 
         public CosignerAttribute()
         {

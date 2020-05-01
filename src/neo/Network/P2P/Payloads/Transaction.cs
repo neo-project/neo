@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                if (attributes.TryGet<CosignerAttribute>(TransactionAttributeUsage.Cosigners, out var cosigners))
+                if (attributes.TryGet<CosignerAttribute>(TransactionAttributeUsage.Cosigner, out var cosigners))
                 {
                     return cosigners;
                 }
