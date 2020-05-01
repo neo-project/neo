@@ -144,18 +144,6 @@ namespace Neo.IO.Caching
 
         protected abstract void DeleteInternal(TKey key);
 
-        public void DeleteWhere(Func<TKey, TValue, bool> predicate)
-        {
-            lock (dictionary)
-            {
-                foreach (Trackable trackable in dictionary.Where(p => p.Value.State != TrackState.Deleted && predicate(p.Key, p.Value.Item)).Select(p => p.Value))
-                {
-                    changeSet.Add(trackable.Key);
-                    trackable.State = TrackState.Deleted;
-                }
-            }
-        }
-
         /// <summary>
         /// Find the entries that start with the `key_prefix`
         /// </summary>
