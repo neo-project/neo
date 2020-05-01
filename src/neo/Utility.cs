@@ -12,21 +12,8 @@ namespace Neo
         {
             public Logger()
             {
-                Receive<Debug>(e => OnLog(LogLevel.Debug, e.ToString()));
-                Receive<Info>(e => OnLog(LogLevel.Info, e.ToString()));
-                Receive<Warning>(e => OnLog(LogLevel.Warning, e.ToString()));
-                Receive<Error>(e => OnLog(LogLevel.Error, e.ToString()));
-                Receive<InitializeLogger>(_ => Init(Sender));
-            }
-
-            private void Init(IActorRef sender)
-            {
-                sender.Tell(new LoggerInitialized());
-            }
-
-            private void OnLog(LogLevel level, string message)
-            {
-                Log("Akka", level, message);
+                Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
+                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message.ToString()));
             }
         }
 

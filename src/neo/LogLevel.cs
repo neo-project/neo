@@ -1,11 +1,13 @@
+using static Akka.Event.LogLevel;
+
 namespace Neo
 {
     public enum LogLevel : byte
     {
-        Debug = 0,
-        Info = 1,
-        Warning = 2,
-        Error = 3,
-        Fatal = 4
+        Debug = DebugLevel,
+        Info = InfoLevel,
+        Warning = WarningLevel,
+        Error = ErrorLevel,
+        Fatal = Error + 1
     }
 }
