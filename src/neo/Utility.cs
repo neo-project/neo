@@ -30,10 +30,6 @@ namespace Neo
             }
         }
 
-        public delegate void delOnLog(string source, LogLevel level, string message);
-
-        public static event delOnLog OnLog;
-
         /// <summary>
         /// Load configuration with different Environment Variable
         /// </summary>
@@ -50,8 +46,6 @@ namespace Neo
 
         public static void Log(string source, LogLevel level, string message)
         {
-            OnLog?.Invoke(source, level, message);
-
             foreach (ILogPlugin plugin in Plugin.Loggers)
                 plugin.Log(source, level, message);
         }
