@@ -26,7 +26,7 @@ namespace Neo
 
             private void OnLog(LogLevel level, string message)
             {
-                Log<NeoSystem>(level, message);
+                Log("Akka", level, message);
             }
         }
 
