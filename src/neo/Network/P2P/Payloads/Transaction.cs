@@ -46,19 +46,6 @@ namespace Neo.Network.P2P.Payloads
             set { attributes = value; _hash = null; _size = 0; }
         }
 
-        public CosignerAttribute[] Cosigners
-        {
-            get
-            {
-                if (attributes.TryGet<CosignerAttribute>(TransactionAttributeUsage.Cosigner, out var cosigners))
-                {
-                    return cosigners;
-                }
-
-                return new CosignerAttribute[0];
-            }
-        }
-
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
         /// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
@@ -174,8 +161,6 @@ namespace Neo.Network.P2P.Payloads
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = reader.ReadSerializable<TransactionAttributeCollection>();
-            var cosigners = Cosigners;
-            if (cosigners.Select(u => u.Account).Distinct().Count() != cosigners.Length) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -205,7 +190,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             var hashes = new HashSet<UInt160> { Sender };
-            hashes.UnionWith(Cosigners.Select(p => p.Account));
+            hashes.UnionWith(Attributes.Cosigners.Select(p => p.Account));
             return hashes.OrderBy(p => p).ToArray();
         }
 

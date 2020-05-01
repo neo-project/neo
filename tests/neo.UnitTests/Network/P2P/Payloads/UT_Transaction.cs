@@ -250,10 +250,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Part II
                 Assert.AreEqual(24, tx.Attributes.Size);
                 Assert.AreEqual(1, tx.Attributes.Count);
-                Assert.AreEqual(1, tx.Cosigners.Length);
-                Assert.AreEqual(22, tx.Cosigners.GetVarSize());
+                Assert.AreEqual(1, tx.Attributes.Cosigners.Length);
+                Assert.AreEqual(22, tx.Attributes.Cosigners.GetVarSize());
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
-                Assert.AreEqual(21, tx.Cosigners[0].Size);
+                Assert.AreEqual(21, tx.Attributes.Cosigners[0].Size);
                 // Part III
                 Assert.AreEqual(86, tx.Script.GetVarSize());
                 // Part IV
@@ -649,7 +649,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // no attributes must exist
                 tx.Attributes.Count.Should().Be(1);
                 // one cosigner must exist
-                tx.Cosigners.Length.Should().Be(1);
+                tx.Attributes.Cosigners.Length.Should().Be(1);
 
                 // Fast check
                 Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
@@ -789,7 +789,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx2.NetworkFee.Should().Be(0x0000000000000001);
             tx2.ValidUntilBlock.Should().Be(0x01020304);
             tx2.Attributes.Should().BeEquivalentTo(new TransactionAttribute[0] { });
-            tx2.Cosigners.Should().BeEquivalentTo(new CosignerAttribute[0] { });
+            tx2.Attributes.Cosigners.Should().BeEquivalentTo(new CosignerAttribute[0] { });
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
             tx2.Witnesses.Should().BeEquivalentTo(new Witness[0] { });
         }

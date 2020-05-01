@@ -24,6 +24,19 @@ namespace Neo.Network.P2P.Payloads
 
         public int Count => _entries.Count;
 
+        public CosignerAttribute[] Cosigners
+        {
+            get
+            {
+                if (_entries.TryGetValue(TransactionAttributeUsage.Cosigner, out var cosigners))
+                {
+                    return cosigners.Cast<CosignerAttribute>().ToArray();
+                }
+
+                return new CosignerAttribute[0];
+            }
+        }
+
         public TransactionAttributeCollection()
         {
             _entries = new Dictionary<TransactionAttributeUsage, List<TransactionAttribute>>();
@@ -84,6 +97,11 @@ namespace Neo.Network.P2P.Payloads
                     default: throw new FormatException();
                 }
             }
+
+            // Check duplicate cosigners
+
+            var cosigners = Cosigners;
+            if (cosigners.Select(u => u.Account).Distinct().Count() != cosigners.Length) throw new FormatException();
         }
 
         public void Add(TransactionAttributeUsage usage, TransactionAttribute attr)
