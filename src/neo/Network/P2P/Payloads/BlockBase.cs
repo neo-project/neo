@@ -6,7 +6,6 @@ using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -111,17 +110,6 @@ namespace Neo.Network.P2P.Payloads
             json["nextconsensus"] = NextConsensus.ToAddress();
             json["witnesses"] = new JArray(Witness.ToJson());
             return json;
-        }
-
-        public void FromJson(JObject json)
-        {
-            Version = (uint)json["version"].AsNumber();
-            PrevHash = UInt256.Parse(json["previousblockhash"].AsString());
-            MerkleRoot = UInt256.Parse(json["merkleroot"].AsString());
-            Timestamp = (ulong)json["time"].AsNumber();
-            Index = (uint)json["index"].AsNumber();
-            NextConsensus = json["nextconsensus"].AsString().ToScriptHash();
-            Witness = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).FirstOrDefault();
         }
 
         public virtual bool Verify(StoreView snapshot)
