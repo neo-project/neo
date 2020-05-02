@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class CosignerAttribute : TransactionAttribute
+    public class Cosigner : TransactionAttribute
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -19,7 +19,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override TransactionAttributeUsage Usage => TransactionAttributeUsage.Cosigner;
 
-        public CosignerAttribute()
+        public Cosigner()
         {
             this.Scopes = WitnessScope.Global;
         }

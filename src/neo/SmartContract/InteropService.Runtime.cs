@@ -81,7 +81,7 @@ namespace Neo.SmartContract
             {
                 if (engine.ScriptContainer is Transaction tx)
                 {
-                    CosignerAttribute usage = tx.Attributes.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
+                    Cosigner usage = tx.Attributes.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
                     if (usage is null) return false;
                     if (usage.Scopes == WitnessScope.Global) return true;
                     if (usage.Scopes.HasFlag(WitnessScope.CalledByEntry))

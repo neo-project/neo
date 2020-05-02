@@ -25,16 +25,16 @@ namespace Neo.Network.P2P.Payloads
 
         public int Count => _entries.Count;
 
-        public CosignerAttribute[] Cosigners
+        public Cosigner[] Cosigners
         {
             get
             {
                 if (_entries.TryGetValue(TransactionAttributeUsage.Cosigner, out var cosigners))
                 {
-                    return cosigners.Cast<CosignerAttribute>().ToArray();
+                    return cosigners.Cast<Cosigner>().ToArray();
                 }
 
-                return Array.Empty<CosignerAttribute>();
+                return Array.Empty<Cosigner>();
             }
         }
 

@@ -307,7 +307,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new CosignerAttribute[]{ new CosignerAttribute
+                var cosigners = new Cosigner[]{ new Cosigner
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.Global
@@ -393,7 +393,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new CosignerAttribute[]{ new CosignerAttribute
+                var cosigners = new Cosigner[]{ new Cosigner
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -480,7 +480,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying CalledByEntry together with GAS
-                var cosigners = new CosignerAttribute[]{ new CosignerAttribute
+                var cosigners = new Cosigner[]{ new Cosigner
                 {
                     Account = acc.ScriptHash,
                     // This combination is supposed to actually be an OR,
@@ -568,7 +568,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new CosignerAttribute[]{ new CosignerAttribute
+                var cosigners = new Cosigner[]{ new Cosigner
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -620,7 +620,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying two custom hashes, for same target account
-                var cosigners = new CosignerAttribute[]{ new CosignerAttribute
+                var cosigners = new Cosigner[]{ new Cosigner
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -735,7 +735,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new TransactionAttributeCollection(
-                            new CosignerAttribute
+                            new Cosigner
                             {
                                 Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                                 Scopes = WitnessScope.Global
@@ -789,7 +789,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx2.NetworkFee.Should().Be(0x0000000000000001);
             tx2.ValidUntilBlock.Should().Be(0x01020304);
             tx2.Attributes.Should().BeEquivalentTo(new TransactionAttribute[0] { });
-            tx2.Attributes.Cosigners.Should().BeEquivalentTo(new CosignerAttribute[0] { });
+            tx2.Attributes.Cosigners.Should().BeEquivalentTo(new Cosigner[0] { });
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
             tx2.Witnesses.Should().BeEquivalentTo(new Witness[0] { });
         }
@@ -808,12 +808,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new TransactionAttributeCollection(
-                            new CosignerAttribute
+                            new Cosigner
                             {
                                 Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                                 Scopes = WitnessScope.Global
                             },
-                            new CosignerAttribute
+                            new Cosigner
                             {
                                 Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
                                 Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
@@ -847,13 +847,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // --------------------------------------
             // this should pass (respecting max size)
 
-            var cosigners1 = new CosignerAttribute[maxCosigners];
+            var cosigners1 = new Cosigner[maxCosigners];
             for (int i = 0; i < cosigners1.Length; i++)
             {
                 string hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
-                cosigners1[i] = new CosignerAttribute
+                cosigners1[i] = new Cosigner
                 {
                     Account = UInt160.Parse(hex)
                 };
@@ -881,13 +881,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // ----------------------------
             // this should fail (max + 1)
 
-            var cosigners = new CosignerAttribute[maxCosigners + 1];
+            var cosigners = new Cosigner[maxCosigners + 1];
             for (var i = 0; i < maxCosigners + 1; i++)
             {
                 string hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
-                cosigners[i] = new CosignerAttribute
+                cosigners[i] = new Cosigner
                 {
                     Account = UInt160.Parse(hex)
                 };
@@ -921,7 +921,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             // Global is supposed to be default
 
-            CosignerAttribute cosigner = new CosignerAttribute();
+            Cosigner cosigner = new Cosigner();
             cosigner.Scopes.Should().Be(WitnessScope.Global);
 
             var wallet = TestUtils.GenerateTestWallet();
@@ -956,7 +956,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // default to global scope
-                var cosigners = new CosignerAttribute[]{ new CosignerAttribute
+                var cosigners = new Cosigner[]{ new Cosigner
                 {
                     Account = acc.ScriptHash
                 } };
