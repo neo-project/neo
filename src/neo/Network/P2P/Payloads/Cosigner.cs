@@ -23,13 +23,13 @@ namespace Neo.Network.P2P.Payloads
             this.Scopes = WitnessScope.Global;
         }
 
-        public override int Size =>
+        public override int Size => base.Size +
             /*Account*/             UInt160.Length +
             /*Scopes*/              sizeof(WitnessScope) +
             /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
             /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0);
 
-        public override void Deserialize(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader)
         {
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
@@ -41,7 +41,7 @@ namespace Neo.Network.P2P.Payloads
                 : new ECPoint[0];
         }
 
-        public override void Serialize(BinaryWriter writer)
+        protected override void SerializeWithoutType(BinaryWriter writer)
         {
             writer.Write(Account);
             writer.Write((byte)Scopes);
