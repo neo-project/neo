@@ -51,15 +51,7 @@ namespace Neo.Network.P2P.Payloads
                 writer.Write(AllowedGroups);
         }
 
-        protected override void Deserialize(JObject json)
-        {
-            Account = UInt160.Parse(json["account"].AsString());
-            Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scopes"].AsString());
-            AllowedContracts = ((JArray)json["allowedContracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray();
-            AllowedGroups = ((JArray)json["allowedGroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray();
-        }
-
-        protected override void Serialize(JObject json)
+        protected override void ToJson(JObject json)
         {
             json["account"] = Account.ToString();
             json["scopes"] = Scopes;
@@ -67,7 +59,6 @@ namespace Neo.Network.P2P.Payloads
                 json["allowedContracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
-            return json;
         }
     }
 }

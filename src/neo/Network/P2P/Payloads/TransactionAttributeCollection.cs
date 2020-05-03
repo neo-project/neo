@@ -136,15 +136,5 @@ namespace Neo.Network.P2P.Payloads
 
             return ret;
         }
-
-        public static TransactionAttributeCollection FromJson(JObject json)
-        {
-            var ret = new TransactionAttributeCollection();
-            foreach (var entry in (JArray)json)
-            {
-                ret.Add(TransactionAttribute.FromJson(entry));
-            }
-            return ret;
-        }
     }
 }

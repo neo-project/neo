@@ -1,7 +1,5 @@
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.IO.Json;
-using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -12,14 +10,13 @@ namespace Neo.Network.P2P.Payloads
         public abstract int Size { get; }
         public abstract void Serialize(BinaryWriter writer);
         public abstract void Deserialize(BinaryReader reader);
-        protected abstract void Serialize(JObject json);
-        protected abstract void Deserialize(JObject json);
+        protected abstract void ToJson(JObject json);
 
         public JObject ToJson()
         {
             var ret = new JObject();
             ret["usage"] = Usage.ToString();
-            Serialize(ret);
+            ToJson(ret);
             return ret;
         }
     }
