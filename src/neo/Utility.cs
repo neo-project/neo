@@ -17,17 +17,6 @@ namespace Neo
             }
         }
 
-        static Utility()
-        {
-            // Unify unhandled exceptions
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-        }
-
-        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            Log(e.ExceptionObject.GetType().Name, LogLevel.Fatal, e.ToString());
-        }
-
         /// <summary>
         /// Load configuration with different Environment Variable
         /// </summary>

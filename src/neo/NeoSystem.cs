@@ -26,6 +26,17 @@ namespace Neo
         private ChannelsConfig start_message = null;
         private bool suspend = false;
 
+        static NeoSystem()
+        {
+            // Unify unhandled exceptions
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Utility.Log(e.ExceptionObject.GetType().Name, LogLevel.Fatal, e.ToString());
+        }
+
         public NeoSystem(string storageEngine = null)
         {
             Plugin.LoadPlugins(this);
