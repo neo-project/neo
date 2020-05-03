@@ -1,7 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using System;
 using System.IO;
 using System.Linq;
 
@@ -68,6 +67,7 @@ namespace Neo.Network.P2P.Payloads
                 json["allowedContracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+            return json;
         }
     }
 }

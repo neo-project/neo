@@ -22,13 +22,5 @@ namespace Neo.Network.P2P.Payloads
             Serialize(ret);
             return ret;
         }
-
-        public static TransactionAttribute FromJson(JObject json)
-        {
-            var usage = (TransactionAttributeUsage)Enum.Parse(typeof(TransactionAttributeUsage), json["usage"].AsString(), true);
-            var obj = (TransactionAttribute)ReflectionCache<TransactionAttributeUsage>.CreateInstance(usage);
-            obj.Deserialize(json);
-            return obj;
-        }
     }
 }
