@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.Collections;
@@ -20,7 +19,6 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size =>
             IO.Helper.GetVarSize(_entries.Count) +      // count
-            _entries.Count +                            // usages
             _entries.Values.Sum(u => u.GetVarSize());   // entries
 
         public int Count => _entries.Count;
@@ -75,7 +73,6 @@ namespace Neo.Network.P2P.Payloads
             {
                 foreach (var entry in attr.Value)
                 {
-                    writer.Write((byte)entry.Type);
                     writer.Write(entry);
                 }
             }
@@ -88,10 +85,7 @@ namespace Neo.Network.P2P.Payloads
             var count = (int)reader.ReadVarInt(MaxTransactionAttributes);
             for (int x = 0; x < count; x++)
             {
-                var type = (TransactionAttributeType)reader.ReadByte();
-                var obj = ReflectionCache<TransactionAttributeType>.CreateSerializable(type, reader);
-                if (!(obj is TransactionAttribute attr)) throw new FormatException();
-                Add(attr);
+                Add(TransactionAttribute.DeserializeFrom(reader));
             }
 
             // Check duplicate cosigners

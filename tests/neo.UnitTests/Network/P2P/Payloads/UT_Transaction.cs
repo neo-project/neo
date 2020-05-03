@@ -251,9 +251,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(24, tx.Attributes.Size);
                 Assert.AreEqual(1, tx.Attributes.Count);
                 Assert.AreEqual(1, tx.Attributes.Cosigners.Length);
-                Assert.AreEqual(22, tx.Attributes.Cosigners.GetVarSize());
+                Assert.AreEqual(23, tx.Attributes.Cosigners.GetVarSize());
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
-                Assert.AreEqual(21, tx.Attributes.Cosigners[0].Size);
+                Assert.AreEqual(22, tx.Attributes.Cosigners[0].Size);
                 // Part III
                 Assert.AreEqual(86, tx.Script.GetVarSize());
                 // Part IV
@@ -826,7 +826,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f50500000000010000000000000004030201028109080706050403020100090807060504030201000081090807060504030201000908070605040302010001011100");
+            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f50500000000010000000000000004030201020109080706050403020100090807060504030201000001090807060504030201000908070605040302010001011100");
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;

@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.IO;
@@ -15,6 +16,15 @@ namespace Neo.Network.P2P.Payloads
             if (reader.ReadByte() != (byte)Type)
                 throw new FormatException();
             DeserializeWithoutType(reader);
+        }
+
+        public static TransactionAttribute DeserializeFrom(BinaryReader reader)
+        {
+            TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
+            if (!(ReflectionCache<TransactionAttributeType>.CreateInstance(type) is TransactionAttribute attribute))
+                throw new FormatException();
+            attribute.DeserializeWithoutType(reader);
+            return attribute;
         }
 
         protected abstract void DeserializeWithoutType(BinaryReader reader);
