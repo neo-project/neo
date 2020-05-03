@@ -8,18 +8,19 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class TransactionAttributeCollection : ISerializable, IEnumerable<KeyValuePair<TransactionAttributeType, List<TransactionAttribute>>>
+    public class TransactionAttributeCollection : ISerializable, IEnumerable<TransactionAttribute>
     {
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         public const int MaxTransactionAttributes = 16;
 
-        private readonly Dictionary<TransactionAttributeType, List<TransactionAttribute>> _entries;
+        private Cosigner[] _cosigners;
+        private readonly List<TransactionAttribute> _entries;
 
         public int Size =>
-            IO.Helper.GetVarSize(_entries.Count) +      // count
-            _entries.Values.Sum(u => u.GetVarSize());   // entries
+            IO.Helper.GetVarSize(_entries.Count) +  // count
+            _entries.Sum(u => u.Size);              // entries
 
         public int Count => _entries.Count;
 
@@ -27,23 +28,24 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                if (_entries.TryGetValue(TransactionAttributeType.Cosigner, out var cosigners))
+                if (_cosigners != null)
                 {
-                    return cosigners.Cast<Cosigner>().ToArray();
+                    return _cosigners;
                 }
 
-                return Array.Empty<Cosigner>();
+                _cosigners = _entries.OfType<Cosigner>().ToArray();
+                return _cosigners;
             }
         }
 
         public TransactionAttributeCollection()
         {
-            _entries = new Dictionary<TransactionAttributeType, List<TransactionAttribute>>();
+            _entries = new List<TransactionAttribute>();
         }
 
         public TransactionAttributeCollection(params TransactionAttribute[] attributes)
         {
-            _entries = new Dictionary<TransactionAttributeType, List<TransactionAttribute>>();
+            _entries = new List<TransactionAttribute>();
 
             if (attributes != null)
             {
@@ -54,33 +56,19 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public bool TryGet<T>(TransactionAttributeType type, out T[] attr)
-        {
-            if (_entries.TryGetValue(type, out var val))
-            {
-                attr = val.Cast<T>().ToArray();
-                return true;
-            }
-
-            attr = null;
-            return false;
-        }
-
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteVarInt(_entries.Sum(u => u.Value.Count));
-            foreach (var attr in _entries)
+            writer.WriteVarInt(_entries.Count);
+            foreach (var entry in _entries)
             {
-                foreach (var entry in attr.Value)
-                {
-                    writer.Write(entry);
-                }
+                writer.Write(entry);
             }
         }
 
         public void Deserialize(BinaryReader reader)
         {
             _entries.Clear();
+            _cosigners = null;
 
             var count = (int)reader.ReadVarInt(MaxTransactionAttributes);
             for (int x = 0; x < count; x++)
@@ -90,23 +78,16 @@ namespace Neo.Network.P2P.Payloads
 
             // Check duplicate cosigners
 
-            var cosigners = Cosigners;
-            if (cosigners.Select(u => u.Account).Distinct().Count() != cosigners.Length) throw new FormatException();
+            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
         }
 
         public void Add(TransactionAttribute attr)
         {
-            if (_entries.TryGetValue(attr.Type, out var list))
-            {
-                list.Add(attr);
-            }
-            else
-            {
-                _entries[attr.Type] = new List<TransactionAttribute>(new TransactionAttribute[] { attr });
-            }
+            _cosigners = null;
+            _entries.Add(attr);
         }
 
-        public IEnumerator<KeyValuePair<TransactionAttributeType, List<TransactionAttribute>>> GetEnumerator()
+        public IEnumerator<TransactionAttribute> GetEnumerator()
         {
             return _entries.GetEnumerator();
         }
@@ -120,12 +101,9 @@ namespace Neo.Network.P2P.Payloads
         {
             var ret = new JArray();
 
-            foreach (var entries in _entries.Values)
+            foreach (var entry in _entries)
             {
-                foreach (var attr in entries)
-                {
-                    ret.Add(attr.ToJson());
-                }
+                ret.Add(entry.ToJson());
             }
 
             return ret;
