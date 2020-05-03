@@ -81,24 +81,24 @@ namespace Neo.SmartContract
             {
                 if (engine.ScriptContainer is Transaction tx)
                 {
-                    Cosigner usage = tx.Attributes.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
-                    if (usage is null) return false;
-                    if (usage.Scopes == WitnessScope.Global) return true;
-                    if (usage.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                    Cosigner cosigner = tx.Attributes.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
+                    if (cosigner is null) return false;
+                    if (cosigner.Scopes == WitnessScope.Global) return true;
+                    if (cosigner.Scopes.HasFlag(WitnessScope.CalledByEntry))
                     {
                         if (engine.CallingScriptHash == engine.EntryScriptHash)
                             return true;
                     }
-                    if (usage.Scopes.HasFlag(WitnessScope.CustomContracts))
+                    if (cosigner.Scopes.HasFlag(WitnessScope.CustomContracts))
                     {
-                        if (usage.AllowedContracts.Contains(engine.CurrentScriptHash))
+                        if (cosigner.AllowedContracts.Contains(engine.CurrentScriptHash))
                             return true;
                     }
-                    if (usage.Scopes.HasFlag(WitnessScope.CustomGroups))
+                    if (cosigner.Scopes.HasFlag(WitnessScope.CustomGroups))
                     {
                         var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                         // check if current group is the required one
-                        if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(usage.AllowedGroups).Any())
+                        if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(cosigner.AllowedGroups).Any())
                             return true;
                     }
                     return false;

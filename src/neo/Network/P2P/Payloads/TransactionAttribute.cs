@@ -6,7 +6,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public abstract class TransactionAttribute : ISerializable
     {
-        public abstract TransactionAttributeUsage Usage { get; }
+        public abstract TransactionAttributeType Type { get; }
         public abstract int Size { get; }
         public abstract void Serialize(BinaryWriter writer);
         public abstract void Deserialize(BinaryReader reader);
@@ -15,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
         {
             return new JObject
             {
-                ["usage"] = Usage
+                ["type"] = Type
             };
         }
     }

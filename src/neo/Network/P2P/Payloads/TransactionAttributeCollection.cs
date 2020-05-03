@@ -9,14 +9,14 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class TransactionAttributeCollection : ISerializable, IEnumerable<KeyValuePair<TransactionAttributeUsage, List<TransactionAttribute>>>
+    public class TransactionAttributeCollection : ISerializable, IEnumerable<KeyValuePair<TransactionAttributeType, List<TransactionAttribute>>>
     {
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         public const int MaxTransactionAttributes = 16;
 
-        private readonly Dictionary<TransactionAttributeUsage, List<TransactionAttribute>> _entries;
+        private readonly Dictionary<TransactionAttributeType, List<TransactionAttribute>> _entries;
 
         public int Size =>
             IO.Helper.GetVarSize(_entries.Count) +      // count
@@ -29,7 +29,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                if (_entries.TryGetValue(TransactionAttributeUsage.Cosigner, out var cosigners))
+                if (_entries.TryGetValue(TransactionAttributeType.Cosigner, out var cosigners))
                 {
                     return cosigners.Cast<Cosigner>().ToArray();
                 }
@@ -40,12 +40,12 @@ namespace Neo.Network.P2P.Payloads
 
         public TransactionAttributeCollection()
         {
-            _entries = new Dictionary<TransactionAttributeUsage, List<TransactionAttribute>>();
+            _entries = new Dictionary<TransactionAttributeType, List<TransactionAttribute>>();
         }
 
         public TransactionAttributeCollection(params TransactionAttribute[] attributes)
         {
-            _entries = new Dictionary<TransactionAttributeUsage, List<TransactionAttribute>>();
+            _entries = new Dictionary<TransactionAttributeType, List<TransactionAttribute>>();
 
             if (attributes != null)
             {
@@ -56,9 +56,9 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public bool TryGet<T>(TransactionAttributeUsage usage, out T[] attr)
+        public bool TryGet<T>(TransactionAttributeType type, out T[] attr)
         {
-            if (_entries.TryGetValue(usage, out var val))
+            if (_entries.TryGetValue(type, out var val))
             {
                 attr = val.Cast<T>().ToArray();
                 return true;
@@ -75,7 +75,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 foreach (var entry in attr.Value)
                 {
-                    writer.Write((byte)entry.Usage);
+                    writer.Write((byte)entry.Type);
                     writer.Write(entry);
                 }
             }
@@ -88,8 +88,8 @@ namespace Neo.Network.P2P.Payloads
             var count = (int)reader.ReadVarInt(MaxTransactionAttributes);
             for (int x = 0; x < count; x++)
             {
-                var usage = (TransactionAttributeUsage)reader.ReadByte();
-                var obj = ReflectionCache<TransactionAttributeUsage>.CreateSerializable(usage, reader);
+                var type = (TransactionAttributeType)reader.ReadByte();
+                var obj = ReflectionCache<TransactionAttributeType>.CreateSerializable(type, reader);
                 if (!(obj is TransactionAttribute attr)) throw new FormatException();
                 Add(attr);
             }
@@ -102,17 +102,17 @@ namespace Neo.Network.P2P.Payloads
 
         public void Add(TransactionAttribute attr)
         {
-            if (_entries.TryGetValue(attr.Usage, out var list))
+            if (_entries.TryGetValue(attr.Type, out var list))
             {
                 list.Add(attr);
             }
             else
             {
-                _entries[attr.Usage] = new List<TransactionAttribute>(new TransactionAttribute[] { attr });
+                _entries[attr.Type] = new List<TransactionAttribute>(new TransactionAttribute[] { attr });
             }
         }
 
-        public IEnumerator<KeyValuePair<TransactionAttributeUsage, List<TransactionAttribute>>> GetEnumerator()
+        public IEnumerator<KeyValuePair<TransactionAttributeType, List<TransactionAttribute>>> GetEnumerator()
         {
             return _entries.GetEnumerator();
         }
