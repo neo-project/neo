@@ -51,14 +51,16 @@ namespace Neo.Network.P2P.Payloads
                 writer.Write(AllowedGroups);
         }
 
-        protected override void ToJson(JObject json)
+        public override JObject ToJson()
         {
+            JObject json = base.ToJson();
             json["account"] = Account.ToString();
             json["scopes"] = Scopes;
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
                 json["allowedContracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+            return json;
         }
     }
 }
