@@ -5,6 +5,6 @@ namespace Neo.Network.P2P.Payloads
     public enum TransactionAttributeType : byte
     {
         [ReflectionCache(typeof(Cosigner))]
-        Cosigner = 0x81
+        Cosigner = 0x01
     }
 }
