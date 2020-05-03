@@ -20,7 +20,6 @@ namespace Neo
         static Utility()
         {
             // Unify unhandled exceptions
-
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
