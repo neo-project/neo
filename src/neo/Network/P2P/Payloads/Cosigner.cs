@@ -1,7 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using System;
 using System.IO;
 using System.Linq;
 
@@ -60,17 +59,6 @@ namespace Neo.Network.P2P.Payloads
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
             return json;
-        }
-
-        public static Cosigner FromJson(JObject json)
-        {
-            return new Cosigner
-            {
-                Account = UInt160.Parse(json["account"].AsString()),
-                Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scopes"].AsString()),
-                AllowedContracts = ((JArray)json["allowedContracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray(),
-                AllowedGroups = ((JArray)json["allowedGroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
-            };
         }
     }
 }
