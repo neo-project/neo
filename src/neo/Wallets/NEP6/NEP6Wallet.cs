@@ -265,6 +265,22 @@ namespace Neo.Wallets.NEP6
             File.WriteAllText(path, wallet.ToString());
         }
 
+        public bool Backup()
+        {
+            string backup = path + ".bak";
+            if (!File.Exists(path) || File.Exists(backup))
+                return false;
+            try
+            {
+                File.Copy(path, backup);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            return true;
+        }
+
         public IDisposable Unlock(string password)
         {
             if (!VerifyPassword(password))
