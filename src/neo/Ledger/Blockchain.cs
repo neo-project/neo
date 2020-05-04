@@ -167,7 +167,7 @@ namespace Neo.Ledger
                 Script = script,
                 Sender = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
                 SystemFee = 0,
-                Attributes = new TransactionAttributeCollection(),
+                Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
                     new Witness

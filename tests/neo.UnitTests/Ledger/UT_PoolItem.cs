@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -121,7 +120,7 @@ namespace Neo.UnitTests.Ledger
                 Script = overrideScriptBytes ?? new byte[0],
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
-                Attributes = new TransactionAttributeCollection(),
+                Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
                     new Witness
@@ -132,8 +131,8 @@ namespace Neo.UnitTests.Ledger
                 }
             };
 
-            tx.Attributes.Count.Should().Be(0);
-            tx.Attributes.Cosigners.Length.Should().Be(0);
+            tx.Attributes.Length.Should().Be(0);
+            tx.Cosigners.Length.Should().Be(0);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();

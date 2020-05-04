@@ -19,6 +19,10 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
+        /// <summary>
+        /// Maximum number of attributes that can be contained within a transaction
+        /// </summary>
+        public const int MaxTransactionAttributes = 16;
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
 
@@ -28,7 +32,7 @@ namespace Neo.Network.P2P.Payloads
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
-        private TransactionAttributeCollection attributes;
+        private TransactionAttribute[] attributes;
         private byte[] script;
         private Witness[] witnesses;
 
@@ -40,11 +44,14 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
-        public TransactionAttributeCollection Attributes
+        public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _hash = null; _size = 0; }
+            set { attributes = value; _cosigners = null; _hash = null; _size = 0; }
         }
+
+        private Cosigner[] _cosigners;
+        public Cosigner[] Cosigners => _cosigners ??= attributes.OfType<Cosigner>().ToArray();
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -102,9 +109,9 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.Size +       // Attributes
-                        Script.GetVarSize() +   // Script
-                        Witnesses.GetVarSize(); // Witnesses
+                        Attributes.GetVarSize() +   // Attributes
+                        Script.GetVarSize() +       // Script
+                        Witnesses.GetVarSize();     // Witnesses
                 }
                 return _size;
             }
@@ -160,7 +167,11 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = reader.ReadSerializable<TransactionAttributeCollection>();
+            Attributes = new TransactionAttribute[reader.ReadVarInt(MaxTransactionAttributes)];
+            for (int i = 0; i < Attributes.Length; i++)
+                Attributes[i] = TransactionAttribute.DeserializeFrom(reader);
+            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length)
+                throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -190,7 +201,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             var hashes = new HashSet<UInt160> { Sender };
-            hashes.UnionWith(Attributes.Cosigners.Select(p => p.Account));
+            hashes.UnionWith(Cosigners.Select(p => p.Account));
             return hashes.OrderBy(p => p).ToArray();
         }
 
@@ -223,7 +234,7 @@ namespace Neo.Network.P2P.Payloads
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
-            json["attributes"] = Attributes.ToJson();
+            json["attributes"] = new JArray(Attributes.Select(p => p.ToJson()));
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;

@@ -24,7 +24,7 @@ namespace Neo.UnitTests.Ledger
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = networkFee;
             mock.Object.SystemFee = systemFee;
-            mock.Object.Attributes = new TransactionAttributeCollection();
+            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
             mock.Object.Witnesses = new[]
             {
                 new Witness

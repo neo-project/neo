@@ -81,7 +81,7 @@ namespace Neo.SmartContract
             {
                 if (engine.ScriptContainer is Transaction tx)
                 {
-                    Cosigner cosigner = tx.Attributes.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
+                    Cosigner cosigner = tx.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
                     if (cosigner is null) return false;
                     if (cosigner.Scopes == WitnessScope.Global) return true;
                     if (cosigner.Scopes.HasFlag(WitnessScope.CalledByEntry))

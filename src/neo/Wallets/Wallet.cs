@@ -311,7 +311,7 @@ namespace Neo.Wallets
                     Script = script,
                     Sender = account,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = new TransactionAttributeCollection(attributes),
+                    Attributes = attributes,
                 };
 
                 // will try to execute 'transfer' script to check if it works
@@ -325,7 +325,7 @@ namespace Neo.Wallets
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
                 // base size for transaction: includes const_header + attributes + script + hashes
-                int size = Transaction.HeaderSize + tx.Attributes.Size + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+                int size = Transaction.HeaderSize + tx.Attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
 
                 foreach (UInt160 hash in hashes)
                 {
