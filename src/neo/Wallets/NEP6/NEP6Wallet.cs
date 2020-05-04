@@ -13,13 +13,13 @@ namespace Neo.Wallets.NEP6
 {
     public class NEP6Wallet : Wallet
     {
-        private readonly string path;
         private string password;
         private string name;
         private Version version;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
         private readonly JObject extra;
 
+        public readonly string path;
         public readonly ScryptParameters Scrypt;
         public override string Name => name;
         public override Version Version => version;
@@ -263,22 +263,6 @@ namespace Neo.Wallets.NEP6
             wallet["accounts"] = new JArray(accounts.Values.Select(p => p.ToJson()));
             wallet["extra"] = extra;
             File.WriteAllText(path, wallet.ToString());
-        }
-
-        public bool Backup()
-        {
-            string backup = path + ".bak";
-            if (!File.Exists(path) || File.Exists(backup))
-                return false;
-            try
-            {
-                File.Copy(path, backup);
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            return true;
         }
 
         public IDisposable Unlock(string password)
