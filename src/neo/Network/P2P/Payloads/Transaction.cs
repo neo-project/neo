@@ -19,12 +19,12 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
+        public const int MaxTransactionSize = 102400;
+        public const uint MaxValidUntilBlockIncrement = 2102400;
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         public const int MaxTransactionAttributes = 16;
-        public const int MaxTransactionSize = 102400;
-        public const uint MaxValidUntilBlockIncrement = 2102400;
 
         private byte version;
         private uint nonce;
