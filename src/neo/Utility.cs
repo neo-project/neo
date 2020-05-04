@@ -13,7 +13,7 @@ namespace Neo
             public Logger()
             {
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message.ToString()));
+                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
             }
         }
 
@@ -31,7 +31,7 @@ namespace Neo
                 .Build();
         }
 
-        public static void Log(string source, LogLevel level, string message)
+        public static void Log(string source, LogLevel level, object message)
         {
             foreach (ILogPlugin plugin in Plugin.Loggers)
                 plugin.Log(source, level, message);
