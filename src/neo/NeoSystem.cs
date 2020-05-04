@@ -47,7 +47,7 @@ namespace Neo
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Utility.Log(e.ExceptionObject.GetType().Name, LogLevel.Fatal, e.ExceptionObject);
+            Utility.Log("UnhandledException", LogLevel.Fatal, e.ExceptionObject);
         }
 
         public void Dispose()
