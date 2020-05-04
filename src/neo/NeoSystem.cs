@@ -32,11 +32,6 @@ namespace Neo
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
-        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            Utility.Log(e.ExceptionObject.GetType().Name, LogLevel.Fatal, e.ToString());
-        }
-
         public NeoSystem(string storageEngine = null)
         {
             Plugin.LoadPlugins(this);
@@ -48,6 +43,11 @@ namespace Neo
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnPluginsLoaded();
+        }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Utility.Log(e.ExceptionObject.GetType().Name, LogLevel.Fatal, e.ToString());
         }
 
         public void Dispose()
