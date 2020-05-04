@@ -170,8 +170,7 @@ namespace Neo.Network.P2P.Payloads
             Attributes = new TransactionAttribute[reader.ReadVarInt(MaxTransactionAttributes)];
             for (int i = 0; i < Attributes.Length; i++)
                 Attributes[i] = TransactionAttribute.DeserializeFrom(reader);
-            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length)
-                throw new FormatException();
+            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
