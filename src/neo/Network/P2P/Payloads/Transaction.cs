@@ -233,7 +233,7 @@ namespace Neo.Network.P2P.Payloads
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
-            json["attributes"] = new JArray(Attributes.Select(p => p.ToJson()));
+            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
