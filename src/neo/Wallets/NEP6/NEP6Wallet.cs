@@ -19,9 +19,9 @@ namespace Neo.Wallets.NEP6
         private readonly Dictionary<UInt160, NEP6Account> accounts;
         private readonly JObject extra;
 
-        public readonly string Path;
         public readonly ScryptParameters Scrypt;
         public override string Name => name;
+        public override string Path { get; }
         public override Version Version => version;
 
         public NEP6Wallet(string path, string name = null)

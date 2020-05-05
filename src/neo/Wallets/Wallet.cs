@@ -21,6 +21,7 @@ namespace Neo.Wallets
     public abstract class Wallet
     {
         public abstract string Name { get; }
+        public abstract string Path { get; }
         public abstract Version Version { get; }
 
         public abstract bool ChangePassword(string oldPassword, string newPassword);

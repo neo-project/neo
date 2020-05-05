@@ -17,6 +17,8 @@ namespace Neo.UnitTests.Wallets
     {
         public override string Name => "MyWallet";
 
+        public override string Path => throw new NotImplementedException();
+
         public override Version Version => Version.Parse("0.0.1");
 
         Dictionary<UInt160, WalletAccount> accounts = new Dictionary<UInt160, WalletAccount>();
