@@ -26,8 +26,6 @@ namespace Neo.Wallets.SQLite
 
         public override string Name => GetFileNameWithoutExtension(Path);
 
-        public override string Path { get; }
-
         public override Version Version
         {
             get
@@ -47,9 +45,8 @@ namespace Neo.Wallets.SQLite
         /// </summary>
         /// <param name="path">Path</param>
         /// <param name="passwordKey">Password Key</param>
-        private UserWallet(string path, byte[] passwordKey)
+        private UserWallet(string path, byte[] passwordKey) : base(path)
         {
-            this.Path = path;
             this.salt = LoadStoredData("Salt");
             byte[] passwordHash = LoadStoredData("PasswordHash");
             if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
@@ -71,9 +68,8 @@ namespace Neo.Wallets.SQLite
         /// <param name="path">Path</param>
         /// <param name="passwordKey">Password Key</param>
         /// <param name="scrypt">Scrypt initialization value</param>
-        private UserWallet(string path, byte[] passwordKey, ScryptParameters scrypt)
+        private UserWallet(string path, byte[] passwordKey, ScryptParameters scrypt) : base(path)
         {
-            this.Path = path;
             this.iv = new byte[16];
             this.salt = new byte[20];
             this.masterKey = new byte[32];

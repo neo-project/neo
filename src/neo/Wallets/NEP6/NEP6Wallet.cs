@@ -21,12 +21,10 @@ namespace Neo.Wallets.NEP6
 
         public readonly ScryptParameters Scrypt;
         public override string Name => name;
-        public override string Path { get; }
         public override Version Version => version;
 
-        public NEP6Wallet(string path, string name = null)
+        public NEP6Wallet(string path, string name = null) : base(path)
         {
-            this.Path = path;
             if (File.Exists(path))
             {
                 JObject wallet = JObject.Parse(File.ReadAllBytes(path));
@@ -42,9 +40,8 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public NEP6Wallet(JObject wallet)
+        internal NEP6Wallet(JObject wallet) : base(null)
         {
-            this.Path = "";
             LoadFromJson(wallet, out Scrypt, out accounts, out extra);
         }
 
