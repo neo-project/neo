@@ -21,10 +21,6 @@ namespace Neo.UnitTests.Wallets
 
         Dictionary<UInt160, WalletAccount> accounts = new Dictionary<UInt160, WalletAccount>();
 
-        public MyWallet() : base(null)
-        {
-        }
-
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
             throw new NotImplementedException();
