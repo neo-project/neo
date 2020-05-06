@@ -88,39 +88,38 @@ namespace Neo.Ledger
             {
                 var result = OnNewStateRoot(state_root);
                 if (result != RelayResultReason.Succeed)
-                {
                     break;
-                }
             }
             system.TaskManager.Tell(new TaskManager.StateRootTaskCompleted(), Sender);
         }
 
         private void OnImportRoots(IEnumerable<StateRoot> roots)
         {
-            foreach (StateRoot root in roots)
+            foreach (StateRoot stateRoot in roots)
             {
-                if (root.Index < Math.Max(StateHeight, StateRootEnableIndex)) continue;
-                if (root.Index != Math.Max(StateHeight + 1, StateRootEnableIndex))
+                if (stateRoot.Index < Math.Max(StateHeight, StateRootEnableIndex)) continue;
+                if (stateRoot.Index != Math.Max(StateHeight + 1, StateRootEnableIndex))
                     throw new InvalidOperationException();
+
                 using (Snapshot snapshot = GetSnapshot())
                 {
-                    var local_state = snapshot.StateRoots.GetAndChange(root.Index);
-                    if (local_state.Flag == StateRootVerifyFlag.Invalid) break;
-                    if (local_state.StateRoot.Root == root.Root && local_state.StateRoot.PreHash == root.PreHash)
+                    var localState = snapshot.StateRoots.GetAndChange(stateRoot.Index);
+                    if (localState.StateRoot.Root == stateRoot.Root && localState.StateRoot.PreHash == stateRoot.PreHash)
                     {
                         HashIndexState hashIndexState = snapshot.StateRootHashIndex.GetAndChange();
-                        hashIndexState.Index = root.Index;
-                        hashIndexState.Hash = root.Hash;
-                        local_state.StateRoot = root;
-                        local_state.Flag = StateRootVerifyFlag.Verified;
+                        hashIndexState.Index = stateRoot.Index;
+                        hashIndexState.Hash = stateRoot.Hash;
+                        localState.StateRoot = stateRoot;
+                        localState.Flag = StateRootVerifyFlag.Verified;
                     }
                     else
                     {
-                        local_state.Flag = StateRootVerifyFlag.Invalid;
+                        localState.Flag = StateRootVerifyFlag.Invalid;
                     }
                     snapshot.Commit();
                     UpdateCurrentSnapshot();
-                    if (local_state.Flag == StateRootVerifyFlag.Invalid) break;
+
+                    if (localState.Flag == StateRootVerifyFlag.Invalid) break;
                 }
             }
             Sender.Tell(new ImportCompleted());
