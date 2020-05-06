@@ -54,33 +54,32 @@ namespace Neo.Ledger
 
             using (Snapshot snapshot = GetSnapshot())
             {
-                var index = stateRoot.Index;
-                while (index <= Height)
+                while (stateRoot.Index <= Height)
                 {
-                    if (!stateRootCache.TryGetValue(index++, out StateRoot stateVerifying)) break;
-
-                    var localState = snapshot.StateRoots.GetAndChange(stateVerifying.Index);
-                    if (localState.StateRoot.Root == stateVerifying.Root && localState.StateRoot.PreHash == stateVerifying.PreHash)
+                    var localState = snapshot.StateRoots.GetAndChange(stateRoot.Index);
+                    if (localState.StateRoot.Root == stateRoot.Root && localState.StateRoot.PreHash == stateRoot.PreHash)
                     {
                         HashIndexState hashIndexState = snapshot.StateRootHashIndex.GetAndChange();
-                        hashIndexState.Index = stateVerifying.Index;
-                        hashIndexState.Hash = stateVerifying.Hash;
-                        localState.StateRoot = stateVerifying;
+                        hashIndexState.Index = stateRoot.Index;
+                        hashIndexState.Hash = stateRoot.Hash;
+                        localState.StateRoot = stateRoot;
                         localState.Flag = StateRootVerifyFlag.Verified;
-                        if (stateVerifying.Index + 3 > HeaderHeight)
+                        if (stateRoot.Index + 3 > HeaderHeight)
                         {// TODO remove +3 and use LocalNode.RelayDirectly
-                            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateVerifying });
+                            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateRoot });
                         }
                     }
                     else
                     {
                         localState.Flag = StateRootVerifyFlag.Invalid;
                     }
+                    
                     snapshot.Commit();
                     UpdateCurrentSnapshot();
-                    stateRootCache.Remove(stateVerifying.Index);
+                    stateRootCache.Remove(stateRoot.Index);
 
                     if (localState.Flag == StateRootVerifyFlag.Invalid) break;
+                    if (!stateRootCache.TryGetValue(stateRoot.Index + 1, out stateRoot)) break;
                 }
             }
             return RelayResultReason.Succeed;
