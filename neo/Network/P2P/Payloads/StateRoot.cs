@@ -88,7 +88,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            return new UInt160[] { snapshot.GetBlock(Index).NextConsensus };
+            return new UInt160[] { snapshot.GetBlock(Index)?.NextConsensus };
         }
 
         public byte[] GetMessage()
