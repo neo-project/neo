@@ -653,7 +653,7 @@ namespace Neo.Ledger
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
-            PersistStateRoot();
+            PersistLocalStateRoot();
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
         }

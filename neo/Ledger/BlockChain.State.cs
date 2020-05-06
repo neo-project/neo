@@ -125,7 +125,7 @@ namespace Neo.Ledger
             Sender.Tell(new ImportCompleted());
         }
 
-        private void PersistStateRoot()
+        private void PersistLocalStateRoot()
         {
             using (Snapshot snapshot = GetSnapshot())
             {
