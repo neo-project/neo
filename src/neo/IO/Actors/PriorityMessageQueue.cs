@@ -11,10 +11,10 @@ namespace Neo.IO.Actors
 {
     internal class PriorityMessageQueue : IMessageQueue, IUnboundedMessageQueueSemantics, IUnboundedDequeBasedMessageQueueSemantics
     {
-        private readonly ConcurrentQueue<Envelope> high = new ConcurrentQueue<Envelope>();
         private readonly ConcurrentStack<Envelope> preHigh = new ConcurrentStack<Envelope>();
-        private readonly ConcurrentQueue<Envelope> low = new ConcurrentQueue<Envelope>();
+        private readonly ConcurrentQueue<Envelope> high = new ConcurrentQueue<Envelope>();
         private readonly ConcurrentStack<Envelope> preLow = new ConcurrentStack<Envelope>();
+        private readonly ConcurrentQueue<Envelope> low = new ConcurrentQueue<Envelope>();
         private readonly Func<object, IEnumerable, bool> dropper;
         private readonly Func<object, bool> priority_generator;
         private int idle = 1;
