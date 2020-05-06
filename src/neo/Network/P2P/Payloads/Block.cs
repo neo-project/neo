@@ -113,16 +113,6 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public new static Block FromJson(JObject json)
-        {
-            Block block = new Block();
-            BlockBase blockBase = block;
-            blockBase.FromJson(json);
-            block.ConsensusData = ConsensusData.FromJson(json["consensus_data"]);
-            block.Transactions = ((JArray)json["tx"]).Select(p => Transaction.FromJson(p)).ToArray();
-            return block;
-        }
-
         public TrimmedBlock Trim()
         {
             return new TrimmedBlock
