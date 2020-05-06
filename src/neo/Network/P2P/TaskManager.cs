@@ -28,7 +28,7 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private readonly Dictionary<uint, RemoteNode> receivedBlockIndex = new Dictionary<uint, RemoteNode>();
-        private readonly List<uint> failedTasks = new List<uint>();
+        private readonly List<uint> failedSyncTasks = new List<uint>();
         private readonly Dictionary<IActorRef, RemoteNode> nodes = new Dictionary<IActorRef, RemoteNode>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         /// <summary>
@@ -111,7 +111,7 @@ namespace Neo.Network.P2P
             node.session.InvalidBlockCount++;
             node.session.IndexTasks.Remove(invalidIndex);
             receivedBlockIndex.Remove(invalidIndex);
-            AssignTask(invalidIndex, node.session);
+            AssignSyncTask(invalidIndex, node.session);
         }
 
         private void RequestTasks()
@@ -120,14 +120,14 @@ namespace Neo.Network.P2P
 
             SendPingMessage();
 
-            while (failedTasks.Count() > 0)
+            while (failedSyncTasks.Count() > 0)
             {
-                if (failedTasks[0] <= Blockchain.Singleton.Height)
+                if (failedSyncTasks[0] <= Blockchain.Singleton.Height)
                 {
-                    failedTasks.Remove(failedTasks[0]);
+                    failedSyncTasks.Remove(failedSyncTasks[0]);
                     continue;
                 }
-                if (!AssignTask(failedTasks[0])) return;
+                if (!AssignSyncTask(failedSyncTasks[0])) return;
             }
 
             int taskCounts = nodes.Values.Sum(p => p.session.IndexTasks.Count);
@@ -135,11 +135,11 @@ namespace Neo.Network.P2P
             for (; taskCounts < MaxSyncTasksCount; taskCounts++)
             {
                 if (lastTaskIndex >= highestBlockIndex) break;
-                if (!AssignTask(++lastTaskIndex)) break;
+                if (!AssignSyncTask(++lastTaskIndex)) break;
             }
         }
 
-        private bool AssignTask(uint index, NodeSession filterSession = null)
+        private bool AssignSyncTask(uint index, NodeSession filterSession = null)
         {
             if (index <= Blockchain.Singleton.Height || nodes.Values.Any(p => p.session != filterSession && p.session.IndexTasks.ContainsKey(index)))
                 return true;
@@ -150,13 +150,13 @@ namespace Neo.Network.P2P
                 .FirstOrDefault();
             if (remoteNode.Value == null)
             {
-                failedTasks.Add(index);
+                failedSyncTasks.Add(index);
                 return false;
             }
             NodeSession session = remoteNode.Value.session;
             session.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
             remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(index, 1)));
-            failedTasks.Remove(index);
+            failedSyncTasks.Remove(index);
             return true;
         }
 
@@ -273,7 +273,7 @@ namespace Neo.Network.P2P
                     {
                         session.IndexTasks.Remove(kvp.Key);
                         session.TimeoutTimes++;
-                        AssignTask(kvp.Key, session);
+                        AssignSyncTask(kvp.Key, session);
                     }
                 }
             }
@@ -286,7 +286,7 @@ namespace Neo.Network.P2P
                 return;
             NodeSession session = remoteNode.session;
             foreach (uint index in session.IndexTasks.Keys)
-                AssignTask(index, session);
+                AssignSyncTask(index, session);
 
             foreach (UInt256 hash in session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
