@@ -21,7 +21,7 @@ namespace Neo.UnitTests
         public void TestGetLocalNode() => neoSystem.LocalNode.Should().NotBeNull();
 
         [TestMethod]
-        public void TestGetSyncManager() => neoSystem.SyncManager.Should().NotBeNull();
+        public void TestGetTaskManager() => neoSystem.TaskManager.Should().NotBeNull();
 
         [TestMethod]
         public void TestGetConsensus() => neoSystem.Consensus.Should().BeNull();

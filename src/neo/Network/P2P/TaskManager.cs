@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P
 {
-    partial class SyncManager : UntypedActor
+    partial class TaskManager : UntypedActor
     {
         public class Register { public RemoteNode Node; }
         public class PersistedBlockIndex { public uint PersistedIndex; }
@@ -43,7 +43,7 @@ namespace Neo.Network.P2P
 
         private uint lastTaskIndex = 0;
 
-        public SyncManager(NeoSystem system)
+        public TaskManager(NeoSystem system)
         {
             this.system = system;
             this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
@@ -78,7 +78,7 @@ namespace Neo.Network.P2P
                         OnReceiveInvalidBlockIndex(invalidBlock.Index);
                     break;
                 case StartSync _:
-                    RequestSync();
+                    RequestTasks();
                     break;
                 case Timer _:
                     OnTimer();
@@ -96,7 +96,7 @@ namespace Neo.Network.P2P
             node.session.IndexTasks.Remove(block.Index);
             receivedBlockIndex.Add(block.Index, node);
             system.Blockchain.Tell(block);
-            RequestSync();
+            RequestTasks();
         }
 
         private void OnReceivePersistedBlockIndex(uint blockIndex)
@@ -114,7 +114,7 @@ namespace Neo.Network.P2P
             AssignTask(invalidIndex, node.session);
         }
 
-        private void RequestSync()
+        private void RequestTasks()
         {
             if (nodes.Count() == 0) return;
 
@@ -205,7 +205,7 @@ namespace Neo.Network.P2P
         {
             Context.Watch(Sender);
             nodes.Add(Sender, node);
-            RequestSync();
+            RequestTasks();
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -277,7 +277,7 @@ namespace Neo.Network.P2P
                     }
                 }
             }
-            RequestSync();
+            RequestTasks();
         }
 
         private void OnTerminated(IActorRef actor)
@@ -301,13 +301,13 @@ namespace Neo.Network.P2P
 
         public static Props Props(NeoSystem system)
         {
-            return Akka.Actor.Props.Create(() => new SyncManager(system)).WithMailbox("sync-manager-mailbox");
+            return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
     }
 
-    internal class SyncManagerMailbox : PriorityMailbox
+    internal class TaskManagerMailbox : PriorityMailbox
     {
-        public SyncManagerMailbox(Akka.Actor.Settings settings, Config config)
+        public TaskManagerMailbox(Akka.Actor.Settings settings, Config config)
             : base(settings, config)
         {
         }
@@ -316,10 +316,10 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
-                case SyncManager.Register _:
-                case SyncManager.RestartTasks _:
+                case TaskManager.Register _:
+                case TaskManager.RestartTasks _:
                     return true;
-                case SyncManager.NewTasks tasks:
+                case TaskManager.NewTasks tasks:
                     if (tasks.Payload.Type == InventoryType.Consensus)
                         return true;
                     return false;
@@ -330,9 +330,9 @@ namespace Neo.Network.P2P
 
         internal protected override bool ShallDrop(object message, IEnumerable queue)
         {
-            if (!(message is SyncManager.NewTasks tasks)) return false;
+            if (!(message is TaskManager.NewTasks tasks)) return false;
             // Remove duplicate tasks
-            if (queue.OfType<SyncManager.NewTasks>().Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes))) return true;
+            if (queue.OfType<TaskManager.NewTasks>().Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes))) return true;
             return false;
         }
     }

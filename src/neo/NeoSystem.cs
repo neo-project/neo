@@ -14,12 +14,12 @@ namespace Neo
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
-            $"sync-manager-mailbox {{ mailbox-type: \"{typeof(SyncManagerMailbox).AssemblyQualifiedName}\" }}" +
+            $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
             $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
-        internal IActorRef SyncManager { get; }
+        internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
 
         private readonly IStore store;
@@ -34,7 +34,7 @@ namespace Neo
                 : Plugin.Storages[storageEngine].GetStore();
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
-            this.SyncManager = ActorSystem.ActorOf(Network.P2P.SyncManager.Props(this));
+            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnPluginsLoaded();
         }
@@ -70,7 +70,7 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
         {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.SyncManager, consensus_store ?? store, wallet));
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 

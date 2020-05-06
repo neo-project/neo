@@ -8,11 +8,11 @@ using System;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    public class UT_SyncManagerMailbox : TestKit
+    public class UT_TaskManagerMailbox : TestKit
     {
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-        SyncManagerMailbox uut;
+        TaskManagerMailbox uut;
 
         [TestCleanup]
         public void Cleanup()
@@ -26,23 +26,23 @@ namespace Neo.UnitTests.Network.P2P
             Akka.Actor.ActorSystem system = Sys;
             var config = TestKit.DefaultConfig;
             var akkaSettings = new Akka.Actor.Settings(system, config);
-            uut = new SyncManagerMailbox(akkaSettings, config);
+            uut = new TaskManagerMailbox(akkaSettings, config);
         }
 
         [TestMethod]
-        public void SyncManager_Test_IsHighPriority()
+        public void TaskManager_Test_IsHighPriority()
         {
             // high priority
-            uut.IsHighPriority(new SyncManager.Register()).Should().Be(true);
-            uut.IsHighPriority(new SyncManager.RestartTasks()).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.Register()).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.RestartTasks()).Should().Be(true);
 
             // low priority
             // -> NewTasks: generic InvPayload
-            uut.IsHighPriority(new SyncManager.NewTasks { Payload = new InvPayload() }).Should().Be(false);
+            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload() }).Should().Be(false);
 
             // high priority
             // -> NewTasks: payload Consensus
-            uut.IsHighPriority(new SyncManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Consensus } }).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Consensus } }).Should().Be(true);
 
             // any random object should not have priority
             object obj = null;
