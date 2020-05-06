@@ -71,7 +71,6 @@ namespace Neo.Ledger
                     {
                         localState.Flag = StateRootVerifyFlag.Invalid;
                     }
-                    
                     snapshot.Commit();
                     UpdateCurrentSnapshot();
                     stateRootCache.Remove(stateRoot.Index);
