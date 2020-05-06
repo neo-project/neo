@@ -39,7 +39,7 @@ namespace Neo.Cryptography.ECC
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
             BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
-            BigInteger r, s;
+            BigInteger r, s, isEven;
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 do
@@ -53,6 +53,7 @@ namespace Neo.Cryptography.ECC
                         }
                         while (k.Sign == 0 || k.CompareTo(curve.N) >= 0);
                         ECPoint p = ECPoint.Multiply(curve.G, k);
+                        isEven = p.Y.Value & 1;
                         BigInteger x = p.X.Value;
                         r = x.Mod(curve.N);
                     }
@@ -61,11 +62,12 @@ namespace Neo.Cryptography.ECC
                     if (s > curve.N / 2)
                     {
                         s = curve.N - s;
+                        isEven = isEven ^ 1;
                     }
                 }
                 while (s.Sign == 0);
             }
-            return new BigInteger[] { r, s };
+            return new BigInteger[] { r, s, isEven };
         }
 
         private static ECPoint SumOfTwoMultiplies(ECPoint P, BigInteger k, ECPoint Q, BigInteger l)
@@ -103,6 +105,53 @@ namespace Neo.Cryptography.ECC
             ECPoint point = SumOfTwoMultiplies(curve.G, u1, publicKey, u2);
             BigInteger v = point.X.Value.Mod(curve.N);
             return v.Equals(r);
+        }
+
+        public static ECPoint KeyRecover(ECCurve curve, BigInteger r, BigInteger s, byte[] msg, bool isEven)
+        {
+            if (r < BigInteger.One || s < BigInteger.One)
+            {
+                throw new ArithmeticException("Invalid signature");
+            }
+            // calculate h
+            BigInteger h = (curve.Q + 1 + 2 * (BigInteger)Math.Sqrt((double)curve.Q)) / curve.N;
+            BigInteger e;
+            ECPoint Q = new ECPoint();
+            int messageBitLength;
+
+            for (int i = 0; i <= h; i++)
+            {
+                // step 1.1 x = (n * i) + r
+                BigInteger Rx = curve.N * i + r;
+                if (Rx > curve.Q) break;
+
+                // step 1.2 and 1.3 get point R
+                ECPoint R;
+                if (isEven)
+                {
+                    R = ECPoint.DecompressPoint(0, Rx, curve);
+                }
+                else
+                {
+                    R = ECPoint.DecompressPoint(1, Rx, curve);
+                }
+                if (ECPoint.Multiply(R, curve.N) != curve.Infinity)
+                    continue;
+
+                // step 1.5 compute e
+                messageBitLength = msg.Length * 8;
+                e = new BigInteger(msg.Reverse().Concat(new byte[1]).ToArray());
+                if (curve.N.GetBitLength() < messageBitLength)
+                {
+                    e >>= messageBitLength - curve.N.GetBitLength();
+                }
+
+                // step 1.6 Q = r^-1 (sR-eG)
+                BigInteger invr = r.ModInverse(curve.N);
+                ECPoint t0 = ECPoint.Multiply(R, s) - ECPoint.Multiply(curve.G, e);
+                Q = ECPoint.Multiply(t0, invr);
+            }
+            return Q;
         }
     }
 }
