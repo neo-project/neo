@@ -48,13 +48,5 @@ namespace Neo.Network.P2P.Payloads
             json["verification"] = Convert.ToBase64String(VerificationScript);
             return json;
         }
-
-        public static Witness FromJson(JObject json)
-        {
-            Witness witness = new Witness();
-            witness.InvocationScript = Convert.FromBase64String(json["invocation"].AsString());
-            witness.VerificationScript = Convert.FromBase64String(json["verification"].AsString());
-            return witness;
-        }
     }
 }
