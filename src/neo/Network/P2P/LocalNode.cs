@@ -59,11 +59,11 @@ namespace Neo.Network.P2P
                 singleton = this;
 
                 // Start dns resolution in parallel
-
-                for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
+                string[] seedList = ProtocolSettings.Default.SeedList;
+                for (int i = 0; i < seedList.Length; i++)
                 {
                     int index = i;
-                    Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
+                    Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
                 }
             }
         }
