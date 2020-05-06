@@ -187,7 +187,7 @@ namespace Neo.SmartContract
             byte[] messageHash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             try
             {
-                ECPoint point = ECDsa.KeyRecover(curve, r, s, messageHash, v, true);
+                ECPoint point = ECDsa.KeyRecover(curve, r, s, messageHash, v);
                 engine.CurrentContext.EvaluationStack.Push(point.EncodePoint(false).Skip(1).ToArray());
             }
             catch

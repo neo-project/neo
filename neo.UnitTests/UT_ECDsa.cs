@@ -43,14 +43,14 @@ namespace Neo.Cryptography.ECC.Tests
             {
                 v = false;
             }
-            ECPoint recoverKey = ECDsa.KeyRecover(Curve, r, s, message, v, true);
+            ECPoint recoverKey = ECDsa.KeyRecover(Curve, r, s, message, v);
             Assert.IsTrue(recoverKey.Equals(publicKey));
             //wrong r part
             r = new BigInteger(generatekey(32));
             s = new BigInteger(generatekey(32));
             try
             {
-                recoverKey = ECDsa.KeyRecover(Curve, r, s, message, v, true);
+                recoverKey = ECDsa.KeyRecover(Curve, r, s, message, v);
                 Assert.IsFalse(recoverKey.Equals(publicKey));
             }
             catch (Exception e)

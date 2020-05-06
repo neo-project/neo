@@ -107,7 +107,7 @@ namespace Neo.Cryptography.ECC
             return v.Equals(r);
         }
 
-        public static ECPoint KeyRecover(ECCurve curve, BigInteger r, BigInteger s, byte[] msg, bool isEven, bool doChecks)
+        public static ECPoint KeyRecover(ECCurve curve, BigInteger r, BigInteger s, byte[] msg, bool isEven)
         {
             if (r < BigInteger.One || s < BigInteger.One)
             {
@@ -135,11 +135,8 @@ namespace Neo.Cryptography.ECC
                 {
                     R = ECPoint.DecompressPoint(1, Rx, curve);
                 }
-                if (doChecks)
-                {
-                    if (ECPoint.Multiply(R, curve.N) != curve.Infinity)
-                        continue;
-                }
+                if (ECPoint.Multiply(R, curve.N) != curve.Infinity)
+                    continue;
 
                 // step 1.5 compute e
                 messageBitLength = msg.Length * 8;
