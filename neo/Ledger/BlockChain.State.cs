@@ -14,7 +14,7 @@ namespace Neo.Ledger
     {
         public class ImportRoots { public IEnumerable<StateRoot> Roots; }
         public uint StateHeight => currentSnapshot.StateHeight;
-        private uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
+        private static uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
         private readonly Dictionary<uint, StateRoot> stateRootCache = new Dictionary<uint, StateRoot>();
 
         public StateRootState GetStateRoot(UInt256 block_hash)
@@ -47,9 +47,11 @@ namespace Neo.Ledger
             if (stateRoot.Index < StateRootEnableIndex || stateRoot.Index <= StateHeight) return RelayResultReason.Invalid;
             if (!stateRoot.Verify(currentSnapshot)) return RelayResultReason.Invalid;
             if (stateRootCache.ContainsKey(stateRoot.Index)) return RelayResultReason.AlreadyExists;
-            if (stateRoot.Index > Height || (stateRoot.Index > StateHeight + 1 && stateRoot.Index != StateRootEnableIndex))
+            if (stateRoot.Index > StateHeight + 1 && stateRoot.Index != StateRootEnableIndex)
+            {
+                stateRootCache.Add(stateRoot.Index, stateRoot);
                 return RelayResultReason.Succeed;
-
+            }
             using (Snapshot snapshot = GetSnapshot())
             {
                 while (stateRoot.Index <= Height)
