@@ -66,6 +66,7 @@ namespace Neo.Ledger
                 {
                     stateRootCache.Remove(state_root_verifying.Index);
                     var local_state = snapshot.StateRoots.GetAndChange(state_root_verifying.Index);
+                    local_state.Flag = StateRootVerifyFlag.Invalid;
                     if (local_state.StateRoot.Root == state_root_verifying.Root && local_state.StateRoot.PreHash == state_root_verifying.PreHash)
                     {
                         HashIndexState hashIndexState = snapshot.StateRootHashIndex.GetAndChange();
@@ -74,13 +75,9 @@ namespace Neo.Ledger
                         local_state.StateRoot = state_root_verifying;
                         local_state.Flag = StateRootVerifyFlag.Verified;
                         if (state_root_verifying.Index + 3 > HeaderHeight)
-                        {
+                        {// TODO remove +3 and use LocalNode.RelayDirectly
                             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = state_root_verifying });
                         }
-                    }
-                    else
-                    {
-                        local_state.Flag = StateRootVerifyFlag.Invalid;
                     }
                     snapshot.Commit();
                     UpdateCurrentSnapshot();
