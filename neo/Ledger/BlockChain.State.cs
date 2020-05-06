@@ -42,46 +42,45 @@ namespace Neo.Ledger
             return result;
         }
 
-        private RelayResultReason OnNewStateRoot(StateRoot state_root)
+        private RelayResultReason OnNewStateRoot(StateRoot stateRoot)
         {
-            if (state_root.Index < StateRootEnableIndex || state_root.Index <= StateHeight) return RelayResultReason.Invalid;
-            if (!state_root.Verify(currentSnapshot)) return RelayResultReason.Invalid;
-            if (stateRootCache.ContainsKey(state_root.Index)) return RelayResultReason.AlreadyExists;
-            if (state_root.Index > Height || (state_root.Index > StateHeight + 1 && state_root.Index != StateRootEnableIndex))
-            {
-                stateRootCache.Add(state_root.Index, state_root);
+            if (stateRoot.Index < StateRootEnableIndex || stateRoot.Index <= StateHeight) return RelayResultReason.Invalid;
+            if (!stateRoot.Verify(currentSnapshot)) return RelayResultReason.Invalid;
+            if (stateRootCache.ContainsKey(stateRoot.Index)) return RelayResultReason.AlreadyExists;
+
+            stateRootCache.Add(stateRoot.Index, stateRoot);
+            if (stateRoot.Index > Height || (stateRoot.Index > StateHeight + 1 && stateRoot.Index != StateRootEnableIndex))
                 return RelayResultReason.Succeed;
-            }
-            var state_root_to_verify = state_root;
-            var state_roots_to_verify = new List<StateRoot>();
-            var index = state_root_to_verify.Index;
-            while (index <= Height)
+
+            using (Snapshot snapshot = GetSnapshot())
             {
-                state_roots_to_verify.Add(state_root_to_verify);
-                if (!stateRootCache.TryGetValue(++index, out state_root_to_verify)) break;
-            }
-            foreach (var state_root_verifying in state_roots_to_verify)
-            {
-                using (Snapshot snapshot = GetSnapshot())
+                var index = stateRoot.Index;
+                while (index <= Height)
                 {
-                    stateRootCache.Remove(state_root_verifying.Index);
-                    var local_state = snapshot.StateRoots.GetAndChange(state_root_verifying.Index);
-                    local_state.Flag = StateRootVerifyFlag.Invalid;
-                    if (local_state.StateRoot.Root == state_root_verifying.Root && local_state.StateRoot.PreHash == state_root_verifying.PreHash)
+                    if (!stateRootCache.TryGetValue(index++, out StateRoot stateVerifying)) break;
+
+                    var localState = snapshot.StateRoots.GetAndChange(stateVerifying.Index);
+                    if (localState.StateRoot.Root == stateVerifying.Root && localState.StateRoot.PreHash == stateVerifying.PreHash)
                     {
                         HashIndexState hashIndexState = snapshot.StateRootHashIndex.GetAndChange();
-                        hashIndexState.Index = state_root_verifying.Index;
-                        hashIndexState.Hash = state_root_verifying.Hash;
-                        local_state.StateRoot = state_root_verifying;
-                        local_state.Flag = StateRootVerifyFlag.Verified;
-                        if (state_root_verifying.Index + 3 > HeaderHeight)
+                        hashIndexState.Index = stateVerifying.Index;
+                        hashIndexState.Hash = stateVerifying.Hash;
+                        localState.StateRoot = stateVerifying;
+                        localState.Flag = StateRootVerifyFlag.Verified;
+                        if (stateVerifying.Index + 3 > HeaderHeight)
                         {// TODO remove +3 and use LocalNode.RelayDirectly
-                            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = state_root_verifying });
+                            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateVerifying });
                         }
+                    }
+                    else
+                    {
+                        localState.Flag = StateRootVerifyFlag.Invalid;
                     }
                     snapshot.Commit();
                     UpdateCurrentSnapshot();
-                    if (local_state.Flag == StateRootVerifyFlag.Invalid) break;
+                    stateRootCache.Remove(stateVerifying.Index);
+
+                    if (localState.Flag == StateRootVerifyFlag.Invalid) break;
                 }
             }
             return RelayResultReason.Succeed;
