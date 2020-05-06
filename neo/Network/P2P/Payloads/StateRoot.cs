@@ -54,7 +54,7 @@ namespace Neo.Network.P2P.Payloads
         {
             this.DeserializeUnsigned(reader);
             Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
-            if (witnesses.Length != 1) throw new FormatException();
+            if (witnesses.Length != 1) return;
             Witness = witnesses[0];
         }
 
