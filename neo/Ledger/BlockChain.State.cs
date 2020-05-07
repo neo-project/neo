@@ -124,29 +124,28 @@ namespace Neo.Ledger
         {
             using (Snapshot snapshot = GetSnapshot())
             {
-                var trie_db = new TrieReadOnlyStore(Store, Prefixes.DATA_MPT);
-                var current_root = trie_db.GetRoot();
-                var current_index = snapshot.Height;
-                var pre_hash = UInt256.Zero;
-                if (current_index > 0)
+                var trieDb = new TrieReadOnlyStore(Store, Prefixes.DATA_MPT);
+                var currentRoot = trieDb.GetRoot();
+                var currentIndex = snapshot.Height;
+                var preHash = UInt256.Zero;
+                if (currentIndex > 0)
                 {
-                    var last_state_root = currentSnapshot.StateRoots.TryGet(current_index - 1);
-                    pre_hash = last_state_root.StateRoot.Hash;
+                    var last_state_root = currentSnapshot.StateRoots.TryGet(currentIndex - 1);
+                    preHash = last_state_root.StateRoot.Hash;
                 }
-
-                var state_root = new StateRoot
-                {
-                    Version = MPTTrie.Version,
-                    Index = current_index,
-                    PreHash = pre_hash,
-                    Root = current_root,
-                };
-                var state_root_state = new StateRootState
+                var stateRootState = new StateRootState
                 {
                     Flag = StateRootVerifyFlag.Unverified,
-                    StateRoot = state_root,
+                    StateRoot = new StateRoot
+                                {
+                                    Version = MPTTrie.Version,
+                                    Index = currentIndex,
+                                    PreHash = preHash,
+                                    Root = currentRoot,
+                                }
                 };
-                snapshot.StateRoots.Add(current_index, state_root_state);
+
+                snapshot.StateRoots.Add(currentIndex, stateRootState);
                 snapshot.Commit();
             }
         }
