@@ -21,6 +21,7 @@ namespace Neo.Wallets
     public abstract class Wallet
     {
         public abstract string Name { get; }
+        public string Path { get; }
         public abstract Version Version { get; }
 
         public abstract bool ChangePassword(string oldPassword, string newPassword);
@@ -31,6 +32,15 @@ namespace Neo.Wallets
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
+
+        internal Wallet()
+        {
+        }
+
+        protected Wallet(string path)
+        {
+            this.Path = path;
+        }
 
         public WalletAccount CreateAccount()
         {
