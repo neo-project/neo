@@ -4,12 +4,12 @@ using System.IO;
 
 namespace Neo.Ledger
 {
-    public class HashIndexState : ICloneable<HashIndexState>, ISerializable
+    public class HashIndexState : ICloneable<HashIndexState>, IO.ISerializable
     {
         public UInt256 Hash = UInt256.Zero;
         public uint Index = uint.MaxValue;
 
-        int ISerializable.Size => Hash.Size + sizeof(uint);
+        int IO.ISerializable.Size => Hash.Size + sizeof(uint);
 
         HashIndexState ICloneable<HashIndexState>.Clone()
         {
@@ -20,7 +20,7 @@ namespace Neo.Ledger
             };
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void IO.ISerializable.Deserialize(BinaryReader reader)
         {
             Hash = reader.ReadSerializable<UInt256>();
             Index = reader.ReadUInt32();
@@ -32,7 +32,7 @@ namespace Neo.Ledger
             Index = replica.Index;
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        void IO.ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Hash);
             writer.Write(Index);

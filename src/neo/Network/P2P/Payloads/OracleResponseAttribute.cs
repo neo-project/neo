@@ -3,29 +3,22 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class OracleResponseAttribute : ISerializable
+    public class OracleResponseAttribute : TransactionAttribute
     {
         public UInt256 RequestTx;
 
-        public int Size => UInt256.Length;
+        public override int Size => base.Size + UInt256.Length;
 
-        public void Deserialize(BinaryReader reader)
+        public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
+
+        protected override void DeserializeWithoutType(BinaryReader reader)
         {
             RequestTx = reader.ReadSerializable<UInt256>();
         }
 
-        public void Serialize(BinaryWriter writer)
+        protected override void SerializeWithoutType(BinaryWriter writer)
         {
             writer.Write(RequestTx);
-        }
-
-        public TransactionAttribute Build()
-        {
-            return new TransactionAttribute()
-            {
-                Usage = TransactionAttributeUsage.OracleResponse,
-                Data = this.ToArray()
-            };
         }
     }
 }

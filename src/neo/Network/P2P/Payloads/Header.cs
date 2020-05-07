@@ -1,4 +1,3 @@
-using Neo.IO.Json;
 using Neo.Ledger;
 using System;
 using System.IO;
@@ -52,14 +51,5 @@ namespace Neo.Network.P2P.Payloads
                 Hashes = new UInt256[0]
             };
         }
-
-        public new static Header FromJson(JObject json)
-        {
-            Header header = new Header();
-            BlockBase blockBase = header;
-            blockBase.FromJson(json);
-            return header;
-        }
-
     }
 }
