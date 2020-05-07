@@ -47,6 +47,7 @@ namespace Neo.Network.P2P
         private readonly UInt256 StateRootTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
         private bool HasStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
+
         public TaskManager(NeoSystem system)
         {
             this.system = system;

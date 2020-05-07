@@ -60,8 +60,8 @@ namespace Neo.Ledger
                         break;
 
                     if (stateRoot.Index + 3 > HeaderHeight)
-                    {// TODO remove +3 and use LocalNode.RelayDirectly
-                        system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateRoot });
+                    {
+                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = stateRoot });
                     }
 
                     stateRootCache.Remove(stateRoot.Index);
