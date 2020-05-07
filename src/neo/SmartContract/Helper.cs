@@ -154,7 +154,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        internal static bool VerifyWitnessStateIndependent (this IVerifiable verifiable, StoreView snapshot, long gas, UInt160 hash, Witness witness)
+        internal static bool VerifyWitnessStateIndependent(this IVerifiable verifiable, StoreView snapshot, long gas, UInt160 hash, Witness witness)
         {
             if (hash != witness.ScriptHash) return false;
 
@@ -169,7 +169,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        internal static bool VerifyWitnessStateDependent (this IVerifiable verifiable, StoreView snapshot, long gas, UInt160 hash, Witness witness)
+        internal static bool VerifyWitnessStateDependent(this IVerifiable verifiable, StoreView snapshot, long gas, UInt160 hash, Witness witness)
         {
             ContractState cs = snapshot.Contracts.TryGet(hash);
             if (cs is null) return false;
