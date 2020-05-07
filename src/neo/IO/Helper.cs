@@ -4,6 +4,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -139,6 +140,12 @@ namespace Neo.IO
         public static int GetVarSize(this string value)
         {
             int size = Encoding.UTF8.GetByteCount(value);
+            return GetVarSize(size) + size;
+        }
+
+        public static int GetVarSize(this BigInteger value)
+        {
+            int size = value.ToByteArray().Length;
             return GetVarSize(size) + size;
         }
 

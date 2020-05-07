@@ -11,20 +11,24 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
-    public partial class NNSContract : NativeContract
+    public partial class NNSContract
     {
         public override string ServiceName => "Neo.Native.NNS";
         public override int Id => -5;
-        public string Name => "NNS";
-        public string Symbol => "nns";
+        public override string Name => "NNS";
+        public override string Symbol => "nns";
+
+        public override byte Decimals => 1;
 
         protected const byte Prefix_Root = 22;
-        protected const byte Prefix_Domain = 23;
         protected const byte Prefix_Record = 24;
-        protected const byte Prefix_OwnershipMapping = 25;
         protected const byte Prefix_Admin = 26;
         protected const byte Prefix_RentalPrice = 27;
         protected const byte Prefix_ReceiptAddress = 28;
+
+        public NNSContract()
+        {
+        }
 
         internal override bool Initialize(ApplicationEngine engine)
         {
