@@ -362,7 +362,7 @@ namespace Neo.Wallets
                         // Append attribute
 
                         var attr = new List<TransactionAttribute>(attributes);
-                        if (!attr.OfType<OracleResponseAttribute>().Any())
+                        if (!attr.OfType<OracleRequestAttribute>().Any())
                         {
                             attr.Add(new OracleRequestAttribute());
                             tx.Attributes = attributes = attr.ToArray();

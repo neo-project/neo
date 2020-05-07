@@ -19,14 +19,6 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
-        [Flags]
-        private enum OracleCache : byte
-        {
-            None = 0,
-            Request = 0b00000001,
-            Response = 0b00000010,
-        }
-
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
         /// <summary>
@@ -185,6 +177,7 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < Attributes.Length; i++)
                 Attributes[i] = TransactionAttribute.DeserializeFrom(reader);
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
+            // Don't allow request and response attributes
             if (OracleRequest != null && OracleResponse != null) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
@@ -290,13 +283,6 @@ namespace Neo.Network.P2P.Payloads
 
             if (IsOracleResponse(out _))
             {
-                if (IsOracleRequest())
-                {
-                    // Don't allow request and response attributes
-
-                    return VerifyResult.Invalid;
-                }
-
                 // Oracle response only can be signed by oracle nodes
 
                 var hashes = GetScriptHashesForVerifying(snapshot);
