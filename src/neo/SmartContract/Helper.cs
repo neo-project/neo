@@ -168,7 +168,6 @@ namespace Neo.SmartContract
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
                     gas -= engine.GasConsumed;
-                    if (gas < 0) return false;
                 }
             }
             return true;
