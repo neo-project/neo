@@ -145,29 +145,44 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                int offset;
-                byte[] verification = verifiable.Witnesses[i].VerificationScript;
-                if (verification.Length == 0)
-                {
-                    ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
-                    if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                    if (md is null) return false;
-                    verification = cs.Script;
-                    offset = md.Offset;
-                }
-                else
-                {
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-                    offset = 0;
-                }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
-                {
-                    engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) return false;
-                    if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
-                }
+                if (verifiable.Witnesses[i].VerificationScript.Length == 0
+                    && !verifiable.VerifyWitnessStateDependent(snapshot, gas, hashes[i], verifiable.Witnesses[i]))
+                    return false;
+                else if (!verifiable.VerifyWitnessStateIndependent(snapshot, gas, hashes[i], verifiable.Witnesses[i]))
+                    return false;
+            }
+            return true;
+        }
+
+        internal static bool VerifyWitnessStateIndependent (this IVerifiable verifiable, StoreView snapshot, long gas, UInt160 hash, Witness witness)
+        {
+            if (hash != witness.ScriptHash) return false;
+
+            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+            {
+                engine.LoadScript(witness.VerificationScript, CallFlags.ReadOnly).InstructionPointer = 0;
+                engine.LoadScript(witness.InvocationScript, CallFlags.None);
+                if (engine.Execute() == VMState.FAULT) return false;
+                if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
+                witness.GasConsumed = engine.GasConsumed;
+            }
+            return true;
+        }
+
+        internal static bool VerifyWitnessStateDependent (this IVerifiable verifiable, StoreView snapshot, long gas, UInt160 hash, Witness witness)
+        {
+            ContractState cs = snapshot.Contracts.TryGet(hash);
+            if (cs is null) return false;
+            ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
+            if (md is null) return false;
+
+            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+            {
+                engine.LoadScript(cs.Script, CallFlags.ReadOnly).InstructionPointer = md.Offset;
+                engine.LoadScript(witness.InvocationScript, CallFlags.None);
+                if (engine.Execute() == VMState.FAULT) return false;
+                if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
+                witness.GasConsumed = engine.GasConsumed;
             }
             return true;
         }
