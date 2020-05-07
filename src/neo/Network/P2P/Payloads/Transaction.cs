@@ -24,11 +24,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
-        private const int MaxTransactionAttributes = 16;
-        /// <summary>
-        /// Maximum number of cosigners that can be contained within a transaction
-        /// </summary>
-        private const int MaxCosigners = 16;
+        public const int MaxTransactionAttributes = 16;
 
         private TransactionVersion version;
         private uint nonce;
@@ -37,7 +33,6 @@ namespace Neo.Network.P2P.Payloads
         private long netfee;
         private uint validUntilBlock;
         private TransactionAttribute[] attributes;
-        private Cosigner[] cosigners;
         private byte[] script;
         private Witness[] witnesses;
         private UInt256 oracleRequestTx;
@@ -53,14 +48,11 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _hash = null; _size = 0; }
+            set { attributes = value; _cosigners = null; _hash = null; _size = 0; }
         }
 
-        public Cosigner[] Cosigners
-        {
-            get => cosigners;
-            set { cosigners = value; _hash = null; _size = 0; }
-        }
+        private Cosigner[] _cosigners;
+        public Cosigner[] Cosigners => _cosigners ??= attributes.OfType<Cosigner>().ToArray();
 
         public UInt256 OracleRequestTx
         {
@@ -124,15 +116,9 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.GetVarSize() +   //Attributes
-                        Cosigners.GetVarSize() +    //Cosigners
-                        Script.GetVarSize() +       //Script
-                        Witnesses.GetVarSize();     //Witnesses
-
-                    if (Version == TransactionVersion.OracleResponse)
-                    {
-                        _size += UInt256.Length;
-                    }
+                        Attributes.GetVarSize() +   // Attributes
+                        Script.GetVarSize() +       // Script
+                        Witnesses.GetVarSize();     // Witnesses
                 }
                 return _size;
             }
@@ -188,8 +174,9 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
-            Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
+            Attributes = new TransactionAttribute[reader.ReadVarInt(MaxTransactionAttributes)];
+            for (int i = 0; i < Attributes.Length; i++)
+                Attributes[i] = TransactionAttribute.DeserializeFrom(reader);
             if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
@@ -240,7 +227,6 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
             writer.Write(Attributes);
-            writer.Write(Cosigners);
             writer.WriteVarBytes(Script);
             if (Version == TransactionVersion.OracleResponse)
             {
@@ -260,7 +246,6 @@ namespace Neo.Network.P2P.Payloads
             json["net_fee"] = NetworkFee.ToString();
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             if (Version == TransactionVersion.OracleResponse)
@@ -268,31 +253,6 @@ namespace Neo.Network.P2P.Payloads
                 json["oracle_response_tx"] = OracleRequestTx.ToString();
             }
             return json;
-        }
-
-        public static Transaction FromJson(JObject json)
-        {
-            Transaction tx = new Transaction();
-            tx.Version = (TransactionVersion)byte.Parse(json["version"].AsString());
-            if (!Enum.IsDefined(typeof(TransactionVersion), tx.Version)) throw new FormatException();
-            tx.Nonce = uint.Parse(json["nonce"].AsString());
-            tx.Sender = json["sender"].AsString().ToScriptHash();
-            tx.SystemFee = long.Parse(json["sys_fee"].AsString());
-            tx.NetworkFee = long.Parse(json["net_fee"].AsString());
-            tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
-            tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
-            tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
-            tx.Script = Convert.FromBase64String(json["script"].AsString());
-            tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
-            if (tx.Version == TransactionVersion.OracleResponse)
-            {
-                tx.OracleRequestTx = UInt256.Parse(json["oracle_response_tx"].AsString());
-            }
-            else
-            {
-                tx.OracleRequestTx = null;
-            }
-            return tx;
         }
 
         bool IInventory.Verify(StoreView snapshot)

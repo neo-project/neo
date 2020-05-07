@@ -171,9 +171,9 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAccount1()
         {
             MyWallet wallet = new MyWallet();
-            wallet.CreateAccount(UInt160.Parse("0x7e471cf52f27edc291e29ec8f2d1ea2d210d6725"));
+            wallet.CreateAccount(UInt160.Parse("0xb3f1526d9f9670df1a21a5953d5296c3a9c9173c"));
             WalletAccount account = wallet.GetAccount(ECCurve.Secp256r1.G);
-            account.ScriptHash.Should().Be(UInt160.Parse("0x7e471cf52f27edc291e29ec8f2d1ea2d210d6725"));
+            account.ScriptHash.Should().Be(UInt160.Parse("0xb3f1526d9f9670df1a21a5953d5296c3a9c9173c"));
         }
 
         [TestMethod]
@@ -209,6 +209,7 @@ namespace Neo.UnitTests.Wallets
 
             wallet.GetAvailable(NativeContract.GAS.Hash).Should().Be(new BigDecimal(1000000000000, 8));
 
+            entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
             entry.GetInteroperable<Nep5AccountState>().Balance = 0;
             snapshot.Commit();
         }
@@ -231,6 +232,7 @@ namespace Neo.UnitTests.Wallets
             wallet.GetBalance(UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(0, 0));
             wallet.GetBalance(NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(1000000000000, 8));
 
+            entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
             entry.GetInteroperable<Nep5AccountState>().Balance = 0;
             snapshot.Commit();
         }
@@ -354,6 +356,8 @@ namespace Neo.UnitTests.Wallets
             });
             tx.Should().NotBeNull();
 
+            entry1 = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+            entry2 = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
             entry1.GetInteroperable<Nep5AccountState>().Balance = 0;
             entry2.GetInteroperable<NeoToken.AccountState>().Balance = 0;
             snapshot.Commit();
@@ -383,6 +387,7 @@ namespace Neo.UnitTests.Wallets
             tx = wallet.MakeTransaction(new byte[] { }, null, new TransactionAttribute[] { });
             tx.Should().NotBeNull();
 
+            entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
             entry.GetInteroperable<Nep5AccountState>().Balance = 0;
             snapshot.Commit();
         }
