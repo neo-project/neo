@@ -260,7 +260,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b224435724a376f755c753030324256574845456c5c75303032426e74486b414a424f614c4a6737496776303356337a4953646d6750413d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
+                    @"5b227a4e467850723961674b4d675a484a325a4d576554696a706a6d6b57354f74477a6d5455796f764d6b42413d222c302c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }

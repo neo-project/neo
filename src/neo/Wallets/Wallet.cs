@@ -364,7 +364,7 @@ namespace Neo.Wallets
                         var attr = new List<TransactionAttribute>(attributes);
                         if (!attr.OfType<OracleResponseAttribute>().Any())
                         {
-                            attr.Add(new OracleResponseAttribute());
+                            attr.Add(new OracleRequestAttribute());
                             tx.Attributes = attributes = attr.ToArray();
                         }
 

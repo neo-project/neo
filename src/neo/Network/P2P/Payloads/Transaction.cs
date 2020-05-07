@@ -55,7 +55,7 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _cosigners = null; _hash = null; oracleResponse = null; _size = 0; }
+            set { attributes = value; _cosigners = null; _hash = null; oracleRequest = null; oracleResponse = null; _size = 0; }
         }
 
         private Cosigner[] _cosigners;
@@ -123,9 +123,9 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.GetVarSize() +   //Attributes
-                        Script.GetVarSize() +       //Script
-                        Witnesses.GetVarSize();     //Witnesses
+                        Attributes.GetVarSize() +   // Attributes
+                        Script.GetVarSize() +       // Script
+                        Witnesses.GetVarSize();     // Witnesses
                 }
                 return _size;
             }
@@ -158,7 +158,7 @@ namespace Neo.Network.P2P.Payloads
             set { witnesses = value; _size = 0; }
         }
 
-        void IO.ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             int startPosition = -1;
             if (reader.BaseStream.CanSeek)
@@ -219,7 +219,7 @@ namespace Neo.Network.P2P.Payloads
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        void IO.ISerializable.Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
             writer.Write(Witnesses);
@@ -328,7 +328,7 @@ namespace Neo.Network.P2P.Payloads
 
         public bool IsOracleRequest()
         {
-            return oracleRequest != null;
+            return OracleRequest != null;
         }
 
         #endregion
