@@ -568,15 +568,7 @@ namespace Neo.Oracle
             {
                 Version = TransactionVersion.OracleResponse,
                 ValidUntilBlock = requestTx.ValidUntilBlock,
-                Attributes = new TransactionAttribute[0],
-                OracleRequestTx = requestTx.Hash,
-                Sender = contract.ScriptHash,
-                Witnesses = new Witness[0],
-                Script = script.ToArray(),
-                NetworkFee = 0,
-                Nonce = requestTx.Nonce,
-                SystemFee = systemFee,
-                Cosigners = new Cosigner[]
+                Attributes = new TransactionAttribute[]
                 {
                     new Cosigner()
                     {
@@ -584,7 +576,14 @@ namespace Neo.Oracle
                         AllowedContracts = new UInt160[]{ NativeContract.Oracle.Hash },
                         Scopes = WitnessScope.CustomContracts
                     }
-                }
+                },
+                OracleRequestTx = requestTx.Hash,
+                Sender = contract.ScriptHash,
+                Witnesses = new Witness[0],
+                Script = script.ToArray(),
+                NetworkFee = 0,
+                Nonce = requestTx.Nonce,
+                SystemFee = systemFee
             };
 
             // Calculate network fee
