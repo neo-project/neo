@@ -137,12 +137,12 @@ namespace Neo.Ledger
                 {
                     Flag = StateRootVerifyFlag.Unverified,
                     StateRoot = new StateRoot
-                                {
-                                    Version = MPTTrie.Version,
-                                    Index = currentIndex,
-                                    PreHash = preHash,
-                                    Root = currentRoot,
-                                }
+                    {
+                        Version = MPTTrie.Version,
+                        Index = currentIndex,
+                        PreHash = preHash,
+                        Root = currentRoot,
+                    }
                 };
 
                 snapshot.StateRoots.Add(currentIndex, stateRootState);
