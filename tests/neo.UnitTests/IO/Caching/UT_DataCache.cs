@@ -326,12 +326,5 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.TryGet(new MyKey("key2")).Should().Be(new MyValue("value2"));
             myDataCache.TryGet(new MyKey("key3")).Should().BeNull();
         }
-
-        [TestMethod]
-        public void TestAddAndCommit()
-        {
-            myDataCache.AddAndCommit(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
-        }
     }
 }

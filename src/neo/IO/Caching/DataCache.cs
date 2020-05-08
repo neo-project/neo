@@ -318,12 +318,6 @@ namespace Neo.IO.Caching
             }
         }
 
-        public void AddAndCommit(TKey key, TValue value)
-        {
-            Add(key, value);
-            Commit();
-        }
-
         protected abstract TValue TryGetInternal(TKey key);
 
         protected abstract void UpdateInternal(TKey key, TValue value);
