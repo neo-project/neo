@@ -24,6 +24,7 @@ namespace Neo.Plugins
 
         public virtual string ConfigFile => Combine(PluginsDirectory, GetType().Assembly.GetName().Name, "config.json");
         public virtual string Name => GetType().Name;
+        public virtual int Order { get; } = 0;
         public string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
         protected static NeoSystem System { get; private set; }
         public virtual Version Version => GetType().Assembly.GetName().Version;
@@ -159,6 +160,14 @@ namespace Neo.Plugins
             {
                 LoadPlugin(assembly);
             }
+
+            // Sort plugins according to his order
+
+            Plugins.Sort((a, b) => a.Order.CompareTo(b.Order));
+            Loggers.Sort((a, b) => a.Order.CompareTo(b.Order));
+            PersistencePlugins.Sort((a, b) => a.Order.CompareTo(b.Order));
+            P2PPlugins.Sort((a, b) => a.Order.CompareTo(b.Order));
+            TxObserverPlugins.Sort((a, b) => a.Order.CompareTo(b.Order));
         }
 
         protected void Log(object message, LogLevel level = LogLevel.Info)
