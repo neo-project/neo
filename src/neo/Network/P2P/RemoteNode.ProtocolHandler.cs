@@ -246,11 +246,11 @@ namespace Neo.Network.P2P
                         }
                         break;
                     case InventoryType.Consensus:
-                        if (Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus))
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryConsensus))
                             EnqueueMessage(Message.Create(MessageCommand.Consensus, inventoryConsensus));
                         break;
                     case InventoryType.Oracle:
-                        if (Blockchain.Singleton.OracleRelayCache.TryGet(hash, out IInventory inventoryOracle))
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryOracle))
                             EnqueueMessage(Message.Create(MessageCommand.Oracle, inventoryOracle));
                         break;
                 }
