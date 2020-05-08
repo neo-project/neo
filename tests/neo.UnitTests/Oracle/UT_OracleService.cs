@@ -239,8 +239,8 @@ namespace Neo.UnitTests.Oracle
 
             var response = responseMsg.Inventory as Transaction;
 
-            Assert.AreEqual(TransactionVersion.OracleResponse, response.Version);
-            Assert.AreEqual(tx.Hash, response.OracleRequestTx);
+            Assert.IsTrue(response.IsOracleResponse(out var requestTxHash));
+            Assert.AreEqual(tx.Hash, requestTxHash);
 
             //var response = responseMsg.Inventory as OraclePayload;
             //Assert.AreEqual(117, response.Data.Length);
@@ -263,8 +263,11 @@ namespace Neo.UnitTests.Oracle
 
             return new Transaction()
             {
-                Version = TransactionVersion.OracleRequest,
-                Attributes = new TransactionAttribute[0],
+                Version = 0,
+                Attributes = new TransactionAttribute[]
+                {
+                    new OracleRequestAttribute()
+                },
                 Script = script.ToArray(),
                 Sender = UInt160.Zero,
                 Witnesses = new Witness[0],
@@ -319,7 +322,7 @@ namespace Neo.UnitTests.Oracle
 
                 Assert.IsNotNull(txWithout);
                 Assert.IsNull(txWithout.Witnesses);
-                Assert.AreEqual(TransactionVersion.OracleRequest, txWithout.Version);
+                Assert.IsTrue(txWithout.IsOracleRequest());
 
                 // OracleWithoutAssert
 
@@ -327,7 +330,7 @@ namespace Neo.UnitTests.Oracle
 
                 Assert.IsNotNull(txWith);
                 Assert.IsNull(txWith.Witnesses);
-                Assert.AreEqual(TransactionVersion.OracleRequest, txWith.Version);
+                Assert.IsTrue(txWith.IsOracleRequest());
 
                 // Check that has more fee and the script is longer
 

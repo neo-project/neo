@@ -349,7 +349,7 @@ namespace Neo.Oracle
                     {
                         // We only need to take care about the requests
 
-                        if (tx.Version == TransactionVersion.OracleRequest)
+                        if (tx.IsOracleRequest())
                         {
                             // If it's an OracleRequest and it's new, tell it to OracleService
 
@@ -566,7 +566,7 @@ namespace Neo.Oracle
 
             var tx = new Transaction()
             {
-                Version = TransactionVersion.OracleResponse,
+                Version = 0,
                 ValidUntilBlock = requestTx.ValidUntilBlock,
                 Attributes = new TransactionAttribute[]
                 {
@@ -575,9 +575,12 @@ namespace Neo.Oracle
                         Account = contract.ScriptHash,
                         AllowedContracts = new UInt160[]{ NativeContract.Oracle.Hash },
                         Scopes = WitnessScope.CustomContracts
+                    },
+                    new OracleResponseAttribute()
+                    {
+                         RequestTx = requestTx.Hash,
                     }
                 },
-                OracleRequestTx = requestTx.Hash,
                 Sender = contract.ScriptHash,
                 Witnesses = new Witness[0],
                 Script = script.ToArray(),
