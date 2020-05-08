@@ -19,7 +19,7 @@ using static Neo.SmartContract.Native.Tokens.NeoToken;
 namespace Neo.UnitTests.SmartContract.Native.Tokens
 {
     [TestClass]
-    public partial class UT_NeoToken
+    public class UT_NeoToken
     {
         [TestInitialize]
         public void TestSetup()
@@ -249,19 +249,32 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             {
                 Balance = 100
             }));
-            snapshot.PersistingBlock.Index = 10000;
-            SetEpochState();
+            snapshot.PersistingBlock = new Block
+            {
+                Index = 10000
+            };
+            SetEpochState(snapshot);
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 30 * Blockchain.DecrementInterval).Should().Be(new BigInteger(7000000000));
         }
 
-        private void SetEpochState()
+        private void SetEpochState(StoreView snapshot)
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             StorageKey epochKey = CreateStorageKey(17);
             snapshot.Storages.Add(epochKey, new StorageItem(new EpochState
             {
                 CommitteeId = 0,
                 EconomicId = 0
+            }));
+
+            StorageKey economicKey = CreateStorageKey(19, BitConverter.GetBytes((uint)0));
+            snapshot.Storages.Add(economicKey, new StorageItem(new EconomicEpochState
+            {
+                GasPerBlock = 5,
+                NeoHoldersRewardRatio = 10,
+                CommitteesRewardRatio = 5,
+                VotersRewardRatio = 85,
+                Start = 0,
+                End = uint.MaxValue
             }));
 
             (ECPoint, BigInteger, UInt160)[] committees = new (ECPoint, BigInteger, UInt160)[Blockchain.CommitteeMembersCount];
@@ -271,25 +284,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 committees[i].Item1 = committee;
                 committees[i].Item2 = 10000;
                 committees[i].Item3 = Contract.CreateSignatureContract(committee).ScriptHash;
+                i++;
             }
-
-            StorageKey committeeKey = CreateStorageKey(19, BitConverter.GetBytes((uint)0));
+            StorageKey committeeKey = CreateStorageKey(23, BitConverter.GetBytes((uint)0));
             snapshot.Storages.Add(committeeKey, new StorageItem(new CommitteesEpochState
             {
                 Start = 0,
                 End = uint.MaxValue,
-                Committees = committees// TODO committees
-            }));
-
-            StorageKey economicKey = CreateStorageKey(23, BitConverter.GetBytes((uint)0));
-            snapshot.Storages.Add(economicKey, new StorageItem(new EconomicEpochState
-            {
-                GasPerBlock = 5,
-                NeoHoldersRewardRatio = 10,
-                CommitteesRewardRatio = 5,
-                VotersRewardRatio = 85,
-                Start = 0,
-                End = uint.MaxValue
+                Committees = committees
             }));
         }
 

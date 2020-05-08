@@ -66,5 +66,17 @@ namespace Neo.SmartContract.Native.Tokens
             OnPersistEpochState(engine);
             return true;
         }
+
+        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
+        {
+            DistributeGas(engine, account, state);
+            if (amount.IsZero) return;
+            if (state.VoteTo != null)
+            {
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
+                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
+                state_validator.Votes += amount;
+            }
+        }
     }
 }

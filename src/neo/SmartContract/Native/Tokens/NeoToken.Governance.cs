@@ -16,18 +16,6 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_Candidate = 33;
         private const byte Prefix_NextValidators = 14;
 
-        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
-        {
-            DistributeGas(engine, account, state);
-            if (amount.IsZero) return;
-            if (state.VoteTo != null)
-            {
-                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
-                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-                state_validator.Votes += amount;
-            }
-        }
-
         [ContractMethod(0_05000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
         private StackItem RegisterCandidate(ApplicationEngine engine, Array args)
         {
@@ -156,7 +144,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public bool CheckCommitteeWitness(ApplicationEngine engine)
         {
-            //verify multi-signature of committees
+            // Verify multi-signature of committees
             ECPoint[] committees = NEO.GetCommittee(engine.Snapshot);
             UInt160 script = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 3, committees).ToScriptHash();
             return InteropService.Runtime.CheckWitnessInternal(engine, script);

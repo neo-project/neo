@@ -23,9 +23,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (engine.Snapshot.PersistingBlock.Index % Blockchain.Epoch != Blockchain.Epoch - 1)
                 return;
-
             uint currentHeight = engine.Snapshot.PersistingBlock.Index;
-
             EpochState epochState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Epoch), () => new StorageItem(new EpochState())).GetInteroperable<EpochState>();
             EconomicParameter economicParameter = GetEconomicParameter(engine);
             EconomicEpochState economicEpoch = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_EconomicEpoch, epochState.EconomicId), () => new StorageItem(new EconomicEpochState())).GetInteroperable<EconomicEpochState>();
@@ -69,6 +67,18 @@ namespace Neo.SmartContract.Native.Tokens
             return CalculateBonus(snapshot, account, state.VoteTo, state.Balance, state.BalanceHeight, end, out _);
         }
 
+        /// <summary>
+        /// Calculate claimable GAS
+        /// More details https://github.com/neo-project/neo/issues/1617#issue-607424930
+        /// </summary>
+        /// <param name="snapshot"></param>
+        /// <param name="account"></param>
+        /// <param name="votee"></param>
+        /// <param name="votes"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="claimedHeight"></param>
+        /// <returns></returns>
         public BigInteger CalculateBonus(StoreView snapshot, UInt160 account, ECPoint votee, BigInteger votes, uint start, uint end, out uint claimedHeight)
         {
             claimedHeight = start;
@@ -78,56 +88,49 @@ namespace Neo.SmartContract.Native.Tokens
             EpochState epochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Epoch))?.GetInteroperable<EpochState>();
             if (epochState is null) return BigInteger.Zero;
 
-            uint economicId = epochState.EconomicId;
-            uint committeeId = epochState.CommitteeId;
-            EconomicEpochState economicEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_EconomicEpoch, economicId)).GetInteroperable<EconomicEpochState>();
-            CommitteesEpochState committeeEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_CommitteeEpoch, committeeId)).GetInteroperable< CommitteesEpochState>();
+            BigInteger claimableGAS = 0;
+            for (long economicId = epochState.EconomicId; economicId >= 0; --economicId)
+            {
+                EconomicEpochState economicEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_EconomicEpoch, (uint) economicId)).GetInteroperable<EconomicEpochState>();                
+                if (economicEpochState.Start >= end) continue;
+                if (economicEpochState.End <= start) break;
 
-            BigInteger unClaimGas = 0;
-            while (economicEpochState.Start >= end)
-            {
-                economicEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_EconomicEpoch, --economicId)).GetInteroperable<EconomicEpochState>();
-            }
-            while (economicEpochState.End > start)
-            {
                 uint aStart = Math.Max(economicEpochState.Start, start);
                 uint aEnd = Math.Min(economicEpochState.End, end);
 
-                while (committeeEpochState.Start >= aEnd)
+                for (long committeeId = epochState.CommitteeId; committeeId >= 0; --committeeId)
                 {
-                    committeeEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_CommitteeEpoch, --committeeId)).GetInteroperable<CommitteesEpochState>();
-                }
-                while (committeeEpochState.End > aStart)
-                {
+                    CommitteesEpochState committeeEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_CommitteeEpoch, (uint) committeeId)).GetInteroperable<CommitteesEpochState>();
+                    if (committeeEpochState.Start >= aEnd) continue;
+                    if (committeeEpochState.End <= aStart) break;
+
                     uint bStart = Math.Max(committeeEpochState.Start, aStart);
                     uint bEnd = Math.Min(committeeEpochState.End, aEnd);
 
                     BigInteger totalGas = (bEnd - bStart) * economicEpochState.GasPerBlock;
-                    BigInteger totalRewardRatio = economicEpochState.TotalRewardRatio;
+                    BigInteger totalVotersReward = totalGas * economicEpochState.VotersRewardRatio / economicEpochState.TotalRewardRatio;
+                    BigInteger totalCommitteesReward = totalGas * economicEpochState.CommitteesRewardRatio / economicEpochState.TotalRewardRatio;
+                    BigInteger totalNeoHodlersReward = totalGas * economicEpochState.NeoHoldersRewardRatio / economicEpochState.TotalRewardRatio;
 
-                    // More incentive model details, see https://github.com/neo-project/neo/issues/1617#issue-607424930
-                    if (votee != null && committeeEpochState.TryGetVotes(votee, out BigInteger totalVotes))
+                    claimableGAS += totalNeoHodlersReward * votes / this.TotalAmount; // Neo holder reward
+                    if (votee != null && committeeEpochState.TryGetVotes(votee, out BigInteger totalVotes)) // Voter reward
                     {
                         int ratio = committeeEpochState.IsValidator(votee) ? 2 : 1;
                         int baseCount = Blockchain.CommitteeMembersCount + Blockchain.ValidatorsCount;
-                        unClaimGas += ratio * totalGas * economicEpochState.VotersRewardRatio * votes / totalRewardRatio / totalVotes / baseCount; // Voter reward
+                        claimableGAS += ratio * totalVotersReward * votes / totalVotes / baseCount;
                     }
-                    if (committeeEpochState.IsCommittee(account))
+                    if (committeeEpochState.IsCommittee(account)) // Committee reward
                     {
-                        unClaimGas += totalGas * economicEpochState.CommitteesRewardRatio / totalRewardRatio / Blockchain.CommitteeMembersCount; // Committee reward
+                        claimableGAS += totalCommitteesReward / Blockchain.CommitteeMembersCount;
                     }
-                    unClaimGas += totalGas * economicEpochState.NeoHoldersRewardRatio * votes / totalRewardRatio / this.TotalAmount; // Neo holder reward
 
                     if (bEnd > claimedHeight)
                     {
                         claimedHeight = bEnd;
                     }
-                    committeeEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_CommitteeEpoch, --committeeId)).GetInteroperable<CommitteesEpochState>();
                 }
-
-                economicEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_EconomicEpoch, --economicId)).GetInteroperable<EconomicEpochState>();
             }
-            return unClaimGas;
+            return claimableGAS;
         }
 
         internal class EpochState : IInteroperable
