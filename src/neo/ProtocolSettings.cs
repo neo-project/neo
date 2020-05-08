@@ -13,6 +13,7 @@ namespace Neo
         public byte ValidatorsCount { get; }
         public string[] SeedList { get; }
         public uint MillisecondsPerBlock { get; }
+        public uint Epoch { get; }
         public int MemoryPoolMaxTransactions { get; }
 
         static ProtocolSettings _default;
@@ -91,6 +92,7 @@ namespace Neo
                     "seed5.neo.org:10333"
                 };
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
+            this.Epoch = section.GetValue("Epoch", 5760u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
         }
     }

@@ -19,7 +19,7 @@ using static Neo.SmartContract.Native.Tokens.NeoToken;
 namespace Neo.UnitTests.SmartContract.Native.Tokens
 {
     [TestClass]
-    public class UT_NeoToken
+    public partial class UT_NeoToken
     {
         [TestInitialize]
         public void TestSetup()
@@ -238,19 +238,61 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
-            snapshot.Storages.Add(key, new StorageItem(new AccountState
-            {
-                Balance = -100
-            }));
-            Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
-            action.Should().Throw<ArgumentOutOfRangeException>();
-            snapshot.Storages.Delete(key);
+            //snapshot.Storages.Add(key, new StorageItem(new AccountState
+            //{
+            //    Balance = -100
+            //}));
+            //Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            //action.Should().Throw<ArgumentOutOfRangeException>();
+            //snapshot.Storages.Delete(key);
             snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState
             {
                 Balance = 100
             }));
+            snapshot.PersistingBlock.Index = 10000;
+            SetEpochState();
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 30 * Blockchain.DecrementInterval).Should().Be(new BigInteger(7000000000));
         }
+
+        private void SetEpochState()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            StorageKey epochKey = CreateStorageKey(17);
+            snapshot.Storages.Add(epochKey, new StorageItem(new EpochState
+            {
+                CommitteeId = 0,
+                EconomicId = 0
+            }));
+
+            (ECPoint, BigInteger, UInt160)[] committees = new (ECPoint, BigInteger, UInt160)[Blockchain.CommitteeMembersCount];
+            var i = 0;
+            foreach(ECPoint committee in Blockchain.StandbyCommittee)
+            {
+                committees[i].Item1 = committee;
+                committees[i].Item2 = 10000;
+                committees[i].Item3 = Contract.CreateSignatureContract(committee).ScriptHash;
+            }
+
+            StorageKey committeeKey = CreateStorageKey(19, BitConverter.GetBytes((uint)0));
+            snapshot.Storages.Add(committeeKey, new StorageItem(new CommitteesEpochState
+            {
+                Start = 0,
+                End = uint.MaxValue,
+                Committees = committees// TODO committees
+            }));
+
+            StorageKey economicKey = CreateStorageKey(23, BitConverter.GetBytes((uint)0));
+            snapshot.Storages.Add(economicKey, new StorageItem(new EconomicEpochState
+            {
+                GasPerBlock = 5,
+                NeoHoldersRewardRatio = 10,
+                CommitteesRewardRatio = 5,
+                VotersRewardRatio = 85,
+                Start = 0,
+                End = uint.MaxValue
+            }));
+        }
+
 
         [TestMethod]
         public void TestGetNextBlockValidators1()

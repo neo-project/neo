@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -98,6 +99,11 @@ namespace Neo.SmartContract.Native
         internal protected StorageKey CreateStorageKey(byte prefix, ISerializable key)
         {
             return CreateStorageKey(prefix, key.ToArray());
+        }
+
+        internal protected StorageKey CreateStorageKey(byte prefix, uint value)
+        {
+            return CreateStorageKey(prefix, BitConverter.GetBytes(value));
         }
 
         internal bool Invoke(ApplicationEngine engine)
