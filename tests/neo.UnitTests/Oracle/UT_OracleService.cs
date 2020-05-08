@@ -204,9 +204,17 @@ namespace Neo.UnitTests.Oracle
             TestProbe subscriber = CreateTestProbe();
 
             var service = new OracleService(subscriber, null, _wallet, MockedSnapshotFactory, 10);
+
             Assert.IsFalse(service.IsStarted);
+            Assert.AreEqual(10, service.PendingCapacity);
+            Assert.AreEqual(0, service.PendingRequestCount);
+            Assert.AreEqual(0, service.PendingResponseCount);
+
+            service.Stop(); // Without error
             service.Start();
             Assert.IsTrue(service.IsStarted);
+            service.Start(); // Without error
+
             service.Stop();
         }
 
