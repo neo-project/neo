@@ -23,6 +23,7 @@ namespace Neo.Wallets
     public abstract class Wallet
     {
         public abstract string Name { get; }
+        public string Path { get; }
         public abstract Version Version { get; }
 
         public abstract bool ChangePassword(string oldPassword, string newPassword);
@@ -33,6 +34,15 @@ namespace Neo.Wallets
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
+
+        internal Wallet()
+        {
+        }
+
+        protected Wallet(string path)
+        {
+            this.Path = path;
+        }
 
         public WalletAccount CreateAccount()
         {
@@ -277,11 +287,11 @@ namespace Neo.Wallets
                              Account = new UInt160(p.ToArray())
                          }).ToArray();
 
-                return MakeTransaction(snapshot, script, new TransactionAttribute[0], cosigners, balances_gas, oracle);
+                return MakeTransaction(snapshot, script, cosigners, balances_gas, oracle);
             }
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, Cosigner[] cosigners = null, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -297,11 +307,11 @@ namespace Neo.Wallets
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], cosigners ?? new Cosigner[0], balances_gas, oracle);
+                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], balances_gas, oracle);
             }
         }
 
-        private Transaction MakeTransaction(StoreView snapshot, byte[] script, TransactionAttribute[] attributes, Cosigner[] cosigners, List<(UInt160 Account, BigInteger Value)> balances_gas, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
+        private Transaction MakeTransaction(StoreView snapshot, byte[] script, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, OracleWalletBehaviour oracle = OracleWalletBehaviour.OracleWithAssert)
         {
             OracleExecutionCache oracleCache = null;
             List<OracleRequest> oracleRequests = null;
@@ -325,25 +335,13 @@ namespace Neo.Wallets
             {
                 Transaction tx = new Transaction
                 {
-                    Version = oracleCache?.Count > 0 ? TransactionVersion.OracleRequest : TransactionVersion.Transaction,
+                    Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     Sender = account,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
                     Attributes = attributes,
-                    Cosigners = cosigners
                 };
-
-                if (oracleCache != null)
-                {
-                    // We need to reset if we already consumed the fiter price
-                    // otherwise we can have a wrong gas computation
-
-                    foreach (var entry in oracleCache.Responses)
-                    {
-                        entry.ResetFilterCostOnce();
-                    }
-                }
 
                 // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true, oracle: oracleCache))
@@ -360,8 +358,19 @@ namespace Neo.Wallets
                         // We should pay for the response extra cost
 
                         tx.SystemFee += NativeContract.Oracle.GetPerRequestFee(snapshot) +
-                            (oracleCache.Size * NativeContract.Policy.GetFeePerByte(snapshot));
-                        tx.Version = TransactionVersion.OracleRequest;
+                            (oracleCache.Size * NativeContract.Policy.GetFeePerByte(snapshot)) +
+                            oracleCache.FilterCost;
+
+                        // Append attribute
+
+                        var attr = new List<TransactionAttribute>(attributes);
+                        if (!attr.OfType<OracleRequestAttribute>().Any())
+                        {
+                            attr.Add(new OracleRequestAttribute());
+                            tx.Attributes = attributes = attr.ToArray();
+                        }
+
+                        // Check asserts
 
                         if (oracle == OracleWalletBehaviour.OracleWithAssert)
                         {
@@ -457,8 +466,8 @@ namespace Neo.Wallets
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
-                // base size for transaction: includes const_header + attributes + cosigners with scopes + script + hashes
-                int size = Transaction.HeaderSize + attributes.GetVarSize() + cosigners.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+                // base size for transaction: includes const_header + attributes + script + hashes
+                int size = Transaction.HeaderSize + tx.Attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
 
                 foreach (UInt160 hash in hashes)
                 {
@@ -479,7 +488,7 @@ namespace Neo.Wallets
             if (witness_script.IsSignatureContract())
             {
                 size += 67 + witness_script.GetVarSize();
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.ECDsaVerify, null, null);
+                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.VerifyWithECDsaSecp256r1, null, null);
             }
             else if (witness_script.IsMultiSigContract(out int m, out int n))
             {
@@ -491,7 +500,7 @@ namespace Neo.Wallets
                 networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
                 using (ScriptBuilder sb = new ScriptBuilder())
                     networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.ECDsaVerify, null, null) * n;
+                networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + InteropService.GetPrice(InteropService.Crypto.VerifyWithECDsaSecp256r1, null, null) * n;
             }
             else
             {

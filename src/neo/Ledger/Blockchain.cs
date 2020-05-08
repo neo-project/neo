@@ -168,8 +168,7 @@ namespace Neo.Ledger
                 Script = script,
                 Sender = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
                 SystemFee = 0,
-                Attributes = new TransactionAttribute[0],
-                Cosigners = new Cosigner[0],
+                Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
                     new Witness
@@ -270,7 +269,7 @@ namespace Neo.Ledger
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
         {
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
-            MemPool.InvalidateAllTransactions();
+            MemPool.InvalidateAllTransactions(currentSnapshot);
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
@@ -333,6 +332,7 @@ namespace Neo.Ledger
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
                     return VerifyResult.Invalid;
             }
+            block_cache.TryAdd(block.Hash, block);
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
@@ -372,7 +372,6 @@ namespace Neo.Ledger
             }
             else
             {
-                block_cache.Add(block.Hash, block);
                 if (block.Index + 100 >= header_index.Count)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
@@ -436,7 +435,7 @@ namespace Neo.Ledger
             if (reason != VerifyResult.Succeed) return reason;
             if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
 
-            if (transaction.Version == TransactionVersion.OracleRequest)
+            if (transaction.IsOracleRequest())
             {
                 // Oracle Service only need the OracleRequests
 
@@ -448,7 +447,7 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
+            block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }

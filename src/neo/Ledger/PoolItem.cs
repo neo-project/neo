@@ -29,11 +29,17 @@ namespace Neo.Ledger
         /// </summary>
         public DateTime LastBroadcastTimestamp;
 
+        /// <summary>
+        /// check if oracle response was already found in storage
+        /// </summary>
+        private bool _responseExists;
+
         internal PoolItem(Transaction tx)
         {
             Tx = tx;
             Timestamp = TimeProvider.Current.UtcNow;
             LastBroadcastTimestamp = Timestamp;
+            _responseExists = false;
         }
 
         internal class DelayState
@@ -42,41 +48,47 @@ namespace Neo.Ledger
             public HashSet<Transaction> Delayed = new HashSet<Transaction>();
         }
 
-        public bool IsReady(StoreView snapshot, DelayState state)
+        public void CheckOracleResponse(StoreView snapshot)
         {
-            switch (Tx.Version)
+            if (!_responseExists &&
+                Tx.IsOracleRequest() &&
+                NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
             {
-                case TransactionVersion.OracleRequest:
+                _responseExists = true;
+            }
+        }
+
+        public bool IsReady(DelayState state)
+        {
+            if (Tx.IsOracleRequest())
+            {
+                if (state.Allowed.Remove(Tx.Hash))
+                {
+                    // The response was already fetched, we can put request and response in the same block
+
+                    return true;
+                }
+                else
+                {
+                    if (_responseExists)
                     {
-                        if (state.Allowed.Remove(Tx.Hash))
-                        {
-                            // The response was already fetched, we can put request and response in the same block
+                        // The response it's waiting to be consumed (block+n)
 
-                            return true;
-                        }
-                        else
-                        {
-                            if (NativeContract.Oracle.ContainsResponse(snapshot, Tx.Hash))
-                            {
-                                // The response it's waiting to be consumed (block+n)
-
-                                return true;
-                            }
-                            else
-                            {
-                                // If the response it's in the pool it's located after the request
-                                // We save the request in order to put after the response
-
-                                state.Delayed.Add(Tx);
-                                return false;
-                            }
-                        }
+                        return true;
                     }
-                case TransactionVersion.OracleResponse:
+                    else
                     {
-                        state.Allowed.Add(Tx.OracleRequestTx);
-                        break;
+                        // If the response it's in the pool it's located after the request
+                        // We save the request in order to put after the response
+
+                        state.Delayed.Add(Tx);
+                        return false;
                     }
+                }
+            }
+            else if (Tx.IsOracleResponse(out var oracleRequestTx))
+            {
+                state.Allowed.Add(oracleRequestTx);
             }
 
             return true;

@@ -204,9 +204,17 @@ namespace Neo.UnitTests.Oracle
             TestProbe subscriber = CreateTestProbe();
 
             var service = new OracleService(subscriber, null, _wallet, MockedSnapshotFactory, 10);
+
             Assert.IsFalse(service.IsStarted);
+            Assert.AreEqual(10, service.PendingCapacity);
+            Assert.AreEqual(0, service.PendingRequestCount);
+            Assert.AreEqual(0, service.PendingResponseCount);
+
+            service.Stop(); // Without error
             service.Start();
             Assert.IsTrue(service.IsStarted);
+            service.Start(); // Without error
+
             service.Stop();
         }
 
@@ -239,8 +247,8 @@ namespace Neo.UnitTests.Oracle
 
             var response = responseMsg.Inventory as Transaction;
 
-            Assert.AreEqual(TransactionVersion.OracleResponse, response.Version);
-            Assert.AreEqual(tx.Hash, response.OracleRequestTx);
+            Assert.IsTrue(response.IsOracleResponse(out var requestTxHash));
+            Assert.AreEqual(tx.Hash, requestTxHash);
 
             //var response = responseMsg.Inventory as OraclePayload;
             //Assert.AreEqual(117, response.Data.Length);
@@ -263,9 +271,11 @@ namespace Neo.UnitTests.Oracle
 
             return new Transaction()
             {
-                Version = TransactionVersion.OracleRequest,
-                Attributes = new TransactionAttribute[0],
-                Cosigners = new Cosigner[0],
+                Version = 0,
+                Attributes = new TransactionAttribute[]
+                {
+                    new OracleRequestAttribute()
+                },
                 Script = script.ToArray(),
                 Sender = UInt160.Zero,
                 Witnesses = new Witness[0],
@@ -311,24 +321,24 @@ namespace Neo.UnitTests.Oracle
 
                 Assert.ThrowsException<InvalidOperationException>(() =>
                 {
-                    _ = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], new Cosigner[0], oracle: OracleWalletBehaviour.WithoutOracle);
+                    _ = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], oracle: OracleWalletBehaviour.WithoutOracle);
                 });
 
                 // OracleWithoutAssert
 
-                var txWithout = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], new Cosigner[0], oracle: OracleWalletBehaviour.OracleWithoutAssert);
+                var txWithout = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], oracle: OracleWalletBehaviour.OracleWithoutAssert);
 
                 Assert.IsNotNull(txWithout);
                 Assert.IsNull(txWithout.Witnesses);
-                Assert.AreEqual(TransactionVersion.OracleRequest, txWithout.Version);
+                Assert.IsTrue(txWithout.IsOracleRequest());
 
                 // OracleWithoutAssert
 
-                var txWith = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], new Cosigner[0], oracle: OracleWalletBehaviour.OracleWithAssert);
+                var txWith = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], oracle: OracleWalletBehaviour.OracleWithAssert);
 
                 Assert.IsNotNull(txWith);
                 Assert.IsNull(txWith.Witnesses);
-                Assert.AreEqual(TransactionVersion.OracleRequest, txWith.Version);
+                Assert.IsTrue(txWith.IsOracleRequest());
 
                 // Check that has more fee and the script is longer
 

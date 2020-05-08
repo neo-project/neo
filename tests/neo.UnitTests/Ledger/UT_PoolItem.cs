@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -51,6 +50,33 @@ namespace Neo.UnitTests.Ledger
             pitem1.CompareTo(pitem2).Should().Be(-1);
             // pitem2 > pitem1 (fee) => 1
             pitem2.CompareTo(pitem1).Should().Be(1);
+        }
+
+        [TestMethod]
+        public void PoolItem_IsReady()
+        {
+            var tx1 = GenerateTx(1, 51);
+            var tx2 = GenerateTx(1, 51);
+
+            PoolItem pitem1 = new PoolItem(tx1);
+            PoolItem pitem2 = new PoolItem(tx2);
+
+            var state = new PoolItem.DelayState();
+
+            Assert.IsTrue(pitem1.IsReady(state));
+            Assert.IsTrue(pitem2.IsReady(state));
+
+            tx2.Attributes = new TransactionAttribute[] { new OracleRequestAttribute() };
+            tx1.Attributes = new TransactionAttribute[] { new OracleResponseAttribute() { RequestTx = tx2.Hash } };
+
+            Assert.IsFalse(pitem2.IsReady(state));
+            Assert.IsTrue(state.Delayed.Contains(tx2));
+
+            Assert.IsTrue(pitem1.IsReady(state));
+            Assert.IsTrue(state.Allowed.Contains(tx2.Hash));
+
+            Assert.IsTrue(pitem2.IsReady(state));
+            Assert.IsFalse(state.Allowed.Contains(tx2.Hash));
         }
 
         [TestMethod]
@@ -121,8 +147,7 @@ namespace Neo.UnitTests.Ledger
                 Script = overrideScriptBytes ?? new byte[0],
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
-                Attributes = new TransactionAttribute[0],
-                Cosigners = new Cosigner[0],
+                Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
                     new Witness

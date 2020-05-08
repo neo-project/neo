@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <summary>
         /// Set Oracle Response Only
         /// </summary>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "transactionHash", "oracleResponse" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "transactionHash", "oracleResponse" })]
         private StackItem SetOracleResponse(ApplicationEngine engine, Array args)
         {
             if (args.Count != 2) return false;
@@ -82,19 +82,24 @@ namespace Neo.SmartContract.Native.Oracle
         /// <summary>
         /// Consume Oracle Response
         /// </summary>
-        /// <param name="snapshot">Snapshot</param>
+        /// <param name="engine">Engine</param>
         /// <param name="txHash">Transaction Hash</param>
-        public OracleExecutionCache ConsumeOracleResponse(StoreView snapshot, UInt256 txHash)
+        public OracleExecutionCache ConsumeOracleResponse(ApplicationEngine engine, UInt256 txHash)
         {
             StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
-            StorageItem storage = snapshot.Storages.TryGet(key);
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage == null) return null;
 
             OracleExecutionCache ret = storage.Value.AsSerializable<OracleExecutionCache>();
 
             // It should be cached by the ApplicationEngine so we can save space removing it
 
-            snapshot.Storages.Delete(key);
+            engine.Snapshot.Storages.Delete(key);
+
+            // Pay for the filter
+
+            if (!engine.AddGas(ret.FilterCost)) throw new ArgumentException("OutOfGas");
+
             return ret;
         }
 
@@ -104,7 +109,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "consignorPubKey", "consigneePubKey" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "consignorPubKey", "consigneePubKey" })]
         private StackItem DelegateOracleValidator(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
@@ -139,7 +144,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Authorized Oracle validator</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Array)]
+        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetOracleValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetOracleValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
@@ -171,7 +176,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>The number of authorized Oracle validator</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         private StackItem GetOracleValidatorsCount(ApplicationEngine engine, Array args)
         {
             return GetOracleValidatorsCount(engine.Snapshot);
@@ -214,7 +219,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray }, ParameterNames = new[] { "configKey", "configValue" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray }, ParameterNames = new[] { "configKey", "configValue" })]
         private StackItem SetConfig(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
@@ -242,7 +247,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// </summary>
         /// <param name="engine">VM</param>
         /// <returns>value</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Array, ParameterTypes = new[] { ContractParameterType.String }, ParameterNames = new[] { "configKey" })]
+        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.String }, ParameterNames = new[] { "configKey" })]
         private StackItem GetConfig(ApplicationEngine engine, Array args)
         {
             switch (args[0].GetString())
@@ -273,7 +278,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "fee" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "fee" })]
         private StackItem SetPerRequestFee(ApplicationEngine engine, Array args)
         {
             StoreView snapshot = engine.Snapshot;
@@ -292,7 +297,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Value</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, requiredCallFlags: CallFlags.AllowStates)]
         private StackItem GetPerRequestFee(ApplicationEngine engine, Array args)
         {
             return new Integer(GetPerRequestFee(engine.Snapshot));
@@ -313,7 +318,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <summary>
         /// Oracle get the hash of the current OracleFlow [Request/Response]
         /// </summary>
-        [ContractMethod(0_01000000, ContractParameterType.Boolean, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Boolean, requiredCallFlags: CallFlags.None)]
         private StackItem GetHash(ApplicationEngine engine, Array args)
         {
             if (engine.OracleCache == null)
@@ -330,7 +335,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// Oracle Get
         ///     string url, [UInt160 filter], [string filterMethod], [string filterArgs]
         /// </summary>
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray,
+        [ContractMethod(0_01000000, ContractParameterType.ByteArray, CallFlags.AllowModifyStates,
             ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray, ContractParameterType.String, ContractParameterType.String },
             ParameterNames = new[] { "url", "filterContract", "filterMethod", "filterArgs" })]
         private StackItem Get(ApplicationEngine engine, Array args)
@@ -348,7 +353,7 @@ namespace Neo.SmartContract.Native.Oracle
                 {
                     // Read Oracle Response
 
-                    engine.OracleCache = Oracle.ConsumeOracleResponse(engine.Snapshot, tx.Hash);
+                    engine.OracleCache = Oracle.ConsumeOracleResponse(engine, tx.Hash);
 
                     // If it doesn't exist, fault
 
@@ -414,8 +419,6 @@ namespace Neo.SmartContract.Native.Oracle
             if (engine.OracleCache.TryGet(request, out var response))
             {
                 // Add the gas filter cost
-
-                if (!engine.AddGas(response.FilterCostOnce())) return false;
 
                 return response.Result ?? StackItem.Null;
             }
