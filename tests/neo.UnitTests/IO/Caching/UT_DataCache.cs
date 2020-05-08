@@ -247,23 +247,6 @@ namespace Neo.UnitTests.IO.Caching
         }
 
         [TestMethod]
-        public void TestDeleteWhere()
-        {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
-
-            myDataCache.DeleteWhere((k, v) => k.Key.StartsWith("key"));
-            myDataCache.Commit();
-            myDataCache.TryGet(new MyKey("key1")).Should().BeNull();
-            myDataCache.TryGet(new MyKey("key2")).Should().BeNull();
-            myDataCache.InnerDict.ContainsKey(new MyKey("key1")).Should().BeFalse();
-            myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
-        }
-
-        [TestMethod]
         public void TestFind()
         {
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));

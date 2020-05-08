@@ -6,26 +6,25 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using static System.IO.Path;
 
 namespace Neo.Wallets.SQLite
 {
     public class UserWallet : Wallet
     {
         private readonly object db_lock = new object();
-        private readonly string path;
         private readonly byte[] iv;
         private readonly byte[] salt;
         private readonly byte[] masterKey;
         private readonly ScryptParameters scrypt;
         private readonly Dictionary<UInt160, UserWalletAccount> accounts;
 
-        public override string Name => Path.GetFileNameWithoutExtension(path);
+        public override string Name => GetFileNameWithoutExtension(Path);
 
         public override Version Version
         {
@@ -46,9 +45,8 @@ namespace Neo.Wallets.SQLite
         /// </summary>
         /// <param name="path">Path</param>
         /// <param name="passwordKey">Password Key</param>
-        private UserWallet(string path, byte[] passwordKey)
+        private UserWallet(string path, byte[] passwordKey) : base(path)
         {
-            this.path = path;
             this.salt = LoadStoredData("Salt");
             byte[] passwordHash = LoadStoredData("PasswordHash");
             if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
@@ -70,9 +68,8 @@ namespace Neo.Wallets.SQLite
         /// <param name="path">Path</param>
         /// <param name="passwordKey">Password Key</param>
         /// <param name="scrypt">Scrypt initialization value</param>
-        private UserWallet(string path, byte[] passwordKey, ScryptParameters scrypt)
+        private UserWallet(string path, byte[] passwordKey, ScryptParameters scrypt) : base(path)
         {
-            this.path = path;
             this.iv = new byte[16];
             this.salt = new byte[20];
             this.masterKey = new byte[32];
@@ -110,7 +107,7 @@ namespace Neo.Wallets.SQLite
                 accounts[account.ScriptHash] = account;
             }
             lock (db_lock)
-                using (WalletDataContext ctx = new WalletDataContext(path))
+                using (WalletDataContext ctx = new WalletDataContext(Path))
                 {
                     if (account.HasKey)
                     {
@@ -163,7 +160,7 @@ namespace Neo.Wallets.SQLite
 
         private void BuildDatabase()
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(Path))
             {
                 ctx.Database.EnsureDeleted();
                 ctx.Database.EnsureCreated();
@@ -259,7 +256,7 @@ namespace Neo.Wallets.SQLite
             if (account != null)
             {
                 lock (db_lock)
-                    using (WalletDataContext ctx = new WalletDataContext(path))
+                    using (WalletDataContext ctx = new WalletDataContext(Path))
                     {
                         if (account.HasKey)
                         {
@@ -303,7 +300,7 @@ namespace Neo.Wallets.SQLite
 
         private Dictionary<UInt160, UserWalletAccount> LoadAccounts()
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(Path))
             {
                 string passphrase = Encoding.UTF8.GetString(masterKey);
                 Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p))).ToDictionary(p => p.ScriptHash);
@@ -320,7 +317,7 @@ namespace Neo.Wallets.SQLite
 
         private byte[] LoadStoredData(string name)
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(Path))
             {
                 return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
             }
@@ -339,7 +336,7 @@ namespace Neo.Wallets.SQLite
         private void SaveStoredData(string name, byte[] value)
         {
             lock (db_lock)
-                using (WalletDataContext ctx = new WalletDataContext(path))
+                using (WalletDataContext ctx = new WalletDataContext(Path))
                 {
                     SaveStoredData(ctx, name, value);
                     ctx.SaveChanges();

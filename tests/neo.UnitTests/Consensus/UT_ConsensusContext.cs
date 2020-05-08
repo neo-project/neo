@@ -98,8 +98,7 @@ namespace Neo.UnitTests.Consensus
             var r = new Random();
             var tx = new Transaction()
             {
-                Cosigners = new Cosigner[0],
-                Attributes = new TransactionAttribute[0],
+                Attributes = Array.Empty<TransactionAttribute>(),
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],
