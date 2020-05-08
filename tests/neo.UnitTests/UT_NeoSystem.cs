@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace Neo.UnitTests
 {
@@ -25,5 +26,18 @@ namespace Neo.UnitTests
 
         [TestMethod]
         public void TestGetConsensus() => neoSystem.Consensus.Should().BeNull();
+
+        [TestMethod]
+        public void TestGetOracle() => neoSystem.Oracle.Should().BeNull();
+
+        [TestMethod]
+        public void TestStartStopOracle()
+        {
+            Assert.IsFalse(neoSystem.StopOracle());
+            Assert.ThrowsException<ArgumentException>(() => neoSystem.StartOracle(null, 0));
+
+            neoSystem.StartOracle(null, 1);
+            Assert.IsTrue(neoSystem.StopOracle());
+        }
     }
 }
