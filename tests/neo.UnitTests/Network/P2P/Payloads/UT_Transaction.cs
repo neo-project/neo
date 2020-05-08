@@ -838,6 +838,32 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsNull(tx2);
         }
 
+        [TestMethod]
+        public void Transaction_Serialize_Deserialize_OracleRequestAndResponse()
+        {
+            Transaction txCosigners1 = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 0x01020304,
+                Attributes = new TransactionAttribute[]
+                {
+                    new OracleResponseAttribute() { RequestTx = UInt256.Zero },
+                    new OracleRequestAttribute()
+                },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            byte[] sTx1 = txCosigners1.ToArray();
+
+            Assert.ThrowsException<FormatException>(() =>
+                Neo.IO.Helper.AsSerializable<Transaction>(sTx1)
+            );
+        }
 
         [TestMethod]
         public void Transaction_Serialize_Deserialize_MaxSizeCosigners()
