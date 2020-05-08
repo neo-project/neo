@@ -9,7 +9,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract
 {
-    using TraceSink = System.Action<VMState, IReadOnlyCollection<ExecutionContext>, System.Func<byte[], IEnumerable<KeyValuePair<StorageKey, StorageItem>>>>;
+    using TraceSink = System.Action<VMState, RandomAccessStack<ExecutionContext>, System.Func<UInt160, IEnumerable<KeyValuePair<StorageKey, StorageItem>>>>;
 
     public class ApplicationEngine : ExecutionEngine
     {
@@ -41,10 +41,9 @@ namespace Neo.SmartContract
             }
         }
 
-        private IEnumerable<KeyValuePair<StorageKey, StorageItem>> GetStorage(byte[] scriptHash)
+        private IEnumerable<KeyValuePair<StorageKey, StorageItem>> GetStorage(UInt160 scriptHash)
         {
-            var _scriptHash = new UInt160(scriptHash);
-            return snapshot.Storages.Find().Where(s => s.Key.ScriptHash == _scriptHash);
+            return snapshot.Storages.Find().Where(s => s.Key.ScriptHash == scriptHash);
         }
 
         private bool CheckDynamicInvoke()
