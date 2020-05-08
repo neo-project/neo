@@ -220,7 +220,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write((byte)Version);
+            writer.Write(Version);
             writer.Write(Nonce);
             writer.Write(Sender);
             writer.Write(SystemFee);
@@ -235,7 +235,7 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
-            json["version"] = (byte)Version;
+            json["version"] = Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
             json["sys_fee"] = SystemFee.ToString();

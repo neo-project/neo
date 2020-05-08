@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Oracle.Protocols.Https;
+using System;
 using System.Net;
 
 namespace Neo.UnitTests.Oracle.Protocols.Https
@@ -22,6 +23,12 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
         {
             "88.22.32.11"
         };
+
+        [TestInitialize]
+        public void Init()
+        {
+            TestBlockchain.InitializeMockNeoSystem();
+        }
 
         [TestMethod]
         public void TestIsInternalAddress()
@@ -55,6 +62,39 @@ namespace Neo.UnitTests.Oracle.Protocols.Https
 
                 Assert.IsFalse(OracleHttpsProtocol.IsInternal(entry), $"{i} is internal");
             }
+        }
+
+        [TestMethod]
+        public void WrongProtocol()
+        {
+            var protocol = new OracleHttpsProtocol
+            {
+                AllowPrivateHost = true
+            };
+
+            var request = new OracleHttpsRequest() { Filter = null, Method = (HttpMethod)0xFF, URL = new Uri("https://google.com") };
+            var response = protocol.Process(request);
+
+            Assert.IsTrue(response.Error);
+            Assert.IsNull(response.Result);
+            Assert.AreEqual(request.Hash, response.RequestHash);
+        }
+
+        [TestMethod]
+        public void WrongTimeout()
+        {
+            var protocol = new OracleHttpsProtocol
+            {
+                AllowPrivateHost = true
+            };
+
+            protocol.Config.TimeOut = 0;
+            var request = new OracleHttpsRequest() { Filter = null, Method = HttpMethod.GET, URL = new Uri("https://google.com") };
+            var response = protocol.Process(request);
+
+            Assert.IsTrue(response.Error);
+            Assert.IsNull(response.Result);
+            Assert.AreEqual(request.Hash, response.RequestHash);
         }
     }
 }
