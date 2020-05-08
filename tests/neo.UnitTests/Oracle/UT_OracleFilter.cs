@@ -7,7 +7,6 @@ namespace Neo.UnitTests.Oracle
     [TestClass]
     public class UT_OracleFilter
     {
-
         [TestMethod]
         public void TestSerialization()
         {
