@@ -581,7 +581,8 @@ namespace Neo.Ledger
 #pragma warning restore CS0612
                         case InvocationTransaction tx_invocation:
                             {
-                                // For now, only support a first trace debug plugin that returns true to ShouldTrace
+                                // only use first trace debug plugin that returns true to ShouldTrace
+
                                 var plugin = Plugin.TraceDebugPlugins
                                     .Where(p => p.ShouldTrace(block.Header, tx_invocation))
                                     .FirstOrDefault();

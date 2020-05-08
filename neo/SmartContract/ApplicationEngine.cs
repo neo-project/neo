@@ -9,6 +9,8 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract
 {
+    using TraceSink = System.Action<VMState, IReadOnlyCollection<ExecutionContext>, System.Func<byte[], IEnumerable<KeyValuePair<StorageKey, StorageItem>>>>;
+
     public class ApplicationEngine : ExecutionEngine
     {
         private const long ratio = 100000;
@@ -16,13 +18,13 @@ namespace Neo.SmartContract
         private readonly long gas_amount;
         private long gas_consumed = 0;
         private readonly bool testMode;
-        private readonly System.Action<VMState, IList<ITraceDebugSink.StackFrame>> traceDebugSink;
+        private readonly TraceSink traceDebugSink;
         private readonly Snapshot snapshot;
 
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;
 
-        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false, System.Action<VMState, IList<ITraceDebugSink.StackFrame>> traceDebugSink = null)
+        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false, TraceSink traceDebugSink = null)
             : base(container, Cryptography.Crypto.Default, snapshot, new NeoService(trigger, snapshot))
         {
             this.gas_amount = gas_free + gas.GetData();
@@ -35,30 +37,14 @@ namespace Neo.SmartContract
         {
             if (traceDebugSink != null)
             {
-                DoTrace();   
+                traceDebugSink(State, InvocationStack, GetStorage);
             }
         }
 
-        private void DoTrace()
+        private IEnumerable<KeyValuePair<StorageKey, StorageItem>> GetStorage(byte[] scriptHash)
         {
-            var frames = new List<ITraceDebugSink.StackFrame>(InvocationStack.Count);
-
-            for (var index = 0; index < InvocationStack.Count; index++)
-            {
-                var context = InvocationStack.Peek(index);
-
-                var variables = context.AltStack.Count > 0
-                    ? (Neo.VM.Types.Array)context.AltStack.Peek(0)
-                    : null;
-                var storages = snapshot.Storages.Find()
-                    .Where(s => s.Key.ScriptHash == new UInt160(context.ScriptHash));
-
-                var stackFrame = new ITraceDebugSink.StackFrame(index, new UInt160(context.ScriptHash),
-                    context.InstructionPointer, variables, storages);
-                frames.Add(stackFrame);
-            }
-
-            traceDebugSink(State, frames);
+            var _scriptHash = new UInt160(scriptHash);
+            return snapshot.Storages.Find().Where(s => s.Key.ScriptHash == _scriptHash);
         }
 
         private bool CheckDynamicInvoke()
