@@ -18,10 +18,8 @@ namespace Neo.UnitTests
         public void TestCachedFind_Between()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var storages = snapshot.Storages;
+            var storages = snapshot.Storages.CreateSnapshot();
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
-
-            storages.DeleteWhere((k, v) => k.Id == 0);
 
             storages.Add
                 (
@@ -53,18 +51,14 @@ namespace Neo.UnitTests
                 cache.Find(new byte[5]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x01, 0x02, 0x03 }
                 );
-
-            storages.DeleteWhere((k, v) => k.Id == 0);
         }
 
         [TestMethod]
         public void TestCachedFind_Last()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var storages = snapshot.Storages;
+            var storages = snapshot.Storages.CreateSnapshot();
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
-
-            storages.DeleteWhere((k, v) => k.Id == 0);
 
             storages.Add
                 (
@@ -89,18 +83,14 @@ namespace Neo.UnitTests
             CollectionAssert.AreEqual(cache.Find(new byte[5]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x01, 0x02 }
                 );
-
-            storages.DeleteWhere((k, v) => k.Id == 0);
         }
 
         [TestMethod]
         public void TestCachedFind_Empty()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var storages = snapshot.Storages;
+            var storages = snapshot.Storages.CreateSnapshot();
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
-
-            storages.DeleteWhere((k, v) => k.Id == 0);
 
             cache.Add
                 (
@@ -117,8 +107,6 @@ namespace Neo.UnitTests
                 cache.Find(new byte[5]).Select(u => u.Key.Key[1]).ToArray(),
                 new byte[] { 0x02 }
                 );
-
-            storages.DeleteWhere((k, v) => k.Id == 0);
         }
     }
 }

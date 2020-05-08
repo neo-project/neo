@@ -92,7 +92,7 @@ namespace Neo.SmartContract
             if (script[i++] != (byte)OpCode.PUSHNULL) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
             if (script.Length != i + 4) return false;
-            if (BitConverter.ToUInt32(script, i) != InteropService.Crypto.ECDsaCheckMultiSig)
+            if (BitConverter.ToUInt32(script, i) != InteropService.Crypto.CheckMultisigWithECDsaSecp256r1)
                 return false;
             return true;
         }
@@ -104,7 +104,7 @@ namespace Neo.SmartContract
                 || script[1] != 33
                 || script[35] != (byte)OpCode.PUSHNULL
                 || script[36] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 37) != InteropService.Crypto.ECDsaVerify)
+                || BitConverter.ToUInt32(script, 37) != InteropService.Crypto.VerifyWithECDsaSecp256r1)
                 return false;
             return true;
         }
@@ -167,6 +167,7 @@ namespace Neo.SmartContract
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
+                    gas -= engine.GasConsumed;
                 }
             }
             return true;

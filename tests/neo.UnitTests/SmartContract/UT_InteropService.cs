@@ -262,6 +262,15 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestContract_GetCallFlags()
+        {
+            var engine = GetEngine();
+            InteropService.Invoke(engine, InteropService.Contract.GetCallFlags).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger()
+                .Should().Be(((int)CallFlags.All));
+        }
+
+        [TestMethod]
         public void TestRuntime_Platform()
         {
             var engine = GetEngine();
@@ -382,7 +391,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));
             engine.CurrentContext.EvaluationStack.Push(message);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaVerify).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             byte[] wrongkey = pubkey.EncodePoint(false);
@@ -390,7 +399,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(wrongkey);
             engine.CurrentContext.EvaluationStack.Push(new InteropInterface(engine.ScriptContainer));
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaVerify).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Peek().ToBoolean().Should().BeFalse();
         }
 
@@ -870,7 +879,7 @@ namespace Neo.UnitTests.SmartContract
 
             engine.CurrentContext.EvaluationStack.Push(data);
             InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Parse("0x2c847208959ec1cc94dd13bfe231fa622a404a8a").ToArray());
+            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().ToHexString().Should().Be("68f96a15748750cccd548feb71be766e8a2c2733");
 
             data = "064b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
             engine.CurrentContext.EvaluationStack.Push(data);

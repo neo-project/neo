@@ -24,6 +24,8 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor IsStandard = Register("System.Contract.IsStandard", Contract_IsStandard, 0_00030000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor GetCallFlags = Register("System.Contract.GetCallFlags", Contract_GetCallFlags, 0_00030000, TriggerType.All, CallFlags.None);
+
             /// <summary>
             /// Calculate corresponding account scripthash for given public key
             /// Warning: check first that input public key is valid, before creating the script.
@@ -34,6 +36,13 @@ namespace Neo.SmartContract
             {
                 int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
                 return Storage.GasPerByte * size;
+            }
+
+            private static bool Contract_GetCallFlags(ApplicationEngine engine)
+            {
+                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                engine.Push((int)state.CallFlags);
+                return true;
             }
 
             private static bool Contract_Create(ApplicationEngine engine)
@@ -125,15 +134,18 @@ namespace Neo.SmartContract
                 if (!engine.TryPop(out ReadOnlySpan<byte> contractHash)) return false;
                 if (!engine.TryPop(out string method)) return false;
                 if (!engine.TryPop(out Array args)) return false;
-                if (!engine.TryPop(out int flags)) return false;
+                if (!engine.TryPop(out int flagsValue)) return false;
 
-                if (!Enum.IsDefined(typeof(CallFlags), (CallFlags)flags)) return false;
+                CallFlags flags = (CallFlags)flagsValue;
+                if ((flags & ~CallFlags.All) != 0) return false;
 
-                return Contract_CallEx(engine, new UInt160(contractHash), method, args, (CallFlags)flags);
+                return Contract_CallEx(engine, new UInt160(contractHash), method, args, flags);
             }
 
             private static bool Contract_CallEx(ApplicationEngine engine, UInt160 contractHash, string method, Array args, CallFlags flags)
             {
+                if (method.StartsWith('_')) return false;
+
                 ContractState contract = engine.Snapshot.Contracts.TryGet(contractHash);
                 if (contract is null) return false;
 
@@ -174,6 +186,10 @@ namespace Neo.SmartContract
                         context_new.EvaluationStack.Push(args[i]);
                     context_new.InstructionPointer = md.Offset;
                 }
+
+                md = contract.Manifest.Abi.GetMethod("_initialize");
+                if (md != null) engine.LoadClonedContext(md.Offset);
+
                 return true;
             }
 
