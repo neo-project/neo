@@ -41,14 +41,9 @@ namespace Neo.SmartContract.Native.Tokens
                 networkFee += tx.NetworkFee;
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
 
-                switch (tx.Version)
+                if (tx.IsOracleRequest() || tx.IsOracleResponse(out _))
                 {
-                    case TransactionVersion.OracleRequest:
-                    case TransactionVersion.OracleResponse:
-                        {
-                            oracleFee += tx.SystemFee;
-                            break;
-                        }
+                    oracleFee += tx.SystemFee;
                 }
             }
 
