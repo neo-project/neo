@@ -244,46 +244,29 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, BigInteger.Zero) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            VerifyResult result = VerifyStateDependent(snapshot, totalSenderFeeFromPool);
-            if (result != VerifyResult.Succeed) return result;
-            result = VerifyForEachBlockStateDependent(snapshot);
-            return result;
-        }
-
-        public virtual VerifyResult VerifyForEachBlockStateDependent(StoreView snapshot)
+        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying();
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
                 return VerifyResult.PolicyFail;
-            if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
-            for (int i = 0; i < hashes.Length; i++)
-            {
-                if (Witnesses[i].VerificationScript.Length > 0) continue;
-                if (snapshot.Contracts.TryGet(hashes[i]) is null) return VerifyResult.Invalid;
-            }
-            return VerifyResult.Succeed;
-        }
-
-        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            VerifyResult result = VerifyForEachBlockStateDependent(snapshot);
-            if (result != VerifyResult.Succeed) return result;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            if (net_fee < 0)
+                return VerifyResult.InsufficientFunds;
+
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return VerifyResult.InsufficientFunds;
-            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.NonStandardWitness)) return VerifyResult.Invalid;
+            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.NonStandardWitness))
+                return VerifyResult.Invalid;
 
             //Check all gas consumed for state dependent and independent witnesses
             long gasConsumed = 0;
             foreach (Witness witness in witnesses)
                 gasConsumed += witness.GasConsumed;
-            if (gasConsumed > net_fee) return VerifyResult.Invalid;
+            if (gasConsumed > net_fee)
+                return VerifyResult.InsufficientFee;
             return VerifyResult.Succeed;
         }
 

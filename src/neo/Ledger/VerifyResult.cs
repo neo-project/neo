@@ -9,6 +9,7 @@ namespace Neo.Ledger
         Invalid,
         Expired,
         InsufficientFunds,
+        InsufficientFee,
         PolicyFail,
         Unknown
     }
