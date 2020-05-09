@@ -7,6 +7,7 @@ namespace Neo.Ledger
         OutOfMemory,
         UnableToVerify,
         Invalid,
+        InvalidWitness,
         Expired,
         InsufficientFunds,
         InsufficientFee,

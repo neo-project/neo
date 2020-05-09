@@ -259,7 +259,7 @@ namespace Neo.Network.P2P.Payloads
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.NonStandardWitness))
-                return VerifyResult.Invalid;
+                return VerifyResult.InvalidWitness;
 
             //Check all gas consumed for state dependent and independent witnesses
             long gasConsumed = 0;
@@ -273,7 +273,7 @@ namespace Neo.Network.P2P.Payloads
         public virtual VerifyResult VerifyStateIndependent()
         {
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StandardWitness)) return VerifyResult.Invalid;
+            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StandardWitness)) return VerifyResult.InvalidWitness;
             return VerifyResult.Succeed;
         }
 
