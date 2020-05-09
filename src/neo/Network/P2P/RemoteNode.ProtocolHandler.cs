@@ -113,16 +113,8 @@ namespace Neo.Network.P2P
                         if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         {
                             Transaction tx = (Transaction)msg.Payload;
-                            if (tx.isStateDepedent)
-                            {
-                                if (tx.VerifyStateIndependent(null, false) != VerifyResult.Succeed)
-                                    return;
-                            }
-                            else if (tx.VerifyStateIndependent(Blockchain.Singleton.CurrentSnapshot, true) != VerifyResult.Succeed)
-                            {
-                                return;
-                            }
-                            OnInventoryReceived(tx);
+                            if (tx.VerifyStateIndependent(Blockchain.Singleton.CurrentSnapshot) == VerifyResult.Succeed)
+                                OnInventoryReceived(tx);
                         }
                     });
                     break;

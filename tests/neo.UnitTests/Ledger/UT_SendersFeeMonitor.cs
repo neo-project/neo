@@ -22,7 +22,7 @@ namespace Neo.UnitTests.Ledger
             mock.Setup(p => p.VerifyForEachBlockStateDependent(It.IsAny<StoreView>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateIndependent(It.IsAny<StoreView>(), It.IsAny<bool>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateIndependent(It.IsAny<StoreView>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = networkFee;

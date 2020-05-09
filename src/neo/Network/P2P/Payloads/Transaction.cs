@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -288,24 +287,20 @@ namespace Neo.Network.P2P.Payloads
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return VerifyResult.InsufficientFunds;
-            if (isStateDepedent)
-            {
-                if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
-            }
-            else
-            {
-                long gasConsumed = 0;
-                foreach (Witness witness in witnesses)
-                    gasConsumed += witness.GasConsumed;
-                if (gasConsumed > net_fee) return VerifyResult.Invalid;
-            }
+            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessVerifyStrategy.OnlyStateDependent)) return VerifyResult.Invalid;
+
+            //Check all gas consumed for state dependent and independent witnesses
+            long gasConsumed = 0;
+            foreach (Witness witness in witnesses)
+                gasConsumed += witness.GasConsumed;
+            if (gasConsumed > net_fee) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyStateIndependent(StoreView snapshot, bool checkWitness = true)
+        public virtual VerifyResult VerifyStateIndependent(StoreView snapshot)
         {
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
-            if (checkWitness && !this.VerifyWitnesses(snapshot, NetworkFee)) return VerifyResult.Invalid;
+            if (!this.VerifyWitnesses(snapshot, NetworkFee, WitnessVerifyStrategy.OnlyStateIndependent)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
@@ -333,41 +328,6 @@ namespace Neo.Network.P2P.Payloads
                 ValidUntilBlock,
                 Script,
             });
-        }
-
-        private int _stateDependent = -1;
-
-        public bool isStateDepedent
-        {
-            get
-            {
-                switch (_stateDependent)
-                {
-                    case 0:
-                        return false;
-                    case 1:
-                        return true;
-                    default:
-                        bool isStateDependent = false;
-                        Parallel.ForEach(witnesses, (witness, state) =>
-                        {
-                            if (witness.VerificationScript.Length == 0 || !witness.VerificationScript.IsStandardContract())
-                            {
-                                isStateDependent = true;
-                                state.Stop();
-                            }
-                        });
-                        if (isStateDependent)
-                        {
-                            _stateDependent = 1;
-                        }
-                        else
-                        {
-                            _stateDependent = 0;
-                        }
-                        return isStateDependent;
-                }
-            }
         }
     }
 }

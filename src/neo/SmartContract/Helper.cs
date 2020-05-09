@@ -129,7 +129,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessVerifyStrategy strategy = WitnessVerifyStrategy.All)
         {
             if (gas < 0) return false;
 
@@ -145,11 +145,16 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (verifiable.Witnesses[i].VerificationScript.Length == 0
-                    && !verifiable.VerifyWitnessStateDependent(snapshot, gas, hashes[i], verifiable.Witnesses[i]))
-                    return false;
-                else if (!verifiable.VerifyWitnessStateIndependent(snapshot, gas, hashes[i], verifiable.Witnesses[i]))
-                    return false;
+                if (verifiable.Witnesses[i].IsStateDepedent && strategy != WitnessVerifyStrategy.OnlyStateIndependent)
+                {
+                    if (!verifiable.VerifyWitnessStateDependent(snapshot, gas, hashes[i], verifiable.Witnesses[i]))
+                        return false;
+                }
+                else if (!verifiable.Witnesses[i].IsStateDepedent && strategy != WitnessVerifyStrategy.OnlyStateDependent)
+                {
+                    if (!verifiable.VerifyWitnessStateIndependent(snapshot, gas, hashes[i], verifiable.Witnesses[i]))
+                        return false;
+                }
             }
             return true;
         }

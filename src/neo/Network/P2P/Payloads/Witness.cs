@@ -49,5 +49,32 @@ namespace Neo.Network.P2P.Payloads
             json["verification"] = Convert.ToBase64String(VerificationScript);
             return json;
         }
+
+        private int _stateDependent = -1;
+
+        public bool IsStateDepedent
+        {
+            get
+            {
+                switch (_stateDependent)
+                {
+                    case 0:
+                        return false;
+                    case 1:
+                        return true;
+                    default:
+                        if (VerificationScript.Length == 0 || !VerificationScript.IsStandardContract())
+                        {
+                            _stateDependent = 1;
+                            return true;
+                        }
+                        else
+                        {
+                            _stateDependent = 0;
+                            return false;
+                        }
+                }
+            }
+        }
     }
 }
