@@ -17,6 +17,7 @@ namespace Neo.IO.Caching
 
         private readonly Dictionary<TKey, Trackable> dictionary = new Dictionary<TKey, Trackable>();
         private readonly HashSet<TKey> nonexistentKeySet = new HashSet<TKey>();
+        private readonly HashSet<TKey> changeSet = new HashSet<TKey>();
 
         public TValue this[TKey key]
         {
@@ -67,6 +68,7 @@ namespace Neo.IO.Caching
                     Item = value,
                     State = trackable == null ? TrackState.Added : TrackState.Changed
                 };
+                changeSet.Add(key);
             }
         }
 
@@ -98,6 +100,7 @@ namespace Neo.IO.Caching
             {
                 dictionary.Remove(key);
             }
+            changeSet.Clear();
         }
 
         public DataCache<TKey, TValue> CreateSnapshot()
@@ -116,9 +119,15 @@ namespace Neo.IO.Caching
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
                     if (trackable.State == TrackState.Added)
+                    {
                         dictionary.Remove(key);
+                        changeSet.Remove(key);
+                    }
                     else
+                    {
                         trackable.State = TrackState.Deleted;
+                        changeSet.Add(key);
+                    }
                 }
                 else
                 {
@@ -135,20 +144,12 @@ namespace Neo.IO.Caching
                         Item = item,
                         State = TrackState.Deleted
                     });
+                    changeSet.Add(key);
                 }
             }
         }
 
         protected abstract void DeleteInternal(TKey key);
-
-        public void DeleteWhere(Func<TKey, TValue, bool> predicate)
-        {
-            lock (dictionary)
-            {
-                foreach (Trackable trackable in dictionary.Where(p => p.Value.State != TrackState.Deleted && predicate(p.Key, p.Value.Item)).Select(p => p.Value))
-                    trackable.State = TrackState.Deleted;
-            }
-        }
 
         /// <summary>
         /// Find the entries that start with the `key_prefix`
@@ -211,8 +212,8 @@ namespace Neo.IO.Caching
         {
             lock (dictionary)
             {
-                foreach (Trackable trackable in dictionary.Values.Where(p => p.State != TrackState.None))
-                    yield return trackable;
+                foreach (TKey key in changeSet)
+                    yield return dictionary[key];
             }
         }
 
@@ -241,6 +242,7 @@ namespace Neo.IO.Caching
                     else if (trackable.State == TrackState.None)
                     {
                         trackable.State = TrackState.Changed;
+                        changeSet.Add(key);
                     }
                 }
                 else
@@ -267,6 +269,7 @@ namespace Neo.IO.Caching
                     }
                     if (nonexistanceChecked) nonexistentKeySet.Remove(key);
                     dictionary.Add(key, trackable);
+                    changeSet.Add(key);
                 }
                 return trackable.Item;
             }
@@ -296,6 +299,7 @@ namespace Neo.IO.Caching
                     {
                         trackable.Item = factory();
                         trackable.State = TrackState.Added;
+                        changeSet.Add(key);
                     }
                     else
                     {
