@@ -66,13 +66,6 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
-        public SnapshotView CurrentSnapshot
-        {
-            get
-            {
-                return currentSnapshot;
-            }
-        }
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }

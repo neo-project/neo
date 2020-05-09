@@ -161,13 +161,13 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+                    if (hashes[i] != witness.ScriptHash) return false;
                     offset = 0;
                 }
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
                 {
                     engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
+                    engine.LoadScript(witness.InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
                     gas -= engine.GasConsumed;
