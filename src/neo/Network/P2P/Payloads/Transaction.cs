@@ -296,9 +296,9 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
         {
-            VerifyResult result = VerifyStateDependent(snapshot, totalSenderFeeFromPool);
+            VerifyResult result = VerifyStateIndependent();
             if (result != VerifyResult.Succeed) return result;
-            result = VerifyStateIndependent();
+            result = VerifyStateDependent(snapshot, totalSenderFeeFromPool);
             return result;
         }
 
