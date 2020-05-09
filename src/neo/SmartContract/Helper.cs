@@ -164,7 +164,7 @@ namespace Neo.SmartContract
                     if (hashes[i] != witness.ScriptHash) return false;
                     offset = 0;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, null, gas))
                 {
                     engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
                     engine.LoadScript(witness.InvocationScript, CallFlags.None);
