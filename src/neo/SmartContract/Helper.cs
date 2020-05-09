@@ -129,7 +129,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessVerifyStrategy strategy = WitnessVerifyStrategy.All)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
         {
             if (gas < 0) return false;
 
@@ -145,12 +145,13 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                int offset;
                 Witness witness = verifiable.Witnesses[i];
+                if (!filter.HasFlag(witness.Flag)) continue;
+
+                int offset;
                 byte[] verification = witness.VerificationScript;
-                if (witness.IsStateDepedent)
+                if (verification.Length == 0)
                 {
-                    if (strategy == WitnessVerifyStrategy.OnlyStateIndependent) continue;
                     ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
                     if (cs is null) return false;
                     ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
@@ -160,7 +161,6 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    if (strategy == WitnessVerifyStrategy.OnlyStateDependent) continue;
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }

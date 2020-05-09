@@ -50,17 +50,16 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        private int _isStandardWitness;
-
-        public bool IsStandardWitness
+        private WitnessFlag _flag = WitnessFlag.None;
+        public WitnessFlag Flag
         {
             get
             {
-                if (_isStandardWitness == 0)
+                if (_flag == WitnessFlag.None)
                 {
-                    _isStandardWitness = VerificationScript.IsStandardContract() ? 1 : -1;
+                    _flag = VerificationScript.IsStandardContract() ? WitnessFlag.StandardWitness : WitnessFlag.NonStandardWitness;
                 }
-                return _isStandardWitness == 1;
+                return _flag;
             }
         }
     }
