@@ -248,23 +248,18 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-
             UInt160[] hashes = GetScriptHashesForVerifying();
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
-                return VerifyResult.PolicyFail;            
-
+                return VerifyResult.PolicyFail;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
             if (balance < fee)
                 return VerifyResult.InsufficientFunds;
-
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0)
                 return VerifyResult.InsufficientFunds;
-
             if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.NonStandardWitness))
                 return VerifyResult.Invalid;
-
             return VerifyResult.Succeed;
         }
 
