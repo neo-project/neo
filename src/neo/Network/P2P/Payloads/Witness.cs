@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        private int _stateDependent = -1;
+        private Boolean _IsStandardWitness;
 
         public bool IsStateDepedent
         {
