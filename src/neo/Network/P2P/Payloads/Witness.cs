@@ -56,8 +56,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                _IsStandardWitness??= VerificationScript.IsStandardContract();                
-                return _IsStandardWitness;
+                switch (_stateDependent)
                 {
                     case 0:
                         return false;
