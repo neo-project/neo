@@ -197,7 +197,7 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
+        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot = null)
         {
             var hashes = new HashSet<UInt160> { Sender };
             hashes.UnionWith(Cosigners.Select(p => p.Account));
@@ -256,7 +256,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            UInt160[] hashes = GetScriptHashesForVerifying();
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
                 return VerifyResult.PolicyFail;
             if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
