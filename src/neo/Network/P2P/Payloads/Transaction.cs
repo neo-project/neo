@@ -248,32 +248,32 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
+
             UInt160[] hashes = GetScriptHashesForVerifying();
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
-                return VerifyResult.PolicyFail;
+                return VerifyResult.PolicyFail;            
+
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
+            if (balance < fee)
+                return VerifyResult.InsufficientFunds;
+
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0)
                 return VerifyResult.InsufficientFunds;
 
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.NonStandardWitness))
-                return VerifyResult.InvalidWitness;
+                return VerifyResult.Invalid;
 
-            //Check all gas consumed for state dependent and independent witnesses
-            long gasConsumed = 0;
-            foreach (Witness witness in witnesses)
-                gasConsumed += witness.GasConsumed;
-            if (gasConsumed > net_fee)
-                return VerifyResult.InsufficientFee;
             return VerifyResult.Succeed;
         }
 
         public virtual VerifyResult VerifyStateIndependent()
         {
-            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StandardWitness)) return VerifyResult.InvalidWitness;
+            if (Size > MaxTransactionSize)
+                return VerifyResult.Invalid;
+            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StandardWitness))
+                return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 

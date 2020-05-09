@@ -146,7 +146,11 @@ namespace Neo.SmartContract
             for (int i = 0; i < hashes.Length; i++)
             {
                 Witness witness = verifiable.Witnesses[i];
-                if (!filter.HasFlag(witness.Flag)) continue;
+                if (!filter.HasFlag(witness.Flag))
+                {
+                    gas -= witness.GasConsumed;
+                    continue;
+                }
 
                 int offset;
                 byte[] verification = witness.VerificationScript;
