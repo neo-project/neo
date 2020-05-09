@@ -3,11 +3,10 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Collections.Generic;
 using System.Linq;
+using Array = System.Array;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -26,8 +25,7 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Attributes = new TransactionAttribute[0],
-                Cosigners = new Cosigner[0],
+                Attributes = Array.Empty<TransactionAttribute>(),
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
@@ -245,8 +243,7 @@ namespace Neo.UnitTests.SmartContract
                 var tx = new Transaction()
                 {
                     Script = new byte[] { 0x01 },
-                    Attributes = new TransactionAttribute[0],
-                    Cosigners = new Cosigner[0],
+                    Attributes = Array.Empty<TransactionAttribute>(),
                     NetworkFee = 0x02,
                     SystemFee = 0x03,
                     Nonce = 0x04,
@@ -263,7 +260,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
                 Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b226770564846625133316969517a614f4c7a33523546394d6256715932596b7a5164324461785536677154303d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
+                    @"5b224435724a376f755c753030324256574845456c5c75303032426e74486b414a424f614c4a6737496776303356337a4953646d6750413d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
                 Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }
@@ -323,7 +320,7 @@ namespace Neo.UnitTests.SmartContract
         public void System_Runtime_GetInvocationCounter()
         {
             ContractState contractA, contractB, contractC;
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
             var contracts = snapshot.Contracts;
 
             // Create dummy contracts
@@ -339,9 +336,9 @@ namespace Neo.UnitTests.SmartContract
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments
 
-                contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractA.ScriptHash.ToArray()));
-                contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractB.ScriptHash.ToArray()));
-                contracts.DeleteWhere((a, b) => a.ToArray().SequenceEqual(contractC.ScriptHash.ToArray()));
+                contracts.Delete(contractA.ScriptHash);
+                contracts.Delete(contractB.ScriptHash);
+                contracts.Delete(contractC.ScriptHash);
                 contractA.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
                 contractB.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
                 contractC.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
