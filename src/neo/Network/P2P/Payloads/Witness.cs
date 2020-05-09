@@ -52,7 +52,7 @@ namespace Neo.Network.P2P.Payloads
 
         private Boolean _IsStandardWitness;
 
-        public bool IsStateDepedent
+        public bool IsStandardWitness
         {
             get
             {
