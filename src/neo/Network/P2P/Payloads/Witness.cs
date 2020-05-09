@@ -50,30 +50,17 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        private int _stateDependent = -1;
+        private int _isStandardWitness;
 
-        public bool IsStateDepedent
+        public bool IsStandardWitness
         {
             get
             {
-                switch (_stateDependent)
+                if (_isStandardWitness == 0)
                 {
-                    case 0:
-                        return false;
-                    case 1:
-                        return true;
-                    default:
-                        if (VerificationScript.Length == 0 || !VerificationScript.IsStandardContract())
-                        {
-                            _stateDependent = 1;
-                            return true;
-                        }
-                        else
-                        {
-                            _stateDependent = 0;
-                            return false;
-                        }
+                    _isStandardWitness = VerificationScript.IsStandardContract() ? 1 : -1;
                 }
+                return _isStandardWitness == 1;
             }
         }
     }
