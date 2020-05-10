@@ -1,5 +1,7 @@
-﻿using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Enumerators;
@@ -99,6 +101,8 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
             Register("Neo.Iterator.Concat", Iterator_Concat, 1);
+            Register("Neo.Cryptography.Secp256k1Recover", Secp256k1Recover, 100);
+            Register("Neo.Cryptography.Secp256r1Recover", Secp256r1Recover, 100);
 
             #region Aliases
             Register("Neo.Iterator.Next", Enumerator_Next, 1);
@@ -163,6 +167,34 @@ namespace Neo.SmartContract
             Register("AntShares.Storage.Put", Storage_Put);
             Register("AntShares.Storage.Delete", Storage_Delete, 100);
             #endregion
+        }
+
+        private bool Secp256k1Recover(ExecutionEngine engine)
+        {
+            return EccRecover(ECCurve.Secp256k1, engine);
+        }
+
+        private bool Secp256r1Recover(ExecutionEngine engine)
+        {
+            return EccRecover(ECCurve.Secp256r1, engine);
+        }
+
+        private bool EccRecover(ECCurve curve, ExecutionEngine engine)
+        {
+            var r = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
+            var s = new System.Numerics.BigInteger(engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Reverse().Concat(new byte[1]).ToArray());
+            bool v = engine.CurrentContext.EvaluationStack.Pop().GetBoolean();
+            byte[] messageHash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            try
+            {
+                ECPoint point = ECDsa.KeyRecover(curve, r, s, messageHash, v);
+                engine.CurrentContext.EvaluationStack.Push(point.EncodePoint(false).Skip(1).ToArray());
+            }
+            catch
+            {
+                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
+            }
+            return true;
         }
 
         private bool Blockchain_GetAccount(ExecutionEngine engine)
