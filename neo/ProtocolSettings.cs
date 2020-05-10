@@ -17,6 +17,7 @@ namespace Neo
         public Fixed8 LowPriorityThreshold { get; }
         public uint SecondsPerBlock { get; }
 
+        public uint StateRootEnableIndex { get; }
         static ProtocolSettings _default;
 
         static bool UpdateDefault(IConfiguration configuration)
@@ -88,6 +89,7 @@ namespace Neo
             }
             this.SystemFee = sys_fee;
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
+            this.StateRootEnableIndex = section.GetValue("StateRootEnableIndex", 0u);
             this.LowPriorityThreshold = Fixed8.Parse(section.GetValue("LowPriorityThreshold", "0.001"));
         }
     }
