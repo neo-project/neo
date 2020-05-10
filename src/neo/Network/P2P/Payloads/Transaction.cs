@@ -280,7 +280,14 @@ namespace Neo.Network.P2P.Payloads
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
+            if (!this.VerifyOracle(snapshot)) return VerifyResult.Invalid;
+            return VerifyResult.Succeed;
+        }
 
+        #region Oracles
+
+        internal bool VerifyOracle(StoreView snapshot)
+        {
             if (IsOracleResponse(out _))
             {
                 // Oracle response only can be signed by oracle nodes
@@ -291,14 +298,12 @@ namespace Neo.Network.P2P.Payloads
                     hashes[0] != NativeContract.Oracle.GetOracleMultiSigAddress(snapshot) ||
                     hashes[0] != Sender)
                 {
-                    return VerifyResult.Invalid;
+                    return false;
                 }
             }
 
-            return VerifyResult.Succeed;
+            return true;
         }
-
-        #region Oracles
 
         public bool IsOracleResponse(out UInt256 requestTx)
         {

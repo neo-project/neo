@@ -1,8 +1,11 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using System;
 
 namespace Neo.UnitTests.Ledger
@@ -15,6 +18,8 @@ namespace Neo.UnitTests.Ledger
         [TestInitialize]
         public void TestSetup()
         {
+            TestBlockchain.InitializeMockNeoSystem();
+
             var timeValues = new[] {
                 new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),
             };
@@ -50,6 +55,8 @@ namespace Neo.UnitTests.Ledger
             pitem1.CompareTo(pitem2).Should().Be(-1);
             // pitem2 > pitem1 (fee) => 1
             pitem2.CompareTo(pitem1).Should().Be(1);
+            pitem2.CompareTo((PoolItem)null).Should().Be(1);
+            pitem2.CompareTo((Transaction)null).Should().Be(1);
         }
 
         [TestMethod]
@@ -77,6 +84,23 @@ namespace Neo.UnitTests.Ledger
 
             Assert.IsTrue(pitem2.IsReady(state));
             Assert.IsFalse(state.Allowed.Contains(tx2.Hash));
+
+            // With response
+
+            state = new PoolItem.DelayState();
+            Assert.IsFalse(pitem2.IsReady(state));
+
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            snapshot.Storages.Add(NativeContract.Oracle.CreateStorageKey(OracleContract.Prefix_OracleResponse, pitem2.Tx.Hash),
+                new StorageItem()
+                {
+                    IsConstant = false,
+                    Value = new byte[0]
+                }
+            );
+
+            pitem2.CheckOracleResponse(snapshot);
+            Assert.IsTrue(pitem2.IsReady(state));
         }
 
         [TestMethod]

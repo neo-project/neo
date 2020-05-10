@@ -37,6 +37,7 @@ namespace Neo.UnitTests
             Assert.ThrowsException<ArgumentException>(() => neoSystem.StartOracle(null, 0));
 
             neoSystem.StartOracle(null, 1);
+            neoSystem.StartOracle(null, 1); // Do nothing
             Assert.IsTrue(neoSystem.StopOracle());
         }
     }
