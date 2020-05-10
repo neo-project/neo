@@ -143,16 +143,11 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                Witness witness = verifiable.Witnesses[i];
-                if (filter != WitnessFlag.All && !filter.HasFlag(witness.Flag))
-                {
-                    gas -= witness.GasConsumed;
-                    if (gas < 0) return false;
-                    continue;
-                }
+                if (i != 0) gas -= verifiable.Witnesses[i - 1].GasConsumed;
+                if (filter != WitnessFlag.All && !filter.HasFlag(verifiable.Witnesses[i].Flag)) continue;
 
                 int offset;
-                byte[] verification = witness.VerificationScript;
+                byte[] verification = verifiable.Witnesses[i].VerificationScript;
                 if (verification.Length == 0)
                 {
                     ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
@@ -164,16 +159,16 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    if (hashes[i] != witness.ScriptHash) return false;
+                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, null, gas))
                 {
                     engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
-                    engine.LoadScript(witness.InvocationScript, CallFlags.None);
+                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
-                    gas -= engine.GasConsumed;
+                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
                 }
             }
             return true;
