@@ -271,6 +271,21 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
+        public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            if (result != VerifyResult.Succeed) return result;
+            int size = Size;
+            if (size > MaxTransactionSize) return VerifyResult.Invalid;
+            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
+            if (!this.VerifyOracle(snapshot)) return VerifyResult.Invalid;
+            return VerifyResult.Succeed;
+        }
+
+        #region Oracles
+
         internal bool VerifyOracle(StoreView snapshot)
         {
             if (IsOracleResponse(out _))
@@ -289,21 +304,6 @@ namespace Neo.Network.P2P.Payloads
 
             return true;
         }
-
-        public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
-            if (result != VerifyResult.Succeed) return result;
-            int size = Size;
-            if (size > MaxTransactionSize) return VerifyResult.Invalid;
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return VerifyResult.InsufficientFunds;
-            if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
-            if (!this.VerifyOracle(snapshot)) return VerifyResult.Invalid;
-            return VerifyResult.Succeed;
-        }
-
-        #region Oracles
 
         public bool IsOracleResponse(out UInt256 requestTx)
         {
