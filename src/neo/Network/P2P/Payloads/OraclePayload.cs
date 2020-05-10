@@ -40,9 +40,9 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_size == 0)
                 {
-                    _size = Data.GetVarSize() + //Data
-                        OraclePub.Size +        //Oracle Public key
-                        Witness.Size;           //Witness
+                    _size = Data.GetVarSize() + // Data
+                        OraclePub.Size +        // Oracle Public key
+                        1 + Witness.Size;       // Witness
                 }
                 return _size;
             }

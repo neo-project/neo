@@ -751,6 +751,37 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void Transaction_Verify_WrongOracleResponse()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+
+            Transaction txSimple = new Transaction
+            {
+                Version = 0x00,
+                Nonce = 0x01020304,
+                Sender = UInt160.Zero,
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                NetworkFee = 0x0000000000000001,
+                ValidUntilBlock = 1000,
+                Attributes = new[]
+                {
+                    new OracleResponseAttribute
+                    {
+                        RequestTx = UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1")
+                    }
+                },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            Assert.IsFalse(txSimple.VerifyOracle(snapshot));
+
+            txSimple.Sender = NativeContract.Oracle.GetOracleMultiSigAddress(snapshot);
+
+            Assert.IsTrue(txSimple.VerifyOracle(snapshot));
+        }
+
+        [TestMethod]
         public void Transaction_Serialize_Deserialize_Simple()
         {
             // good and simple transaction

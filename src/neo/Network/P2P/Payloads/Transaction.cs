@@ -271,16 +271,8 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        internal bool VerifyOracle(StoreView snapshot)
         {
-            VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
-            if (result != VerifyResult.Succeed) return result;
-            int size = Size;
-            if (size > MaxTransactionSize) return VerifyResult.Invalid;
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return VerifyResult.InsufficientFunds;
-            if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
-
             if (IsOracleResponse(out _))
             {
                 // Oracle response only can be signed by oracle nodes
@@ -291,10 +283,23 @@ namespace Neo.Network.P2P.Payloads
                     hashes[0] != NativeContract.Oracle.GetOracleMultiSigAddress(snapshot) ||
                     hashes[0] != Sender)
                 {
-                    return VerifyResult.Invalid;
+                    return false;
                 }
             }
 
+            return true;
+        }
+
+        public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        {
+            VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            if (result != VerifyResult.Succeed) return result;
+            int size = Size;
+            if (size > MaxTransactionSize) return VerifyResult.Invalid;
+            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
+            if (!this.VerifyOracle(snapshot)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
