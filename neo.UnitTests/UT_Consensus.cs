@@ -23,6 +23,7 @@ namespace Neo.UnitTests
     [TestClass]
     public class ConsensusTests : TestKit
     {
+
         [TestInitialize]
         public void TestSetup()
         {
@@ -112,7 +113,12 @@ namespace Neo.UnitTests
                 Nonce = mockConsensusContext.Object.Nonce,
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
                 TransactionHashes = new UInt256[0],
-                MinerTransaction = minerTx //(MinerTransaction)Transactions[TransactionHashes[0]],
+                MinerTransaction = minerTx, //(MinerTransaction)Transactions[TransactionHashes[0]],
+
+                RootVersion = 0,
+                RootIndex = 1,
+                RootPreHash = UInt256.Zero,
+                Root = UInt256.Zero
             };
 
             ConsensusPayload prepPayload = new ConsensusPayload
@@ -177,6 +183,15 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeConsensusContext()
         {
             var consensusContext = new ConsensusContext(null, null);
+
+            consensusContext.Root = new StateRoot
+            {
+                Version = 0,
+                Index = 0,
+                PreHash = UInt256.Zero,
+                Root = UInt256.Zero,
+            };
+
             consensusContext.PrevHash = UInt256.Parse("0xd42561e3d30e15be6400b6df2f328e02d2bf6354c41dce433bc57687c82144bf");
             consensusContext.BlockIndex = 1;
             consensusContext.ViewNumber = 2;
@@ -219,7 +234,12 @@ namespace Neo.UnitTests
                 NextConsensus = consensusContext.NextConsensus,
                 TransactionHashes = consensusContext.TransactionHashes,
                 MinerTransaction = (MinerTransaction)consensusContext.Transactions[consensusContext.TransactionHashes[0]],
-                Timestamp = 23
+                Timestamp = 23,
+
+                RootVersion = 0,
+                RootIndex = 0,
+                RootPreHash = UInt256.Zero,
+                Root = UInt256.Zero
             };
             consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
             consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 0, new[] { (byte)'t', (byte)'e' });
@@ -232,8 +252,8 @@ namespace Neo.UnitTests
             consensusContext.CommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             using (SHA256 sha256 = SHA256.Create())
             {
-                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()) }, 3, new[] { (byte)'3', (byte)'4' });
-                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
+                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()), StateRootSignature = sha256.ComputeHash(testTx1.Hash.ToArray()) }, 3, new[] { (byte)'3', (byte)'4' });
+                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()), StateRootSignature = sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
             }
 
             consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
@@ -418,7 +438,12 @@ namespace Neo.UnitTests
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
                     Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
-                    MinerTransaction = (MinerTransaction)txs[0]
+                    MinerTransaction = (MinerTransaction)txs[0],
+
+                    RootVersion = 0,
+                    RootIndex = 1,
+                    RootPreHash = UInt256.Zero,
+                    Root = UInt256.Zero
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -475,7 +500,12 @@ namespace Neo.UnitTests
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
                     Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
-                    MinerTransaction = (MinerTransaction)txs[0]
+                    MinerTransaction = (MinerTransaction)txs[0],
+
+                    RootVersion = 0,
+                    RootIndex = 1,
+                    RootPreHash = UInt256.Zero,
+                    Root = UInt256.Zero
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -539,7 +569,12 @@ namespace Neo.UnitTests
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
                     Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
-                    MinerTransaction = (MinerTransaction)txs[0]
+                    MinerTransaction = (MinerTransaction)txs[0],
+
+                    RootVersion = 0,
+                    RootIndex = 1,
+                    RootPreHash = UInt256.Zero,
+                    Root = UInt256.Zero
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -584,6 +619,7 @@ namespace Neo.UnitTests
                         {
                             ValidatorIndex = 1,
                             Signature = new byte[64] { (byte)'1', (byte)'2', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                            StateRootSignature = new byte[64] { (byte)'1', (byte)'2', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
                             InvocationScript = new[] { (byte)'1', (byte)'2' }
                         }
                     },
@@ -593,6 +629,7 @@ namespace Neo.UnitTests
                         {
                             ValidatorIndex = 6,
                             Signature = new byte[64] { (byte)'3', (byte)'D', (byte)'R', (byte)'I', (byte)'N', (byte)'K', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                            StateRootSignature = new byte[64] { (byte)'3', (byte)'D', (byte)'R', (byte)'I', (byte)'N', (byte)'K', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
                             InvocationScript = new[] { (byte)'6', (byte)'7' }
                         }
                     }
