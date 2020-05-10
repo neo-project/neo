@@ -131,8 +131,6 @@ namespace Neo.SmartContract
 
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
         {
-            if (gas < 0) return false;
-
             UInt160[] hashes;
             try
             {
@@ -146,9 +144,10 @@ namespace Neo.SmartContract
             for (int i = 0; i < hashes.Length; i++)
             {
                 Witness witness = verifiable.Witnesses[i];
-                if (!filter.HasFlag(witness.Flag))
+                if (filter != WitnessFlag.All && !filter.HasFlag(witness.Flag))
                 {
                     gas -= witness.GasConsumed;
+                    if (gas < 0) return false;
                     continue;
                 }
 
