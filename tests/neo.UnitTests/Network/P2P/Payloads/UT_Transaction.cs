@@ -1023,7 +1023,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 Assert.ThrowsException<InvalidOperationException>(() => wallet.MakeTransaction(script, acc.ScriptHash, cosigners, Neo.Oracle.OracleWalletBehaviour.WithoutOracle));
 
-                // WithoutOracle
+                // With Oracle
 
                 var tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners, Neo.Oracle.OracleWalletBehaviour.OracleWithoutAssert);
                 var txAssert = wallet.MakeTransaction(script, acc.ScriptHash, cosigners, Neo.Oracle.OracleWalletBehaviour.OracleWithAssert);
