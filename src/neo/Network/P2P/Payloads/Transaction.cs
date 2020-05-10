@@ -256,8 +256,6 @@ namespace Neo.Network.P2P.Payloads
             if (balance < fee)
                 return VerifyResult.InsufficientFunds;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0)
-                return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.NonStandardWitness))
                 return VerifyResult.Invalid;
             return VerifyResult.Succeed;
