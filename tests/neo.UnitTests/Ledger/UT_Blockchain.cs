@@ -1,3 +1,4 @@
+using Akka.Actor;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -10,6 +11,7 @@ using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -133,6 +135,63 @@ namespace Neo.UnitTests.Ledger
                 senderProbe.Send(system.Blockchain, tx);
                 senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
             }
+        }
+
+        [TestMethod]
+        public void TestInvalidTransactionInPersist()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            //var validators = NativeContract.NEO.GetValidators(snapshot).Reverse().ToArray();
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[] { 1 },
+                Sender = UInt160.Zero,
+                SystemFee = 0,
+                ValidUntilBlock = Blockchain.GenesisBlock.Index + 1,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
+            snapshot.Transactions.TryGet(tx.Hash).Should().BeNull();
+            var block = new TestBlock
+            {
+                Version = 0,
+                PrevHash = UInt256.Zero,
+                MerkleRoot = UInt256.Zero,
+                Timestamp = 0,
+                Index = 1,
+                NextConsensus = UInt160.Zero,
+                Transactions = new Transaction[] { tx },
+                ConsensusData = new ConsensusData
+                {
+                    PrimaryIndex = 0
+                },
+                Witness = new Witness()
+            };
+            system.Blockchain.Ask(block).Wait();
+            snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.Transactions.TryGet(tx.Hash).Should().NotBeNull();
+            snapshot.Transactions.Delete(tx.Hash);
+            snapshot.Blocks.Delete(block.Hash);
+            snapshot.PersistingBlock = null;
+            snapshot.BlockHashIndex.GetAndChange().Set(Blockchain.GenesisBlock);
+            snapshot.HeaderHashIndex.GetAndChange().Set(Blockchain.GenesisBlock);
+            snapshot.Storages.Delete(CreateStorageKey(14));
+            snapshot.Commit();
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                Id = NativeContract.NEO.Id,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            key?.CopyTo(storageKey.Key.AsSpan(1));
+            return storageKey;
         }
 
         private Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
