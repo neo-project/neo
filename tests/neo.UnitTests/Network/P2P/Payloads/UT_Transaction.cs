@@ -1034,5 +1034,218 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
             jObj["sys_fee"].AsString().Should().Be("4200000000");
         }
+
+        [TestMethod]
+        public void Test_VerifyStateIndependent()
+        {
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[Transaction.MaxTransactionSize],
+                Sender = UInt160.Zero,
+                SystemFee = 0,
+                ValidUntilBlock = 0,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
+            tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
+            tx.Script = new byte[0];
+            tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
+
+            var walletA = TestUtils.GenerateTestWallet();
+            var walletB = TestUtils.GenerateTestWallet();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            using (var unlockA = walletA.Unlock("123"))
+            using (var unlockB = walletB.Unlock("123"))
+            {
+                var a = walletA.CreateAccount();
+                var b = walletB.CreateAccount();
+
+                var multiSignContract = Contract.CreateMultiSigContract(2,
+                    new ECPoint[]
+                    {
+                        a.GetKey().PublicKey,
+                        b.GetKey().PublicKey
+                    });
+
+                walletA.CreateAccount(multiSignContract, a.GetKey());
+                var acc = walletB.CreateAccount(multiSignContract, b.GetKey());
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+
+                snapshot.Commit();
+
+                // Make transaction
+
+                tx = walletA.MakeTransaction(new TransferOutput[]
+                {
+                    new TransferOutput()
+                    {
+                         AssetId = NativeContract.GAS.Hash,
+                         ScriptHash = acc.ScriptHash,
+                         Value = new BigDecimal(1,8)
+                    }
+                }, acc.ScriptHash);
+
+                // Sign
+
+                var data = new ContractParametersContext(tx);
+                Assert.IsTrue(walletA.Sign(data));
+                Assert.IsTrue(walletB.Sign(data));
+                Assert.IsTrue(data.Completed);
+
+                tx.Witnesses = data.GetWitnesses();
+                tx.VerifyStateIndependent().Should().Be(VerifyResult.Succeed);
+            }
+        }
+
+        [TestMethod]
+        public void Test_VerifyStateDependent()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[0],
+                Sender = UInt160.Zero,
+                SystemFee = 0,
+                ValidUntilBlock = snapshot.Height + 1,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
+            tx.VerifyStateDependent(snapshot, 0).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateDependent(snapshot, 10).Should().Be(VerifyResult.InsufficientFunds);
+
+            var walletA = TestUtils.GenerateTestWallet();
+            var walletB = TestUtils.GenerateTestWallet();
+
+            using (var unlockA = walletA.Unlock("123"))
+            using (var unlockB = walletB.Unlock("123"))
+            {
+                var a = walletA.CreateAccount();
+                var b = walletB.CreateAccount();
+
+                var multiSignContract = Contract.CreateMultiSigContract(2,
+                    new ECPoint[]
+                    {
+                        a.GetKey().PublicKey,
+                        b.GetKey().PublicKey
+                    });
+
+                walletA.CreateAccount(multiSignContract, a.GetKey());
+                var acc = walletB.CreateAccount(multiSignContract, b.GetKey());
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+
+                snapshot.Commit();
+
+                // Make transaction
+
+                tx = walletA.MakeTransaction(new TransferOutput[]
+                {
+                    new TransferOutput()
+                    {
+                         AssetId = NativeContract.GAS.Hash,
+                         ScriptHash = acc.ScriptHash,
+                         Value = new BigDecimal(1,8)
+                    }
+                }, acc.ScriptHash);
+
+                // Sign
+
+                var data = new ContractParametersContext(tx);
+                Assert.IsTrue(walletA.Sign(data));
+                Assert.IsTrue(walletB.Sign(data));
+                Assert.IsTrue(data.Completed);
+
+                tx.Witnesses = data.GetWitnesses();
+                tx.VerifyStateDependent(snapshot, 0).Should().Be(VerifyResult.Succeed);
+            }
+        }
+
+        [TestMethod]
+        public void Test_Verify()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[Transaction.MaxTransactionSize],
+                Sender = UInt160.Zero,
+                SystemFee = 0,
+                ValidUntilBlock = 0,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
+            tx.Verify(snapshot, 0).Should().Be(VerifyResult.Invalid);
+
+            var walletA = TestUtils.GenerateTestWallet();
+            var walletB = TestUtils.GenerateTestWallet();
+
+            using (var unlockA = walletA.Unlock("123"))
+            using (var unlockB = walletB.Unlock("123"))
+            {
+                var a = walletA.CreateAccount();
+                var b = walletB.CreateAccount();
+
+                var multiSignContract = Contract.CreateMultiSigContract(2,
+                    new ECPoint[]
+                    {
+                        a.GetKey().PublicKey,
+                        b.GetKey().PublicKey
+                    });
+
+                walletA.CreateAccount(multiSignContract, a.GetKey());
+                var acc = walletB.CreateAccount(multiSignContract, b.GetKey());
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+
+                snapshot.Commit();
+
+                // Make transaction
+
+                tx = walletA.MakeTransaction(new TransferOutput[]
+                {
+                    new TransferOutput()
+                    {
+                         AssetId = NativeContract.GAS.Hash,
+                         ScriptHash = acc.ScriptHash,
+                         Value = new BigDecimal(1,8)
+                    }
+                }, acc.ScriptHash);
+
+                // Sign
+
+                var data = new ContractParametersContext(tx);
+                Assert.IsTrue(walletA.Sign(data));
+                Assert.IsTrue(walletB.Sign(data));
+                Assert.IsTrue(data.Completed);
+
+                tx.Witnesses = data.GetWitnesses();
+                tx.Verify(snapshot, 0).Should().Be(VerifyResult.Succeed);
+            }
+        }
     }
 }
