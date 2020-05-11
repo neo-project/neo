@@ -1,13 +1,8 @@
-using Neo.Cryptography;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections;
-using System.Collections.Generic;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
@@ -25,9 +20,18 @@ namespace Neo.SmartContract.NNS
             UInt256 innerKey = GetInnerKey(tokenId);
             StorageKey key = CreateTokenKey(innerKey);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
-            if (storage is null) return false;
+            if (storage is null)
+            {
+                string parentDomain = string.Join(".", name.Split(".")[1..]);
+                UInt256 parentInnerKey = GetInnerKey(System.Text.Encoding.UTF8.GetBytes(parentDomain));
+                if (IsCrossLevel(engine.Snapshot, name) || IsExpired(engine.Snapshot, parentInnerKey)) return false;
+                UInt160 parentDomianOwner = (UInt160)OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(parentDomain)).Current;
+                if (!InteropService.Runtime.CheckWitnessInternal(engine, parentDomianOwner))
+                    return false;
+                DomainState parentDomainInfo = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey)).GetInteroperable<DomainState>();
+                Mint(engine, parentDomianOwner, tokenId, parentDomainInfo.TimeToLive);
+            }
             DomainState domainInfo = storage.GetInteroperable<DomainState>();
-
             if (IsExpired(engine.Snapshot, innerKey)) return false;
             IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
             UInt160 owner = null;
@@ -35,21 +39,21 @@ namespace Neo.SmartContract.NNS
             {
                 owner = (UInt160)enumerator.Current;
             }
-            if (!engine.CallingScriptHash.Equals(owner) && (!InteropService.Runtime.CheckWitnessInternal(engine, owner))) return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
             domainInfo.Operator = manager;
             return true;
         }
 
-        protected internal override void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId)
+        protected internal void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId, uint TTL)
         {
-            base.Mint(engine, account, tokenId);
+            Mint(engine, account, tokenId);
             UInt256 innerKey = GetInnerKey(tokenId);
             StorageKey token_key = CreateTokenKey(innerKey);
             StorageItem token_storage = engine.Snapshot.Storages.GetAndChange(token_key);
             DomainState domainInfo = token_storage.GetInteroperable<DomainState>();
             domainInfo.Name = System.Text.Encoding.UTF8.GetString(tokenId);
             domainInfo.Operator = account;
-            domainInfo.TimeToLive = engine.Snapshot.Height + 2000000;
+            domainInfo.TimeToLive = TTL;
         }
     }
 }

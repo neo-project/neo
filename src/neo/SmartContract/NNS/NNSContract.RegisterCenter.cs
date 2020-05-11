@@ -7,7 +7,6 @@ using System.Text;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
 using Neo.Persistence;
 using System.Numerics;
 using Neo.SmartContract.Native.Tokens;
@@ -18,6 +17,8 @@ namespace Neo.SmartContract.NNS
 {
     partial class NnsContract : Nep11Token<DomainState, Nep11AccountState>
     {
+        private static readonly uint BlockCountsPerYear = 2000000;
+
         public override UInt256 GetInnerKey(byte[] parameter)
         {
             return ComputeNameHash(System.Text.Encoding.UTF8.GetString(parameter));
@@ -78,30 +79,6 @@ namespace Neo.SmartContract.NNS
             return PolicyContract.NEO.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
-        public override StackItem Transfer(ApplicationEngine engine, Array args)
-        {
-            if (args.Count != 4 && args.Count != 2) return false;
-            UInt160 from = null;
-            UInt160 to = null;
-            BigInteger amount = Factor;
-            byte[] tokenId = null;
-            if (args.Count == 2 && Decimals == 0)
-            {
-                from = engine.CallingScriptHash;
-                to = new UInt160(args[0].GetSpan());
-                tokenId = args[1].GetSpan().ToArray();
-            }
-            else
-            {
-                from = new UInt160(args[0].GetSpan());
-                to = new UInt160(args[1].GetSpan());
-                amount = args[2].GetBigInteger();
-                tokenId = args[3].GetSpan().ToArray();
-            }
-            return Transfer(engine, from, to, amount, tokenId);
-        }
-
         public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
         {
             if (!Factor.Equals(amount)) return false;
@@ -116,12 +93,13 @@ namespace Neo.SmartContract.NNS
             string parentDomain = string.Join(".", name.Split(".")[1..]);
             UInt256 parentInnerKey = GetInnerKey(System.Text.Encoding.UTF8.GetBytes(parentDomain));
             var domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
+            uint TTL = engine.Snapshot.Height + BlockCountsPerYear;
             if (domainInfo is null)
             {
                 if (IsCrossLevel(engine.Snapshot, name) || IsExpired(engine.Snapshot, parentInnerKey)) return false;
                 var parentDomianOwner = OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(parentDomain)).Current;
                 if (!parentDomianOwner.Equals(from)) return false;
-                if (!from.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
+                if (!InteropService.Runtime.CheckWitnessInternal(engine, from))
                     return false;
             }
             else
@@ -131,11 +109,12 @@ namespace Neo.SmartContract.NNS
                 var oldOwner = OwnerOf(engine.Snapshot, tokenId).Current;
                 var parentDomianOwner = OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(parentDomain)).Current;
                 if (!parentDomianOwner.Equals(from)) return false;
-                if (!from.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
+                if (!InteropService.Runtime.CheckWitnessInternal(engine, from))
                     return false;
                 Burn(engine, (UInt160)oldOwner, Factor, tokenId);
             }
-            Mint(engine, from, tokenId);
+            TTL = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey))?.GetInteroperable<DomainState>().TimeToLive ?? TTL;
+            Mint(engine, from, tokenId, TTL);
             return base.Transfer(engine, from, to, Factor, tokenId);
         }
 
@@ -163,9 +142,7 @@ namespace Neo.SmartContract.NNS
 
         private bool IsAdminCalling(ApplicationEngine engine)
         {
-            ECPoint[] admins = GetAdmin(engine.Snapshot);
-            UInt160 script = Contract.CreateMultiSigRedeemScript(admins.Length - (admins.Length - 1) / 3, admins).ToScriptHash();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, script)) return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, GetAdmin(engine.Snapshot))) return false;
             return true;
         }
     }

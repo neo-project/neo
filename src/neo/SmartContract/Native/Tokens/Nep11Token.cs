@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160,ContractParameterType.ByteArray }, ParameterNames = new[] { "account" ,"tokenId"})]
         protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
@@ -136,7 +136,7 @@ namespace Neo.SmartContract.Native.Tokens
             }).GetEnumerator();
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.None, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
+        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.None, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
         private StackItem OwnerOf(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
@@ -152,28 +152,14 @@ namespace Neo.SmartContract.Native.Tokens
             }).GetEnumerator();
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
+        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer,ContractParameterType.ByteArray }, ParameterNames = new[] { "from", "to", "amount", "tokenId" })]
         public virtual StackItem Transfer(ApplicationEngine engine, Array args)
         {
-            if (args.Count != 4 && args.Count != 2) return false;
-            UInt160 from = null;
-            UInt160 to = null;
-            BigInteger amount = Factor;
-            byte[] tokenId = null;
-            if (args.Count == 2 && Decimals == 0)
-            {
-                from = engine.CallingScriptHash;
-                to = new UInt160(args[0].GetSpan());
-                tokenId = args[1].GetSpan().ToArray();
-            }
-            else
-            {
-                from = new UInt160(args[0].GetSpan());
-                to = new UInt160(args[1].GetSpan());
-                amount = args[2].GetBigInteger();
-                tokenId = args[3].GetSpan().ToArray();
-            }
-            return Transfer(engine, from, to, amount, tokenId);
+           UInt160 from = new UInt160(args[0].GetSpan());
+           UInt160 to = new UInt160(args[1].GetSpan());
+           BigInteger amount = args[2].GetBigInteger();
+           byte[] tokenId = args[3].GetSpan().ToArray();
+           return Transfer(engine, from, to, amount, tokenId);
         }
 
         public virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
@@ -182,7 +168,7 @@ namespace Neo.SmartContract.Native.Tokens
             //check amount range.
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             //check witness
-            if (!from.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, from))
                 return false;
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
@@ -229,7 +215,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
+        [ContractMethod(0_01000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
         protected StackItem Properties(ApplicationEngine engine, Array args)
         {
             byte[] tokenid = args[0].GetSpan().ToArray();
@@ -253,12 +239,12 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey owner_key = CreateOwner2TokenKey(account, innerKey);
             StorageItem owner_storage = engine.Snapshot.Storages.TryGet(owner_key);
             if (owner_storage != null) throw new InvalidOperationException("Token is exist");
-            owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key, () => new StorageItem(new Nep11AccountState() { Balance = Factor }));
+            owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key, () => new StorageItem(new UState() { Balance = Factor }));
 
             owner_key = CreateToken2OwnerKey(innerKey, account);
             owner_storage = engine.Snapshot.Storages.TryGet(owner_key);
             if (owner_storage != null) throw new InvalidOperationException("Token is exist");
-            owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key, () => new StorageItem(new Nep11AccountState() { Balance = Factor }));
+            owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key, () => new StorageItem(new UState() { Balance = Factor }));
             Accumulator(engine);
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, tokenId }));
         }
