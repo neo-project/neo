@@ -835,7 +835,7 @@ namespace Neo.Network.RPC
             using (MemoryStream ms = new MemoryStream(proof_bytes, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                key = reader.ReadVarBytes();
+                key = reader.ReadVarBytes(ExtensionNode.MaxKeyLength);
                 var count = reader.ReadVarInt();
                 for (ulong i = 0; i < count; i++)
                 {
