@@ -8,6 +8,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
+using Neo.UnitTests.Oracle;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -973,6 +974,89 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx2)
             );
             Assert.IsNull(tx2);
+        }
+
+        [TestMethod]
+        public void FeeIsOracleRequest()
+        {
+            // Global is supposed to be default
+
+            var port = 8443;
+            using var server = UT_OracleService.CreateServer(port);
+
+            Cosigner cosigner = new Cosigner();
+            cosigner.Scopes.Should().Be(WitnessScope.Global);
+
+            var wallet = TestUtils.GenerateTestWallet();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // no password on this wallet
+            using (var unlock = wallet.Unlock(""))
+            {
+                var acc = wallet.CreateAccount();
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                snapshot.Commit();
+
+                // Make transaction
+                // Manually creating script
+
+                byte[] script;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    // self-transfer of 1e-8 GAS
+                    sb.EmitAppCall(NativeContract.Oracle.Hash, "get", $"https://127.0.0.1:{port}/ping", null, null, null);
+                    script = sb.ToArray();
+                }
+
+                // default to global scope
+                var cosigners = new Cosigner[]{ new Cosigner
+                {
+                    Account = acc.ScriptHash
+                } };
+
+                // WithoutOracle
+
+                Assert.ThrowsException<InvalidOperationException>(() => wallet.MakeTransaction(script, acc.ScriptHash, cosigners, Neo.Oracle.OracleWalletBehaviour.WithoutOracle));
+
+                // With Oracle
+
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners, Neo.Oracle.OracleWalletBehaviour.OracleWithoutAssert);
+                var txAssert = wallet.MakeTransaction(script, acc.ScriptHash, cosigners, Neo.Oracle.OracleWalletBehaviour.OracleWithAssert);
+
+                Assert.IsNotNull(tx);
+                Assert.IsNull(tx.Witnesses);
+
+                Assert.IsNotNull(txAssert);
+                Assert.IsNull(txAssert.Witnesses);
+
+                Assert.IsTrue(txAssert.Script.Length > tx.Script.Length);
+
+                // ----
+                // Sign
+                // ----
+
+                foreach (var tSign in new Transaction[] { tx, txAssert })
+                {
+                    var data = new ContractParametersContext(tSign);
+                    bool signed = wallet.Sign(data);
+                    Assert.IsTrue(signed);
+
+                    // get witnesses from signed 'data'
+                    tSign.Witnesses = data.GetWitnesses();
+                    tSign.Witnesses.Length.Should().Be(1);
+
+                    // Fast check
+                    Assert.IsTrue(tSign.VerifyWitnesses(snapshot, tSign.NetworkFee));
+                }
+
+                Assert.IsTrue(txAssert.NetworkFee > tx.NetworkFee);
+                Assert.IsTrue(txAssert.SystemFee > tx.SystemFee);
+            }
         }
 
         [TestMethod]

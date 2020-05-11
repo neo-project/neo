@@ -139,7 +139,9 @@ namespace Neo.Oracle.Protocols.Https
 
             // Filter
 
-            if (!OracleFilter.Filter(request.Filter, Encoding.UTF8.GetBytes(ret), out var output, out var gasCost))
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            if (!OracleFilter.Filter(snapshot, request.Filter, Encoding.UTF8.GetBytes(ret), out var output, out var gasCost))
             {
                 LogError(request.URL, "FilterError");
                 return OracleResponse.CreateError(request.Hash, gasCost);
