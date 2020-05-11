@@ -1,33 +1,35 @@
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System.IO;
 
 namespace Neo.SmartContract.NNS
 {
-    public class RecordInfo : ISerializable
+    public class RecordInfo : IInteroperable
     {
-        public RecordType RecordType { set; get; }
+        public RecordType Type { set; get; }
         public string Text { get; set; }
 
-        public int Size => sizeof(RecordType) + Text.GetVarSize();
-
-        public void Deserialize(BinaryReader reader)
+        public void FromStackItem(StackItem stackItem)
         {
-            RecordType = (RecordType)reader.ReadByte();
-            Text = reader.ReadVarString(1024);
+            Type = (RecordType)((Struct)stackItem)[0].GetSpan()[0];
+            Text = ((Struct)stackItem)[1].GetString();
         }
 
-        public void Serialize(BinaryWriter writer)
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            writer.Write((byte)RecordType);
-            writer.WriteVarString(Text);
+            Struct @struct = new Struct(referenceCounter);
+            @struct.Add(new byte[] { (byte)Type });
+            @struct.Add(Text);
+            return @struct;
         }
 
         public JObject ToJson()
         {
             JObject json = new JObject();
             json["text"] = Text;
-            json["recordType"] = RecordType.ToString();
+            json["recordType"] = Type.ToString();
             return json;
         }
 

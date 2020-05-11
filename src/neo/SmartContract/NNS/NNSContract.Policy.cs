@@ -11,14 +11,14 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
-    public partial class NNSContract
+    public partial class NnsContract
     {
         public override string ServiceName => "Neo.Native.NNS";
         public override int Id => -5;
         public override string Name => "NNS";
         public override string Symbol => "nns";
 
-        public override byte Decimals => 1;
+        public override byte Decimals => 0;
 
         protected const byte Prefix_Root = 22;
         protected const byte Prefix_Record = 24;
@@ -26,18 +26,13 @@ namespace Neo.SmartContract.NNS
         protected const byte Prefix_RentalPrice = 27;
         protected const byte Prefix_ReceiptAddress = 28;
 
-        public NNSContract()
+        public NnsContract()
         {
         }
 
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Root), new StorageItem
-            {
-                Value = new UInt256[0].ToByteArray()
-            });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Admin), new StorageItem
             {
                 Value = new UInt160[0].ToByteArray()

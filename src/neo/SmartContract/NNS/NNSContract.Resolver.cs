@@ -11,7 +11,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
-    partial class NNSContract
+    partial class NnsContract
     {
         private static readonly uint MaxResolveCount = 7;
 
@@ -22,26 +22,14 @@ namespace Neo.SmartContract.NNS
             string name = args[0].GetString().ToLower();
             UInt256 nameHash = ComputeNameHash(name);
             if (IsExpired(engine.Snapshot, nameHash)) return false;
-
             string text = args[1].GetString();
             RecordType recordType = (RecordType)(byte)args[2].GetBigInteger();
             if ((recordType == RecordType.A || recordType == RecordType.CNAME) && IsDomain(name)) return false;
-
             StorageKey key = CreateStorageKey(Prefix_Record, nameHash);
-            StorageItem storage = engine.Snapshot.Storages[key];
-            RecordInfo recordInfo = new RecordInfo { Text = text, RecordType = recordType };
-            if (storage.Value is null)
-            {
-                engine.Snapshot.Storages.Add(key, new StorageItem
-                {
-                    Value = recordInfo.ToArray()
-                });
-            }
-            else
-            {
-                storage = engine.Snapshot.Storages.GetAndChange(key);
-                storage.Value = recordInfo.ToArray();
-            }
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key,()=>new StorageItem(new RecordInfo { Text = text, Type = recordType }));
+            RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
+            recordInfo.Text = text;
+            recordInfo.Type = recordType;
             return true;
         }
 
@@ -57,24 +45,21 @@ namespace Neo.SmartContract.NNS
         {
             if (resolveCount++ > MaxResolveCount) 
             {
-                return new RecordInfo { Text = "The count of domain redirection exceeds 100 times", RecordType = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "The count of domain redirection exceeds 100 times", Type = RecordType.ERROR }.ToString();
             }
-
             UInt256 nameHash = ComputeNameHash(name);
             if (IsExpired(snapshot, nameHash))
             {
-                return new RecordInfo { Text = "TTL is expired", RecordType = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "TTL is expired", Type = RecordType.ERROR }.ToString();
             }
-
             StorageKey key = CreateStorageKey(Prefix_Record, nameHash);
             StorageItem storage = snapshot.Storages[key];
             if (storage is null)
             {
-                return new RecordInfo { Text = "Name does not exist", RecordType = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "Name does not exist", Type = RecordType.ERROR }.ToString();
             }
-            RecordInfo recordInfo = storage.Value.AsSerializable<RecordInfo>();
-
-            RecordType recordType = recordInfo.RecordType;
+            RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
+            RecordType recordType = recordInfo.Type;
             switch (recordType)
             {
                 case RecordType.CNAME:
