@@ -48,12 +48,13 @@ namespace Neo.Oracle
         /// <summary>
         /// Filter response
         /// </summary>
+        /// <param name="snapshot">Snapshot (CallEx will require the snapshot for get the script)</param>
         /// <param name="filter">Filter</param>
         /// <param name="input">Input</param>
         /// <param name="result">Result</param>
         /// <param name="gasCost">Gas cost</param>
         /// <returns>True if was filtered</returns>
-        public static bool Filter(OracleFilter filter, byte[] input, out byte[] result, out long gasCost)
+        public static bool Filter(StoreView snapshot, OracleFilter filter, byte[] input, out byte[] result, out long gasCost)
         {
             if (filter == null)
             {
@@ -66,10 +67,6 @@ namespace Neo.Oracle
 
             using ScriptBuilder script = new ScriptBuilder();
             script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, new object[] { input, filter.FilterArgs }, (byte)CallFlags.None);
-
-            // CallEx will require the snapshot for get the script
-
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Execute
 
