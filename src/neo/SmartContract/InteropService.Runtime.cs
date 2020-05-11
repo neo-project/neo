@@ -24,7 +24,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", Runtime_GetExecutingScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", Runtime_GetCallingScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", Runtime_GetEntryScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000, TriggerType.System | TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000, TriggerType.All, CallFlags.AllowStates);
             public static readonly InteropDescriptor GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", Runtime_GetInvocationCounter, 0_00000400, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor Log = Register("System.Runtime.Log", Runtime_Log, 0_01000000, TriggerType.All, CallFlags.AllowNotify);
             public static readonly InteropDescriptor Notify = Register("System.Runtime.Notify", Runtime_Notify, 0_01000000, TriggerType.All, CallFlags.AllowNotify);
