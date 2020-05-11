@@ -776,8 +776,8 @@ namespace Neo.Network.RPC
         private JObject GetStateHeight()
         {
             var json = new JObject();
-            json["blockheight"] = Blockchain.Singleton.Height;
-            json["stateheight"] = Blockchain.Singleton.StateHeight;
+            json["blockHeight"] = Blockchain.Singleton.Height;
+            json["stateHeight"] = Blockchain.Singleton.StateHeight;
             return json;
         }
 

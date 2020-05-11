@@ -172,12 +172,9 @@ namespace Neo.Network.P2P
             for (uint i = 0; i < count; i++)
             {
                 var state = Blockchain.Singleton.GetStateRoot(start + i);
-                if (state?.Flag == StateRootVerifyFlag.Verified)
-                {
-                    state_roots.Add(state.StateRoot);
-                    continue;
-                }
-                break;
+                if (state is null || state.Flag != StateRootVerifyFlag.Verified)
+                    break;
+                state_roots.Add(state.StateRoot);
             }
             foreach (StateRootsPayload pl in StateRootsPayload.Create(state_roots))
             {
@@ -311,12 +308,6 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            if (inventory.InventoryType == InventoryType.StateRoot && !knownHashes.Contains(inventory.Hash))
-            {
-                knownHashes.Add(inventory.Hash);
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
-                return;
-            }
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
             if (inventory is MinerTransaction) return;
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
