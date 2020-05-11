@@ -76,7 +76,7 @@ namespace Neo.SmartContract.NNS
             domain_state.TimeToLive = validUntilBlock;
             uint blocksPerYear = 200;
             BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / blocksPerYear;
-            return PolicyContract.NEO.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
+            return NEO.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
         }
 
         public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)

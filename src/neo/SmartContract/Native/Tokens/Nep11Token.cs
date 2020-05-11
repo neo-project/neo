@@ -27,10 +27,10 @@ namespace Neo.SmartContract.Native.Tokens
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
-        protected const byte Prefix_TotalSupply = 11;
-        protected const byte Prefix_Owner2TokenMapping = 25;
-        protected const byte Prefix_Token2OwnerMapping = 26;
-        protected const byte Prefix_TokenId = 27;
+        protected const byte Prefix_TotalSupply = 20;
+        protected const byte Prefix_Owner2TokenMapping = 21;
+        protected const byte Prefix_Token2OwnerMapping = 22;
+        protected const byte Prefix_TokenId = 23;
 
         protected Nep11Token()
         {
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160,ContractParameterType.ByteArray }, ParameterNames = new[] { "account" ,"tokenId"})]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.ByteArray }, ParameterNames = new[] { "account", "tokenId" })]
         protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
@@ -152,14 +152,14 @@ namespace Neo.SmartContract.Native.Tokens
             }).GetEnumerator();
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer,ContractParameterType.ByteArray }, ParameterNames = new[] { "from", "to", "amount", "tokenId" })]
+        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.ByteArray }, ParameterNames = new[] { "from", "to", "amount", "tokenId" })]
         public virtual StackItem Transfer(ApplicationEngine engine, Array args)
         {
-           UInt160 from = new UInt160(args[0].GetSpan());
-           UInt160 to = new UInt160(args[1].GetSpan());
-           BigInteger amount = args[2].GetBigInteger();
-           byte[] tokenId = args[3].GetSpan().ToArray();
-           return Transfer(engine, from, to, amount, tokenId);
+            UInt160 from = new UInt160(args[0].GetSpan());
+            UInt160 to = new UInt160(args[1].GetSpan());
+            BigInteger amount = args[2].GetBigInteger();
+            byte[] tokenId = args[3].GetSpan().ToArray();
+            return Transfer(engine, from, to, amount, tokenId);
         }
 
         public virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)

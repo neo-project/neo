@@ -19,8 +19,8 @@ namespace Neo.SmartContract.NNS
         public override string Symbol => "nns";
         public override byte Decimals => 0;
 
-        protected const byte Prefix_Root = 22;
-        protected const byte Prefix_Record = 24;
+        protected const byte Prefix_Root = 24;
+        protected const byte Prefix_Record = 25;
         protected const byte Prefix_Admin = 26;
         protected const byte Prefix_RentalPrice = 27;
         protected const byte Prefix_ReceiptAddress = 28;
