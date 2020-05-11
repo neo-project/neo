@@ -15,10 +15,10 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!CheckCommitteeWitness(engine)) return false;
             BigInteger gasPerBlock = args[0].GetBigInteger();
-            if (gasPerBlock > uint.MaxValue) return false;
+            if (gasPerBlock < 0) return false;
 
-            EconomicParameter economic = GetEconomicParameter(engine);
-            economic.GasPerBlock = (uint)gasPerBlock;
+            EconomicParameter economic = GetAndChangeEconomicParameter(engine);
+            economic.GasPerBlock = gasPerBlock;
             return true;
         }
 
@@ -27,9 +27,9 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!CheckCommitteeWitness(engine)) return false;
             BigInteger neoHoldersRewardRatio = args[0].GetBigInteger();
-            if (neoHoldersRewardRatio > uint.MaxValue) return false;
+            if (neoHoldersRewardRatio < 0 || neoHoldersRewardRatio > uint.MaxValue) return false;
 
-            EconomicParameter economic = GetEconomicParameter(engine);
+            EconomicParameter economic = GetAndChangeEconomicParameter(engine);
             economic.NeoHoldersRewardRatio = (uint)neoHoldersRewardRatio;
             return true;
         }
@@ -39,9 +39,9 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!CheckCommitteeWitness(engine)) return false;
             BigInteger committeesRewardRatio = args[0].GetBigInteger();
-            if (committeesRewardRatio > uint.MaxValue) return false;
+            if (committeesRewardRatio < 0 || committeesRewardRatio > uint.MaxValue) return false;
 
-            EconomicParameter economic = GetEconomicParameter(engine);
+            EconomicParameter economic = GetAndChangeEconomicParameter(engine);
             economic.CommitteesRewardRatio = (uint)committeesRewardRatio;
             return true;
         }
@@ -51,9 +51,9 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!CheckCommitteeWitness(engine)) return false;
             BigInteger votersRewardRatio = args[0].GetBigInteger();
-            if (votersRewardRatio > uint.MaxValue) return false;
+            if (votersRewardRatio < 0 || votersRewardRatio > uint.MaxValue) return false;
 
-            EconomicParameter economic = GetEconomicParameter(engine);
+            EconomicParameter economic = GetAndChangeEconomicParameter(engine);
             economic.VotersRewardRatio = (uint)votersRewardRatio;
             return true;
         }
@@ -80,6 +80,12 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem GetVotersRewardRatio(ApplicationEngine engine, Array args)
         {
             return GetEconomicParameter(engine).VotersRewardRatio;
+        }
+
+        private EconomicParameter GetAndChangeEconomicParameter(ApplicationEngine engine)
+        {
+            StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Ecomonic), () => new StorageItem(new EconomicParameter()));
+            return storageItem.GetInteroperable<EconomicParameter>();
         }
 
         private EconomicParameter GetEconomicParameter(ApplicationEngine engine)

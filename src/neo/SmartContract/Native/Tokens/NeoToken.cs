@@ -32,16 +32,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!base.Initialize(engine)) return false;
             if (base.TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
-
-            EconomicParameter economic = new EconomicParameter
-            {
-                GasPerBlock = 5,
-                NeoHoldersRewardRatio = 10,
-                CommitteesRewardRatio = 5,
-                VotersRewardRatio = 85
-            };
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Ecomonic), new StorageItem(economic));
-
+            
             BigInteger amount = TotalAmount;
             for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
             {
@@ -55,6 +46,7 @@ namespace Neo.SmartContract.Native.Tokens
                 amount -= balance;
             }
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), amount);
+            InitializeEconomicModel(engine);
             return true;
         }
 
@@ -69,7 +61,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
         {
-            DistributeGas(engine, account, state);
+            //DistributeGas(engine, account, state);
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
