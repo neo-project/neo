@@ -1,3 +1,5 @@
+using Akka.Actor;
+using Akka.Event;
 using Microsoft.Extensions.Configuration;
 using Neo.Plugins;
 using System;
@@ -6,6 +8,15 @@ namespace Neo
 {
     public static class Utility
     {
+        internal class Logger : ReceiveActor
+        {
+            public Logger()
+            {
+                Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
+                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
+            }
+        }
+
         /// <summary>
         /// Load configuration with different Environment Variable
         /// </summary>
@@ -20,7 +31,7 @@ namespace Neo
                 .Build();
         }
 
-        public static void Log(string source, LogLevel level, string message)
+        public static void Log(string source, LogLevel level, object message)
         {
             foreach (ILogPlugin plugin in Plugin.Loggers)
                 plugin.Log(source, level, message);

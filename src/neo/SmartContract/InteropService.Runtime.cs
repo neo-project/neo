@@ -19,12 +19,12 @@ namespace Neo.SmartContract
 
             public static readonly InteropDescriptor Platform = Register("System.Runtime.Platform", Runtime_Platform, 0_00000250, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 0_00000250, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250, TriggerType.Application, CallFlags.None);
+            public static readonly InteropDescriptor GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250, TriggerType.Application, CallFlags.AllowStates);
             public static readonly InteropDescriptor GetScriptContainer = Register("System.Runtime.GetScriptContainer", Runtime_GetScriptContainer, 0_00000250, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", Runtime_GetExecutingScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", Runtime_GetCallingScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", Runtime_GetEntryScriptHash, 0_00000400, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000, TriggerType.All, CallFlags.AllowStates);
             public static readonly InteropDescriptor GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", Runtime_GetInvocationCounter, 0_00000400, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor Log = Register("System.Runtime.Log", Runtime_Log, 0_01000000, TriggerType.All, CallFlags.AllowNotify);
             public static readonly InteropDescriptor Notify = Register("System.Runtime.Notify", Runtime_Notify, 0_01000000, TriggerType.All, CallFlags.AllowNotify);
@@ -81,24 +81,24 @@ namespace Neo.SmartContract
             {
                 if (engine.ScriptContainer is Transaction tx)
                 {
-                    Cosigner usage = tx.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
-                    if (usage is null) return false;
-                    if (usage.Scopes == WitnessScope.Global) return true;
-                    if (usage.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                    Cosigner cosigner = tx.Cosigners.FirstOrDefault(p => p.Account.Equals(hash));
+                    if (cosigner is null) return false;
+                    if (cosigner.Scopes == WitnessScope.Global) return true;
+                    if (cosigner.Scopes.HasFlag(WitnessScope.CalledByEntry))
                     {
                         if (engine.CallingScriptHash == engine.EntryScriptHash)
                             return true;
                     }
-                    if (usage.Scopes.HasFlag(WitnessScope.CustomContracts))
+                    if (cosigner.Scopes.HasFlag(WitnessScope.CustomContracts))
                     {
-                        if (usage.AllowedContracts.Contains(engine.CurrentScriptHash))
+                        if (cosigner.AllowedContracts.Contains(engine.CurrentScriptHash))
                             return true;
                     }
-                    if (usage.Scopes.HasFlag(WitnessScope.CustomGroups))
+                    if (cosigner.Scopes.HasFlag(WitnessScope.CustomGroups))
                     {
                         var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                         // check if current group is the required one
-                        if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(usage.AllowedGroups).Any())
+                        if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(cosigner.AllowedGroups).Any())
                             return true;
                     }
                     return false;
