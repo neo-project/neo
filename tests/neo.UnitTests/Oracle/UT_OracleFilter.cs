@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Oracle
             Assert.IsTrue(OracleFilter.Filter(snapshot, filter, new byte[] { }, out result, out gas));
 
             Assert.AreEqual(filter.FilterArgs, Encoding.UTF8.GetString(result));
-            Assert.AreEqual(1, gas);
+            Assert.AreEqual(1007840, gas);
         }
     }
 }
