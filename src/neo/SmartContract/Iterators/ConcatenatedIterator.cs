@@ -2,7 +2,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class ConcatenatedIterator : IIterator
+    public class ConcatenatedIterator : IIterator
     {
         private readonly IIterator first, second;
         private IIterator current;

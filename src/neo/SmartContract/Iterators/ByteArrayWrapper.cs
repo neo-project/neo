@@ -3,7 +3,7 @@ using System;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class ByteArrayWrapper : IIterator
+    public class ByteArrayWrapper : IIterator
     {
         private readonly byte[] array;
         private int index = -1;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class MapWrapper : IIterator
+    public class MapWrapper : IIterator
     {
         private readonly IEnumerator<KeyValuePair<PrimitiveType, StackItem>> enumerator;
 

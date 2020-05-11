@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class ArrayWrapper : IIterator
+    public class ArrayWrapper : IIterator
     {
         private readonly IReadOnlyList<StackItem> array;
         private int index = -1;

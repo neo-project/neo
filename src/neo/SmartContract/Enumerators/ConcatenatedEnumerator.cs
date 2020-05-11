@@ -2,7 +2,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Enumerators
 {
-    internal class ConcatenatedEnumerator : IEnumerator
+    public class ConcatenatedEnumerator : IEnumerator
     {
         private readonly IEnumerator first, second;
         private IEnumerator current;
