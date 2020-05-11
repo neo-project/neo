@@ -24,6 +24,8 @@ namespace Neo.Network.P2P
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
+        private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
+        internal static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
@@ -37,7 +39,6 @@ namespace Neo.Network.P2P
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
-        private readonly UInt256 HeaderTaskHash = UInt256.Zero;
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
 
         public TaskManager(NeoSystem system)
@@ -183,7 +184,6 @@ namespace Neo.Network.P2P
                 return false;
 
             globalTasks[hash] = value + 1;
-
             return true;
         }
 
@@ -271,9 +271,8 @@ namespace Neo.Network.P2P
             else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
                     && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
             {
-                if (session.ShouldAskForMemPool)
+                if (session.AvailableTasks.Remove(MemPoolTaskHash))
                 {
-                    session.ShouldAskForMemPool = false;
                     session.RemoteNode.Tell(Message.Create(MessageCommand.Mempool));
                 }
 

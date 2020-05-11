@@ -16,18 +16,23 @@ namespace Neo.Network.P2P
 
         public bool HasTask => Tasks.Count > 0;
         public uint StartHeight { get; }
+        public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
-        public bool ShouldAskForMemPool { get; set; }
 
         public TaskSession(IActorRef node, VersionPayload version)
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
 
-            this.ShouldAskForMemPool = fullNode != null;
+            this.IsFullNode = fullNode != null;
             this.RemoteNode = node;
             this.Version = version;
             this.StartHeight = fullNode?.StartHeight ?? 0;
             this.LastBlockIndex = this.StartHeight;
+
+            if (IsFullNode)
+            {
+                AvailableTasks.Add(TaskManager.MemPoolTaskHash);
+            }
         }
     }
 }
