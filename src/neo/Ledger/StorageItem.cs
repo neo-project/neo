@@ -69,7 +69,7 @@ namespace Neo.Ledger
             if (interoperable is null)
             {
                 interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, 128, 256));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, 64, 128));
             }
             value = null;
             return (T)interoperable;
