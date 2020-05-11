@@ -23,7 +23,6 @@ namespace Neo.UnitTests
     [TestClass]
     public class ConsensusTests : TestKit
     {
-
         [TestInitialize]
         public void TestSetup()
         {
