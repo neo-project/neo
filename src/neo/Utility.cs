@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Plugins;
 using System;
 using System.IO;
+using System.Reflection;
 
 namespace Neo
 {
@@ -27,8 +28,27 @@ namespace Neo
         {
             var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
             var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
+
+            // Working directory
+            var file = Path.Combine(Environment.CurrentDirectory, configFile);
+            if (!File.Exists(file))
+            {
+                // EntryPoint folder
+                file = Path.Combine(Assembly.GetEntryAssembly().Location, configFile);
+                if (!File.Exists(file))
+                {
+                    // neo.dll folder
+                    file = Path.Combine(Assembly.GetExecutingAssembly().Location, configFile);
+                    if (!File.Exists(file))
+                    {
+                        // default config
+                        return new ConfigurationBuilder().Build();
+                    }
+                }
+            }
+
             return new ConfigurationBuilder()
-                .AddJsonFile(Path.Combine(Environment.CurrentDirectory, configFile), true)
+                .AddJsonFile(file, true)
                 .Build();
         }
 
