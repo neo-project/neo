@@ -11,7 +11,7 @@ namespace Neo.Cryptography.MPT
     {
         public bool Delete(TKey key)
         {
-            var path = key.ToArray().ToNibbles();
+            var path = ToNibbles(key.ToArray());
             if (path.Length < 1) return false;
             return TryDelete(ref root, path);
         }

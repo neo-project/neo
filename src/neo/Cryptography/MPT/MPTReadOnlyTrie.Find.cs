@@ -64,7 +64,7 @@ namespace Neo.Cryptography.MPT
 
         public IEnumerable<(TKey Key, TValue Value)> Find(byte[] prefix)
         {
-            var path = prefix.ToNibbles();
+            var path = ToNibbles(prefix);
             path = Seek(ref root, path, out MPTNode start);
             foreach (var item in Travers(start, path))
                 yield return (item.Key.AsSerializable<TKey>(), item.Value.AsSerializable<TValue>());

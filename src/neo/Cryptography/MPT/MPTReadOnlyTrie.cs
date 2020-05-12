@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Persistence;
+using System;
 
 namespace Neo.Cryptography.MPT
 {
@@ -35,6 +36,17 @@ namespace Neo.Cryptography.MPT
         public UInt256 GetRoot()
         {
             return root.GetHash();
+        }
+
+        protected static byte[] ToNibbles(ReadOnlySpan<byte> path)
+        {
+            var result = new byte[path.Length * 2];
+            for (int i = 0; i < path.Length; i++)
+            {
+                result[i * 2] = (byte)(path[i] >> 4);
+                result[i * 2 + 1] = (byte)(path[i] & 0x0F);
+            }
+            return result;
         }
     }
 }

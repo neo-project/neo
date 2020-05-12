@@ -9,7 +9,7 @@ namespace Neo.Cryptography.MPT
     {
         public TValue Get(TKey key)
         {
-            var path = key.ToArray().ToNibbles();
+            var path = ToNibbles(key.ToArray());
             if (path.Length < 1) return null;
             var result = TryGet(ref root, path, out byte[] value);
             return result ? value.AsSerializable<TValue>() : null;

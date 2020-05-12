@@ -7,9 +7,8 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private static byte[] CommonPrefix(byte[] a, byte[] b)
+        private static ReadOnlySpan<byte> CommonPrefix(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
-            if (a is null || b is null) return Array.Empty<byte>();
             var minLen = a.Length <= b.Length ? a.Length : b.Length;
             int i = 0;
             if (a.Length != 0 && b.Length != 0)
@@ -24,7 +23,7 @@ namespace Neo.Cryptography.MPT
 
         public bool Put(TKey key, TValue value)
         {
-            var path = key.ToArray().ToNibbles();
+            var path = ToNibbles(key.ToArray());
             var val = value.ToArray();
             if (ExtensionNode.MaxKeyLength < path.Length || path.Length < 1)
                 return false;
@@ -96,7 +95,7 @@ namespace Neo.Cryptography.MPT
                         {
                             var exNode = new ExtensionNode()
                             {
-                                Key = prefix,
+                                Key = prefix.ToArray(),
                                 Next = son,
                             };
                             db.Put(exNode);

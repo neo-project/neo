@@ -12,7 +12,7 @@ namespace Neo.Cryptography.MPT
         public bool GetProof(TKey key, out HashSet<byte[]> set)
         {
             set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
-            var path = key.ToArray().ToNibbles();
+            var path = ToNibbles(key.ToArray());
             if (path.Length < 1) return false;
             return GetProof(ref root, path, set);
         }
