@@ -241,7 +241,7 @@ namespace Neo.UnitTests
                 ProposalStateRoot = new StateRootBase
                 {
                     Version = 0,
-                    Index = 1,
+                    Index = 0,
                     PreHash = UInt256.Zero,
                     Root = UInt256.Zero
                 }

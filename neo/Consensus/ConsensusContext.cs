@@ -102,7 +102,6 @@ namespace Neo.Consensus
             ProposalStateRoot.Deserialize(reader);
             if (ProposalStateRoot.Version != MPTTrie.Version) throw new FormatException();
             if (ProposalStateRoot.Index != BlockIndex - 1) throw new InvalidOperationException();
-
             if (reader.ReadUInt32() != Version) throw new FormatException();
             if (reader.ReadUInt32() != BlockIndex) throw new InvalidOperationException();
             ViewNumber = reader.ReadByte();
@@ -361,8 +360,7 @@ namespace Neo.Consensus
 
         public void Serialize(BinaryWriter writer)
         {
-            ProposalStateRoot.Serialize(writer);
-
+            writer.Write(ProposalStateRoot);
             writer.Write(Version);
             writer.Write(BlockIndex);
             writer.Write(ViewNumber);
