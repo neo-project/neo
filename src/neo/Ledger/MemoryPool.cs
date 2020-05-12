@@ -375,7 +375,6 @@ namespace Neo.Ledger
             {
                 if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
                     _unverifiedSortedTransactions.Add(item);
-                item.CheckOracleResponse(snapshot);
             }
 
             // Clear the verified transactions now, since they all must be reverified.
@@ -478,6 +477,7 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
+                        item.CheckOracleResponse(snapshot);
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
