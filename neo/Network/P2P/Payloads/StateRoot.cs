@@ -36,7 +36,7 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public override new int Size => base.Size + Witness.Size;           //Witness
+        public override int Size => base.Size + Witness.Size;           //Witness
 
         public StateRoot() { }
 
