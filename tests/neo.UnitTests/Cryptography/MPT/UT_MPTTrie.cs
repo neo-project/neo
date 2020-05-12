@@ -1,14 +1,14 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.MPT;
 using Neo.IO;
 using Neo.Persistence;
-using Neo.Trie.MPT;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Neo.UnitTests.Trie.MPT
+namespace Neo.UnitTests.Cryptography.MPT
 {
     public class TestKey : ISerializable
     {

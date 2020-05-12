@@ -1,9 +1,8 @@
-using Neo.Cryptography;
 using Neo.IO.Json;
 using System.IO;
 using System.Text;
 
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public abstract class MPTNode
     {

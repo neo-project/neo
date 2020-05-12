@@ -3,7 +3,7 @@ using Neo.IO.Json;
 using Neo.SmartContract;
 using System.IO;
 
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public class LeafNode : MPTNode
     {

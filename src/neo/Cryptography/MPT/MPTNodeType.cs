@@ -1,5 +1,4 @@
-
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public enum NodeType
     {

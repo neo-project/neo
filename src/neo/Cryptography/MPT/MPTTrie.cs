@@ -2,7 +2,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public partial class MPTTrie<TKey, TValue> : MPTReadOnlyTrie<TKey, TValue>
         where TKey : notnull, ISerializable, new()

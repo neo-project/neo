@@ -3,7 +3,7 @@ using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public partial class MPTReadOnlyTrie<TKey, TValue>
         where TKey : notnull, ISerializable, new()

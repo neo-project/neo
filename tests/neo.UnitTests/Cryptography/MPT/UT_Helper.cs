@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Trie.MPT;
+using Neo.Cryptography.MPT;
 
-namespace Neo.UnitTests.Trie.MPT
+namespace Neo.UnitTests.Cryptography.MPT
 {
     [TestClass]
     public class UT_Helper

@@ -1,7 +1,7 @@
 using Neo.IO;
 using System;
 
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public partial class MPTTrie<TKey, TValue> : MPTReadOnlyTrie<TKey, TValue>
         where TKey : notnull, ISerializable, new()

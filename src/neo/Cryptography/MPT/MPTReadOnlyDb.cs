@@ -1,7 +1,7 @@
 using Neo.IO;
 using Neo.Persistence;
 
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public class MPTReadOnlyDb
     {

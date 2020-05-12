@@ -1,9 +1,8 @@
-using Neo.Cryptography;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 
-namespace Neo.Trie.MPT
+namespace Neo.Cryptography.MPT
 {
     public class MPTProofStore : IReadOnlyStore
     {
