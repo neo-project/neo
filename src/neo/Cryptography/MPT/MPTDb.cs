@@ -14,7 +14,7 @@ namespace Neo.Cryptography.MPT
 
         public void Put(MPTNode node)
         {
-            if (node is HashNode hn)
+            if (node is HashNode)
                 throw new System.InvalidOperationException("Means nothing to store HashNode");
             store.Put(prefix, node.GetHash().ToArray(), node.Encode());
         }

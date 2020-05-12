@@ -14,7 +14,7 @@ namespace Neo.Cryptography.MPT
         public MPTReadOnlyTrie(UInt256 root, IReadOnlyStore store, byte prefix)
         {
             if (store is null)
-                throw new System.ArgumentNullException();
+                throw new ArgumentNullException();
 
             this.rodb = new MPTReadOnlyDb(store, prefix);
 

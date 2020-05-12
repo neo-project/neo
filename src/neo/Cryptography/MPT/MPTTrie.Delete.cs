@@ -20,7 +20,8 @@ namespace Neo.Cryptography.MPT
         {
             switch (node)
             {
-                case LeafNode leafNode:
+                case LeafNode _:
+
                     {
                         if (path.Length < 1)
                         {
