@@ -175,7 +175,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 //Is exist token
                 StorageKey key_token = CreateTokenKey(innerKey);
-                StorageItem storage_token = engine.Snapshot.Storages.GetAndChange(key_token);
+                StorageItem storage_token = engine.Snapshot.Storages.TryGet(key_token);
                 if (storage_token is null) return false;
                 if (!from.Equals(to))
                 {
@@ -233,7 +233,6 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey token_key = CreateTokenKey(innerKey);
             StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
             if (token_storage != null) throw new InvalidOperationException("Token is exist");
-            engine.Snapshot.Storages.Add(token_key, new StorageItem(token_state));
 
             StorageKey owner2token_key = CreateOwner2TokenKey(account, innerKey);
             StorageItem owner2token_storage = engine.Snapshot.Storages.TryGet(owner2token_key);
@@ -243,6 +242,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey token2owner_key = CreateToken2OwnerKey(innerKey, account);
             engine.Snapshot.Storages.Add(token2owner_key, new StorageItem(new UState() { Balance = Factor }));
 
+            engine.Snapshot.Storages.Add(token_key, new StorageItem(token_state));
             IncreaseTotalSupply(engine);
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, tokenId }));
         }
@@ -253,7 +253,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
             UInt256 innerKey = GetInnerKey(tokenId);
             StorageKey token_key = CreateTokenKey(innerKey);
-            StorageItem token_storage = engine.Snapshot.Storages.GetAndChange(token_key);
+            StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
             if (token_storage is null) throw new InvalidOperationException("Token is not exist");
 
             StorageKey owner2token_key = CreateOwner2TokenKey(account, innerKey);
@@ -267,18 +267,17 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 engine.Snapshot.Storages.Delete(owner2token_key);
                 engine.Snapshot.Storages.Delete(token2owner_key);
+                if (!OwnerOf(engine.Snapshot, tokenId).MoveNext())
+                {
+                    engine.Snapshot.Storages.Delete(token_key);
+                    DecreaseTotalSupply(engine);
+                }
             }
             else
             {
                 UState token2owner_state = token2owner_storage.GetInteroperable<UState>();
                 owner2token_state.Balance -= amount;
                 token2owner_state.Balance -= amount;
-            }
-
-            if (!OwnerOf(engine.Snapshot, tokenId).MoveNext())
-            {
-                engine.Snapshot.Storages.Delete(token_key);
-                DecreaseTotalSupply(engine);
             }
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount, tokenId }));
         }

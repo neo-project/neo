@@ -7,6 +7,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
@@ -78,9 +79,11 @@ namespace Neo.SmartContract.NNS
             return GetRentalPrice(engine.Snapshot);
         }
 
-        public ulong GetRentalPrice(StoreView snapshot)
+        public BigInteger GetRentalPrice(StoreView snapshot)
         {
-            return BitConverter.ToUInt64(snapshot.Storages.TryGet(CreateStorageKey(Prefix_RentalPrice))?.Value, 0);
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_RentalPrice));
+            if (storage is null) return BigInteger.Zero;
+            return new BigInteger(storage.Value);
         }
 
         // set addmin, only can be called by committees
@@ -105,9 +108,10 @@ namespace Neo.SmartContract.NNS
         {
             if (!IsAdminCalling(engine)) return false;
 
-            long value = (long)args[0].GetBigInteger();
+            BigInteger value = (long)args[0].GetBigInteger();
+            if (value < 0) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RentalPrice));
-            storage.Value = BitConverter.GetBytes(value);
+            storage.Value = value.ToByteArray();
             return true;
         }
 

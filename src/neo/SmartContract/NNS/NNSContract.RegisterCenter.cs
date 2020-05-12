@@ -18,6 +18,7 @@ namespace Neo.SmartContract.NNS
     partial class NnsContract : Nep11Token<DomainState, Nep11AccountState>
     {
         public const uint BlockPerYear = Blockchain.DecrementInterval;
+        public const uint MaxDomainLevel = 4;
 
         public override UInt256 GetInnerKey(byte[] parameter)
         {
@@ -75,7 +76,7 @@ namespace Neo.SmartContract.NNS
             DomainState domain_state = storage.GetInteroperable<DomainState>();
             domain_state.TimeToLive = validUntilBlock;
             BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / BlockPerYear;
-            return GAS.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
+            return GAS.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), amount);
         }
 
         public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
@@ -87,7 +88,7 @@ namespace Neo.SmartContract.NNS
 
             string[] names = name.Split(".");
             int level = names.Length;
-            if (level >= 5) return false;
+            if (level > MaxDomainLevel) return false;
 
             string parentDomain = string.Join(".", name.Split(".")[1..]);
             UInt256 parentInnerKey = GetInnerKey(System.Text.Encoding.UTF8.GetBytes(parentDomain));
