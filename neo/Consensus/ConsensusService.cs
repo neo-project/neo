@@ -119,8 +119,11 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
 
                 StateRoot stateRoot = context.CreateStateRoot();
-                Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Hash}");
-                localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });
+                if (stateRoot != null)
+                {
+                    Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Hash}");
+                    localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });
+                }
             }
         }
 
