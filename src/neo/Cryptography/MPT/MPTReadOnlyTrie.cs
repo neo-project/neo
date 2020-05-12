@@ -8,7 +8,7 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private MPTReadOnlyDb rodb;
+        private readonly MPTReadOnlyDb rodb;
         protected readonly MPTNode root;
 
         public MPTReadOnlyTrie(UInt256 root, IReadOnlyStore store, byte prefix)
