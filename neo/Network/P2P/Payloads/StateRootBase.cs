@@ -11,7 +11,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 PreHash;
         public UInt256 Root;
 
-        public int Size =>
+        public virtual int Size =>
              sizeof(byte) +          //Version
              sizeof(uint) +          //Index
              PreHash.Size +          //PrevHash
