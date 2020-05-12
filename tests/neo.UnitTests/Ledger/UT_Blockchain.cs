@@ -142,7 +142,6 @@ namespace Neo.UnitTests.Ledger
         public void TestInvalidTransactionInPersist()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            //var validators = NativeContract.NEO.GetValidators(snapshot).Reverse().ToArray();
             var tx = new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -155,33 +154,17 @@ namespace Neo.UnitTests.Ledger
                 Version = 0,
                 Witnesses = new Witness[0],
             };
-            snapshot.Transactions.TryGet(tx.Hash).Should().BeNull();
-            var block = new TestBlock
-            {
-                Version = 0,
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                Timestamp = 0,
-                Index = 1,
-                NextConsensus = UInt160.Zero,
-                Transactions = new Transaction[] { tx },
-                ConsensusData = new ConsensusData
-                {
-                    PrimaryIndex = 0
-                },
-                Witness = new Witness()
-            };
-            system.Blockchain.Ask(block).Wait();
-            snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.Transactions.TryGet(tx.Hash).Should().NotBeNull();
+            
+            StoreView clonedSnapshot = snapshot.Clone();
+            var state = new TransactionState
+                    {
+                        BlockIndex = 0,
+                        Transaction = tx
+                    };
+            clonedSnapshot.Transactions.Add(tx.Hash, state);
+            clonedSnapshot.Transactions.Commit();
+            state.VMState = VMState.FAULT;
             snapshot.Transactions.TryGet(tx.Hash).VMState.Should().Be(VMState.FAULT);
-            snapshot.Transactions.Delete(tx.Hash);
-            snapshot.Blocks.Delete(block.Hash);
-            snapshot.PersistingBlock = null;
-            snapshot.BlockHashIndex.GetAndChange().Set(Blockchain.GenesisBlock);
-            snapshot.HeaderHashIndex.GetAndChange().Set(Blockchain.GenesisBlock);
-            snapshot.Storages.Delete(CreateStorageKey(14));
-            snapshot.Commit();
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
