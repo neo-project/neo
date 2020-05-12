@@ -369,13 +369,12 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void InvalidateVerifiedTransactions(StoreView snapshot)
+        internal void InvalidateVerifiedTransactions()
         {
             foreach (PoolItem item in _sortedTransactions)
             {
                 if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
                     _unverifiedSortedTransactions.Add(item);
-                item.CheckOracleResponse(snapshot);
             }
 
             // Clear the verified transactions now, since they all must be reverified.
@@ -400,7 +399,7 @@ namespace Neo.Ledger
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions
-                InvalidateVerifiedTransactions(snapshot);
+                InvalidateVerifiedTransactions();
 
                 if (policyChanged)
                 {
@@ -430,12 +429,12 @@ namespace Neo.Ledger
                 _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
-        internal void InvalidateAllTransactions(StoreView snapshot)
+        internal void InvalidateAllTransactions()
         {
             _txRwLock.EnterWriteLock();
             try
             {
-                InvalidateVerifiedTransactions(snapshot);
+                InvalidateVerifiedTransactions();
             }
             finally
             {
@@ -478,6 +477,7 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
+                        item.CheckOracleResponse(snapshot);
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
