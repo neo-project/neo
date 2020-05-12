@@ -113,7 +113,6 @@ namespace Neo.UnitTests
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
                 TransactionHashes = new UInt256[0],
                 MinerTransaction = minerTx, //(MinerTransaction)Transactions[TransactionHashes[0]],
-
                 ProposalStateRoot = new StateRootBase
                 {
                     Version = 0,
@@ -185,7 +184,6 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeConsensusContext()
         {
             var consensusContext = new ConsensusContext(null, null);
-
             consensusContext.ProposalStateRoot = new StateRootBase
             {
                 Version = 0,
@@ -193,7 +191,6 @@ namespace Neo.UnitTests
                 PreHash = UInt256.Zero,
                 Root = UInt256.Zero
             };
-
             consensusContext.PrevHash = UInt256.Parse("0xd42561e3d30e15be6400b6df2f328e02d2bf6354c41dce433bc57687c82144bf");
             consensusContext.BlockIndex = 1;
             consensusContext.ViewNumber = 2;
@@ -237,7 +234,6 @@ namespace Neo.UnitTests
                 TransactionHashes = consensusContext.TransactionHashes,
                 MinerTransaction = (MinerTransaction)consensusContext.Transactions[consensusContext.TransactionHashes[0]],
                 Timestamp = 23,
-
                 ProposalStateRoot = new StateRootBase
                 {
                     Version = 0,
@@ -447,7 +443,6 @@ namespace Neo.UnitTests
                     Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     MinerTransaction = (MinerTransaction)txs[0],
-
                     ProposalStateRoot = new StateRootBase
                     {
                         Version = 0,
@@ -512,7 +507,6 @@ namespace Neo.UnitTests
                     Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     MinerTransaction = (MinerTransaction)txs[0],
-
                     ProposalStateRoot = new StateRootBase
                     {
                         Version = 0,
@@ -584,7 +578,6 @@ namespace Neo.UnitTests
                     Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     MinerTransaction = (MinerTransaction)txs[0],
-
                     ProposalStateRoot = new StateRootBase
                     {
                         Version = 0,

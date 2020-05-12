@@ -13,7 +13,6 @@ namespace Neo.Consensus
         public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public MinerTransaction MinerTransaction;
-
         public StateRootBase ProposalStateRoot;
 
         public override int Size => base.Size
@@ -22,7 +21,6 @@ namespace Neo.Consensus
             + NextConsensus.Size                //NextConsensus
             + TransactionHashes.GetVarSize()    //TransactionHashes
             + MinerTransaction.Size             //MinerTransaction
-
             + ProposalStateRoot.Size;           //StateRoot
 
         public PrepareRequest()

@@ -497,7 +497,6 @@ namespace Neo.Consensus
                     Payload = InvPayload.Create(InventoryType.TX, hashes)
                 });
             }
-
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
