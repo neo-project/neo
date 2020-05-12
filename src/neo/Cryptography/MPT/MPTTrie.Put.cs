@@ -7,6 +7,21 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
+        private static byte[] CommonPrefix(byte[] a, byte[] b)
+        {
+            if (a is null || b is null) return Array.Empty<byte>();
+            var minLen = a.Length <= b.Length ? a.Length : b.Length;
+            int i = 0;
+            if (a.Length != 0 && b.Length != 0)
+            {
+                for (i = 0; i < minLen; i++)
+                {
+                    if (a[i] != b[i]) break;
+                }
+            }
+            return a[..i];
+        }
+
         public bool Put(TKey key, TValue value)
         {
             var path = key.ToArray().ToNibbles();
@@ -56,7 +71,7 @@ namespace Neo.Cryptography.MPT
                             }
                             return result;
                         }
-                        var prefix = extensionNode.Key.CommonPrefix(path);
+                        var prefix = CommonPrefix(extensionNode.Key, path);
                         var pathRemain = path[prefix.Length..];
                         var keyRemain = extensionNode.Key[prefix.Length..];
                         var son = new BranchNode();
