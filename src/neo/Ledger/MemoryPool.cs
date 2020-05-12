@@ -369,7 +369,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void InvalidateVerifiedTransactions(StoreView snapshot)
+        internal void InvalidateVerifiedTransactions()
         {
             foreach (PoolItem item in _sortedTransactions)
             {
@@ -399,7 +399,7 @@ namespace Neo.Ledger
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions
-                InvalidateVerifiedTransactions(snapshot);
+                InvalidateVerifiedTransactions();
 
                 if (policyChanged)
                 {
@@ -429,12 +429,12 @@ namespace Neo.Ledger
                 _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
-        internal void InvalidateAllTransactions(StoreView snapshot)
+        internal void InvalidateAllTransactions()
         {
             _txRwLock.EnterWriteLock();
             try
             {
-                InvalidateVerifiedTransactions(snapshot);
+                InvalidateVerifiedTransactions();
             }
             finally
             {

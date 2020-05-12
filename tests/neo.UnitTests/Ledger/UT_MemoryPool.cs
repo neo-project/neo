@@ -176,32 +176,32 @@ namespace Neo.UnitTests.Ledger
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
                     .Concat(_unit.GetSortedVerifiedTransactions().Take(5)).ToArray()
             };
-            _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.UpdatePoolForBlockPersisted(block, snapshot);
+            _unit.InvalidateVerifiedTransactions();
             _unit.SortedTxCount.Should().Be(0);
             _unit.UnverifiedSortedTxCount.Should().Be(60);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, snapshot);
             _unit.SortedTxCount.Should().Be(10);
             _unit.UnverifiedSortedTxCount.Should().Be(50);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, snapshot);
             _unit.SortedTxCount.Should().Be(20);
             _unit.UnverifiedSortedTxCount.Should().Be(40);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, snapshot);
             _unit.SortedTxCount.Should().Be(30);
             _unit.UnverifiedSortedTxCount.Should().Be(30);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, snapshot);
             _unit.SortedTxCount.Should().Be(40);
             _unit.UnverifiedSortedTxCount.Should().Be(20);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, snapshot);
             _unit.SortedTxCount.Should().Be(50);
             _unit.UnverifiedSortedTxCount.Should().Be(10);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, snapshot);
             _unit.SortedTxCount.Should().Be(60);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
         }
@@ -275,7 +275,7 @@ namespace Neo.UnitTests.Ledger
             // move all to unverified
             var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, snapshot);
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.InvalidateVerifiedTransactions();
             _unit.SortedTxCount.Should().Be(0);
             _unit.UnverifiedSortedTxCount.Should().Be(100);
 
@@ -297,7 +297,7 @@ namespace Neo.UnitTests.Ledger
                 var blockWith2Tx = new Block { Transactions = new[] { maxTransaction, minTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, snapshot);
-                _unit.InvalidateVerifiedTransactions(snapshot);
+                _unit.InvalidateVerifiedTransactions();
                 _unit.SortedTxCount.Should().Be(0);
             }
             _unit.UnverifiedSortedTxCount.Should().Be(0);
@@ -345,12 +345,11 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestInvalidateAll()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
             AddTransactions(30);
 
             _unit.UnverifiedSortedTxCount.Should().Be(0);
             _unit.SortedTxCount.Should().Be(30);
-            _unit.InvalidateAllTransactions(snapshot);
+            _unit.InvalidateAllTransactions();
             _unit.UnverifiedSortedTxCount.Should().Be(30);
             _unit.SortedTxCount.Should().Be(0);
         }
@@ -358,22 +357,20 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestContainsKey()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
             AddTransactions(10);
 
             var txToAdd = CreateTransaction();
             _unit.TryAdd(txToAdd.Hash, txToAdd);
             _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.InvalidateVerifiedTransactions();
             _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
         }
 
         [TestMethod]
         public void TestGetEnumerator()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
             AddTransactions(10);
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.InvalidateVerifiedTransactions();
             IEnumerator<Transaction> enumerator = _unit.GetEnumerator();
             foreach (Transaction tx in _unit)
             {
@@ -385,9 +382,8 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestIEnumerableGetEnumerator()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
             AddTransactions(10);
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.InvalidateVerifiedTransactions();
             IEnumerable enumerable = _unit;
             var enumerator = enumerable.GetEnumerator();
             foreach (Transaction tx in _unit)
@@ -400,11 +396,10 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetVerifiedTransactions()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
             _unit.TryAdd(tx1.Hash, tx1);
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.InvalidateVerifiedTransactions();
             _unit.TryAdd(tx2.Hash, tx2);
             IEnumerable<Transaction> enumerable = _unit.GetVerifiedTransactions();
             enumerable.Count().Should().Be(1);
@@ -426,7 +421,7 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(4);
             _unit.UnVerifiedCount.Should().Be(0);
 
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.InvalidateVerifiedTransactions();
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(4);
 
@@ -434,17 +429,17 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(511);
             _unit.UnVerifiedCount.Should().Be(4);
 
-            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, Blockchain.Singleton.GetSnapshot());
+            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, snapshot);
             result.Should().BeTrue();
             _unit.VerifiedCount.Should().Be(512);
             _unit.UnVerifiedCount.Should().Be(3);
 
-            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, snapshot);
             result.Should().BeTrue();
             _unit.VerifiedCount.Should().Be(514);
             _unit.UnVerifiedCount.Should().Be(1);
 
-            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(3, Blockchain.Singleton.GetSnapshot());
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(3, snapshot);
             result.Should().BeFalse();
             _unit.VerifiedCount.Should().Be(515);
             _unit.UnVerifiedCount.Should().Be(0);
@@ -462,13 +457,12 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestTryGetValue()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = CreateTransaction();
             _unit.TryAdd(tx1.Hash, tx1);
             _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
             tx.Should().BeEquivalentTo(tx1);
 
-            _unit.InvalidateVerifiedTransactions(snapshot);
+            _unit.InvalidateVerifiedTransactions();
             _unit.TryGetValue(tx1.Hash, out tx).Should().BeTrue();
             tx.Should().BeEquivalentTo(tx1);
 
