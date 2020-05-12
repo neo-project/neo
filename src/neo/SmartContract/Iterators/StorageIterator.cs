@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
 {
-    public class StorageIterator : IIterator
+    internal class StorageIterator : IIterator
     {
         private readonly IEnumerator<(StorageKey Key, StorageItem Value)> enumerator;
 
