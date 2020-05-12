@@ -21,7 +21,6 @@ namespace Neo.Cryptography.MPT
             switch (node)
             {
                 case LeafNode _:
-
                     {
                         if (path.Length < 1)
                         {
