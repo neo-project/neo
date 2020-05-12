@@ -8,7 +8,7 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private MPTDb db;
+        private readonly MPTDb db;
 
         public MPTTrie(UInt256 root, ISnapshot store, byte prefix) : base(root, store, prefix)
         {
