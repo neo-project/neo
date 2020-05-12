@@ -14,10 +14,7 @@ namespace Neo.Consensus
         public UInt256[] TransactionHashes;
         public MinerTransaction MinerTransaction;
 
-        public byte RootVersion;
-        public uint RootIndex;
-        public UInt256 RootPreHash;
-        public UInt256 Root;
+        public StateRootBase ProposalStateRoot;
 
         public override int Size => base.Size
             + sizeof(uint)                      //Timestamp
@@ -26,10 +23,7 @@ namespace Neo.Consensus
             + TransactionHashes.GetVarSize()    //TransactionHashes
             + MinerTransaction.Size             //MinerTransaction
 
-            + sizeof(uint)                      //Version
-            + sizeof(uint)                      //Index
-            + RootPreHash.Size                  //PreHash
-            + Root.Size;                        //StateRoot
+            + ProposalStateRoot.Size;                        //StateRoot
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
@@ -48,11 +42,7 @@ namespace Neo.Consensus
             MinerTransaction = reader.ReadSerializable<MinerTransaction>();
             if (MinerTransaction.Hash != TransactionHashes[0])
                 throw new FormatException();
-
-            RootVersion = reader.ReadByte();
-            RootIndex = reader.ReadUInt32();
-            RootPreHash = reader.ReadSerializable<UInt256>();
-            Root = reader.ReadSerializable<UInt256>();
+            ProposalStateRoot = reader.ReadSerializable<StateRootBase>();
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -64,10 +54,7 @@ namespace Neo.Consensus
             writer.Write(TransactionHashes);
             writer.Write(MinerTransaction);
 
-            writer.Write(RootVersion);
-            writer.Write(RootIndex);
-            writer.Write(RootPreHash);
-            writer.Write(Root);
+            writer.Write(ProposalStateRoot);
         }
     }
 }

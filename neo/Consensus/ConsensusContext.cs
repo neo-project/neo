@@ -17,7 +17,7 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
-        public StateRoot Root { get; set; }
+        public StateRootBase ProposalStateRoot { get; set; }
         /// <summary>
         /// Prefix for saving consensus state.
         /// </summary>
@@ -99,9 +99,9 @@ namespace Neo.Consensus
         public void Deserialize(BinaryReader reader)
         {
             Reset(0);
-            Root.Deserialize(reader);
-            if (Root.Version != MPTTrie.Version) throw new FormatException();
-            if (Root.Index != BlockIndex - 1) throw new InvalidOperationException();
+            ProposalStateRoot.Deserialize(reader);
+            if (ProposalStateRoot.Version != MPTTrie.Version) throw new FormatException();
+            if (ProposalStateRoot.Index != BlockIndex - 1) throw new InvalidOperationException();
 
             if (reader.ReadUInt32() != Version) throw new FormatException();
             if (reader.ReadUInt32() != BlockIndex) throw new InvalidOperationException();
@@ -183,7 +183,7 @@ namespace Neo.Consensus
 
         public StateRoot MakeStateRoot()
         {
-            return Root;
+            return new StateRoot(ProposalStateRoot);
         }
 
         private Block _header = null;
@@ -248,10 +248,7 @@ namespace Neo.Consensus
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
 
-                RootVersion = Root.Version,
-                RootIndex = Root.Index,
-                RootPreHash = Root.PreHash,
-                Root = Root.Root,
+                ProposalStateRoot = ProposalStateRoot,
             });
         }
 
@@ -277,10 +274,7 @@ namespace Neo.Consensus
                     MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                     Timestamp = Timestamp,
 
-                    RootVersion = Root.Version,
-                    RootIndex = Root.Index,
-                    RootPreHash = Root.PreHash,
-                    Root = Root.Root,
+                    ProposalStateRoot = ProposalStateRoot
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -351,7 +345,7 @@ namespace Neo.Consensus
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)BlockIndex;
             _header = null;
 
-            Root = new StateRoot
+            ProposalStateRoot = new StateRootBase
             {
                 Version = MPTTrie.Version,
                 Index = Snapshot.Height,
@@ -367,7 +361,7 @@ namespace Neo.Consensus
 
         public void Serialize(BinaryWriter writer)
         {
-            Root.Serialize(writer);
+            ProposalStateRoot.Serialize(writer);
 
             writer.Write(Version);
             writer.Write(BlockIndex);
@@ -448,7 +442,7 @@ namespace Neo.Consensus
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
 
-            Root = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
+            ProposalStateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
         }
 
         private static ulong GetNonce()
