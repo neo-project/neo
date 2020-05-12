@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!base.Initialize(engine)) return false;
             if (base.TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
-            
+
             BigInteger amount = TotalAmount;
             for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
             {
@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
         {
-            //DistributeGas(engine, account, state);
+            DistributeGas(engine, account, state);
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {

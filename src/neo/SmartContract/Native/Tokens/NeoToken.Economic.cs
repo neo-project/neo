@@ -29,31 +29,33 @@ namespace Neo.SmartContract.Native.Tokens
                 VotersRewardRatio = 85
             };
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Ecomonic), new StorageItem(economic));
-            IEnumerable<(ECPoint, BigInteger)> committees = GetCommitteeMembers(engine.Snapshot, Blockchain.CommitteeMembersCount);
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Epoch), new StorageItem(new EpochState()));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_EconomicEpoch, 0), new StorageItem(new EconomicEpochState(economic)));
+            IEnumerable<(ECPoint, BigInteger)> committees = GetCommitteeMembers(engine.Snapshot, Blockchain.CommitteeMembersCount);
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_CommitteeEpoch, 0), new StorageItem(new CommitteesEpochState(committees)));
         }
 
         private void OnPersistEpochState(ApplicationEngine engine)
         {
-            if (engine.Snapshot.PersistingBlock.Index % Blockchain.Epoch != Blockchain.Epoch - 1)
+            if (engine.Snapshot.PersistingBlock.Index % Blockchain.Epoch != 0)
                 return;
             uint currentHeight = engine.Snapshot.PersistingBlock.Index;
-            EpochState epochState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Epoch), () => new StorageItem(new EpochState())).GetInteroperable<EpochState>();
-            EconomicParameter economicParameter = GetEconomicParameter(engine);
-            EconomicEpochState economicEpoch = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_EconomicEpoch, epochState.EconomicId), () => new StorageItem(new EconomicEpochState())).GetInteroperable<EconomicEpochState>();
-            economicEpoch.End = currentHeight;
+            EpochState epochState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Epoch)).GetInteroperable<EpochState>();
+
+            EconomicParameter economicParameter = GetEconomicParameter(engine.Snapshot);
+            EconomicEpochState economicEpoch = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_EconomicEpoch, epochState.EconomicId)).GetInteroperable<EconomicEpochState>();
             if (!economicEpoch.CompareTo(economicParameter))
             {
+                economicEpoch.End = currentHeight;
                 EconomicEpochState newEconomicEpoch = new EconomicEpochState(economicParameter, currentHeight);
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_EconomicEpoch, ++epochState.EconomicId), new StorageItem(newEconomicEpoch));
             }
+
             IEnumerable<(ECPoint, BigInteger)> committees = GetCommitteeMembers(engine.Snapshot, Blockchain.CommitteeMembersCount);
-            CommitteesEpochState committeeEpoch = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_CommitteeEpoch, epochState.CommitteeId), () => new StorageItem(new CommitteesEpochState())).GetInteroperable<CommitteesEpochState>();
-            committeeEpoch.End = currentHeight;
+            CommitteesEpochState committeeEpoch = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_CommitteeEpoch, epochState.CommitteeId)).GetInteroperable<CommitteesEpochState>();
             if (!committeeEpoch.CompareTo(committees))
             {
+                committeeEpoch.End = currentHeight;
                 CommitteesEpochState newCommitteeEpoch = new CommitteesEpochState(committees, currentHeight);
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_CommitteeEpoch, ++epochState.CommitteeId), new StorageItem(newCommitteeEpoch));
             }
@@ -85,10 +87,11 @@ namespace Neo.SmartContract.Native.Tokens
         public BigInteger CalculateBonus(StoreView snapshot, UInt160 account, ECPoint votee, BigInteger votes, uint start, uint end, out uint claimedHeight)
         {
             claimedHeight = start;
+            if (start == end) return BigInteger.Zero;
             if (votes.IsZero || start >= end) return BigInteger.Zero;
             if (votes.Sign < 0) throw new ArgumentOutOfRangeException(nameof(votes));
 
-            EpochState epochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Epoch))?.GetInteroperable<EpochState>();
+            EpochState epochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Epoch)).GetInteroperable<EpochState>();
             if (epochState is null) return BigInteger.Zero;
 
             BigInteger claimableGAS = 0;
@@ -155,17 +158,18 @@ namespace Neo.SmartContract.Native.Tokens
         internal class EconomicEpochState : EconomicParameter
         {
             public uint Start;
-            public uint End = uint.MaxValue;
+            public uint End;
 
             public EconomicEpochState() { }
 
-            public EconomicEpochState(EconomicParameter config, uint start = 0)
+            public EconomicEpochState(EconomicParameter config, uint start = 0, uint end = uint.MaxValue)
             {
                 GasPerBlock = config.GasPerBlock;
                 NeoHoldersRewardRatio = config.NeoHoldersRewardRatio;
                 CommitteesRewardRatio = config.CommitteesRewardRatio;
                 VotersRewardRatio = config.VotersRewardRatio;
                 Start = start;
+                End = end;
             }
 
             public override void FromStackItem(StackItem stackItem)
@@ -196,14 +200,15 @@ namespace Neo.SmartContract.Native.Tokens
         internal class CommitteesEpochState : IInteroperable
         {
             public uint Start;
-            public uint End = uint.MaxValue;
-            public (ECPoint, BigInteger, UInt160)[] Committees;
+            public uint End;
+            public (ECPoint, BigInteger, UInt160)[] Committees = new (ECPoint, BigInteger, UInt160)[0];
 
             public CommitteesEpochState() { }
 
-            public CommitteesEpochState(IEnumerable<(ECPoint, BigInteger)> enumerator, uint start = 0)
+            public CommitteesEpochState(IEnumerable<(ECPoint, BigInteger)> enumerator, uint start = 0, uint end = uint.MaxValue)
             {
                 Start = start;
+                End = end;
                 Committees = new (ECPoint, BigInteger, UInt160)[enumerator.Count()];
                 var i = 0;
                 foreach((ECPoint, BigInteger) item in enumerator)
