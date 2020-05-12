@@ -290,7 +290,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             var i = 0;
             (ECPoint, BigInteger, UInt160)[] committees = new (ECPoint, BigInteger, UInt160)[Blockchain.CommitteeMembersCount];
-            foreach(ECPoint committee in Blockchain.StandbyCommittee)
+            foreach (ECPoint committee in Blockchain.StandbyCommittee)
             {
                 committees[i].Item1 = committee;
                 committees[i].Item2 = 10000;

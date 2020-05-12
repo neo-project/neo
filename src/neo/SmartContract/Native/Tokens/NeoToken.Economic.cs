@@ -95,9 +95,9 @@ namespace Neo.SmartContract.Native.Tokens
             if (epochState is null) return BigInteger.Zero;
 
             BigInteger claimableGAS = 0;
-            for (long economicId = epochState.EconomicId, committeeId = (long) epochState.CommitteeId - 1; economicId >= 0; --economicId)
+            for (long economicId = epochState.EconomicId, committeeId = (long)epochState.CommitteeId - 1; economicId >= 0; --economicId)
             {
-                EconomicEpochState economicEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_EconomicEpoch, (uint) economicId)).GetInteroperable<EconomicEpochState>();                
+                EconomicEpochState economicEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_EconomicEpoch, (uint)economicId)).GetInteroperable<EconomicEpochState>();
                 if (economicEpochState.Start >= end) continue;
                 if (economicEpochState.End <= start) break;
 
@@ -181,7 +181,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             public override StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                Struct @struct = (Struct) base.ToStackItem(referenceCounter);
+                Struct @struct = (Struct)base.ToStackItem(referenceCounter);
                 @struct.Add(Start);
                 @struct.Add(End);
                 return @struct;
@@ -211,7 +211,7 @@ namespace Neo.SmartContract.Native.Tokens
                 End = end;
                 Committees = new (ECPoint, BigInteger, UInt160)[enumerator.Count()];
                 var i = 0;
-                foreach((ECPoint, BigInteger) item in enumerator)
+                foreach((ECPoint, BigInteger)item in enumerator)
                 {
                     Committees[i].Item1 = item.Item1;
                     Committees[i].Item2 = item.Item2;
@@ -255,7 +255,6 @@ namespace Neo.SmartContract.Native.Tokens
                 Struct @struct = (Struct)stackItem;
                 Start = (uint)@struct[0].GetBigInteger();
                 End = (uint)@struct[1].GetBigInteger();
-                
                 Array votees = (Array)@struct[2];
                 Array votes = (Array)@struct[3];
                 Array voters = (Array)@struct[4];
