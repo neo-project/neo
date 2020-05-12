@@ -197,9 +197,6 @@ namespace Neo.Ledger
 
         public UInt256 GetBlockHash(uint index)
         {
-            var kvp = block_cache.FirstOrDefault(kvp => kvp.Value.Index == index);
-            if (kvp.Key != null)
-                return kvp.Value.Hash;
             if (header_index.Count <= index) return null;
             return header_index[(int)index];
         }
@@ -335,6 +332,8 @@ namespace Neo.Ledger
                     return VerifyResult.Invalid;
                 block_cache.TryAdd(block.Hash, block);
                 block_cache_unverified.Remove(block.Index);
+                if (block.Index == header_index.Count)
+                    header_index.Add(block.Hash);
                 system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height + 1)));
                 Persist(block);
                 SaveHeaderHashList();
@@ -452,6 +451,8 @@ namespace Neo.Ledger
                     header_index.Add(block.Hash);
                     snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
+                else if (block.Index == header_index.Count - 1)
+                    snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
