@@ -19,7 +19,7 @@ namespace Neo.SmartContract.NNS
             if (IsRootDomain(name) || !IsDomain(name)) return false;
             UInt256 innerKey = GetInnerKey(tokenId);
             StorageKey key = CreateTokenKey(innerKey);
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage is null)
             {
                 string parentDomain = string.Join(".", name.Split(".")[1..]);
@@ -31,6 +31,7 @@ namespace Neo.SmartContract.NNS
                 DomainState parentDomainInfo = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey)).GetInteroperable<DomainState>();
                 Mint(engine, parentDomianOwner, tokenId, parentDomainInfo.TimeToLive);
             }
+            storage = engine.Snapshot.Storages.GetAndChange(key);
             DomainState domainInfo = storage.GetInteroperable<DomainState>();
             if (IsExpired(engine.Snapshot, innerKey)) return false;
             IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
@@ -44,7 +45,7 @@ namespace Neo.SmartContract.NNS
             return true;
         }
 
-        protected internal void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId, uint TTL)
+        protected internal void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId, uint ttl)
         {
             Mint(engine, account, tokenId);
             UInt256 innerKey = GetInnerKey(tokenId);
@@ -53,7 +54,7 @@ namespace Neo.SmartContract.NNS
             DomainState domainInfo = token_storage.GetInteroperable<DomainState>();
             domainInfo.Name = System.Text.Encoding.UTF8.GetString(tokenId);
             domainInfo.Operator = account;
-            domainInfo.TimeToLive = TTL;
+            domainInfo.TimeToLive = ttl;
         }
     }
 }

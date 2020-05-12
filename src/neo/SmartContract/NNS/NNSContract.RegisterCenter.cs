@@ -17,7 +17,7 @@ namespace Neo.SmartContract.NNS
 {
     partial class NnsContract : Nep11Token<DomainState, Nep11AccountState>
     {
-        private static readonly uint BlockCountsPerYear = 2000000;
+        public const uint BlockPerYear = Blockchain.DecrementInterval;
 
         public override UInt256 GetInnerKey(byte[] parameter)
         {
@@ -47,10 +47,10 @@ namespace Neo.SmartContract.NNS
             if (!IsRootDomain(name)) return false;
             UInt256 innerKey = ComputeNameHash(name);
             StorageKey key = CreateStorageKey(Prefix_Root, innerKey.ToArray());
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage != null) return false;
-            storage = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem() { Value = tokenId });
-            Accumulator(engine);
+            engine.Snapshot.Storages.Add(key, new StorageItem() { Value = tokenId });
+            IncreaseTotalSupply(engine);
             return true;
         }
 
@@ -74,9 +74,8 @@ namespace Neo.SmartContract.NNS
             if (storage is null) return false;
             DomainState domain_state = storage.GetInteroperable<DomainState>();
             domain_state.TimeToLive = validUntilBlock;
-            uint blocksPerYear = 200;
-            BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / blocksPerYear;
-            return NEO.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
+            BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / BlockPerYear;
+            return GAS.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), (new BigDecimal(amount, 8)).Value);
         }
 
         public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
@@ -93,7 +92,7 @@ namespace Neo.SmartContract.NNS
             string parentDomain = string.Join(".", name.Split(".")[1..]);
             UInt256 parentInnerKey = GetInnerKey(System.Text.Encoding.UTF8.GetBytes(parentDomain));
             var domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
-            uint TTL = engine.Snapshot.Height + BlockCountsPerYear;
+            uint ttl = engine.Snapshot.Height + BlockPerYear;
             if (domainInfo is null)
             {
                 if (IsCrossLevel(engine.Snapshot, name) || IsExpired(engine.Snapshot, parentInnerKey)) return false;
@@ -113,8 +112,8 @@ namespace Neo.SmartContract.NNS
                     return false;
                 Burn(engine, (UInt160)oldOwner, Factor, tokenId);
             }
-            TTL = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey))?.GetInteroperable<DomainState>().TimeToLive ?? TTL;
-            Mint(engine, from, tokenId, TTL);
+            ttl = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey))?.GetInteroperable<DomainState>().TimeToLive ?? ttl;
+            Mint(engine, from, tokenId, ttl);
             return base.Transfer(engine, from, to, Factor, tokenId);
         }
 

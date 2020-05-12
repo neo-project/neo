@@ -4,7 +4,6 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
-using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -234,18 +233,17 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey token_key = CreateTokenKey(innerKey);
             StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
             if (token_storage != null) throw new InvalidOperationException("Token is exist");
-            token_storage = engine.Snapshot.Storages.GetAndChange(token_key, () => new StorageItem(token_state));
+            engine.Snapshot.Storages.Add(token_key, new StorageItem(token_state));
 
-            StorageKey owner_key = CreateOwner2TokenKey(account, innerKey);
-            StorageItem owner_storage = engine.Snapshot.Storages.TryGet(owner_key);
-            if (owner_storage != null) throw new InvalidOperationException("Token is exist");
-            owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key, () => new StorageItem(new UState() { Balance = Factor }));
+            StorageKey owner2token_key = CreateOwner2TokenKey(account, innerKey);
+            StorageItem owner2token_storage = engine.Snapshot.Storages.TryGet(owner2token_key);
+            if (owner2token_storage != null) throw new InvalidOperationException("Token is exist");
+            engine.Snapshot.Storages.Add(owner2token_key, new StorageItem(new UState() { Balance = Factor }));
 
-            owner_key = CreateToken2OwnerKey(innerKey, account);
-            owner_storage = engine.Snapshot.Storages.TryGet(owner_key);
-            if (owner_storage != null) throw new InvalidOperationException("Token is exist");
-            owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key, () => new StorageItem(new UState() { Balance = Factor }));
-            Accumulator(engine);
+            StorageKey token2owner_key = CreateToken2OwnerKey(innerKey, account);
+            engine.Snapshot.Storages.Add(token2owner_key, new StorageItem(new UState() { Balance = Factor }));
+
+            IncreaseTotalSupply(engine);
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, tokenId }));
         }
 
@@ -258,31 +256,29 @@ namespace Neo.SmartContract.Native.Tokens
             StorageItem token_storage = engine.Snapshot.Storages.GetAndChange(token_key);
             if (token_storage is null) throw new InvalidOperationException("Token is not exist");
 
-            StorageKey owner_key = CreateOwner2TokenKey(account, innerKey);
-            StorageItem owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key);
-            if (owner_storage is null) throw new InvalidOperationException("Account is not exist");
-            UState owner_state = owner_storage.GetInteroperable<UState>();
-            if (owner_state.Balance < amount) throw new InvalidOperationException();
-            if (owner_state.Balance == amount)
-                engine.Snapshot.Storages.Delete(owner_key);
+            StorageKey owner2token_key = CreateOwner2TokenKey(account, innerKey);
+            StorageItem owner2token_storage = engine.Snapshot.Storages.GetAndChange(owner2token_key);
+            if (owner2token_storage is null) throw new InvalidOperationException("Account is not exist");
+            StorageKey token2owner_key = CreateToken2OwnerKey(innerKey, account);
+            StorageItem token2owner_storage = engine.Snapshot.Storages.GetAndChange(token2owner_key);
+            UState owner2token_state = owner2token_storage.GetInteroperable<UState>();
+            if (owner2token_state.Balance < amount) throw new InvalidOperationException();
+            if (owner2token_state.Balance == amount)
+            {
+                engine.Snapshot.Storages.Delete(owner2token_key);
+                engine.Snapshot.Storages.Delete(token2owner_key);
+            }
             else
-                owner_state.Balance -= amount;
-            owner_key = CreateToken2OwnerKey(innerKey, account);
-            owner_storage = engine.Snapshot.Storages.GetAndChange(owner_key);
-            if (owner_storage is null) throw new InvalidOperationException("Account is not exist");
-            owner_state = owner_storage.GetInteroperable<UState>();
-            if (owner_state.Balance < amount) throw new InvalidOperationException();
-            if (owner_state.Balance == amount)
-                engine.Snapshot.Storages.Delete(owner_key);
-            else
-                owner_state.Balance -= amount;
+            {
+                UState token2owner_state = token2owner_storage.GetInteroperable<UState>();
+                owner2token_state.Balance -= amount;
+                token2owner_state.Balance -= amount;
+            }
+
             if (!OwnerOf(engine.Snapshot, tokenId).MoveNext())
             {
                 engine.Snapshot.Storages.Delete(token_key);
-                StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
-                BigInteger totalSupply = new BigInteger(storage.Value);
-                totalSupply -= 1;
-                storage.Value = totalSupply.ToByteArrayStandard();
+                DecreaseTotalSupply(engine);
             }
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount, tokenId }));
         }
@@ -313,10 +309,18 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_TokenId, innerKey.ToArray());
         }
 
-        public void Accumulator(ApplicationEngine engine)
+        public void IncreaseTotalSupply(ApplicationEngine engine)
         {
             StorageItem storage_totalSupply = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
             storage_totalSupply.Value = (new BigInteger(storage_totalSupply.Value) + BigInteger.One).ToByteArray();
+        }
+
+        public void DecreaseTotalSupply(ApplicationEngine engine)
+        {
+            StorageItem storage_totalSupply = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
+            BigInteger totalSupply = new BigInteger(storage_totalSupply.Value);
+            if (totalSupply.Equals(BigInteger.Zero)) return;
+            storage_totalSupply.Value = (totalSupply - BigInteger.One).ToByteArray();
         }
     }
 }

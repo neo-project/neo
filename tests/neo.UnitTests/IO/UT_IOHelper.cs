@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace Neo.UnitTests.IO
@@ -283,6 +284,13 @@ namespace Neo.UnitTests.IO
         {
             int result = Neo.IO.Helper.GetVarSize("AA");
             Assert.AreEqual(3, result);
+        }
+
+        [TestMethod]
+        public void TestGetVarSizeBigInteger()
+        {
+            int result = Neo.IO.Helper.GetVarSize(BigInteger.One);
+            Assert.AreEqual(2, result);
         }
 
         [TestMethod]

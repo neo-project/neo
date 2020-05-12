@@ -34,7 +34,7 @@ namespace Neo.SmartContract.NNS
             if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Admin), new StorageItem
             {
-                Value = GetCommitteeMultiSigAddress(engine).ToArray()
+                Value = NEO.GetCommitteeMultiSigAddress(engine.Snapshot).ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_ReceiptAddress), new StorageItem
             {
@@ -88,7 +88,7 @@ namespace Neo.SmartContract.NNS
         private StackItem SetAdmin(ApplicationEngine engine, Array args)
         {
             //verify multi-signature of committees
-            var address = GetCommitteeMultiSigAddress(engine);
+            var address = NEO.GetCommitteeMultiSigAddress(engine.Snapshot);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, address))
                 return false;
 
@@ -120,12 +120,6 @@ namespace Neo.SmartContract.NNS
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ReceiptAddress));
             storage.Value = address.ToArray();
             return true;
-        }
-
-        private UInt160 GetCommitteeMultiSigAddress(ApplicationEngine engine)
-        {
-            ECPoint[] committees = NEO.GetCommittee(engine.Snapshot);
-            return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 3, committees).ToScriptHash();
         }
     }
 }
