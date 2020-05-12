@@ -5,7 +5,7 @@ namespace Neo.Cryptography.MPT
 {
     public class MPTDb : MPTReadOnlyDb
     {
-        private ISnapshot store;
+        private readonly ISnapshot store;
 
         public MPTDb(ISnapshot store, byte prefix) : base(store, prefix)
         {
