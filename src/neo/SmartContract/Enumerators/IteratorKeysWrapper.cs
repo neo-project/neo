@@ -3,7 +3,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Enumerators
 {
-    public class IteratorKeysWrapper : IEnumerator
+    internal class IteratorKeysWrapper : IEnumerator
     {
         private readonly IIterator iterator;
 
