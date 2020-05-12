@@ -53,7 +53,6 @@ namespace Neo.Consensus
             writer.Write(NextConsensus);
             writer.Write(TransactionHashes);
             writer.Write(MinerTransaction);
-
             writer.Write(ProposalStateRoot);
         }
     }
