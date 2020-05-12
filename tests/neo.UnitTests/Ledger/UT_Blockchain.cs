@@ -154,13 +154,12 @@ namespace Neo.UnitTests.Ledger
                 Version = 0,
                 Witnesses = new Witness[0],
             };
-            
             StoreView clonedSnapshot = snapshot.Clone();
             var state = new TransactionState
-                    {
-                        BlockIndex = 0,
-                        Transaction = tx
-                    };
+            {
+                BlockIndex = 0,
+                Transaction = tx
+            };
             clonedSnapshot.Transactions.Add(tx.Hash, state);
             clonedSnapshot.Transactions.Commit();
             state.VMState = VMState.FAULT;
