@@ -211,7 +211,7 @@ namespace Neo.SmartContract.Native.Tokens
                 End = end;
                 Committees = new (ECPoint, BigInteger, UInt160)[enumerator.Count()];
                 var i = 0;
-                foreach((ECPoint, BigInteger)item in enumerator)
+                foreach ((ECPoint, BigInteger) item in enumerator)
                 {
                     Committees[i].Item1 = item.Item1;
                     Committees[i].Item2 = item.Item2;
@@ -260,7 +260,7 @@ namespace Neo.SmartContract.Native.Tokens
                 Array voters = (Array)@struct[4];
 
                 Committees = new (ECPoint, BigInteger, UInt160)[votees.Count];
-                for(var i = 0; i < votees.Count; i++)
+                for (var i = 0; i < votees.Count; i++)
                 {
                     Committees[i].Item1 = votees[i].GetSpan().AsSerializable<ECPoint>();
                     Committees[i].Item2 = votes[i].GetBigInteger();
@@ -274,7 +274,7 @@ namespace Neo.SmartContract.Native.Tokens
                 Array votees = new Array(referenceCounter);
                 Array votes = new Array(referenceCounter);
                 Array voters = new Array(referenceCounter);
-                foreach((ECPoint, BigInteger, UInt160) item in Committees)
+                foreach ((ECPoint, BigInteger, UInt160) item in Committees)
                 {
                     votees.Add(item.Item1.ToArray());
                     votes.Add(item.Item2);
@@ -292,7 +292,7 @@ namespace Neo.SmartContract.Native.Tokens
                     return false;
 
                 var i = 0;
-                foreach((ECPoint, BigInteger) item in enumerable)
+                foreach ((ECPoint, BigInteger) item in enumerable)
                 {
                     if (!item.Item1.Equals(Committees[i].Item1)) return false;
                     if (!item.Item2.Equals(Committees[i].Item2)) return false;
