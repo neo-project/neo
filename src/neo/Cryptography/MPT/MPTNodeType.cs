@@ -1,6 +1,6 @@
 namespace Neo.Cryptography.MPT
 {
-    public enum NodeType
+    public enum NodeType : byte
     {
         BranchNode = 0x00,
         ExtensionNode = 0x01,

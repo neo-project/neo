@@ -1,4 +1,5 @@
 using Neo.IO.Json;
+using System;
 using System.IO;
 using System.Text;
 
@@ -47,23 +48,26 @@ namespace Neo.Cryptography.MPT
 
         public abstract void EncodeSpecific(BinaryWriter writer);
 
-        public static MPTNode Decode(byte[] data)
+        public static unsafe MPTNode Decode(ReadOnlySpan<byte> data)
         {
-            if (data is null || data.Length < 1)
-                return null;
+            if (data.Length < 1) return null;
 
-            using BinaryReader reader = new BinaryReader(new MemoryStream(data, false), Encoding.UTF8, false);
-
-            var n = (NodeType)reader.ReadByte() switch
+            fixed (byte* pointer = data)
             {
-                NodeType.BranchNode => (MPTNode)new BranchNode(),
-                NodeType.ExtensionNode => new ExtensionNode(),
-                NodeType.LeafNode => new LeafNode(),
-                _ => throw new System.InvalidOperationException(),
-            };
+                using UnmanagedMemoryStream stream = new UnmanagedMemoryStream(pointer, data.Length);
+                using BinaryReader reader = new BinaryReader(stream);
 
-            n.DecodeSpecific(reader);
-            return n;
+                var n = (NodeType)reader.ReadByte() switch
+                {
+                    NodeType.BranchNode => (MPTNode)new BranchNode(),
+                    NodeType.ExtensionNode => new ExtensionNode(),
+                    NodeType.LeafNode => new LeafNode(),
+                    _ => throw new InvalidOperationException(),
+                };
+
+                n.DecodeSpecific(reader);
+                return n;
+            }
         }
 
         public abstract void DecodeSpecific(BinaryReader reader);

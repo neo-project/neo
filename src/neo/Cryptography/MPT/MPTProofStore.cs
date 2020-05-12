@@ -6,9 +6,9 @@ namespace Neo.Cryptography.MPT
 {
     public class MPTProofStore : IReadOnlyStore
     {
-        private Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+        private readonly Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
 
-        public MPTProofStore(HashSet<byte[]> proof)
+        public MPTProofStore(IEnumerable<byte[]> proof)
         {
             foreach (byte[] data in proof)
             {

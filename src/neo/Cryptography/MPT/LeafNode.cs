@@ -1,6 +1,7 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using System;
 using System.IO;
 
 namespace Neo.Cryptography.MPT
@@ -17,9 +18,9 @@ namespace Neo.Cryptography.MPT
             nType = NodeType.LeafNode;
         }
 
-        public LeafNode(byte[] val) : this()
+        public LeafNode(ReadOnlySpan<byte> val) : this()
         {
-            Value = (byte[])val.Clone();
+            Value = val.ToArray();
         }
 
         public override void EncodeSpecific(BinaryWriter writer)
