@@ -5,7 +5,7 @@ namespace Neo.Cryptography.MPT
 {
     public class MPTReadOnlyDb
     {
-        private IReadOnlyStore store;
+        private readonly IReadOnlyStore store;
         protected byte prefix;
 
         public MPTReadOnlyDb(IReadOnlyStore store, byte prefix)
