@@ -6,7 +6,7 @@ namespace Neo.Cryptography.MPT
     public class BranchNode : MPTNode
     {
         public const int ChildCount = 17;
-        public MPTNode[] Children = new MPTNode[ChildCount];
+        public readonly MPTNode[] Children = new MPTNode[ChildCount];
 
         public BranchNode()
         {
