@@ -23,7 +23,7 @@ namespace Neo.Consensus
             + TransactionHashes.GetVarSize()    //TransactionHashes
             + MinerTransaction.Size             //MinerTransaction
 
-            + ProposalStateRoot.Size;                        //StateRoot
+            + ProposalStateRoot.Size;           //StateRoot
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
