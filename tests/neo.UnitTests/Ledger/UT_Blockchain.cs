@@ -9,6 +9,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
+using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
@@ -173,6 +174,7 @@ namespace Neo.UnitTests.Ledger
             system.Blockchain.Ask(block).Wait();
             snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.Transactions.TryGet(tx.Hash).Should().NotBeNull();
+            snapshot.Transactions.TryGet(tx.Hash).VMState.Should().Be(VMState.FAULT);
             snapshot.Transactions.Delete(tx.Hash);
             snapshot.Blocks.Delete(block.Hash);
             snapshot.PersistingBlock = null;
