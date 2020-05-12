@@ -13,7 +13,6 @@ namespace Neo.Wallets.NEP6
 {
     public class NEP6Wallet : Wallet
     {
-        private readonly string path;
         private string password;
         private string name;
         private Version version;
@@ -24,9 +23,8 @@ namespace Neo.Wallets.NEP6
         public override string Name => name;
         public override Version Version => version;
 
-        public NEP6Wallet(string path, string name = null)
+        public NEP6Wallet(string path, string name = null) : base(path)
         {
-            this.path = path;
             if (File.Exists(path))
             {
                 JObject wallet = JObject.Parse(File.ReadAllBytes(path));
@@ -42,9 +40,8 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public NEP6Wallet(JObject wallet)
+        internal NEP6Wallet(JObject wallet) : base(null)
         {
-            this.path = "";
             LoadFromJson(wallet, out Scrypt, out accounts, out extra);
         }
 
@@ -262,7 +259,7 @@ namespace Neo.Wallets.NEP6
             wallet["scrypt"] = Scrypt.ToJson();
             wallet["accounts"] = new JArray(accounts.Values.Select(p => p.ToJson()));
             wallet["extra"] = extra;
-            File.WriteAllText(path, wallet.ToString());
+            File.WriteAllText(Path, wallet.ToString());
         }
 
         public IDisposable Unlock(string password)
