@@ -246,7 +246,6 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-
                 ProposalStateRoot = ProposalStateRoot,
             });
         }
@@ -272,7 +271,6 @@ namespace Neo.Consensus
                     NextConsensus = NextConsensus,
                     MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                     Timestamp = Timestamp,
-
                     ProposalStateRoot = ProposalStateRoot
                 };
             }
@@ -439,7 +437,6 @@ namespace Neo.Consensus
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
-
             ProposalStateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
         }
 
