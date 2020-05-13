@@ -113,9 +113,11 @@ namespace Neo.Network.P2P
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
+                case MessageCommand.NotFound:
+                    OnNotFound((InvPayload)msg.Payload);
+                    break;
                 case MessageCommand.Alert:
                 case MessageCommand.MerkleBlock:
-                case MessageCommand.NotFound:
                 case MessageCommand.Reject:
                 default: break;
             }
@@ -209,6 +211,11 @@ namespace Neo.Network.P2P
             }
         }
 
+        private void OnNotFound(InvPayload payload)
+        {
+
+        }
+
         /// <summary>
         /// Will be triggered when a MessageCommand.GetData message is received.
         /// The payload includes an array of hash values.
@@ -217,8 +224,8 @@ namespace Neo.Network.P2P
         /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)
         {
-            UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
-            foreach (UInt256 hash in hashes)
+            var notFound = new List<UInt256>();
+            foreach (UInt256 hash in payload.Hashes.Where(p => sentHashes.Add(p)))
             {
                 switch (payload.Type)
                 {
@@ -226,6 +233,8 @@ namespace Neo.Network.P2P
                         Transaction tx = Blockchain.Singleton.GetTransaction(hash);
                         if (tx != null)
                             EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
+                        else
+                            notFound.Add(hash);
                         break;
                     case InventoryType.Block:
                         Block block = Blockchain.Singleton.GetBlock(hash);
@@ -241,12 +250,22 @@ namespace Neo.Network.P2P
                                 EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                             }
                         }
+                        else
+                        {
+                            notFound.Add(hash);
+                        }
                         break;
                     case InventoryType.Consensus:
                         if (Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus))
                             EnqueueMessage(Message.Create(MessageCommand.Consensus, inventoryConsensus));
                         break;
                 }
+            }
+
+            if (notFound.Count > 0)
+            {
+                foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound.ToArray()))
+                    EnqueueMessage(Message.Create(MessageCommand.NotFound, entry));
             }
         }
 
