@@ -605,11 +605,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             economicEpoch.CommitteesRewardRatio.Should().Be(10);
             economicEpoch.VotersRewardRatio.Should().Be(80);
             CommitteesEpochState committeesEpoch = snapshot.Storages.TryGet(CreateStorageKey(23, BitConverter.GetBytes((uint)1))).GetInteroperable<CommitteesEpochState>();
-            for(var i = 0; i < 7; i++)
+            for (var i = 0; i < 7; i++)
             {
                 var validator = committeesEpoch.Committees[i].Item1;
                 bool found = false;
-                for(var j = 0; j < 7; j++)
+                for (var j = 0; j < 7; j++)
                 {
                     if (validator.Equals(Blockchain.StandbyCommittee[Blockchain.CommitteeMembersCount - j - 1]))
                     {
