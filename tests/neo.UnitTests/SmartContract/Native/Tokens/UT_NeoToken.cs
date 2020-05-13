@@ -9,6 +9,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
@@ -525,6 +526,113 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.Result.Should().BeTrue();
         }
 
+        [TestMethod]
+        public void TestEconomicParameter()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            (bool, bool) ret1 = Check_SetEconomicParameter(snapshot, "setGasPerBlock", 2 * GasToken.GAS.Factor);
+            ret1.Item2.Should().BeTrue();
+            ret1.Item1.Should().BeTrue();
+
+            ret1 = Check_SetEconomicParameter(snapshot, "setNeoHoldersRewardRatio", 10);
+            ret1.Item2.Should().BeTrue();
+            ret1.Item1.Should().BeTrue();
+
+            ret1 = Check_SetEconomicParameter(snapshot, "setCommitteesRewardRatio", 10);
+            ret1.Item2.Should().BeTrue();
+            ret1.Item1.Should().BeTrue();
+
+            ret1 = Check_SetEconomicParameter(snapshot, "setVotersRewardRatio", 80);
+            ret1.Item2.Should().BeTrue();
+            ret1.Item1.Should().BeTrue();
+
+            (BigInteger, bool) result = Check_GetEconomicParameter(snapshot, "getGasPerBlock");
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(2 * GasToken.GAS.Factor);
+
+            result = Check_GetEconomicParameter(snapshot, "getGasPerBlock");
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(2 * GasToken.GAS.Factor);
+
+            result = Check_GetEconomicParameter(snapshot, "getNeoHoldersRewardRatio");
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(10);
+
+            result = Check_GetEconomicParameter(snapshot, "getCommitteesRewardRatio");
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(10);
+
+            result = Check_GetEconomicParameter(snapshot, "getVotersRewardRatio");
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(80);
+        }
+
+        [TestMethod]
+        public void TestCrossBlockEpoch()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // 1) epoch parameter will keep the old one
+            snapshot.PersistingBlock = new Block() { Index = Blockchain.Epoch };
+
+            InvokeNeoTokenOnPersist(snapshot);
+
+            EpochState epochState = snapshot.Storages.TryGet(CreateStorageKey(17)).GetInteroperable<EpochState>();
+            epochState.CommitteeId.Should().Be(0);
+            epochState.EconomicId.Should().Be(0);
+
+            // 2) epoch pamaeter will adjusted, when votes or economic parameters changed
+            snapshot.PersistingBlock = new Block() { Index = Blockchain.Epoch * 2 };
+            for (int i = 0; i < 7; i++)
+            {
+                StorageKey key = CreateStorageKey(33, Blockchain.StandbyCommittee[Blockchain.CommitteeMembersCount - i - 1].ToArray());
+                CandidateState candidate = snapshot.Storages.TryGet(key).GetInteroperable<CandidateState>();
+                candidate.Votes *= 10;
+            }
+            EconomicParameter economic = snapshot.Storages.GetAndChange(CreateStorageKey(27)).GetInteroperable<EconomicParameter>();
+            economic.NeoHoldersRewardRatio = 10;
+            economic.CommitteesRewardRatio = 10;
+            economic.VotersRewardRatio = 80;
+
+            InvokeNeoTokenOnPersist(snapshot);
+
+            epochState = snapshot.Storages.TryGet(CreateStorageKey(17)).GetInteroperable<EpochState>();
+            epochState.CommitteeId.Should().Be(1);
+            epochState.EconomicId.Should().Be(1);
+
+            EconomicEpochState economicEpoch = snapshot.Storages.TryGet(CreateStorageKey(19, BitConverter.GetBytes((uint)1))).GetInteroperable<EconomicEpochState>();
+            economicEpoch.NeoHoldersRewardRatio.Should().Be(10);
+            economicEpoch.CommitteesRewardRatio.Should().Be(10);
+            economicEpoch.VotersRewardRatio.Should().Be(80);
+            CommitteesEpochState committeesEpoch = snapshot.Storages.TryGet(CreateStorageKey(23, BitConverter.GetBytes((uint)1))).GetInteroperable<CommitteesEpochState>();
+            for(var i = 0; i < 7; i++)
+            {
+                var validator = committeesEpoch.Committees[i].Item1;
+                bool found = false;
+                for(var j = 0; j < 7; j++)
+                {
+                    if (validator.Equals(Blockchain.StandbyCommittee[Blockchain.CommitteeMembersCount - j - 1]))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                found.Should().BeTrue();
+            }
+        }
+
+        internal bool InvokeNeoTokenOnPersist(StoreView snapshot)
+        {
+            var engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true);
+            engine.LoadScript(NativeContract.NEO.Script);
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("onPersist");
+            engine.LoadScript(script.ToArray());
+            return engine.Execute() == VMState.HALT;
+        }
+
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -656,6 +764,56 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
             return ((result as VM.Types.Integer).GetBigInteger(), true);
+        }
+
+        internal static (BigInteger Value, bool State) Check_GetEconomicParameter(StoreView snapshot, string method)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(method);
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (BigInteger.Zero, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return ((result as VM.Types.Integer).GetBigInteger(), true);
+        }
+
+        internal static (bool Value, bool State) Check_SetEconomicParameter(StoreView snapshot, string method, BigInteger value)
+        {
+            ECPoint[] committees = NeoToken.NEO.GetCommittee(snapshot);
+            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 3, committees).ToScriptHash();
+            var engine = new ApplicationEngine(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(value);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(method);
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (result.ToBoolean(), true);
         }
 
         internal static void CheckValidator(ECPoint eCPoint, DataCache<StorageKey, StorageItem>.Trackable trackable)
