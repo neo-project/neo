@@ -589,7 +589,7 @@ namespace Neo.Ledger
 
                                 using var sink = plugin != null ? plugin.GetSink(block.Header, tx_invocation) : null;
  
-                                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas, traceDebugSink: sink.Trace))
+                                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas, traceDebugSink: sink))
                                 {
                                     if (sink != null)
                                     {
