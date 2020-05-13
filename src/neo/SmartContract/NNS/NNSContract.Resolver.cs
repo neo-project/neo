@@ -18,13 +18,13 @@ namespace Neo.SmartContract.NNS
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             string name = System.Text.Encoding.UTF8.GetString(tokenId);
-            UInt256 innerKey = ComputeNameHash(name);
+            UInt256 innerKey = GetInnerKey(tokenId);
             DomainState domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
             if (domainInfo is null) return false;
             if (IsExpired(engine.Snapshot, innerKey)) return false;
             string text = args[1].GetString();
             RecordType recordType = (RecordType)(byte)args[2].GetBigInteger();
-            if ((recordType == RecordType.A || recordType == RecordType.CNAME) && IsDomain(name)) return false;
+            if ((recordType == RecordType.A || recordType == RecordType.CNAME) && !IsDomain(name)) return false;
             if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Operator)) return false;
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem(new RecordInfo { Text = text, Type = recordType }));
@@ -36,7 +36,7 @@ namespace Neo.SmartContract.NNS
 
         // return the text and recordtype of the name
         [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "name" })]
-        private StackItem Resolve(ApplicationEngine engine, Array args)
+        public StackItem Resolve(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             string name = System.Text.Encoding.UTF8.GetString(tokenId);
@@ -89,9 +89,10 @@ namespace Neo.SmartContract.NNS
 
         public bool IsExpired(StoreView snapshot, UInt256 innerKey)
         {
+            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root, innerKey)) != null) return false;
             var domainInfo = GetDomainInfo(snapshot, innerKey);
             if (domainInfo is null) return false;
-            return snapshot.Height - domainInfo.TimeToLive > 0;
+            return snapshot.Height.CompareTo(domainInfo.TimeToLive) > 0;
         }
     }
 }

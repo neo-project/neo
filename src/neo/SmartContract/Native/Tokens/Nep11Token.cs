@@ -120,7 +120,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
-        private StackItem TokensOf(ApplicationEngine engine, Array args)
+        public StackItem TokensOf(ApplicationEngine engine, Array args)
         {
             UInt160 owner = new UInt160(args[0].GetSpan());
             return new InteropInterface(TokensOf(engine.Snapshot, owner));
@@ -135,8 +135,8 @@ namespace Neo.SmartContract.Native.Tokens
             }).GetEnumerator();
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.None, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
-        private StackItem OwnerOf(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, ContractParameterType.InteropInterface, CallFlags.None, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
+        public StackItem OwnerOf(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             return new InteropInterface(OwnerOf(engine.Snapshot, tokenId));

@@ -11,7 +11,7 @@ namespace Neo.SmartContract.NNS
     {
         //set the operator of the name, only can called by the current owner
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "manager" })]
-        private StackItem SetOperator(ApplicationEngine engine, Array args)
+        public StackItem SetOperator(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             UInt160 manager = new UInt160(args[1].GetSpan());
@@ -19,28 +19,35 @@ namespace Neo.SmartContract.NNS
             if (IsRootDomain(name) || !IsDomain(name)) return false;
             UInt256 innerKey = GetInnerKey(tokenId);
             StorageKey key = CreateTokenKey(innerKey);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
-            if (storage is null)
+            DomainState domainInfo = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<DomainState>();
+            if (domainInfo is null)
             {
                 string parentDomain = string.Join(".", name.Split(".")[1..]);
                 UInt256 parentInnerKey = GetInnerKey(System.Text.Encoding.UTF8.GetBytes(parentDomain));
                 if (IsCrossLevel(engine.Snapshot, name) || IsExpired(engine.Snapshot, parentInnerKey)) return false;
-                UInt160 parentDomianOwner = (UInt160)OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(parentDomain)).Current;
+                var parentDomianOwner = GetAdmin(engine.Snapshot);
+                uint ttl = engine.Snapshot.Height + BlockPerYear;
+                if (!IsRootDomain(parentDomain))
+                {
+                    IEnumerator enumerator = OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(parentDomain));
+                    if (!enumerator.MoveNext()) return false;
+                    parentDomianOwner = (UInt160)enumerator.Current;
+                }
                 if (!InteropService.Runtime.CheckWitnessInternal(engine, parentDomianOwner))
                     return false;
-                DomainState parentDomainInfo = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey)).GetInteroperable<DomainState>();
-                Mint(engine, parentDomianOwner, tokenId, parentDomainInfo.TimeToLive);
+                ttl = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey))?.GetInteroperable<DomainState>().TimeToLive ?? ttl;
+                Mint(engine, parentDomianOwner, tokenId, ttl);
             }
-            storage = engine.Snapshot.Storages.GetAndChange(key);
-            DomainState domainInfo = storage.GetInteroperable<DomainState>();
-            if (IsExpired(engine.Snapshot, innerKey)) return false;
-            IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
-            UInt160 owner = null;
-            if (enumerator.MoveNext())
+            else
             {
-                owner = (UInt160)enumerator.Current;
+                if (IsExpired(engine.Snapshot, innerKey)) return false;
+                IEnumerator enumerator = OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(name));
+                if (!enumerator.MoveNext()) return false;
+                var owner = (UInt160)enumerator.Current;
+                if (!InteropService.Runtime.CheckWitnessInternal(engine, owner))
+                    return false;
             }
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
+            domainInfo = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<DomainState>();
             domainInfo.Operator = manager;
             return true;
         }

@@ -1,5 +1,7 @@
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Ledger;
+using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
