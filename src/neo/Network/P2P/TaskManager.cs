@@ -23,21 +23,20 @@ namespace Neo.Network.P2P
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
 
+        private const int MaxConncurrentTasks = 3;
+        private const int MaxSyncTasksCount = 50;
+        private const int PingCoolingOffPeriod = 60; // in secconds.
+
         private readonly NeoSystem system;
-        private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
-        private readonly List<uint> failedSyncTasks = new List<uint>();
-        private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
-        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>   
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
-
-        private const int MaxConncurrentTasks = 3;
-        private const int MaxSyncTasksCount = 50;
-        private const int PingCoolingOffPeriod = 60; // in secconds.
-
+        private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
+        private readonly List<uint> failedSyncTasks = new List<uint>();
+        private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
+        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private uint lastTaskIndex = 0;
 
         public TaskManager(NeoSystem system)
