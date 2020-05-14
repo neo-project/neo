@@ -92,7 +92,7 @@ namespace Neo
                     "seed5.neo.org:10333"
                 };
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
-            this.Epoch = section.GetValue("Epoch", 5760u);
+            this.Epoch = section.GetValue("Epoch", 5760u); // 24 hours
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
         }
     }
