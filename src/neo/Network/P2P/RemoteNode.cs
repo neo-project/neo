@@ -18,7 +18,7 @@ namespace Neo.Network.P2P
     {
         internal class StartProtocol { }
         internal class Relay { public IInventory Inventory; }
-        internal NodeSession session = new NodeSession();
+        internal TaskSession session = new TaskSession();
 
         private readonly NeoSystem system;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();

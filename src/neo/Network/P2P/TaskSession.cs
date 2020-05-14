@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Neo.Network.P2P
 {
-    internal class NodeSession
+    internal class TaskSession
     {
         public readonly Dictionary<UInt256, DateTime> InvTasks = new Dictionary<UInt256, DateTime>();
         public readonly Dictionary<uint, DateTime> IndexTasks = new Dictionary<uint, DateTime>();

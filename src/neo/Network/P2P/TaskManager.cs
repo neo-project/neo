@@ -139,7 +139,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private bool AssignSyncTask(uint index, NodeSession filterSession = null)
+        private bool AssignSyncTask(uint index, TaskSession filterSession = null)
         {
             if (index <= Blockchain.Singleton.Height || nodes.Values.Any(p => p.session != filterSession && p.session.IndexTasks.ContainsKey(index)))
                 return true;
@@ -153,7 +153,7 @@ namespace Neo.Network.P2P
                 failedSyncTasks.Add(index);
                 return false;
             }
-            NodeSession session = remoteNode.Value.session;
+            TaskSession session = remoteNode.Value.session;
             session.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
             remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(index, 1)));
             failedSyncTasks.Remove(index);
@@ -257,7 +257,7 @@ namespace Neo.Network.P2P
         {
             foreach (RemoteNode node in nodes.Values)
             {
-                NodeSession session = node.session;
+                TaskSession session = node.session;
                 foreach (var task in session.InvTasks.ToArray())
                 {
                     if (DateTime.UtcNow - task.Value > TaskTimeout)
@@ -284,7 +284,7 @@ namespace Neo.Network.P2P
         {
             if (!nodes.TryGetValue(actor, out RemoteNode remoteNode))
                 return;
-            NodeSession session = remoteNode.session;
+            TaskSession session = remoteNode.session;
             foreach (uint index in session.IndexTasks.Keys)
                 AssignSyncTask(index, session);
 
