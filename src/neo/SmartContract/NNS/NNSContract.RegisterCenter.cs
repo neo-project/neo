@@ -55,10 +55,12 @@ namespace Neo.SmartContract.NNS
         }
 
         //update ttl of first level name, can by called by anyone
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "ttl" })]
-        private StackItem RenewName(ApplicationEngine engine, Array args)
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Integer, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "ttl" })]
+        public StackItem RenewName(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
+            uint validUntilBlock = (uint)args[1].GetBigInteger();
+            UInt160 from = args[2].GetSpan().AsSerializable<UInt160>();
             string name = Encoding.UTF8.GetString(tokenId).ToLower();
             if (!IsDomain(name)) return false;
             string[] names = name.Split(".");
@@ -66,16 +68,16 @@ namespace Neo.SmartContract.NNS
             if (level != 2) return false;
 
             UInt256 innerKey = GetInnerKey(tokenId);
-            uint validUntilBlock = (uint)args[1].GetBigInteger();
             ulong duration = validUntilBlock - engine.Snapshot.Height;
             if (duration < 0) return false;
             StorageKey key = CreateTokenKey(innerKey);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
             if (storage is null) return false;
             DomainState domain_state = storage.GetInteroperable<DomainState>();
-            domain_state.TimeToLive = validUntilBlock;
             BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / BlockPerYear;
-            return GAS.Transfer(engine, ((Transaction)engine.ScriptContainer).Sender, GetReceiptAddress(engine.Snapshot), amount);
+            if (!GAS.Transfer(engine, from, GetReceiptAddress(engine.Snapshot), amount)) return false;
+            domain_state.TimeToLive = validUntilBlock;
+            return true;
         }
 
         public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)

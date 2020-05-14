@@ -28,6 +28,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
             NativeContract.NNS.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.NEO.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
         }
 
         [TestMethod]
@@ -329,6 +330,66 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_transfer.State.Should().BeTrue();
         }
 
+        [TestMethod]
+        public void Check_RegisterCenter_Renew()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var factor = 1;
+            var ret = Check_GetAdmin(snapshot);
+            var from = ret.Result.GetSpan().AsSerializable<UInt160>();
+            UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
+
+            //check_registerRootName
+            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            ret_registerRootName.Result.Should().Be(true);
+            ret_registerRootName.State.Should().BeTrue();
+
+            //check_getRootName
+            var ret_getRootName = Check_GetRootName(snapshot);
+            IEnumerator eumerator_RootName = ((InteropInterface)ret_getRootName.Result).GetInterface<IEnumerator>();
+            eumerator_RootName.MoveNext().Should().BeTrue();
+            eumerator_RootName.Current.Equals("AA").Should().Be(true);
+            ret_getRootName.State.Should().BeTrue();
+
+            //check_transfer_create_first-level_domain
+            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            ret_transfer.Result.Should().BeTrue();
+            ret_transfer.State.Should().BeTrue();
+
+            snapshot.BlockHashIndex.GetAndChange().Index = 2000001;
+            //check_renewName
+            var ret_renewName = Check_RenewName(snapshot, from.ToArray(), account, System.Text.Encoding.UTF8.GetBytes("AA.AA"), 100000000L);
+            ret_renewName.Result.Should().BeTrue();
+            ret_renewName.State.Should().BeTrue();
+        }
+
+        internal static (bool State, bool Result) Check_RenewName(StoreView snapshot, byte[] from, UInt160 account, byte[] tokenId, BigInteger height)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(account), snapshot, 0, true);
+
+            engine.LoadScript(NativeContract.NNS.Script);
+
+            var script = new ScriptBuilder();
+
+            script.EmitPush(account);
+            script.EmitPush(height);
+            script.EmitPush(tokenId);
+            script.EmitPush(3);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("renewName");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (true, result.ToBoolean());
+        }
 
         [TestMethod]
         public void Check_Resolver()
@@ -355,6 +416,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
+            //check_transfer_create_first-level_domain
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("BB.AA"), factor, true);
+            ret_transfer.Result.Should().BeTrue();
+            ret_transfer.State.Should().BeTrue();
+
+            //check_transfer_create_first-level_domain
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("CC.AA"), factor, true);
+            ret_transfer.Result.Should().BeTrue();
+            ret_transfer.State.Should().BeTrue();
+
             //check_ownerof
             var ret_OwnerOf = Check_OwnerOf(snapshot, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
             IEnumerator eumerator_OwnerOf = ((InteropInterface)ret_OwnerOf.Result).GetInterface<IEnumerator>();
@@ -366,7 +437,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var ret_TokensOf = Check_TokensOf(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
             IEnumerator eumerator_TokensOf = ((InteropInterface)ret_TokensOf.Result).GetInterface<IEnumerator>();
             eumerator_TokensOf.MoveNext().Should().BeTrue();
-            ((DomainState)(eumerator_TokensOf.Current)).Name.Equals("AA.AA").Should().Be(true);
+            ((DomainState)(eumerator_TokensOf.Current)).Name.Equals("CC.AA").Should().Be(true);
             ret_TokensOf.State.Should().BeTrue();
 
             //check_balanceOf
@@ -381,12 +452,32 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //check_totalSupply
             var ret_totalSupply = Check_TotalSupply(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_totalSupply.Result.GetBigInteger().Should().Be(2);
+            ret_totalSupply.Result.GetBigInteger().Should().Be(4);
             ret_totalSupply.State.Should().BeTrue();
 
             //check_setText
             var ret_setText = Check_SetText(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA"), "BBB", 0, true);
             ret_setText.Result.Should().Be(true);
+            ret_setText.State.Should().BeTrue();
+
+            //check_setText
+            ret_setText = Check_SetText(snapshot, from, System.Text.Encoding.UTF8.GetBytes("BB.AA"), "AA.AA", 1, true);
+            ret_setText.Result.Should().Be(true);
+            ret_setText.State.Should().BeTrue();
+
+            //check_setText
+            ret_setText = Check_SetText(snapshot, from, System.Text.Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
+            ret_setText.Result.Should().Be(true);
+            ret_setText.State.Should().BeTrue();
+
+            //check_setText witness wrong
+            ret_setText = Check_SetText(snapshot, UInt160.Zero, System.Text.Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
+            ret_setText.Result.Should().Be(false);
+            ret_setText.State.Should().BeTrue();
+
+            //check_setText no token
+            ret_setText = Check_SetText(snapshot, UInt160.Zero, System.Text.Encoding.UTF8.GetBytes("EE.AA"), "CC.AA", 3, true);
+            ret_setText.Result.Should().Be(false);
             ret_setText.State.Should().BeTrue();
 
             //check_setOperator
@@ -398,6 +489,41 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_resolve.Result.GetString().Should().Be("{\"text\":\"BBB\",\"recordType\":\"A\"}");
             ret_resolve.State.Should().BeTrue();
+
+            //check_resolve
+            ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("BB.AA"), true);
+            ret_resolve.Result.GetString().Should().Be("{\"text\":\"BBB\",\"recordType\":\"A\"}");
+            ret_resolve.State.Should().BeTrue();
+
+            //check_resolve
+            ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("DD.AA"), true);
+            ret_resolve.Result.GetString().Should().Be("{\"text\":\"Text does not exist\",\"recordType\":\"ERROR\"}");
+            ret_resolve.State.Should().BeTrue();
+        }
+
+        public void Check_Operator()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var factor = 1;
+            var ret = Check_GetAdmin(snapshot);
+            var from = ret.Result.GetSpan().AsSerializable<UInt160>();
+            snapshot.BlockHashIndex.GetAndChange().Index = 0;
+
+            //check_registerRootName
+            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            ret_registerRootName.Result.Should().Be(true);
+            ret_registerRootName.State.Should().BeTrue();
+
+            //check_getRootName
+            var ret_getRootName = Check_GetRootName(snapshot);
+            IEnumerator eumerator_RootName = ((InteropInterface)ret_getRootName.Result).GetInterface<IEnumerator>();
+            eumerator_RootName.MoveNext().Should().BeTrue();
+            eumerator_RootName.Current.Equals("AA").Should().Be(true);
+
+            //check_setOperator
+            var ret_setOperator = Check_SetOperator(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            ret_setOperator.Result.Should().Be(true);
+            ret_setOperator.State.Should().BeTrue();
         }
 
         internal static (bool State, StackItem Result) Check_Resolve(StoreView snapshot, byte[] tokenId, bool signAccount)
