@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P
 {
-    partial class TaskManager : UntypedActor
+    internal class TaskManager : UntypedActor
     {
         public class Register { public uint LastBlockIndex; }
         public class Update { public uint LastBlockIndex; }
