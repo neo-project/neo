@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action.Should().Throw<InvalidOperationException>();
 
             //burn amount greater than balance
-            action = () => test.Burn(ae, UInt160.Zero, test.Factor +1, UInt256.Zero.ToArray());
+            action = () => test.Burn(ae, UInt160.Zero, test.Factor + 1, UInt256.Zero.ToArray());
             action.Should().Throw<InvalidOperationException>();
 
             //burn
@@ -66,7 +66,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action.Should().NotThrow<Exception>();
 
             //burn
-            action = () => test.Burn(ae, UInt160.Zero, test.Factor-1, UInt256.Zero.ToArray());
+            action = () => test.Burn(ae, UInt160.Zero, test.Factor - 1, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
 
             //burn
@@ -96,15 +96,15 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action.Should().NotThrow<Exception>();
 
             //transfer amount greater than balance wrong
-            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor+1, UInt256.Zero.ToArray());
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor + 1, UInt256.Zero.ToArray());
             action.Should().Equals(false);
 
             //transfer
-            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor-1, UInt256.Zero.ToArray());
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor - 1, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
 
             //transfer
-            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),  1, UInt256.Zero.ToArray());
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), 1, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
 
             //transfer negative amount wrong
@@ -112,7 +112,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action.Should().Throw<ArgumentOutOfRangeException>();
 
             //transfer no witness wrong
-            action = () => test.Transfer(ae,UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt160.Zero, -1, UInt256.Zero.ToArray());
+            action = () => test.Transfer(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt160.Zero, -1, UInt256.Zero.ToArray());
             action.Should().Equals(false);
 
             //transfer no token wrong
