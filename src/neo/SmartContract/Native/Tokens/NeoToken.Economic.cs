@@ -37,11 +37,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         private void OnPersistEpochState(ApplicationEngine engine)
         {
+            // At the beginning of epoch, the economic parameters and committees decide the economic model within the epoch.
             if (engine.Snapshot.PersistingBlock.Index % Blockchain.Epoch != 0)
                 return;
+
             uint currentHeight = engine.Snapshot.PersistingBlock.Index;
             EpochState epochState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Epoch)).GetInteroperable<EpochState>();
-
             EconomicParameter economicParameter = GetEconomicParameter(engine.Snapshot);
             EconomicEpochState economicEpoch = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_EconomicEpoch, epochState.EconomicId)).GetInteroperable<EconomicEpochState>();
             if (!economicEpoch.CompareTo(economicParameter))
@@ -91,10 +92,8 @@ namespace Neo.SmartContract.Native.Tokens
             if (votes.IsZero || start >= end) return BigInteger.Zero;
             if (votes.Sign < 0) throw new ArgumentOutOfRangeException(nameof(votes));
 
-            EpochState epochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Epoch)).GetInteroperable<EpochState>();
-            if (epochState is null) return BigInteger.Zero;
-
             BigInteger claimableGAS = 0;
+            EpochState epochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Epoch)).GetInteroperable<EpochState>();
             for (long economicId = epochState.EconomicId, committeeId = (long)epochState.CommitteeId - 1; economicId >= 0; --economicId)
             {
                 EconomicEpochState economicEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_EconomicEpoch, (uint)economicId)).GetInteroperable<EconomicEpochState>();
@@ -103,7 +102,6 @@ namespace Neo.SmartContract.Native.Tokens
 
                 uint aStart = Math.Max(economicEpochState.Start, start);
                 uint aEnd = Math.Min(economicEpochState.End, end);
-
                 for (++committeeId; committeeId >= 0; --committeeId)
                 {
                     CommitteesEpochState committeeEpochState = snapshot.Storages.TryGet(CreateStorageKey(Prefix_CommitteeEpoch, (uint)committeeId))?.GetInteroperable<CommitteesEpochState>();
