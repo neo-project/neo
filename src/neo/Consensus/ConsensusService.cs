@@ -182,7 +182,8 @@ namespace Neo.Consensus
                     if (block_received_gap > Blockchain.TimePerBlock / 3 && block_received_gap < Blockchain.TimePerBlock * 2)
                     {
                         // Renew time per block by last consensus period.
-                        block_span = (8 * block_span + 3 * (2 * Blockchain.TimePerBlock - block_received_gap)) / 11.0;
+                        block_span = block_span + 3 * (Blockchain.TimePerBlock - block_received_gap) / 11.0;
+                        if (block_span < TimeSpan.Zero) block_span = TimeSpan.Zero;
                     }
                     TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
                     if (span >= block_span)
