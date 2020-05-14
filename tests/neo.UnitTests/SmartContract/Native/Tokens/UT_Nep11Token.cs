@@ -38,6 +38,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             test.IncreaseTotalSupply(snapshot);
             test.DecreaseTotalSupply(snapshot);
+            //double decrease will not effective
+            test.DecreaseTotalSupply(snapshot);
             StackItem stackItem = test.TotalSupply(ae, null);
             stackItem.GetBigInteger().Should().Be(0);
         }
@@ -54,8 +56,21 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             //double mint wrong
             action = () => test.Mint(ae, UInt160.Zero, UInt256.Zero.ToArray());
             action.Should().Throw<InvalidOperationException>();
+
+            //burn amount greater than balance
+            action = () => test.Burn(ae, UInt160.Zero, test.Factor +1, UInt256.Zero.ToArray());
+            action.Should().Throw<InvalidOperationException>();
+
             //burn
-            action = () => test.Burn(ae, UInt160.Zero, test.Factor, UInt256.Zero.ToArray());
+            action = () => test.Burn(ae, UInt160.Zero, 0, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+
+            //burn
+            action = () => test.Burn(ae, UInt160.Zero, test.Factor-1, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+
+            //burn
+            action = () => test.Burn(ae, UInt160.Zero, 1, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
 
             //burn no token wrong
@@ -80,9 +95,33 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Action action = () => test.Mint(ae, UInt160.Zero, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
 
+            //transfer amount greater than balance wrong
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor+1, UInt256.Zero.ToArray());
+            action.Should().Equals(false);
+
             //transfer
-            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor, UInt256.Zero.ToArray());
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor-1, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
+
+            //transfer
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),  1, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+
+            //transfer negative amount wrong
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), -1, UInt256.Zero.ToArray());
+            action.Should().Throw<ArgumentOutOfRangeException>();
+
+            //transfer no witness wrong
+            action = () => test.Transfer(ae,UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt160.Zero, -1, UInt256.Zero.ToArray());
+            action.Should().Equals(false);
+
+            //transfer no token wrong
+            action = () => test.Transfer(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt160.Zero, -1, test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
+            action.Should().Equals(false);
+
+            //transfer no account wrong
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), -1, UInt256.Zero.ToArray());
+            action.Should().Equals(false);
 
             //burn
             ae = new ApplicationEngine(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")), snapshot, 0, true);
@@ -99,7 +138,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         public override string Symbol => "tt";
 
-        public override byte Decimals => 0;
+        public override byte Decimals => 1;
 
         public override string ServiceName => "testNep11Token";
 
