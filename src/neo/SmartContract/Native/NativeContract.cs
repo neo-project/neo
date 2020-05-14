@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
