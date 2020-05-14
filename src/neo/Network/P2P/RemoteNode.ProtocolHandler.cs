@@ -113,11 +113,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
-                case MessageCommand.NotFound:
-                    OnNotFound((InvPayload)msg.Payload);
-                    break;
                 case MessageCommand.Alert:
                 case MessageCommand.MerkleBlock:
+                case MessageCommand.NotFound:
                 case MessageCommand.Reject:
                 default: break;
             }
@@ -209,11 +207,6 @@ namespace Neo.Network.P2P
                     EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                 }
             }
-        }
-
-        private void OnNotFound(InvPayload payload)
-        {
-
         }
 
         /// <summary>
