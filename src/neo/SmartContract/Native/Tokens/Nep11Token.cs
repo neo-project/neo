@@ -243,7 +243,7 @@ namespace Neo.SmartContract.Native.Tokens
             engine.Snapshot.Storages.Add(token2owner_key, new StorageItem(new UState() { Balance = Factor }));
 
             engine.Snapshot.Storages.Add(token_key, new StorageItem(token_state));
-            IncreaseTotalSupply(engine);
+            IncreaseTotalSupply(engine.Snapshot);
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, tokenId }));
         }
 
@@ -270,7 +270,7 @@ namespace Neo.SmartContract.Native.Tokens
                 if (!OwnerOf(engine.Snapshot, tokenId).MoveNext())
                 {
                     engine.Snapshot.Storages.Delete(token_key);
-                    DecreaseTotalSupply(engine);
+                    DecreaseTotalSupply(engine.Snapshot);
                 }
             }
             else
@@ -308,15 +308,15 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_TokenId, innerKey.ToArray());
         }
 
-        public void IncreaseTotalSupply(ApplicationEngine engine)
+        public void IncreaseTotalSupply(StoreView snapshot)
         {
-            StorageItem storage_totalSupply = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
+            StorageItem storage_totalSupply = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
             storage_totalSupply.Value = (new BigInteger(storage_totalSupply.Value) + BigInteger.One).ToByteArray();
         }
 
-        public void DecreaseTotalSupply(ApplicationEngine engine)
+        public void DecreaseTotalSupply(StoreView snapshot)
         {
-            StorageItem storage_totalSupply = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
+            StorageItem storage_totalSupply = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
             BigInteger totalSupply = new BigInteger(storage_totalSupply.Value);
             if (totalSupply.Equals(BigInteger.Zero)) return;
             storage_totalSupply.Value = (totalSupply - BigInteger.One).ToByteArray();

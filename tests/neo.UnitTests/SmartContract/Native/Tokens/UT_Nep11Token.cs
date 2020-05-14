@@ -1,10 +1,14 @@
 using Akka.TestKit.Xunit2;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 
 namespace Neo.UnitTests.SmartContract.Native.Tokens
 {
@@ -16,8 +20,75 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             TestBlockchain.InitializeMockNeoSystem();
         }
-
         private static readonly TestNep11Token test = new TestNep11Token();
+
+        [TestMethod]
+        public void TestTotalSupply()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            StackItem stackItem = test.TotalSupply(ae, null);
+            stackItem.GetBigInteger().Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestIncreaseAndDecreaseTotalSupply()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            test.IncreaseTotalSupply(snapshot);
+            test.DecreaseTotalSupply(snapshot);
+            StackItem stackItem = test.TotalSupply(ae, null);
+            stackItem.GetBigInteger().Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestMintAndBurn()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            //mint
+            Action action = () => test.Mint(ae, UInt160.Zero, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+
+            //double mint wrong
+            action = () => test.Mint(ae, UInt160.Zero, UInt256.Zero.ToArray());
+            action.Should().Throw<InvalidOperationException>();
+            //burn
+            action = () => test.Burn(ae, UInt160.Zero, test.Factor, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+
+            //burn no token wrong
+            action = () => test.Burn(ae, UInt160.Zero, test.Factor, test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
+            action.Should().Throw<InvalidOperationException>();
+
+            //burn no account wrong
+            action = () => test.Burn(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor, UInt256.Zero.ToArray());
+            action.Should().Throw<InvalidOperationException>();
+
+            //burn negative wrong
+            action = () => test.Burn(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), -1, UInt256.Zero.ToArray());
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
+
+        [TestMethod]
+        public void TestTransfer()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var ae = new ApplicationEngine(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, 0, true);
+            //mint
+            Action action = () => test.Mint(ae, UInt160.Zero, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+
+            //transfer
+            action = () => test.Transfer(ae, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+
+            //burn
+            ae = new ApplicationEngine(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")), snapshot, 0, true);
+            action = () => test.Burn(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor, UInt256.Zero.ToArray());
+            action.Should().NotThrow<Exception>();
+        }
     }
 
     public class TestNep11Token : Nep11Token<TestNep11TokenState, Nep11AccountState>
@@ -31,6 +102,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override byte Decimals => 0;
 
         public override string ServiceName => "testNep11Token";
+
+        public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.TotalSupply(engine, args);
+        }
     }
 
     public class TestNep11TokenState : Nep11TokenState
