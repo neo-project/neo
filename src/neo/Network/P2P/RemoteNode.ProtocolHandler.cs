@@ -321,7 +321,7 @@ namespace Neo.Network.P2P
         private void OnVerackMessageReceived()
         {
             verack = true;
-            system.TaskManager.Tell(new TaskManager.Register { Node = this });
+            system.TaskManager.Tell(new TaskManager.Register { LastBlockIndex = LastBlockIndex });
             CheckMessageQueue();
         }
 
@@ -371,7 +371,7 @@ namespace Neo.Network.P2P
             if (payload.LastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.StartSync { });
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
     }
