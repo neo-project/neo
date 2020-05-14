@@ -18,7 +18,6 @@ namespace Neo.Network.P2P
         public class PersistedBlockIndex { public uint PersistedIndex; }
         public class InvalidBlockIndex { public uint InvalidIndex; }
         public class NewTasks { public InvPayload Payload; }
-        public class TaskCompleted { public UInt256 Hash; }
         public class RestartTasks { public InvPayload Payload; }
         public class StartSync { }
         private class Timer { }
@@ -61,14 +60,14 @@ namespace Neo.Network.P2P
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
                     break;
-                case TaskCompleted completed:
-                    OnTaskCompleted(completed.Hash);
-                    break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
                     break;
                 case Block block:
                     OnReceiveBlock(block);
+                    break;
+                case IInventory inventory:
+                    OnTaskCompleted(inventory.Hash);
                     break;
                 case Blockchain.PersistCompleted persistBlock:
                     OnReceivePersistedBlockIndex(persistBlock.Block.Index);
@@ -95,7 +94,6 @@ namespace Neo.Network.P2P
             if (node is null) return;
             node.session.IndexTasks.Remove(block.Index);
             receivedBlockIndex.Add(block.Index, node);
-            system.Blockchain.Tell(block);
             RequestTasks();
         }
 

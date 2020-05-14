@@ -274,12 +274,7 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            if (inventory is Block block)
-            {
-                system.TaskManager.Tell(block);
-                return;
-            }
-            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
+            system.TaskManager.Tell(inventory);
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
             pendingKnownHashes.Remove(inventory.Hash);
             knownHashes.Add(inventory.Hash);
