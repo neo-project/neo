@@ -30,7 +30,7 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
-        /// </summary>   
+        /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
