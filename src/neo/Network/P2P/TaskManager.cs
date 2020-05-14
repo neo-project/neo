@@ -16,8 +16,6 @@ namespace Neo.Network.P2P
     {
         public class Register { public uint LastBlockIndex; }
         public class Update { public uint LastBlockIndex; }
-        public class PersistedBlockIndex { public uint PersistedIndex; }
-        public class InvalidBlockIndex { public uint InvalidIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
