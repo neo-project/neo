@@ -17,15 +17,20 @@ namespace Neo.SmartContract.NNS
         private StackItem SetText(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
-            string name = System.Text.Encoding.UTF8.GetString(tokenId);
-            UInt256 innerKey = GetInnerKey(tokenId);
-            DomainState domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
-            if (domainInfo is null) return false;
-            if (IsExpired(engine.Snapshot, innerKey)) return false;
             string text = args[1].GetString();
             RecordType recordType = (RecordType)(byte)args[2].GetBigInteger();
+
+            string name = System.Text.Encoding.UTF8.GetString(tokenId);
+            UInt256 innerKey = GetInnerKey(tokenId);
+            //Check whether domain is exist 
+            DomainState domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
+            if (domainInfo is null) return false;
+            //Check whether domain is expired 
+            if (IsExpired(engine.Snapshot, innerKey)) return false;
+            //Check whether record type is support 
             if ((recordType == RecordType.A || recordType == RecordType.CNAME) && !IsDomain(name)) return false;
             if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Operator)) return false;
+            //Modify text
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem(new RecordInfo { Text = text, Type = recordType }));
             RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
@@ -38,18 +43,18 @@ namespace Neo.SmartContract.NNS
         [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "name" })]
         public StackItem Resolve(ApplicationEngine engine, Array args)
         {
-            byte[] tokenId = args[0].GetSpan().ToArray();
-            string name = System.Text.Encoding.UTF8.GetString(tokenId);
+            byte[] name = args[0].GetSpan().ToArray();
             return Resolve(engine.Snapshot, name);
         }
 
-        public string Resolve(StoreView snapshot, string name, int resolveCount = 0)
+        public string Resolve(StoreView snapshot, byte[] parameter, int resolveCount = 0)
         {
+            string name = System.Text.Encoding.UTF8.GetString(parameter);
             if (resolveCount++ > MaxResolveCount)
             {
-                return new RecordInfo { Text = "The count of domain redirection exceeds 100 times", Type = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "Too many domain redirects", Type = RecordType.ERROR }.ToString();
             }
-            UInt256 innerKey = ComputeNameHash(name);
+            UInt256 innerKey = GetInnerKey(parameter);
             if (IsExpired(snapshot, innerKey))
             {
                 return new RecordInfo { Text = "TTL is expired", Type = RecordType.ERROR }.ToString();
@@ -64,9 +69,11 @@ namespace Neo.SmartContract.NNS
             switch (recordInfo.Type)
             {
                 case RecordType.CNAME:
-                    return Resolve(snapshot, recordInfo.Text, resolveCount);
+                    var parameter_cname = System.Text.Encoding.UTF8.GetBytes(recordInfo.Text);
+                    return Resolve(snapshot, parameter_cname, resolveCount);
                 case RecordType.NS:
-                    return Resolve(snapshot, string.Join(".", name.Split(".")[1..]), resolveCount);
+                    var parameter_ns = System.Text.Encoding.UTF8.GetBytes(string.Join(".", name.Split(".")[1..]));
+                    return Resolve(snapshot, parameter_ns, resolveCount);
             }
             return recordInfo.ToString();
         }
@@ -85,14 +92,6 @@ namespace Neo.SmartContract.NNS
             string pattern = @"^[a-zA-Z]{0,62}$";
             Regex regex = new Regex(pattern);
             return regex.Match(name).Success;
-        }
-
-        public bool IsExpired(StoreView snapshot, UInt256 innerKey)
-        {
-            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root, innerKey)) != null) return false;
-            var domainInfo = GetDomainInfo(snapshot, innerKey);
-            if (domainInfo is null) return false;
-            return snapshot.Height.CompareTo(domainInfo.TimeToLive) > 0;
         }
     }
 }
