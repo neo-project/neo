@@ -248,9 +248,9 @@ namespace Neo.Network.P2P
                             notFound.Add(hash);
                         }
                         break;
-                    case InventoryType.Consensus:
-                        if (Blockchain.Singleton.ConsensusRelayCache.TryGet(hash, out IInventory inventoryConsensus))
-                            EnqueueMessage(Message.Create(MessageCommand.Consensus, inventoryConsensus));
+                    default:
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory))
+                            EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
                         break;
                 }
             }
