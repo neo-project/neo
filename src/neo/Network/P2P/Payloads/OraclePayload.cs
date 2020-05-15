@@ -12,6 +12,8 @@ namespace Neo.Network.P2P.Payloads
 {
     public class OraclePayload : IInventory
     {
+        private const long MaxWitnessGas = 0_02000000;
+
         private byte[] _data;
         public byte[] Data
         {
@@ -133,7 +135,7 @@ namespace Neo.Network.P2P.Payloads
             ECPoint[] validators = NativeContract.Oracle.GetOracleValidators(snapshot);
             if (!validators.Any(u => u.Equals(OraclePub)))
                 return false;
-            return this.VerifyWitnesses(snapshot, 0_02000000);
+            return this.VerifyWitnesses(snapshot, MaxWitnessGas);
         }
     }
 }
