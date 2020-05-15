@@ -12,7 +12,7 @@ namespace Neo.SmartContract.Native.Tokens
         public byte CommitteesRewardRatio;
         public byte VotersRewardRatio;
 
-        public uint TotalRewardRatio => (uint) (NeoHoldersRewardRatio + CommitteesRewardRatio + VotersRewardRatio);
+        public uint TotalRewardRatio => (uint)(NeoHoldersRewardRatio + CommitteesRewardRatio + VotersRewardRatio);
 
         public virtual void FromStackItem(StackItem stackItem)
         {

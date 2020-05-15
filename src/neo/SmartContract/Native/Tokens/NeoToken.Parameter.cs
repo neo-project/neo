@@ -65,19 +65,19 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_08000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         private StackItem GetNeoHoldersRewardRatio(ApplicationEngine engine, Array args)
         {
-            return (int) GetEconomicParameter(engine.Snapshot).NeoHoldersRewardRatio;
+            return (int)GetEconomicParameter(engine.Snapshot).NeoHoldersRewardRatio;
         }
 
         [ContractMethod(0_08000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         private StackItem GetCommitteesRewardRatio(ApplicationEngine engine, Array args)
         {
-            return (int) GetEconomicParameter(engine.Snapshot).CommitteesRewardRatio;
+            return (int)GetEconomicParameter(engine.Snapshot).CommitteesRewardRatio;
         }
 
         [ContractMethod(0_08000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         private StackItem GetVotersRewardRatio(ApplicationEngine engine, Array args)
         {
-            return (int) GetEconomicParameter(engine.Snapshot).VotersRewardRatio;
+            return (int)GetEconomicParameter(engine.Snapshot).VotersRewardRatio;
         }
 
         private EconomicParameter GetAndChangeEconomicParameter(StoreView snapshot)
