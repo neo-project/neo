@@ -4,37 +4,18 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public class Nep5AccountState
+    public class Nep5AccountState : IInteroperable
     {
         public BigInteger Balance;
 
-        public Nep5AccountState()
+        public virtual void FromStackItem(StackItem stackItem)
         {
+            Balance = ((Struct)stackItem)[0].GetBigInteger();
         }
 
-        public Nep5AccountState(byte[] data)
+        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            FromByteArray(data);
-        }
-
-        public void FromByteArray(byte[] data)
-        {
-            FromStruct((Struct)BinarySerializer.Deserialize(data, 16, 34));
-        }
-
-        protected virtual void FromStruct(Struct @struct)
-        {
-            Balance = @struct[0].GetBigInteger();
-        }
-
-        public byte[] ToByteArray()
-        {
-            return BinarySerializer.Serialize(ToStruct(), 4096);
-        }
-
-        protected virtual Struct ToStruct()
-        {
-            return new Struct(new StackItem[] { Balance });
+            return new Struct(referenceCounter) { Balance };
         }
     }
 }

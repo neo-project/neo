@@ -14,10 +14,16 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_SmartContractHelper
     {
+        [TestInitialize]
+        public void TestSetup()
+        {
+            TestBlockchain.InitializeMockNeoSystem();
+        }
+
         [TestMethod]
         public void TestIsMultiSigContract()
         {
-            Neo.Cryptography.ECC.ECPoint[] publicKeys1 = new Neo.Cryptography.ECC.ECPoint[20];
+            ECPoint[] publicKeys1 = new ECPoint[20];
             for (int i = 0; i < 20; i++)
             {
                 byte[] privateKey1 = new byte[32];
@@ -151,7 +157,10 @@ namespace Neo.UnitTests.SmartContract
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
             Header header3 = new Header() { PrevHash = index3, Witness = new Witness { VerificationScript = new byte[0] } };
-            snapshot3.Contracts.Add(UInt160.Zero, new ContractState());
+            snapshot3.Contracts.Add(UInt160.Zero, new ContractState()
+            {
+                Manifest = TestUtils.CreateDefaultManifest(UInt160.Zero, "verify"),
+            });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
         }
     }

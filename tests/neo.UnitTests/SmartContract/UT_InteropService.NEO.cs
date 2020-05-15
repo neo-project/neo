@@ -35,13 +35,13 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaVerify).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             engine.CurrentContext.EvaluationStack.Push(signature);
             engine.CurrentContext.EvaluationStack.Push(new byte[70]);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaVerify).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
         }
 
@@ -77,14 +77,14 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaCheckMultiSig).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.CheckMultisigWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
 
             pubkeys = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaCheckMultiSig).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Crypto.CheckMultisigWithECDsaSecp256r1).Should().BeFalse();
 
             pubkeys = new VMArray
             {
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaCheckMultiSig).Should().BeFalse();
+            InteropService.Invoke(engine, InteropService.Crypto.CheckMultisigWithECDsaSecp256r1).Should().BeFalse();
 
             pubkeys = new VMArray
             {
@@ -110,7 +110,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaCheckMultiSig).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.CheckMultisigWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
 
             pubkeys = new VMArray
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(signatures);
             engine.CurrentContext.EvaluationStack.Push(pubkeys);
             engine.CurrentContext.EvaluationStack.Push(StackItem.Null);
-            InteropService.Invoke(engine, InteropService.Crypto.ECDsaCheckMultiSig).Should().BeTrue();
+            InteropService.Invoke(engine, InteropService.Crypto.CheckMultisigWithECDsaSecp256r1).Should().BeTrue();
             engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
         }
 
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Create).Should().BeFalse();
 
-            var manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+            var manifest = TestUtils.CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
             engine.CurrentContext.EvaluationStack.Push(manifest.ToString());
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Create).Should().BeFalse();
@@ -205,7 +205,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CurrentContext.EvaluationStack.Push(script);
             InteropService.Invoke(engine, InteropService.Contract.Update).Should().BeFalse();
 
-            var manifest = ContractManifest.CreateDefault(script.ToScriptHash());
+            var manifest = TestUtils.CreateDefaultManifest(script.ToScriptHash());
             byte[] privkey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair key = new KeyPair(privkey);
