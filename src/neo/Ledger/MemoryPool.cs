@@ -168,37 +168,6 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerable<Transaction> GetVerifiedTransactions()
-        {
-            Transaction[] ret;
-            var state = new PoolItem.DelayState();
-
-            _txRwLock.EnterReadLock();
-            try
-            {
-                ret = _unsortedTransactions
-                    .Where(u => u.Value.IsReady(state))
-                    .Select(p => p.Value.Tx)
-                    .ToArray();
-            }
-            finally
-            {
-                _txRwLock.ExitReadLock();
-            }
-
-            // Fetch transactions
-
-            foreach (var tx in ret)
-            {
-                yield return tx;
-            }
-            foreach (var delayed in state.Delayed)
-            {
-                if (state.Allowed.Contains(delayed.Hash))
-                    yield return delayed;
-            }
-        }
-
         public void GetVerifiedAndUnverifiedTransactions(out IEnumerable<Transaction> verifiedTransactions,
             out IEnumerable<Transaction> unverifiedTransactions)
         {
@@ -214,24 +183,40 @@ namespace Neo.Ledger
             }
         }
 
-        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
+        public IEnumerable<Transaction> GetVerifiedTransactions()
         {
-            Transaction[] ret;
-            var state = new PoolItem.DelayState();
-
             _txRwLock.EnterReadLock();
             try
             {
-                ret = _sortedTransactions
-                    .Reverse()
-                    .Where(u => u.IsReady(state))
-                    .Select(p => p.Tx)
-                    .ToArray();
+                return GetTransactions(_unsortedTransactions.Values);
             }
             finally
             {
                 _txRwLock.ExitReadLock();
             }
+        }
+
+        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
+        {
+            _txRwLock.EnterReadLock();
+            try
+            {
+                return GetTransactions(_sortedTransactions);
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+        }
+
+        private IEnumerable<Transaction> GetTransactions(IEnumerable<PoolItem> set)
+        {
+            var state = new PoolItem.DelayState();
+            var ret = set
+                .Reverse()
+                .Where(u => u.IsReady(state))
+                .Select(p => p.Tx)
+                .ToArray();
 
             // Fetch transactions
 
