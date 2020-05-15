@@ -17,7 +17,7 @@ namespace Neo.Cryptography.MPT
             return GetProof(ref root, path, set);
         }
 
-        private bool GetProof(ref MPTNode node, byte[] path, HashSet<byte[]> set)
+        private bool GetProof(ref MPTNode node, ReadOnlySpan<byte> path, HashSet<byte[]> set)
         {
             switch (node)
             {
@@ -49,7 +49,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        if (path.AsSpan().StartsWith(extensionNode.Key))
+                        if (path.StartsWith(extensionNode.Key))
                         {
                             set.Add(extensionNode.Encode());
                             return GetProof(ref extensionNode.Next, path[extensionNode.Key.Length..], set);

@@ -16,7 +16,7 @@ namespace Neo.Cryptography.MPT
             return TryDelete(ref root, path);
         }
 
-        private bool TryDelete(ref MPTNode node, byte[] path)
+        private bool TryDelete(ref MPTNode node, ReadOnlySpan<byte> path)
         {
             switch (node)
             {
@@ -31,7 +31,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        if (path.AsSpan().StartsWith(extensionNode.Key))
+                        if (path.StartsWith(extensionNode.Key))
                         {
                             var result = TryDelete(ref extensionNode.Next, path[extensionNode.Key.Length..]);
                             if (!result) return false;

@@ -11,11 +11,11 @@ namespace Neo.Cryptography.MPT
         {
             var path = ToNibbles(key.ToArray());
             if (path.Length < 1) return null;
-            var result = TryGet(ref root, path, out byte[] value);
+            var result = TryGet(ref root, path, out var value);
             return result ? value.AsSerializable<TValue>() : null;
         }
 
-        private bool TryGet(ref MPTNode node, byte[] path, out byte[] value)
+        private bool TryGet(ref MPTNode node, ReadOnlySpan<byte> path, out ReadOnlySpan<byte> value)
         {
             switch (node)
             {
@@ -23,7 +23,7 @@ namespace Neo.Cryptography.MPT
                     {
                         if (path.Length < 1)
                         {
-                            value = (byte[])leafNode.Value.Clone();
+                            value = leafNode.Value;
                             return true;
                         }
                         break;
@@ -46,14 +46,14 @@ namespace Neo.Cryptography.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        if (path.AsSpan().StartsWith(extensionNode.Key))
+                        if (path.StartsWith(extensionNode.Key))
                         {
                             return TryGet(ref extensionNode.Next, path[extensionNode.Key.Length..], out value);
                         }
                         break;
                     }
             }
-            value = null;
+            value = default;
             return false;
         }
 

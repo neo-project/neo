@@ -354,13 +354,13 @@ namespace Neo.UnitTests.Cryptography.MPT
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
             var mpt1 = new MPTTrie<TestKey, TestValue>(null, snapshot, 0);
-            var results = mpt1.Find(Array.Empty<byte>()).ToArray();
+            var results = mpt1.Find(ReadOnlySpan<byte>.Empty).ToArray();
             Assert.AreEqual(0, results.Count());
             var mpt2 = new MPTTrie<TestKey, TestValue>(null, snapshot, 0);
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xef }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xe1 }, new byte[] { 0x02 }));
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x03 }));
-            results = mpt2.Find(Array.Empty<byte>()).ToArray();
+            results = mpt2.Find(ReadOnlySpan<byte>.Empty).ToArray();
             Assert.AreEqual(3, results.Count());
             results = mpt2.Find(new byte[] { 0xab }).ToArray();
             Assert.AreEqual(3, results.Count());

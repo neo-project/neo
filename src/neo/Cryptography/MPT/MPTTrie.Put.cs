@@ -35,7 +35,7 @@ namespace Neo.Cryptography.MPT
             return Put(ref root, path, n);
         }
 
-        private bool Put(ref MPTNode node, byte[] path, MPTNode val)
+        private bool Put(ref MPTNode node, ReadOnlySpan<byte> path, MPTNode val)
         {
             switch (node)
             {
@@ -60,7 +60,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        if (path.AsSpan().StartsWith(extensionNode.Key))
+                        if (path.StartsWith(extensionNode.Key))
                         {
                             var result = Put(ref extensionNode.Next, path[extensionNode.Key.Length..], val);
                             if (result)
@@ -72,7 +72,7 @@ namespace Neo.Cryptography.MPT
                         }
                         var prefix = CommonPrefix(extensionNode.Key, path);
                         var pathRemain = path[prefix.Length..];
-                        var keyRemain = extensionNode.Key[prefix.Length..];
+                        var keyRemain = extensionNode.Key.AsSpan(prefix.Length);
                         var son = new BranchNode();
                         MPTNode grandSon1 = HashNode.EmptyNode();
                         MPTNode grandSon2 = HashNode.EmptyNode();
@@ -138,7 +138,7 @@ namespace Neo.Cryptography.MPT
                             {
                                 newNode = new ExtensionNode()
                                 {
-                                    Key = path,
+                                    Key = path.ToArray(),
                                     Next = val,
                                 };
                                 db.Put(newNode);

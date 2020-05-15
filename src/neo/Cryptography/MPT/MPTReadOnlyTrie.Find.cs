@@ -1,6 +1,7 @@
 using Neo.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static Neo.Helper;
 
 namespace Neo.Cryptography.MPT
@@ -9,7 +10,7 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private byte[] Seek(ref MPTNode node, byte[] path, out MPTNode start)
+        private ReadOnlySpan<byte> Seek(ref MPTNode node, ReadOnlySpan<byte> path, out MPTNode start)
         {
             switch (node)
             {
@@ -18,7 +19,7 @@ namespace Neo.Cryptography.MPT
                         if (path.Length < 1)
                         {
                             start = leafNode;
-                            return Array.Empty<byte>();
+                            return ReadOnlySpan<byte>.Empty;
                         }
                         break;
                     }
@@ -35,7 +36,7 @@ namespace Neo.Cryptography.MPT
                         if (path.Length < 1)
                         {
                             start = branchNode;
-                            return Array.Empty<byte>();
+                            return ReadOnlySpan<byte>.Empty;
                         }
                         return Concat(path[..1], Seek(ref branchNode.Children[path[0]], path[1..], out start));
                     }
@@ -44,9 +45,9 @@ namespace Neo.Cryptography.MPT
                         if (path.Length < 1)
                         {
                             start = extensionNode;
-                            return Array.Empty<byte>();
+                            return ReadOnlySpan<byte>.Empty;
                         }
-                        if (path.AsSpan().StartsWith(extensionNode.Key))
+                        if (path.StartsWith(extensionNode.Key))
                         {
                             return Concat(extensionNode.Key, Seek(ref extensionNode.Next, path[extensionNode.Key.Length..], out start));
                         }
@@ -59,15 +60,15 @@ namespace Neo.Cryptography.MPT
                     }
             }
             start = null;
-            return Array.Empty<byte>();
+            return ReadOnlySpan<byte>.Empty;
         }
 
-        public IEnumerable<(TKey Key, TValue Value)> Find(byte[] prefix)
+        public IEnumerable<(TKey Key, TValue Value)> Find(ReadOnlySpan<byte> prefix)
         {
             var path = ToNibbles(prefix);
-            path = Seek(ref root, path, out MPTNode start);
-            foreach (var (Key, Value) in Travers(start, path))
-                yield return (Key.AsSerializable<TKey>(), Value.AsSerializable<TValue>());
+            path = Seek(ref root, path, out MPTNode start).ToArray();
+            return Travers(start, path)
+                .Select(p => (p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
         }
 
         private IEnumerable<(byte[] Key, byte[] Value)> Travers(MPTNode node, byte[] path)
