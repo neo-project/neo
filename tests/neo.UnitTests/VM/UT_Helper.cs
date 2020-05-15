@@ -62,7 +62,7 @@ namespace Neo.UnitTests.VMT
             tempArray[9] = (byte)OpCode.PUSHDATA1;
             tempArray[10] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 11, 20);//operation.data
-            uint api = InteropService.Contract.Call;
+            uint api = "System.Contract.Call".ToInteropMethodHash();
             tempArray[31] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 32, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.VMT
             tempArray[10] = (byte)OpCode.PUSHDATA1;
             tempArray[11] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
-            uint api = InteropService.Contract.Call;
+            uint api = "System.Contract.Call".ToInteropMethodHash();
             tempArray[32] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -106,7 +106,7 @@ namespace Neo.UnitTests.VMT
             tempArray[10] = (byte)OpCode.PUSHDATA1;
             tempArray[11] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
-            uint api = InteropService.Contract.Call;
+            uint api = "System.Contract.Call".ToInteropMethodHash();
             tempArray[32] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -493,7 +493,7 @@ namespace Neo.UnitTests.VMT
         public void TestEmitSysCall()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitSysCall(0, true);
+            sb.EmitSysCall("", true);
             byte[] tempArray = new byte[6];
             tempArray[0] = (byte)OpCode.PUSH1;
             tempArray[1] = (byte)OpCode.SYSCALL;

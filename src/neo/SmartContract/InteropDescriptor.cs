@@ -1,6 +1,6 @@
-using Neo.Persistence;
-using Neo.VM;
+using Neo.SmartContract.Native;
 using System;
+using System.Reflection;
 
 namespace Neo.SmartContract
 {
@@ -10,39 +10,27 @@ namespace Neo.SmartContract
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
         public long Price { get; }
-        public Func<EvaluationStack, StoreView, long> PriceCalculator { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
 
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-            : this(method, handler, allowedTriggers, requiredCallFlags)
+        internal InteropDescriptor(InteropServiceAttribute attribute, MethodInfo handler)
+            : this(attribute.Method, (Func<ApplicationEngine, bool>)handler.CreateDelegate(typeof(Func<ApplicationEngine, bool>)), attribute.Price, attribute.AllowedTriggers, attribute.RequiredCallFlags)
         {
-            this.Price = price;
         }
 
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, StoreView, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-            : this(method, handler, allowedTriggers, requiredCallFlags)
+        internal InteropDescriptor(NativeContract contract)
+            : this(contract.ServiceName, contract.Invoke, 0, TriggerType.System | TriggerType.Application, CallFlags.None)
         {
-            this.PriceCalculator = priceCalculator;
         }
 
-        private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             this.Method = method;
             this.Hash = method.ToInteropMethodHash();
             this.Handler = handler;
+            this.Price = price;
             this.AllowedTriggers = allowedTriggers;
             this.RequiredCallFlags = requiredCallFlags;
-        }
-
-        public long GetPrice(EvaluationStack stack, StoreView snapshot)
-        {
-            return PriceCalculator is null ? Price : PriceCalculator(stack, snapshot);
-        }
-
-        public static implicit operator uint(InteropDescriptor descriptor)
-        {
-            return descriptor.Hash;
         }
     }
 }

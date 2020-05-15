@@ -29,7 +29,7 @@ namespace Neo.VM
             sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall("System.Contract.Call");
             return sb;
         }
 
@@ -41,7 +41,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall("System.Contract.Call");
             return sb;
         }
 
@@ -53,7 +53,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall("System.Contract.Call");
             return sb;
         }
 
@@ -161,11 +161,11 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, uint method, params object[] args)
+        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, string method, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 EmitPush(sb, args[i]);
-            return sb.EmitSysCall(method);
+            return sb.EmitSysCall(method.ToInteropMethodHash());
         }
 
         public static BigInteger GetBigInteger(this StackItem item)

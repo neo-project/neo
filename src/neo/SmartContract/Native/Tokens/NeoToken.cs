@@ -136,7 +136,7 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem RegisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             return RegisterCandidate(engine.Snapshot, pubkey);
         }
@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem UnregisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             return UnregisterCandidate(engine.Snapshot, pubkey);
         }
@@ -177,7 +177,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             UInt160 account = new UInt160(args[0].GetSpan());
             ECPoint voteTo = args[1].IsNull ? null : args[1].GetSpan().AsSerializable<ECPoint>();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
+            if (!engine.CheckWitnessInternal(account)) return false;
             return Vote(engine.Snapshot, account, voteTo);
         }
 

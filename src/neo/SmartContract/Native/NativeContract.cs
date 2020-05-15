@@ -2,7 +2,6 @@
 
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
@@ -108,6 +107,8 @@ namespace Neo.SmartContract.Native
             Array args = (Array)engine.CurrentContext.EvaluationStack.Pop();
             if (!methods.TryGetValue(operation, out ContractMethodMetadata method))
                 return false;
+            if (!engine.AddGas(method.Price))
+                return false;
             ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 return false;
@@ -119,11 +120,6 @@ namespace Neo.SmartContract.Native
         public static bool IsNative(UInt160 hash)
         {
             return contractsDictionary.ContainsKey(hash);
-        }
-
-        internal long GetPrice(EvaluationStack stack, StoreView snapshot)
-        {
-            return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)

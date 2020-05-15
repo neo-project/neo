@@ -1,10 +1,12 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using Array = System.Array;
 
@@ -20,18 +22,36 @@ namespace Neo.SmartContract
         private readonly bool testMode;
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
+        private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
+        private static readonly Dictionary<uint, InteropDescriptor> services = new Dictionary<uint, InteropDescriptor>();
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
+        public static IEnumerable<InteropDescriptor> Services => services.Values;
 
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
-        internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
+
+        static ApplicationEngine()
+        {
+            foreach (MethodInfo method in typeof(ApplicationEngine).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                InteropServiceAttribute attribute = method.GetCustomAttribute<InteropServiceAttribute>();
+                if (attribute is null) continue;
+                InteropDescriptor descriptor = new InteropDescriptor(attribute, method);
+                services.Add(descriptor.Hash, descriptor);
+            }
+            foreach (NativeContract contract in NativeContract.Contracts)
+            {
+                InteropDescriptor descriptor = new InteropDescriptor(contract);
+                services.Add(descriptor.Hash, descriptor);
+            }
+        }
 
         public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
         {
@@ -42,54 +62,10 @@ namespace Neo.SmartContract
             this.Snapshot = snapshot;
         }
 
-        internal T AddDisposable<T>(T disposable) where T : IDisposable
-        {
-            disposables.Add(disposable);
-            return disposable;
-        }
-
-        private bool AddGas(long gas)
+        internal bool AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
-        }
-
-        protected override void LoadContext(ExecutionContext context)
-        {
-            // Set default execution context state
-
-            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
-
-            base.LoadContext(context);
-        }
-
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
-        {
-            ExecutionContext context = LoadScript(script, rvcount);
-            context.GetState<ExecutionContextState>().CallFlags = callFlags;
-            return context;
-        }
-
-        public override void Dispose()
-        {
-            foreach (IDisposable disposable in disposables)
-                disposable.Dispose();
-            disposables.Clear();
-            base.Dispose();
-        }
-
-        protected override bool OnSysCall(uint method)
-        {
-            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack, Snapshot)))
-                return false;
-            return InteropService.Invoke(this, method);
-        }
-
-        protected override bool PreExecuteInstruction()
-        {
-            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
-                return true;
-            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)
@@ -113,6 +89,50 @@ namespace Neo.SmartContract
             };
         }
 
+        public override void Dispose()
+        {
+            foreach (IDisposable disposable in disposables)
+                disposable.Dispose();
+            disposables.Clear();
+            base.Dispose();
+        }
+
+        protected override void LoadContext(ExecutionContext context)
+        {
+            // Set default execution context state
+
+            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+
+            base.LoadContext(context);
+        }
+
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
+        {
+            ExecutionContext context = LoadScript(script, rvcount);
+            context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            return context;
+        }
+
+        protected override bool OnSysCall(uint method)
+        {
+            if (!services.TryGetValue(method, out var descriptor))
+                return false;
+            if (!AddGas(descriptor.Price))
+                return false;
+            if (!descriptor.AllowedTriggers.HasFlag(Trigger))
+                return false;
+            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(descriptor.RequiredCallFlags))
+                return false;
+            return descriptor.Handler(this);
+        }
+
+        protected override bool PreExecuteInstruction()
+        {
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
+            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+        }
+
         public static ApplicationEngine Run(byte[] script, StoreView snapshot,
             IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long extraGAS = default)
         {
@@ -129,12 +149,6 @@ namespace Neo.SmartContract
             {
                 return Run(script, snapshot, container, persistingBlock, offset, testMode, extraGAS);
             }
-        }
-
-        internal void SendLog(UInt160 script_hash, string message)
-        {
-            LogEventArgs log = new LogEventArgs(ScriptContainer, script_hash, message);
-            Log?.Invoke(this, log);
         }
 
         internal void SendNotification(UInt160 script_hash, StackItem state)

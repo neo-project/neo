@@ -42,7 +42,7 @@ namespace Neo.SmartContract.Native
         {
             UInt256 prev_hash = engine.Snapshot.PersistingBlock.PrevHash;
             TrimmedBlock prev_block = engine.Snapshot.Blocks[prev_hash];
-            return InteropService.Runtime.CheckWitnessInternal(engine, prev_block.NextConsensus);
+            return engine.CheckWitnessInternal(prev_block.NextConsensus);
         }
 
         internal override bool Initialize(ApplicationEngine engine)
