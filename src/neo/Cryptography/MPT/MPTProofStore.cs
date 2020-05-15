@@ -1,6 +1,8 @@
+using Neo.IO;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.Cryptography.MPT
 {
@@ -24,13 +26,12 @@ namespace Neo.Cryptography.MPT
 
         public IEnumerable<(byte[] Key, byte[] Value)> Find(byte table, byte[] prefix)
         {
-            foreach (var pair in store)
-            {
-                if (prefix is null || pair.Key.AsSpan().StartsWith(prefix))
-                {
-                    yield return (pair.Key, pair.Value);
-                }
-            }
+            IEnumerable<KeyValuePair<byte[], byte[]>> records = store;
+            if (prefix?.Length > 0)
+                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
+            records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
+            foreach (var pair in records)
+                yield return (pair.Key, pair.Value);
         }
     }
 }
