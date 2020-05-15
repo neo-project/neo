@@ -233,15 +233,6 @@ namespace Neo.Network.P2P
         {
             foreach (TaskSession session in sessions.Values)
             {
-                foreach (var task in session.InvTasks.ToArray())
-                {
-                    if (DateTime.UtcNow - task.Value > TaskTimeout)
-                    {
-                        if (session.InvTasks.Remove(task.Key))
-                            DecrementGlobalTask(task.Key);
-                    }
-                }
-
                 foreach (KeyValuePair<uint, DateTime> kvp in session.IndexTasks)
                 {
                     if (TimeProvider.Current.UtcNow - kvp.Value > TaskTimeout)
@@ -249,6 +240,15 @@ namespace Neo.Network.P2P
                         session.IndexTasks.Remove(kvp.Key);
                         session.TimeoutTimes++;
                         AssignSyncTask(kvp.Key, session);
+                    }
+                }
+
+                foreach (var task in session.InvTasks.ToArray())
+                {
+                    if (DateTime.UtcNow - task.Value > TaskTimeout)
+                    {
+                        if (session.InvTasks.Remove(task.Key))
+                            DecrementGlobalTask(task.Key);
                     }
                 }
             }
@@ -321,7 +321,7 @@ namespace Neo.Network.P2P
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:
-                    if (tasks.Payload.Type == InventoryType.Consensus)
+                    if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Consensus)
                         return true;
                     return false;
                 default:
