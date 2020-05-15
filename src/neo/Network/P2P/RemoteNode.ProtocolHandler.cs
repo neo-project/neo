@@ -63,10 +63,14 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
+                    Block block = (Block)msg.Payload;
+                    OnInventoryReceived(block);
+                    RenewKnownHashes(block.Hash);
                     break;
                 case MessageCommand.Consensus:
-                    OnInventoryReceived((ConsensusPayload)msg.Payload);
+                    ConsensusPayload consensusPayload = (ConsensusPayload)msg.Payload;
+                    OnInventoryReceived(consensusPayload);
+                    RenewKnownHashes(consensusPayload.Hash);
                     break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
@@ -108,11 +112,12 @@ namespace Neo.Network.P2P
                     OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
+                    Transaction tx = (Transaction)msg.Payload;
+                    RenewKnownHashes(tx.Hash);
                     Task.Run(() =>
                     {
                         if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         {
-                            Transaction tx = (Transaction)msg.Payload;
                             if (tx.VerifyStateIndependent() == VerifyResult.Succeed)
                                 OnInventoryReceived(tx);
                         }
@@ -295,8 +300,12 @@ namespace Neo.Network.P2P
         {
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
-            pendingKnownHashes.Remove(inventory.Hash);
-            knownHashes.Add(inventory.Hash);
+        }
+
+        private void RenewKnownHashes(UInt256 hash)
+        {
+            pendingKnownHashes.Remove(hash);
+            knownHashes.Add(hash);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
