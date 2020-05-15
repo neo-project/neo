@@ -12,18 +12,17 @@ namespace Neo.SmartContract.NNS
 
         public override void FromStackItem(StackItem stackItem)
         {
+            base.FromStackItem(stackItem);
             Struct @struct = (Struct)stackItem;
-            Operator = @struct[0].GetSpan().AsSerializable<UInt160>();
-            TimeToLive = (uint)@struct[1].GetBigInteger();
-            Name = System.Text.Encoding.UTF8.GetString(@struct[2].GetSpan().ToArray()).ToLower();
+            Operator = @struct[1].GetSpan().AsSerializable<UInt160>();
+            TimeToLive = (uint)@struct[2].GetBigInteger();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            Struct @struct = new Struct(referenceCounter);
+            Struct @struct = (Struct)base.ToStackItem(referenceCounter);
             @struct.Add(Operator.ToArray());
             @struct.Add(TimeToLive);
-            @struct.Add(System.Text.Encoding.UTF8.GetBytes(Name));
             return @struct;
         }
     }

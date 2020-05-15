@@ -501,6 +501,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_resolve.State.Should().BeTrue();
         }
 
+        [TestMethod]
         public void Check_Operator()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -523,6 +524,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             //check_setOperator
             var ret_setOperator = Check_SetOperator(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_setOperator.Result.Should().Be(true);
+            ret_setOperator.State.Should().BeTrue();
+
+            //check_setOperator cross-level
+            ret_setOperator = Check_SetOperator(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA.AA.AA"), true);
+            ret_setOperator.Result.Should().Be(false);
             ret_setOperator.State.Should().BeTrue();
         }
 
