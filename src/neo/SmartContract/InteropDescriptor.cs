@@ -1,6 +1,8 @@
+using Neo.Cryptography;
 using Neo.Persistence;
 using Neo.VM;
 using System;
+using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -29,7 +31,7 @@ namespace Neo.SmartContract
         private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             this.Method = method;
-            this.Hash = method.ToInteropMethodHash();
+            this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
             this.Handler = handler;
             this.AllowedTriggers = allowedTriggers;
             this.RequiredCallFlags = requiredCallFlags;
