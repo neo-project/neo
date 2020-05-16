@@ -425,13 +425,6 @@ namespace Neo.Ledger
             return VerifyResult.Succeed;
         }
 
-        private void OnPersistCompleted(Block block)
-        {
-            block_cache.Remove(block.PrevHash);
-            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
-            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-        }
-
         protected override void OnReceive(object message)
         {
             switch (message)
@@ -545,7 +538,9 @@ namespace Neo.Ledger
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
-            OnPersistCompleted(block);
+            block_cache.Remove(block.PrevHash);
+            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
         protected override void PostStop()
