@@ -6,7 +6,7 @@ namespace Neo.SmartContract
 {
     public class InteropDescriptor
     {
-        public string Method { get; }
+        public string Name { get; }
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
         public long Price { get; }
@@ -14,7 +14,7 @@ namespace Neo.SmartContract
         public CallFlags RequiredCallFlags { get; }
 
         internal InteropDescriptor(InteropServiceAttribute attribute, MethodInfo handler)
-            : this(attribute.Method, (Func<ApplicationEngine, bool>)handler.CreateDelegate(typeof(Func<ApplicationEngine, bool>)), attribute.Price, attribute.AllowedTriggers, attribute.RequiredCallFlags)
+            : this(attribute.Name, (Func<ApplicationEngine, bool>)handler.CreateDelegate(typeof(Func<ApplicationEngine, bool>)), attribute.Price, attribute.AllowedTriggers, attribute.RequiredCallFlags)
         {
         }
 
@@ -23,10 +23,10 @@ namespace Neo.SmartContract
         {
         }
 
-        private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        private InteropDescriptor(string name, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
-            this.Method = method;
-            this.Hash = method.ToInteropMethodHash();
+            this.Name = name;
+            this.Hash = name.ToInteropMethodHash();
             this.Handler = handler;
             this.Price = price;
             this.AllowedTriggers = allowedTriggers;
