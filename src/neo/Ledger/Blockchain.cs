@@ -64,7 +64,7 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
+        internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
         public IStore Store { get; }
@@ -299,8 +299,7 @@ namespace Neo.Ledger
                 {
                     Block block => OnNewBlock(block),
                     Transaction transaction => OnNewTransaction(transaction),
-                    ConsensusPayload payload => OnNewConsensus(payload),
-                    _ => VerifyResult.Unknown
+                    _ => OnNewInventory(inventory)
                 }
             };
             if (relay && rr.Result == VerifyResult.Succeed)
@@ -388,14 +387,6 @@ namespace Neo.Ledger
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewConsensus(ConsensusPayload payload)
-        {
-            if (!payload.Verify(currentSnapshot)) return VerifyResult.Invalid;
-            system.Consensus?.Tell(payload);
-            ConsensusRelayCache.Add(payload);
-            return VerifyResult.Succeed;
-        }
-
         private void OnNewHeaders(Header[] headers)
         {
             using (SnapshotView snapshot = GetSnapshot())
@@ -415,6 +406,13 @@ namespace Neo.Ledger
             }
             UpdateCurrentSnapshot();
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
+        }
+
+        private VerifyResult OnNewInventory(IInventory inventory)
+        {
+            if (!inventory.Verify(currentSnapshot)) return VerifyResult.Invalid;
+            RelayCache.Add(inventory);
+            return VerifyResult.Succeed;
         }
 
         private VerifyResult OnNewTransaction(Transaction transaction)
