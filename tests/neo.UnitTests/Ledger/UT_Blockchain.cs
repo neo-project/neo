@@ -1,3 +1,4 @@
+using Akka.Actor;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,8 +9,10 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
+using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -133,6 +136,46 @@ namespace Neo.UnitTests.Ledger
                 senderProbe.Send(system.Blockchain, tx);
                 senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
             }
+        }
+
+        [TestMethod]
+        public void TestInvalidTransactionInPersist()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[] { 1 },
+                Sender = UInt160.Zero,
+                SystemFee = 0,
+                ValidUntilBlock = Blockchain.GenesisBlock.Index + 1,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
+            StoreView clonedSnapshot = snapshot.Clone();
+            var state = new TransactionState
+            {
+                BlockIndex = 0,
+                Transaction = tx
+            };
+            clonedSnapshot.Transactions.Add(tx.Hash, state);
+            clonedSnapshot.Transactions.Commit();
+            state.VMState = VMState.FAULT;
+            snapshot.Transactions.TryGet(tx.Hash).VMState.Should().Be(VMState.FAULT);
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                Id = NativeContract.NEO.Id,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            key?.CopyTo(storageKey.Key.AsSpan(1));
+            return storageKey;
         }
 
         private Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
