@@ -10,17 +10,8 @@ namespace Neo.Cryptography.MPT
     {
         private UInt256 hash;
 
+        public virtual UInt256 Hash => hash ??= new UInt256(Crypto.Hash256(Encode()));
         protected abstract NodeType Type { get; }
-
-        protected virtual UInt256 GenHash()
-        {
-            return new UInt256(Crypto.Hash256(Encode()));
-        }
-
-        public UInt256 GetHash()
-        {
-            return hash ??= GenHash();
-        }
 
         public void SetDirty()
         {

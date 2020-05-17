@@ -22,7 +22,7 @@ namespace Neo.Cryptography.MPT
         {
             for (int i = 0; i < ChildCount; i++)
             {
-                var hashNode = new HashNode(Children[i].GetHash());
+                var hashNode = new HashNode(Children[i].Hash);
                 hashNode.EncodeSpecific(writer);
             }
         }

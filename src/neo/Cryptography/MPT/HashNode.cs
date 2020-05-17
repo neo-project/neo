@@ -7,8 +7,9 @@ namespace Neo.Cryptography.MPT
 {
     public class HashNode : MPTNode
     {
-        public UInt256 Hash;
+        private UInt256 hash;
 
+        public override UInt256 Hash => hash;
         protected override NodeType Type => NodeType.HashNode;
         public static HashNode EmptyNode { get; } = new HashNode();
 
@@ -18,12 +19,7 @@ namespace Neo.Cryptography.MPT
 
         public HashNode(UInt256 hash)
         {
-            Hash = hash;
-        }
-
-        protected override UInt256 GenHash()
-        {
-            return Hash;
+            this.hash = hash;
         }
 
         public bool IsEmpty => Hash is null;
@@ -43,11 +39,11 @@ namespace Neo.Cryptography.MPT
             var len = reader.ReadVarInt();
             if (len < 1)
             {
-                Hash = null;
+                hash = null;
                 return;
             }
             if (len != UInt256.Length) throw new InvalidOperationException("Invalid hash bytes");
-            Hash = new UInt256(reader.ReadFixedBytes((int)len));
+            hash = new UInt256(reader.ReadFixedBytes((int)len));
         }
 
         public override JObject ToJson()

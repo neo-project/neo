@@ -17,7 +17,7 @@ namespace Neo.Cryptography.MPT
         public override void EncodeSpecific(BinaryWriter writer)
         {
             writer.WriteVarBytes(Key);
-            var hashNode = new HashNode(Next.GetHash());
+            var hashNode = new HashNode(Next.Hash);
             hashNode.EncodeSpecific(writer);
         }
 

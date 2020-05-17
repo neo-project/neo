@@ -35,7 +35,7 @@ namespace Neo.Cryptography.MPT
 
         public UInt256 GetRoot()
         {
-            return root.GetHash();
+            return root.Hash;
         }
 
         protected static byte[] ToNibbles(ReadOnlySpan<byte> path)
