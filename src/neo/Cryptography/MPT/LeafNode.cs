@@ -10,15 +10,15 @@ namespace Neo.Cryptography.MPT
     {
         //the max size when store StorageItem
         public const int MaxValueLength = 3 + InteropService.Storage.MaxValueSize + sizeof(bool);
-
         public byte[] Value;
+
+        protected override NodeType Type => NodeType.LeafNode;
 
         public LeafNode()
         {
-            nType = NodeType.LeafNode;
         }
 
-        public LeafNode(ReadOnlySpan<byte> val) : this()
+        public LeafNode(ReadOnlySpan<byte> val)
         {
             Value = val.ToArray();
         }

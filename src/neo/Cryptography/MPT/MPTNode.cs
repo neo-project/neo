@@ -9,7 +9,7 @@ namespace Neo.Cryptography.MPT
     {
         private UInt256 hash;
         public bool Dirty { get; private set; }
-        protected NodeType nType;
+        protected abstract NodeType Type { get; }
 
         protected virtual UInt256 GenHash()
         {
@@ -39,7 +39,7 @@ namespace Neo.Cryptography.MPT
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8, true);
 
-            writer.Write((byte)nType);
+            writer.Write((byte)Type);
             EncodeSpecific(writer);
             writer.Flush();
 

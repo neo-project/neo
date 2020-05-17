@@ -8,9 +8,10 @@ namespace Neo.Cryptography.MPT
         public const int ChildCount = 17;
         public readonly MPTNode[] Children = new MPTNode[ChildCount];
 
+        protected override NodeType Type => NodeType.BranchNode;
+
         public BranchNode()
         {
-            nType = NodeType.BranchNode;
             for (int i = 0; i < ChildCount; i++)
             {
                 Children[i] = HashNode.EmptyNode();

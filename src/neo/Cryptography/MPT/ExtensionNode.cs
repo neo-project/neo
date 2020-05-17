@@ -12,10 +12,7 @@ namespace Neo.Cryptography.MPT
         public byte[] Key;
         public MPTNode Next;
 
-        public ExtensionNode()
-        {
-            nType = NodeType.ExtensionNode;
-        }
+        protected override NodeType Type => NodeType.ExtensionNode;
 
         public override void EncodeSpecific(BinaryWriter writer)
         {

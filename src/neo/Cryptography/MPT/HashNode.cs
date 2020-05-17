@@ -9,12 +9,13 @@ namespace Neo.Cryptography.MPT
     {
         public UInt256 Hash;
 
+        protected override NodeType Type => NodeType.HashNode;
+
         public HashNode()
         {
-            nType = NodeType.HashNode;
         }
 
-        public HashNode(UInt256 hash) : this()
+        public HashNode(UInt256 hash)
         {
             Hash = hash;
         }
