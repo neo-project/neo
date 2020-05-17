@@ -1,3 +1,4 @@
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.IO;
@@ -57,13 +58,8 @@ namespace Neo.Cryptography.MPT
                 using UnmanagedMemoryStream stream = new UnmanagedMemoryStream(pointer, data.Length);
                 using BinaryReader reader = new BinaryReader(stream);
 
-                var n = (NodeType)reader.ReadByte() switch
-                {
-                    NodeType.BranchNode => (MPTNode)new BranchNode(),
-                    NodeType.ExtensionNode => new ExtensionNode(),
-                    NodeType.LeafNode => new LeafNode(),
-                    _ => throw new InvalidOperationException(),
-                };
+                MPTNode n = (MPTNode)ReflectionCache<NodeType>.CreateInstance((NodeType)reader.ReadByte());
+                if (n is null) throw new InvalidOperationException();
 
                 n.DecodeSpecific(reader);
                 return n;
