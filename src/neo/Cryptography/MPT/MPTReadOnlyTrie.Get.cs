@@ -30,7 +30,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case HashNode hashNode:
                     {
-                        if (hashNode.IsEmptyNode) break;
+                        if (hashNode.IsEmpty) break;
                         var newNode = Resolve(hashNode);
                         if (newNode is null) break;
                         node = newNode;

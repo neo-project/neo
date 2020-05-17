@@ -10,6 +10,7 @@ namespace Neo.Cryptography.MPT
         public UInt256 Hash;
 
         protected override NodeType Type => NodeType.HashNode;
+        public static HashNode EmptyNode { get; } = new HashNode();
 
         public HashNode()
         {
@@ -25,16 +26,11 @@ namespace Neo.Cryptography.MPT
             return Hash;
         }
 
-        public static HashNode EmptyNode()
-        {
-            return new HashNode(null);
-        }
-
-        public bool IsEmptyNode => Hash is null;
+        public bool IsEmpty => Hash is null;
 
         public override void EncodeSpecific(BinaryWriter writer)
         {
-            if (this.IsEmptyNode)
+            if (this.IsEmpty)
             {
                 writer.WriteVarBytes(Array.Empty<byte>());
                 return;
@@ -57,7 +53,7 @@ namespace Neo.Cryptography.MPT
         public override JObject ToJson()
         {
             var json = new JObject();
-            if (!this.IsEmptyNode)
+            if (!this.IsEmpty)
             {
                 json["hash"] = Hash.ToString();
             }

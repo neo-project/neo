@@ -107,8 +107,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             v2.Value = "2222".HexToBytes();
             var v3 = new LeafNode();
             v3.Value = Encoding.ASCII.GetBytes("hello");
-            var h1 = new HashNode();
-            h1.Hash = v3.GetHash();
+            var h1 = new HashNode(v3.GetHash());
             var l3 = new ExtensionNode();
             l3.Next = h1;
             l3.Key = "0e".HexToBytes();
@@ -283,8 +282,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             v2.Value = "2222".HexToBytes();
             var v3 = new LeafNode();
             v3.Value = Encoding.ASCII.GetBytes("hello");
-            var h1 = new HashNode();
-            h1.Hash = v3.GetHash();
+            var h1 = new HashNode(v3.GetHash());
             var l3 = new ExtensionNode();
             l3.Next = h1;
             l3.Key = "0e".HexToBytes();

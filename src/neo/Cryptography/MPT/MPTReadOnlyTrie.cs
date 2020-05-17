@@ -20,7 +20,7 @@ namespace Neo.Cryptography.MPT
 
             if (root is null)
             {
-                this.root = HashNode.EmptyNode();
+                this.root = HashNode.EmptyNode;
             }
             else
             {

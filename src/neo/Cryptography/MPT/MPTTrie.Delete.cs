@@ -24,7 +24,7 @@ namespace Neo.Cryptography.MPT
                     {
                         if (path.Length < 1)
                         {
-                            node = HashNode.EmptyNode();
+                            node = HashNode.EmptyNode;
                             return true;
                         }
                         return false;
@@ -35,7 +35,7 @@ namespace Neo.Cryptography.MPT
                         {
                             var result = TryDelete(ref extensionNode.Next, path[extensionNode.Key.Length..]);
                             if (!result) return false;
-                            if (extensionNode.Next is HashNode hashNode && hashNode.IsEmptyNode)
+                            if (extensionNode.Next is HashNode hashNode && hashNode.IsEmpty)
                             {
                                 node = extensionNode.Next;
                                 return true;
@@ -66,7 +66,7 @@ namespace Neo.Cryptography.MPT
                         List<byte> childrenIndexes = new List<byte>();
                         for (int i = 0; i < BranchNode.ChildCount; i++)
                         {
-                            if (branchNode.Children[i] is HashNode hn && hn.IsEmptyNode) continue;
+                            if (branchNode.Children[i] is HashNode hn && hn.IsEmpty) continue;
                             childrenIndexes.Add((byte)i);
                         }
                         if (childrenIndexes.Count > 1)
@@ -105,7 +105,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case HashNode hashNode:
                     {
-                        if (hashNode.IsEmptyNode)
+                        if (hashNode.IsEmpty)
                         {
                             return true;
                         }

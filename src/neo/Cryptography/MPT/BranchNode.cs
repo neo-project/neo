@@ -14,7 +14,7 @@ namespace Neo.Cryptography.MPT
         {
             for (int i = 0; i < ChildCount; i++)
             {
-                Children[i] = HashNode.EmptyNode();
+                Children[i] = HashNode.EmptyNode;
             }
         }
 
