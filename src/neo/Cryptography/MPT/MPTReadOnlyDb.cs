@@ -6,18 +6,18 @@ namespace Neo.Cryptography.MPT
     public class MPTReadOnlyDb
     {
         private readonly IReadOnlyStore store;
-        protected readonly byte prefix;
+        protected readonly byte Prefix;
 
         public MPTReadOnlyDb(IReadOnlyStore store, byte prefix)
         {
             this.store = store;
-            this.prefix = prefix;
+            this.Prefix = prefix;
         }
 
         public MPTNode Node(UInt256 hash)
         {
             if (hash is null) return null;
-            var data = store.TryGet(prefix, hash.ToArray());
+            var data = store.TryGet(Prefix, hash.ToArray());
             return MPTNode.Decode(data);
         }
     }
