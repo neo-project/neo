@@ -26,12 +26,7 @@ namespace Neo.Cryptography.MPT
 
         public override void EncodeSpecific(BinaryWriter writer)
         {
-            if (this.IsEmpty)
-            {
-                writer.WriteVarBytes(Array.Empty<byte>());
-                return;
-            }
-            writer.WriteVarBytes(Hash.ToArray());
+            WriteHash(writer, hash);
         }
 
         public override void DecodeSpecific(BinaryReader reader)

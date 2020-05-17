@@ -1,3 +1,4 @@
+using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
@@ -52,5 +53,13 @@ namespace Neo.Cryptography.MPT
         public abstract void DecodeSpecific(BinaryReader reader);
 
         public abstract JObject ToJson();
+
+        protected void WriteHash(BinaryWriter writer, UInt256 hash)
+        {
+            if (hash is null)
+                writer.Write((byte)0);
+            else
+                writer.WriteVarBytes(hash.ToArray());
+        }
     }
 }
