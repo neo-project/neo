@@ -447,11 +447,8 @@ namespace Neo.Ledger
                         foreach (var tx in transactions) OnInventory(tx, false);
                         break;
                     }
-                case Transaction transaction:
-                    OnInventory(transaction);
-                    break;
-                case ConsensusPayload payload:
-                    OnInventory(payload);
+                case IInventory inventory:
+                    OnInventory(inventory);
                     break;
                 case OraclePayload oracle:
                     OnInventory(oracle);
