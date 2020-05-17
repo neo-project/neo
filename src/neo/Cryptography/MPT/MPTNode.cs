@@ -3,7 +3,6 @@ using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.IO;
-using System.Text;
 
 namespace Neo.Cryptography.MPT
 {
@@ -22,7 +21,7 @@ namespace Neo.Cryptography.MPT
         public byte[] Encode()
         {
             using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8, true);
+            using BinaryWriter writer = new BinaryWriter(ms);
 
             writer.Write((byte)Type);
             EncodeSpecific(writer);
