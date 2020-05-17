@@ -220,8 +220,8 @@ namespace Neo.Network.P2P
         /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)
         {
-            UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
-            foreach (UInt256 hash in hashes)
+            var notFound = new List<UInt256>();
+            foreach (UInt256 hash in payload.Hashes.Where(p => sentHashes.Add(p)))
             {
                 switch (payload.Type)
                 {
@@ -229,6 +229,8 @@ namespace Neo.Network.P2P
                         Transaction tx = Blockchain.Singleton.GetTransaction(hash);
                         if (tx != null)
                             EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
+                        else
+                            notFound.Add(hash);
                         break;
                     case InventoryType.Block:
                         Block block = Blockchain.Singleton.GetBlock(hash);
@@ -244,16 +246,22 @@ namespace Neo.Network.P2P
                                 EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                             }
                         }
+                        else
+                        {
+                            notFound.Add(hash);
+                        }
                         break;
-                    case InventoryType.Consensus:
-                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryConsensus))
-                            EnqueueMessage(Message.Create(MessageCommand.Consensus, inventoryConsensus));
-                        break;
-                    case InventoryType.Oracle:
-                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventoryOracle))
-                            EnqueueMessage(Message.Create(MessageCommand.Oracle, inventoryOracle));
+                    default:
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory))
+                            EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
                         break;
                 }
+            }
+
+            if (notFound.Count > 0)
+            {
+                foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound.ToArray()))
+                    EnqueueMessage(Message.Create(MessageCommand.NotFound, entry));
             }
         }
 

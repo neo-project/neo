@@ -299,9 +299,7 @@ namespace Neo.Ledger
                 {
                     Block block => OnNewBlock(block),
                     Transaction transaction => OnNewTransaction(transaction),
-                    ConsensusPayload payload => OnNewConsensus(payload),
-                    OraclePayload payload => OnNewOracle(payload),
-                    _ => VerifyResult.Unknown
+                    _ => OnNewInventory(inventory)
                 }
             };
             if (relay && rr.Result == VerifyResult.Succeed)
@@ -389,22 +387,6 @@ namespace Neo.Ledger
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewConsensus(ConsensusPayload payload)
-        {
-            if (!payload.Verify(currentSnapshot)) return VerifyResult.Invalid;
-            system.Consensus?.Tell(payload);
-            RelayCache.Add(payload);
-            return VerifyResult.Succeed;
-        }
-
-        private VerifyResult OnNewOracle(OraclePayload payload)
-        {
-            if (!payload.Verify(currentSnapshot)) return VerifyResult.Invalid;
-            system.Oracle?.Tell(payload);
-            RelayCache.Add(payload);
-            return VerifyResult.Succeed;
-        }
-
         private void OnNewHeaders(Header[] headers)
         {
             using (SnapshotView snapshot = GetSnapshot())
@@ -426,6 +408,13 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
+        private VerifyResult OnNewInventory(IInventory inventory)
+        {
+            if (!inventory.Verify(currentSnapshot)) return VerifyResult.Invalid;
+            RelayCache.Add(inventory);
+            return VerifyResult.Succeed;
+        }
+
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
@@ -442,13 +431,6 @@ namespace Neo.Ledger
             }
 
             return VerifyResult.Succeed;
-        }
-
-        private void OnPersistCompleted(Block block)
-        {
-            block_cache.Remove(block.PrevHash);
-            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
-            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
         protected override void OnReceive(object message)
@@ -507,6 +489,8 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
+                StoreView clonedSnapshot = snapshot.Clone();
+                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
                     var state = new TransactionState
@@ -515,15 +499,20 @@ namespace Neo.Ledger
                         Transaction = tx
                     };
 
-                    snapshot.Transactions.Add(tx.Hash, state);
+                    clonedSnapshot.Transactions.Add(tx.Hash, state);
+                    clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
                         if (state.VMState == VMState.HALT)
                         {
-                            engine.Snapshot.Commit();
+                            clonedSnapshot.Commit();
+                        }
+                        else
+                        {
+                            clonedSnapshot = snapshot.Clone();
                         }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
@@ -560,7 +549,9 @@ namespace Neo.Ledger
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
-            OnPersistCompleted(block);
+            block_cache.Remove(block.PrevHash);
+            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
         protected override void PostStop()
