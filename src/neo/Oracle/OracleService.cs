@@ -1,4 +1,5 @@
 using Akka.Actor;
+using Akka.Event;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
@@ -306,6 +307,8 @@ namespace Neo.Oracle
                 (
                 Comparer<KeyValuePair<UInt256, ResponseCollection>>.Create(SortResponse), capacity
                 );
+
+            Context.System.EventStream.Subscribe<Blockchain.RelayResult>(Self);
         }
 
         /// <summary>
@@ -339,10 +342,13 @@ namespace Neo.Oracle
                         }
                         break;
                     }
-                case OraclePayload msg:
+                case Blockchain.RelayResult rr:
                     {
-                        using var snapshot = _snapshotFactory();
-                        TryAddOracleResponse(snapshot, new ResponseItem(msg));
+                        if (rr.Result == VerifyResult.Succeed && rr.Inventory is OraclePayload msg)
+                        {
+                            using var snapshot = _snapshotFactory();
+                            TryAddOracleResponse(snapshot, new ResponseItem(msg));
+                        }
                         break;
                     }
                 case Transaction tx:
