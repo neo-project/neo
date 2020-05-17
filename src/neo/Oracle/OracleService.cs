@@ -342,37 +342,29 @@ namespace Neo.Oracle
                         }
                         break;
                     }
-                case Blockchain.RelayResult rr:
+                case Blockchain.RelayResult rr when rr.Result == VerifyResult.Succeed:
+                    switch (rr.Inventory)
                     {
-                        if (rr.Result == VerifyResult.Succeed && rr.Inventory is OraclePayload msg)
-                        {
-                            using var snapshot = _snapshotFactory();
-                            TryAddOracleResponse(snapshot, new ResponseItem(msg));
-                        }
-                        break;
-                    }
-                case Transaction tx:
-                    {
-                        // We only need to take care about the requests
-
-                        if (tx.IsOracleRequest())
-                        {
-                            // If it's an OracleRequest and it's new, tell it to OracleService
+                        case OraclePayload msg:
+                            using (var snapshot = _snapshotFactory())
+                                TryAddOracleResponse(snapshot, new ResponseItem(msg));
+                            break;
+                        case Transaction tx when tx.IsOracleRequest():
+                            // We only need to take care about the requests
 
                             if (_pendingRequests.TryAdd(tx.Hash, new RequestItem(tx)))
                             {
-                                using var snapshot = _snapshotFactory();
-
-                                ReverifyPendingResponses(snapshot, tx.Hash);
+                                using (var snapshot = _snapshotFactory())
+                                    ReverifyPendingResponses(snapshot, tx.Hash);
 
                                 // Add it to the oracle processing queue
 
                                 _processingQueue.Add(tx.Hash, tx);
                             }
-                        }
 
-                        break;
+                            break;
                     }
+                    break;
             }
         }
 
