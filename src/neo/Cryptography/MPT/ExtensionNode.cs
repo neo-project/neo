@@ -23,9 +23,8 @@ namespace Neo.Cryptography.MPT
         public override void DecodeSpecific(BinaryReader reader)
         {
             Key = reader.ReadVarBytes(MaxKeyLength);
-            var hashNode = new HashNode();
-            hashNode.DecodeSpecific(reader);
-            Next = hashNode;
+            Next = new HashNode();
+            Next.DecodeSpecific(reader);
         }
 
         public override JObject ToJson()

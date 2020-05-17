@@ -31,14 +31,13 @@ namespace Neo.Cryptography.MPT
 
         public override void DecodeSpecific(BinaryReader reader)
         {
-            var len = reader.ReadVarInt();
-            if (len < 1)
+            byte[] buffer = reader.ReadVarBytes(UInt256.Length);
+            hash = buffer.Length switch
             {
-                hash = null;
-                return;
-            }
-            if (len != UInt256.Length) throw new InvalidOperationException("Invalid hash bytes");
-            hash = new UInt256(reader.ReadFixedBytes((int)len));
+                0 => null,
+                UInt256.Length => new UInt256(buffer),
+                _ => throw new FormatException()
+            };
         }
 
         public override JObject ToJson()

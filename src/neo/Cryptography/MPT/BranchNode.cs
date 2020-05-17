@@ -28,9 +28,8 @@ namespace Neo.Cryptography.MPT
         {
             for (int i = 0; i < ChildCount; i++)
             {
-                var hashNode = new HashNode();
-                hashNode.DecodeSpecific(reader);
-                Children[i] = hashNode;
+                Children[i] = new HashNode();
+                Children[i].DecodeSpecific(reader);
             }
         }
 
