@@ -9,30 +9,22 @@ namespace Neo.Cryptography.MPT
     public abstract class MPTNode
     {
         private UInt256 hash;
-        public bool Dirty { get; private set; }
+
         protected abstract NodeType Type { get; }
 
         protected virtual UInt256 GenHash()
         {
-            return new UInt256(Crypto.Hash256(this.Encode()));
+            return new UInt256(Crypto.Hash256(Encode()));
         }
 
-        public virtual UInt256 GetHash()
+        public UInt256 GetHash()
         {
-            if (!Dirty && !(hash is null)) return hash;
-            hash = GenHash();
-            Dirty = false;
-            return hash;
+            return hash ??= GenHash();
         }
 
         public void SetDirty()
         {
-            Dirty = true;
-        }
-
-        public MPTNode()
-        {
-            Dirty = true;
+            hash = null;
         }
 
         public byte[] Encode()

@@ -18,13 +18,6 @@ namespace Neo.UnitTests.Cryptography.MPT
         }
 
         [TestMethod]
-        public void TestFlag()
-        {
-            var n = new ExtensionNode();
-            Assert.IsTrue(n.Dirty);
-        }
-
-        [TestMethod]
         public void TestHashNode()
         {
             var hn = new HashNode(null);
