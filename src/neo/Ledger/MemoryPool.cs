@@ -168,6 +168,19 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        public IEnumerable<Transaction> GetVerifiedTransactions()
+        {
+            _txRwLock.EnterReadLock();
+            try
+            {
+                return GetTransactions(_unsortedTransactions.Values);
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+        }
+
         public void GetVerifiedAndUnverifiedTransactions(out IEnumerable<Transaction> verifiedTransactions,
             out IEnumerable<Transaction> unverifiedTransactions)
         {
@@ -176,19 +189,6 @@ namespace Neo.Ledger
             {
                 verifiedTransactions = _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
                 unverifiedTransactions = _unverifiedSortedTransactions.Reverse().Select(p => p.Tx).ToArray();
-            }
-            finally
-            {
-                _txRwLock.ExitReadLock();
-            }
-        }
-
-        public IEnumerable<Transaction> GetVerifiedTransactions()
-        {
-            _txRwLock.EnterReadLock();
-            try
-            {
-                return GetTransactions(_unsortedTransactions.Values);
             }
             finally
             {
