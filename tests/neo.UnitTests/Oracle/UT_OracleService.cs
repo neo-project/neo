@@ -237,8 +237,12 @@ namespace Neo.UnitTests.Oracle
 
             // Send tx
 
-            var tx = CreateTx($"https://127.0.0.1:{port}/ping", null);
-            service.Tell(tx);
+            var rr = new Blockchain.RelayResult
+            {
+                Result = VerifyResult.Succeed,
+                Inventory = CreateTx($"https://127.0.0.1:{port}/ping", null)
+            };
+            service.Tell(rr);
 
             // Receive response
 
@@ -248,7 +252,7 @@ namespace Neo.UnitTests.Oracle
             var response = responseMsg.Inventory as Transaction;
 
             Assert.IsTrue(response.IsOracleResponse(out var requestTxHash));
-            Assert.AreEqual(tx.Hash, requestTxHash);
+            Assert.AreEqual(rr.Inventory.Hash, requestTxHash);
 
             //var response = responseMsg.Inventory as OraclePayload;
             //Assert.AreEqual(117, response.Data.Length);
