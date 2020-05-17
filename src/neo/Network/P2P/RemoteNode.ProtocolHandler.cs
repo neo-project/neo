@@ -329,7 +329,6 @@ namespace Neo.Network.P2P
 
         private void OnMemPoolMessageReceived()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
                 EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
         }
