@@ -450,9 +450,6 @@ namespace Neo.Ledger
                 case IInventory inventory:
                     OnInventory(inventory);
                     break;
-                case OraclePayload oracle:
-                    OnInventory(oracle);
-                    break;
                 case Idle _:
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
