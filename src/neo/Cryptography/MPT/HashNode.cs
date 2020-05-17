@@ -11,6 +11,7 @@ namespace Neo.Cryptography.MPT
 
         public override UInt256 Hash => hash;
         protected override NodeType Type => NodeType.HashNode;
+        public bool IsEmpty => Hash is null;
         public static HashNode EmptyNode { get; } = new HashNode();
 
         public HashNode()
@@ -22,14 +23,12 @@ namespace Neo.Cryptography.MPT
             this.hash = hash;
         }
 
-        public bool IsEmpty => Hash is null;
-
-        public override void EncodeSpecific(BinaryWriter writer)
+        internal override void EncodeSpecific(BinaryWriter writer)
         {
             WriteHash(writer, hash);
         }
 
-        public override void DecodeSpecific(BinaryReader reader)
+        internal override void DecodeSpecific(BinaryReader reader)
         {
             byte[] buffer = reader.ReadVarBytes(UInt256.Length);
             hash = buffer.Length switch

@@ -1,5 +1,6 @@
 using Neo.IO.Json;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Cryptography.MPT
 {
@@ -18,13 +19,13 @@ namespace Neo.Cryptography.MPT
             }
         }
 
-        public override void EncodeSpecific(BinaryWriter writer)
+        internal override void EncodeSpecific(BinaryWriter writer)
         {
             for (int i = 0; i < ChildCount; i++)
                 WriteHash(writer, Children[i].Hash);
         }
 
-        public override void DecodeSpecific(BinaryReader reader)
+        internal override void DecodeSpecific(BinaryReader reader)
         {
             for (int i = 0; i < ChildCount; i++)
             {
@@ -35,12 +36,7 @@ namespace Neo.Cryptography.MPT
 
         public override JObject ToJson()
         {
-            var jarr = new JArray();
-            for (int i = 0; i < ChildCount; i++)
-            {
-                jarr.Add(Children[i].ToJson());
-            }
-            return jarr;
+            return new JArray(Children.Select(p => p.ToJson()));
         }
     }
 }

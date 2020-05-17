@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Persistence;
+using System;
 
 namespace Neo.Cryptography.MPT
 {
@@ -15,7 +16,7 @@ namespace Neo.Cryptography.MPT
         public void Put(MPTNode node)
         {
             if (node is HashNode)
-                throw new System.InvalidOperationException("Means nothing to store HashNode");
+                throw new InvalidOperationException("Means nothing to store HashNode");
             store.Put(prefix, node.Hash.ToArray(), node.Encode());
         }
     }

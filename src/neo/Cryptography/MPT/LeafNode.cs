@@ -10,6 +10,7 @@ namespace Neo.Cryptography.MPT
     {
         //the max size when store StorageItem
         public const int MaxValueLength = 3 + InteropService.Storage.MaxValueSize + sizeof(bool);
+
         public byte[] Value;
 
         protected override NodeType Type => NodeType.LeafNode;
@@ -18,26 +19,27 @@ namespace Neo.Cryptography.MPT
         {
         }
 
-        public LeafNode(ReadOnlySpan<byte> val)
+        public LeafNode(ReadOnlySpan<byte> value)
         {
-            Value = val.ToArray();
+            Value = value.ToArray();
         }
 
-        public override void EncodeSpecific(BinaryWriter writer)
+        internal override void EncodeSpecific(BinaryWriter writer)
         {
             writer.WriteVarBytes(Value);
         }
 
-        public override void DecodeSpecific(BinaryReader reader)
+        internal override void DecodeSpecific(BinaryReader reader)
         {
             Value = reader.ReadVarBytes(MaxValueLength);
         }
 
         public override JObject ToJson()
         {
-            var json = new JObject();
-            json["value"] = Value.ToHexString();
-            return json;
+            return new JObject
+            {
+                ["value"] = Value.ToHexString()
+            };
         }
     }
 }

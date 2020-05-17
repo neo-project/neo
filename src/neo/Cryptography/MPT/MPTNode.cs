@@ -31,7 +31,7 @@ namespace Neo.Cryptography.MPT
             return ms.ToArray();
         }
 
-        public abstract void EncodeSpecific(BinaryWriter writer);
+        internal abstract void EncodeSpecific(BinaryWriter writer);
 
         public static unsafe MPTNode Decode(ReadOnlySpan<byte> data)
         {
@@ -50,7 +50,7 @@ namespace Neo.Cryptography.MPT
             }
         }
 
-        public abstract void DecodeSpecific(BinaryReader reader);
+        internal abstract void DecodeSpecific(BinaryReader reader);
 
         public abstract JObject ToJson();
 
