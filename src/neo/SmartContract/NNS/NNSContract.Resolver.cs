@@ -52,18 +52,18 @@ namespace Neo.SmartContract.NNS
             string name = System.Text.Encoding.UTF8.GetString(parameter);
             if (resolveCount++ > MaxResolveCount)
             {
-                return new RecordInfo { Text = "Too many domain redirects", Type = RecordType.ERROR };
+                return new RecordInfo { Type = RecordType.ERROR, Text = "Too many domain redirects" };
             }
             UInt256 innerKey = GetInnerKey(parameter);
             if (IsExpired(snapshot, innerKey))
             {
-                return new RecordInfo { Text = "TTL is expired", Type = RecordType.ERROR };
+                return new RecordInfo { Type = RecordType.ERROR, Text = "TTL is expired" };
             }
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null)
             {
-                return new RecordInfo { Text = "Text does not exist", Type = RecordType.ERROR };
+                return new RecordInfo { Type = RecordType.ERROR, Text = "Text does not exist" };
             }
             RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
             switch (recordInfo.Type)
