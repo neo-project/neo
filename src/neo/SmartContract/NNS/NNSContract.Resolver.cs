@@ -44,26 +44,26 @@ namespace Neo.SmartContract.NNS
         public StackItem Resolve(ApplicationEngine engine, Array args)
         {
             byte[] name = args[0].GetSpan().ToArray();
-            return Resolve(engine.Snapshot, name);
+            return Resolve(engine.Snapshot, name).ToStackItem(engine.ReferenceCounter);
         }
 
-        public string Resolve(StoreView snapshot, byte[] parameter, int resolveCount = 0)
+        public RecordInfo Resolve(StoreView snapshot, byte[] parameter, int resolveCount = 0)
         {
             string name = System.Text.Encoding.UTF8.GetString(parameter);
             if (resolveCount++ > MaxResolveCount)
             {
-                return new RecordInfo { Text = "Too many domain redirects", Type = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "Too many domain redirects", Type = RecordType.ERROR };
             }
             UInt256 innerKey = GetInnerKey(parameter);
             if (IsExpired(snapshot, innerKey))
             {
-                return new RecordInfo { Text = "TTL is expired", Type = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "TTL is expired", Type = RecordType.ERROR };
             }
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null)
             {
-                return new RecordInfo { Text = "Text does not exist", Type = RecordType.ERROR }.ToString();
+                return new RecordInfo { Text = "Text does not exist", Type = RecordType.ERROR };
             }
             RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
             switch (recordInfo.Type)
@@ -75,7 +75,7 @@ namespace Neo.SmartContract.NNS
                     var parameter_ns = System.Text.Encoding.UTF8.GetBytes(string.Join(".", name.Split(".")[1..]));
                     return Resolve(snapshot, parameter_ns, resolveCount);
             }
-            return recordInfo.ToString();
+            return recordInfo;
         }
 
         public bool IsDomain(string name)

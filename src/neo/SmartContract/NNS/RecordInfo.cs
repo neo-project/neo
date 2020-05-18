@@ -1,4 +1,3 @@
-using Neo.IO.Json;
 using Neo.VM;
 using Neo.VM.Types;
 
@@ -21,19 +20,6 @@ namespace Neo.SmartContract.NNS
             @struct.Add(new byte[] { (byte)Type });
             @struct.Add(Text);
             return @struct;
-        }
-
-        public JObject ToJson()
-        {
-            JObject json = new JObject();
-            json["text"] = Text;
-            json["recordType"] = Type.ToString();
-            return json;
-        }
-
-        public override string ToString()
-        {
-            return ToJson().ToString();
         }
     }
 }

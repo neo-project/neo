@@ -487,17 +487,23 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //check_resolve
             var ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_resolve.Result.GetString().Should().Be("{\"text\":\"BBB\",\"recordType\":\"A\"}");
+            Struct @struct = (Struct) ret_resolve.Result;
+            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x00 });
+            @struct[1].Should().Be((ByteString)"BBB");
             ret_resolve.State.Should().BeTrue();
 
             //check_resolve
             ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("BB.AA"), true);
-            ret_resolve.Result.GetString().Should().Be("{\"text\":\"BBB\",\"recordType\":\"A\"}");
+            @struct = (Struct)ret_resolve.Result;
+            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x00 });
+            @struct[1].Should().Be((ByteString)"BBB");
             ret_resolve.State.Should().BeTrue();
 
             //check_resolve
             ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("DD.AA"), true);
-            ret_resolve.Result.GetString().Should().Be("{\"text\":\"Text does not exist\",\"recordType\":\"ERROR\"}");
+            @struct = (Struct)ret_resolve.Result;
+            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
+            @struct[1].Should().Be((ByteString)"Text does not exist");
             ret_resolve.State.Should().BeTrue();
         }
 
@@ -554,7 +560,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
+            result.Should().BeOfType(typeof(VM.Types.Struct));
 
             return (true, result);
         }
