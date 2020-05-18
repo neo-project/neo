@@ -1,4 +1,3 @@
-using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -39,11 +38,11 @@ namespace Neo.SmartContract.NNS
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_ReceiptAddress), new StorageItem
             {
-                Value = new UInt160().ToArray() //TBD
+                Value = NEO.GetCommitteeMultiSigAddress(engine.Snapshot).ToArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RentalPrice), new StorageItem
             {
-                Value = BitConverter.GetBytes(10000000000L) //TBD
+                Value = BitConverter.GetBytes(5_000_000_000L)
             });
             return true;
         }
