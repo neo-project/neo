@@ -3,16 +3,15 @@ using Neo.Ledger;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Text;
-using System.Linq;
-using Array = Neo.VM.Types.Array;
 using Neo.Cryptography;
 using Neo.Persistence;
-using System.Numerics;
 using Neo.SmartContract.Native.Tokens;
-using System.Collections;
-using Neo.Network.P2P.Payloads;
 using System;
+using System.Text;
+using System.Linq;
+using System.Numerics;
+using System.Collections;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
@@ -98,7 +97,8 @@ namespace Neo.SmartContract.NNS
             var domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
             uint ttl = engine.Snapshot.Height + BlockPerYear;
             //If domain is exist and not expired,it can be transfered directly.
-            if (domainInfo != null && !IsExpired(engine.Snapshot, innerKey)) return base.Transfer(engine, from, to, Factor, tokenId);
+            if (domainInfo != null && !IsExpired(engine.Snapshot, innerKey))
+                return base.Transfer(engine, from, to, Factor, tokenId);
             //Check domain is cross-level or expired
             if (IsCrossLevel(engine.Snapshot, name) || IsExpired(engine.Snapshot, parentInnerKey)) return false;
             //Get parent domain owner
