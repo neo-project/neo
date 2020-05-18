@@ -29,7 +29,7 @@ namespace Neo.Network.P2P
             this.StartHeight = fullNode?.StartHeight ?? 0;
             this.LastBlockIndex = this.StartHeight;
 
-            if (IsFullNode && Blockchain.Singleton.HeaderHeight >= this.LastBlockIndex)
+            if (IsFullNode)
             {
                 AvailableTasks.Add(TaskManager.MemPoolTaskHash);
             }
