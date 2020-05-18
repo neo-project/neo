@@ -487,7 +487,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //check_resolve
             var ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
-            Struct @struct = (Struct) ret_resolve.Result;
+            Struct @struct = (Struct)ret_resolve.Result;
             @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x00 });
             @struct[1].Should().Be((ByteString)"BBB");
             ret_resolve.State.Should().BeTrue();
@@ -536,6 +536,19 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_setOperator = Check_SetOperator(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA.AA.AA"), true);
             ret_setOperator.Result.Should().Be(false);
             ret_setOperator.State.Should().BeTrue();
+        }
+
+        [TestMethod()]
+        public void IsDomainTest()
+        {
+            Assert.IsFalse(NativeContract.NNS.IsDomain(""));
+            Assert.IsFalse(NativeContract.NNS.IsDomain(null));
+            Assert.IsFalse(NativeContract.NNS.IsDomain("www,neo.org"));
+            Assert.IsFalse(NativeContract.NNS.IsDomain("www.hello.world.neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("www.hello.neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("www.neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("neo.org"));
+            Assert.IsTrue(NativeContract.NNS.IsDomain("bb.aa123"));
         }
 
         internal static (bool State, StackItem Result) Check_Resolve(StoreView snapshot, byte[] tokenId, bool signAccount)
