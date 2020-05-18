@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Neo.Cryptography.MPT
 {
-    public partial class MPTReadOnlyTrie<TKey, TValue>
+    public partial class MPTTrie<TKey, TValue>
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
@@ -64,10 +64,15 @@ namespace Neo.Cryptography.MPT
         {
             byte table = 0;
             var memoryStore = new MemoryStore();
-            var trie = new MPTReadOnlyTrie<TKey, TValue>(root, memoryStore, table);
             foreach (byte[] data in proof)
             {
                 memoryStore.Put(table, Crypto.Hash256(data), data);
+            }
+            ISnapshot snapshot = memoryStore.GetSnapshot();
+            var trie = new MPTTrie<TKey, TValue>(root, snapshot, table);
+            foreach (byte[] data in proof)
+            {
+                snapshot.Put(table, Crypto.Hash256(data), data);
             }
             return trie.Get(key);
         }

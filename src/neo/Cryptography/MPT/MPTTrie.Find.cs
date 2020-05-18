@@ -6,7 +6,7 @@ using static Neo.Helper;
 
 namespace Neo.Cryptography.MPT
 {
-    public partial class MPTReadOnlyTrie<TKey, TValue>
+    public partial class MPTTrie<TKey, TValue>
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
