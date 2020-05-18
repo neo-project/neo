@@ -2,7 +2,6 @@
 
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
@@ -19,7 +18,8 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
-        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new Dictionary<UInt160, NativeContract>();
+        private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
+        private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
@@ -28,8 +28,7 @@ namespace Neo.SmartContract.Native
         public static PolicyContract Policy { get; } = new PolicyContract();
         public static OracleContract Oracle { get; } = new OracleContract();
 
-        public abstract string ServiceName { get; }
-        public uint ServiceHash { get; }
+        public abstract string Name { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
         public abstract int Id { get; }
@@ -38,10 +37,10 @@ namespace Neo.SmartContract.Native
 
         protected NativeContract()
         {
-            this.ServiceHash = ServiceName.ToInteropMethodHash();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(ServiceHash);
+                sb.EmitPush(Name);
+                sb.EmitSysCall(InteropService.Native.Call);
                 this.Script = sb.ToArray();
             }
             this.Hash = Script.ToScriptHash();
@@ -82,7 +81,8 @@ namespace Neo.SmartContract.Native
                 Extra = null,
             };
             contractsList.Add(this);
-            contractsDictionary.Add(Hash, this);
+            contractsNameDictionary.Add(Name, this);
+            contractsHashDictionary.Add(Hash, this);
         }
 
         protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
@@ -102,6 +102,18 @@ namespace Neo.SmartContract.Native
             return CreateStorageKey(prefix, key.ToArray());
         }
 
+        public static NativeContract GetContract(UInt160 hash)
+        {
+            contractsHashDictionary.TryGetValue(hash, out var contract);
+            return contract;
+        }
+
+        public static NativeContract GetContract(string name)
+        {
+            contractsNameDictionary.TryGetValue(name, out var contract);
+            return contract;
+        }
+
         internal bool Invoke(ApplicationEngine engine)
         {
             if (!engine.CurrentScriptHash.Equals(Hash))
@@ -113,6 +125,8 @@ namespace Neo.SmartContract.Native
             ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 return false;
+            if (!engine.AddGas(method.Price))
+                return false;
             StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
@@ -120,12 +134,7 @@ namespace Neo.SmartContract.Native
 
         public static bool IsNative(UInt160 hash)
         {
-            return contractsDictionary.ContainsKey(hash);
-        }
-
-        internal long GetPrice(EvaluationStack stack, StoreView snapshot)
-        {
-            return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
+            return contractsHashDictionary.ContainsKey(hash);
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)
