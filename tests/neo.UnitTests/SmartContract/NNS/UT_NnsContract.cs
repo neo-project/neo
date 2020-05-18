@@ -614,8 +614,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             var script = new ScriptBuilder();
 
-            script.EmitPush(recordType);
             script.EmitPush(text);
+            script.EmitPush(recordType);
             script.EmitPush(tokenId);
             script.EmitPush(3);
             script.Emit(OpCode.PACK);

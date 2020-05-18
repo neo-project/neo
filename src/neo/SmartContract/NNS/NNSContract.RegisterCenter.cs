@@ -151,8 +151,7 @@ namespace Neo.SmartContract.NNS
 
         private bool IsAdminCalling(ApplicationEngine engine)
         {
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, GetAdmin(engine.Snapshot))) return false;
-            return true;
+            return InteropService.Runtime.CheckWitnessInternal(engine, GetAdmin(engine.Snapshot));
         }
 
         public bool IsExpired(StoreView snapshot, UInt256 innerKey)

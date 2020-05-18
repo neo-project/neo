@@ -13,12 +13,12 @@ namespace Neo.SmartContract.NNS
         private static readonly uint MaxResolveCount = 7;
 
         // only can be called by the admin of the name
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.String, ContractParameterType.Integer }, ParameterNames = new[] { "name", "text", "recordType" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Integer, ContractParameterType.String }, ParameterNames = new[] { "name", "recordType", "text" })]
         private StackItem SetText(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
-            string text = args[1].GetString();
-            RecordType recordType = (RecordType)(byte)args[2].GetBigInteger();
+            RecordType recordType = (RecordType)(byte)args[1].GetBigInteger();
+            string text = args[2].GetString();
 
             string name = System.Text.Encoding.UTF8.GetString(tokenId);
             UInt256 innerKey = GetInnerKey(tokenId);
