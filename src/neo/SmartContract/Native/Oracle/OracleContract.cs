@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Native.Oracle
 {
     public sealed class OracleContract : NativeContract
     {
-        public override string ServiceName => "Neo.Native.Oracle";
+        public override string Name => "Oracle";
 
         public override int Id => -4;
 
