@@ -17,7 +17,7 @@ namespace Neo.SmartContract.Native
 {
     public sealed class PolicyContract : NativeContract
     {
-        public override string ServiceName => "Neo.Native.Policy";
+        public override string Name => "Policy";
         public override int Id => -3;
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
