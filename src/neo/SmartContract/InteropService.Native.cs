@@ -8,12 +8,7 @@ namespace Neo.SmartContract
         internal static class Native
         {
             public static readonly InteropDescriptor Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application, CallFlags.AllowModifyStates);
-
-            static Native()
-            {
-                foreach (NativeContract contract in NativeContract.Contracts)
-                    Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application, CallFlags.None);
-            }
+            public static readonly InteropDescriptor Call = Register("Neo.Native.Call", Native_Call, 0, TriggerType.System | TriggerType.Application, CallFlags.None);
 
             private static bool Native_Deploy(ApplicationEngine engine)
             {
@@ -28,6 +23,15 @@ namespace Neo.SmartContract
                     });
                     contract.Initialize(engine);
                 }
+                return true;
+            }
+
+            private static bool Native_Call(ApplicationEngine engine)
+            {
+                if (!engine.TryPop(out string name)) return false;
+                NativeContract contract = NativeContract.GetContract(name);
+                if (contract is null) return false;
+                contract.Invoke(engine);
                 return true;
             }
         }

@@ -9,7 +9,6 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -112,11 +111,6 @@ namespace Neo.SmartContract
         public static bool IsStandardContract(this byte[] script)
         {
             return script.IsSignatureContract() || script.IsMultiSigContract();
-        }
-
-        public static uint ToInteropMethodHash(this string method)
-        {
-            return BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
         }
 
         public static UInt160 ToScriptHash(this byte[] script)
