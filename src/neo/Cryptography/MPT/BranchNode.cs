@@ -33,10 +33,5 @@ namespace Neo.Cryptography.MPT
                 Children[i].DecodeSpecific(reader);
             }
         }
-
-        public override JObject ToJson()
-        {
-            return new JArray(Children.Select(p => p.ToJson()));
-        }
     }
 }

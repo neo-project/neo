@@ -51,8 +51,6 @@ namespace Neo.Cryptography.MPT
 
         internal abstract void DecodeSpecific(BinaryReader reader);
 
-        public abstract JObject ToJson();
-
         protected void WriteHash(BinaryWriter writer, UInt256 hash)
         {
             if (hash is null)

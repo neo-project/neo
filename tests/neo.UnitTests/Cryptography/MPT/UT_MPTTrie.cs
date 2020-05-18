@@ -262,8 +262,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             result = mpt.Delete("ac11".HexToBytes());
             Assert.IsTrue(result);
             result = mpt.Delete("ac22".HexToBytes());
-            Assert.IsTrue(result);
-            Assert.AreEqual("{\"key\":\"0a0c\",\"next\":{\"value\":\"ac\"}}", mpt.ToJson().ToString());
+            Assert.IsFalse(mpt.Get("ac".HexToBytes()) is null);
         }
 
         [TestMethod]

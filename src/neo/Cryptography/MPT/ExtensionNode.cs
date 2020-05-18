@@ -27,14 +27,5 @@ namespace Neo.Cryptography.MPT
             Next = new HashNode();
             Next.DecodeSpecific(reader);
         }
-
-        public override JObject ToJson()
-        {
-            return new JObject
-            {
-                ["key"] = Key.ToHexString(),
-                ["next"] = Next.ToJson()
-            };
-        }
     }
 }

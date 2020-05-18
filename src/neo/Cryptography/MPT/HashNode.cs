@@ -38,15 +38,5 @@ namespace Neo.Cryptography.MPT
                 _ => throw new FormatException()
             };
         }
-
-        public override JObject ToJson()
-        {
-            var json = new JObject();
-            if (!this.IsEmpty)
-            {
-                json["hash"] = Hash.ToString();
-            }
-            return json;
-        }
     }
 }

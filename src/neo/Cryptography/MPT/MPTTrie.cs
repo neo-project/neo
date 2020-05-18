@@ -14,10 +14,5 @@ namespace Neo.Cryptography.MPT
         {
             this.db = new MPTDb(store, prefix);
         }
-
-        public JObject ToJson()
-        {
-            return root.ToJson();
-        }
     }
 }

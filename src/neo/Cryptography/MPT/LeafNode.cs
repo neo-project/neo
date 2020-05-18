@@ -33,13 +33,5 @@ namespace Neo.Cryptography.MPT
         {
             Value = reader.ReadVarBytes(MaxValueLength);
         }
-
-        public override JObject ToJson()
-        {
-            return new JObject
-            {
-                ["value"] = Value.ToHexString()
-            };
-        }
     }
 }
