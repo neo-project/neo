@@ -1,7 +1,6 @@
 using Neo.Cryptography;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -18,19 +17,8 @@ namespace Neo.SmartContract
 
             public static readonly InteropDescriptor VerifyWithECDsaSecp256r1 = Register("Neo.Crypto.ECDsa.Secp256r1.Verify", Crypto_ECDsaSecp256r1Verify, 0_01000000, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor VerifyWithECDsaSecp256k1 = Register("Neo.Crypto.ECDsa.Secp256k1.Verify", Crypto_ECDsaSecp256k1Verify, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.ECDsa.Secp256r1.CheckMultiSig", Crypto_ECDsaSecp256r1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.ECDsa.Secp256k1.CheckMultiSig", Crypto_ECDsaSecp256k1CheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
-
-            private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack, StoreView snapshot)
-            {
-                if (stack.Count < 2) return 0;
-                var item = stack.Peek(1);
-                int n;
-                if (item is Array array) n = array.Count;
-                else n = (int)item.GetBigInteger();
-                if (n < 1) return 0;
-                return VerifyWithECDsaSecp256r1.Price * n;
-            }
+            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.ECDsa.Secp256r1.CheckMultiSig", Crypto_ECDsaSecp256r1CheckMultiSig, 0, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.ECDsa.Secp256k1.CheckMultiSig", Crypto_ECDsaSecp256k1CheckMultiSig, 0, TriggerType.All, CallFlags.None);
 
             private static bool Crypto_SHA256(ApplicationEngine engine)
             {
@@ -114,6 +102,7 @@ namespace Neo.SmartContract
                     for (int i = 0; i < n; i++)
                         pubkeys[i] = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                 }
+                if (!engine.AddGas(VerifyWithECDsaSecp256r1.FixedPrice * n)) return false;
                 int m;
                 byte[][] signatures;
                 item = engine.CurrentContext.EvaluationStack.Pop();
