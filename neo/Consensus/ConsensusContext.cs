@@ -437,7 +437,7 @@ namespace Neo.Consensus
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
-            ProposalStateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
+            ProposalStateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot.ToArray().AsSerializable<StateRootBase>();
         }
 
         private static ulong GetNonce()
