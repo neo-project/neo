@@ -11,7 +11,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
-    public partial class NnsContract
+    partial class NnsContract
     {
         public override string ServiceName => "Neo.Native.NNS";
         public override int Id => -5;

@@ -15,7 +15,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.NNS
 {
-    partial class NnsContract : Nep11Token<DomainState, Nep11AccountState>
+    public partial class NnsContract : Nep11Token<DomainState, Nep11AccountState>
     {
         public const uint BlockPerYear = Blockchain.DecrementInterval;
         public const uint MaxDomainLevel = 4;

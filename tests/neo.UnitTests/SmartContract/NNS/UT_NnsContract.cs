@@ -511,7 +511,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Operator()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var factor = 1;
             var ret = Check_GetAdmin(snapshot);
             var from = ret.Result.GetSpan().AsSerializable<UInt160>();
             snapshot.BlockHashIndex.GetAndChange().Index = 0;
