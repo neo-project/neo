@@ -4,7 +4,6 @@ using Neo.Persistence;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -13,35 +12,11 @@ namespace Neo.SmartContract.NNS
 {
     partial class NnsContract
     {
-        public override string ServiceName => "Neo.Native.NNS";
-        public override int Id => -5;
-        public override string Name => "NNS";
-        public override string Symbol => "nns";
-        public override byte Decimals => 0;
-
         protected const byte Prefix_Root = 24;
         protected const byte Prefix_Record = 25;
         protected const byte Prefix_Admin = 26;
         protected const byte Prefix_RentalPrice = 27;
         protected const byte Prefix_ReceiptAddress = 28;
-
-        internal override bool Initialize(ApplicationEngine engine)
-        {
-            if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Admin), new StorageItem
-            {
-                Value = NEO.GetCommitteeMultiSigAddress(engine.Snapshot).ToArray()
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_ReceiptAddress), new StorageItem
-            {
-                Value = NEO.GetCommitteeMultiSigAddress(engine.Snapshot).ToArray()
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RentalPrice), new StorageItem
-            {
-                Value = BitConverter.GetBytes(5_000_000_000L)
-            });
-            return true;
-        }
 
         // Get Admin
         [ContractMethod(0_01000000, ContractParameterType.Hash160, CallFlags.AllowStates)]
