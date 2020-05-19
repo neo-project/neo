@@ -199,9 +199,9 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160> { Sender };
-            hashes.UnionWith(Cosigners.Select(p => p.Account));
-            return hashes.OrderBy(p => p).ToArray();
+            var hashes = Cosigners.Select(p => p.Account);
+            hashes = hashes.Contains(Sender) ? hashes : hashes.Append(Sender);
+            return hashes.ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
