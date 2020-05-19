@@ -1,4 +1,3 @@
-using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -15,11 +14,6 @@ namespace Neo.SmartContract
                 t.GetFields()[0].GetValue(null);
         }
 
-        public static long GetPrice(uint hash, EvaluationStack stack)
-        {
-            return methods[hash].GetPrice(stack);
-        }
-
         public static IEnumerable<InteropDescriptor> SupportedMethods()
         {
             return methods.Values;
@@ -34,19 +28,14 @@ namespace Neo.SmartContract
             ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
                 return false;
+            if (!engine.AddGas(descriptor.FixedPrice))
+                return false;
             return descriptor.Handler(engine);
         }
 
         private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers, requiredCallFlags);
-            methods.Add(descriptor.Hash, descriptor);
-            return descriptor;
-        }
-
-        private static InteropDescriptor Register(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-        {
-            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers, requiredCallFlags);
             methods.Add(descriptor.Hash, descriptor);
             return descriptor;
         }

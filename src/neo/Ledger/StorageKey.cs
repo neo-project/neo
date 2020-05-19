@@ -1,40 +1,32 @@
 using Neo.Cryptography;
 using Neo.IO;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 
 namespace Neo.Ledger
 {
     public class StorageKey : IEquatable<StorageKey>, ISerializable
     {
-        public UInt160 ScriptHash;
+        public int Id;
         public byte[] Key;
 
-        int ISerializable.Size => ScriptHash.Size + (Key.Length / 16 + 1) * 17;
+        int ISerializable.Size => sizeof(int) + Key.Length;
 
-        internal static byte[] CreateSearchPrefix(UInt160 hash, byte[] prefix)
+        internal static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
         {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                int index = 0;
-                int remain = prefix.Length;
-                while (remain >= 16)
-                {
-                    ms.Write(prefix, index, 16);
-                    ms.WriteByte(16);
-                    index += 16;
-                    remain -= 16;
-                }
-                if (remain > 0)
-                    ms.Write(prefix, index, remain);
-                return Helper.Concat(hash.ToArray(), ms.ToArray());
-            }
+            byte[] buffer = new byte[sizeof(int) + prefix.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
+            prefix.CopyTo(buffer.AsSpan(sizeof(int)));
+            return buffer;
         }
 
+        //If the base stream of the reader doesn't support seeking, a NotSupportedException is thrown.
+        //But StorageKey never works with NetworkStream, so it doesn't matter.
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ScriptHash = reader.ReadSerializable<UInt160>();
-            Key = reader.ReadBytesWithGrouping();
+            Id = reader.ReadInt32();
+            Key = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
         }
 
         public bool Equals(StorageKey other)
@@ -43,7 +35,7 @@ namespace Neo.Ledger
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return ScriptHash.Equals(other.ScriptHash) && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
+            return Id == other.Id && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
         }
 
         public override bool Equals(object obj)
@@ -54,13 +46,13 @@ namespace Neo.Ledger
 
         public override int GetHashCode()
         {
-            return ScriptHash.GetHashCode() + (int)Key.Murmur32(0);
+            return Id.GetHashCode() + (int)Key.Murmur32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(ScriptHash);
-            writer.WriteBytesWithGrouping(Key);
+            writer.Write(Id);
+            writer.Write(Key);
         }
     }
 }

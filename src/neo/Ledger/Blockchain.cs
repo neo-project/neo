@@ -15,7 +15,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -23,18 +22,20 @@ namespace Neo.Ledger
     {
         public partial class ApplicationExecuted { }
         public class PersistCompleted { public Block Block; }
-        public class Import { public IEnumerable<Block> Blocks; }
+        public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        private class ParallelVerified { public Transaction Transaction; public bool ShouldRelay; public RelayResultReason VerifyResult; }
+        public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
-        public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
-        public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly byte CommitteeMembersCount = (byte)ProtocolSettings.Default.StandbyCommittee.Length;
+        public static readonly byte ValidatorsCount = ProtocolSettings.Default.ValidatorsCount;
+        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[..ValidatorsCount];
 
         public static readonly Block GenesisBlock = new Block
         {
@@ -63,7 +64,7 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
+        internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
         public IStore Store { get; }
@@ -166,8 +167,7 @@ namespace Neo.Ledger
                 Script = script,
                 Sender = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
                 SystemFee = 0,
-                Attributes = new TransactionAttribute[0],
-                Cosigners = new Cosigner[0],
+                Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
                     new Witness
@@ -239,12 +239,14 @@ namespace Neo.Ledger
             return View.GetTransaction(hash);
         }
 
-        private void OnImport(IEnumerable<Block> blocks)
+        private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
             foreach (Block block in blocks)
             {
                 if (block.Index <= Height) continue;
                 if (block.Index != Height + 1)
+                    throw new InvalidOperationException();
+                if (verify && !block.Verify(currentSnapshot))
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
@@ -278,7 +280,7 @@ namespace Neo.Ledger
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Verify the the transaction
-                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != RelayResultReason.Succeed)
+                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
                     continue;
                 // Add to the memory pool
                 MemPool.TryAdd(tx.Hash, tx);
@@ -288,27 +290,46 @@ namespace Neo.Ledger
             Sender.Tell(new FillCompleted());
         }
 
-        private RelayResultReason OnNewBlock(Block block)
+        private void OnInventory(IInventory inventory, bool relay = true)
+        {
+            RelayResult rr = new RelayResult
+            {
+                Inventory = inventory,
+                Result = inventory switch
+                {
+                    Block block => OnNewBlock(block),
+                    Transaction transaction => OnNewTransaction(transaction),
+                    _ => OnNewInventory(inventory)
+                }
+            };
+            if (relay && rr.Result == VerifyResult.Succeed)
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
+            Sender.Tell(rr);
+            Context.System.EventStream.Publish(rr);
+        }
+
+        private VerifyResult OnNewBlock(Block block)
         {
             if (block.Index <= Height)
-                return RelayResultReason.AlreadyExists;
+                return VerifyResult.AlreadyExists;
             if (block_cache.ContainsKey(block.Hash))
-                return RelayResultReason.AlreadyExists;
+                return VerifyResult.AlreadyExists;
             if (block.Index - 1 >= header_index.Count)
             {
                 AddUnverifiedBlockToCache(block);
-                return RelayResultReason.UnableToVerify;
+                return VerifyResult.UnableToVerify;
             }
             if (block.Index == header_index.Count)
             {
                 if (!block.Verify(currentSnapshot))
-                    return RelayResultReason.Invalid;
+                    return VerifyResult.Invalid;
             }
             else
             {
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
-                    return RelayResultReason.Invalid;
+                    return VerifyResult.Invalid;
             }
+            block_cache.TryAdd(block.Hash, block);
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
@@ -348,7 +369,6 @@ namespace Neo.Ledger
             }
             else
             {
-                block_cache.Add(block.Hash, block);
                 if (block.Index + 100 >= header_index.Count)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
@@ -364,16 +384,7 @@ namespace Neo.Ledger
                     UpdateCurrentSnapshot();
                 }
             }
-            return RelayResultReason.Succeed;
-        }
-
-        private RelayResultReason OnNewConsensus(ConsensusPayload payload)
-        {
-            if (!payload.Verify(currentSnapshot)) return RelayResultReason.Invalid;
-            system.Consensus?.Tell(payload);
-            ConsensusRelayCache.Add(payload);
-            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
-            return RelayResultReason.Succeed;
+            return VerifyResult.Succeed;
         }
 
         private void OnNewHeaders(Header[] headers)
@@ -397,53 +408,21 @@ namespace Neo.Ledger
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
-        private void OnNewTransaction(Transaction transaction, bool relay)
+        private VerifyResult OnNewInventory(IInventory inventory)
         {
-            RelayResultReason reason;
-            if (ContainsTransaction(transaction.Hash))
-                reason = RelayResultReason.AlreadyExists;
-            else if (!MemPool.CanTransactionFitInPool(transaction))
-                reason = RelayResultReason.OutOfMemory;
-            else
-                reason = transaction.VerifyForEachBlock(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
-            if (reason == RelayResultReason.Succeed)
-            {
-                Task.Run(() =>
-                {
-                    return new ParallelVerified
-                    {
-                        Transaction = transaction,
-                        ShouldRelay = relay,
-                        VerifyResult = transaction.VerifyParallelParts(currentSnapshot)
-                    };
-                }).PipeTo(Self, Sender);
-            }
-            else
-            {
-                Sender.Tell(reason);
-            }
+            if (!inventory.Verify(currentSnapshot)) return VerifyResult.Invalid;
+            RelayCache.Add(inventory);
+            return VerifyResult.Succeed;
         }
 
-        private void OnParallelVerified(ParallelVerified parallelVerified)
+        private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            RelayResultReason reason = parallelVerified.VerifyResult;
-            if (reason == RelayResultReason.Succeed)
-            {
-                if (!MemPool.CanTransactionFitInPool(parallelVerified.Transaction))
-                    reason = RelayResultReason.OutOfMemory;
-                else if (!MemPool.TryAdd(parallelVerified.Transaction.Hash, parallelVerified.Transaction))
-                    reason = RelayResultReason.OutOfMemory;
-                else if (parallelVerified.ShouldRelay)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = parallelVerified.Transaction });
-            }
-            Sender.Tell(reason);
-        }
-
-        private void OnPersistCompleted(Block block)
-        {
-            block_cache.Remove(block.Hash);
-            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
-            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
+            if (!MemPool.CanTransactionFitInPool(transaction)) return VerifyResult.OutOfMemory;
+            VerifyResult reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
+            if (reason != VerifyResult.Succeed) return reason;
+            if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
+            return VerifyResult.Succeed;
         }
 
         protected override void OnReceive(object message)
@@ -451,7 +430,7 @@ namespace Neo.Ledger
             switch (message)
             {
                 case Import import:
-                    OnImport(import.Blocks);
+                    OnImport(import.Blocks, import.Verify);
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
@@ -460,22 +439,16 @@ namespace Neo.Ledger
                     OnNewHeaders(headers);
                     break;
                 case Block block:
-                    Sender.Tell(OnNewBlock(block));
+                    OnInventory(block, false);
                     break;
                 case Transaction[] transactions:
                     {
                         // This message comes from a mempool's revalidation, already relayed
-                        foreach (var tx in transactions) OnNewTransaction(tx, false);
+                        foreach (var tx in transactions) OnInventory(tx, false);
                         break;
                     }
-                case Transaction transaction:
-                    OnNewTransaction(transaction, true);
-                    break;
-                case ParallelVerified parallelVerified:
-                    OnParallelVerified(parallelVerified);
-                    break;
-                case ConsensusPayload payload:
-                    Sender.Tell(OnNewConsensus(payload));
+                case IInventory inventory:
+                    OnInventory(inventory);
                     break;
                 case Idle _:
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
@@ -502,6 +475,8 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
+                StoreView clonedSnapshot = snapshot.Clone();
+                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
                     var state = new TransactionState
@@ -510,15 +485,20 @@ namespace Neo.Ledger
                         Transaction = tx
                     };
 
-                    snapshot.Transactions.Add(tx.Hash, state);
+                    clonedSnapshot.Transactions.Add(tx.Hash, state);
+                    clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
                         if (state.VMState == VMState.HALT)
                         {
-                            engine.Snapshot.Commit();
+                            clonedSnapshot.Commit();
+                        }
+                        else
+                        {
+                            clonedSnapshot = snapshot.Clone();
                         }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
@@ -555,7 +535,9 @@ namespace Neo.Ledger
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
-            OnPersistCompleted(block);
+            block_cache.Remove(block.PrevHash);
+            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
         protected override void PostStop()

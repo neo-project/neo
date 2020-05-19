@@ -1,5 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.VM.Types;
 using System;
@@ -180,6 +181,7 @@ namespace Neo.VM
             {
                 PrimitiveType p => p.Size,
                 Buffer b => b.Size,
+                Null _ => 0,
                 _ => throw new ArgumentException(),
             };
         }
@@ -218,6 +220,52 @@ namespace Neo.VM
             }
         }
 
+        public static JObject ToJson(this StackItem item)
+        {
+            return ToJson(item, null);
+        }
+
+        private static JObject ToJson(StackItem item, HashSet<StackItem> context)
+        {
+            JObject json = new JObject();
+            json["type"] = item.Type;
+            switch (item)
+            {
+                case Array array:
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    if (!context.Add(array)) throw new InvalidOperationException();
+                    json["value"] = new JArray(array.Select(p => ToJson(p, context)));
+                    break;
+                case Boolean boolean:
+                    json["value"] = boolean.ToBoolean();
+                    break;
+                case Buffer buffer:
+                    json["value"] = Convert.ToBase64String(buffer.InnerBuffer);
+                    break;
+                case ByteString byteString:
+                    json["value"] = Convert.ToBase64String(byteString.Span);
+                    break;
+                case Integer integer:
+                    json["value"] = integer.ToBigInteger().ToString();
+                    break;
+                case Map map:
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    if (!context.Add(map)) throw new InvalidOperationException();
+                    json["value"] = new JArray(map.Select(p =>
+                    {
+                        JObject item = new JObject();
+                        item["key"] = ToJson(p.Key, context);
+                        item["value"] = ToJson(p.Value, context);
+                        return item;
+                    }));
+                    break;
+                case Pointer pointer:
+                    json["value"] = pointer.Position;
+                    break;
+            }
+            return json;
+        }
+
         public static ContractParameter ToParameter(this StackItem item)
         {
             return ToParameter(item, null);
@@ -225,6 +273,7 @@ namespace Neo.VM
 
         private static ContractParameter ToParameter(StackItem item, List<(StackItem, ContractParameter)> context)
         {
+            if (item is null) throw new ArgumentNullException();
             ContractParameter parameter = null;
             switch (item)
             {
@@ -259,7 +308,7 @@ namespace Neo.VM
                         Value = item.ToBoolean()
                     };
                     break;
-                case ByteArray array:
+                case ByteString array:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
@@ -286,7 +335,7 @@ namespace Neo.VM
                     };
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException($"StackItemType({item.Type}) is not supported to ContractParameter.");
             }
             return parameter;
         }
@@ -298,6 +347,8 @@ namespace Neo.VM
 
         private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
         {
+            if (parameter is null) throw new ArgumentNullException();
+            if (parameter.Value is null) return StackItem.Null;
             StackItem stackItem = null;
             switch (parameter.Type)
             {
@@ -347,8 +398,6 @@ namespace Neo.VM
                     break;
                 case ContractParameterType.String:
                     stackItem = (string)parameter.Value;
-                    break;
-                case ContractParameterType.InteropInterface:
                     break;
                 default:
                     throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");

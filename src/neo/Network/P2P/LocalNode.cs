@@ -1,6 +1,5 @@
 using Akka.Actor;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
@@ -60,11 +59,11 @@ namespace Neo.Network.P2P
                 singleton = this;
 
                 // Start dns resolution in parallel
-
-                for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
+                string[] seedList = ProtocolSettings.Default.SeedList;
+                for (int i = 0; i < seedList.Length; i++)
                 {
                     int index = i;
-                    Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
+                    Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
                 }
             }
         }
@@ -179,8 +178,6 @@ namespace Neo.Network.P2P
                 case SendDirectly send:
                     OnSendDirectly(send.Inventory);
                     break;
-                case RelayResultReason _:
-                    break;
             }
         }
 
@@ -215,6 +212,11 @@ namespace Neo.Network.P2P
         }
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
+
+        protected override void OnTcpConnected(IActorRef connection)
+        {
+            connection.Tell(new RemoteNode.StartProtocol());
+        }
 
         public static Props Props(NeoSystem system)
         {

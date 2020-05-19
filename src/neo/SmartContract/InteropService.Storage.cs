@@ -15,62 +15,57 @@ namespace Neo.SmartContract
             public const int MaxKeySize = 64;
             public const int MaxValueSize = ushort.MaxValue;
 
-            public static readonly InteropDescriptor GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor AsReadOnly = Register("System.Storage.AsReadOnly", Storage_AsReadOnly, 0_00000400, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor Get = Register("System.Storage.Get", Storage_Get, 0_01000000, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor Find = Register("System.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application, CallFlags.None);
-            public static readonly InteropDescriptor Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
-
-            private static bool CheckStorageContext(ApplicationEngine engine, StorageContext context)
-            {
-                ContractState contract = engine.Snapshot.Contracts.TryGet(context.ScriptHash);
-                if (contract == null) return false;
-                if (!contract.HasStorage) return false;
-                return true;
-            }
-
-            private static long GetStoragePrice(EvaluationStack stack)
-            {
-                return (stack.Peek(1).GetByteLength() + stack.Peek(2).GetByteLength()) * GasPerByte;
-            }
+            public static readonly InteropDescriptor GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor AsReadOnly = Register("System.Storage.AsReadOnly", Storage_AsReadOnly, 0_00000400, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor Get = Register("System.Storage.Get", Storage_Get, 0_01000000, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor Find = Register("System.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application, CallFlags.AllowStates);
+            public static readonly InteropDescriptor Put = Register("System.Storage.Put", Storage_Put, 0, TriggerType.Application, CallFlags.AllowModifyStates);
+            public static readonly InteropDescriptor PutEx = Register("System.Storage.PutEx", Storage_PutEx, 0, TriggerType.Application, CallFlags.AllowModifyStates);
+            public static readonly InteropDescriptor Delete = Register("System.Storage.Delete", Storage_Delete, 1 * GasPerByte, TriggerType.Application, CallFlags.AllowModifyStates);
 
             private static bool PutExInternal(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
             {
                 if (key.Length > MaxKeySize) return false;
                 if (value.Length > MaxValueSize) return false;
                 if (context.IsReadOnly) return false;
-                if (!CheckStorageContext(engine, context)) return false;
 
+                int newDataSize;
                 StorageKey skey = new StorageKey
                 {
-                    ScriptHash = context.ScriptHash,
+                    Id = context.Id,
                     Key = key
                 };
-
-                if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
-
-                if (value.Length == 0 && !flags.HasFlag(StorageFlags.Constant))
+                StorageItem item = engine.Snapshot.Storages.GetAndChange(skey);
+                if (item is null)
                 {
-                    // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)
-                    engine.Snapshot.Storages.Delete(skey);
+                    newDataSize = key.Length + value.Length;
+                    engine.Snapshot.Storages.Add(skey, item = new StorageItem());
                 }
                 else
                 {
-                    StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
-                    item.Value = value;
-                    item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+                    if (item.IsConstant) return false;
+                    if (value.Length <= item.Value.Length)
+                        newDataSize = 1;
+                    else
+                        newDataSize = value.Length - item.Value.Length;
                 }
+                if (!engine.AddGas(newDataSize * GasPerByte)) return false;
+
+                item.Value = value;
+                item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+
                 return true;
             }
 
             private static bool Storage_GetContext(ApplicationEngine engine)
             {
+                ContractState contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
+                if (contract == null) return false;
+                if (!contract.HasStorage) return false;
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
-                    ScriptHash = engine.CurrentScriptHash,
+                    Id = contract.Id,
                     IsReadOnly = false
                 }));
                 return true;
@@ -78,9 +73,12 @@ namespace Neo.SmartContract
 
             private static bool Storage_GetReadOnlyContext(ApplicationEngine engine)
             {
+                ContractState contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
+                if (contract == null) return false;
+                if (!contract.HasStorage) return false;
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
-                    ScriptHash = engine.CurrentScriptHash,
+                    Id = contract.Id,
                     IsReadOnly = true
                 }));
                 return true;
@@ -94,7 +92,7 @@ namespace Neo.SmartContract
                     if (!context.IsReadOnly)
                         context = new StorageContext
                         {
-                            ScriptHash = context.ScriptHash,
+                            Id = context.Id,
                             IsReadOnly = true
                         };
                     engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(context));
@@ -108,11 +106,10 @@ namespace Neo.SmartContract
                 if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
-                    if (!CheckStorageContext(engine, context)) return false;
                     byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                     StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
                     {
-                        ScriptHash = context.ScriptHash,
+                        Id = context.Id,
                         Key = key
                     });
                     engine.CurrentContext.EvaluationStack.Push(item?.Value ?? StackItem.Null);
@@ -126,9 +123,8 @@ namespace Neo.SmartContract
                 if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
-                    if (!CheckStorageContext(engine, context)) return false;
                     byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
-                    byte[] prefix_key = StorageKey.CreateSearchPrefix(context.ScriptHash, prefix);
+                    byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
                     StorageIterator iterator = engine.AddDisposable(new StorageIterator(engine.Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator()));
                     engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
                     return true;
@@ -163,10 +159,9 @@ namespace Neo.SmartContract
                 {
                     StorageContext context = _interface.GetInterface<StorageContext>();
                     if (context.IsReadOnly) return false;
-                    if (!CheckStorageContext(engine, context)) return false;
                     StorageKey key = new StorageKey
                     {
-                        ScriptHash = context.ScriptHash,
+                        Id = context.Id,
                         Key = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray()
                     };
                     if (engine.Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;

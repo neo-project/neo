@@ -12,8 +12,6 @@ namespace Neo.IO
 {
     public static class Helper
     {
-        public const int GroupingSizeInBytes = 16;
-
         public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, start, value.Length - start, false))
@@ -144,27 +142,30 @@ namespace Neo.IO
             return GetVarSize(size) + size;
         }
 
-        public static byte[] ReadBytesWithGrouping(this BinaryReader reader)
+        public static byte[] ReadFixedBytes(this BinaryReader reader, int size)
         {
-            using (MemoryStream ms = new MemoryStream())
+            var index = 0;
+            var data = new byte[size];
+
+            while (size > 0)
             {
-                int count;
-                do
+                var bytesRead = reader.Read(data, index, size);
+
+                if (bytesRead <= 0)
                 {
-                    byte[] group = reader.ReadBytes(GroupingSizeInBytes);
-                    count = reader.ReadByte();
-                    if (count > GroupingSizeInBytes)
-                        throw new FormatException();
-                    if (count > 0)
-                        ms.Write(group, 0, count);
-                } while (count == GroupingSizeInBytes);
-                return ms.ToArray();
+                    throw new FormatException();
+                }
+
+                size -= bytesRead;
+                index += bytesRead;
             }
+
+            return data;
         }
 
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
-            byte[] data = reader.ReadBytes(length);
+            byte[] data = reader.ReadFixedBytes(length);
             return Encoding.UTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
         }
 
@@ -196,7 +197,7 @@ namespace Neo.IO
 
         public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0x1000000)
         {
-            return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
+            return reader.ReadFixedBytes((int)reader.ReadVarInt((ulong)max));
         }
 
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
@@ -254,25 +255,6 @@ namespace Neo.IO
             {
                 item.Serialize(writer);
             }
-        }
-
-        public static void WriteBytesWithGrouping(this BinaryWriter writer, byte[] value)
-        {
-            int index = 0;
-            int remain = value.Length;
-            while (remain >= GroupingSizeInBytes)
-            {
-                writer.Write(value, index, GroupingSizeInBytes);
-                writer.Write((byte)GroupingSizeInBytes);
-                index += GroupingSizeInBytes;
-                remain -= GroupingSizeInBytes;
-            }
-            if (remain > 0)
-                writer.Write(value, index, remain);
-            int padding = GroupingSizeInBytes - remain;
-            for (int i = 0; i < padding; i++)
-                writer.Write((byte)0);
-            writer.Write((byte)remain);
         }
 
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)

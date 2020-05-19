@@ -13,21 +13,38 @@ namespace Neo.SmartContract
     {
         public static class Crypto
         {
-            public static readonly InteropDescriptor ECDsaVerify = Register("Neo.Crypto.ECDsaVerify", Crypto_ECDsaVerify, 0_01000000, TriggerType.All, CallFlags.None);
-            public static readonly InteropDescriptor ECDsaCheckMultiSig = Register("Neo.Crypto.ECDsaCheckMultiSig", Crypto_ECDsaCheckMultiSig, GetECDsaCheckMultiSigPrice, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor SHA256 = Register("Neo.Crypto.SHA256", Crypto_SHA256, 0_01000000, TriggerType.All, CallFlags.None);
 
-            private static long GetECDsaCheckMultiSigPrice(EvaluationStack stack)
+            public static readonly InteropDescriptor VerifyWithECDsaSecp256r1 = Register("Neo.Crypto.ECDsa.Secp256r1.Verify", Crypto_ECDsaSecp256r1Verify, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor VerifyWithECDsaSecp256k1 = Register("Neo.Crypto.ECDsa.Secp256k1.Verify", Crypto_ECDsaSecp256k1Verify, 0_01000000, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.ECDsa.Secp256r1.CheckMultiSig", Crypto_ECDsaSecp256r1CheckMultiSig, 0, TriggerType.All, CallFlags.None);
+            public static readonly InteropDescriptor CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.ECDsa.Secp256k1.CheckMultiSig", Crypto_ECDsaSecp256k1CheckMultiSig, 0, TriggerType.All, CallFlags.None);
+
+            private static bool Crypto_SHA256(ApplicationEngine engine)
             {
-                if (stack.Count < 2) return 0;
-                var item = stack.Peek(1);
-                int n;
-                if (item is Array array) n = array.Count;
-                else n = (int)item.GetBigInteger();
-                if (n < 1) return 0;
-                return ECDsaVerify.Price * n;
+                StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
+                ReadOnlySpan<byte> value = item0 switch
+                {
+                    InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),
+                    Null _ => engine.ScriptContainer.GetHashData(),
+                    _ => item0.GetSpan()
+                };
+
+                engine.CurrentContext.EvaluationStack.Push(value.ToArray().Sha256());
+                return true;
             }
 
-            private static bool Crypto_ECDsaVerify(ApplicationEngine engine)
+            private static bool Crypto_ECDsaSecp256r1Verify(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Secp256r1);
+            }
+
+            private static bool Crypto_ECDsaSecp256k1Verify(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaVerify(engine, Cryptography.ECC.ECCurve.Secp256k1);
+            }
+
+            private static bool Crypto_ECDsaVerify(ApplicationEngine engine, Cryptography.ECC.ECCurve curve)
             {
                 StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
                 ReadOnlySpan<byte> message = item0 switch
@@ -40,7 +57,7 @@ namespace Neo.SmartContract
                 ReadOnlySpan<byte> signature = engine.CurrentContext.EvaluationStack.Pop().GetSpan();
                 try
                 {
-                    engine.CurrentContext.EvaluationStack.Push(Cryptography.Crypto.VerifySignature(message, signature, pubkey));
+                    engine.CurrentContext.EvaluationStack.Push(Cryptography.Crypto.VerifySignature(message, signature, pubkey, curve));
                 }
                 catch (ArgumentException)
                 {
@@ -49,7 +66,17 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine)
+            private static bool Crypto_ECDsaSecp256r1CheckMultiSig(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Secp256r1);
+            }
+
+            private static bool Crypto_ECDsaSecp256k1CheckMultiSig(ApplicationEngine engine)
+            {
+                return Crypto_ECDsaCheckMultiSig(engine, Cryptography.ECC.ECCurve.Secp256k1);
+            }
+
+            private static bool Crypto_ECDsaCheckMultiSig(ApplicationEngine engine, Cryptography.ECC.ECCurve curve)
             {
                 StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
                 ReadOnlySpan<byte> message = item0 switch
@@ -75,6 +102,7 @@ namespace Neo.SmartContract
                     for (int i = 0; i < n; i++)
                         pubkeys[i] = engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray();
                 }
+                if (!engine.AddGas(VerifyWithECDsaSecp256r1.FixedPrice * n)) return false;
                 int m;
                 byte[][] signatures;
                 item = engine.CurrentContext.EvaluationStack.Pop();
@@ -97,7 +125,7 @@ namespace Neo.SmartContract
                 {
                     for (int i = 0, j = 0; fSuccess && i < m && j < n;)
                     {
-                        if (Cryptography.Crypto.VerifySignature(message, signatures[i], pubkeys[j]))
+                        if (Cryptography.Crypto.VerifySignature(message, signatures[i], pubkeys[j], curve))
                             i++;
                         j++;
                         if (m - i > n - j)

@@ -18,14 +18,13 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(RelayResultReason.Succeed);
-            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(RelayResultReason.Succeed);
+            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<BigInteger>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = networkFee;
             mock.Object.SystemFee = systemFee;
-            mock.Object.Attributes = new TransactionAttribute[0];
-            mock.Object.Cosigners = new Cosigner[0];
+            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
             mock.Object.Witnesses = new[]
             {
                 new Witness

@@ -27,6 +27,27 @@ namespace Neo.UnitTests.VMT
         }
 
         [TestMethod]
+        public void TestToJson()
+        {
+            var item = new VM.Types.Array();
+            item.Add(5);
+            item.Add("hello world");
+            item.Add(new byte[] { 1, 2, 3 });
+            item.Add(true);
+
+            Assert.AreEqual("{\"type\":\"Integer\",\"value\":\"5\"}", item[0].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"}", item[1].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"AQID\"}", item[2].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"Boolean\",\"value\":true}", item[3].ToJson().ToString());
+            Assert.AreEqual("{\"type\":\"Array\",\"value\":[{\"type\":\"Integer\",\"value\":\"5\"},{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"},{\"type\":\"ByteString\",\"value\":\"AQID\"},{\"type\":\"Boolean\",\"value\":true}]}", item.ToJson().ToString());
+
+            var item2 = new VM.Types.Map();
+            item2[1] = new Pointer(new Script(new byte[0]), 0);
+
+            Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString());
+        }
+
+        [TestMethod]
         public void TestEmitAppCall1()
         {
             //format:(byte)0x10+(byte)OpCode.NEWARRAY+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
@@ -96,7 +117,7 @@ namespace Neo.UnitTests.VMT
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
-            Assert.AreEqual("0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+            Assert.AreEqual("0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c14bcaf41d684c7d4ad6ee0d99da9707b9d1f0c8e6641627d5b52",
                             testScript.ToHexString());
         }
 
@@ -112,8 +133,8 @@ namespace Neo.UnitTests.VMT
             StackItem intItem = new BigInteger(1000);
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
 
-            StackItem interopItem = new VM.Types.InteropInterface("test");
-            Assert.AreEqual(null, interopItem.ToParameter().Value);
+            StackItem interopItem = new InteropInterface("test");
+            Assert.AreEqual(ContractParameterType.InteropInterface, interopItem.ToParameter().Type);
 
             StackItem arrayItem = new VM.Types.Array(new[] { byteItem, boolItem, intItem, interopItem });
             Assert.AreEqual(1000, (BigInteger)(arrayItem.ToParameter().Value as List<ContractParameter>)[2].Value);
@@ -125,6 +146,9 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestToStackItem()
         {
+            ContractParameter parameter = null;
+            Assert.ThrowsException<ArgumentNullException>(() => parameter.ToStackItem());
+
             ContractParameter byteParameter = new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() };
             Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetBigInteger());
 
@@ -146,10 +170,13 @@ namespace Neo.UnitTests.VMT
             ContractParameter strParameter = new ContractParameter { Type = ContractParameterType.String, Value = "test😂👍" };
             Assert.AreEqual("test😂👍", strParameter.ToStackItem().GetString());
 
-            ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface };
-            Assert.AreEqual(null, interopParameter.ToStackItem());
+            ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface, Value = new object() };
+            Assert.ThrowsException<ArgumentException>(() => interopParameter.ToStackItem());
 
-            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter, interopParameter }.ToList() };
+            ContractParameter interopParameter2 = new ContractParameter { Type = ContractParameterType.InteropInterface };
+            Assert.AreEqual(StackItem.Null, interopParameter2.ToStackItem());
+
+            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter }.ToList() };
             Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetBigInteger());
 
             ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
@@ -486,9 +513,13 @@ namespace Neo.UnitTests.VMT
             TestToParameter2ByteArray();
             TestToParameter2Integer();
             TestToParameter2InteropInterface();
+            TestToParameterNull();
+        }
 
-            Action action = () => VM.Helper.ToParameter(null);
-            action.Should().Throw<ArgumentException>();
+        private void TestToParameterNull()
+        {
+            StackItem item = null;
+            Assert.ThrowsException<ArgumentNullException>(() => item.ToParameter());
         }
 
         private void TestToParameter2InteropInterface()
@@ -508,7 +539,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParameter2ByteArray()
         {
-            StackItem item = new VM.Types.ByteArray(new byte[] { 0x00 });
+            StackItem item = new VM.Types.ByteString(new byte[] { 0x00 });
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.ByteArray, parameter.Type);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00 }), Encoding.Default.GetString((byte[])parameter.Value));

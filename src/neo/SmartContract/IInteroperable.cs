@@ -5,6 +5,7 @@ namespace Neo.SmartContract
 {
     public interface IInteroperable
     {
+        void FromStackItem(StackItem stackItem);
         StackItem ToStackItem(ReferenceCounter referenceCounter);
     }
 }

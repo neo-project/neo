@@ -16,31 +16,32 @@ namespace Neo.SmartContract.Native
 {
     public abstract class NativeContract
     {
-        private static readonly List<NativeContract> contracts = new List<NativeContract>();
+        private static readonly List<NativeContract> contractsList = new List<NativeContract>();
+        private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
+        private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
-        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
 
-        public abstract string ServiceName { get; }
-        public uint ServiceHash { get; }
+        public abstract string Name { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
+        public abstract int Id { get; }
         public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
         protected NativeContract()
         {
-            this.ServiceHash = ServiceName.ToInteropMethodHash();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(ServiceHash);
+                sb.EmitPush(Name);
+                sb.EmitSysCall(InteropService.Native.Call);
                 this.Script = sb.ToArray();
             }
             this.Hash = Script.ToScriptHash();
-            this.Manifest = ContractManifest.CreateDefault(this.Hash);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             List<string> safeMethods = new List<string>();
             foreach (MethodInfo method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
@@ -54,24 +55,39 @@ namespace Neo.SmartContract.Native
                     ReturnType = attribute.ReturnType,
                     Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
                 });
-                if (attribute.SafeMethod) safeMethods.Add(name);
+                if (!attribute.RequiredCallFlags.HasFlag(CallFlags.AllowModifyStates)) safeMethods.Add(name);
                 methods.Add(name, new ContractMethodMetadata
                 {
                     Delegate = (Func<ApplicationEngine, Array, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, Array, StackItem>), this),
                     Price = attribute.Price,
-                    RequiredCallFlags = attribute.SafeMethod ? CallFlags.None : CallFlags.AllowModifyStates
+                    RequiredCallFlags = attribute.RequiredCallFlags
                 });
             }
-            this.Manifest.Abi.Methods = descriptors.ToArray();
-            this.Manifest.SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray());
-            contracts.Add(this);
+            this.Manifest = new ContractManifest
+            {
+                Permissions = new[] { ContractPermission.DefaultPermission },
+                Abi = new ContractAbi()
+                {
+                    Hash = Hash,
+                    Events = new ContractEventDescriptor[0],
+                    Methods = descriptors.ToArray()
+                },
+                Features = ContractFeatures.NoProperty,
+                Groups = new ContractGroup[0],
+                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
+                Trusts = WildcardContainer<UInt160>.Create(),
+                Extra = null,
+            };
+            contractsList.Add(this);
+            contractsNameDictionary.Add(Name, this);
+            contractsHashDictionary.Add(Hash, this);
         }
 
         protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = Hash,
+                Id = Id,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
@@ -82,6 +98,18 @@ namespace Neo.SmartContract.Native
         internal protected StorageKey CreateStorageKey(byte prefix, ISerializable key)
         {
             return CreateStorageKey(prefix, key.ToArray());
+        }
+
+        public static NativeContract GetContract(UInt160 hash)
+        {
+            contractsHashDictionary.TryGetValue(hash, out var contract);
+            return contract;
+        }
+
+        public static NativeContract GetContract(string name)
+        {
+            contractsNameDictionary.TryGetValue(name, out var contract);
+            return contract;
         }
 
         internal bool Invoke(ApplicationEngine engine)
@@ -95,14 +123,16 @@ namespace Neo.SmartContract.Native
             ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 return false;
+            if (!engine.AddGas(method.Price))
+                return false;
             StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
         }
 
-        internal long GetPrice(EvaluationStack stack)
+        public static bool IsNative(UInt160 hash)
         {
-            return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
+            return contractsHashDictionary.ContainsKey(hash);
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)
@@ -112,7 +142,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Boolean)]
+        [ContractMethod(0, ContractParameterType.Boolean, CallFlags.AllowModifyStates)]
         protected StackItem OnPersist(ApplicationEngine engine, Array args)
         {
             if (engine.Trigger != TriggerType.System) return false;
@@ -124,7 +154,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards", SafeMethod = true)]
+        [ContractMethod(0, ContractParameterType.Array, CallFlags.None, Name = "supportedStandards")]
         protected StackItem SupportedStandardsMethod(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, SupportedStandards.Select(p => (StackItem)p));

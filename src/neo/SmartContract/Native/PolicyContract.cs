@@ -17,7 +17,8 @@ namespace Neo.SmartContract.Native
 {
     public sealed class PolicyContract : NativeContract
     {
-        public override string ServiceName => "Neo.Native.Policy";
+        public override string Name => "Policy";
+        public override int Id => -3;
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
@@ -66,7 +67,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         private StackItem GetMaxTransactionsPerBlock(ApplicationEngine engine, Array args)
         {
             return GetMaxTransactionsPerBlock(engine.Snapshot);
@@ -77,7 +78,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         private StackItem GetMaxBlockSize(ApplicationEngine engine, Array args)
         {
             return GetMaxBlockSize(engine.Snapshot);
@@ -88,7 +89,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)].Value, 0);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
         private StackItem GetFeePerByte(ApplicationEngine engine, Array args)
         {
             return GetFeePerByte(engine.Snapshot);
@@ -99,7 +100,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetBlockedAccounts(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
@@ -110,7 +111,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetMaxBlockSize(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
@@ -121,7 +122,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetMaxTransactionsPerBlock(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
@@ -131,7 +132,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetFeePerByte(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
@@ -141,7 +142,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         private StackItem BlockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
@@ -155,7 +156,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         private StackItem UnblockAccount(ApplicationEngine engine, Array args)
         {
             if (!CheckValidators(engine)) return false;
