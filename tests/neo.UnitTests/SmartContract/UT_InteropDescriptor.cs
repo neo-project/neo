@@ -15,7 +15,7 @@ namespace Neo.UnitTests.SmartContract
             TriggerType allowedTriggers = TriggerType.All;
             InteropDescriptor descriptor = new InteropDescriptor(method, TestHandler, price, allowedTriggers, CallFlags.None);
             descriptor.Method.Should().Be(method);
-            descriptor.Price.Should().Be(price);
+            descriptor.FixedPrice.Should().Be(price);
         }
 
         private bool TestHandler(ApplicationEngine engine)
