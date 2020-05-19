@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using VMArray = Neo.VM.Types.Array;
@@ -37,31 +36,20 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestInvoke()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-
-            ScriptBuilder sb1 = new ScriptBuilder();
-
-            sb1.EmitSysCall("null".ToInteropMethodHash());
-            engine1.LoadScript(sb1.ToArray());
-            testNativeContract.Invoke(engine1).Should().BeFalse();
-
-            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-
-            ScriptBuilder sb2 = new ScriptBuilder();
-            sb2.EmitSysCall("test".ToInteropMethodHash());
-            engine2.LoadScript(sb2.ToArray());
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            engine.LoadScript(testNativeContract.Script);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             VMArray args1 = new VMArray();
-            engine2.CurrentContext.EvaluationStack.Push(args1);
-            engine2.CurrentContext.EvaluationStack.Push(method1);
-            testNativeContract.Invoke(engine2).Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Push(args1);
+            engine.CurrentContext.EvaluationStack.Push(method1);
+            testNativeContract.Invoke(engine).Should().BeFalse();
 
             ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("onPersist"));
             VMArray args2 = new VMArray();
-            engine2.CurrentContext.EvaluationStack.Push(args2);
-            engine2.CurrentContext.EvaluationStack.Push(method2);
-            testNativeContract.Invoke(engine2).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Push(args2);
+            engine.CurrentContext.EvaluationStack.Push(method2);
+            testNativeContract.Invoke(engine).Should().BeTrue();
         }
 
         [TestMethod]
@@ -89,7 +77,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
     public class TestNativeContract : NativeContract
     {
-        public override string ServiceName => "test";
+        public override string Name => "test";
 
         public override int Id => 0x10000006;
 
