@@ -10,11 +10,11 @@ namespace Neo.SmartContract.NNS
     partial class NnsContract
     {
         //set the operator of the name, only can called by the current owner
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "manager" })]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "operator" })]
         public StackItem SetOperator(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
-            UInt160 manager = new UInt160(args[1].GetSpan());
+            UInt160 @operator = new UInt160(args[1].GetSpan());
             string name = System.Text.Encoding.UTF8.GetString(tokenId).ToLower();
             if (IsRootDomain(name) || !IsDomain(name)) return false;
             UInt256 innerKey = GetInnerKey(tokenId);
@@ -26,7 +26,6 @@ namespace Neo.SmartContract.NNS
                 UInt256 parentInnerKey = GetInnerKey(System.Text.Encoding.UTF8.GetBytes(parentDomain));
                 if (IsCrossLevel(engine.Snapshot, name) || IsExpired(engine.Snapshot, parentInnerKey)) return false;
                 var parentDomianOwner = GetAdmin(engine.Snapshot);
-                uint ttl = engine.Snapshot.Height + BlockPerYear;
                 if (!IsRootDomain(parentDomain))
                 {
                     IEnumerator enumerator = OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(parentDomain));
@@ -35,6 +34,7 @@ namespace Neo.SmartContract.NNS
                 }
                 if (!InteropService.Runtime.CheckWitnessInternal(engine, parentDomianOwner))
                     return false;
+                uint ttl = engine.Snapshot.Height + BlockPerYear;
                 ttl = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey))?.GetInteroperable<DomainState>().TimeToLive ?? ttl;
                 Mint(engine, parentDomianOwner, tokenId, ttl);
             }
@@ -48,7 +48,7 @@ namespace Neo.SmartContract.NNS
                     return false;
             }
             domainInfo = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<DomainState>();
-            domainInfo.Operator = manager;
+            domainInfo.Operator = @operator;
             return true;
         }
 

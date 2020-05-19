@@ -25,10 +25,6 @@ namespace Neo.SmartContract.NNS
         protected const byte Prefix_RentalPrice = 27;
         protected const byte Prefix_ReceiptAddress = 28;
 
-        public NnsContract()
-        {
-        }
-
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
