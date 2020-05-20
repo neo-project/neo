@@ -299,7 +299,7 @@ namespace Neo.SmartContract.Native.Tokens
                 Struct @struct = (Struct)stackItem;
                 Registered = @struct[0].ToBoolean();
                 Votes = @struct[1].GetBigInteger();
-                Description = @struct[1].GetString();
+                Description = @struct[2].GetString();
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
