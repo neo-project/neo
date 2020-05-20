@@ -6,13 +6,13 @@ namespace Neo.Cryptography.MPT
 {
     public class MPTDb
     {
-        private readonly ISnapshot Store;
-        private readonly byte Prefix;
+        internal const byte Prefix = 0xf0;
 
-        public MPTDb(ISnapshot store, byte prefix)
+        private readonly ISnapshot Store;
+
+        public MPTDb(ISnapshot store)
         {
             this.Store = store;
-            this.Prefix = prefix;
         }
 
         public MPTNode Node(UInt256 hash)

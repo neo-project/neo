@@ -11,12 +11,12 @@ namespace Neo.Cryptography.MPT
         private readonly MPTDb db;
         private MPTNode root;
 
-        public MPTTrie(UInt256 root, ISnapshot store, byte prefix)
+        public MPTTrie(UInt256 root, ISnapshot store)
         {
             if (store is null)
                 throw new ArgumentNullException();
 
-            this.db = new MPTDb(store, prefix);
+            this.db = new MPTDb(store);
 
             if (root is null)
             {
