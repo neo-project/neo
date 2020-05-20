@@ -21,13 +21,13 @@ namespace Neo.Cryptography.MPT
             this.root = root is null ? HashNode.EmptyNode : new HashNode(root);
         }
 
-        public MPTNode Resolve(HashNode n)
+        private MPTNode Resolve(HashNode n)
         {
             var data = store.TryGet(Prefix, n.Hash.ToArray());
             return MPTNode.Decode(data);
         }
 
-        protected static byte[] ToNibbles(ReadOnlySpan<byte> path)
+        private static byte[] ToNibbles(ReadOnlySpan<byte> path)
         {
             var result = new byte[path.Length * 2];
             for (int i = 0; i < path.Length; i++)
