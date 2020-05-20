@@ -1,6 +1,4 @@
 using Neo.Cryptography;
-using Neo.Persistence;
-using Neo.VM;
 using System;
 using System.Text;
 
@@ -11,35 +9,18 @@ namespace Neo.SmartContract
         public string Method { get; }
         public uint Hash { get; }
         internal Func<ApplicationEngine, bool> Handler { get; }
-        public long Price { get; }
-        public Func<EvaluationStack, StoreView, long> PriceCalculator { get; }
+        public long FixedPrice { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
 
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-            : this(method, handler, allowedTriggers, requiredCallFlags)
-        {
-            this.Price = price;
-        }
-
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, StoreView, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-            : this(method, handler, allowedTriggers, requiredCallFlags)
-        {
-            this.PriceCalculator = priceCalculator;
-        }
-
-        private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags)
         {
             this.Method = method;
             this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
             this.Handler = handler;
+            this.FixedPrice = fixedPrice;
             this.AllowedTriggers = allowedTriggers;
             this.RequiredCallFlags = requiredCallFlags;
-        }
-
-        public long GetPrice(EvaluationStack stack, StoreView snapshot)
-        {
-            return PriceCalculator is null ? Price : PriceCalculator(stack, snapshot);
         }
 
         public static implicit operator uint(InteropDescriptor descriptor)
