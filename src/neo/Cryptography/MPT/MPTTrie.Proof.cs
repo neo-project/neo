@@ -5,9 +5,7 @@ using System.Collections.Generic;
 
 namespace Neo.Cryptography.MPT
 {
-    public partial class MPTTrie<TKey, TValue>
-        where TKey : notnull, ISerializable, new()
-        where TValue : class, ISerializable, new()
+    partial class MPTTrie<TKey, TValue>
     {
         public bool GetProof(TKey key, out HashSet<byte[]> set)
         {

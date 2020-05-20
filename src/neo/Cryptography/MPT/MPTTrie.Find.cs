@@ -6,9 +6,7 @@ using static Neo.Helper;
 
 namespace Neo.Cryptography.MPT
 {
-    public partial class MPTTrie<TKey, TValue>
-        where TKey : notnull, ISerializable, new()
-        where TValue : class, ISerializable, new()
+    partial class MPTTrie<TKey, TValue>
     {
         private ReadOnlySpan<byte> Seek(ref MPTNode node, ReadOnlySpan<byte> path, out MPTNode start)
         {

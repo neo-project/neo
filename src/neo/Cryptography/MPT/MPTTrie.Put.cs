@@ -3,9 +3,7 @@ using System;
 
 namespace Neo.Cryptography.MPT
 {
-    public partial class MPTTrie<TKey, TValue>
-        where TKey : notnull, ISerializable, new()
-        where TValue : class, ISerializable, new()
+    partial class MPTTrie<TKey, TValue>
     {
         private static ReadOnlySpan<byte> CommonPrefix(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
