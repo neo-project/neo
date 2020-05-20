@@ -37,5 +37,10 @@ namespace Neo.Cryptography.MPT
             }
             return result;
         }
+
+        private void PutToStore(MPTNode node)
+        {
+            store.Put(Prefix, node.Hash.ToArray(), node.Encode());
+        }
     }
 }
