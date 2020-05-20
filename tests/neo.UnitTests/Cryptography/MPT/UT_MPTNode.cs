@@ -10,8 +10,10 @@ namespace Neo.UnitTests.Cryptography.MPT
         [TestMethod]
         public void TestDecode()
         {
-            var n = new LeafNode();
-            n.Value = Encoding.ASCII.GetBytes("hello");
+            var n = new LeafNode
+            {
+                Value = Encoding.ASCII.GetBytes("hello")
+            };
             var code = n.Encode();
             var m = MPTNode.Decode(code);
             Assert.IsInstanceOfType(m, n.GetType());
