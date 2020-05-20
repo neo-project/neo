@@ -357,7 +357,7 @@ namespace Neo.UnitTests.SmartContract
             engine.GetBlock(data1).Should().BeNull();
 
             byte[] data2 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-            Assert.ThrowsException<ArgumentException>(() => engine.GetBlock(data2));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => engine.GetBlock(data2));
         }
 
         [TestMethod]
@@ -696,7 +696,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
             ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
-            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("68f96a15748750cccd548feb71be766e8a2c2733");
+            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a17e91aff4bb5e0ad54d7ce8de8472e17ce88bf1");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)

@@ -147,7 +147,6 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(false, true);
             var script = new byte[] { 0x01 };
-            Assert.ThrowsException<ArgumentException>(() => engine.UpdateContract(script, new byte[ContractManifest.MaxLength + 1]));
             Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(script, new byte[0]));
 
             var manifest = TestUtils.CreateDefaultManifest(script.ToScriptHash());
