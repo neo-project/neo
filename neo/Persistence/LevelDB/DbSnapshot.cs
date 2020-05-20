@@ -48,15 +48,7 @@ namespace Neo.Persistence.LevelDB
             ValidatorsCount = new DbMetaDataCache<ValidatorsCountState>(db, options, batch, Prefixes.IX_ValidatorsCount);
             BlockHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentHeader);
-            StateRootHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentStateRoot,
-            () =>
-            {
-                return new HashIndexState
-                {
-                    Index = 0,
-                    Hash = UInt256.Zero,
-                };
-            });
+            StateRootHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentStateRoot);
         }
 
         public override void Commit()

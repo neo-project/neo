@@ -13,7 +13,7 @@ namespace Neo.Ledger
     public sealed partial class Blockchain : UntypedActor
     {
         public class ImportRoots { public IEnumerable<StateRoot> Roots; }
-        public uint StateHeight => currentSnapshot.StateHeight;
+        public long StateHeight => currentSnapshot.StateHeight == uint.MaxValue ? -1 : (long)currentSnapshot.StateHeight;
         private static uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
         private readonly Dictionary<uint, StateRoot> stateRootCache = new Dictionary<uint, StateRoot>();
 
@@ -152,7 +152,7 @@ namespace Neo.Ledger
 
         private void CheckRootOnBlockPersistCompleted()
         {
-            var index = Math.Max(StateHeight + 1, StateRootEnableIndex);
+            var index = (uint)Math.Max(StateHeight + 1, StateRootEnableIndex);
             if (GetStateRoot(index)?.Flag == StateRootVerifyFlag.Unverified && stateRootCache.TryGetValue(index, out StateRoot state_root))
             {
                 stateRootCache.Remove(index);
