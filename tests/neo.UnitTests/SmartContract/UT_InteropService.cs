@@ -283,51 +283,40 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_GetTime()
         {
             Block block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out var merkRootVal, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 0);
+            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out _, out _, out _, out _, out _, out _, 0);
             var engine = GetEngine(true, true);
             engine.Snapshot.PersistingBlock = block;
-
-            InteropService.Invoke(engine, InteropService.Runtime.GetTime).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(block.Timestamp);
+            engine.GetTime().Should().Be(block.Timestamp);
         }
 
         [TestMethod]
         public void TestRuntime_Serialize()
         {
             var engine = GetEngine();
-            engine.CurrentContext.EvaluationStack.Push(100);
-            InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString()
-                .Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
+            engine.BinarySerialize(100).ToHexString().Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
 
-            engine.CurrentContext.EvaluationStack.Push(new byte[1024 * 1024 * 2]); //Larger than MaxItemSize
-            Assert.ThrowsException<InvalidOperationException>(() => InteropService.Invoke(engine, InteropService.Binary.Serialize));
+            //Larger than MaxItemSize
+            Assert.ThrowsException<InvalidOperationException>(() => engine.BinarySerialize(new byte[1024 * 1024 * 2]));
 
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new object()));  //NotSupportedException
-            Assert.ThrowsException<NotSupportedException>(() => InteropService.Invoke(engine, InteropService.Binary.Serialize));
+            //NotSupportedException
+            Assert.ThrowsException<NotSupportedException>(() => engine.BinarySerialize(new InteropInterface(new object())));
         }
 
         [TestMethod]
         public void TestRuntime_Deserialize()
         {
             var engine = GetEngine();
-            engine.CurrentContext.EvaluationStack.Push(100);
-            InteropService.Invoke(engine, InteropService.Binary.Serialize).Should().BeTrue();
-            InteropService.Invoke(engine, InteropService.Binary.Deserialize).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(100);
+            engine.BinaryDeserialize(engine.BinarySerialize(100)).GetBigInteger().Should().Be(100);
 
-            engine.CurrentContext.EvaluationStack.Push(new byte[] { 0xfa, 0x01 }); //FormatException
-            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Binary.Deserialize));
+            //FormatException
+            Assert.ThrowsException<FormatException>(() => engine.BinaryDeserialize(new byte[] { 0xfa, 0x01 }));
         }
 
         [TestMethod]
         public void TestRuntime_GetInvocationCounter()
         {
             var engine = GetEngine();
-            InteropService.Invoke(engine, InteropService.Runtime.GetInvocationCounter).Should().BeFalse();
-            engine.InvocationCounter.TryAdd(engine.CurrentScriptHash, 10);
-            InteropService.Invoke(engine, InteropService.Runtime.GetInvocationCounter).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(10);
+            Assert.ThrowsException<InvalidOperationException>(() => engine.GetInvocationCounter());
         }
 
         [TestMethod]
@@ -341,28 +330,17 @@ namespace Neo.UnitTests.SmartContract
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
             byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
-
-            engine.CurrentContext.EvaluationStack.Push(signature);
-            engine.CurrentContext.EvaluationStack.Push(pubkey.EncodePoint(false));
-            engine.CurrentContext.EvaluationStack.Push(message);
-            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeTrue();
+            engine.VerifyWithECDsaSecp256r1(message, pubkey.EncodePoint(false), signature).Should().BeTrue();
 
             byte[] wrongkey = pubkey.EncodePoint(false);
             wrongkey[0] = 5;
-            engine.CurrentContext.EvaluationStack.Push(signature);
-            engine.CurrentContext.EvaluationStack.Push(wrongkey);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(engine.ScriptContainer));
-            InteropService.Invoke(engine, InteropService.Crypto.VerifyWithECDsaSecp256r1).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Peek().ToBoolean().Should().BeFalse();
+            engine.VerifyWithECDsaSecp256r1(new InteropInterface(engine.ScriptContainer), wrongkey, signature).Should().BeFalse();
         }
 
         [TestMethod]
         public void TestBlockchain_GetHeight()
         {
-            var engine = GetEngine(true, true);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetHeight).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(0);
+            GetEngine(true, true).GetBlockchainHeight().Should().Be(0);
         }
 
         [TestMethod]
@@ -370,21 +348,16 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
 
-            engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
-            InteropService.Invoke(engine, InteropService.Blockchain.GetBlock).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().Should().Be(StackItem.Null);
+            engine.GetBlock(new byte[] { 0x01 }).Should().BeNull();
 
             byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.CurrentContext.EvaluationStack.Push(data1);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetBlock).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
+            engine.GetBlock(data1).Should().BeNull();
 
             byte[] data2 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-            engine.CurrentContext.EvaluationStack.Push(data2);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetBlock).Should().BeFalse();
+            Assert.ThrowsException<ArgumentException>(() => engine.GetBlock(data2));
         }
 
         [TestMethod]
@@ -395,9 +368,7 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.CurrentContext.EvaluationStack.Push(data1);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetTransaction).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().ToBoolean().Should().BeFalse();
+            engine.GetTransaction(new UInt256(data1)).Should().BeNull();
         }
 
         [TestMethod]
@@ -408,9 +379,7 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.CurrentContext.EvaluationStack.Push(data1);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetTransactionHeight).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetBigInteger().Should().Be(-1);
+            engine.GetTransactionHeight(new UInt256(data1)).Should().Be(-1);
         }
 
         [TestMethod]
@@ -421,23 +390,14 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
-            engine.CurrentContext.EvaluationStack.Push(data1);
-            InteropService.Invoke(engine, InteropService.Blockchain.GetContract).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().Should().Be(StackItem.Null);
+            engine.GetContract(new UInt160(data1)).Should().BeNull();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.Contracts.Add(state.ScriptHash, state);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
-            engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
-            InteropService.Invoke(engine, InteropService.Blockchain.GetContract).Should().BeTrue();
-            var stackItems = ((VM.Types.Array)engine.CurrentContext.EvaluationStack.Pop()).ToArray();
-            stackItems.Length.Should().Be(3);
-            stackItems[0].GetType().Should().Be(typeof(ByteString));
-            stackItems[0].GetSpan().ToHexString().Should().Be(state.Script.ToHexString());
-            stackItems[1].ToBoolean().Should().BeFalse();
-            stackItems[2].ToBoolean().Should().BeFalse();
+            engine.GetContract(state.ScriptHash).Should().BeSameAs(state);
         }
 
         [TestMethod]
@@ -448,9 +408,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             engine.Snapshot.Contracts.Add(state.ScriptHash, state);
             engine.LoadScript(state.Script);
-            InteropService.Invoke(engine, InteropService.Storage.GetContext).Should().BeTrue();
-            var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
-            ret.GetInterface<StorageContext>().IsReadOnly.Should().BeFalse();
+            engine.GetStorageContext().IsReadOnly.Should().BeFalse();
         }
 
         [TestMethod]
@@ -461,9 +419,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             engine.Snapshot.Contracts.Add(state.ScriptHash, state);
             engine.LoadScript(state.Script);
-            InteropService.Invoke(engine, InteropService.Storage.GetReadOnlyContext).Should().BeTrue();
-            var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
-            ret.GetInterface<StorageContext>().IsReadOnly.Should().BeTrue();
+            engine.GetReadOnlyContext().IsReadOnly.Should().BeTrue();
         }
 
         [TestMethod]
@@ -489,61 +445,44 @@ namespace Neo.UnitTests.SmartContract
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.CurrentContext.EvaluationStack.Push(new byte[] { 0x01 });
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(new StorageContext
+            engine.Get(new StorageContext
             {
                 Id = state.Id,
                 IsReadOnly = false
-            }));
-            InteropService.Invoke(engine, InteropService.Storage.Get).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
+            }, new byte[] { 0x01 }).ToHexString().Should().Be(storageItem.Value.ToHexString());
         }
 
         [TestMethod]
         public void TestStorage_Put()
         {
             var engine = GetEngine(false, true);
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
 
             //CheckStorageContext fail
             var key = new byte[] { 0x01 };
             var value = new byte[] { 0x02 };
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
                 Id = state.Id,
                 IsReadOnly = false
             };
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
+            engine.Put(storageContext, key, value);
 
             //key.Length > MaxStorageKeySize
-            key = new byte[InteropService.Storage.MaxKeySize + 1];
+            key = new byte[ApplicationEngine.MaxStorageKeySize + 1];
             value = new byte[] { 0x02 };
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
+            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //value.Length > MaxStorageValueSize
             key = new byte[] { 0x01 };
             value = new byte[ushort.MaxValue + 1];
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
+            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //context.IsReadOnly
             key = new byte[] { 0x01 };
             value = new byte[] { 0x02 };
             storageContext.IsReadOnly = true;
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
+            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //storage value is constant
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -566,34 +505,22 @@ namespace Neo.UnitTests.SmartContract
             key = new byte[] { 0x01 };
             value = new byte[] { 0x02 };
             storageContext.IsReadOnly = false;
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => engine.Put(storageContext, key, value));
 
             //success
             storageItem.IsConstant = false;
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
+            engine.Put(storageContext, key, value);
 
             //value length == 0
             key = new byte[] { 0x01 };
             value = new byte[0];
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Put).Should().BeTrue();
+            engine.Put(storageContext, key, value);
         }
 
         [TestMethod]
         public void TestStorage_PutEx()
         {
             var engine = GetEngine(false, true);
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Storage.PutEx).Should().BeFalse();
-
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
@@ -618,21 +545,13 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 IsReadOnly = false
             };
-            engine.CurrentContext.EvaluationStack.Push((int)StorageFlags.None);
-            engine.CurrentContext.EvaluationStack.Push(value);
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.PutEx).Should().BeTrue();
+            engine.PutEx(storageContext, key, value, StorageFlags.None);
         }
 
         [TestMethod]
         public void TestStorage_Delete()
         {
             var engine = GetEngine(false, true);
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
-
-
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             state.Manifest.Features = ContractFeatures.HasStorage;
@@ -657,42 +576,24 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 IsReadOnly = false
             };
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeTrue();
+            engine.Delete(storageContext, key);
 
             //context is readonly
             storageContext.IsReadOnly = true;
-            engine.CurrentContext.EvaluationStack.Push(key);
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.Delete).Should().BeFalse();
+            Assert.ThrowsException<ArgumentException>(() => engine.Delete(storageContext, key));
         }
 
         [TestMethod]
         public void TestStorageContext_AsReadOnly()
         {
             var engine = GetEngine();
-            engine.CurrentContext.EvaluationStack.Push(1);
-            InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeFalse();
-
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
                 Id = state.Id,
                 IsReadOnly = false
             };
-            engine.CurrentContext.EvaluationStack.Push(new InteropInterface(storageContext));
-            InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeTrue();
-            var ret = (InteropInterface)engine.CurrentContext.EvaluationStack.Pop();
-            ret.GetInterface<StorageContext>().IsReadOnly.Should().Be(true);
-        }
-
-        [TestMethod]
-        public void TestInvoke()
-        {
-            var engine = new ApplicationEngine(TriggerType.Verification, null, null, 0);
-            InteropService.Invoke(engine, 10000).Should().BeFalse();
-            InteropService.Invoke(engine, InteropService.Storage.AsReadOnly).Should().BeFalse();
+            engine.AsReadOnly(storageContext).IsReadOnly.Should().BeTrue();
         }
 
         [TestMethod]
@@ -701,36 +602,24 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract("method");
             state.Manifest.Features = ContractFeatures.HasStorage;
-            byte[] method = Encoding.UTF8.GetBytes("method");
+            string method = "method";
             var args = new VM.Types.Array { 0, 1 };
 
             snapshot.Contracts.Add(state.ScriptHash, state);
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.CurrentContext.EvaluationStack.Push(args);
-            engine.CurrentContext.EvaluationStack.Push(method);
-            engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
-            InteropService.Invoke(engine, InteropService.Contract.Call).Should().BeTrue();
+            engine.CallContract(state.ScriptHash, method, args);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
-            engine.CurrentContext.EvaluationStack.Push(args);
-            engine.CurrentContext.EvaluationStack.Push(method);
-            engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
-            InteropService.Invoke(engine, InteropService.Contract.Call).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.ScriptHash, method, args));
+
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
+            engine.CallContract(state.ScriptHash, method, args);
 
-            engine.CurrentContext.EvaluationStack.Push(args);
-            engine.CurrentContext.EvaluationStack.Push(method);
-            engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
-            InteropService.Invoke(engine, InteropService.Contract.Call).Should().BeTrue();
-
-            engine.CurrentContext.EvaluationStack.Push(args);
-            engine.CurrentContext.EvaluationStack.Push(method);
-            engine.CurrentContext.EvaluationStack.Push(UInt160.Zero.ToArray());
-            InteropService.Invoke(engine, InteropService.Contract.Call).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, args));
         }
 
         [TestMethod]
@@ -742,7 +631,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
             snapshot.Contracts.Add(state.ScriptHash, state);
 
-            byte[] method = Encoding.UTF8.GetBytes("method");
+            string method = "method";
             var args = new VM.Types.Array { 0, 1 };
 
             foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
@@ -750,39 +639,17 @@ namespace Neo.UnitTests.SmartContract
                 var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(new byte[] { 0x01 });
 
-                engine.CurrentContext.EvaluationStack.Push((int)CallFlags.All);
-                engine.CurrentContext.EvaluationStack.Push(args);
-                engine.CurrentContext.EvaluationStack.Push(method);
-                engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
-                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeTrue();
+                engine.CallContractEx(state.ScriptHash, method, args, CallFlags.All);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
                 // Contract doesn't exists
-
-                engine.CurrentContext.EvaluationStack.Push((int)CallFlags.All);
-                engine.CurrentContext.EvaluationStack.Push(args);
-                engine.CurrentContext.EvaluationStack.Push(method);
-                engine.CurrentContext.EvaluationStack.Push(UInt160.Zero.ToArray());
-                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeFalse();
+                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.All));
 
                 // Call with rights
-
-                engine.CurrentContext.EvaluationStack.Push((int)flags);
-                engine.CurrentContext.EvaluationStack.Push(args);
-                engine.CurrentContext.EvaluationStack.Push(method);
-                engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
-                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().BeTrue();
+                engine.CallContractEx(state.ScriptHash, method, args, flags);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
-
-                // Check rights
-
-                engine.CurrentContext.EvaluationStack.Push((int)CallFlags.All);
-                engine.CurrentContext.EvaluationStack.Push(args);
-                engine.CurrentContext.EvaluationStack.Push(method);
-                engine.CurrentContext.EvaluationStack.Push(state.ScriptHash.ToArray());
-                InteropService.Invoke(engine, InteropService.Contract.CallEx).Should().Be(flags.HasFlag(CallFlags.AllowCall));
             }
         }
 
@@ -790,7 +657,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_Destroy()
         {
             var engine = GetEngine(false, true);
-            InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
+            engine.DestroyContract();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
@@ -811,7 +678,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[0]);
-            InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
+            engine.DestroyContract();
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
 
             //storages are removed
@@ -820,48 +687,16 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Contracts.Add(scriptHash, state);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[0]);
-            InteropService.Invoke(engine, InteropService.Contract.Destroy).Should().BeTrue();
+            engine.DestroyContract();
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
-
         }
 
         [TestMethod]
         public void TestContract_CreateStandardAccount()
         {
             var engine = GetEngine(true, true);
-            byte[] data = "024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
-
-            engine.CurrentContext.EvaluationStack.Push(data);
-            InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount).Should().BeTrue();
-            engine.CurrentContext.EvaluationStack.Pop().GetSpan().ToArray().ToHexString().Should().Be("68f96a15748750cccd548feb71be766e8a2c2733");
-
-            data = "064b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Invalid point encoding 6");
-
-            data = "024b817ef37f2fc3d4a33fe36687e599f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Incorrect length for compressed encoding");
-
-            data = "02ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<ArgumentException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("x value too large in field element");
-
-            data = "020fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<ArithmeticException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Invalid point compression");
-
-            data = "044b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<FormatException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("Incorrect length for uncompressed/hybrid encoding");
-
-            data = "04ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<ArgumentException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("x value too large in field element");
-
-            data = "040fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
-            engine.CurrentContext.EvaluationStack.Push(data);
-            Assert.ThrowsException<ArgumentException>(() => InteropService.Invoke(engine, InteropService.Contract.CreateStandardAccount)).Message.Should().BeEquivalentTo("x value too large in field element");
+            ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
+            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("68f96a15748750cccd548feb71be766e8a2c2733");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)

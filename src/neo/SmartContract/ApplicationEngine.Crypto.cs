@@ -15,8 +15,8 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor Neo_Crypto_SHA256 = Register("Neo.Crypto.SHA256", nameof(Sha256), 0_01000000, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor Neo_Crypto_VerifyWithECDsaSecp256r1 = Register("Neo.Crypto.VerifyWithECDsaSecp256r1", nameof(VerifyWithECDsaSecp256r1), ECDsaVerifyPrice, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor Neo_Crypto_VerifyWithECDsaSecp256k1 = Register("Neo.Crypto.VerifyWithECDsaSecp256k1", nameof(VerifyWithECDsaSecp256k1), ECDsaVerifyPrice, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256r1", nameof(CheckMultiSigWithECDsaSecp256r1), 0, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256k1", nameof(CheckMultiSigWithECDsaSecp256k1), 0, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256r1", nameof(CheckMultisigWithECDsaSecp256r1), 0, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256k1", nameof(CheckMultisigWithECDsaSecp256k1), 0, TriggerType.All, CallFlags.None);
 
         internal byte[] Sha256(StackItem item)
         {
@@ -57,12 +57,12 @@ namespace Neo.SmartContract
             }
         }
 
-        internal bool CheckMultiSigWithECDsaSecp256r1(StackItem item, byte[][] pubkeys, byte[][] signatures)
+        internal bool CheckMultisigWithECDsaSecp256r1(StackItem item, byte[][] pubkeys, byte[][] signatures)
         {
             return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256r1);
         }
 
-        internal bool CheckMultiSigWithECDsaSecp256k1(StackItem item, byte[][] pubkeys, byte[][] signatures)
+        internal bool CheckMultisigWithECDsaSecp256k1(StackItem item, byte[][] pubkeys, byte[][] signatures)
         {
             return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256k1);
         }
