@@ -4,7 +4,6 @@ using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System.Linq;
-using System.Numerics;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -19,13 +18,10 @@ namespace Neo.SmartContract.Native.Tokens
         {
         }
 
-        internal override bool Initialize(ApplicationEngine engine)
+        internal override void Initialize(ApplicationEngine engine)
         {
-            if (!base.Initialize(engine)) return false;
-            if (TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
             UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
             Mint(engine, account, 30_000_000 * Factor);
-            return true;
         }
 
         protected override bool OnPersist(ApplicationEngine engine)

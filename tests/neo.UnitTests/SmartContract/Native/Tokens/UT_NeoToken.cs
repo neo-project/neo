@@ -207,18 +207,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             for (var x = 0; x < Blockchain.StandbyValidators.Length; x++)
             {
-                validators[x].Equals(Blockchain.StandbyValidators[x]);
+                validators[x].Should().Be(Blockchain.StandbyValidators[x]);
             }
-
-            // Check double call
-
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var result = NativeContract.NEO.Initialize(engine);
-
-            result.Should().Be(false);
         }
 
         [TestMethod]
@@ -382,14 +372,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true);
             Action action = () => NativeContract.NEO.Initialize(engine);
             action.Should().Throw<InvalidOperationException>();
-
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.NEO.Initialize(engine).Should().BeFalse();
-
-            snapshot.Storages.Delete(CreateStorageKey(11));
-            snapshot.PersistingBlock = Blockchain.GenesisBlock;
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.NEO.Initialize(engine).Should().BeTrue();
         }
 
         [TestMethod]

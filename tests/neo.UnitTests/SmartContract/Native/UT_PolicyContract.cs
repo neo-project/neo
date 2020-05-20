@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -30,7 +29,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
             (keyCount + 4).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
@@ -61,7 +60,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -107,7 +106,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -142,7 +141,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -177,7 +176,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
             // Block without signature
 

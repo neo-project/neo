@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0);
 
-            testNativeContract.Initialize(ae).Should().BeTrue();
+            testNativeContract.Initialize(ae);
 
             ae = new ApplicationEngine(TriggerType.System, null, null, 0);
             Action action = () => testNativeContract.Initialize(ae);

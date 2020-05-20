@@ -42,12 +42,11 @@ namespace Neo.SmartContract.Native
         {
             UInt256 prev_hash = engine.Snapshot.PersistingBlock.PrevHash;
             TrimmedBlock prev_block = engine.Snapshot.Blocks[prev_hash];
-            return InteropService.Runtime.CheckWitnessInternal(engine, prev_block.NextConsensus);
+            return engine.CheckWitnessInternal(prev_block.NextConsensus);
         }
 
-        internal override bool Initialize(ApplicationEngine engine)
+        internal override void Initialize(ApplicationEngine engine)
         {
-            if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
             {
                 Value = BitConverter.GetBytes(1024u * 256u)
@@ -64,7 +63,6 @@ namespace Neo.SmartContract.Native
             {
                 Value = new UInt160[0].ToByteArray()
             });
-            return true;
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
