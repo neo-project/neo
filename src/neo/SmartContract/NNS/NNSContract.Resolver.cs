@@ -71,9 +71,6 @@ namespace Neo.SmartContract.NNS
                 case RecordType.CNAME:
                     var parameter_cname = System.Text.Encoding.UTF8.GetBytes(recordInfo.Text);
                     return Resolve(snapshot, parameter_cname, resolveCount);
-                case RecordType.NS:
-                    var parameter_ns = System.Text.Encoding.UTF8.GetBytes(string.Join(".", name.Split(".")[1..]));
-                    return Resolve(snapshot, parameter_ns, resolveCount);
             }
             return recordInfo;
         }
