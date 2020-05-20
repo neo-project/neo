@@ -43,7 +43,6 @@ namespace Neo.Network.P2P
                 if (compressed.Length < message._payload_compressed.Length - CompressionThreshold)
                 {
                     message._payload_compressed = compressed;
-                    message.Payload = null;
                     message.Flags |= MessageFlags.Compressed;
                 }
             }
