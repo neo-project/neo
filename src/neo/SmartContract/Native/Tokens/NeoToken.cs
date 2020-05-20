@@ -95,7 +95,7 @@ namespace Neo.SmartContract.Native.Tokens
             for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
             {
                 ECPoint pubkey = Blockchain.StandbyCommittee[i];
-                RegisterCandidate(engine.Snapshot, pubkey, "Backup candidate");
+                RegisterCandidate(engine.Snapshot, pubkey, "Genesis candidate");
                 BigInteger balance = TotalAmount / 2 / (Blockchain.ValidatorsCount * 2 + (Blockchain.CommitteeMembersCount - Blockchain.ValidatorsCount));
                 if (i < Blockchain.ValidatorsCount) balance *= 2;
                 UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
