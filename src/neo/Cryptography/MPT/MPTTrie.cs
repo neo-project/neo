@@ -8,29 +8,21 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private readonly MPTDb db;
+        private const byte Prefix = 0xf0;
+
+        private readonly ISnapshot store;
         private MPTNode root;
 
-        public MPTTrie(UInt256 root, ISnapshot store)
+        public MPTTrie(ISnapshot store, UInt256 root)
         {
-            if (store is null)
-                throw new ArgumentNullException();
-
-            this.db = new MPTDb(store);
-
-            if (root is null)
-            {
-                this.root = HashNode.EmptyNode;
-            }
-            else
-            {
-                this.root = new HashNode(root);
-            }
+            this.store = store ?? throw new ArgumentNullException();
+            this.root = root is null ? HashNode.EmptyNode : new HashNode(root);
         }
 
         public MPTNode Resolve(HashNode n)
         {
-            return db.Node(n.Hash);
+            var data = store.TryGet(Prefix, n.Hash.ToArray());
+            return MPTNode.Decode(data);
         }
 
         public UInt256 GetRoot()

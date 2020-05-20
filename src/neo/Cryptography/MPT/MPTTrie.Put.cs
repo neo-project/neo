@@ -46,13 +46,13 @@ namespace Neo.Cryptography.MPT
                             if (path.Length < 1)
                             {
                                 node = v;
-                                db.Put(node);
+                                PutToStore(node);
                                 return true;
                             }
                             var branch = new BranchNode();
                             branch.Children[BranchNode.ChildCount - 1] = leafNode;
                             Put(ref branch.Children[path[0]], path[1..], v);
-                            db.Put(branch);
+                            PutToStore(branch);
                             node = branch;
                             return true;
                         }
@@ -66,7 +66,7 @@ namespace Neo.Cryptography.MPT
                             if (result)
                             {
                                 extensionNode.SetDirty();
-                                db.Put(extensionNode);
+                                PutToStore(extensionNode);
                             }
                             return result;
                         }
@@ -90,7 +90,7 @@ namespace Neo.Cryptography.MPT
                             Put(ref grandSon2, pathRemain[1..], val);
                             son.Children[pathRemain[0]] = grandSon2;
                         }
-                        db.Put(son);
+                        PutToStore(son);
                         if (prefix.Length > 0)
                         {
                             var exNode = new ExtensionNode()
@@ -98,7 +98,7 @@ namespace Neo.Cryptography.MPT
                                 Key = prefix.ToArray(),
                                 Next = son,
                             };
-                            db.Put(exNode);
+                            PutToStore(exNode);
                             node = exNode;
                         }
                         else
@@ -121,7 +121,7 @@ namespace Neo.Cryptography.MPT
                         if (result)
                         {
                             branchNode.SetDirty();
-                            db.Put(branchNode);
+                            PutToStore(branchNode);
                         }
                         return result;
                     }
@@ -141,10 +141,10 @@ namespace Neo.Cryptography.MPT
                                     Key = path.ToArray(),
                                     Next = val,
                                 };
-                                db.Put(newNode);
+                                PutToStore(newNode);
                             }
                             node = newNode;
-                            if (val is LeafNode) db.Put(val);
+                            if (val is LeafNode) PutToStore(val);
                             return true;
                         }
                         newNode = Resolve(hashNode);
@@ -155,6 +155,11 @@ namespace Neo.Cryptography.MPT
                 default:
                     return false;
             }
+        }
+
+        private void PutToStore(MPTNode node)
+        {
+            store.Put(Prefix, node.Hash.ToArray(), node.Encode());
         }
     }
 }

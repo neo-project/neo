@@ -91,6 +91,11 @@ namespace Neo.UnitTests.Cryptography.MPT
 
         private UInt256 rootHash;
 
+        private void PutToStore(MPTNode node)
+        {
+            mptdb.Put(0xf0, node.Hash.ToArray(), node.Encode());
+        }
+
         [TestInitialize]
         public void TestInit()
         {
@@ -119,26 +124,22 @@ namespace Neo.UnitTests.Cryptography.MPT
             l2.Next = v2;
             b.Children[10] = l3;
             root = r;
-            var store = new MemoryStore();
-            var snapshot = store.GetSnapshot();
-            var db = new MPTDb(snapshot);
+            this.mptdb = new MemoryStore();
             this.rootHash = root.Hash;
-            db.Put(r);
-            db.Put(b);
-            db.Put(l1);
-            db.Put(l2);
-            db.Put(l3);
-            db.Put(v1);
-            db.Put(v2);
-            db.Put(v3);
-            snapshot.Commit();
-            this.mptdb = store;
+            PutToStore(r);
+            PutToStore(b);
+            PutToStore(l1);
+            PutToStore(l2);
+            PutToStore(l3);
+            PutToStore(v1);
+            PutToStore(v2);
+            PutToStore(v3);
         }
 
         [TestMethod]
         public void TestTryGet()
         {
-            var mpt = new MPTTrie<TestKey, TestValue>(rootHash, mptdb.GetSnapshot());
+            var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
             TestValue value = mpt.Get("ac01".HexToBytes());
             Assert.IsNotNull(value);
             Assert.AreEqual("abcd", value.ToString());
@@ -163,7 +164,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         [TestMethod]
         public void TestTryGetResolve()
         {
-            var mpt = new MPTTrie<TestKey, TestValue>(rootHash, mptdb.GetSnapshot());
+            var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
             TestValue value = mpt.Get("acae".HexToBytes());
             Assert.IsNotNull(value);
             Assert.AreEqual(Encoding.ASCII.GetBytes("hello").ToHexString(), value.ToString());
@@ -173,7 +174,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         public void TestTryPut()
         {
             var store = new MemoryStore();
-            var mpt = new MPTTrie<TestKey, TestValue>(null, store.GetSnapshot());
+            var mpt = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), null);
             var result = mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
             Assert.IsTrue(result);
             result = mpt.Put("ac99".HexToBytes(), "2222".HexToBytes());
@@ -213,7 +214,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", r1.Hash.ToString());
             Assert.AreEqual("0x93e8e1ffe2f83dd92fca67330e273bcc811bf64b8f8d9d1b25d5e7366b47d60d", r.Hash.ToString());
 
-            var mpt = new MPTTrie<TestKey, TestValue>(rootHash, mptdb.GetSnapshot());
+            var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
             var result = true;
             TestValue value = mpt.Get("ac99".HexToBytes());
             Assert.IsNotNull(value);
@@ -229,7 +230,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         {
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
-            var mpt = new MPTTrie<TestKey, TestValue>(null, snapshot);
+            var mpt = new MPTTrie<TestKey, TestValue>(snapshot, null);
             var result = mpt.Put("ac01".HexToBytes(), "abcd".HexToBytes());
             Assert.IsTrue(result);
             result = mpt.Put("ac02".HexToBytes(), "abcd".HexToBytes());
@@ -243,7 +244,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsNotNull(value);
             snapshot.Commit();
 
-            var mpt0 = new MPTTrie<TestKey, TestValue>(mpt.GetRoot(), store.GetSnapshot());
+            var mpt0 = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), mpt.GetRoot());
             value = mpt0.Get("ac02".HexToBytes());
             Assert.IsNotNull(value);
         }
@@ -252,7 +253,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         public void TestBranchNodeRemainValue()
         {
             var store = new MemoryStore();
-            var mpt = new MPTTrie<TestKey, TestValue>(null, store.GetSnapshot());
+            var mpt = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), null);
             var result = mpt.Put("ac11".HexToBytes(), "ac11".HexToBytes());
             Assert.IsTrue(result);
             result = mpt.Put("ac22".HexToBytes(), "ac22".HexToBytes());
@@ -293,7 +294,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             l2.Next = v2;
             b.Children[10] = l3;
 
-            var mpt = new MPTTrie<TestKey, TestValue>(rootHash, mptdb.GetSnapshot());
+            var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
             Assert.AreEqual(r.Hash.ToString(), mpt.GetRoot().ToString());
             var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
             Assert.IsTrue(result);
@@ -307,7 +308,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         [TestMethod]
         public void TestVerifyProof()
         {
-            var mpt = new MPTTrie<TestKey, TestValue>(rootHash, mptdb.GetSnapshot());
+            var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
             var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
             Assert.IsTrue(result);
             TestValue value = MPTTrie<TestKey, TestValue>.VerifyProof(rootHash, "ac01".HexToBytes(), proof);
@@ -320,7 +321,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         {
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
-            var mpt = new MPTTrie<TestKey, TestValue>(null, snapshot);
+            var mpt = new MPTTrie<TestKey, TestValue>(snapshot, null);
             var result = mpt.Put(new byte[] { 0xab }, new byte[] { 0x01 });
             Assert.IsTrue(result);
             result = mpt.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x02 });
@@ -332,12 +333,12 @@ namespace Neo.UnitTests.Cryptography.MPT
         {
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
-            var mpt1 = new MPTTrie<TestKey, TestValue>(null, snapshot);
+            var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, null);
             Assert.IsTrue(mpt1.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt1.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
             Assert.IsTrue(mpt1.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set1));
             Assert.AreEqual(4, set1.Count);
-            var mpt2 = new MPTTrie<TestKey, TestValue>(null, snapshot);
+            var mpt2 = new MPTTrie<TestKey, TestValue>(snapshot, null);
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt2.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set2));
@@ -350,10 +351,10 @@ namespace Neo.UnitTests.Cryptography.MPT
         {
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
-            var mpt1 = new MPTTrie<TestKey, TestValue>(null, snapshot);
+            var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, null);
             var results = mpt1.Find(ReadOnlySpan<byte>.Empty).ToArray();
             Assert.AreEqual(0, results.Count());
-            var mpt2 = new MPTTrie<TestKey, TestValue>(null, snapshot);
+            var mpt2 = new MPTTrie<TestKey, TestValue>(snapshot, null);
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xef }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xe1 }, new byte[] { 0x02 }));
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x03 }));

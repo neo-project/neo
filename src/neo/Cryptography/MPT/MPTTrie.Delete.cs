@@ -46,7 +46,7 @@ namespace Neo.Cryptography.MPT
                                 extensionNode.Next = sn.Next;
                             }
                             extensionNode.SetDirty();
-                            db.Put(extensionNode);
+                            PutToStore(extensionNode);
                             return true;
                         }
                         return false;
@@ -72,7 +72,7 @@ namespace Neo.Cryptography.MPT
                         if (childrenIndexes.Count > 1)
                         {
                             branchNode.SetDirty();
-                            db.Put(branchNode);
+                            PutToStore(branchNode);
                             return true;
                         }
                         var lastChildIndex = childrenIndexes[0];
@@ -91,7 +91,7 @@ namespace Neo.Cryptography.MPT
                         {
                             exNode.Key = Concat(childrenIndexes.ToArray(), exNode.Key);
                             exNode.SetDirty();
-                            db.Put(exNode);
+                            PutToStore(exNode);
                             node = exNode;
                             return true;
                         }
@@ -100,7 +100,7 @@ namespace Neo.Cryptography.MPT
                             Key = childrenIndexes.ToArray(),
                             Next = lastChild,
                         };
-                        db.Put(node);
+                        PutToStore(node);
                         return true;
                     }
                 case HashNode hashNode:

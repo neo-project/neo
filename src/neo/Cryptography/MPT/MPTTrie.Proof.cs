@@ -65,13 +65,13 @@ namespace Neo.Cryptography.MPT
             var memoryStore = new MemoryStore();
             foreach (byte[] data in proof)
             {
-                memoryStore.Put(MPTDb.Prefix, Crypto.Hash256(data), data);
+                memoryStore.Put(Prefix, Crypto.Hash256(data), data);
             }
             ISnapshot snapshot = memoryStore.GetSnapshot();
-            var trie = new MPTTrie<TKey, TValue>(root, snapshot);
+            var trie = new MPTTrie<TKey, TValue>(snapshot, root);
             foreach (byte[] data in proof)
             {
-                snapshot.Put(MPTDb.Prefix, Crypto.Hash256(data), data);
+                snapshot.Put(Prefix, Crypto.Hash256(data), data);
             }
             return trie.Get(key);
         }
