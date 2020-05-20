@@ -4,7 +4,7 @@ using Neo.SmartContract.Native.Tokens;
 using System;
 using System.Linq;
 
-namespace Neo.SmartContract.NNS
+namespace Neo.SmartContract.Nns
 {
     public partial class NnsContract : Nep11Token<DomainState, Nep11AccountState>
     {

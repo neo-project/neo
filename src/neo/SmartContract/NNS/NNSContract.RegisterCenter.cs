@@ -12,7 +12,7 @@ using System.Numerics;
 using System.Collections;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.NNS
+namespace Neo.SmartContract.Nns
 {
     partial class NnsContract
     {

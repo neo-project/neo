@@ -3,7 +3,7 @@ using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
 
-namespace Neo.SmartContract.NNS
+namespace Neo.SmartContract.Nns
 {
     public class DomainState : Nep11TokenState
     {

@@ -6,7 +6,7 @@ using Neo.VM.Types;
 using System.Text.RegularExpressions;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.NNS
+namespace Neo.SmartContract.Nns
 {
     partial class NnsContract
     {

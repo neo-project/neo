@@ -1,4 +1,4 @@
-namespace Neo.SmartContract.NNS
+namespace Neo.SmartContract.Nns
 {
     public enum RecordType : byte
     {

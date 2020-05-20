@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM.Types;
 
-namespace Neo.SmartContract.NNS.Tests
+namespace Neo.SmartContract.Nns.Tests
 {
     [TestClass()]
     public class UT_DomainState

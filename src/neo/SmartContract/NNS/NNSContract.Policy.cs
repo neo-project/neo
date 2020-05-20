@@ -8,7 +8,7 @@ using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.NNS
+namespace Neo.SmartContract.Nns
 {
     partial class NnsContract
     {

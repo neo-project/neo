@@ -4,7 +4,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
-using Neo.SmartContract.NNS;
+using Neo.SmartContract.Nns;
 using Neo.VM;
 using Neo.VM.Types;
 using System;

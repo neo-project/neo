@@ -1,7 +1,7 @@
 using Neo.VM;
 using Neo.VM.Types;
 
-namespace Neo.SmartContract.NNS
+namespace Neo.SmartContract.Nns
 {
     public class RecordInfo : IInteroperable
     {
