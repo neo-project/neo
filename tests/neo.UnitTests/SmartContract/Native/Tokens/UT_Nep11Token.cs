@@ -140,8 +140,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         public override byte Decimals => 1;
 
-        public override string ServiceName => "testNep11Token";
-
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {
             return base.TotalSupply(engine, args);

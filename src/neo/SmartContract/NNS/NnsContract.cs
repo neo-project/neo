@@ -8,7 +8,6 @@ namespace Neo.SmartContract.NNS
 {
     public partial class NnsContract : Nep11Token<DomainState, Nep11AccountState>
     {
-        public override string ServiceName => "Neo.Native.NNS";
         public override int Id => -5;
         public override string Name => "NNS";
         public override string Symbol => "nns";
