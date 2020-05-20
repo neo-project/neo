@@ -13,6 +13,8 @@ namespace Neo.Cryptography.MPT
         private readonly ISnapshot store;
         private MPTNode root;
 
+        public MPTNode Root => root;
+
         public MPTTrie(ISnapshot store, UInt256 root)
         {
             this.store = store ?? throw new ArgumentNullException();
@@ -23,11 +25,6 @@ namespace Neo.Cryptography.MPT
         {
             var data = store.TryGet(Prefix, n.Hash.ToArray());
             return MPTNode.Decode(data);
-        }
-
-        public UInt256 GetRoot()
-        {
-            return root.Hash;
         }
 
         protected static byte[] ToNibbles(ReadOnlySpan<byte> path)

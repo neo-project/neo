@@ -181,7 +181,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsTrue(result);
             result = mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("hello"));
             Assert.IsTrue(result);
-            Assert.AreEqual(rootHash.ToString(), mpt.GetRoot().ToString());
+            Assert.AreEqual(rootHash.ToString(), mpt.Root.Hash.ToString());
         }
 
         [TestMethod]
@@ -222,7 +222,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsTrue(result);
             result = mpt.Delete("acae".HexToBytes());
             Assert.IsTrue(result);
-            Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", mpt.GetRoot().ToString());
+            Assert.AreEqual("0xdea3ab46e9461e885ed7091c1e533e0a8030b248d39cbc638962394eaca0fbb3", mpt.Root.Hash.ToString());
         }
 
         [TestMethod]
@@ -244,7 +244,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsNotNull(value);
             snapshot.Commit();
 
-            var mpt0 = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), mpt.GetRoot());
+            var mpt0 = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), mpt.Root.Hash);
             value = mpt0.Get("ac02".HexToBytes());
             Assert.IsNotNull(value);
         }
@@ -295,7 +295,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             b.Children[10] = l3;
 
             var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
-            Assert.AreEqual(r.Hash.ToString(), mpt.GetRoot().ToString());
+            Assert.AreEqual(r.Hash.ToString(), mpt.Root.Hash.ToString());
             var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
             Assert.IsTrue(result);
             Assert.AreEqual(4, proof.Count);
@@ -343,7 +343,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt2.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set2));
             Assert.AreEqual(4, set2.Count);
-            Assert.AreEqual(mpt1.GetRoot(), mpt2.GetRoot());
+            Assert.AreEqual(mpt1.Root.Hash, mpt2.Root.Hash);
         }
 
         [TestMethod]
