@@ -95,7 +95,7 @@ namespace Neo.SmartContract.Native.Tokens
             for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
             {
                 ECPoint pubkey = Blockchain.StandbyCommittee[i];
-                RegisterCandidate(engine.Snapshot, pubkey);
+                RegisterCandidate(engine.Snapshot, pubkey, "Backup candidate");
                 BigInteger balance = TotalAmount / 2 / (Blockchain.ValidatorsCount * 2 + (Blockchain.CommitteeMembersCount - Blockchain.ValidatorsCount));
                 if (i < Blockchain.ValidatorsCount) balance *= 2;
                 UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
@@ -135,17 +135,19 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem RegisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
+            String description = args[0].GetString();
             if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
-            return RegisterCandidate(engine.Snapshot, pubkey);
+            return RegisterCandidate(engine.Snapshot, pubkey, description);
         }
 
-        private bool RegisterCandidate(StoreView snapshot, ECPoint pubkey)
+        private bool RegisterCandidate(StoreView snapshot, ECPoint pubkey, String description)
         {
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
             StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
             state.Registered = true;
+            state.Description = description;
             return true;
         }
 
@@ -211,17 +213,17 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetCandidates(ApplicationEngine engine, Array args)
         {
-            return new Array(engine.ReferenceCounter, GetCandidates(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
+            return new Array(engine.ReferenceCounter, GetCandidates(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes, p.Description })));
         }
 
-        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetCandidates(StoreView snapshot)
+        public IEnumerable<(ECPoint PublicKey, BigInteger Votes, string Description)> GetCandidates(StoreView snapshot)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Candidate });
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes, p.Item2.Description));
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
@@ -290,17 +292,19 @@ namespace Neo.SmartContract.Native.Tokens
         {
             public bool Registered = true;
             public BigInteger Votes;
+            public string Description;
 
             public void FromStackItem(StackItem stackItem)
             {
                 Struct @struct = (Struct)stackItem;
                 Registered = @struct[0].ToBoolean();
                 Votes = @struct[1].GetBigInteger();
+                Description = @struct[1].GetString();
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                return new Struct(referenceCounter) { Registered, Votes };
+                return new Struct(referenceCounter) { Registered, Votes, Description };
             }
         }
     }
