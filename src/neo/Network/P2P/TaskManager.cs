@@ -230,6 +230,7 @@ namespace Neo.Network.P2P
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
+                hashes.Remove(MemPoolTaskHash);
                 if (hashes.Count > 0)
                 {
                     foreach (UInt256 hash in hashes.ToArray())
