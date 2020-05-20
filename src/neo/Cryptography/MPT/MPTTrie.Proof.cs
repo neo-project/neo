@@ -71,7 +71,7 @@ namespace Neo.Cryptography.MPT
             {
                 snapshot.Put(Prefix, Crypto.Hash256(data), data);
             }
-            return trie.Get(key);
+            return trie[key];
         }
     }
 }

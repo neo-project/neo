@@ -5,12 +5,15 @@ namespace Neo.Cryptography.MPT
 {
     partial class MPTTrie<TKey, TValue>
     {
-        public TValue Get(TKey key)
+        public TValue this[TKey key]
         {
-            var path = ToNibbles(key.ToArray());
-            if (path.Length < 1) return null;
-            var result = TryGet(ref root, path, out var value);
-            return result ? value.AsSerializable<TValue>() : null;
+            get
+            {
+                var path = ToNibbles(key.ToArray());
+                if (path.Length < 1) return null;
+                var result = TryGet(ref root, path, out var value);
+                return result ? value.AsSerializable<TValue>() : null;
+            }
         }
 
         private bool TryGet(ref MPTNode node, ReadOnlySpan<byte> path, out ReadOnlySpan<byte> value)
@@ -53,14 +56,6 @@ namespace Neo.Cryptography.MPT
             }
             value = default;
             return false;
-        }
-
-        public TValue this[TKey key]
-        {
-            get
-            {
-                return Get(key);
-            }
         }
     }
 }
