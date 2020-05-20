@@ -7,12 +7,13 @@ namespace Neo.Cryptography.MPT
 {
     partial class MPTTrie<TKey, TValue>
     {
-        public bool GetProof(TKey key, out HashSet<byte[]> set)
+        public HashSet<byte[]> GetProof(TKey key)
         {
-            set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
             var path = ToNibbles(key.ToArray());
-            if (path.Length < 1) return false;
-            return GetProof(ref root, path, set);
+            if (path.Length < 1) return null;
+            HashSet<byte[]> set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+            if (!GetProof(ref root, path, set)) return null;
+            return set;
         }
 
         private bool GetProof(ref MPTNode node, ReadOnlySpan<byte> path, HashSet<byte[]> set)

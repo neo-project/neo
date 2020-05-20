@@ -275,8 +275,7 @@ namespace Neo.UnitTests.Cryptography.MPT
 
             var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
             Assert.AreEqual(r.Hash.ToString(), mpt.Root.Hash.ToString());
-            var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
-            Assert.IsTrue(result);
+            HashSet<byte[]> proof = mpt.GetProof("ac01".HexToBytes());
             Assert.AreEqual(4, proof.Count);
             Assert.IsTrue(proof.Contains(b.Encode()));
             Assert.IsTrue(proof.Contains(r.Encode()));
@@ -288,8 +287,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         public void TestVerifyProof()
         {
             var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), rootHash);
-            var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
-            Assert.IsTrue(result);
+            HashSet<byte[]> proof = mpt.GetProof("ac01".HexToBytes());
             TestValue value = MPTTrie<TestKey, TestValue>.VerifyProof(rootHash, "ac01".HexToBytes(), proof);
             Assert.IsNotNull(value);
             Assert.AreEqual(value.ToString(), "abcd");
@@ -315,12 +313,12 @@ namespace Neo.UnitTests.Cryptography.MPT
             var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, null);
             Assert.IsTrue(mpt1.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt1.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
-            Assert.IsTrue(mpt1.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set1));
+            HashSet<byte[]> set1 = mpt1.GetProof(new byte[] { 0xab, 0xcd });
             Assert.AreEqual(4, set1.Count);
             var mpt2 = new MPTTrie<TestKey, TestValue>(snapshot, null);
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
-            Assert.IsTrue(mpt2.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set2));
+            HashSet<byte[]> set2 = mpt2.GetProof(new byte[] { 0xab, 0xcd });
             Assert.AreEqual(4, set2.Count);
             Assert.AreEqual(mpt1.Root.Hash, mpt2.Root.Hash);
         }
