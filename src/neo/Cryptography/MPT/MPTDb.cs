@@ -8,17 +8,17 @@ namespace Neo.Cryptography.MPT
     {
         internal const byte Prefix = 0xf0;
 
-        private readonly ISnapshot Store;
+        private readonly ISnapshot store;
 
         public MPTDb(ISnapshot store)
         {
-            this.Store = store;
+            this.store = store;
         }
 
         public MPTNode Node(UInt256 hash)
         {
             if (hash is null) return null;
-            var data = Store.TryGet(Prefix, hash.ToArray());
+            var data = store.TryGet(Prefix, hash.ToArray());
             return MPTNode.Decode(data);
         }
 
@@ -26,7 +26,7 @@ namespace Neo.Cryptography.MPT
         {
             if (node is HashNode)
                 throw new InvalidOperationException("Means nothing to store HashNode");
-            Store.Put(Prefix, node.Hash.ToArray(), node.Encode());
+            store.Put(Prefix, node.Hash.ToArray(), node.Encode());
         }
     }
 }
