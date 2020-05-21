@@ -249,7 +249,6 @@ namespace Neo.SmartContract.Native.Tokens
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount, byte[] tokenId)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (amount % Factor != 0) throw new InvalidOperationException("Amount must be divisible by Factor");
             if (amount.IsZero) return;
             UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey token_key = CreateTokenKey(innerKey);
