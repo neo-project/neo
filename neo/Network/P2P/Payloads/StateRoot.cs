@@ -12,7 +12,7 @@ namespace Neo.Network.P2P.Payloads
     {
         public Witness Witness;
 
-        InventoryType IInventory.InventoryType => InventoryType.Root;
+        InventoryType IInventory.InventoryType => InventoryType.StateRoot;
 
         private UInt256 _hash = null;
 
