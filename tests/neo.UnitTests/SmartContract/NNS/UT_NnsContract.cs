@@ -437,7 +437,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var ret_TokensOf = Check_TokensOf(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             IEnumerator eumerator_TokensOf = ((InteropInterface)ret_TokensOf.Result).GetInterface<IEnumerator>();
             eumerator_TokensOf.MoveNext().Should().BeTrue();
-            ((DomainState)(eumerator_TokensOf.Current)).TokenId.Should().BeEquivalentTo(Encoding.ASCII.GetBytes("CC.AA"));
+            ((DomainState)(eumerator_TokensOf.Current)).TokenId.Should().BeEquivalentTo(Encoding.ASCII.GetBytes("BB.AA"));
             ret_TokensOf.State.Should().BeTrue();
 
             //check_balanceOf

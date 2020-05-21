@@ -19,11 +19,6 @@ namespace Neo.SmartContract.Nns
         public const uint BlockPerYear = Blockchain.DecrementInterval;
         public const uint MaxDomainLevel = 4;
 
-        public override UInt256 GetInnerKey(byte[] parameter)
-        {
-            return ComputeNameHash(Encoding.UTF8.GetString(parameter).ToLower());
-        }
-
         [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
         public StackItem GetRootName(ApplicationEngine engine, Array args)
         {
@@ -143,11 +138,6 @@ namespace Neo.SmartContract.Nns
             var domainInfo = GetDomainInfo(snapshot, tokenId);
             if (domainInfo is null) return true;
             return false;
-        }
-
-        private UInt256 ComputeNameHash(string name)
-        {
-            return new UInt256(Crypto.Hash256(Encoding.UTF8.GetBytes(name.ToLower())));
         }
 
         private bool IsAdminCalling(ApplicationEngine engine)

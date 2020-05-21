@@ -283,7 +283,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual UInt256 GetInnerKey(byte[] tokenId)
         {
-            return new UInt256(tokenId.Sha256());
+            return new UInt256(Crypto.Hash256(tokenId));
         }
 
         protected StorageKey CreateOwner2TokenKey(UInt160 owner, UInt256 innerKey)
