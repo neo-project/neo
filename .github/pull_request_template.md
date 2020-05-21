@@ -2,10 +2,6 @@ Closes ISSUE_NUMBER
 
 
 
-**Change summary**
-
-
-
 **How to test and verify the impact of these changes?**
 
 // If need the help of test team, please describe the test scenario.
