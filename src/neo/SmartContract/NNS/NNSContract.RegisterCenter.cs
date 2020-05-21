@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Nns
             string name = Encoding.UTF8.GetString(tokenId);
             int level = name.Split(".").Length;
             if (level > MaxDomainLevel || IsRootDomain(name) || !IsDomain(name)) return false;
-            
+
             var domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
             if (domainInfo != null)
             {
