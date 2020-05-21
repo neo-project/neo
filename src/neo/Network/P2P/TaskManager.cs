@@ -30,7 +30,7 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
 
-        private const int PingCoolingOffPeriod = 60; // in secconds.
+        private const int PingCoolingOffPeriod = 60_000; // in ms.
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>        
@@ -270,7 +270,7 @@ namespace Neo.Network.P2P
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
             }
             else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
+                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
             {
                 if (session.AvailableTasks.Remove(MemPoolTaskHash))
                 {
