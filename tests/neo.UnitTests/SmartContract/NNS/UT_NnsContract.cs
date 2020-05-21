@@ -457,7 +457,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //check_setText
             var ret_setText = Check_SetText(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), "BBB", 0, true);
-            ret_setText.Result.Should().Be(true);
+            ret_setText.Result.Should().Be(false);
             ret_setText.State.Should().BeTrue();
 
             //check_setText
@@ -488,22 +488,19 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             //check_resolve
             var ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("AA.AA"), true);
             Struct @struct = (Struct)ret_resolve.Result;
-            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x00 });
-            @struct[1].Should().Be((ByteString)"BBB");
+            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
             ret_resolve.State.Should().BeTrue();
 
             //check_resolve
             ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("BB.AA"), true);
             @struct = (Struct)ret_resolve.Result;
-            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x00 });
-            @struct[1].Should().Be((ByteString)"BBB");
+            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
             ret_resolve.State.Should().BeTrue();
 
             //check_resolve
             ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("DD.AA"), true);
             @struct = (Struct)ret_resolve.Result;
             @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
-            @struct[1].Should().Be((ByteString)"Text does not exist");
             ret_resolve.State.Should().BeTrue();
         }
 
@@ -528,7 +525,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //check_setOperator
             var ret_setOperator = Check_SetOperator(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_setOperator.Result.Should().Be(true);
+            ret_setOperator.Result.Should().Be(false);
             ret_setOperator.State.Should().BeTrue();
 
             //check_setOperator cross-level

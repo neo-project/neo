@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Nns
 
         public override UInt256 GetInnerKey(byte[] parameter)
         {
-            return ComputeNameHash(System.Text.Encoding.UTF8.GetString(parameter).ToLower());
+            return ComputeNameHash(Encoding.UTF8.GetString(parameter).ToLower());
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Nns
 
         public IEnumerator GetRootName(StoreView snapshot)
         {
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_Root).ToArray()).Select(p => System.Text.Encoding.UTF8.GetString(p.Value.Value.ToArray())).GetEnumerator();
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_Root).ToArray()).Select(p => Encoding.UTF8.GetString(p.Value.Value.ToArray())).GetEnumerator();
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "name" })]
@@ -80,39 +80,35 @@ namespace Neo.SmartContract.Nns
 
         public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
         {
-            //Domain can't be splite
             if (!Factor.Equals(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
-            //Domain level <5
-            string name = System.Text.Encoding.UTF8.GetString(tokenId);
-            string[] names = name.Split(".");
-            int level = names.Length;
+            string name = Encoding.UTF8.GetString(tokenId);
+            int level = name.Split(".").Length;
             if (level > MaxDomainLevel || IsRootDomain(name) || !IsDomain(name)) return false;
-            //Get parent domain token id
-            UInt256 innerKey = GetInnerKey(tokenId);
-            string parentDomain = string.Join(".", name.Split(".")[1..]);
-            byte[] parentTokenId = System.Text.Encoding.UTF8.GetBytes(parentDomain);
-            UInt256 parentInnerKey = GetInnerKey(parentTokenId);
+            
+            var domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
+            if (domainInfo != null)
+            {
+                if (domainInfo.IsExpired(engine.Snapshot))
+                    Burn(engine, from, Factor, tokenId);
+                else
+                    return base.Transfer(engine, from, to, Factor, tokenId);
+            }
 
-            var domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
-            uint ttl = engine.Snapshot.Height + BlockPerYear;
-            //If domain is exist and not expired,it can be transfered directly.
-            if (domainInfo != null && !IsExpired(engine.Snapshot, innerKey))
-                return base.Transfer(engine, from, to, Factor, tokenId);
-            //Check domain is cross-level or expired
-            if (IsCrossLevel(engine.Snapshot, name) || IsExpired(engine.Snapshot, parentInnerKey)) return false;
-            //Get parent domain owner
-            var parentDomainOwner = GetAdmin(engine.Snapshot);
+            string parentDomain = string.Join(".", name.Split(".")[1..]);
+            var parentOwner = GetAdmin(engine.Snapshot);
+            var ttl = engine.Snapshot.Height + BlockPerYear;
             if (!IsRootDomain(parentDomain))
             {
-                IEnumerator enumerator = OwnerOf(engine.Snapshot, System.Text.Encoding.UTF8.GetBytes(parentDomain));
-                if (!enumerator.MoveNext()) return false;
-                parentDomainOwner = (UInt160)enumerator.Current;
+                parentOwner = GetOwner(engine.Snapshot, parentDomain);
+                byte[] parentTokenId = Encoding.UTF8.GetBytes(parentDomain);
+                var parentDomainState = GetDomainInfo(engine.Snapshot, parentTokenId);
+
+                if (IsCrossLevel(engine.Snapshot, name)) return false;
+                if (parentDomainState is null || parentDomainState.IsExpired(engine.Snapshot)) return false;
+                ttl = parentDomainState.TimeToLive;
             }
-            //Check witness,parent domain owner and from account must be same.
-            if (!parentDomainOwner.Equals(from) || !InteropService.Runtime.CheckWitnessInternal(engine, from)) return false;
-            //Expired token will be burn first.
-            if (IsExpired(engine.Snapshot, innerKey)) Burn(engine, from, Factor, tokenId);
-            ttl = engine.Snapshot.Storages.TryGet(CreateTokenKey(parentInnerKey))?.GetInteroperable<DomainState>().TimeToLive ?? ttl;
+            if (!parentOwner.Equals(from) || !InteropService.Runtime.CheckWitnessInternal(engine, from)) return false;
+
             Mint(engine, from, tokenId, ttl);
             return base.Transfer(engine, from, to, Factor, tokenId);
         }
@@ -122,23 +118,32 @@ namespace Neo.SmartContract.Nns
             return CreateStorageKey(Prefix_Root, innerKey.ToArray());
         }
 
-        private DomainState GetDomainInfo(StoreView snapshot, UInt256 nameHash)
+        private DomainState GetDomainInfo(StoreView snapshot, byte[] tokenid)
         {
-            StorageKey key = CreateTokenKey(nameHash);
+            UInt256 innerKey = GetInnerKey(tokenid);
+            StorageKey key = CreateTokenKey(innerKey);
             StorageItem storage = snapshot.Storages.TryGet(key);
             return storage?.GetInteroperable<DomainState>();
+        }
+
+        private UInt160 GetOwner(StoreView snapshot, string name)
+        {
+            IEnumerator enumerator = OwnerOf(snapshot, Encoding.UTF8.GetBytes(name));
+            if (!enumerator.MoveNext()) return null;
+            return (UInt160)enumerator.Current;
         }
 
         private bool IsCrossLevel(StoreView snapshot, string name)
         {
             if (string.IsNullOrEmpty(name)) return false;
             string fatherLevel = string.Join(".", name.Split(".")[1..]);
-            UInt256 innerKey = GetInnerKey(System.Text.Encoding.UTF8.GetBytes(fatherLevel));
+            byte[] tokenId = Encoding.UTF8.GetBytes(fatherLevel);
             if (IsRootDomain(fatherLevel))
             {
+                UInt256 innerKey = GetInnerKey(tokenId);
                 return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root, innerKey)) == null;
             }
-            var domainInfo = GetDomainInfo(snapshot, innerKey);
+            var domainInfo = GetDomainInfo(snapshot, tokenId);
             if (domainInfo is null) return true;
             return false;
         }
@@ -151,15 +156,6 @@ namespace Neo.SmartContract.Nns
         private bool IsAdminCalling(ApplicationEngine engine)
         {
             return InteropService.Runtime.CheckWitnessInternal(engine, GetAdmin(engine.Snapshot));
-        }
-
-        public bool IsExpired(StoreView snapshot, UInt256 innerKey)
-        {
-            //Root domain never be expired
-            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root, innerKey)) != null) return false;
-            var domainInfo = GetDomainInfo(snapshot, innerKey);
-            if (domainInfo is null) return false;
-            return snapshot.Height.CompareTo(domainInfo.TimeToLive) > 0;
         }
     }
 }

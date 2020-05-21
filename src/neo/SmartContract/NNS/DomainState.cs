@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Persistence;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
@@ -24,6 +25,11 @@ namespace Neo.SmartContract.Nns
             @struct.Add(Operator.ToArray());
             @struct.Add(TimeToLive);
             return @struct;
+        }
+
+        public bool IsExpired(StoreView snapshot)
+        {
+            return snapshot.Height.CompareTo(TimeToLive) > 0;
         }
     }
 }

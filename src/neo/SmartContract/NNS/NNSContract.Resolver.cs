@@ -23,20 +23,18 @@ namespace Neo.SmartContract.Nns
             switch (recordType)
             {
                 case RecordType.A:
-                    if (text.Length != 20) return false;
+                    if (text.Length != UInt160.Length) return false;
                     break;
                 case RecordType.CNAME:
                     string cname = Encoding.UTF8.GetString(text);
                     if (!IsDomain(cname)) return false;
                     break;
             }
-
-            UInt256 innerKey = GetInnerKey(tokenId);
-            DomainState domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
-            if (domainInfo is null) return false;
-            if (IsExpired(engine.Snapshot, innerKey)) return false;
+            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
+            if (domainInfo is null || domainInfo.IsExpired(engine.Snapshot)) return false;
             if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Operator)) return false;
 
+            UInt256 innerKey = GetInnerKey(tokenId);
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem(new RecordInfo()));
             RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
@@ -53,15 +51,16 @@ namespace Neo.SmartContract.Nns
             return Resolve(engine.Snapshot, name).ToStackItem(engine.ReferenceCounter);
         }
 
-        public RecordInfo Resolve(StoreView snapshot, byte[] parameter, int resolveCount = 0)
+        public RecordInfo Resolve(StoreView snapshot, byte[] domain, int resolveCount = 0)
         {
             if (resolveCount > MaxResolveCount)
                 return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Too many domain redirects") };
 
-            UInt256 innerKey = GetInnerKey(parameter);
-            if (IsExpired(snapshot, innerKey))
-                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("TTL is expired") };
+            DomainState domainInfo = GetDomainInfo(snapshot, domain);
+            if (domainInfo is null || domainInfo.IsExpired(snapshot))
+                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Domain not found or expired") };
 
+            UInt256 innerKey = GetInnerKey(domain);
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null)
