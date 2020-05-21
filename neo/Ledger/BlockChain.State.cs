@@ -61,7 +61,7 @@ namespace Neo.Ledger
 
                     if (stateRoot.Index + 3 > HeaderHeight)
                     {
-                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = stateRoot });
+                        system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateRoot });
                     }
 
                     stateRootCache.Remove(stateRoot.Index);
