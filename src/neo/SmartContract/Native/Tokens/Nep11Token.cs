@@ -249,6 +249,7 @@ namespace Neo.SmartContract.Native.Tokens
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount, byte[] tokenId)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount % Factor != 0) throw new InvalidOperationException("Amount must be divisible by Factor");
             if (amount.IsZero) return;
             UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey token_key = CreateTokenKey(innerKey);
@@ -259,7 +260,6 @@ namespace Neo.SmartContract.Native.Tokens
             StorageItem owner2token_storage = engine.Snapshot.Storages.GetAndChange(owner2token_key);
             if (owner2token_storage is null) throw new InvalidOperationException("Account is not exist");
             StorageKey token2owner_key = CreateToken2OwnerKey(innerKey, account);
-            StorageItem token2owner_storage = engine.Snapshot.Storages.GetAndChange(token2owner_key);
             UState owner2token_state = owner2token_storage.GetInteroperable<UState>();
             if (owner2token_state.Balance < amount) throw new InvalidOperationException();
             if (owner2token_state.Balance == amount)
@@ -274,6 +274,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
             else
             {
+                StorageItem token2owner_storage = engine.Snapshot.Storages.GetAndChange(token2owner_key);
                 UState token2owner_state = token2owner_storage.GetInteroperable<UState>();
                 owner2token_state.Balance -= amount;
                 token2owner_state.Balance -= amount;
