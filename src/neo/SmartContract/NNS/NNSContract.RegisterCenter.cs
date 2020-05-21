@@ -40,12 +40,11 @@ namespace Neo.SmartContract.Nns
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             string name = Encoding.UTF8.GetString(tokenId);
-            //Check name format and witness
             if (!IsRootDomain(name) || !IsAdminCalling(engine)) return false;
+
             UInt256 innerKey = GetInnerKey(tokenId);
             StorageKey key = CreateRootKey(innerKey);
             StorageItem storage = engine.Snapshot.Storages.TryGet(key);
-            //Root name can't be duplicate
             if (storage != null) return false;
             engine.Snapshot.Storages.Add(key, new StorageItem() { Value = tokenId });
             IncreaseTotalSupply(engine.Snapshot);
@@ -59,22 +58,18 @@ namespace Neo.SmartContract.Nns
             byte[] tokenId = args[0].GetSpan().ToArray();
             uint validUntilBlock = (uint)args[1].GetBigInteger();
             UInt160 from = args[2].GetSpan().AsSerializable<UInt160>();
+            if (validUntilBlock <= engine.Snapshot.Height) return false;
+
+            DomainState domainState = GetDomainInfo(engine.Snapshot, tokenId, true);
+            if (domainState is null) return false;
             string name = Encoding.UTF8.GetString(tokenId).ToLower();
-            if (!IsDomain(name)) return false;
-            string[] names = name.Split(".");
-            int level = names.Length;
+            int level = name.Split(".").Length;
             if (level != 2) return false;
 
-            UInt256 innerKey = GetInnerKey(tokenId);
-            ulong duration = validUntilBlock - engine.Snapshot.Height;
-            if (duration < 0) return false;
-            StorageKey key = CreateTokenKey(innerKey);
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
-            if (storage is null) return false;
-            DomainState domain_state = storage.GetInteroperable<DomainState>();
-            BigInteger amount = duration * GetRentalPrice(engine.Snapshot) / BlockPerYear;
+            BigInteger amount = (validUntilBlock - engine.Snapshot.Height) * GetRentalPrice(engine.Snapshot) / BlockPerYear;
             if (!GAS.Transfer(engine, from, GetReceiptAddress(engine.Snapshot), amount)) return false;
-            domain_state.TimeToLive = validUntilBlock;
+
+            domainState.TimeToLive = validUntilBlock;
             return true;
         }
 
@@ -99,8 +94,8 @@ namespace Neo.SmartContract.Nns
             var ttl = engine.Snapshot.Height + BlockPerYear;
             if (!IsRootDomain(parentDomain))
             {
-                parentOwner = GetOwner(engine.Snapshot, parentDomain);
                 byte[] parentTokenId = Encoding.UTF8.GetBytes(parentDomain);
+                parentOwner = GetOwner(engine.Snapshot, parentTokenId);
                 var parentDomainState = GetDomainInfo(engine.Snapshot, parentTokenId);
 
                 if (IsCrossLevel(engine.Snapshot, name)) return false;
@@ -118,17 +113,19 @@ namespace Neo.SmartContract.Nns
             return CreateStorageKey(Prefix_Root, innerKey.ToArray());
         }
 
-        private DomainState GetDomainInfo(StoreView snapshot, byte[] tokenid)
+        private DomainState GetDomainInfo(StoreView snapshot, byte[] tokenid, bool update = false)
         {
             UInt256 innerKey = GetInnerKey(tokenid);
             StorageKey key = CreateTokenKey(innerKey);
-            StorageItem storage = snapshot.Storages.TryGet(key);
-            return storage?.GetInteroperable<DomainState>();
+            if (update)
+                return snapshot.Storages.GetAndChange(key)?.GetInteroperable<DomainState>();
+            else
+                return snapshot.Storages.TryGet(key)?.GetInteroperable<DomainState>();
         }
 
-        private UInt160 GetOwner(StoreView snapshot, string name)
+        private UInt160 GetOwner(StoreView snapshot, byte[] tokenid)
         {
-            IEnumerator enumerator = OwnerOf(snapshot, Encoding.UTF8.GetBytes(name));
+            IEnumerator enumerator = OwnerOf(snapshot, tokenid);
             if (!enumerator.MoveNext()) return null;
             return (UInt160)enumerator.Current;
         }

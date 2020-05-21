@@ -1,8 +1,6 @@
-using Neo.Ledger;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Collections;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Nns
@@ -15,15 +13,10 @@ namespace Neo.SmartContract.Nns
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             UInt160 @operator = new UInt160(args[1].GetSpan());
-
-            IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
-            if (!enumerator.MoveNext()) return false;
-            var owner = (UInt160)enumerator.Current;
+            UInt160 owner = GetOwner(engine.Snapshot, tokenId);
             if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
 
-            UInt256 innerKey = GetInnerKey(tokenId);
-            StorageKey key = CreateTokenKey(innerKey);
-            DomainState domainInfo = engine.Snapshot.Storages.GetAndChange(key)?.GetInteroperable<DomainState>();
+            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
             if (domainInfo is null || domainInfo.IsExpired(engine.Snapshot)) return false;
             domainInfo.Operator = @operator;
             return true;
@@ -32,10 +25,7 @@ namespace Neo.SmartContract.Nns
         protected internal void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId, uint ttl)
         {
             base.Mint(engine, account, tokenId);
-
-            UInt256 innerKey = GetInnerKey(tokenId);
-            StorageKey token_key = CreateTokenKey(innerKey);
-            DomainState domainInfo = engine.Snapshot.Storages.GetAndChange(token_key).GetInteroperable<DomainState>();
+            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
             domainInfo.Operator = account;
             domainInfo.TimeToLive = ttl;
         }
