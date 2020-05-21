@@ -151,13 +151,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Name = System.Text.Encoding.UTF8.GetString(@struct[0].GetSpan().ToArray()).ToLower();
+            TokenId = @struct[0].GetSpan().ToArray();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             Struct @struct = new Struct(referenceCounter);
-            @struct.Add(System.Text.Encoding.UTF8.GetBytes(Name));
+            @struct.Add(TokenId);
             return @struct;
         }
     }

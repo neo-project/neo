@@ -228,7 +228,7 @@ namespace Neo.SmartContract.Native.Tokens
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId)
         {
             UInt256 innerKey = GetInnerKey(tokenId);
-            TState token_state = new TState() { Name = System.Text.Encoding.UTF8.GetString(tokenId) };
+            TState token_state = new TState() { TokenId = tokenId };
             StorageKey token_key = CreateTokenKey(innerKey);
             StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
             if (token_storage != null) throw new InvalidOperationException("Token is exist");

@@ -14,6 +14,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native.Tokens
 {
@@ -238,22 +239,22 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var from = ret.Result.GetSpan().AsSerializable<UInt160>();
 
             //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
             //check_registerRootName double register wrong
-            ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(false);
             ret_registerRootName.State.Should().BeTrue();
 
             //check_registerRootName wrong format
-            ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"));
+            ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
             ret_registerRootName.Result.Should().Be(false);
             ret_registerRootName.State.Should().BeTrue();
 
             //check_registerRootName wrong witness
-            ret_registerRootName = Check_RegisterRootName(snapshot, UInt160.Zero.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            ret_registerRootName = Check_RegisterRootName(snapshot, UInt160.Zero.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(false);
             ret_registerRootName.State.Should().BeTrue();
 
@@ -274,7 +275,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var from = ret.Result.GetSpan().AsSerializable<UInt160>();
 
             //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
@@ -286,45 +287,45 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_getRootName.State.Should().BeTrue();
 
             //check_transfer wrong amount format
-            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), factor + 1, true);
+            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor + 1, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeFalse();
 
             //check_transfer wrong domain level
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA.AA.AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA.AA.AA"), factor, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer transfer root domain wrong
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA"), factor, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer cross-level wrong
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer_create_first-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             snapshot.BlockHashIndex.GetAndChange().Index = 1;
 
             //check_transfer expired domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer_create_second&third-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer_from_A_to_B
             byte[] to = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), to, System.Text.Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), to, Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
         }
@@ -339,7 +340,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
 
             //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
@@ -351,13 +352,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_getRootName.State.Should().BeTrue();
 
             //check_transfer_create_first-level_domain
-            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             snapshot.BlockHashIndex.GetAndChange().Index = 2000001;
             //check_renewName
-            var ret_renewName = Check_RenewName(snapshot, from.ToArray(), account, System.Text.Encoding.UTF8.GetBytes("AA.AA"), 100000000L);
+            var ret_renewName = Check_RenewName(snapshot, from.ToArray(), account, Encoding.UTF8.GetBytes("AA.AA"), 100000000L);
             ret_renewName.Result.Should().BeTrue();
             ret_renewName.State.Should().BeTrue();
         }
@@ -400,7 +401,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.BlockHashIndex.GetAndChange().Index = 0;
 
             //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
@@ -411,95 +412,95 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             eumerator_RootName.Current.Equals("AA").Should().Be(true);
 
             //check_transfer_create_first-level_domain
-            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer_create_first-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("BB.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("BB.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer_create_first-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), System.Text.Encoding.UTF8.GetBytes("CC.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("CC.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             //check_ownerof
-            var ret_OwnerOf = Check_OwnerOf(snapshot, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_OwnerOf = Check_OwnerOf(snapshot, Encoding.UTF8.GetBytes("AA.AA"), true);
             IEnumerator eumerator_OwnerOf = ((InteropInterface)ret_OwnerOf.Result).GetInterface<IEnumerator>();
             eumerator_OwnerOf.MoveNext().Should().BeTrue();
             eumerator_OwnerOf.Current.Should().Be(from);
             ret_OwnerOf.State.Should().BeTrue();
 
             //check_tokensof
-            var ret_TokensOf = Check_TokensOf(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_TokensOf = Check_TokensOf(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             IEnumerator eumerator_TokensOf = ((InteropInterface)ret_TokensOf.Result).GetInterface<IEnumerator>();
             eumerator_TokensOf.MoveNext().Should().BeTrue();
-            ((DomainState)(eumerator_TokensOf.Current)).Name.Equals("CC.AA").Should().Be(true);
+            ((DomainState)(eumerator_TokensOf.Current)).TokenId.Should().BeEquivalentTo(Encoding.ASCII.GetBytes("CC.AA"));
             ret_TokensOf.State.Should().BeTrue();
 
             //check_balanceOf
-            var ret_BalanceOf = Check_BalanceOf(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_BalanceOf = Check_BalanceOf(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_BalanceOf.Result.GetBigInteger().Should().Be(1);
             ret_BalanceOf.State.Should().BeTrue();
 
             //check_getProperties
-            var ret_properties = Check_GetProperties(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_properties = Check_GetProperties(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_properties.Result.GetString().Should().Be("{}");
             ret_properties.State.Should().BeTrue();
 
             //check_totalSupply
-            var ret_totalSupply = Check_TotalSupply(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_totalSupply = Check_TotalSupply(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_totalSupply.Result.GetBigInteger().Should().Be(4);
             ret_totalSupply.State.Should().BeTrue();
 
             //check_setText
-            var ret_setText = Check_SetText(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA"), "BBB", 0, true);
+            var ret_setText = Check_SetText(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), "BBB", 0, true);
             ret_setText.Result.Should().Be(true);
             ret_setText.State.Should().BeTrue();
 
             //check_setText
-            ret_setText = Check_SetText(snapshot, from, System.Text.Encoding.UTF8.GetBytes("BB.AA"), "AA.AA", 1, true);
+            ret_setText = Check_SetText(snapshot, from, Encoding.UTF8.GetBytes("BB.AA"), "AA.AA", 1, true);
             ret_setText.Result.Should().Be(true);
             ret_setText.State.Should().BeTrue();
 
             //check_setText
-            ret_setText = Check_SetText(snapshot, from, System.Text.Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
+            ret_setText = Check_SetText(snapshot, from, Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
             ret_setText.Result.Should().Be(true);
             ret_setText.State.Should().BeTrue();
 
             //check_setText witness wrong
-            ret_setText = Check_SetText(snapshot, UInt160.Zero, System.Text.Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
+            ret_setText = Check_SetText(snapshot, UInt160.Zero, Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
             ret_setText.Result.Should().Be(false);
             ret_setText.State.Should().BeTrue();
 
             //check_setText no token
-            ret_setText = Check_SetText(snapshot, UInt160.Zero, System.Text.Encoding.UTF8.GetBytes("EE.AA"), "CC.AA", 3, true);
+            ret_setText = Check_SetText(snapshot, UInt160.Zero, Encoding.UTF8.GetBytes("EE.AA"), "CC.AA", 3, true);
             ret_setText.Result.Should().Be(false);
             ret_setText.State.Should().BeTrue();
 
             //check_setOperator
-            var ret_setOperator = Check_SetOperator(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_setOperator = Check_SetOperator(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_setOperator.Result.Should().Be(true);
             ret_setOperator.State.Should().BeTrue();
 
             //check_resolve
-            var ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("AA.AA"), true);
             Struct @struct = (Struct)ret_resolve.Result;
             @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x00 });
             @struct[1].Should().Be((ByteString)"BBB");
             ret_resolve.State.Should().BeTrue();
 
             //check_resolve
-            ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("BB.AA"), true);
+            ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("BB.AA"), true);
             @struct = (Struct)ret_resolve.Result;
             @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x00 });
             @struct[1].Should().Be((ByteString)"BBB");
             ret_resolve.State.Should().BeTrue();
 
             //check_resolve
-            ret_resolve = Check_Resolve(snapshot, System.Text.Encoding.UTF8.GetBytes("DD.AA"), true);
+            ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("DD.AA"), true);
             @struct = (Struct)ret_resolve.Result;
             @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
             @struct[1].Should().Be((ByteString)"Text does not exist");
@@ -515,7 +516,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.BlockHashIndex.GetAndChange().Index = 0;
 
             //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), System.Text.Encoding.UTF8.GetBytes("AA"));
+            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
@@ -526,12 +527,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             eumerator_RootName.Current.Equals("AA").Should().Be(true);
 
             //check_setOperator
-            var ret_setOperator = Check_SetOperator(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_setOperator = Check_SetOperator(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_setOperator.Result.Should().Be(true);
             ret_setOperator.State.Should().BeTrue();
 
             //check_setOperator cross-level
-            ret_setOperator = Check_SetOperator(snapshot, from, System.Text.Encoding.UTF8.GetBytes("AA.AA.AA.AA"), true);
+            ret_setOperator = Check_SetOperator(snapshot, from, Encoding.UTF8.GetBytes("AA.AA.AA.AA"), true);
             ret_setOperator.Result.Should().Be(false);
             ret_setOperator.State.Should().BeTrue();
         }

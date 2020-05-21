@@ -59,7 +59,7 @@ namespace Neo.SmartContract.Nns
             StorageKey token_key = CreateTokenKey(innerKey);
             StorageItem token_storage = engine.Snapshot.Storages.GetAndChange(token_key);
             DomainState domainInfo = token_storage.GetInteroperable<DomainState>();
-            domainInfo.Name = System.Text.Encoding.UTF8.GetString(tokenId);
+            domainInfo.TokenId = tokenId;
             domainInfo.Operator = account;
             domainInfo.TimeToLive = ttl;
         }
