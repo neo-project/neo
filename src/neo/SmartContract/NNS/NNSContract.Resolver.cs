@@ -3,6 +3,7 @@ using Neo.Persistence;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Text;
 using System.Text.RegularExpressions;
 using Array = Neo.VM.Types.Array;
 
@@ -18,9 +19,9 @@ namespace Neo.SmartContract.Nns
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             RecordType recordType = (RecordType)(byte)args[1].GetBigInteger();
-            string text = args[2].GetString();
+            byte[] text = args[2].GetSpan().ToArray();
 
-            string name = System.Text.Encoding.UTF8.GetString(tokenId);
+            string name = Encoding.UTF8.GetString(tokenId);
             UInt256 innerKey = GetInnerKey(tokenId);
             //Check whether domain is exist 
             DomainState domainInfo = GetDomainInfo(engine.Snapshot, innerKey);
@@ -49,27 +50,23 @@ namespace Neo.SmartContract.Nns
 
         public RecordInfo Resolve(StoreView snapshot, byte[] parameter, int resolveCount = 0)
         {
-            string name = System.Text.Encoding.UTF8.GetString(parameter);
-            if (resolveCount++ > MaxResolveCount)
-            {
-                return new RecordInfo { Type = RecordType.ERROR, Text = "Too many domain redirects" };
-            }
+            if (resolveCount > MaxResolveCount)
+                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Too many domain redirects") };
+
             UInt256 innerKey = GetInnerKey(parameter);
             if (IsExpired(snapshot, innerKey))
-            {
-                return new RecordInfo { Type = RecordType.ERROR, Text = "TTL is expired" };
-            }
+                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("TTL is expired") };
+
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null)
-            {
-                return new RecordInfo { Type = RecordType.ERROR, Text = "Text does not exist" };
-            }
+                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Text does not exist") };
+
             RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
             switch (recordInfo.Type)
             {
                 case RecordType.CNAME:
-                    var parameter_cname = System.Text.Encoding.UTF8.GetBytes(recordInfo.Text);
+                    var parameter_cname = recordInfo.Text;
                     return Resolve(snapshot, parameter_cname, resolveCount);
             }
             return recordInfo;
