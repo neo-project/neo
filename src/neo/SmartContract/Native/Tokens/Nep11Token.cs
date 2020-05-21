@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account, byte[] tokenId)
         {
-            UInt256 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(tokenId);
             StorageItem storage = snapshot.Storages.TryGet(CreateOwner2TokenKey(account, innerKey));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<UState>().Balance;
@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             return snapshot.Storages.Find(CreateStorageKey(Prefix_Owner2TokenMapping, owner).ToArray()).Select(p =>
             {
-                UInt256 innerKey = new UInt256(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt256.Length).ToArray());
+                UInt160 innerKey = new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
                 return snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TState>();
             }).GetEnumerator();
         }
@@ -143,10 +143,10 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual IEnumerator OwnerOf(StoreView snapshot, byte[] tokenId)
         {
-            UInt256 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(tokenId);
             return snapshot.Storages.Find(CreateStorageKey(Prefix_Token2OwnerMapping, innerKey).ToArray()).Select(p =>
             {
-                return new UInt160(p.Key.Key.Skip(1 + UInt256.Length).Take(UInt160.Length).ToArray());
+                return new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
             }).GetEnumerator();
         }
 
@@ -162,7 +162,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
         {
-            UInt256 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(tokenId);
             //check amount range.
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             //check witness
@@ -227,7 +227,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId)
         {
-            UInt256 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(tokenId);
             TState token_state = new TState() { TokenId = tokenId };
             StorageKey token_key = CreateTokenKey(innerKey);
             StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
@@ -250,7 +250,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            UInt256 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey token_key = CreateTokenKey(innerKey);
             StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
             if (token_storage is null) throw new InvalidOperationException("Token is not exist");
@@ -281,12 +281,12 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount, tokenId }));
         }
 
-        public virtual UInt256 GetInnerKey(byte[] tokenId)
+        public virtual UInt160 GetInnerKey(byte[] tokenId)
         {
-            return new UInt256(Crypto.Hash256(tokenId));
+            return new UInt160(Crypto.Hash160(tokenId));
         }
 
-        protected StorageKey CreateOwner2TokenKey(UInt160 owner, UInt256 innerKey)
+        protected StorageKey CreateOwner2TokenKey(UInt160 owner, UInt160 innerKey)
         {
             byte[] byteSource = new byte[owner.Size + innerKey.Size];
             System.Array.Copy(owner.ToArray(), 0, byteSource, 0, owner.Size);
@@ -294,7 +294,7 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_Owner2TokenMapping, byteSource);
         }
 
-        protected StorageKey CreateToken2OwnerKey(UInt256 innerKey, UInt160 owner)
+        protected StorageKey CreateToken2OwnerKey(UInt160 innerKey, UInt160 owner)
         {
             byte[] byteSource = new byte[owner.Size + innerKey.Size];
             System.Array.Copy(innerKey.ToArray(), 0, byteSource, 0, innerKey.Size);
@@ -302,7 +302,7 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_Token2OwnerMapping, byteSource);
         }
 
-        protected StorageKey CreateTokenKey(UInt256 innerKey)
+        protected StorageKey CreateTokenKey(UInt160 innerKey)
         {
             return CreateStorageKey(Prefix_TokenId, innerKey.ToArray());
         }

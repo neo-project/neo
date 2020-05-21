@@ -37,7 +37,7 @@ namespace Neo.SmartContract.Nns
             string name = Encoding.UTF8.GetString(tokenId);
             if (!IsRootDomain(name) || !IsAdminCalling(engine)) return false;
 
-            UInt256 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey key = CreateRootKey(innerKey);
             StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage != null) return false;
@@ -103,14 +103,14 @@ namespace Neo.SmartContract.Nns
             return base.Transfer(engine, from, to, Factor, tokenId);
         }
 
-        private StorageKey CreateRootKey(UInt256 innerKey)
+        private StorageKey CreateRootKey(UInt160 innerKey)
         {
             return CreateStorageKey(Prefix_Root, innerKey.ToArray());
         }
 
         private DomainState GetDomainInfo(StoreView snapshot, byte[] tokenid, bool update = false)
         {
-            UInt256 innerKey = GetInnerKey(tokenid);
+            UInt160 innerKey = GetInnerKey(tokenid);
             StorageKey key = CreateTokenKey(innerKey);
             if (update)
                 return snapshot.Storages.GetAndChange(key)?.GetInteroperable<DomainState>();
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Nns
             byte[] tokenId = Encoding.UTF8.GetBytes(fatherLevel);
             if (IsRootDomain(fatherLevel))
             {
-                UInt256 innerKey = GetInnerKey(tokenId);
+                UInt160 innerKey = GetInnerKey(tokenId);
                 return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root, innerKey)) == null;
             }
             var domainInfo = GetDomainInfo(snapshot, tokenId);

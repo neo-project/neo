@@ -34,7 +34,7 @@ namespace Neo.SmartContract.Nns
             if (domainInfo is null || domainInfo.IsExpired(engine.Snapshot)) return false;
             if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Operator)) return false;
 
-            UInt256 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem(new RecordInfo()));
             RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Nns
             if (domainInfo is null || domainInfo.IsExpired(snapshot))
                 return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Domain not found or expired") };
 
-            UInt256 innerKey = GetInnerKey(domain);
+            UInt160 innerKey = GetInnerKey(domain);
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null)
