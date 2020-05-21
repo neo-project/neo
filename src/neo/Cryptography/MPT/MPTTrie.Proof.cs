@@ -61,12 +61,10 @@ namespace Neo.Cryptography.MPT
 
         public static TValue VerifyProof(UInt256 root, TKey key, HashSet<byte[]> proof)
         {
-            var memoryStore = new MemoryStore();
+            using var memoryStore = new MemoryStore();
             foreach (byte[] data in proof)
-            {
                 memoryStore.Put(Prefix, Crypto.Hash256(data), data);
-            }
-            ISnapshot snapshot = memoryStore.GetSnapshot();
+            using ISnapshot snapshot = memoryStore.GetSnapshot();
             var trie = new MPTTrie<TKey, TValue>(snapshot, root);
             return trie[key];
         }
