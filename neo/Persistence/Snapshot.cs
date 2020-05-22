@@ -27,11 +27,11 @@ namespace Neo.Persistence
         public abstract MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public abstract MetaDataCache<HashIndexState> StateRootHashIndex { get; }
+        public abstract MetaDataCache<RootHashIndex> StateRootHashIndex { get; }
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
-        public uint StateHeight => StateRootHashIndex.Get().Index;
+        public long StateHeight => StateRootHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
