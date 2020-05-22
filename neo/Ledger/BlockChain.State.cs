@@ -16,6 +16,7 @@ namespace Neo.Ledger
         public long StateHeight => currentSnapshot.StateHeight;
         private static uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
         private readonly Dictionary<uint, StateRoot> stateRootCache = new Dictionary<uint, StateRoot>();
+        private readonly uint MaxRootCacheCount = 1000;
 
         public StateRootState GetStateRoot(UInt256 block_hash)
         {
@@ -45,8 +46,8 @@ namespace Neo.Ledger
         private RelayResultReason OnNewStateRoot(StateRoot stateRoot)
         {
             if (stateRoot.Index < StateRootEnableIndex || stateRoot.Index <= StateHeight) return RelayResultReason.Invalid;
-            if (!stateRoot.Verify(currentSnapshot)) return RelayResultReason.Invalid;
             if (stateRootCache.ContainsKey(stateRoot.Index)) return RelayResultReason.AlreadyExists;
+            if (currentSnapshot.StateHeight + MaxRootCacheCount < stateRoot.Index) return RelayResultReason.UnableToVerify;
             if (stateRoot.Index > StateHeight + 1 && stateRoot.Index != StateRootEnableIndex)
             {
                 stateRootCache.Add(stateRoot.Index, stateRoot);
@@ -56,15 +57,14 @@ namespace Neo.Ledger
             {
                 while (stateRoot.Index <= Height)
                 {
+                    stateRootCache.Remove(stateRoot.Index);
+                    if (!stateRoot.Verify(currentSnapshot)) break;
                     if (PersistCnStateRoot(stateRoot) == StateRootVerifyFlag.Invalid)
                         break;
-
                     if (stateRoot.Index + 3 > HeaderHeight)
                     {
                         system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateRoot });
                     }
-
-                    stateRootCache.Remove(stateRoot.Index);
                     if (!stateRootCache.TryGetValue(stateRoot.Index + 1, out stateRoot)) break;
                 }
             }
