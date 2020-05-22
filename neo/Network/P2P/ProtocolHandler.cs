@@ -94,7 +94,7 @@ namespace Neo.Network.P2P
                 case "consensus":
                     OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
-                case "root":
+                case "stateroot":
                     OnInventoryReceived(msg.GetPayload<StateRoot>());
                     break;
                 case "getroots":
