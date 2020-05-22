@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Native.Tokens
         public BigInteger Factor { get; }
 
         private const byte Prefix_TotalSupply = 20;
-        private const byte Prefix_MappingBetweenTokenAndOwner = 21;
+        private const byte Prefix_Ownership = 21;
         private const byte Prefix_TokenId = 22;
 
         protected Nep11Token()
@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual IEnumerator<TState> TokensOf(StoreView snapshot, UInt160 owner)
         {
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_MappingBetweenTokenAndOwner, owner).ToArray()).Select(p =>
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_Ownership, owner).ToArray()).Select(p =>
             {
                 UInt160 innerKey = new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
                 return snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TState>();
@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native.Tokens
         public virtual IEnumerator<UInt160> OwnerOf(StoreView snapshot, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_MappingBetweenTokenAndOwner, innerKey).ToArray()).Select(p =>
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_Ownership, innerKey).ToArray()).Select(p =>
             {
                 return new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
             }).GetEnumerator();
