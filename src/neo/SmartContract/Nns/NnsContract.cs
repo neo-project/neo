@@ -28,11 +28,9 @@ namespace Neo.SmartContract.Nns
 
         private const byte Prefix_Root = 24;
 
-
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Root), new StorageItem(new RootDomainState()
             {
                 Roots = new Array() { "neo", "wallet", "dapp" }
@@ -170,10 +168,10 @@ namespace Neo.SmartContract.Nns
 
         public override JObject Properties(StoreView snapshot, byte[] tokenid)
         {
+            JObject json = new JObject();
             DomainState domain = GetDomainInfo(snapshot, tokenid);
             if (domain is null || domain.IsExpired(snapshot))
-                return "{}";
-            JObject json = new JObject();
+                return new JObject();
             json["name"] = Encoding.ASCII.GetString(domain.TokenId);
             json["description"] = domain.Text.ToHexString();
             return json;

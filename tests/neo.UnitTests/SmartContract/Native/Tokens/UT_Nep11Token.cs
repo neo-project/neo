@@ -2,7 +2,9 @@ using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
@@ -110,6 +112,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override string Symbol => "tt";
 
         public override byte Decimals => 1;
+
+        public override JObject Properties(StoreView snapshot, byte[] tokenid)
+        {
+            throw new NotImplementedException();
+        }
 
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {
