@@ -245,7 +245,7 @@ namespace Neo.SmartContract.Native.Tokens
             byte[] byteSource = new byte[first.Size + second.Size];
             System.Array.Copy(first.ToArray(), 0, byteSource, 0, first.Size);
             System.Array.Copy(second.ToArray(), 0, byteSource, first.Size, second.Size);
-            return CreateStorageKey(Prefix_MappingBetweenTokenAndOwner, byteSource);
+            return CreateStorageKey(Prefix_Ownership, byteSource);
         }
 
         protected StorageKey CreateTokenKey(UInt160 innerKey)
