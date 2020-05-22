@@ -117,9 +117,9 @@ namespace Neo.Persistence.LevelDB
             return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentHeader);
         }
 
-        public override MetaDataCache<HashIndexState> GetStateRootHashIndex()
+        public override MetaDataCache<RootHashIndex> GetStateRootHashIndex()
         {
-            return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentStateRoot);
+            return new DbMetaDataCache<RootHashIndex>(db, null, null, Prefixes.IX_CurrentStateRoot);
         }
 
         public override void Put(byte prefix, byte[] key, byte[] value)

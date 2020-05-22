@@ -21,7 +21,7 @@ namespace Neo.Persistence
         public override MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<HashIndexState> StateRootHashIndex { get; }
+        public override MetaDataCache<RootHashIndex> StateRootHashIndex { get; }
 
         public CloneSnapshot(Snapshot snapshot)
         {

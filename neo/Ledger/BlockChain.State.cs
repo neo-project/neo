@@ -13,7 +13,7 @@ namespace Neo.Ledger
     public sealed partial class Blockchain : UntypedActor
     {
         public class ImportRoots { public IEnumerable<StateRoot> Roots; }
-        public long StateHeight => currentSnapshot.StateHeight == uint.MaxValue ? -1 : (long)currentSnapshot.StateHeight;
+        public long StateHeight => currentSnapshot.StateHeight;
         private static uint StateRootEnableIndex => ProtocolSettings.Default.StateRootEnableIndex;
         private readonly Dictionary<uint, StateRoot> stateRootCache = new Dictionary<uint, StateRoot>();
 
@@ -103,9 +103,9 @@ namespace Neo.Ledger
                 var localState = snapshot.StateRoots.GetAndChange(stateRoot.Index);
                 if (localState.StateRoot.Root == stateRoot.Root && localState.StateRoot.PreHash == stateRoot.PreHash)
                 {
-                    HashIndexState hashIndexState = snapshot.StateRootHashIndex.GetAndChange();
-                    hashIndexState.Index = stateRoot.Index;
-                    hashIndexState.Hash = stateRoot.Hash;
+                    RootHashIndex rootHashIndex = snapshot.StateRootHashIndex.GetAndChange();
+                    rootHashIndex.Index = stateRoot.Index;
+                    rootHashIndex.Hash = stateRoot.Hash;
                     localState.StateRoot = stateRoot;
                     localState.Flag = StateRootVerifyFlag.Verified;
                 }
