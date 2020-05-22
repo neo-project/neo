@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
         private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
-        internal static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
+        private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
@@ -127,6 +127,8 @@ namespace Neo.Network.P2P
         {
             Context.Watch(Sender);
             TaskSession session = new TaskSession(Sender, version);
+            if (session.IsFullNode)
+                session.AvailableTasks.Add(TaskManager.MemPoolTaskHash);
             sessions.Add(Sender, session);
             RequestTasks(session);
         }

@@ -28,11 +28,6 @@ namespace Neo.Network.P2P
             this.Version = version;
             this.StartHeight = fullNode?.StartHeight ?? 0;
             this.LastBlockIndex = this.StartHeight;
-
-            if (IsFullNode)
-            {
-                AvailableTasks.Add(TaskManager.MemPoolTaskHash);
-            }
         }
     }
 }
