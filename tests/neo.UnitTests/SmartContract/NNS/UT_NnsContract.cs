@@ -58,26 +58,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var ret_getAdmin = Check_GetAdmin(snapshot);
             ret_getAdmin.Result.GetSpan().AsSerializable<UInt160>().Should().Be(new UInt160(from));
             ret_getAdmin.State.Should().BeTrue();
-
-            //check_setReceiptAddress
-            var ret_setReceiptAddress = Check_SetReceiptAddress(snapshot, from);
-            ret_setReceiptAddress.Result.Should().BeTrue();
-            ret_setReceiptAddress.State.Should().BeTrue();
-
-            //check_getReceiptAddress
-            var ret_getReceiptAddress = Check_GetReceiptAddress(snapshot);
-            ret_getReceiptAddress.Result.GetSpan().AsSerializable<UInt160>().Should().Be(new UInt160(from));
-            ret_getReceiptAddress.State.Should().BeTrue();
-
-            //check_setRentalPrice
-            var ret_setRentalPrice = Check_SetRentalPrice(snapshot, from, 10000000000L);
-            ret_setRentalPrice.Result.Should().BeTrue();
-            ret_setRentalPrice.State.Should().BeTrue();
-
-            //check_getRentalPrice
-            var ret_getRentalPrice = Check_GetRentalPrice(snapshot);
-            ret_getRentalPrice.Result.GetBigInteger().Should().Be(10000000000L);
-            ret_getRentalPrice.State.Should().BeTrue();
         }
         internal static (bool State, bool Result) Check_SetAdmin(StoreView snapshot, byte[] account)
         {

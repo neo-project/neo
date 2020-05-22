@@ -24,20 +24,15 @@ namespace Neo.SmartContract.Nns
         public const uint BlockPerYear = Blockchain.DecrementInterval;
         public const uint MaxDomainLevel = 4;
 
+        private const byte Prefix_Root = 24;
+        private const byte Prefix_Record = 25;
+
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Admin), new StorageItem
             {
                 Value = NEO.GetCommitteeMultiSigAddress(engine.Snapshot).ToArray()
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_ReceiptAddress), new StorageItem
-            {
-                Value = NEO.GetCommitteeMultiSigAddress(engine.Snapshot).ToArray()
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RentalPrice), new StorageItem
-            {
-                Value = BitConverter.GetBytes(5_000_000_000L)
             });
             return true;
         }
@@ -68,25 +63,22 @@ namespace Neo.SmartContract.Nns
             return true;
         }
 
-        //update ttl of first level name, can by called by anyone
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Integer, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "ttl" })]
+        //update ttl of first level name, can be called by anyone
+        [ContractMethod(10_00000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "name" })]
         public StackItem RenewName(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
-            uint validUntilBlock = (uint)args[1].GetBigInteger();
-            UInt160 from = args[2].GetSpan().AsSerializable<UInt160>();
-            if (validUntilBlock <= engine.Snapshot.Height) return false;
-
-            DomainState domainState = GetDomainInfo(engine.Snapshot, tokenId, true);
-            if (domainState is null) return false;
             string name = Encoding.UTF8.GetString(tokenId).ToLower();
             int level = name.Split(".").Length;
             if (level != 2) return false;
 
-            BigInteger amount = (validUntilBlock - engine.Snapshot.Height) * GetRentalPrice(engine.Snapshot) / BlockPerYear;
-            if (!GAS.Transfer(engine, from, GetReceiptAddress(engine.Snapshot), amount)) return false;
+            DomainState domainState = GetDomainInfo(engine.Snapshot, tokenId, true);
+            if (domainState is null) return false;
 
-            domainState.TimeToLive = validUntilBlock;
+            if (domainState.IsExpired(engine.Snapshot))
+                domainState.TimeToLive = engine.Snapshot.Height + BlockPerYear;
+            else
+                domainState.TimeToLive += BlockPerYear;
             return true;
         }
 
@@ -143,7 +135,7 @@ namespace Neo.SmartContract.Nns
         protected internal void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId, uint ttl)
         {
             base.Mint(engine, account, tokenId);
-            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
+            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
             domainInfo.Operator = account;
             domainInfo.TimeToLive = ttl;
         }
@@ -181,8 +173,7 @@ namespace Neo.SmartContract.Nns
                 return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root, innerKey)) == null;
             }
             var domainInfo = GetDomainInfo(snapshot, tokenId);
-            if (domainInfo is null) return true;
-            return false;
+            return (domainInfo is null);
         }
 
         private bool IsAdminCalling(ApplicationEngine engine)
