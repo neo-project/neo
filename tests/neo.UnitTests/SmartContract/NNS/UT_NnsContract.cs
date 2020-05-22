@@ -44,301 +44,115 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_SupportedStandards() => NativeContract.NNS.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-11", "NEP-10" });
 
         [TestMethod]
-        public void Check_Policy()
+        public void Check_Register()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
 
-            //check_setAdmin
-            var ret_setAdmin = Check_SetAdmin(snapshot, from);
-            ret_setAdmin.Result.Should().BeTrue();
-            ret_setAdmin.State.Should().BeTrue();
-
-            //check_getAdmin
-            var ret_getAdmin = Check_GetAdmin(snapshot);
-            ret_getAdmin.Result.GetSpan().AsSerializable<UInt160>().Should().Be(new UInt160(from));
-            ret_getAdmin.State.Should().BeTrue();
-        }
-        internal static (bool State, bool Result) Check_SetAdmin(StoreView snapshot, byte[] account)
-        {
-            var address = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(address), snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NNS.Script);
-
-            var script = new ScriptBuilder();
-
-            script.EmitPush(account);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("setAdmin");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (true, result.ToBoolean());
-        }
-
-        internal static (bool State, StackItem Result) Check_GetAdmin(StoreView snapshot)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NNS.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("getAdmin");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
-
-            return (true, result);
-        }
-
-        internal static (bool State, bool Result) Check_SetReceiptAddress(StoreView snapshot, byte[] account)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(new UInt160(account)), snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NNS.Script);
-
-            var script = new ScriptBuilder();
-
-            script.EmitPush(account);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("setReceiptAddress");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (true, result.ToBoolean());
-        }
-
-        internal static (bool State, StackItem Result) Check_GetReceiptAddress(StoreView snapshot)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NNS.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("getReceiptAddress");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
-
-            return (true, result);
-        }
-
-        internal static (bool State, bool Result) Check_SetRentalPrice(StoreView snapshot, byte[] account, BigInteger amount)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(new UInt160(account)), snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NNS.Script);
-
-            var script = new ScriptBuilder();
-
-            script.EmitPush(amount);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("setRentalPrice");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (true, result.ToBoolean());
-        }
-
-        internal static (bool State, StackItem Result) Check_GetRentalPrice(StoreView snapshot)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NNS.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("getRentalPrice");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
-
-            return (true, result);
-        }
-
-        [TestMethod]
-        public void Check_RegisterCenter_RegisterRootName()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            var ret = Check_GetAdmin(snapshot);
-            var from = ret.Result.GetSpan().AsSerializable<UInt160>();
-
-            //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
+            //Check_RegisterRun
+            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA"));
+            ret_registerRootName.State.Should().BeTrue();
             ret_registerRootName.Result.Should().Be(true);
-            ret_registerRootName.State.Should().BeTrue();
-
-            //check_registerRootName double register wrong
-            ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
-            ret_registerRootName.Result.Should().Be(false);
-            ret_registerRootName.State.Should().BeTrue();
-
-            //check_registerRootName wrong format
-            ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
-            ret_registerRootName.Result.Should().Be(false);
-            ret_registerRootName.State.Should().BeTrue();
-
-            //check_registerRootName wrong witness
-            ret_registerRootName = Check_RegisterRootName(snapshot, UInt160.Zero.ToArray(), Encoding.UTF8.GetBytes("AA"));
-            ret_registerRootName.Result.Should().Be(false);
-            ret_registerRootName.State.Should().BeTrue();
 
             //check_getRootName
             var ret_getRootName = Check_GetRootName(snapshot);
-            IEnumerator eumerator_RootName = ((InteropInterface)ret_getRootName.Result).GetInterface<IEnumerator>();
-            eumerator_RootName.MoveNext().Should().BeTrue();
-            eumerator_RootName.Current.Equals("AA").Should().Be(true);
+            VM.Types.Array roots = (VM.Types.Array)ret_getRootName.Result;
             ret_getRootName.State.Should().BeTrue();
+            roots[roots.Count - 1].Should().Be((ByteString)"aa");
+
+            //check_transfer_create_first-level_domain
+            var ret_transfer = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
+            ret_transfer.Result.Should().BeTrue();
+            ret_transfer.State.Should().BeTrue();
         }
 
         [TestMethod]
-        public void Check_RegisterCenter_Transfer()
+        public void Check_Transfer()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var factor = 1;
-            var ret = Check_GetAdmin(snapshot);
-            var from = ret.Result.GetSpan().AsSerializable<UInt160>();
+            UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
 
-            //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
+            //Check_RegisterRun
+            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
             //check_getRootName
             var ret_getRootName = Check_GetRootName(snapshot);
-            IEnumerator eumerator_RootName = ((InteropInterface)ret_getRootName.Result).GetInterface<IEnumerator>();
-            eumerator_RootName.MoveNext().Should().BeTrue();
-            eumerator_RootName.Current.Equals("AA").Should().Be(true);
+            VM.Types.Array roots = (VM.Types.Array)ret_getRootName.Result;
             ret_getRootName.State.Should().BeTrue();
+            roots[roots.Count - 1].Should().Be((ByteString)"aa");
 
             //check_transfer wrong amount format
-            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor + 1, true);
+            var ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor + 1, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeFalse();
 
             //check_transfer wrong domain level
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA.AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA.AA.AA"), factor, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer transfer root domain wrong
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA"), factor, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer cross-level wrong
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
             ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
 
+            // register sub-domain
+            var ret_registerName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
+            ret_registerName.Result.Should().Be(true);
+            ret_registerName.State.Should().BeTrue();
+
             //check_transfer_create_first-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             snapshot.BlockHashIndex.GetAndChange().Index = 1;
 
             //check_transfer expired domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
+
+            // register subdomain
 
             //check_transfer_create_second&third-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
-            ret_transfer.Result.Should().BeTrue();
-            ret_transfer.State.Should().BeTrue();
-
-            //check_transfer_from_A_to_B
-            byte[] to = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), to, Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
-            ret_transfer.Result.Should().BeTrue();
+            ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA.AA"), factor, true);
+            ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
         }
 
         [TestMethod]
-        public void Check_RegisterCenter_Renew()
+        public void Check_Renew()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var factor = 1;
-            var ret = Check_GetAdmin(snapshot);
-            var from = ret.Result.GetSpan().AsSerializable<UInt160>();
-            UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
+            UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
 
-            //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
-            ret_registerRootName.Result.Should().Be(true);
+            //Check_RegisterRun
+            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.State.Should().BeTrue();
+            ret_registerRootName.Result.Should().Be(true);
 
             //check_getRootName
             var ret_getRootName = Check_GetRootName(snapshot);
-            IEnumerator eumerator_RootName = ((InteropInterface)ret_getRootName.Result).GetInterface<IEnumerator>();
-            eumerator_RootName.MoveNext().Should().BeTrue();
-            eumerator_RootName.Current.Equals("AA").Should().Be(true);
+            VM.Types.Array roots = (VM.Types.Array) ret_getRootName.Result;
             ret_getRootName.State.Should().BeTrue();
+            roots[roots.Count - 1].Should().Be((ByteString)"aa");
 
             //check_transfer_create_first-level_domain
-            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            var ret_transfer = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
-            snapshot.BlockHashIndex.GetAndChange().Index = 2000001;
             //check_renewName
-            var ret_renewName = Check_RenewName(snapshot, from.ToArray(), account, Encoding.UTF8.GetBytes("AA.AA"), 100000000L);
+            var ret_renewName = Check_RenewName(snapshot, admin.ToArray(), UInt160.Zero, Encoding.UTF8.GetBytes("AA.AA"), 100000000L);
             ret_renewName.Result.Should().BeTrue();
             ret_renewName.State.Should().BeTrue();
         }
@@ -376,77 +190,86 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var factor = 1;
-            var ret = Check_GetAdmin(snapshot);
-            var from = ret.Result.GetSpan().AsSerializable<UInt160>();
+            UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
             snapshot.BlockHashIndex.GetAndChange().Index = 0;
 
-            //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
+            //Check_RegisterRun
+            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
             //check_getRootName
             var ret_getRootName = Check_GetRootName(snapshot);
-            IEnumerator eumerator_RootName = ((InteropInterface)ret_getRootName.Result).GetInterface<IEnumerator>();
-            eumerator_RootName.MoveNext().Should().BeTrue();
-            eumerator_RootName.Current.Equals("AA").Should().Be(true);
+            VM.Types.Array roots = (VM.Types.Array)ret_getRootName.Result;
+            ret_getRootName.State.Should().BeTrue();
+            roots[roots.Count - 1].Should().Be((ByteString)"aa");
+
+            // register sub-domain
+            var ret_registerName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
+            ret_registerName.Result.Should().Be(true);
+            ret_registerName.State.Should().BeTrue();
 
             //check_transfer_create_first-level_domain
-            var ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
+            var ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), factor, true);
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
 
             //check_transfer_create_first-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("BB.AA"), factor, true);
-            ret_transfer.Result.Should().BeTrue();
-            ret_transfer.State.Should().BeTrue();
-
-            //check_transfer_create_first-level_domain
-            ret_transfer = Check_Transfer(snapshot, from.ToArray(), from.ToArray(), Encoding.UTF8.GetBytes("CC.AA"), factor, true);
-            ret_transfer.Result.Should().BeTrue();
+            ret_transfer = Check_Transfer(snapshot, admin.ToArray(), admin.ToArray(), Encoding.UTF8.GetBytes("BB.AA"), factor, true);
+            ret_transfer.Result.Should().BeFalse();
             ret_transfer.State.Should().BeTrue();
 
             //check_ownerof
             var ret_OwnerOf = Check_OwnerOf(snapshot, Encoding.UTF8.GetBytes("AA.AA"), true);
             IEnumerator eumerator_OwnerOf = ((InteropInterface)ret_OwnerOf.Result).GetInterface<IEnumerator>();
             eumerator_OwnerOf.MoveNext().Should().BeTrue();
-            eumerator_OwnerOf.Current.Should().Be(from);
+            eumerator_OwnerOf.Current.Should().Be(admin);
             ret_OwnerOf.State.Should().BeTrue();
 
             //check_tokensof
-            var ret_TokensOf = Check_TokensOf(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_TokensOf = Check_TokensOf(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             IEnumerator eumerator_TokensOf = ((InteropInterface)ret_TokensOf.Result).GetInterface<IEnumerator>();
             eumerator_TokensOf.MoveNext().Should().BeTrue();
-            ((DomainState)(eumerator_TokensOf.Current)).TokenId.Should().BeEquivalentTo(Encoding.ASCII.GetBytes("BB.AA"));
+            ((DomainState)(eumerator_TokensOf.Current)).TokenId.Should().BeEquivalentTo(Encoding.ASCII.GetBytes("AA.AA"));
             ret_TokensOf.State.Should().BeTrue();
 
             //check_balanceOf
-            var ret_BalanceOf = Check_BalanceOf(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_BalanceOf = Check_BalanceOf(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_BalanceOf.Result.GetBigInteger().Should().Be(1);
             ret_BalanceOf.State.Should().BeTrue();
 
             //check_getProperties
-            var ret_properties = Check_GetProperties(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_properties = Check_GetProperties(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_properties.Result.GetString().Should().Be("{}");
             ret_properties.State.Should().BeTrue();
 
             //check_totalSupply
-            var ret_totalSupply = Check_TotalSupply(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_totalSupply.Result.GetBigInteger().Should().Be(3);
+            var ret_totalSupply = Check_TotalSupply(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
+            ret_totalSupply.Result.GetBigInteger().Should().Be(1);
             ret_totalSupply.State.Should().BeTrue();
 
             //check_setText
-            var ret_setText = Check_SetText(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), "BBB", 0, true);
+            var ret_setText = Check_SetText(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA"), "BBB", 0, true);
             ret_setText.Result.Should().Be(false);
             ret_setText.State.Should().BeTrue();
 
+            // Register BB.AA
+            ret_registerName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("BB.AA"));
+            ret_registerName.Result.Should().Be(true);
+            ret_registerName.State.Should().BeTrue();
+
             //check_setText
-            ret_setText = Check_SetText(snapshot, from, Encoding.UTF8.GetBytes("BB.AA"), "AA.AA", 1, true);
+            ret_setText = Check_SetText(snapshot, admin, Encoding.UTF8.GetBytes("BB.AA"), "AA.AA", 1, true);
             ret_setText.Result.Should().Be(true);
             ret_setText.State.Should().BeTrue();
 
+            // Register cc.aa
+            ret_registerName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("CC.AA"));
+            ret_registerName.Result.Should().Be(true);
+            ret_registerName.State.Should().BeTrue();
+
             //check_setText
-            ret_setText = Check_SetText(snapshot, from, Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
+            ret_setText = Check_SetText(snapshot, admin, Encoding.UTF8.GetBytes("CC.AA"), "CC.AA", 3, true);
             ret_setText.Result.Should().Be(true);
             ret_setText.State.Should().BeTrue();
 
@@ -461,7 +284,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_setText.State.Should().BeTrue();
 
             //check_setOperator
-            var ret_setOperator = Check_SetOperator(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_setOperator.Result.Should().Be(true);
             ret_setOperator.State.Should().BeTrue();
 
@@ -488,28 +311,35 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Operator()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var ret = Check_GetAdmin(snapshot);
-            var from = ret.Result.GetSpan().AsSerializable<UInt160>();
+            UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
             snapshot.BlockHashIndex.GetAndChange().Index = 0;
 
-            //check_registerRootName
-            var ret_registerRootName = Check_RegisterRootName(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA"));
+            //Check_RegisterRun
+            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA"));
             ret_registerRootName.Result.Should().Be(true);
             ret_registerRootName.State.Should().BeTrue();
 
             //check_getRootName
             var ret_getRootName = Check_GetRootName(snapshot);
-            IEnumerator eumerator_RootName = ((InteropInterface)ret_getRootName.Result).GetInterface<IEnumerator>();
-            eumerator_RootName.MoveNext().Should().BeTrue();
-            eumerator_RootName.Current.Equals("AA").Should().Be(true);
+            VM.Types.Array roots = (VM.Types.Array) ret_getRootName.Result;
+            roots[roots.Count - 1].Should().Be((ByteString)"aa");
 
             //check_setOperator
-            var ret_setOperator = Check_SetOperator(snapshot, from, Encoding.UTF8.GetBytes("AA.AA"), true);
+            var ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA"), true);
             ret_setOperator.Result.Should().Be(false);
             ret_setOperator.State.Should().BeTrue();
 
+            // Register sub domain && and set operator
+            ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
+            ret_registerRootName.Result.Should().Be(true);
+            ret_registerRootName.State.Should().BeTrue();
+
+            ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA"), true);
+            ret_setOperator.Result.Should().Be(true);
+            ret_setOperator.State.Should().BeTrue();
+
             //check_setOperator cross-level
-            ret_setOperator = Check_SetOperator(snapshot, from, Encoding.UTF8.GetBytes("AA.AA.AA.AA"), true);
+            ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA.AA.AA"), true);
             ret_setOperator.Result.Should().Be(false);
             ret_setOperator.State.Should().BeTrue();
         }
@@ -609,7 +439,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return (true, result.ToBoolean());
         }
 
-        internal static (bool State, bool Result) Check_RegisterRootName(StoreView snapshot, byte[] account, byte[] tokenId)
+        internal static (bool State, bool Result) Check_RegisterRun(StoreView snapshot, byte[] account, byte[] tokenId)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
                 new Nep5NativeContractExtensions.ManualWitness(new UInt160(account)), snapshot, 0, true);
@@ -618,10 +448,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             var script = new ScriptBuilder();
 
+            script.EmitPush(account);
             script.EmitPush(tokenId);
-            script.EmitPush(1);
+            script.EmitPush(2);
             script.Emit(OpCode.PACK);
-            script.EmitPush("registerRootName");
+            script.EmitPush("register");
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -786,7 +617,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.InteropInterface));
+            result.Should().BeOfType(typeof(VM.Types.Array));
 
             return (true, result);
         }

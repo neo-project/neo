@@ -234,7 +234,6 @@ namespace Neo.SmartContract.Native.Tokens
                 storages.Delete(CreateMappingKeyBetween(account, innerKey));
             }
             DecreaseTotalSupply(engine.Snapshot);
-
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, StackItem.Null, Factor, tokenId }));
         }
 
