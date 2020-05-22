@@ -57,33 +57,17 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action = () => test.Mint(ae, UInt160.Zero, UInt256.Zero.ToArray());
             action.Should().Throw<InvalidOperationException>();
 
-            //burn amount greater than balance
-            action = () => test.Burn(ae, UInt160.Zero, test.Factor + 1, UInt256.Zero.ToArray());
-            action.Should().Throw<InvalidOperationException>();
-
             //burn
-            action = () => test.Burn(ae, UInt160.Zero, 0, UInt256.Zero.ToArray());
-            action.Should().NotThrow<Exception>();
-
-            //burn
-            action = () => test.Burn(ae, UInt160.Zero, test.Factor - 1, UInt256.Zero.ToArray());
-            action.Should().NotThrow<Exception>();
-
-            //burn
-            action = () => test.Burn(ae, UInt160.Zero, 1, UInt256.Zero.ToArray());
+            action = () => test.Burn(ae, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
 
             //burn no token wrong
-            action = () => test.Burn(ae, UInt160.Zero, test.Factor, test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
+            action = () => test.Burn(ae, test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
             action.Should().Throw<InvalidOperationException>();
 
             //burn no account wrong
-            action = () => test.Burn(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor, UInt256.Zero.ToArray());
+            action = () => test.Burn(ae, UInt256.Zero.ToArray());
             action.Should().Throw<InvalidOperationException>();
-
-            //burn negative wrong
-            action = () => test.Burn(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), -1, UInt256.Zero.ToArray());
-            action.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [TestMethod]
@@ -125,7 +109,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //burn
             ae = new ApplicationEngine(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")), snapshot, 0, true);
-            action = () => test.Burn(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), test.Factor, UInt256.Zero.ToArray());
+            action = () => test.Burn(ae, UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
         }
     }

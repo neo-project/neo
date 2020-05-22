@@ -110,7 +110,7 @@ namespace Neo.IO.Caching
         /// Delete key from cached Dictionary or search in Internal.
         /// </summary>
         /// <param name="key">Key to be deleted.</param>
-        public void Delete(TKey key)
+        public bool Delete(TKey key)
         {
             lock (dictionary)
             {
@@ -130,7 +130,7 @@ namespace Neo.IO.Caching
                 else
                 {
                     TValue item = TryGetInternal(key);
-                    if (item == null) return;
+                    if (item == null) return false;
                     dictionary.Add(key, new Trackable
                     {
                         Key = key,
@@ -140,6 +140,7 @@ namespace Neo.IO.Caching
                     changeSet.Add(key);
                 }
             }
+            return true;
         }
 
         protected abstract void DeleteInternal(TKey key);

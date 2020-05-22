@@ -102,7 +102,7 @@ namespace Neo.SmartContract.Nns
             if (domainInfo != null)
             {
                 if (domainInfo.IsExpired(engine.Snapshot))
-                    Burn(engine, from, Factor, tokenId);
+                    Burn(engine, tokenId);
                 else
                     return base.Transfer(engine, from, to, Factor, tokenId);
             }

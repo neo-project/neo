@@ -8,7 +8,6 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -26,9 +25,8 @@ namespace Neo.SmartContract.Native.Tokens
         public BigInteger Factor { get; }
 
         protected const byte Prefix_TotalSupply = 20;
-        protected const byte Prefix_Owner2TokenMapping = 21;
-        protected const byte Prefix_Token2OwnerMapping = 22;
-        protected const byte Prefix_TokenId = 23;
+        protected const byte Prefix_MappingBetweenTokenAndOwner = 21;
+        protected const byte Prefix_TokenId = 22;
 
         protected Nep11Token()
         {
@@ -113,7 +111,7 @@ namespace Neo.SmartContract.Native.Tokens
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            StorageItem storage = snapshot.Storages.TryGet(CreateOwner2TokenKey(account, innerKey));
+            StorageItem storage = snapshot.Storages.TryGet(CreateMappingKeyBetween(account, innerKey));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<UState>().Balance;
         }
@@ -125,9 +123,9 @@ namespace Neo.SmartContract.Native.Tokens
             return new InteropInterface(TokensOf(engine.Snapshot, owner));
         }
 
-        public virtual IEnumerator TokensOf(StoreView snapshot, UInt160 owner)
+        public virtual IEnumerator<TState> TokensOf(StoreView snapshot, UInt160 owner)
         {
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_Owner2TokenMapping, owner).ToArray()).Select(p =>
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_MappingBetweenTokenAndOwner, owner).ToArray()).Select(p =>
             {
                 UInt160 innerKey = new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
                 return snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TState>();
@@ -141,10 +139,10 @@ namespace Neo.SmartContract.Native.Tokens
             return new InteropInterface(OwnerOf(engine.Snapshot, tokenId));
         }
 
-        public virtual IEnumerator OwnerOf(StoreView snapshot, byte[] tokenId)
+        public virtual IEnumerator<UInt160> OwnerOf(StoreView snapshot, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_Token2OwnerMapping, innerKey).ToArray()).Select(p =>
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_MappingBetweenTokenAndOwner, innerKey).ToArray()).Select(p =>
             {
                 return new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
             }).GetEnumerator();
@@ -162,52 +160,30 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
         {
-            UInt160 innerKey = GetInnerKey(tokenId);
-            //check amount range.
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            //check witness
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, from))
-                return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, from)) return false;
+
+            var storages = engine.Snapshot.Storages;
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
-            if (!amount.IsZero)
+            if (!amount.IsZero && !from.Equals(to))
             {
-                //Is exist token
-                StorageKey key_token = CreateTokenKey(innerKey);
-                StorageItem storage_token = engine.Snapshot.Storages.TryGet(key_token);
-                if (storage_token is null) return false;
-                if (!from.Equals(to))
+                UInt160 innerKey = GetInnerKey(tokenId);
+                StorageKey fromKey = CreateMappingKeyBetween(from, innerKey);
+                UState fromBalance = storages.GetAndChange(fromKey)?.GetInteroperable<UState>();
+                if (fromBalance is null) return false;
+                if (fromBalance.Balance < amount) return false;
+                if (fromBalance.Balance == amount)
                 {
-                    //Check from account
-                    StorageKey key_from = CreateOwner2TokenKey(from, innerKey);
-                    StorageItem storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
-                    if (storage_from is null) return false;
-                    UState accountstate_from = storage_from.GetInteroperable<UState>();
-                    if (accountstate_from.Balance < amount) return false;
-                    //change from account state
-                    if (accountstate_from.Balance == amount)
-                    {
-                        engine.Snapshot.Storages.Delete(key_from);
-                        engine.Snapshot.Storages.Delete(CreateToken2OwnerKey(innerKey, from));
-                    }
-                    else
-                    {
-                        accountstate_from.Balance -= amount;
-                        key_from = CreateToken2OwnerKey(innerKey, from);
-                        storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
-                        accountstate_from = storage_from.GetInteroperable<UState>();
-                        accountstate_from.Balance -= amount;
-                    }
-                    //change to account state
-                    StorageKey key_to = CreateOwner2TokenKey(to, innerKey);
-                    StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem(new UState() { Balance = 0 }));
-                    UState accountstate_to = storage_to.GetInteroperable<UState>();
-                    accountstate_to.Balance += amount;
-                    key_to = CreateToken2OwnerKey(innerKey, to);
-                    storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem(new UState() { Balance = 0 }));
-                    accountstate_to = storage_to.GetInteroperable<UState>();
-                    accountstate_to.Balance += amount;
+                    storages.Delete(fromKey);
+                    storages.Delete(CreateMappingKeyBetween(innerKey, from));
                 }
+                fromBalance.Balance -= amount;
+
+                StorageKey toKey = CreateMappingKeyBetween(to, innerKey);
+                UState toBalance = storages.GetAndChange(toKey, () => new StorageItem(new UState())).GetInteroperable<UState>();
+                toBalance.Balance += amount;
+                storages.GetAndChange(CreateMappingKeyBetween(innerKey, to), () => new StorageItem(new byte[0]));
             }
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount, tokenId }));
             return true;
@@ -227,58 +203,39 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId)
         {
+            var storages = engine.Snapshot.Storages;
             UInt160 innerKey = GetInnerKey(tokenId);
-            TState token_state = new TState() { TokenId = tokenId };
-            StorageKey token_key = CreateTokenKey(innerKey);
-            StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
-            if (token_storage != null) throw new InvalidOperationException("Token is exist");
+            StorageKey tokenKey = CreateTokenKey(innerKey);
+            if (storages.TryGet(tokenKey) != null) throw new InvalidOperationException("Token is exist");
 
-            StorageKey owner2token_key = CreateOwner2TokenKey(account, innerKey);
-            StorageItem owner2token_storage = engine.Snapshot.Storages.TryGet(owner2token_key);
-            if (owner2token_storage != null) throw new InvalidOperationException("Token is exist");
-            engine.Snapshot.Storages.Add(owner2token_key, new StorageItem(new UState() { Balance = Factor }));
-
-            StorageKey token2owner_key = CreateToken2OwnerKey(innerKey, account);
-            engine.Snapshot.Storages.Add(token2owner_key, new StorageItem(new UState() { Balance = Factor }));
-
-            engine.Snapshot.Storages.Add(token_key, new StorageItem(token_state));
+            storages.Add(tokenKey, new StorageItem(new TState() { TokenId = tokenId }));
             IncreaseTotalSupply(engine.Snapshot);
+
+            StorageKey owner2tokenKey = CreateMappingKeyBetween(account, innerKey);
+            StorageKey token2ownerKey = CreateMappingKeyBetween(innerKey, account);
+            storages.Add(owner2tokenKey, new StorageItem(new UState() { Balance = Factor }));
+            storages.Add(token2ownerKey, new StorageItem(new byte[0]));
+
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, tokenId }));
         }
 
-        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount, byte[] tokenId)
+        internal protected virtual void Burn(ApplicationEngine engine, byte[] tokenId)
         {
-            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (amount.IsZero) return;
+            var storages = engine.Snapshot.Storages;
             UInt160 innerKey = GetInnerKey(tokenId);
-            StorageKey token_key = CreateTokenKey(innerKey);
-            StorageItem token_storage = engine.Snapshot.Storages.TryGet(token_key);
-            if (token_storage is null) throw new InvalidOperationException("Token is not exist");
+            StorageKey tokenKey = CreateTokenKey(innerKey);
+            if (!storages.Delete(tokenKey)) throw new InvalidOperationException("Token is not exist");
 
-            StorageKey owner2token_key = CreateOwner2TokenKey(account, innerKey);
-            StorageItem owner2token_storage = engine.Snapshot.Storages.GetAndChange(owner2token_key);
-            if (owner2token_storage is null) throw new InvalidOperationException("Account is not exist");
-            StorageKey token2owner_key = CreateToken2OwnerKey(innerKey, account);
-            UState owner2token_state = owner2token_storage.GetInteroperable<UState>();
-            if (owner2token_state.Balance < amount) throw new InvalidOperationException();
-            if (owner2token_state.Balance == amount)
+            IEnumerator<UInt160> enumerator = OwnerOf(engine.Snapshot, tokenId);
+            while (!enumerator.MoveNext())
             {
-                engine.Snapshot.Storages.Delete(owner2token_key);
-                engine.Snapshot.Storages.Delete(token2owner_key);
-                if (!OwnerOf(engine.Snapshot, tokenId).MoveNext())
-                {
-                    engine.Snapshot.Storages.Delete(token_key);
-                    DecreaseTotalSupply(engine.Snapshot);
-                }
+                UInt160 account = enumerator.Current;
+                storages.Delete(CreateMappingKeyBetween(innerKey, account));
+                storages.Delete(CreateMappingKeyBetween(account, innerKey));
             }
-            else
-            {
-                StorageItem token2owner_storage = engine.Snapshot.Storages.GetAndChange(token2owner_key);
-                UState token2owner_state = token2owner_storage.GetInteroperable<UState>();
-                owner2token_state.Balance -= amount;
-                token2owner_state.Balance -= amount;
-            }
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount, tokenId }));
+            DecreaseTotalSupply(engine.Snapshot);
+
+            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, StackItem.Null, Factor, tokenId }));
         }
 
         public virtual UInt160 GetInnerKey(byte[] tokenId)
@@ -286,20 +243,12 @@ namespace Neo.SmartContract.Native.Tokens
             return new UInt160(Crypto.Hash160(tokenId));
         }
 
-        protected StorageKey CreateOwner2TokenKey(UInt160 owner, UInt160 innerKey)
+        protected StorageKey CreateMappingKeyBetween(UInt160 first, UInt160 second)
         {
-            byte[] byteSource = new byte[owner.Size + innerKey.Size];
-            System.Array.Copy(owner.ToArray(), 0, byteSource, 0, owner.Size);
-            System.Array.Copy(innerKey.ToArray(), 0, byteSource, owner.Size, innerKey.Size);
-            return CreateStorageKey(Prefix_Owner2TokenMapping, byteSource);
-        }
-
-        protected StorageKey CreateToken2OwnerKey(UInt160 innerKey, UInt160 owner)
-        {
-            byte[] byteSource = new byte[owner.Size + innerKey.Size];
-            System.Array.Copy(innerKey.ToArray(), 0, byteSource, 0, innerKey.Size);
-            System.Array.Copy(owner.ToArray(), 0, byteSource, innerKey.Size, owner.Size);
-            return CreateStorageKey(Prefix_Token2OwnerMapping, byteSource);
+            byte[] byteSource = new byte[first.Size + second.Size];
+            System.Array.Copy(first.ToArray(), 0, byteSource, 0, first.Size);
+            System.Array.Copy(second.ToArray(), 0, byteSource, first.Size, second.Size);
+            return CreateStorageKey(Prefix_MappingBetweenTokenAndOwner, byteSource);
         }
 
         protected StorageKey CreateTokenKey(UInt160 innerKey)
