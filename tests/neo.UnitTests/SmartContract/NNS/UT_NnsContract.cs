@@ -452,7 +452,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //check_totalSupply
             var ret_totalSupply = Check_TotalSupply(snapshot, from.ToArray(), Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_totalSupply.Result.GetBigInteger().Should().Be(4);
+            ret_totalSupply.Result.GetBigInteger().Should().Be(3);
             ret_totalSupply.State.Should().BeTrue();
 
             //check_setText

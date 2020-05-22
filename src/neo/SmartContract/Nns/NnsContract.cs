@@ -65,7 +65,6 @@ namespace Neo.SmartContract.Nns
             StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage != null) return false;
             engine.Snapshot.Storages.Add(key, new StorageItem() { Value = tokenId });
-            IncreaseTotalSupply(engine.Snapshot);
             return true;
         }
 

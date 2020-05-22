@@ -32,19 +32,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void TestIncreaseAndDecreaseTotalSupply()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            test.IncreaseTotalSupply(snapshot);
-            test.DecreaseTotalSupply(snapshot);
-            //double decrease will not effective
-            test.DecreaseTotalSupply(snapshot);
-            StackItem stackItem = test.TotalSupply(ae, null);
-            stackItem.GetBigInteger().Should().Be(0);
-        }
-
-        [TestMethod]
         public void TestMintAndBurn()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();

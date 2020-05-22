@@ -243,7 +243,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new UInt160(Crypto.Hash160(tokenId));
         }
 
-        protected StorageKey CreateMappingKeyBetween(UInt160 first, UInt160 second)
+        private StorageKey CreateMappingKeyBetween(UInt160 first, UInt160 second)
         {
             byte[] byteSource = new byte[first.Size + second.Size];
             System.Array.Copy(first.ToArray(), 0, byteSource, 0, first.Size);
@@ -256,13 +256,13 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_TokenId, innerKey.ToArray());
         }
 
-        public void IncreaseTotalSupply(StoreView snapshot)
+        private void IncreaseTotalSupply(StoreView snapshot)
         {
             StorageItem storage_totalSupply = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
             storage_totalSupply.Value = (new BigInteger(storage_totalSupply.Value) + BigInteger.One).ToByteArray();
         }
 
-        public void DecreaseTotalSupply(StoreView snapshot)
+        private void DecreaseTotalSupply(StoreView snapshot)
         {
             StorageItem storage_totalSupply = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem() { Value = BigInteger.Zero.ToByteArray() });
             BigInteger totalSupply = new BigInteger(storage_totalSupply.Value);
