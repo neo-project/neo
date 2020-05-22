@@ -77,13 +77,13 @@ namespace Neo.SmartContract.Nns
                         Burn(engine, tokenId);
 
                     string parentDomain = string.Join(".", name.Split(".")[1..]);
-                    if (IsRootDomain(parentDomain) || IsCrossLevel(engine.Snapshot, name)) return false;
-
                     byte[] parentTokenId = Encoding.UTF8.GetBytes(parentDomain);
-                    var parentOwner = GetOwner(engine.Snapshot, parentTokenId);
                     var parentDomainState = GetDomainInfo(engine.Snapshot, parentTokenId);
                     if (parentDomainState is null || parentDomainState.IsExpired(engine.Snapshot)) return false;
+
+                    var parentOwner = GetOwner(engine.Snapshot, parentTokenId);
                     if (!InteropService.Runtime.CheckWitnessInternal(engine, parentOwner)) return false;
+
                     ttl = parentDomainState.TimeToLive;
                 }
                 Mint(engine, account, tokenId, ttl);
@@ -201,20 +201,6 @@ namespace Neo.SmartContract.Nns
             IEnumerator enumerator = OwnerOf(snapshot, tokenid);
             if (!enumerator.MoveNext()) return null;
             return (UInt160)enumerator.Current;
-        }
-
-        private bool IsCrossLevel(StoreView snapshot, string name)
-        {
-            if (string.IsNullOrEmpty(name)) return false;
-            string fatherLevel = string.Join(".", name.Split(".")[1..]);
-            byte[] tokenId = Encoding.UTF8.GetBytes(fatherLevel);
-            if (IsRootDomain(fatherLevel))
-            {
-                UInt160 innerKey = GetInnerKey(tokenId);
-                return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root, innerKey)) == null;
-            }
-            var domainInfo = GetDomainInfo(snapshot, tokenId);
-            return (domainInfo is null);
         }
 
         public bool IsDomain(string name)

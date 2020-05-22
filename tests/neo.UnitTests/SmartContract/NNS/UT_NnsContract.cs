@@ -142,7 +142,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //check_getRootName
             var ret_getRootName = Check_GetRootName(snapshot);
-            VM.Types.Array roots = (VM.Types.Array) ret_getRootName.Result;
+            VM.Types.Array roots = (VM.Types.Array)ret_getRootName.Result;
             ret_getRootName.State.Should().BeTrue();
             roots[roots.Count - 1].Should().Be((ByteString)"aa");
 
