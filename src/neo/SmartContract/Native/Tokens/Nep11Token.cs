@@ -24,9 +24,9 @@ namespace Neo.SmartContract.Native.Tokens
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
-        protected const byte Prefix_TotalSupply = 20;
-        protected const byte Prefix_MappingBetweenTokenAndOwner = 21;
-        protected const byte Prefix_TokenId = 22;
+        private const byte Prefix_TotalSupply = 20;
+        private const byte Prefix_MappingBetweenTokenAndOwner = 21;
+        private const byte Prefix_TokenId = 22;
 
         protected Nep11Token()
         {

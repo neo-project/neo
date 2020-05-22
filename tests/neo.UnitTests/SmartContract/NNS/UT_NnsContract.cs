@@ -282,66 +282,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_setText = Check_SetText(snapshot, UInt160.Zero, Encoding.UTF8.GetBytes("EE.AA"), "CC.AA", 3, true);
             ret_setText.Result.Should().Be(false);
             ret_setText.State.Should().BeTrue();
-
-            //check_setOperator
-            var ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_setOperator.Result.Should().Be(true);
-            ret_setOperator.State.Should().BeTrue();
-
-            //check_resolve
-            var ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("AA.AA"), true);
-            Struct @struct = (Struct)ret_resolve.Result;
-            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
-            ret_resolve.State.Should().BeTrue();
-
-            //check_resolve
-            ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("BB.AA"), true);
-            @struct = (Struct)ret_resolve.Result;
-            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
-            ret_resolve.State.Should().BeTrue();
-
-            //check_resolve
-            ret_resolve = Check_Resolve(snapshot, Encoding.UTF8.GetBytes("DD.AA"), true);
-            @struct = (Struct)ret_resolve.Result;
-            @struct[0].GetSpan().ToArray().Should().BeEquivalentTo(new byte[] { 0x04 });
-            ret_resolve.State.Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void Check_Operator()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
-            snapshot.BlockHashIndex.GetAndChange().Index = 0;
-
-            //Check_RegisterRun
-            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA"));
-            ret_registerRootName.Result.Should().Be(true);
-            ret_registerRootName.State.Should().BeTrue();
-
-            //check_getRootName
-            var ret_getRootName = Check_GetRootName(snapshot);
-            VM.Types.Array roots = (VM.Types.Array) ret_getRootName.Result;
-            roots[roots.Count - 1].Should().Be((ByteString)"aa");
-
-            //check_setOperator
-            var ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_setOperator.Result.Should().Be(false);
-            ret_setOperator.State.Should().BeTrue();
-
-            // Register sub domain && and set operator
-            ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
-            ret_registerRootName.Result.Should().Be(true);
-            ret_registerRootName.State.Should().BeTrue();
-
-            ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA"), true);
-            ret_setOperator.Result.Should().Be(true);
-            ret_setOperator.State.Should().BeTrue();
-
-            //check_setOperator cross-level
-            ret_setOperator = Check_SetOperator(snapshot, admin, Encoding.UTF8.GetBytes("AA.AA.AA.AA"), true);
-            ret_setOperator.Result.Should().Be(false);
-            ret_setOperator.State.Should().BeTrue();
         }
 
         [TestMethod()]
@@ -382,33 +322,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result.Should().BeOfType(typeof(VM.Types.Struct));
 
             return (true, result);
-        }
-
-        internal static (bool State, bool Result) Check_SetOperator(StoreView snapshot, UInt160 account, byte[] tokenId, bool signAccount)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(signAccount ? account : UInt160.Zero), snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NNS.Script);
-
-            var script = new ScriptBuilder();
-
-            script.EmitPush(account);
-            script.EmitPush(tokenId);
-            script.EmitPush(2);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("setOperator");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (true, result.ToBoolean());
         }
 
         internal static (bool State, bool Result) Check_SetText(StoreView snapshot, UInt160 account, byte[] tokenId, String text, int recordType, bool signAccount)

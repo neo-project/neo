@@ -8,22 +8,27 @@ namespace Neo.SmartContract.Nns
 {
     public class DomainState : Nep11TokenState
     {
-        public UInt160 Operator { set; get; }
         public uint TimeToLive { set; get; }
+
+        public RecordType Type { set; get; }
+
+        public byte[] Text { get; set; }
 
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);
             Struct @struct = (Struct)stackItem;
-            Operator = @struct[1].GetSpan().AsSerializable<UInt160>();
-            TimeToLive = (uint)@struct[2].GetBigInteger();
+            TimeToLive = (uint)@struct[1].GetBigInteger();
+            Type = (RecordType)@struct[2].GetSpan().ToArray()[0];
+            Text = @struct[3].GetSpan().ToArray();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             Struct @struct = (Struct)base.ToStackItem(referenceCounter);
-            @struct.Add(Operator.ToArray());
             @struct.Add(TimeToLive);
+            @struct.Add(new byte[] { (byte)Type });
+            @struct.Add(Text);
             return @struct;
         }
 

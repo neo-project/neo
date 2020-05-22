@@ -117,21 +117,6 @@ namespace Neo.SmartContract.Nns
             return base.Transfer(engine, from, to, Factor, tokenId);
         }
 
-        //set the operator of the name, only can called by the current owner
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "operator" })]
-        public StackItem SetOperator(ApplicationEngine engine, Array args)
-        {
-            byte[] tokenId = args[0].GetSpan().ToArray();
-            UInt160 @operator = new UInt160(args[1].GetSpan());
-            UInt160 owner = GetOwner(engine.Snapshot, tokenId);
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
-
-            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
-            if (domainInfo is null || domainInfo.IsExpired(engine.Snapshot)) return false;
-            domainInfo.Operator = @operator;
-            return true;
-        }
-
         // only can be called by the admin of the name
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Integer, ContractParameterType.String }, ParameterNames = new[] { "name", "recordType", "text" })]
         private StackItem SetText(ApplicationEngine engine, Array args)
@@ -149,16 +134,13 @@ namespace Neo.SmartContract.Nns
                     if (!IsDomain(cname)) return false;
                     break;
             }
-            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
-            if (domainInfo is null || domainInfo.IsExpired(engine.Snapshot)) return false;
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Operator)) return false;
-
-            UInt160 innerKey = GetInnerKey(tokenId);
-            StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem(new RecordInfo()));
-            RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
-            recordInfo.Type = recordType;
-            recordInfo.Text = text;
+            UInt160 owner = GetOwner(engine.Snapshot, tokenId);
+            if (owner is null) return false;
+            DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
+            if (domainInfo.IsExpired(engine.Snapshot)) return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
+            domainInfo.Type = recordType;
+            domainInfo.Text = text;
             return true;
         }
 
@@ -170,22 +152,22 @@ namespace Neo.SmartContract.Nns
             return Resolve(engine.Snapshot, name).ToStackItem(engine.ReferenceCounter);
         }
 
-        public RecordInfo Resolve(StoreView snapshot, byte[] domain, int resolveCount = 0)
+        public DomainState Resolve(StoreView snapshot, byte[] domain, int resolveCount = 0)
         {
             if (resolveCount > MaxResolveCount)
-                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Too many domain redirects") };
+                return new DomainState { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Too many domain redirects") };
 
             DomainState domainInfo = GetDomainInfo(snapshot, domain);
             if (domainInfo is null || domainInfo.IsExpired(snapshot))
-                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Domain not found or expired") };
+                return new DomainState { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Domain not found or expired") };
 
             UInt160 innerKey = GetInnerKey(domain);
             StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null)
-                return new RecordInfo { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Text does not exist") };
+                return new DomainState { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Text does not exist") };
 
-            RecordInfo recordInfo = storage.GetInteroperable<RecordInfo>();
+            DomainState recordInfo = storage.GetInteroperable<DomainState>();
             switch (recordInfo.Type)
             {
                 case RecordType.CNAME:
@@ -199,8 +181,9 @@ namespace Neo.SmartContract.Nns
         {
             base.Mint(engine, account, tokenId);
             DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
-            domainInfo.Operator = account;
             domainInfo.TimeToLive = ttl;
+            domainInfo.Type = RecordType.A;
+            domainInfo.Text = account.ToArray();
         }
 
         private DomainState GetDomainInfo(StoreView snapshot, byte[] tokenid, bool update = false)
@@ -250,6 +233,7 @@ namespace Neo.SmartContract.Nns
             return regex.Match(name).Success;
         }
     }
+
     internal class RootDomainState : IInteroperable
     {
         public Array Roots;
