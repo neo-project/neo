@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
@@ -26,7 +27,6 @@ namespace Neo.SmartContract.Nns
         private const uint MaxResolveCount = 7;
 
         private const byte Prefix_Root = 24;
-        private const byte Prefix_Record = 25;
 
 
         internal override bool Initialize(ApplicationEngine engine)
@@ -117,7 +117,6 @@ namespace Neo.SmartContract.Nns
             return base.Transfer(engine, from, to, Factor, tokenId);
         }
 
-        // only can be called by the admin of the name
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Integer, ContractParameterType.String }, ParameterNames = new[] { "name", "recordType", "text" })]
         private StackItem SetText(ApplicationEngine engine, Array args)
         {
@@ -135,16 +134,15 @@ namespace Neo.SmartContract.Nns
                     break;
             }
             UInt160 owner = GetOwner(engine.Snapshot, tokenId);
-            if (owner is null) return false;
+            if (owner is null || !InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
+
             DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
             if (domainInfo.IsExpired(engine.Snapshot)) return false;
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
             domainInfo.Type = recordType;
             domainInfo.Text = text;
             return true;
         }
 
-        // return the text and recordtype of the name
         [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "name" })]
         public StackItem Resolve(ApplicationEngine engine, Array args)
         {
@@ -161,20 +159,24 @@ namespace Neo.SmartContract.Nns
             if (domainInfo is null || domainInfo.IsExpired(snapshot))
                 return new DomainState { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Domain not found or expired") };
 
-            UInt160 innerKey = GetInnerKey(domain);
-            StorageKey key = CreateStorageKey(Prefix_Record, innerKey);
-            StorageItem storage = snapshot.Storages.TryGet(key);
-            if (storage is null)
-                return new DomainState { Type = RecordType.ERROR, Text = Encoding.ASCII.GetBytes("Text does not exist") };
-
-            DomainState recordInfo = storage.GetInteroperable<DomainState>();
-            switch (recordInfo.Type)
+            switch (domainInfo.Type)
             {
                 case RecordType.CNAME:
-                    var parameter_cname = recordInfo.Text;
+                    var parameter_cname = domainInfo.Text;
                     return Resolve(snapshot, parameter_cname, ++resolveCount);
             }
-            return recordInfo;
+            return domainInfo;
+        }
+
+        public override JObject Properties(StoreView snapshot, byte[] tokenid)
+        {
+            DomainState domain = GetDomainInfo(snapshot, tokenid);
+            if (domain is null || domain.IsExpired(snapshot))
+                return "{}";
+            JObject json = new JObject();
+            json["name"] = Encoding.ASCII.GetString(domain.TokenId);
+            json["description"] = domain.Text.ToHexString();
+            return json;
         }
 
         protected internal void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId, uint ttl)

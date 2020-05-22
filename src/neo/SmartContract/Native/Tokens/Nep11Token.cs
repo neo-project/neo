@@ -2,6 +2,7 @@
 
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -193,13 +194,10 @@ namespace Neo.SmartContract.Native.Tokens
         protected StackItem Properties(ApplicationEngine engine, Array args)
         {
             byte[] tokenid = args[0].GetSpan().ToArray();
-            return Properties(engine.Snapshot, tokenid);
+            return Properties(engine.Snapshot, tokenid).ToString();
         }
 
-        public virtual String Properties(StoreView snapshot, byte[] tokenid)
-        {
-            return "{}";
-        }
+        public abstract JObject Properties(StoreView snapshot, byte[] tokenid);
 
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId)
         {
