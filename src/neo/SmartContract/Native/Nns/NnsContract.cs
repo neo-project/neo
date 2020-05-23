@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -166,7 +165,7 @@ namespace Neo.SmartContract.Nns
             if (domains.Length > MaxDomainLevel) return false;
             if (domains.Length <= 2) return false; // The first-level must be registered
 
-            for (var i = 1; i < domains.Length - 1; i++)
+            for (var i = 1; i < domains.Length - 1; i++) // Sub domain can be created directly by the owner of parent domain name
             {
                 string parentDomain = string.Join(".", domains.Skip(i));
                 byte[] parentTokenId = Encoding.UTF8.GetBytes(parentDomain);
