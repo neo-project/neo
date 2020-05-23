@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native.Tokens
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            StorageItem storage = snapshot.Storages.TryGet(CreateMappingKeyBetween(account, innerKey));
+            StorageItem storage = snapshot.Storages.TryGet(CreateOwnershipKey(account, innerKey));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<UState>().Balance;
         }
@@ -170,21 +170,21 @@ namespace Neo.SmartContract.Native.Tokens
             if (!amount.IsZero && !from.Equals(to))
             {
                 UInt160 innerKey = GetInnerKey(tokenId);
-                StorageKey fromKey = CreateMappingKeyBetween(from, innerKey);
+                StorageKey fromKey = CreateOwnershipKey(from, innerKey);
                 UState fromBalance = storages.GetAndChange(fromKey)?.GetInteroperable<UState>();
                 if (fromBalance is null) return false;
                 if (fromBalance.Balance < amount) return false;
                 if (fromBalance.Balance == amount)
                 {
                     storages.Delete(fromKey);
-                    storages.Delete(CreateMappingKeyBetween(innerKey, from));
+                    storages.Delete(CreateOwnershipKey(innerKey, from));
                 }
                 fromBalance.Balance -= amount;
 
-                StorageKey toKey = CreateMappingKeyBetween(to, innerKey);
+                StorageKey toKey = CreateOwnershipKey(to, innerKey);
                 UState toBalance = storages.GetAndChange(toKey, () => new StorageItem(new UState())).GetInteroperable<UState>();
                 toBalance.Balance += amount;
-                storages.GetAndChange(CreateMappingKeyBetween(innerKey, to), () => new StorageItem(new byte[0]));
+                storages.GetAndChange(CreateOwnershipKey(innerKey, to), () => new StorageItem(new byte[0]));
             }
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount, tokenId }));
             return true;
@@ -209,8 +209,8 @@ namespace Neo.SmartContract.Native.Tokens
             storages.Add(tokenKey, new StorageItem(new TState() { TokenId = tokenId }));
             IncreaseTotalSupply(engine.Snapshot);
 
-            StorageKey owner2tokenKey = CreateMappingKeyBetween(account, innerKey);
-            StorageKey token2ownerKey = CreateMappingKeyBetween(innerKey, account);
+            StorageKey owner2tokenKey = CreateOwnershipKey(account, innerKey);
+            StorageKey token2ownerKey = CreateOwnershipKey(innerKey, account);
             storages.Add(owner2tokenKey, new StorageItem(new UState() { Balance = Factor }));
             storages.Add(token2ownerKey, new StorageItem(new byte[0]));
 
@@ -228,8 +228,8 @@ namespace Neo.SmartContract.Native.Tokens
             while (!enumerator.MoveNext())
             {
                 UInt160 account = enumerator.Current;
-                storages.Delete(CreateMappingKeyBetween(innerKey, account));
-                storages.Delete(CreateMappingKeyBetween(account, innerKey));
+                storages.Delete(CreateOwnershipKey(innerKey, account));
+                storages.Delete(CreateOwnershipKey(account, innerKey));
             }
             DecreaseTotalSupply(engine.Snapshot);
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, StackItem.Null, Factor, tokenId }));
@@ -240,7 +240,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new UInt160(Crypto.Hash160(tokenId));
         }
 
-        private StorageKey CreateMappingKeyBetween(UInt160 first, UInt160 second)
+        private StorageKey CreateOwnershipKey(UInt160 first, UInt160 second)
         {
             byte[] byteSource = new byte[first.Size + second.Size];
             System.Array.Copy(first.ToArray(), 0, byteSource, 0, first.Size);

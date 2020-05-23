@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -8,6 +9,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -33,64 +35,55 @@ namespace Neo.SmartContract.Nns
             if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Root), new StorageItem(new RootDomainState()
             {
-                Roots = new Array() { "neo", "wallet", "dapp" }
+                Roots = new Array() { "neo", "wallet", "dapp", "org" }
             }));
             return true;
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
-        public StackItem GetRootName(ApplicationEngine engine, Array args)
+        public StackItem GetRoots(ApplicationEngine engine, Array args)
         {
             return engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root)).GetInteroperable<RootDomainState>().Roots;
         }
 
-        [ContractMethod(1_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "account" })]
-        public StackItem Register(ApplicationEngine engine, Array args)
+        [ContractMethod(1_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "owner" })]
+        private StackItem Register(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             string name = Encoding.UTF8.GetString(tokenId).ToLower();
+            if (!IsDomain(name)) return false;
             string[] domains = name.Split(".");
-            string root = domains[domains.Length - 1];
-            if (domains.Length - 1 > MaxDomainLevel) throw new InvalidOperationException("Out of max domain level 4");
+            if (domains.Length > 3) return false; // only the root and first-level name can be registered
 
-            var storages = engine.Snapshot.Storages;
-            RootDomainState rootState = storages.GetAndChange(CreateStorageKey(Prefix_Root)).GetInteroperable<RootDomainState>();
+            string root = domains[^1];
+            RootDomainState rootState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Root)).GetInteroperable<RootDomainState>();
             if (domains.Length == 1)
             {
                 if (rootState.Contains(root)) return false;
                 if (!InteropService.Runtime.CheckWitnessInternal(engine, NEO.GetCommitteeMultiSigAddress(engine.Snapshot))) return false;
                 rootState.Roots.Add(root);
-                return true;
             }
             else
             {
-                if (!rootState.Contains(root)) throw new InvalidOperationException("The root domain is invalid");
+                if (!rootState.Contains(root)) throw new InvalidOperationException("Invalid root domain");
 
-                UInt160 account = args[1].GetSpan().AsSerializable<UInt160>();
                 DomainState domainState = GetDomainInfo(engine.Snapshot, tokenId);
-                var ttl = BlockPerYear;
                 if (domainState != null)
                 {
-                    if (domainState.IsExpired(engine.Snapshot))
-                        Burn(engine, tokenId);
-
-                    string parentDomain = string.Join(".", name.Split(".")[1..]);
-                    byte[] parentTokenId = Encoding.UTF8.GetBytes(parentDomain);
-                    var parentDomainState = GetDomainInfo(engine.Snapshot, parentTokenId);
-                    if (parentDomainState is null || parentDomainState.IsExpired(engine.Snapshot)) return false;
-
-                    var parentOwner = GetOwner(engine.Snapshot, parentTokenId);
-                    if (!InteropService.Runtime.CheckWitnessInternal(engine, parentOwner)) return false;
-
-                    ttl = parentDomainState.TimeToLive;
+                    if (!domainState.IsExpired(engine.Snapshot))
+                        return false;
+                    Burn(engine, tokenId);
                 }
-                Mint(engine, account, tokenId, ttl);
+
+                var ttl = engine.Snapshot.Height + BlockPerYear;
+                UInt160 owner = args[1].GetSpan().AsSerializable<UInt160>();
+                Mint(engine, owner, tokenId, ttl);
             }
             return true;
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "name" })]
-        public StackItem RenewName(ApplicationEngine engine, Array args)
+        private StackItem RenewName(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             string name = Encoding.UTF8.GetString(tokenId).ToLower();
@@ -103,16 +96,6 @@ namespace Neo.SmartContract.Nns
             else
                 domainState.TimeToLive += BlockPerYear;
             return true;
-        }
-
-        public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
-        {
-            if (!Factor.Equals(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
-            var domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
-            if (domainInfo is null) return false;
-            if (domainInfo.IsExpired(engine.Snapshot)) throw new InvalidOperationException("Name is expired");
-
-            return base.Transfer(engine, from, to, Factor, tokenId);
         }
 
         [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Integer, ContractParameterType.String }, ParameterNames = new[] { "name", "recordType", "text" })]
@@ -133,16 +116,16 @@ namespace Neo.SmartContract.Nns
             }
             UInt160 owner = GetOwner(engine.Snapshot, tokenId);
             if (owner is null || !InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
-
             DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
             if (domainInfo.IsExpired(engine.Snapshot)) return false;
+
             domainInfo.Type = recordType;
             domainInfo.Text = text;
             return true;
         }
 
         [ContractMethod(0_03000000, ContractParameterType.String, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "name" })]
-        public StackItem Resolve(ApplicationEngine engine, Array args)
+        private StackItem Resolve(ApplicationEngine engine, Array args)
         {
             byte[] name = args[0].GetSpan().ToArray();
             return Resolve(engine.Snapshot, name).ToStackItem(engine.ReferenceCounter);
@@ -166,12 +149,51 @@ namespace Neo.SmartContract.Nns
             return domainInfo;
         }
 
+        public override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, byte[] tokenId)
+        {
+            if (!Factor.Equals(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
+            var domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
+
+            if (domainInfo != null && !domainInfo.IsExpired(engine.Snapshot))
+                return base.Transfer(engine, from, to, Factor, tokenId);
+
+            if (domainInfo != null && domainInfo.IsExpired(engine.Snapshot))
+                Burn(engine, tokenId);
+
+            string name = Encoding.UTF8.GetString(tokenId).ToLower();
+            if (!IsDomain(name)) return false;
+            string[] domains = name.Split(".");
+            if (domains.Length > MaxDomainLevel) return false;
+            if (domains.Length <= 2) return false; // The first-level must be registered
+
+            for (var i = 1; i < domains.Length - 1; i++)
+            {
+                string parentDomain = string.Join(".", domains.Skip(i));
+                byte[] parentTokenId = Encoding.UTF8.GetBytes(parentDomain);
+                var parentState = GetDomainInfo(engine.Snapshot, parentTokenId);
+                if (parentState is null) continue;
+                if (parentState.IsExpired(engine.Snapshot))
+                {
+                    Burn(engine, parentTokenId);
+                    continue;
+                }
+
+                var parentOwner = GetOwner(engine.Snapshot, parentTokenId);
+                if (!parentOwner.Equals(from) || !InteropService.Runtime.CheckWitnessInternal(engine, parentOwner)) return false;
+
+                var ttl = parentState.TimeToLive;
+                Mint(engine, parentOwner, tokenId, ttl);
+                return base.Transfer(engine, from, to, Factor, tokenId);
+            }
+            return false;
+        }
+
         public override JObject Properties(StoreView snapshot, byte[] tokenid)
         {
             JObject json = new JObject();
             DomainState domain = GetDomainInfo(snapshot, tokenid);
             if (domain is null || domain.IsExpired(snapshot))
-                return new JObject();
+                return json;
             json["name"] = Encoding.ASCII.GetString(domain.TokenId);
             json["description"] = domain.Text.ToHexString();
             return json;
@@ -210,13 +232,35 @@ namespace Neo.SmartContract.Nns
             Regex regex = new Regex(pattern);
             return regex.Match(name).Success;
         }
+    }
 
-        public bool IsRootDomain(string name)
+    public class DomainState : Nep11TokenState
+    {
+        public uint TimeToLive { set; get; }
+        public RecordType Type { set; get; }
+        public byte[] Text { get; set; }
+
+        public override void FromStackItem(StackItem stackItem)
         {
-            if (string.IsNullOrEmpty(name)) return false;
-            string pattern = @"^[a-zA-Z]{0,62}$";
-            Regex regex = new Regex(pattern);
-            return regex.Match(name).Success;
+            base.FromStackItem(stackItem);
+            Struct @struct = (Struct)stackItem;
+            TimeToLive = (uint)@struct[1].GetBigInteger();
+            Type = (RecordType)@struct[2].GetSpan().ToArray()[0];
+            Text = @struct[3].GetSpan().ToArray();
+        }
+
+        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+            @struct.Add(TimeToLive);
+            @struct.Add(new byte[] { (byte)Type });
+            @struct.Add(Text);
+            return @struct;
+        }
+
+        public bool IsExpired(StoreView snapshot)
+        {
+            return snapshot.Height.CompareTo(TimeToLive) > 0;
         }
     }
 
