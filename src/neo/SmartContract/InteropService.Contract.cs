@@ -1,7 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -18,8 +17,8 @@ namespace Neo.SmartContract
         {
             public const int MaxLength = 1024 * 1024;
 
-            public static readonly InteropDescriptor Create = Register("System.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application, CallFlags.AllowModifyStates);
-            public static readonly InteropDescriptor Update = Register("System.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application, CallFlags.AllowModifyStates);
+            public static readonly InteropDescriptor Create = Register("System.Contract.Create", Contract_Create, 0, TriggerType.Application, CallFlags.AllowModifyStates);
+            public static readonly InteropDescriptor Update = Register("System.Contract.Update", Contract_Update, 0, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
             public static readonly InteropDescriptor Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
             public static readonly InteropDescriptor CallEx = Register("System.Contract.CallEx", Contract_CallEx, 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
@@ -31,12 +30,6 @@ namespace Neo.SmartContract
             /// Warning: check first that input public key is valid, before creating the script.
             /// </summary>
             public static readonly InteropDescriptor CreateStandardAccount = Register("System.Contract.CreateStandardAccount", Contract_CreateStandardAccount, 0_00010000, TriggerType.All, CallFlags.None);
-
-            private static long GetDeploymentPrice(EvaluationStack stack, StoreView snapshot)
-            {
-                int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
-                return Storage.GasPerByte * size;
-            }
 
             private static bool Contract_GetCallFlags(ApplicationEngine engine)
             {
@@ -52,6 +45,8 @@ namespace Neo.SmartContract
 
                 if (!engine.TryPop(out ReadOnlySpan<byte> manifest)) return false;
                 if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength) return false;
+
+                if (!engine.AddGas(Storage.GasPerByte * (script.Length + manifest.Length))) return false;
 
                 UInt160 hash = script.ToScriptHash();
                 ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
@@ -74,6 +69,8 @@ namespace Neo.SmartContract
             {
                 if (!engine.TryPop(out StackItem item0)) return false;
                 if (!engine.TryPop(out StackItem item1)) return false;
+
+                if (!engine.AddGas(Storage.GasPerByte * (item0.GetByteLength() + item1.GetByteLength()))) return false;
 
                 var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
                 if (contract is null) return false;
