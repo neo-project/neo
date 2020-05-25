@@ -24,11 +24,13 @@ namespace Neo.Network.P2P
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
+        private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
+        private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
 
-        private const int PingCoolingOffPeriod = 60; // in secconds.
+        private const int PingCoolingOffPeriod = 60_000; // in ms.
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>        
@@ -37,7 +39,6 @@ namespace Neo.Network.P2P
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
-        private readonly UInt256 HeaderTaskHash = UInt256.Zero;
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
 
         public TaskManager(NeoSystem system)
@@ -126,6 +127,8 @@ namespace Neo.Network.P2P
         {
             Context.Watch(Sender);
             TaskSession session = new TaskSession(Sender, version);
+            if (session.IsFullNode)
+                session.AvailableTasks.Add(TaskManager.MemPoolTaskHash);
             sessions.Add(Sender, session);
             RequestTasks(session);
         }
@@ -183,7 +186,6 @@ namespace Neo.Network.P2P
                 return false;
 
             globalTasks[hash] = value + 1;
-
             return true;
         }
 
@@ -230,6 +232,7 @@ namespace Neo.Network.P2P
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
+                hashes.Remove(MemPoolTaskHash);
                 if (hashes.Count > 0)
                 {
                     foreach (UInt256 hash in hashes.ToArray())
@@ -269,8 +272,13 @@ namespace Neo.Network.P2P
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
             }
             else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
+                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
             {
+                if (session.AvailableTasks.Remove(MemPoolTaskHash))
+                {
+                    session.RemoteNode.Tell(Message.Create(MessageCommand.Mempool));
+                }
+
                 session.RemoteNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
             }
         }
