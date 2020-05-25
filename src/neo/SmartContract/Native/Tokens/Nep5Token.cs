@@ -17,7 +17,6 @@ namespace Neo.SmartContract.Native.Tokens
         where TState : Nep5AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
-        public abstract string Name { get; }
         public abstract string Symbol { get; }
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }

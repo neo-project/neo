@@ -82,13 +82,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
     {
         public override int Id => 0x10000005;
 
-        public override string Name => throw new NotImplementedException();
+        public override string Name => "testNep5Token";
 
         public override string Symbol => throw new NotImplementedException();
 
         public override byte Decimals => 8;
-
-        public override string ServiceName => "testNep5Token";
 
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {

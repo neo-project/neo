@@ -48,7 +48,7 @@ namespace Neo.SmartContract
             return disposable;
         }
 
-        private bool AddGas(long gas)
+        internal bool AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
             return testMode || GasConsumed <= gas_amount;
@@ -80,8 +80,6 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack, Snapshot)))
-                return false;
             return InteropService.Invoke(this, method);
         }
 
