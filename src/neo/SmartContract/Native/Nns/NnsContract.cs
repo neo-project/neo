@@ -153,11 +153,13 @@ namespace Neo.SmartContract.Nns
             if (!Factor.Equals(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
             var domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
 
-            if (domainInfo != null && !domainInfo.IsExpired(engine.Snapshot))
-                return base.Transfer(engine, from, to, Factor, tokenId);
-
-            if (domainInfo != null && domainInfo.IsExpired(engine.Snapshot))
-                Burn(engine, tokenId);
+            if (domainInfo != null)
+            {
+                if (domainInfo.IsExpired(engine.Snapshot))
+                    Burn(engine, tokenId);
+                else
+                    return base.Transfer(engine, from, to, Factor, tokenId);
+            }
 
             string name = Encoding.UTF8.GetString(tokenId).ToLower();
             if (!IsDomain(name)) return false;
