@@ -249,7 +249,7 @@ namespace Neo.SmartContract.Native.Tokens
         public UInt160 GetCommitteeAddress(StoreView snapshot)
         {
             ECPoint[] committees = GetCommittee(snapshot);
-            return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 3, committees).ToScriptHash();
+            return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot, int count)
