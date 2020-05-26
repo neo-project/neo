@@ -17,12 +17,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
     [TestClass]
     public class UT_Nep11Token : TestKit
     {
+        private static readonly TestNep11Token test = new TestNep11Token();
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
         }
-        private static readonly TestNep11Token test = new TestNep11Token();
 
         [TestMethod]
         public void TestTotalSupply()
