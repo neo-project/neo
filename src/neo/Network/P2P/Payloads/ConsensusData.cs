@@ -1,7 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -28,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            PrimaryIndex = (uint)reader.ReadVarInt((ulong)Blockchain.ValidatorsCount - 1);
+            PrimaryIndex = (uint)reader.ReadVarInt((ulong)ProtocolSettings.Default.MaxValidatorsCount - 1);
             Nonce = reader.ReadUInt64();
         }
 
