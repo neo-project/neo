@@ -3,10 +3,8 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
-using System;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract
@@ -111,24 +109,6 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(3, publicKeys2);
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsStandardContract(script2));
-        }
-
-        [TestMethod]
-        public void TestToInteropMethodHash()
-        {
-            byte[] temp1 = Encoding.ASCII.GetBytes("AAAA");
-            byte[] temp2 = Neo.Cryptography.Helper.Sha256(temp1);
-            uint result = BitConverter.ToUInt32(temp2, 0);
-            Assert.AreEqual(result, Neo.SmartContract.Helper.ToInteropMethodHash("AAAA"));
-        }
-
-        [TestMethod]
-        public void TestToScriptHash()
-        {
-            byte[] temp1 = Encoding.ASCII.GetBytes("AAAA");
-            byte[] temp2 = Neo.Cryptography.Helper.Sha256(temp1);
-            uint result = BitConverter.ToUInt32(temp2, 0);
-            Assert.AreEqual(result, Neo.SmartContract.Helper.ToInteropMethodHash("AAAA"));
         }
 
         [TestMethod]

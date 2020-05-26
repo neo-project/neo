@@ -11,7 +11,6 @@ namespace Neo.SmartContract.Native.Tokens
 {
     public sealed partial class NeoToken : Nep5Token<NeoToken.AccountState>
     {
-        public override string ServiceName => "Neo.Native.Tokens.NEO";
         public override int Id => -1;
         public override string Name => "NEO";
         public override string Symbol => "neo";
