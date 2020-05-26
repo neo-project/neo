@@ -222,7 +222,7 @@ namespace Neo.SmartContract.Native.Tokens
             var storages = engine.Snapshot.Storages;
             UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey tokenKey = CreateTokenKey(innerKey);
-            if (!storages.Delete(tokenKey)) throw new InvalidOperationException("Token is not exist");
+            if (!storages.Delete(tokenKey)) throw new InvalidOperationException("Token doesn't exist");
 
             IEnumerator<UInt160> enumerator = OwnerOf(engine.Snapshot, tokenId);
             while (!enumerator.MoveNext())
