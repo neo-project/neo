@@ -14,7 +14,7 @@ namespace Neo.Network.P2P
 {
     internal class TaskManager : UntypedActor
     {
-        public class Register { public uint LastBlockIndex; }
+        public class Register { public uint LastBlockIndex; public VersionPayload Version; }
         public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
@@ -22,10 +22,13 @@ namespace Neo.Network.P2P
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
+        private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
+        private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private const int MaxConncurrentTasks = 3;
+
+        private const int PingCoolingOffPeriod = 60_000; // in ms.
         private const int MaxSyncTasksCount = 50;
-        private const int PingCoolingOffPeriod = 60; // in secconds.
 
         private readonly NeoSystem system;
         /// <summary>
@@ -160,7 +163,10 @@ namespace Neo.Network.P2P
         private void OnRegister(Register register)
         {
             Context.Watch(Sender);
-            sessions.Add(Sender, new TaskSession(register.LastBlockIndex));
+            TaskSession session = new TaskSession(register.LastBlockIndex, register.Version);
+            if (session.IsFullNode)
+                session.InvTasks.Add(TaskManager.MemPoolTaskHash, TimeProvider.Current.UtcNow);
+            sessions.Add(Sender, session);
             RequestTasks();
         }
 
@@ -213,7 +219,6 @@ namespace Neo.Network.P2P
                 return false;
 
             globalTasks[hash] = value + 1;
-
             return true;
         }
 
@@ -300,6 +305,10 @@ namespace Neo.Network.P2P
                 if (Blockchain.Singleton.Height >= session.LastBlockIndex
                     && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
                 {
+                    if (session.InvTasks.Remove(MemPoolTaskHash))
+                    {
+                        node.Tell(Message.Create(MessageCommand.Mempool));
+                    }
                     node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
                 }
             }
