@@ -267,7 +267,7 @@ namespace Neo.SmartContract.Nns
             Operator = @struct[1].GetSpan().AsSerializable<UInt160>();
             TimeToLive = (uint)@struct[2].GetBigInteger();
             Type = (RecordType)@struct[3].GetSpan().ToArray()[0];
-            Text = @struct[3].GetSpan().ToArray();
+            Text = @struct[4].GetSpan().ToArray();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
