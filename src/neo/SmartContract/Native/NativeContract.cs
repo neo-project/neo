@@ -4,7 +4,6 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
-using Neo.SmartContract.Nns;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -26,7 +25,6 @@ namespace Neo.SmartContract.Native
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
-        public static NnsContract NNS { get; } = new NnsContract();
 
         public abstract string Name { get; }
         public byte[] Script { get; }
