@@ -125,7 +125,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Register register:
-                    OnRegister(register);
+                    OnRegister(register.Version);
                     break;
                 case Update update:
                     OnUpdate(update.LastBlockIndex);
@@ -158,10 +158,10 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnRegister(Register register)
+        private void OnRegister(VersionPayload version)
         {
             Context.Watch(Sender);
-            TaskSession session = new TaskSession(register.Version);
+            TaskSession session = new TaskSession(version);
             if (session.IsFullNode)
                 session.InvTasks.Add(MemPoolTaskHash, TimeProvider.Current.UtcNow);
             sessions.Add(Sender, session);
