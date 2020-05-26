@@ -25,9 +25,8 @@ namespace Neo.Network.P2P
         private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private const int MaxConncurrentTasks = 3;
-
-        private const int PingCoolingOffPeriod = 60_000; // in ms.
         private const int MaxSyncTasksCount = 50;
+        private const int PingCoolingOffPeriod = 60_000; // in ms.
 
         private readonly NeoSystem system;
         /// <summary>
