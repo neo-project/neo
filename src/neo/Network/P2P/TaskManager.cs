@@ -22,7 +22,6 @@ namespace Neo.Network.P2P
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
-        private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
         private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private const int MaxConncurrentTasks = 3;
@@ -303,7 +302,7 @@ namespace Neo.Network.P2P
                 var node = item.Key;
                 var session = item.Value;
                 if (Blockchain.Singleton.Height >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
+                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
                 {
                     if (session.InvTasks.Remove(MemPoolTaskHash))
                     {
