@@ -14,7 +14,7 @@ namespace Neo.Network.P2P
 {
     internal class TaskManager : UntypedActor
     {
-        public class Register { public uint LastBlockIndex; public VersionPayload Version; }
+        public class Register { public VersionPayload Version; }
         public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
@@ -162,9 +162,9 @@ namespace Neo.Network.P2P
         private void OnRegister(Register register)
         {
             Context.Watch(Sender);
-            TaskSession session = new TaskSession(register.LastBlockIndex, register.Version);
+            TaskSession session = new TaskSession(register.Version);
             if (session.IsFullNode)
-                session.InvTasks.Add(TaskManager.MemPoolTaskHash, TimeProvider.Current.UtcNow);
+                session.InvTasks.Add(MemPoolTaskHash, TimeProvider.Current.UtcNow);
             sessions.Add(Sender, session);
             RequestTasks();
         }

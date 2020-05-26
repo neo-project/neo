@@ -16,11 +16,11 @@ namespace Neo.Network.P2P
         public uint TimeoutTimes = 0;
         public uint InvalidBlockCount = 0;
 
-        public TaskSession(uint lastBlockIndex, VersionPayload version)
+        public TaskSession(VersionPayload version)
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
             this.IsFullNode = fullNode != null;
-            this.LastBlockIndex = lastBlockIndex;
+            this.LastBlockIndex = fullNode.StartHeight;
         }
     }
 }
