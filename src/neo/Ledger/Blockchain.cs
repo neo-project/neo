@@ -302,7 +302,7 @@ namespace Neo.Ledger
             };
             if (relay && rr.Result == VerifyResult.Succeed)
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
-            if (!Sender.IsNobody()) Sender.Tell(rr);
+            Sender.Tell(rr);
             Context.System.EventStream.Publish(rr);
         }
 
