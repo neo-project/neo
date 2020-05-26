@@ -298,7 +298,9 @@ namespace Neo.Network.P2P
         private void OnInventoryReceived(IInventory inventory)
         {
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
-            system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+            if (inventory is Transaction transaction)
+                system.Consensus?.Tell(transaction);
+            system.Blockchain.Tell(inventory);
             pendingKnownHashes.Remove(inventory.Hash);
             knownHashes.Add(inventory.Hash);
         }

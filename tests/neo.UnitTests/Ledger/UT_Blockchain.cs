@@ -131,10 +131,7 @@ namespace Neo.UnitTests.Ledger
                 var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
 
                 senderProbe.Send(system.Blockchain, tx);
-                senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
-
                 senderProbe.Send(system.Blockchain, tx);
-                senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
             }
         }
 
