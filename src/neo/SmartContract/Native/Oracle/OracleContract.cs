@@ -319,7 +319,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// Oracle get the hash of the current OracleFlow [Request/Response]
         /// </summary>
         [ContractMethod(0_01000000, ContractParameterType.Boolean, requiredCallFlags: CallFlags.None)]
-        private StackItem GetHash(ApplicationEngine engine, Array args)
+        private StackItem GetResponseHash(ApplicationEngine engine, Array args)
         {
             if (engine.OracleCache == null)
             {

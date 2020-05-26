@@ -396,7 +396,7 @@ namespace Neo.Wallets
 
                             // Check that the hash of the whole responses are exactly the same
 
-                            assertScript.EmitAppCall(NativeContract.Oracle.Hash, "getHash");
+                            assertScript.EmitAppCall(NativeContract.Oracle.Hash, "getResponseHash");
                             assertScript.EmitPush(oracleCache.Hash.ToArray());
                             assertScript.Emit(OpCode.EQUAL);
                             assertScript.Emit(OpCode.ASSERT);
