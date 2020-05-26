@@ -404,52 +404,9 @@ namespace Neo.Wallets
                             // Concat two scripts [OracleAsserts+Script]
 
                             script = assertScript.ToArray().Concat(script).ToArray();
-                            oracle = OracleWalletBehaviour.OracleWithoutAssert;
 
-                            // We need to remove new oracle calls (OracleService.Process)
+                            // Change the Transaction type because it's an oracle request
 
-                            oracleCache = new OracleExecutionCache(oracleCache.Responses);
-
-                            // We need to compute the gas again with the right script
-                            goto Start;
-                        }
-
-                        // Change the Transaction type because it's an oracle request
-
-                        if (oracle == OracleWalletBehaviour.OracleWithAssert)
-                        {
-                            // If we want the same result for accept the response, we need to create asserts at the begining of the script
-
-                            var assertScript = new ScriptBuilder();
-
-                            foreach (var oracleRequest in oracleRequests)
-                            {
-                                // Do the request in order to cache the result
-
-                                if (oracleRequest is OracleHttpsRequest https)
-                                {
-                                    assertScript.EmitAppCall(NativeContract.Oracle.Hash, "get", https.URL.ToString(), https.Filter?.ContractHash, https.Filter?.FilterMethod, https.Filter?.FilterArgs);
-                                }
-                                else
-                                {
-                                    throw new NotImplementedException();
-                                }
-                            }
-
-                            // Clear the stack
-
-                            assertScript.Emit(OpCode.CLEAR);
-
-                            // Check that the hash of the whole responses are exactly the same
-
-                            assertScript.EmitAppCall(NativeContract.Oracle.Hash, "getHash");
-                            assertScript.EmitPush(oracleCache.Hash.ToArray());
-                            assertScript.Emit(OpCode.EQUAL);
-                            assertScript.Emit(OpCode.ASSERT);
-
-                            // Concat two scripts [OracleAsserts+Script]
-
-                            script = assertScript.ToArray().Concat(script).ToArray();
                             oracle = OracleWalletBehaviour.OracleWithoutAssert;
 
                             // We need to remove new oracle calls (OracleService.Process)
