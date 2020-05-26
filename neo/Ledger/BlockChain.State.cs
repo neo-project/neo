@@ -45,10 +45,11 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewStateRoot(StateRoot stateRoot)
         {
-            if (stateRoot.Index < StateRootEnableIndex || stateRoot.Index <= StateHeight) return RelayResultReason.Invalid;
+            var expectedStateRootIndex = Math.Max(StateRootEnableIndex, StateHeight + 1);
+            if (stateRoot.Index < expectedStateRootIndex) return RelayResultReason.Invalid;
+            if (expectedStateRootIndex + MaxRootCacheCount < stateRoot.Index) return RelayResultReason.OutOfMemory;
             if (stateRootCache.ContainsKey(stateRoot.Index)) return RelayResultReason.AlreadyExists;
-            if (currentSnapshot.StateHeight + MaxRootCacheCount < stateRoot.Index) return RelayResultReason.UnableToVerify;
-            if (stateRoot.Index > StateHeight + 1 && stateRoot.Index != StateRootEnableIndex)
+            if (stateRoot.Index > expectedStateRootIndex)
             {
                 stateRootCache.Add(stateRoot.Index, stateRoot);
                 return RelayResultReason.Succeed;
