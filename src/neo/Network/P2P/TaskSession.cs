@@ -19,7 +19,6 @@ namespace Neo.Network.P2P
         public TaskSession(uint lastBlockIndex, VersionPayload version)
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
-
             this.IsFullNode = fullNode != null;
             this.LastBlockIndex = lastBlockIndex;
         }
