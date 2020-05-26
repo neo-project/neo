@@ -164,8 +164,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (bool State, bool Result) Check_RenewName(StoreView snapshot, byte[] tokenId)
         {
-            var engine = new ApplicationEngine(TriggerType.Application,null, snapshot, 0, true);
-
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(NativeContract.NNS.Script);
 
             var script = new ScriptBuilder();

@@ -162,7 +162,6 @@ namespace Neo.SmartContract.Nns
         {
             if (!Factor.Equals(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
             var domainInfo = GetDomainInfo(engine.Snapshot, tokenId);
-
             if (domainInfo != null)
             {
                 if (domainInfo.IsExpired(engine.Snapshot))
