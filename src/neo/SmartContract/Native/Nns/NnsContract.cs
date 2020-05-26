@@ -27,12 +27,12 @@ namespace Neo.SmartContract.Nns
         private const uint MaxDomainLevel = 4;
         private const uint MaxResolveCount = 7;
 
-        private const byte Prefix_Root = 24;
+        private const byte Prefix_Roots = 24;
 
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Root), new StorageItem(new RootDomainState()
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Roots), new StorageItem(new RootDomainState()
             {
                 Roots = new Array() { "neo", "wallet", "dapp", "org" }
             }));
@@ -42,7 +42,7 @@ namespace Neo.SmartContract.Nns
         [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
         public StackItem GetRoots(ApplicationEngine engine, Array args)
         {
-            return engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Root)).GetInteroperable<RootDomainState>().Roots;
+            return engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots)).GetInteroperable<RootDomainState>().Roots;
         }
 
         [ContractMethod(1_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "name", "owner" })]
@@ -54,7 +54,7 @@ namespace Neo.SmartContract.Nns
             if (domains.Length > 3) return false; // only the root and first-level name can be registered
 
             string root = domains[^1];
-            RootDomainState rootState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Root)).GetInteroperable<RootDomainState>();
+            RootDomainState rootState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Roots)).GetInteroperable<RootDomainState>();
             if (domains.Length == 1)
             {
                 if (rootState.Contains(root) || !IsRoot(root)) return false;
@@ -112,13 +112,24 @@ namespace Neo.SmartContract.Nns
                     if (!IsDomain(cname)) return false;
                     break;
             }
-            UInt160 owner = GetOwner(engine.Snapshot, tokenId);
-            if (owner is null || !InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
             DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
-            if (domainInfo.IsExpired(engine.Snapshot)) return false;
-
+            if (domainInfo is null || domainInfo.IsExpired(engine.Snapshot)) return false;
+            if (!InteropService.Runtime.CheckWitnessInternal(engine, domainInfo.Operator)) return false;
             domainInfo.Type = recordType;
             domainInfo.Text = text;
+            return true;
+        }
+
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.Hash160 }, ParameterNames = new[] { "tokenid", "operator" })]
+        private StackItem SetOperator(ApplicationEngine engine, Array args)
+        {
+            byte[] tokenId = args[0].GetSpan().ToArray();
+            UInt160 @operator = args[1].GetSpan().AsSerializable<UInt160>();
+
+            var owner = GetOwner(engine.Snapshot, tokenId);
+            if (owner is null || !InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
+            DomainState domainState = GetDomainInfo(engine.Snapshot, tokenId, true);
+            domainState.Operator = @operator;
             return true;
         }
 
@@ -203,6 +214,7 @@ namespace Neo.SmartContract.Nns
         {
             base.Mint(engine, account, tokenId);
             DomainState domainInfo = GetDomainInfo(engine.Snapshot, tokenId, true);
+            domainInfo.Operator = account;
             domainInfo.TimeToLive = ttl;
             domainInfo.Type = RecordType.A;
             domainInfo.Text = account.ToArray();
@@ -244,6 +256,7 @@ namespace Neo.SmartContract.Nns
 
     public class DomainState : Nep11TokenState
     {
+        public UInt160 Operator { set; get; }
         public uint TimeToLive { set; get; }
         public RecordType Type { set; get; }
         public byte[] Text { get; set; }
@@ -252,14 +265,16 @@ namespace Neo.SmartContract.Nns
         {
             base.FromStackItem(stackItem);
             Struct @struct = (Struct)stackItem;
-            TimeToLive = (uint)@struct[1].GetBigInteger();
-            Type = (RecordType)@struct[2].GetSpan().ToArray()[0];
+            Operator = @struct[1].GetSpan().AsSerializable<UInt160>();
+            TimeToLive = (uint)@struct[2].GetBigInteger();
+            Type = (RecordType)@struct[3].GetSpan().ToArray()[0];
             Text = @struct[3].GetSpan().ToArray();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+            @struct.Add(Operator.ToArray());
             @struct.Add(TimeToLive);
             @struct.Add(new byte[] { (byte)Type });
             @struct.Add(Text);

@@ -286,7 +286,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_setText.State.Should().BeTrue();
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void IsDomainTest()
         {
             Assert.IsFalse(NativeContract.NNS.IsDomain(""));
@@ -297,6 +297,49 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Assert.IsTrue(NativeContract.NNS.IsDomain("www.neo.org"));
             Assert.IsTrue(NativeContract.NNS.IsDomain("neo.org"));
             Assert.IsTrue(NativeContract.NNS.IsDomain("bb.aa123"));
+        }
+
+        [TestMethod]
+        public void Check_SetOperator()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
+            snapshot.BlockHashIndex.GetAndChange().Index = 0;
+
+            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("aa.dapp"));
+            ret_registerRootName.Result.Should().Be(true);
+            ret_registerRootName.State.Should().BeTrue();
+
+            var ret_operator = Check_Operator(snapshot, admin, Encoding.UTF8.GetBytes("aa.dapp"), UInt160.Zero);
+            ret_operator.Result.Should().BeTrue();
+            ret_operator.State.Should().BeTrue();
+        }
+
+        internal static (bool State, bool Result) Check_Operator(StoreView snapshot, UInt160 from, byte[] tokenId, UInt160 @operator)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(from), snapshot, 0, true);
+
+            engine.LoadScript(NativeContract.NNS.Script);
+
+            var script = new ScriptBuilder();
+
+            script.EmitPush(@operator);
+            script.EmitPush(tokenId);
+            script.EmitPush(2);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("setOperator");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (true, result.ToBoolean());
         }
 
         internal static (bool State, StackItem Result) Check_Resolve(StoreView snapshot, byte[] tokenId, bool signAccount)
