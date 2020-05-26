@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native.Tokens
             var storages = engine.Snapshot.Storages;
             UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey tokenKey = CreateTokenKey(innerKey);
-            if (storages.TryGet(tokenKey) != null) throw new InvalidOperationException("Token is exist");
+            if (storages.TryGet(tokenKey) != null) throw new InvalidOperationException("Token already exist");
 
             storages.Add(tokenKey, new StorageItem(new TState() { TokenId = tokenId }));
             IncreaseTotalSupply(engine.Snapshot);
