@@ -90,12 +90,12 @@ namespace Neo.SmartContract.Native.Tokens
         internal override void Initialize(ApplicationEngine engine)
         {
             BigInteger amount = TotalAmount;
-            for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
+            for (int i = 0; i < Blockchain.StandbyCommittee.Length; i++)
             {
                 ECPoint pubkey = Blockchain.StandbyCommittee[i];
                 RegisterCandidate(engine.Snapshot, pubkey);
-                BigInteger balance = TotalAmount / 2 / (Blockchain.ValidatorsCount * 2 + (Blockchain.CommitteeMembersCount - Blockchain.ValidatorsCount));
-                if (i < Blockchain.ValidatorsCount) balance *= 2;
+                BigInteger balance = TotalAmount / 2 / (Blockchain.StandbyValidators.Length * 2 + (Blockchain.StandbyCommittee.Length - Blockchain.StandbyValidators.Length));
+                if (i < Blockchain.StandbyValidators.Length) balance *= 2;
                 UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
                 Mint(engine, account, balance);
                 Vote(engine.Snapshot, account, pubkey);
@@ -229,7 +229,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetValidators(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, Blockchain.ValidatorsCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxValidatorsCount).OrderBy(p => p).ToArray();
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
@@ -240,7 +240,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, Blockchain.CommitteeMembersCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxCommitteeMembersCount).OrderBy(p => p).ToArray();
         }
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot, int count)
