@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
     }
 
-    public class TestNep11Token : Nep11Token<TestNep11TokenState, Nep11AccountState>
+    public class TestNep11Token : Nep11Token<TestNep11TokenState, NepAccountState>
     {
         public override int Id => 0x10000006;
 
