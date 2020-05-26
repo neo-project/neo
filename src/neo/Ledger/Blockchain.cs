@@ -33,10 +33,10 @@ namespace Neo.Ledger
         public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
         public static readonly byte CommitteeMembersCount = (byte)ProtocolSettings.Default.StandbyCommittee.Length;
-        public static readonly byte ValidatorsCount = ProtocolSettings.Default.ValidatorsCount;
+        public static readonly byte ValidatorsCount = ProtocolSettings.Default.MaxValidatorsCount;
         public static readonly uint Epoch = ProtocolSettings.Default.Epoch;
-        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
-        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[..ValidatorsCount];
+        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Take(ProtocolSettings.Default.MaxCommitteeMembersCount).Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly ECPoint[] StandbyValidators = StandbyCommittee.Take(ProtocolSettings.Default.MaxValidatorsCount).ToArray();
 
         public static readonly Block GenesisBlock = new Block
         {

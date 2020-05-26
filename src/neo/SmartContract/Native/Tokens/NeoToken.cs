@@ -33,12 +33,12 @@ namespace Neo.SmartContract.Native.Tokens
             if (base.TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
 
             BigInteger amount = TotalAmount;
-            for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
+            for (int i = 0; i < Blockchain.StandbyCommittee.Length; i++)
             {
                 ECPoint pubkey = Blockchain.StandbyCommittee[i];
                 RegisterCandidate(engine.Snapshot, pubkey);
-                BigInteger balance = TotalAmount / 2 / (Blockchain.ValidatorsCount * 2 + (Blockchain.CommitteeMembersCount - Blockchain.ValidatorsCount));
-                if (i < Blockchain.ValidatorsCount) balance *= 2;
+                BigInteger balance = TotalAmount / 2 / (Blockchain.StandbyValidators.Length * 2 + (Blockchain.StandbyCommittee.Length - Blockchain.StandbyValidators.Length));
+                if (i < Blockchain.StandbyValidators.Length) balance *= 2;
                 UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
                 Mint(engine, account, balance);
                 Vote(engine.Snapshot, account, pubkey);
@@ -66,6 +66,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
+                if (!state_validator.Registered) return;
                 state_validator.Votes += amount;
             }
         }
