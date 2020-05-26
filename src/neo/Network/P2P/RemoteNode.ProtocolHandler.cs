@@ -300,7 +300,7 @@ namespace Neo.Network.P2P
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
             if (inventory is Transaction transaction)
                 system.Consensus?.Tell(transaction);
-            system.Blockchain.Tell(inventory);
+            system.Blockchain.Tell(inventory, ActorRefs.NoSender);
             pendingKnownHashes.Remove(inventory.Hash);
             knownHashes.Add(inventory.Hash);
         }
