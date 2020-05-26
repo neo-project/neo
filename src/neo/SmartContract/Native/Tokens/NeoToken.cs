@@ -246,9 +246,9 @@ namespace Neo.SmartContract.Native.Tokens
             return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxCommitteeMembersCount).OrderBy(p => p).ToArray();
         }
 
-        public UInt160 GetCommitteeMultiSigAddress(StoreView snapshot)
+        public UInt160 GetCommitteeAddress(StoreView snapshot)
         {
-            ECPoint[] committees = NEO.GetCommittee(snapshot);
+            ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 3, committees).ToScriptHash();
         }
 

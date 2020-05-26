@@ -61,7 +61,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
 
@@ -124,7 +124,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // With signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot)),
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(NativeContract.NEO.GetCommitteeAddress(snapshot)),
                 "setMaxTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.ToBoolean().Should().BeTrue();
@@ -158,7 +158,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetBigInteger().Should().Be(1000);
 
             // With signature
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
@@ -179,7 +179,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
 

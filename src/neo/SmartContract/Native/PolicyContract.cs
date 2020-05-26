@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
 
         private bool CheckCommittees(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeMultiSigAddress(engine.Snapshot);
+            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
             return InteropService.Runtime.CheckWitnessInternal(engine, committeeMultiSigAddr);
         }
 
