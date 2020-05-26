@@ -50,7 +50,6 @@ namespace Neo.SmartContract.Nns
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             string name = Encoding.UTF8.GetString(tokenId).ToLower();
-            if (!IsDomain(name)) return false;
             string[] domains = name.Split(".");
             if (domains.Length > 3) return false; // only the root and first-level name can be registered
 
@@ -58,13 +57,13 @@ namespace Neo.SmartContract.Nns
             RootDomainState rootState = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Root)).GetInteroperable<RootDomainState>();
             if (domains.Length == 1)
             {
-                if (rootState.Contains(root)) return false;
+                if (rootState.Contains(root) || !IsRoot(root)) return false;
                 if (!InteropService.Runtime.CheckWitnessInternal(engine, NEO.GetCommitteeMultiSigAddress(engine.Snapshot))) return false;
                 rootState.Roots.Add(root);
             }
             else
             {
-                if (!rootState.Contains(root)) throw new InvalidOperationException("Invalid root domain");
+                if (!rootState.Contains(root) || !IsDomain(name)) return false;
 
                 DomainState domainState = GetDomainInfo(engine.Snapshot, tokenId);
                 if (domainState != null)
@@ -230,6 +229,14 @@ namespace Neo.SmartContract.Nns
         {
             if (string.IsNullOrEmpty(name)) return false;
             string pattern = @"^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62}){1,3}$";
+            Regex regex = new Regex(pattern);
+            return regex.Match(name).Success;
+        }
+
+        public bool IsRoot(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            string pattern = @"^[a-zA-Z]{0,62}$";
             Regex regex = new Regex(pattern);
             return regex.Match(name).Success;
         }

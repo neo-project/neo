@@ -46,11 +46,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_Register()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
             UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
 
-            //Check_RegisterRun
-            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA"));
+            //Check_Register
+            var ret_registerRootName = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("bb"));
             ret_registerRootName.State.Should().BeTrue();
             ret_registerRootName.Result.Should().Be(true);
 
@@ -58,10 +58,15 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var ret_getRootName = Check_GetRootName(snapshot);
             VM.Types.Array roots = (VM.Types.Array)ret_getRootName.Result;
             ret_getRootName.State.Should().BeTrue();
-            roots[roots.Count - 1].Should().Be((ByteString)"aa");
+            roots[roots.Count - 1].Should().Be((ByteString)"bb");
 
-            //check_transfer_create_first-level_domain
-            var ret_transfer = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("AA.AA"));
+            // Register invalid domain, which root is not invalid
+            var ret_transfer = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("aa.cc"));
+            ret_transfer.Result.Should().BeFalse();
+            ret_transfer.State.Should().BeTrue();
+
+            // Register normal domain
+            ret_transfer = Check_RegisterRun(snapshot, admin.ToArray(), Encoding.UTF8.GetBytes("aa.bb"));
             ret_transfer.Result.Should().BeTrue();
             ret_transfer.State.Should().BeTrue();
         }
@@ -69,7 +74,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_Transfer()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
             var factor = 1;
             UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
 
@@ -132,7 +137,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_Renew()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
             UInt160 admin = NativeContract.NEO.GetCommitteeMultiSigAddress(snapshot);
 
             //Check_RegisterRun
@@ -152,24 +157,21 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret_transfer.State.Should().BeTrue();
 
             //check_renewName
-            var ret_renewName = Check_RenewName(snapshot, admin.ToArray(), UInt160.Zero, Encoding.UTF8.GetBytes("AA.AA"), 100000000L);
+            var ret_renewName = Check_RenewName(snapshot, Encoding.UTF8.GetBytes("AA.AA"));
             ret_renewName.Result.Should().BeTrue();
             ret_renewName.State.Should().BeTrue();
         }
 
-        internal static (bool State, bool Result) Check_RenewName(StoreView snapshot, byte[] from, UInt160 account, byte[] tokenId, BigInteger height)
+        internal static (bool State, bool Result) Check_RenewName(StoreView snapshot, byte[] tokenId)
         {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(account), snapshot, 0, true);
+            var engine = new ApplicationEngine(TriggerType.Application,null, snapshot, 0, true);
 
             engine.LoadScript(NativeContract.NNS.Script);
 
             var script = new ScriptBuilder();
 
-            script.EmitPush(account);
-            script.EmitPush(height);
             script.EmitPush(tokenId);
-            script.EmitPush(3);
+            script.EmitPush(1);
             script.Emit(OpCode.PACK);
             script.EmitPush("renewName");
             engine.LoadScript(script.ToArray());
@@ -521,7 +523,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             script.EmitPush(0);
             script.Emit(OpCode.PACK);
-            script.EmitPush("getRootName");
+            script.EmitPush("getRoots");
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
