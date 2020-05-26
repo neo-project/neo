@@ -287,13 +287,6 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestGetVarSizeBigInteger()
-        {
-            int result = Neo.IO.Helper.GetVarSize(BigInteger.One);
-            Assert.AreEqual(2, result);
-        }
-
-        [TestMethod]
         public void TestReadFixedString()
         {
             MemoryStream stream = new MemoryStream();

@@ -1,5 +1,6 @@
 #pragma warning disable IDE0060
 
+using Akka.Configuration.Hocon;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
@@ -18,7 +19,7 @@ namespace Neo.SmartContract.Native.Tokens
 {
     public abstract class Nep11Token<TState, UState> : NativeContract
         where TState : Nep11TokenState, new()
-        where UState : Nep11AccountState, new()
+        where UState : NepAccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-11", "NEP-10" };
         public abstract string Symbol { get; }
@@ -28,6 +29,8 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_TotalSupply = 20;
         private const byte Prefix_Ownership = 21;
         private const byte Prefix_TokenId = 22;
+
+        private const int MaxTokenIdLength = 256;
 
         protected Nep11Token()
         {
@@ -59,7 +62,7 @@ namespace Neo.SmartContract.Native.Tokens
                         },
                         new ContractParameterDefinition()
                         {
-                            Name = "tokenid",
+                            Name = "tokenId",
                             Type = ContractParameterType.ByteArray
                         }
                     },
@@ -106,6 +109,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             UInt160 account = new UInt160(args[0].GetSpan());
             byte[] tokenId = args[1].GetSpan().ToArray();
+            if (tokenId.Length > MaxTokenIdLength) return false;
             return BalanceOf(engine.Snapshot, account, tokenId);
         }
 
@@ -137,6 +141,7 @@ namespace Neo.SmartContract.Native.Tokens
         public StackItem OwnerOf(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
+            if (tokenId.Length > MaxTokenIdLength) return false;
             return new InteropInterface(OwnerOf(engine.Snapshot, tokenId));
         }
 
@@ -156,6 +161,7 @@ namespace Neo.SmartContract.Native.Tokens
             UInt160 to = new UInt160(args[1].GetSpan());
             BigInteger amount = args[2].GetBigInteger();
             byte[] tokenId = args[3].GetSpan().ToArray();
+            if (tokenId.Length > MaxTokenIdLength) return false;
             return Transfer(engine, from, to, amount, tokenId);
         }
 
@@ -179,8 +185,10 @@ namespace Neo.SmartContract.Native.Tokens
                     storages.Delete(fromKey);
                     storages.Delete(CreateOwnershipKey(innerKey, from));
                 }
-                fromBalance.Balance -= amount;
-
+                else
+                {
+                    fromBalance.Balance -= amount;
+                }
                 StorageKey toKey = CreateOwnershipKey(to, innerKey);
                 UState toBalance = storages.GetAndChange(toKey, () => new StorageItem(new UState())).GetInteroperable<UState>();
                 toBalance.Balance += amount;
@@ -193,14 +201,17 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
         protected StackItem Properties(ApplicationEngine engine, Array args)
         {
-            byte[] tokenid = args[0].GetSpan().ToArray();
-            return Properties(engine.Snapshot, tokenid).ToString();
+            byte[] tokenId = args[0].GetSpan().ToArray();
+            if (tokenId.Length > MaxTokenIdLength) return false;
+            return Properties(engine.Snapshot, tokenId).ToString();
         }
 
         public abstract JObject Properties(StoreView snapshot, byte[] tokenid);
 
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId)
         {
+            if (tokenId.Length > MaxTokenIdLength) throw new InvalidOperationException("The length of tokenId exceeds the maximum limit");
+
             var storages = engine.Snapshot.Storages;
             UInt160 innerKey = GetInnerKey(tokenId);
             StorageKey tokenKey = CreateTokenKey(innerKey);

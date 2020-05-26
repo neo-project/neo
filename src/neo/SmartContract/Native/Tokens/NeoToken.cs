@@ -270,7 +270,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.Value.AsSerializableArray<ECPoint>();
         }
 
-        public class AccountState : Nep5AccountState
+        public class AccountState : NepAccountState
         {
             public uint BalanceHeight;
             public ECPoint VoteTo;
