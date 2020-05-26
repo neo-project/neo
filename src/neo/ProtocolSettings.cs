@@ -10,7 +10,8 @@ namespace Neo
         public uint Magic { get; }
         public byte AddressVersion { get; }
         public string[] StandbyCommittee { get; }
-        public byte ValidatorsCount { get; }
+        public byte MaxCommitteeMembersCount { get; }
+        public byte MaxValidatorsCount { get; }
         public string[] SeedList { get; }
         public uint MillisecondsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
@@ -77,7 +78,8 @@ namespace Neo
                     "03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc",
                     "02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a"
                 };
-            this.ValidatorsCount = section.GetValue("ValidatorsCount", (byte)7);
+            this.MaxCommitteeMembersCount = section.GetValue("MaxCommitteeMembersCount", (byte)21);
+            this.MaxValidatorsCount = section.GetValue("MaxValidatorsCount", (byte)7);
             IConfigurationSection section_sl = section.GetSection("SeedList");
             if (section_sl.Exists())
                 this.SeedList = section_sl.GetChildren().Select(p => p.Get<string>()).ToArray();
