@@ -66,6 +66,10 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
+        private static readonly int maxWorkThreadsDuringPersist = Environment.ProcessorCount / 2;
+        private static readonly int maxIOWorkThreadsDuringPersist = Environment.ProcessorCount;
+        private static readonly int maxWorkThreads = Environment.ProcessorCount * 2;
+        private static readonly int maxIOWorkThreads = Environment.ProcessorCount;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -459,6 +463,8 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
+            ThreadPool.SetMinThreads(maxWorkThreadsDuringPersist, maxIOWorkThreadsDuringPersist);
+            ThreadPool.SetMaxThreads(maxWorkThreadsDuringPersist, maxIOWorkThreadsDuringPersist);
             using (SnapshotView snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
@@ -538,6 +544,8 @@ namespace Neo.Ledger
             block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            ThreadPool.SetMaxThreads(maxWorkThreads, maxIOWorkThreads);
+            ThreadPool.SetMinThreads(maxWorkThreads, maxIOWorkThreads);
         }
 
         protected override void PostStop()
