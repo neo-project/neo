@@ -18,6 +18,7 @@ namespace Neo.Network.P2P
         public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
+        private class Counter { public int Value; }
         private class Timer { }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
@@ -33,7 +34,7 @@ namespace Neo.Network.P2P
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
-        private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
+        private readonly Dictionary<UInt256, Counter> globalTasks = new Dictionary<UInt256, Counter>();
         private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
         private readonly List<uint> failedSyncTasks = new List<uint>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
@@ -198,10 +199,10 @@ namespace Neo.Network.P2P
         {
             if (globalTasks.TryGetValue(hash, out var value))
             {
-                if (value == 1)
+                if (value.Value == 1)
                     globalTasks.Remove(hash);
                 else
-                    globalTasks[hash] = value - 1;
+                    value.Value--;
             }
         }
 
@@ -210,13 +211,13 @@ namespace Neo.Network.P2P
         {
             if (!globalTasks.TryGetValue(hash, out var value))
             {
-                globalTasks[hash] = 1;
+                globalTasks[hash] = new Counter() { Value = 1 };
                 return true;
             }
-            if (value >= MaxConncurrentTasks)
+            if (value.Value >= MaxConncurrentTasks)
                 return false;
 
-            globalTasks[hash] = value + 1;
+            value.Value++;
             return true;
         }
 
