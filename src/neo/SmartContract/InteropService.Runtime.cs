@@ -39,10 +39,10 @@ namespace Neo.SmartContract
             {
                 int size = 0;
                 List<StackItem> items_checked = new List<StackItem>();
-                Queue<StackItem> items_unchecked = new Queue<StackItem>(new StackItem[] { state });
-                while (items_unchecked.TryDequeue(out StackItem item_unchecked))
+                Queue<StackItem> items_unchecked = new Queue<StackItem>();
+                while (true)
                 {
-                    switch (item_unchecked)
+                    switch (state)
                     {
                         case Struct array:
                             foreach (StackItem item in array)
@@ -76,8 +76,9 @@ namespace Neo.SmartContract
                             break;
                     }
                     if (size > MaxNotificationSize) return false;
+                    if (items_unchecked.Count == 0) return true;
+                    state = items_unchecked.Dequeue();
                 }
-                return true;
             }
 
             internal static bool CheckWitnessInternal(ApplicationEngine engine, UInt160 hash)
