@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native.Tokens
         where TToken : Nep11TokenState, new()
         where TAccount : AccountState, new()
     {
-        public override string[] SupportedStandards { get; } = { "NEP-11", "NEP-10" };
+        public override string[] SupportedStandards { get; } = { "NEP-10", "NEP-11" };
         public abstract string Symbol { get; }
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
