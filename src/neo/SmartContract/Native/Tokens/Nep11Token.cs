@@ -17,9 +17,9 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public abstract class Nep11Token<TState, UState> : NativeContract
-        where TState : Nep11TokenState, new()
-        where UState : AccountState, new()
+    public abstract class Nep11Token<TToken, TAccount> : NativeContract
+        where TToken : Nep11TokenState, new()
+        where TAccount : AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-11", "NEP-10" };
         public abstract string Symbol { get; }
@@ -118,7 +118,7 @@ namespace Neo.SmartContract.Native.Tokens
             UInt160 innerKey = GetInnerKey(tokenId);
             StorageItem storage = snapshot.Storages.TryGet(CreateOwnershipKey(account, innerKey));
             if (storage is null) return BigInteger.Zero;
-            return storage.GetInteroperable<UState>().Balance;
+            return storage.GetInteroperable<TAccount>().Balance;
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
@@ -128,12 +128,12 @@ namespace Neo.SmartContract.Native.Tokens
             return new InteropInterface(TokensOf(engine.Snapshot, owner));
         }
 
-        public virtual IEnumerator<TState> TokensOf(StoreView snapshot, UInt160 owner)
+        public virtual IEnumerator<TToken> TokensOf(StoreView snapshot, UInt160 owner)
         {
             return snapshot.Storages.Find(CreateStorageKey(Prefix_Ownership, owner).ToArray()).Select(p =>
             {
                 UInt160 innerKey = new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
-                return snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TState>();
+                return snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TToken>();
             }).GetEnumerator();
         }
 
@@ -177,7 +177,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 UInt160 innerKey = GetInnerKey(tokenId);
                 StorageKey fromKey = CreateOwnershipKey(from, innerKey);
-                UState fromBalance = storages.GetAndChange(fromKey)?.GetInteroperable<UState>();
+                TAccount fromBalance = storages.GetAndChange(fromKey)?.GetInteroperable<TAccount>();
                 if (fromBalance is null) return false;
                 if (fromBalance.Balance < amount) return false;
                 if (fromBalance.Balance == amount)
@@ -190,7 +190,7 @@ namespace Neo.SmartContract.Native.Tokens
                     fromBalance.Balance -= amount;
                 }
                 StorageKey toKey = CreateOwnershipKey(to, innerKey);
-                UState toBalance = storages.GetAndChange(toKey, () => new StorageItem(new UState())).GetInteroperable<UState>();
+                TAccount toBalance = storages.GetAndChange(toKey, () => new StorageItem(new TAccount())).GetInteroperable<TAccount>();
                 toBalance.Balance += amount;
                 storages.GetAndChange(CreateOwnershipKey(innerKey, to), () => new StorageItem(new byte[0]));
             }
@@ -217,12 +217,12 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey tokenKey = CreateTokenKey(innerKey);
             if (storages.TryGet(tokenKey) != null) throw new InvalidOperationException("Token already exist");
 
-            storages.Add(tokenKey, new StorageItem(new TState() { TokenId = tokenId }));
+            storages.Add(tokenKey, new StorageItem(new TToken() { TokenId = tokenId }));
             IncreaseTotalSupply(engine.Snapshot);
 
             StorageKey owner2tokenKey = CreateOwnershipKey(account, innerKey);
             StorageKey token2ownerKey = CreateOwnershipKey(innerKey, account);
-            storages.Add(owner2tokenKey, new StorageItem(new UState() { Balance = Factor }));
+            storages.Add(owner2tokenKey, new StorageItem(new TAccount() { Balance = Factor }));
             storages.Add(token2ownerKey, new StorageItem(new byte[0]));
 
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, tokenId }));
