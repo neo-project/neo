@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Native.Tokens
 {
     public abstract class Nep11Token<TState, UState> : NativeContract
         where TState : Nep11TokenState, new()
-        where UState : NepAccountState, new()
+        where UState : AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-11", "NEP-10" };
         public abstract string Symbol { get; }

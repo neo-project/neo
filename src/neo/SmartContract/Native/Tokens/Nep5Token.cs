@@ -14,7 +14,7 @@ using Array = Neo.VM.Types.Array;
 namespace Neo.SmartContract.Native.Tokens
 {
     public abstract class Nep5Token<TState> : NativeContract
-        where TState : NepAccountState, new()
+        where TState : AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         public abstract string Symbol { get; }

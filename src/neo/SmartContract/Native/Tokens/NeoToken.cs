@@ -15,7 +15,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public sealed class NeoToken : Nep5Token<NeoToken.AccountState>
+    public sealed class NeoToken : Nep5Token<NeoToken.NeoAccountState>
     {
         public override int Id => -1;
         public override string Name => "NEO";
@@ -36,7 +36,7 @@ namespace Neo.SmartContract.Native.Tokens
             return TotalAmount;
         }
 
-        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
+        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
             DistributeGas(engine, account, state);
             if (amount.IsZero) return;
@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        private void DistributeGas(ApplicationEngine engine, UInt160 account, AccountState state)
+        private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
-            AccountState state = storage.GetInteroperable<AccountState>();
+            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
@@ -185,7 +185,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key_account = CreateAccountKey(account);
             if (snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = snapshot.Storages.GetAndChange(key_account);
-            AccountState state_account = storage_account.GetInteroperable<AccountState>();
+            NeoAccountState state_account = storage_account.GetInteroperable<NeoAccountState>();
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray());
@@ -270,7 +270,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.Value.AsSerializableArray<ECPoint>();
         }
 
-        public class AccountState : NepAccountState
+        public class NeoAccountState : AccountState
         {
             public uint BalanceHeight;
             public ECPoint VoteTo;

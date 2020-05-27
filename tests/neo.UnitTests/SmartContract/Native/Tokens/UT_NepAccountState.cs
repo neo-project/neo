@@ -10,10 +10,10 @@ namespace Neo.SmartContract.NNS.Tests
         [TestMethod()]
         public void Check_FromAndToStackItem()
         {
-            NepAccountState nepAccountState = new NepAccountState();
+            AccountState nepAccountState = new AccountState();
             nepAccountState.Balance = 100;
             StackItem stackitem = nepAccountState.ToStackItem(new VM.ReferenceCounter());
-            NepAccountState result = new NepAccountState();
+            AccountState result = new AccountState();
             result.FromStackItem(stackitem);
             Assert.AreEqual(nepAccountState.Balance, result.Balance);
         }

@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public class NepAccountState : IInteroperable
+    public class AccountState : IInteroperable
     {
         public BigInteger Balance;
 
