@@ -31,14 +31,18 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor GetNotifications = Register("System.Runtime.GetNotifications", Runtime_GetNotifications, 0_00010000, TriggerType.All, CallFlags.None);
             public static readonly InteropDescriptor GasLeft = Register("System.Runtime.GasLeft", Runtime_GasLeft, 0_00000400, TriggerType.All, CallFlags.None);
 
+            /// <summary>
+            /// Check the type and size of stackitem for notification in `Runtime.Notify`. Currently, we allow almost all StackItem types, except for the InteropInterface type, because its size is uncertain.
+            /// </summary>
+            /// <param name="state">Notification item</param>
             private static bool CheckItemForNotification(StackItem state)
             {
                 int size = 0;
                 List<StackItem> items_checked = new List<StackItem>();
-                Queue<StackItem> items_unchecked = new Queue<StackItem>();
-                while (true)
+                Queue<StackItem> items_unchecked = new Queue<StackItem>(new StackItem[] { state });
+                while (items_unchecked.TryDequeue(out StackItem item_unchecked))
                 {
-                    switch (state)
+                    switch (item_unchecked)
                     {
                         case Struct array:
                             foreach (StackItem item in array)
@@ -72,9 +76,8 @@ namespace Neo.SmartContract
                             break;
                     }
                     if (size > MaxNotificationSize) return false;
-                    if (items_unchecked.Count == 0) return true;
-                    state = items_unchecked.Dequeue();
                 }
+                return true;
             }
 
             internal static bool CheckWitnessInternal(ApplicationEngine engine, UInt160 hash)
