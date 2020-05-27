@@ -207,16 +207,14 @@ namespace Neo.SmartContract.Native.Tokens
 
         public abstract JObject Properties(StoreView snapshot, byte[] tokenid);
 
-        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, byte[] tokenId)
+        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, TToken token)
         {
-            if (tokenId.Length > MaxTokenIdLength) throw new InvalidOperationException("The length of tokenId exceeds the maximum limit");
-
             var storages = engine.Snapshot.Storages;
-            UInt160 innerKey = GetInnerKey(tokenId);
+            UInt160 innerKey = GetInnerKey(token.TokenId);
             StorageKey tokenKey = CreateTokenKey(innerKey);
             if (storages.TryGet(tokenKey) != null) throw new InvalidOperationException("Token already exist");
 
-            storages.Add(tokenKey, new StorageItem(new TToken() { TokenId = tokenId }));
+            storages.Add(tokenKey, new StorageItem(token));
             IncreaseTotalSupply(engine.Snapshot);
 
             StorageKey owner2tokenKey = CreateOwnershipKey(account, innerKey);
@@ -224,7 +222,7 @@ namespace Neo.SmartContract.Native.Tokens
             storages.Add(owner2tokenKey, new StorageItem(new TAccount() { Balance = Factor }));
             storages.Add(token2ownerKey, new StorageItem(new byte[0]));
 
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, tokenId }));
+            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, token.TokenId }));
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, byte[] tokenId)
