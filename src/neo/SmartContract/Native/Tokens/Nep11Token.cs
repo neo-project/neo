@@ -210,7 +210,7 @@ namespace Neo.SmartContract.Native.Tokens
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, TToken token)
         {
             var storages = engine.Snapshot.Storages;
-            UInt160 innerKey = GetInnerKey(token.TokenId);
+            UInt160 innerKey = GetInnerKey(token.Id);
             StorageKey tokenKey = CreateTokenKey(innerKey);
             if (storages.TryGet(tokenKey) != null) throw new InvalidOperationException("Token already exist");
 
@@ -222,7 +222,7 @@ namespace Neo.SmartContract.Native.Tokens
             storages.Add(owner2tokenKey, new StorageItem(new TAccount() { Balance = Factor }));
             storages.Add(token2ownerKey, new StorageItem(new byte[0]));
 
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, token.TokenId }));
+            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), Factor, token.Id }));
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, byte[] tokenId)

@@ -40,11 +40,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var snapshot = Blockchain.Singleton.GetSnapshot();
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             //mint
-            Action action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { TokenId = UInt256.Zero.ToArray() });
+            Action action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { Id = UInt256.Zero.ToArray() });
             action.Should().NotThrow<Exception>();
 
             //double mint wrong
-            action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { TokenId = UInt256.Zero.ToArray() });
+            action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { Id = UInt256.Zero.ToArray() });
             action.Should().Throw<InvalidOperationException>();
 
             //burn
@@ -66,7 +66,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var ae = new ApplicationEngine(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, 0, true);
             //mint
-            Action action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { TokenId = UInt256.Zero.ToArray() });
+            Action action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { Id = UInt256.Zero.ToArray() });
             action.Should().NotThrow<Exception>();
 
             //transfer amount greater than balance wrong
@@ -130,13 +130,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            TokenId = @struct[0].GetSpan().ToArray();
+            Id = @struct[0].GetSpan().ToArray();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             Struct @struct = new Struct(referenceCounter);
-            @struct.Add(TokenId);
+            @struct.Add(Id);
             return @struct;
         }
     }
