@@ -517,7 +517,7 @@ namespace Neo.Oracle
                             {
                                 // Send my signature by P2P
 
-                                Log($"Send oracle signature: oracle={response.OraclePub.ToString()} requestTx={tx.Hash} responseTx={response.Hash}");
+                                Log($"Send oracle signature: oracle={response.OraclePub} requestTx={tx.Hash} responseTx={response.Hash}");
 
                                 _localNode.Tell(new LocalNode.SendDirectly { Inventory = response });
                                 break;
@@ -607,14 +607,14 @@ namespace Neo.Oracle
         {
             if (!response.Verify(snapshot))
             {
-                Log($"Received wrong signed payload: oracle={response.OraclePub.ToString()} requestTx={response.TransactionRequestHash} responseTx={response.TransactionRequestHash}", LogLevel.Error);
+                Log($"Received wrong signed payload: oracle={response.OraclePub} requestTx={response.TransactionRequestHash} responseTx={response.TransactionRequestHash}", LogLevel.Error);
 
                 return OracleResponseResult.Invalid;
             }
 
             if (!response.IsMine)
             {
-                Log($"Received oracle signature: oracle={response.OraclePub.ToString()} requestTx={response.TransactionRequestHash} responseTx={response.TransactionRequestHash}");
+                Log($"Received oracle signature: oracle={response.OraclePub} requestTx={response.TransactionRequestHash} responseTx={response.TransactionRequestHash}");
             }
 
             // Find the request tx
@@ -627,17 +627,17 @@ namespace Neo.Oracle
                 {
                     if (request.IsCompleted)
                     {
-                        Log($"Send response tx: oracle={response.OraclePub.ToString()} responseTx={request.ResponseTransaction.Hash}");
+                        Log($"Send response tx: oracle={response.OraclePub} responseTx={request.ResponseTransaction.Hash}");
 
                         // Done! Send to mem pool
 
                         _pendingRequests.TryRemove(response.TransactionRequestHash, out _);
                         _pendingResponses.TryRemove(response.TransactionRequestHash, out _);
-                        _localNode.Tell(new LocalNode.Relay { Inventory = request.ResponseTransaction });
+                        _localNode.Tell(new LocalNode.SendDirectly { Inventory = request.ResponseTransaction });
 
                         // Request should be already there, but it could be removed because the mempool was full during the process
 
-                        _localNode.Tell(new LocalNode.Relay { Inventory = request.RequestTransaction });
+                        _localNode.Tell(new LocalNode.SendDirectly { Inventory = request.RequestTransaction });
 
                         return OracleResponseResult.RelayedTx;
                     }

@@ -78,16 +78,15 @@ namespace Neo.UnitTests.Oracle
             {
                 script.EmitAppCall(NativeContract.Oracle.Hash, "get", "https://google.com", UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray(), "MyFilter", "MyFilterArgs");
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true, new OracleExecutionCache(Oracle)))
-                {
-                    engine.LoadScript(script.ToArray());
+                using var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true, new OracleExecutionCache(Oracle));
 
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(1, engine.ResultStack.Count);
+                engine.LoadScript(script.ToArray());
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var response));
-                    Assert.AreEqual("MyResponse", response.GetString());
-                }
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+
+                Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var response));
+                Assert.AreEqual("MyResponse", response.GetString());
             }
 
             // Wrong Filter
@@ -96,15 +95,14 @@ namespace Neo.UnitTests.Oracle
             {
                 script.EmitAppCall(NativeContract.Oracle.Hash, "get", "https://google.com", UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff").ToArray(), "WrongFilter", "MyFilterArgs");
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true, new OracleExecutionCache(Oracle)))
-                {
-                    engine.LoadScript(script.ToArray());
+                using var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true, new OracleExecutionCache(Oracle));
 
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(1, engine.ResultStack.Count);
+                engine.LoadScript(script.ToArray());
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<Null>(out var isNull));
-                }
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+
+                Assert.IsTrue(engine.ResultStack.TryPop<Null>(out var isNull));
             }
 
             // Wrong schema
@@ -358,7 +356,7 @@ namespace Neo.UnitTests.Oracle
 
             // Fake balance
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
-            var balance = new Nep5AccountState()
+            var balance = new AccountState()
             {
                 Balance = 1000000 * NativeContract.GAS.Factor
             };

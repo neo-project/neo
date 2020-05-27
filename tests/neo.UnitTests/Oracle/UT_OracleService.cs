@@ -246,7 +246,7 @@ namespace Neo.UnitTests.Oracle
 
             // Receive response
 
-            var responseMsg = subscriber.ExpectMsg<LocalNode.Relay>(TimeSpan.FromSeconds(10));
+            var responseMsg = subscriber.ExpectMsg<LocalNode.SendDirectly>(TimeSpan.FromSeconds(10));
             Assert.IsInstanceOfType(responseMsg.Inventory, typeof(Transaction));
 
             var response = responseMsg.Inventory as Transaction;
@@ -305,7 +305,7 @@ namespace Neo.UnitTests.Oracle
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()
                 {
                     Balance = 10000 * NativeContract.GAS.Factor
                 }));
