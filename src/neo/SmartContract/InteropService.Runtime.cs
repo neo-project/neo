@@ -32,7 +32,7 @@ namespace Neo.SmartContract
             public static readonly InteropDescriptor GasLeft = Register("System.Runtime.GasLeft", Runtime_GasLeft, 0_00000400, TriggerType.All, CallFlags.None);
 
             /// <summary>
-            /// Check the type and size of stackitem for notification in `Runtime.Notify`. Currently, we allow almost all StackItem types, except for the InteropInterface type, because its size is uncertain.
+            /// Check the type and size of stackitem for notification in `Runtime.Notify`. Currently, we allow almost all StackItem types, except for the InteropInterface type.
             /// </summary>
             /// <param name="state">Notification item</param>
             private static bool CheckItemForNotification(StackItem state)
