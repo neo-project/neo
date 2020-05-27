@@ -5,7 +5,7 @@ using Neo.VM.Types;
 namespace Neo.SmartContract.NNS.Tests
 {
     [TestClass()]
-    public class UT_NepAccountState
+    public class UT_AccountState
     {
         [TestMethod()]
         public void Check_FromAndToStackItem()
