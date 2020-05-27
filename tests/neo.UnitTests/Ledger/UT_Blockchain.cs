@@ -116,9 +116,9 @@ namespace Neo.UnitTests.Ledger
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 

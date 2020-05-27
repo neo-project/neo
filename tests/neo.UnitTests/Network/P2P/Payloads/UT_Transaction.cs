@@ -106,9 +106,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -176,9 +176,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -287,9 +287,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -373,9 +373,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -460,9 +460,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -550,9 +550,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 // Make transaction
                 // Manually creating script
@@ -600,9 +600,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -692,9 +692,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 // Make transaction
                 // Manually creating script
@@ -938,9 +938,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
 
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
