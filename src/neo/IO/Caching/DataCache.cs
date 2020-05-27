@@ -155,7 +155,8 @@ namespace Neo.IO.Caching
             HashSet<TKey> cachedKeySet;
             lock (dictionary)
             {
-                cached = dictionary.Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().AsSpan().StartsWith(key_prefix)))
+                cached = dictionary
+                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().AsSpan().StartsWith(key_prefix)))
                     .Select(p =>
                     (
                         KeyBytes: p.Key.ToArray(),
@@ -164,7 +165,7 @@ namespace Neo.IO.Caching
                     ))
                     .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
                     .ToArray();
-                cachedKeySet = cached.Select(p => p.Item2).ToHashSet();
+                cachedKeySet = dictionary.Select(p => p.Key).ToHashSet();
             }
             var uncached = FindInternal(key_prefix ?? Array.Empty<byte>())
                 .Where(p => !cachedKeySet.Contains(p.Key))
