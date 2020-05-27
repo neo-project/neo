@@ -165,7 +165,7 @@ namespace Neo.IO.Caching
                     ))
                     .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
                     .ToArray();
-                cachedKeySet = new HashSet<TKey>(cached.Select(p => p.Item2));
+                cachedKeySet = new HashSet<TKey>(dictionary.Keys);
             }
             var uncached = FindInternal(key_prefix ?? Array.Empty<byte>())
                 .Where(p => !cachedKeySet.Contains(p.Key))
