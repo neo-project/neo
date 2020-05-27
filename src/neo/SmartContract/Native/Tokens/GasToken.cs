@@ -8,7 +8,7 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public sealed class GasToken : Nep5Token<Nep5AccountState>
+    public sealed class GasToken : Nep5Token<AccountState>
     {
         public override int Id => -2;
         public override string Name => "GAS";
