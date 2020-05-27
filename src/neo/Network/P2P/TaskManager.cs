@@ -36,7 +36,7 @@ namespace Neo.Network.P2P
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly Dictionary<UInt256, Counter> globalTasks = new Dictionary<UInt256, Counter>();
         private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
-        private readonly List<uint> failedSyncTasks = new List<uint>();
+        private readonly HashSet<uint> failedSyncTasks = new HashSet<uint>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private uint lastTaskIndex = 0;
@@ -64,7 +64,7 @@ namespace Neo.Network.P2P
                 return false;
             }
             TaskSession session = remoteNode.Value;
-            session.IndexTasks.Add(index, TimeProvider.Current.UtcNow);
+            session.IndexTasks.TryAdd(index, TimeProvider.Current.UtcNow);
             remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(index, 1)));
             failedSyncTasks.Remove(index);
             return true;
@@ -75,7 +75,7 @@ namespace Neo.Network.P2P
             var session = sessions.Values.FirstOrDefault(p => p.IndexTasks.ContainsKey(block.Index));
             if (session is null) return;
             session.IndexTasks.Remove(block.Index);
-            receivedBlockIndex.Add(block.Index, session);
+            receivedBlockIndex.TryAdd(block.Index, session);
             RequestTasks();
         }
 
@@ -164,8 +164,8 @@ namespace Neo.Network.P2P
             Context.Watch(Sender);
             TaskSession session = new TaskSession(version);
             if (session.IsFullNode)
-                session.InvTasks.Add(MemPoolTaskHash, TimeProvider.Current.UtcNow);
-            sessions.Add(Sender, session);
+                session.InvTasks.TryAdd(MemPoolTaskHash, TimeProvider.Current.UtcNow);
+            sessions.TryAdd(Sender, session);
             RequestTasks();
         }
 
@@ -278,12 +278,13 @@ namespace Neo.Network.P2P
 
             while (failedSyncTasks.Count() > 0)
             {
-                if (failedSyncTasks[0] <= Blockchain.Singleton.Height)
+                var failedTask = failedSyncTasks.First();
+                if (failedTask <= Blockchain.Singleton.Height)
                 {
-                    failedSyncTasks.Remove(failedSyncTasks[0]);
+                    failedSyncTasks.Remove(failedTask);
                     continue;
                 }
-                if (!AssignSyncTask(failedSyncTasks[0])) return;
+                if (!AssignSyncTask(failedTask)) return;
             }
 
             int taskCounts = sessions.Values.Sum(p => p.IndexTasks.Count);
