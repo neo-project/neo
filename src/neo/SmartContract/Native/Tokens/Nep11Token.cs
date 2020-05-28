@@ -144,18 +144,16 @@ namespace Neo.SmartContract.Native.Tokens
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             if (tokenId.Length > MaxTokenIdLength) return false;
-            UInt160 owner = OwnerOf(engine.Snapshot, tokenId);
-            IEnumerator enumerator = new ArrayWrapper(new StackItem[] { owner.ToArray() });
-            return new InteropInterface(enumerator);
+            return new InteropInterface(OwnerOf(engine.Snapshot, tokenId));
         }
 
-        public virtual UInt160 OwnerOf(StoreView snapshot, byte[] tokenId)
+        public virtual IEnumerator<UInt160> OwnerOf(StoreView snapshot, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
             return snapshot.Storages.Find(CreateStorageKey(Prefix_Ownership, innerKey).ToArray()).Select(p =>
             {
                 return new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
-            }).First();
+            }).GetEnumerator();
         }
 
         [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.ByteArray }, ParameterNames = new[] { "to", "tokenId" })]
@@ -169,7 +167,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
-            UInt160 owner = OwnerOf(engine.Snapshot, tokenId);
+            IEnumerator<UInt160> enumerator = OwnerOf(engine.Snapshot, tokenId);
+            if (!enumerator.MoveNext()) return false;
+            UInt160 owner = enumerator.Current;
             if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
 
             var snapshot = engine.Snapshot;
@@ -219,9 +219,13 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey tokenKey = CreateTokenKey(innerKey);
             if (!storages.Delete(tokenKey)) throw new InvalidOperationException("Token doesn't exist");
 
-            UInt160 owner = OwnerOf(engine.Snapshot, tokenId);
-            storages.Delete(CreateOwnershipKey(innerKey, owner));
-            storages.Delete(CreateOwnershipKey(owner, innerKey));
+            IEnumerator<UInt160> enumerator = OwnerOf(engine.Snapshot, tokenId);
+            if (enumerator.MoveNext())
+            {
+                UInt160 owner = enumerator.Current;
+                storages.Delete(CreateOwnershipKey(innerKey, owner));
+                storages.Delete(CreateOwnershipKey(owner, innerKey));
+            }
 
             DecreaseTotalSupply(engine.Snapshot);
 
