@@ -61,7 +61,7 @@ namespace Neo.Cryptography.MPT
                             result = TryDelete(ref branchNode.Children[path[0]], path[1..]);
                         }
                         if (!result) return false;
-                        List<byte> childrenIndexes = new List<byte>();
+                        List<byte> childrenIndexes = new List<byte>(BranchNode.ChildCount);
                         for (int i = 0; i < BranchNode.ChildCount; i++)
                         {
                             if (branchNode.Children[i] is HashNode hn && hn.IsEmpty) continue;
