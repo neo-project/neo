@@ -308,6 +308,10 @@ namespace Neo.UnitTests.Cryptography.MPT
             var prefix = new byte[] { 0xac, 0x01 }; // =  FromNibbles(path = { 0x0a, 0x0c, 0x00, 0x01 });
             var results = mpt.Find(prefix).ToArray();
             Assert.AreEqual(1, results.Count());
+
+            prefix = new byte[] { 0xac }; // =  FromNibbles(path = { 0x0a, 0x0c });
+            results = mpt.Find(prefix).ToArray();
+            Assert.AreEqual(3, results.Count());
         }
     }
 }
