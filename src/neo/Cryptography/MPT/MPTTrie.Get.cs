@@ -10,7 +10,7 @@ namespace Neo.Cryptography.MPT
             get
             {
                 var path = ToNibbles(key.ToArray());
-                if (path.Length < 1) return null;
+                if (path.Length == 0) return null;
                 var result = TryGet(ref root, path, out var value);
                 return result ? value.AsSerializable<TValue>() : null;
             }
@@ -22,7 +22,7 @@ namespace Neo.Cryptography.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             value = leafNode.Value;
                             return true;
@@ -39,7 +39,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             return TryGet(ref branchNode.Children[BranchNode.ChildCount - 1], path, out value);
                         }

@@ -23,11 +23,11 @@ namespace Neo.Cryptography.MPT
         {
             var path = ToNibbles(key.ToArray());
             var val = value.ToArray();
-            if (ExtensionNode.MaxKeyLength < path.Length || path.Length < 1)
+            if (path.Length == 0 || path.Length > ExtensionNode.MaxKeyLength)
                 return false;
-            if (LeafNode.MaxValueLength < val.Length)
+            if (val.Length > LeafNode.MaxValueLength)
                 return false;
-            if (val.Length < 1)
+            if (val.Length == 0)
                 return TryDelete(ref root, path);
             var n = new LeafNode(val);
             return Put(ref root, path, n);
@@ -41,7 +41,7 @@ namespace Neo.Cryptography.MPT
                     {
                         if (val is LeafNode v)
                         {
-                            if (path.Length < 1)
+                            if (path.IsEmpty)
                             {
                                 node = v;
                                 PutToStore(node);
@@ -78,7 +78,7 @@ namespace Neo.Cryptography.MPT
                         Put(ref grandSon1, keyRemain[1..], extensionNode.Next);
                         son.Children[keyRemain[0]] = grandSon1;
 
-                        if (pathRemain.Length < 1)
+                        if (pathRemain.IsEmpty)
                         {
                             Put(ref grandSon2, pathRemain, val);
                             son.Children[BranchNode.ChildCount - 1] = grandSon2;
@@ -108,7 +108,7 @@ namespace Neo.Cryptography.MPT
                 case BranchNode branchNode:
                     {
                         bool result;
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             result = Put(ref branchNode.Children[BranchNode.ChildCount - 1], path, val);
                         }
@@ -128,7 +128,7 @@ namespace Neo.Cryptography.MPT
                         MPTNode newNode;
                         if (hashNode.IsEmpty)
                         {
-                            if (path.Length < 1)
+                            if (path.IsEmpty)
                             {
                                 newNode = val;
                             }

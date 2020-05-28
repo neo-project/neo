@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.IO.Caching;
-using Neo.IO.Json;
 using System;
 using System.IO;
 
@@ -34,7 +33,7 @@ namespace Neo.Cryptography.MPT
 
         public static unsafe MPTNode Decode(ReadOnlySpan<byte> data)
         {
-            if (data.Length < 1) return null;
+            if (data.IsEmpty) return null;
 
             fixed (byte* pointer = data)
             {

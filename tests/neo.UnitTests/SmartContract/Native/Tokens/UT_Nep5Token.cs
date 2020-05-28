@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
     }
 
-    public class TestNep5Token : Nep5Token<NeoToken.AccountState>
+    public class TestNep5Token : Nep5Token<NeoToken.NeoAccountState>
     {
         public override int Id => 0x10000005;
 
