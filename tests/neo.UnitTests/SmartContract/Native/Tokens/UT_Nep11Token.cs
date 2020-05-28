@@ -6,12 +6,12 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Native.Tokens
 {
@@ -97,9 +97,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             VM.Types.Array array = new VM.Types.Array();
             array.Add(UInt160.Zero.ToArray());
             StackItem stackItem = test.TokensOfMethod(ae, array);
-            IEnumerator<TestNep11TokenState> enumerator = ((InteropInterface)stackItem).GetInterface<IEnumerator<TestNep11TokenState>>();
-            enumerator.MoveNext().Should().BeTrue();
-            new UInt256(enumerator.Current.Id).Should().Be(UInt256.Zero);
+            IEnumerator enumerator = ((InteropInterface)stackItem).GetInterface<IEnumerator>();
+            enumerator.Next().Should().BeTrue();
+            enumerator.Value().GetSpan().ToArray().Should().BeEquivalentTo(UInt256.Zero.ToArray());
         }
 
         [TestMethod]
@@ -114,9 +114,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             VM.Types.Array array = new VM.Types.Array();
             array.Add(UInt256.Zero.ToArray());
             StackItem stackItem = test.OwnerOfMethod(ae, array);
-            IEnumerator<UInt160> enumerator = ((InteropInterface)stackItem).GetInterface<IEnumerator<UInt160>>();
-            enumerator.MoveNext().Should().BeTrue();
-            enumerator.Current.Should().Be(UInt160.Zero);
+            IEnumerator enumerator = ((InteropInterface)stackItem).GetInterface<IEnumerator>();
+            enumerator.Next().Should().BeTrue();
+            enumerator.Value().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
         }
 
         [TestMethod]

@@ -5,6 +5,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -129,13 +130,14 @@ namespace Neo.SmartContract.Native.Tokens
             return new InteropInterface(TokensOf(engine.Snapshot, owner));
         }
 
-        public virtual IEnumerator<TToken> TokensOf(StoreView snapshot, UInt160 owner)
+        public virtual IEnumerator TokensOf(StoreView snapshot, UInt160 owner)
         {
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_OwnerToTokenId, owner).ToArray()).Select(p =>
+            return new CollectionWrapper(snapshot.Storages.Find(CreateStorageKey(Prefix_OwnerToTokenId, owner).ToArray()).Select(p =>
             {
                 UInt160 innerKey = new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
-                return snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TToken>();
-            }).GetEnumerator();
+                TToken token =  snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TToken>();
+                return (StackItem)token.Id;
+            }).GetEnumerator());
         }
 
         [ContractMethod(0_01000000, ContractParameterType.InteropInterface, CallFlags.None, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
@@ -146,13 +148,14 @@ namespace Neo.SmartContract.Native.Tokens
             return new InteropInterface(OwnerOf(engine.Snapshot, tokenId));
         }
 
-        public virtual IEnumerator<UInt160> OwnerOf(StoreView snapshot, byte[] tokenId)
+        public virtual IEnumerator OwnerOf(StoreView snapshot, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_TokenIdToOwner, innerKey).ToArray()).Select(p =>
+            return new CollectionWrapper(snapshot.Storages.Find(CreateStorageKey(Prefix_TokenIdToOwner, innerKey).ToArray()).Select(p =>
             {
-                return new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
-            }).GetEnumerator();
+                var owner = p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray();
+                return (StackItem) owner;
+            }).GetEnumerator());
         }
 
         [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.ByteArray }, ParameterNames = new[] { "to", "tokenId" })]
@@ -166,9 +169,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
-            IEnumerator<UInt160> enumerator = OwnerOf(engine.Snapshot, tokenId);
-            if (!enumerator.MoveNext()) return false;
-            UInt160 owner = enumerator.Current;
+            IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
+            if (!enumerator.Next()) return false;
+            UInt160 owner = new UInt160(enumerator.Value().GetSpan().ToArray());
             if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
 
             var snapshot = engine.Snapshot;
@@ -218,10 +221,10 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey tokenKey = CreateTokenKey(innerKey);
             if (!storages.Delete(tokenKey)) throw new InvalidOperationException("Token doesn't exist");
 
-            IEnumerator<UInt160> enumerator = OwnerOf(engine.Snapshot, tokenId);
-            if (enumerator.MoveNext())
+            IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
+            if (enumerator.Next())
             {
-                UInt160 owner = enumerator.Current;
+                UInt160 owner = new UInt160(enumerator.Value().GetSpan().ToArray());
                 storages.Delete(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, owner));
                 storages.Delete(CreateOwnershipKey(Prefix_OwnerToTokenId, owner, innerKey));
             }
