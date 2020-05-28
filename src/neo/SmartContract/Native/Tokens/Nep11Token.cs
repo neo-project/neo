@@ -27,8 +27,9 @@ namespace Neo.SmartContract.Native.Tokens
         public const byte Decimals = 0;
 
         private const byte Prefix_TotalSupply = 20;
-        private const byte Prefix_Ownership = 21;
-        private const byte Prefix_TokenId = 22;
+        private const byte Prefix_OwnerToTokenId = 21;
+        private const byte Prefix_TokenIdToOwner = 22;
+        private const byte Prefix_TokenId = 23;
 
         private const int MaxTokenIdLength = 256;
 
@@ -116,7 +117,7 @@ namespace Neo.SmartContract.Native.Tokens
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            StorageItem storage = snapshot.Storages.TryGet(CreateOwnershipKey(account, innerKey));
+            StorageItem storage = snapshot.Storages.TryGet(CreateOwnershipKey(Prefix_OwnerToTokenId, account, innerKey));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<TAccount>().Balance;
         }
@@ -130,7 +131,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual IEnumerator<TToken> TokensOf(StoreView snapshot, UInt160 owner)
         {
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_Ownership, owner).ToArray()).Select(p =>
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_OwnerToTokenId, owner).ToArray()).Select(p =>
             {
                 UInt160 innerKey = new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
                 return snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TToken>();
@@ -148,7 +149,7 @@ namespace Neo.SmartContract.Native.Tokens
         public virtual IEnumerator<UInt160> OwnerOf(StoreView snapshot, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_Ownership, innerKey).ToArray()).Select(p =>
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_TokenIdToOwner, innerKey).ToArray()).Select(p =>
             {
                 return new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
             }).GetEnumerator();
@@ -175,10 +176,10 @@ namespace Neo.SmartContract.Native.Tokens
             if (contract_to?.Payable == false) return false;
 
             UInt160 innerKey = GetInnerKey(tokenId);
-            snapshot.Storages.Delete(CreateOwnershipKey(owner, innerKey));
-            snapshot.Storages.Delete(CreateOwnershipKey(innerKey, owner));
-            snapshot.Storages.Add(CreateOwnershipKey(to, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
-            snapshot.Storages.Add(CreateOwnershipKey(innerKey, to), new StorageItem(new byte[0]));
+            snapshot.Storages.Delete(CreateOwnershipKey(Prefix_OwnerToTokenId, owner, innerKey));
+            snapshot.Storages.Delete(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, owner));
+            snapshot.Storages.Add(CreateOwnershipKey(Prefix_OwnerToTokenId, to, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
+            snapshot.Storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, to), new StorageItem(new byte[0]));
 
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", owner.ToArray(), to.ToArray(), Factor, tokenId }));
             return true;
@@ -202,8 +203,8 @@ namespace Neo.SmartContract.Native.Tokens
             if (storages.TryGet(tokenKey) != null) throw new InvalidOperationException("Token already exist");
 
             storages.Add(tokenKey, new StorageItem(token));
-            storages.Add(CreateOwnershipKey(account, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
-            storages.Add(CreateOwnershipKey(innerKey, account), new StorageItem(new byte[0]));
+            storages.Add(CreateOwnershipKey(Prefix_OwnerToTokenId, account, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
+            storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, account), new StorageItem(new byte[0]));
 
             IncreaseTotalSupply(engine.Snapshot);
 
@@ -221,8 +222,8 @@ namespace Neo.SmartContract.Native.Tokens
             if (enumerator.MoveNext())
             {
                 UInt160 owner = enumerator.Current;
-                storages.Delete(CreateOwnershipKey(innerKey, owner));
-                storages.Delete(CreateOwnershipKey(owner, innerKey));
+                storages.Delete(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, owner));
+                storages.Delete(CreateOwnershipKey(Prefix_OwnerToTokenId, owner, innerKey));
             }
 
             DecreaseTotalSupply(engine.Snapshot);
@@ -235,12 +236,12 @@ namespace Neo.SmartContract.Native.Tokens
             return new UInt160(Crypto.Hash160(tokenId));
         }
 
-        private StorageKey CreateOwnershipKey(UInt160 first, UInt160 second)
+        private StorageKey CreateOwnershipKey(byte prefix, UInt160 first, UInt160 second)
         {
             byte[] byteSource = new byte[first.Size + second.Size];
             System.Array.Copy(first.ToArray(), 0, byteSource, 0, first.Size);
             System.Array.Copy(second.ToArray(), 0, byteSource, first.Size, second.Size);
-            return CreateStorageKey(Prefix_Ownership, byteSource);
+            return CreateStorageKey(prefix, byteSource);
         }
 
         protected StorageKey CreateTokenKey(UInt160 innerKey)
