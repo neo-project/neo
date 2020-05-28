@@ -38,6 +38,18 @@ namespace Neo.Cryptography.MPT
             return result;
         }
 
+        private static byte[] FromNibbles(ReadOnlySpan<byte> path)
+        {
+            if (path.Length % 2 != 0) throw new FormatException($"MPTTrie.FromNibbles invalid path.");
+            var key = new byte[path.Length / 2];
+            for (int i = 0; i < key.Length; i++)
+            {
+                key[i] = (byte)(path[i * 2] << 4);
+                key[i] |= path[i * 2 + 1];
+            }
+            return key;
+        }
+
         private void PutToStore(MPTNode node)
         {
             store.Put(Prefix, node.Hash.ToArray(), node.Encode());

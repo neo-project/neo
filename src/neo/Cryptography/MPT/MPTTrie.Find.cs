@@ -66,7 +66,7 @@ namespace Neo.Cryptography.MPT
             var path = ToNibbles(prefix);
             path = Seek(ref root, path, out MPTNode start).ToArray();
             return Travers(start, path)
-                .Select(p => (p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
+                .Select(p => (FromNibbles(p.Key).AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
         }
 
         private IEnumerable<(byte[] Key, byte[] Value)> Travers(MPTNode node, byte[] path)
