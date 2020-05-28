@@ -297,5 +297,17 @@ namespace Neo.UnitTests.Cryptography.MPT
             results = mpt2.Find(new byte[] { 0xac }).ToArray();
             Assert.AreEqual(0, results.Count());
         }
+
+        [TestMethod]
+        public void TestFindLeadNode()
+        {
+            // r.Key = 0x0a0c
+            // b.Key = 0x00
+            // l1.Key = 0x01
+            var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), root.Hash);
+            var prefix = new byte[] { 0xac, 0x01 }; // =  FromNibbles(path = { 0x0a, 0x0c, 0x00, 0x01 });
+            var results = mpt.Find(prefix).ToArray();
+            Assert.AreEqual(1, results.Count());
+        }
     }
 }

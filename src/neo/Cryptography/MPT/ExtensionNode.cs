@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.IO.Json;
 using Neo.SmartContract;
 using System.IO;
 
