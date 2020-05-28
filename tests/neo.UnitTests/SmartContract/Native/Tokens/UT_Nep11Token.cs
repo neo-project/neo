@@ -27,6 +27,17 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
+        public void TestProperties()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            VM.Types.Array array = new VM.Types.Array();
+            array.Add(UInt256.Zero.ToArray());
+            Action action = () => test.Properties(ae, array);
+            action.Should().Throw<NotImplementedException>();
+        }
+
+        [TestMethod]
         public void TestTotalSupply()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -89,6 +100,23 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             IEnumerator<TestNep11TokenState> enumerator = ((InteropInterface)stackItem).GetInterface<IEnumerator<TestNep11TokenState>>();
             enumerator.MoveNext().Should().BeTrue();
             new UInt256(enumerator.Current.Id).Should().Be(UInt256.Zero);
+        }
+
+        [TestMethod]
+        public void TestOwnerOfMethod()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            //mint
+            Action action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { Id = UInt256.Zero.ToArray() });
+            action.Should().NotThrow<Exception>();
+            //ownerOf
+            VM.Types.Array array = new VM.Types.Array();
+            array.Add(UInt256.Zero.ToArray());
+            StackItem stackItem = test.OwnerOfMethod(ae, array);
+            IEnumerator<UInt160> enumerator = ((InteropInterface)stackItem).GetInterface<IEnumerator<UInt160>>();
+            enumerator.MoveNext().Should().BeTrue();
+            enumerator.Current.Should().Be(UInt160.Zero);
         }
 
         [TestMethod]
@@ -166,6 +194,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             throw new NotImplementedException();
         }
 
+        public new StackItem Properties(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.Properties(engine, args);
+        }
+
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {
             return base.TotalSupply(engine, args);
@@ -194,6 +227,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public StackItem TokensOfMethod(ApplicationEngine engine, VM.Types.Array args)
         {
             return base.TokensOf(engine, args);
+        }
+
+        public StackItem OwnerOfMethod(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.OwnerOf(engine, args);
         }
 
         public StackItem TransferMethod(ApplicationEngine engine, VM.Types.Array args)
