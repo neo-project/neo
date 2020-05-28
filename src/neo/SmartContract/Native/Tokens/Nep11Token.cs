@@ -5,8 +5,6 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
-using Neo.SmartContract.Enumerators;
-using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
