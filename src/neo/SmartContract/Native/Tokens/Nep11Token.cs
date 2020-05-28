@@ -135,7 +135,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new CollectionWrapper(snapshot.Storages.Find(CreateStorageKey(Prefix_OwnerToTokenId, owner).ToArray()).Select(p =>
             {
                 UInt160 innerKey = new UInt160(p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray());
-                TToken token =  snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TToken>();
+                TToken token = snapshot.Storages.TryGet(CreateTokenKey(innerKey)).GetInteroperable<TToken>();
                 return (StackItem)token.Id;
             }).GetEnumerator());
         }
@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new CollectionWrapper(snapshot.Storages.Find(CreateStorageKey(Prefix_TokenIdToOwner, innerKey).ToArray()).Select(p =>
             {
                 var owner = p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray();
-                return (StackItem) owner;
+                return (StackItem)owner;
             }).GetEnumerator());
         }
 
