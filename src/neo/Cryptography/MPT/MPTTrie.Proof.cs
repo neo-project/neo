@@ -10,7 +10,7 @@ namespace Neo.Cryptography.MPT
         public HashSet<byte[]> GetProof(TKey key)
         {
             var path = ToNibbles(key.ToArray());
-            if (path.Length < 1) return null;
+            if (path.Length == 0) return null;
             HashSet<byte[]> set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
             if (!GetProof(ref root, path, set)) return null;
             return set;
@@ -22,7 +22,7 @@ namespace Neo.Cryptography.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             set.Add(leafNode.Encode());
                             return true;
@@ -40,7 +40,7 @@ namespace Neo.Cryptography.MPT
                 case BranchNode branchNode:
                     {
                         set.Add(branchNode.Encode());
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             return GetProof(ref branchNode.Children[BranchNode.ChildCount - 1], path, set);
                         }

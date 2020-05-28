@@ -10,7 +10,7 @@ namespace Neo.Cryptography.MPT
         public bool Delete(TKey key)
         {
             var path = ToNibbles(key.ToArray());
-            if (path.Length < 1) return false;
+            if (path.Length == 0) return false;
             return TryDelete(ref root, path);
         }
 
@@ -20,7 +20,7 @@ namespace Neo.Cryptography.MPT
             {
                 case LeafNode _:
                     {
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             node = HashNode.EmptyNode;
                             return true;
@@ -52,7 +52,7 @@ namespace Neo.Cryptography.MPT
                 case BranchNode branchNode:
                     {
                         bool result;
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             result = TryDelete(ref branchNode.Children[BranchNode.ChildCount - 1], path);
                         }

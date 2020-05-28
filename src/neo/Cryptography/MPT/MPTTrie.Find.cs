@@ -14,7 +14,7 @@ namespace Neo.Cryptography.MPT
             {
                 case LeafNode leafNode:
                     {
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             start = leafNode;
                             return ReadOnlySpan<byte>.Empty;
@@ -31,7 +31,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case BranchNode branchNode:
                     {
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             start = branchNode;
                             return ReadOnlySpan<byte>.Empty;
@@ -40,7 +40,7 @@ namespace Neo.Cryptography.MPT
                     }
                 case ExtensionNode extensionNode:
                     {
-                        if (path.Length < 1)
+                        if (path.IsEmpty)
                         {
                             start = extensionNode.Next;
                             return ReadOnlySpan<byte>.Empty;
