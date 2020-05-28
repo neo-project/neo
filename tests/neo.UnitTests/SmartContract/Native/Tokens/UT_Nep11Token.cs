@@ -11,6 +11,7 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Native.Tokens
 {
@@ -32,6 +33,62 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             StackItem stackItem = test.TotalSupply(ae, null);
             stackItem.GetBigInteger().Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestNameMethod()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            StackItem stackItem = test.NameMethod(ae, null);
+            stackItem.GetString().Should().Be("testNep11Token");
+        }
+
+        [TestMethod]
+        public void TestSymbolMethod()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            StackItem stackItem = test.SymbolMethod(ae, null);
+            stackItem.GetString().Should().Be("tt");
+        }
+
+        [TestMethod]
+        public void TestDecimalsMethod()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            StackItem stackItem = test.DecimalsMethod(ae, null);
+            stackItem.GetBigInteger().Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestBalanceOfMethod()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            VM.Types.Array array = new VM.Types.Array();
+            array.Add(UInt160.Zero.ToArray());
+            array.Add(UInt160.Zero.ToArray());
+            StackItem stackItem = test.BalanceOfMethod(ae, array);
+            stackItem.GetBigInteger().Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestTokensOfMethod()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            //mint
+            Action action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { Id = UInt256.Zero.ToArray() });
+            action.Should().NotThrow<Exception>();
+            //tokensOf
+            VM.Types.Array array = new VM.Types.Array();
+            array.Add(UInt160.Zero.ToArray());
+            StackItem stackItem = test.TokensOfMethod(ae, array);
+            IEnumerator<TestNep11TokenState> enumerator = ((InteropInterface)stackItem).GetInterface<IEnumerator<TestNep11TokenState>>();
+            enumerator.MoveNext().Should().BeTrue();
+            new UInt256(enumerator.Current.Id).Should().Be(UInt256.Zero);
         }
 
         [TestMethod]
@@ -70,25 +127,29 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action.Should().NotThrow<Exception>();
 
             //transfer amount greater than balance wrong
-            action = () => test.Transfer(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt256.Zero.ToArray());
+            VM.Types.Array array = new VM.Types.Array();
+            array.Add(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray());
+            array.Add(UInt256.Zero.ToArray());
+            action = () => test.TransferMethod(ae, array);
             action.Should().Equals(false);
 
             //transfer
-            action = () => test.Transfer(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt256.Zero.ToArray());
+            array.Add(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray());
+            array.Add(UInt256.Zero.ToArray());
+            action = () => test.TransferMethod(ae, array);
             action.Should().NotThrow<Exception>();
 
             //transfer no witness wrong
-            action = () => test.Transfer(ae, UInt160.Zero, UInt256.Zero.ToArray());
+            array.Add(UInt160.Zero.ToArray());
+            array.Add(UInt256.Zero.ToArray());
+            action = () => test.TransferMethod(ae, array);
             action.Should().Equals(false);
 
             //transfer no token wrong
-            action = () => test.Transfer(ae, UInt160.Zero, test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
+            array.Add(UInt160.Zero.ToArray());
+            array.Add(test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
+            action = () => test.TransferMethod(ae, array);
             action.Should().Equals(false);
-
-            //burn
-            ae = new ApplicationEngine(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")), snapshot, 0, true);
-            action = () => test.Burn(ae, UInt256.Zero.ToArray());
-            action.Should().NotThrow<Exception>();
         }
     }
 
@@ -108,6 +169,36 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
         {
             return base.TotalSupply(engine, args);
+        }
+
+        public new StackItem NameMethod(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.NameMethod(engine, args);
+        }
+
+        public new StackItem SymbolMethod(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.SymbolMethod(engine, args);
+        }
+
+        public new StackItem DecimalsMethod(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.DecimalsMethod(engine, args);
+        }
+
+        public StackItem BalanceOfMethod(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.BalanceOf(engine, args);
+        }
+
+        public StackItem TokensOfMethod(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.TokensOf(engine, args);
+        }
+
+        public StackItem TransferMethod(ApplicationEngine engine, VM.Types.Array args)
+        {
+            return base.Transfer(engine, args);
         }
     }
 
