@@ -42,7 +42,7 @@ namespace Neo.Cryptography.MPT
                     {
                         if (path.Length < 1)
                         {
-                            start = extensionNode;
+                            start = extensionNode.Next;
                             return ReadOnlySpan<byte>.Empty;
                         }
                         if (path.StartsWith(extensionNode.Key))
@@ -51,8 +51,8 @@ namespace Neo.Cryptography.MPT
                         }
                         if (extensionNode.Key.AsSpan().StartsWith(path))
                         {
-                            start = extensionNode;
-                            return extensionNode.Key[path.Length..];
+                            start = extensionNode.Next;
+                            return extensionNode.Key;
                         }
                         break;
                     }
@@ -71,6 +71,7 @@ namespace Neo.Cryptography.MPT
 
         private IEnumerable<(byte[] Key, byte[] Value)> Travers(MPTNode node, byte[] path)
         {
+            if (node is null) yield break;
             switch (node)
             {
                 case LeafNode leafNode:
