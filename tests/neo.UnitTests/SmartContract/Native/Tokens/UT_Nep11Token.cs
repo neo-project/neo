@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action.Should().NotThrow<Exception>();
 
             //transfer no witness wrong
-            action = () => test.Transfer(ae,  UInt160.Zero, UInt256.Zero.ToArray());
+            action = () => test.Transfer(ae, UInt160.Zero, UInt256.Zero.ToArray());
             action.Should().Equals(false);
 
             //transfer no token wrong
