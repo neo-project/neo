@@ -43,7 +43,7 @@ namespace Neo.Cryptography.MPT
                         if (path.Length < 1)
                         {
                             start = extensionNode.Next;
-                            return ReadOnlySpan<byte>.Empty;
+                            return extensionNode.Key;
                         }
                         if (path.StartsWith(extensionNode.Key))
                         {
@@ -93,7 +93,7 @@ namespace Neo.Cryptography.MPT
                     {
                         for (int i = 0; i < BranchNode.ChildCount; i++)
                         {
-                            foreach (var item in Travers(branchNode.Children[i], Concat(path, new byte[] { (byte)i })))
+                            foreach (var item in Travers(branchNode.Children[i], i == BranchNode.ChildCount - 1 ? path : Concat(path, new byte[] { (byte)i })))
                                 yield return item;
                         }
                         break;
