@@ -117,5 +117,16 @@ namespace Neo.UnitTests
             var endPoint2 = new IPEndPoint(addr2, 8888);
             endPoint2.Unmap().Should().Be(endPoint);
         }
+
+        [TestMethod]
+        public void XorUInt256List()
+        {
+            ((UInt256[])null).XorUInt256List().Should().Be(UInt256.Zero);
+            new UInt256[] { }.XorUInt256List().Should().Be(UInt256.Zero);
+            new UInt256[] { UInt256.Zero }.XorUInt256List().Should().Be(UInt256.Zero);
+            new UInt256[] { UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1"),
+                UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02") }
+            .XorUInt256List().Should().Be(UInt256.Parse("0xf17fa39df386a521e5746799971ea44f4074a43b300cc65e926a801e240d79f3"));
+        }
     }
 }
