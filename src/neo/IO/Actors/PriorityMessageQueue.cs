@@ -15,15 +15,17 @@ namespace Neo.IO.Actors
         private readonly ConcurrentQueue<Envelope> low = new ConcurrentQueue<Envelope>();
         private readonly Func<object, IEnumerable, bool> dropper;
         private readonly Func<object, bool> priority_generator;
+        private readonly Action<object> afterDequeue;
         private int idle = 1;
 
         public bool HasMessages => !high.IsEmpty || !low.IsEmpty;
         public int Count => high.Count + low.Count;
 
-        public PriorityMessageQueue(Func<object, IEnumerable, bool> dropper, Func<object, bool> priority_generator)
+        public PriorityMessageQueue(Func<object, IEnumerable, bool> dropper, Func<object, bool> priority_generator, Action<object> afterDequeue = null)
         {
             this.dropper = dropper;
             this.priority_generator = priority_generator;
+            this.afterDequeue = afterDequeue;
         }
 
         public void CleanUp(IActorRef owner, IMessageQueue deadletters)
@@ -42,8 +44,16 @@ namespace Neo.IO.Actors
 
         public bool TryDequeue(out Envelope envelope)
         {
-            if (high.TryDequeue(out envelope)) return true;
-            if (low.TryDequeue(out envelope)) return true;
+            if (high.TryDequeue(out envelope))
+            {
+                afterDequeue?.Invoke(envelope);
+                return true;
+            }
+            if (low.TryDequeue(out envelope))
+            {
+                afterDequeue?.Invoke(envelope);
+                return true;
+            }
             if (Interlocked.Exchange(ref idle, 0) > 0)
             {
                 envelope = new Envelope(Idle.Instance, ActorRefs.NoSender);

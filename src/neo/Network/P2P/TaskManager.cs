@@ -6,6 +6,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -286,6 +287,8 @@ namespace Neo.Network.P2P
 
     internal class TaskManagerMailbox : PriorityMailbox
     {
+        private ConcurrentDictionary<UInt256, InventoryType> taskHashes = new ConcurrentDictionary<UInt256, InventoryType>();
+
         public TaskManagerMailbox(Akka.Actor.Settings settings, Config config)
             : base(settings, config)
         {
@@ -312,8 +315,13 @@ namespace Neo.Network.P2P
         {
             if (!(message is TaskManager.NewTasks tasks)) return false;
             // Remove duplicate tasks
-            if (queue.OfType<TaskManager.NewTasks>().Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes))) return true;
-            return false;
+            return !taskHashes.TryAdd(tasks.Payload.PayLoadHash, tasks.Payload.Type);
+        }
+
+        internal protected override void AfterDequeue(object message)
+        {
+            if (!(message is TaskManager.NewTasks tasks)) return;
+            taskHashes.Remove(tasks.Payload.PayLoadHash, out _);
         }
     }
 }

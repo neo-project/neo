@@ -1,3 +1,4 @@
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System.IO;
 
@@ -15,6 +16,21 @@ namespace Neo.Network.P2P
                 writer.Flush();
                 return ms.ToArray();
             }
+        }
+
+        public static UInt256 XorUInt256List(this UInt256[] values)
+        {
+            if (values == null || values.Length == 0) return UInt256.Zero;
+            byte[] result = values[0].ToArray();
+            for (int i = 1; i < values.Length; i++)
+            {
+                var array = values[i].ToArray();
+                for (int j = 0; j < result.Length; j++)
+                {
+                    result[j] ^= array[j];
+                }
+            }
+            return new UInt256(result);
         }
     }
 }

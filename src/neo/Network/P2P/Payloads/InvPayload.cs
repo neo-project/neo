@@ -14,6 +14,19 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => sizeof(InventoryType) + Hashes.GetVarSize();
 
+        private UInt256 _payLoadHash = null;
+        public UInt256 PayLoadHash
+        {
+            get
+            {
+                if (_payLoadHash == null)
+                {
+                    _payLoadHash = Hashes.XorUInt256List();
+                }
+                return _payLoadHash;
+            }
+        }
+
         public static InvPayload Create(InventoryType type, params UInt256[] hashes)
         {
             return new InvPayload
