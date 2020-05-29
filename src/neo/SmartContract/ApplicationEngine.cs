@@ -80,8 +80,6 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack, Snapshot)))
-                return false;
             return InteropService.Invoke(this, method);
         }
 
