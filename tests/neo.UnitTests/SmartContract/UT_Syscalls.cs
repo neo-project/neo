@@ -57,7 +57,7 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush(block.Hash.ToArray());
-                script.EmitSysCall(InteropService.Blockchain.GetBlock);
+                script.EmitSysCall(ApplicationEngine.System_Blockchain_GetBlock);
 
                 // Without block
 
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
@@ -115,9 +115,9 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("123");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
                 script.EmitPush("null");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
                 {
@@ -136,7 +136,7 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("***");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
                 {
@@ -152,7 +152,7 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("123.45");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
                 {
@@ -172,20 +172,20 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush(5);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.Emit(OpCode.PUSH0);
                 script.Emit(OpCode.NOT);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.EmitPush("test");
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.Emit(OpCode.PUSHNULL);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.Emit(OpCode.NEWMAP);
                 script.Emit(OpCode.DUP);
                 script.EmitPush("key");
                 script.EmitPush("value");
                 script.Emit(OpCode.SETITEM);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
                 {
@@ -206,8 +206,8 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Storage.GetContext);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Storage_GetContext);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
                 using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
                 {
@@ -225,7 +225,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Runtime.GetScriptContainer);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer);
 
                 // Without tx
 
@@ -238,7 +238,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // With tx
 
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
                 var tx = new Transaction()
                 {
@@ -273,13 +273,13 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.Emit(OpCode.NOP);
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
                 script.Emit(OpCode.NOP);
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
                 script.Emit(OpCode.NOP);
                 script.Emit(OpCode.NOP);
                 script.Emit(OpCode.NOP);
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
 
                 // Execute
 
@@ -300,7 +300,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
 
                 // Execute
 
@@ -327,7 +327,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Runtime.GetInvocationCounter);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GetInvocationCounter);
 
                 contractA = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() };
                 contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };

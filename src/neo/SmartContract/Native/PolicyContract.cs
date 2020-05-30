@@ -41,12 +41,11 @@ namespace Neo.SmartContract.Native
         private bool CheckCommittees(ApplicationEngine engine)
         {
             UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
-            return InteropService.Runtime.CheckWitnessInternal(engine, committeeMultiSigAddr);
+            return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
-        internal override bool Initialize(ApplicationEngine engine)
+        internal override void Initialize(ApplicationEngine engine)
         {
-            if (!base.Initialize(engine)) return false;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
             {
                 Value = BitConverter.GetBytes(1024u * 256u)
@@ -63,7 +62,6 @@ namespace Neo.SmartContract.Native
             {
                 Value = new UInt160[0].ToByteArray()
             });
-            return true;
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
