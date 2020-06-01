@@ -16,15 +16,17 @@ namespace Neo.Network.P2P
 
         public bool HasTask => Tasks.Count > 0;
         public uint StartHeight { get; }
+        public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
 
         public TaskSession(IActorRef node, VersionPayload version)
         {
+            var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
+
+            this.IsFullNode = fullNode != null;
             this.RemoteNode = node;
             this.Version = version;
-            this.StartHeight = version.Capabilities
-                .OfType<FullNodeCapability>()
-                .FirstOrDefault()?.StartHeight ?? 0;
+            this.StartHeight = fullNode?.StartHeight ?? 0;
             this.LastBlockIndex = this.StartHeight;
         }
     }

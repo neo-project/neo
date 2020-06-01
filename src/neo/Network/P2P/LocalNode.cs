@@ -15,7 +15,6 @@ namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
-        public class Relay { public IInventory Inventory; }
         internal class RelayDirectly { public IInventory Inventory; }
         internal class SendDirectly { public IInventory Inventory; }
 
@@ -59,11 +58,11 @@ namespace Neo.Network.P2P
                 singleton = this;
 
                 // Start dns resolution in parallel
-
-                for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
+                string[] seedList = ProtocolSettings.Default.SeedList;
+                for (int i = 0; i < seedList.Length; i++)
                 {
                     int index = i;
-                    Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
+                    Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
                 }
             }
         }
@@ -169,9 +168,6 @@ namespace Neo.Network.P2P
                 case Message msg:
                     BroadcastMessage(msg);
                     break;
-                case Relay relay:
-                    OnRelay(relay.Inventory);
-                    break;
                 case RelayDirectly relay:
                     OnRelayDirectly(relay.Inventory);
                     break;
@@ -179,19 +175,6 @@ namespace Neo.Network.P2P
                     OnSendDirectly(send.Inventory);
                     break;
             }
-        }
-
-        /// <summary>
-        /// For Transaction type of IInventory, it will tell Transaction to the actor of Consensus.
-        /// Otherwise, tell the inventory to the actor of Blockchain.
-        /// There are, currently, three implementations of IInventory: TX, Block and ConsensusPayload.
-        /// </summary>
-        /// <param name="inventory">The inventory to be relayed.</param>
-        private void OnRelay(IInventory inventory)
-        {
-            if (inventory is Transaction transaction)
-                system.Consensus?.Tell(transaction);
-            system.Blockchain.Tell(inventory);
         }
 
         private void OnRelayDirectly(IInventory inventory)
