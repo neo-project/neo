@@ -8,7 +8,7 @@ namespace Neo.Cryptography.MPT
     public class LeafNode : MPTNode
     {
         //the max size when store StorageItem
-        public const int MaxValueLength = 3 + InteropService.Storage.MaxValueSize + sizeof(bool);
+        public const int MaxValueLength = 3 + ApplicationEngine.MaxStorageValueSize + sizeof(bool);
 
         public byte[] Value;
 
