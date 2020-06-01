@@ -17,11 +17,7 @@ namespace Neo.Network.P2P.Payloads
         public ECPoint[] AllowedGroups;
 
         public override TransactionAttributeType Type => TransactionAttributeType.Cosigner;
-
-        public Cosigner()
-        {
-            this.Scopes = WitnessScope.Global;
-        }
+        public override bool AllowMultiple => true;
 
         public override int Size => base.Size +
             /*Account*/             UInt160.Length +
