@@ -172,7 +172,7 @@ namespace Neo.SmartContract.Native.Tokens
             IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
             if (!enumerator.Next()) return false;
             UInt160 owner = new UInt160(enumerator.Value().GetSpan().ToArray());
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, owner)) return false;
+            if (!engine.CheckWitnessInternal(owner)) return false;
 
             var snapshot = engine.Snapshot;
             ContractState contract_to = snapshot.Contracts.TryGet(to);
