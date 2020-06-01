@@ -43,9 +43,10 @@ namespace Neo.UnitTests.SmartContract
         {
             using var script = new ScriptBuilder();
 
-            script.EmitPush(5); // Callback argument
+            script.EmitPush(5); // Callback argument 1
+            script.EmitPush(1); // Callback argument 2
             script.EmitPush(0); // RVcount
-            script.EmitPush(1); // ParamCount
+            script.EmitPush(2); // ParamCount
             script.Emit(OpCode.PUSHA, BitConverter.GetBytes(200)); // -> Nop area
             script.EmitSysCall(ApplicationEngine.CreateCallback);
             script.EmitSysCall(ApplicationEngine.InvokeCallback);
@@ -53,7 +54,7 @@ namespace Neo.UnitTests.SmartContract
 
             for (int x = 0; x < 250; x++) script.Emit(OpCode.NOP);
 
-            script.Emit(OpCode.INC); // Should return 6
+            script.Emit(OpCode.ADD); // Should return 6
             script.Emit(OpCode.RET);
 
             // Execute
