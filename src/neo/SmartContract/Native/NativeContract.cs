@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Native
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(Name);
-                sb.EmitSysCall(InteropService.Native.Call);
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_Call);
                 this.Script = sb.ToArray();
             }
             this.Hash = Script.ToScriptHash();
@@ -135,11 +135,8 @@ namespace Neo.SmartContract.Native
             return contractsHashDictionary.ContainsKey(hash);
         }
 
-        internal virtual bool Initialize(ApplicationEngine engine)
+        internal virtual void Initialize(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application)
-                throw new InvalidOperationException();
-            return true;
         }
 
         [ContractMethod(0, ContractParameterType.Boolean, CallFlags.AllowModifyStates)]
