@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
@@ -8,7 +7,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM.Types;
-using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -22,31 +20,6 @@ namespace Neo.UnitTests.SmartContract
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-        }
-
-        [TestMethod]
-        public void TestLog()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            ApplicationEngine.Log += Test_Log1;
-            string logMessage = "TestMessage";
-
-            engine.SendLog(UInt160.Zero, logMessage);
-            message.Should().Be(logMessage);
-
-            ApplicationEngine.Log += Test_Log2;
-            engine.SendLog(UInt160.Zero, logMessage);
-            message.Should().Be(null);
-
-            message = logMessage;
-            ApplicationEngine.Log -= Test_Log1;
-            engine.SendLog(UInt160.Zero, logMessage);
-            message.Should().Be(null);
-
-            ApplicationEngine.Log -= Test_Log2;
-            engine.SendLog(UInt160.Zero, logMessage);
-            message.Should().Be(null);
         }
 
         [TestMethod]
@@ -72,17 +45,6 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine.Notify -= Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyItem);
             item.Should().Be(null);
-        }
-
-        [TestMethod]
-        public void TestDisposable()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var m = new Mock<IDisposable>();
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            engine.AddDisposable(m.Object).Should().Be(m.Object);
-            Action action = () => engine.Dispose();
-            action.Should().NotThrow();
         }
 
         private void Test_Log1(object sender, LogEventArgs e)
@@ -114,27 +76,6 @@ namespace Neo.UnitTests.SmartContract
             snapshot.PersistingBlock.Version.Should().Be(0);
             snapshot.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
             snapshot.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
-        }
-
-        [TestMethod]
-        public void TestOnSysCall()
-        {
-            InteropDescriptor descriptor = new InteropDescriptor("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application, CallFlags.None);
-            TestApplicationEngine engine = new TestApplicationEngine(TriggerType.Application, null, null, 0);
-            byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            engine.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-            engine.GetOnSysCall(descriptor.Hash).Should().BeFalse();
-
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            engine = new TestApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            engine.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-            engine.GetOnSysCall(descriptor.Hash).Should().BeTrue();
-        }
-
-        private static bool Blockchain_GetHeight(ApplicationEngine engine)
-        {
-            engine.CurrentContext.EvaluationStack.Push(engine.Snapshot.Height);
-            return true;
         }
     }
 
