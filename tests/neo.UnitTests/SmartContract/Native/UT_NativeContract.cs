@@ -24,12 +24,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestInitialize()
         {
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0);
-
-            testNativeContract.Initialize(ae).Should().BeTrue();
-
-            ae = new ApplicationEngine(TriggerType.System, null, null, 0);
-            Action action = () => testNativeContract.Initialize(ae);
-            action.Should().Throw<InvalidOperationException>();
+            testNativeContract.Initialize(ae);
         }
 
         [TestMethod]
