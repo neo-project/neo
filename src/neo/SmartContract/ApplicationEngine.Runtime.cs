@@ -27,6 +27,28 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 0_01000000, TriggerType.All, CallFlags.AllowNotify);
         public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 0_00010000, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor CreateCallback = Register("System.Runtime.CreateCallback", nameof(Runtime_CreateCallback), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor InvokeCallback = Register("System.Runtime.InvokeCallback", nameof(Runtime_InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
+
+        internal void Runtime_CreateCallback(Pointer pointer, int parcount, int rvcount)
+        {
+            Push(new InteropInterface(new Callback(CurrentContext, pointer, parcount, rvcount)));
+        }
+
+        internal void Runtime_InvokeCallback(InteropInterface callbackItem)
+        {
+            var callback = callbackItem.GetInterface<Callback>();
+            if (callback == null) throw new ArgumentException();
+
+            var context = callback.Context.Clone(callback.RVcount);
+            LoadContext(context);
+            context.InstructionPointer = callback.Pointer.Position;
+
+            for (int x = callback.Params.Length - 1; x >= 0; x--)
+            {
+                Push(callback.Params[x]);
+            }
+        }
 
         private static bool CheckItemForNotification(StackItem state)
         {
