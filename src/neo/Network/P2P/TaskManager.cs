@@ -18,7 +18,6 @@ namespace Neo.Network.P2P
         public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
-        private class Counter { public int Value; }
         private class Timer { }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
@@ -34,7 +33,7 @@ namespace Neo.Network.P2P
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
-        private readonly Dictionary<UInt256, Counter> globalTasks = new Dictionary<UInt256, Counter>();
+        private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
         private readonly HashSet<uint> failedSyncTasks = new HashSet<uint>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
@@ -199,10 +198,10 @@ namespace Neo.Network.P2P
         {
             if (globalTasks.TryGetValue(hash, out var value))
             {
-                if (value.Value == 1)
+                if (value == 1)
                     globalTasks.Remove(hash);
                 else
-                    value.Value--;
+                    globalTasks[hash] = value - 1;
             }
         }
 
@@ -211,13 +210,13 @@ namespace Neo.Network.P2P
         {
             if (!globalTasks.TryGetValue(hash, out var value))
             {
-                globalTasks[hash] = new Counter() { Value = 1 };
+                globalTasks[hash] = 1;
                 return true;
             }
-            if (value.Value >= MaxConncurrentTasks)
+            if (value >= MaxConncurrentTasks)
                 return false;
 
-            value.Value++;
+            globalTasks[hash] = value + 1;
             return true;
         }
 
