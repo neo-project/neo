@@ -72,7 +72,7 @@ namespace Neo.UnitTests.SmartContract
             var context1 = new ContractParametersContext(tx);
             context1.Add(contract, 0, new byte[] { 0x01 }).Should().BeFalse();
 
-            tx.Sender = UInt160.Parse("0xcd4ced947d791e887559b3829c3bc08fe37b0a64");
+            tx.Sender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
             var context2 = new ContractParametersContext(tx);
             context2.Add(contract, 0, new byte[] { 0x01 }).Should().BeTrue();
             //test repeatlly createItem
@@ -83,7 +83,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetParameter()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xcd4ced947d791e887559b3829c3bc08fe37b0a64");
+            tx.Sender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
             var context = new ContractParametersContext(tx);
             context.GetParameter(tx.Sender, 0).Should().BeNull();
 
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetWitnesses()
         {
             Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0xcd4ced947d791e887559b3829c3bc08fe37b0a64");
+            tx.Sender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             Witness[] witnesses = context.GetWitnesses();
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestAddSignature()
         {
             Transaction tx = TestUtils.GetTransaction();
-            var singleSender = UInt160.Parse("0xcd4ced947d791e887559b3829c3bc08fe37b0a64");
+            var singleSender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
             tx.Sender = singleSender;
 
             //singleSign
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract
                         key.PublicKey,
                         key2.PublicKey
                     });
-            var multiSender = UInt160.Parse("0x6bb1ea23cefb73dd959775c035a114018c2c1119");
+            var multiSender = UInt160.Parse("0x3593816cc1085a6328fea2b899c24d78cd0ba372");
             tx.Sender = multiSender;
             context = new ContractParametersContext(tx);
             context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
