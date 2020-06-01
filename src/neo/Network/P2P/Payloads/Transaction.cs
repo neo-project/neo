@@ -50,8 +50,8 @@ namespace Neo.Network.P2P.Payloads
             set { attributes = value; _cosigners = null; _hash = null; _size = 0; }
         }
 
-        private Cosigner[] _cosigners;
-        public Cosigner[] Cosigners => _cosigners ??= attributes.OfType<Cosigner>().ToArray();
+        private Dictionary<UInt160, Cosigner> _cosigners;
+        public IReadOnlyDictionary<UInt160, Cosigner> Cosigners => _cosigners ??= attributes.OfType<Cosigner>().ToDictionary(p => p.Account);
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -155,6 +155,19 @@ namespace Neo.Network.P2P.Payloads
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
 
+        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader)
+        {
+            int count = (int)reader.ReadVarInt(MaxTransactionAttributes);
+            HashSet<TransactionAttributeType> hashset = new HashSet<TransactionAttributeType>();
+            while (count-- > 0)
+            {
+                TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(reader);
+                if (!attribute.AllowMultiple && !hashset.Add(attribute.Type))
+                    throw new FormatException();
+                yield return attribute;
+            }
+        }
+
         public void DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadByte();
@@ -167,10 +180,15 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = new TransactionAttribute[reader.ReadVarInt(MaxTransactionAttributes)];
-            for (int i = 0; i < Attributes.Length; i++)
-                Attributes[i] = TransactionAttribute.DeserializeFrom(reader);
-            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
+            Attributes = DeserializeAttributes(reader).ToArray();
+            try
+            {
+                _ = Cosigners;
+            }
+            catch (ArgumentException)
+            {
+                throw new FormatException();
+            }
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -199,8 +217,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160> { Sender };
-            hashes.UnionWith(Cosigners.Select(p => p.Account));
+            var hashes = new HashSet<UInt160>(Cosigners.Keys) { Sender };
             return hashes.OrderBy(p => p).ToArray();
         }
 
