@@ -22,5 +22,13 @@ namespace Neo.SmartContract
                 Params[x] = context.EvaluationStack.Pop();
             }
         }
+
+        public void PushArguments(ExecutionContext context)
+        {
+            for (int x = Params.Length - 1; x >= 0; x--)
+            {
+                context.EvaluationStack.Push(Params[x]);
+            }
+        }
     }
 }

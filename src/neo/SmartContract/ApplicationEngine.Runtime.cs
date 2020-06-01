@@ -35,19 +35,13 @@ namespace Neo.SmartContract
             Push(new InteropInterface(new Callback(CurrentContext, pointer, parcount, rvcount)));
         }
 
-        internal void Runtime_InvokeCallback(InteropInterface callbackItem)
+        internal void Runtime_InvokeCallback(Callback callback)
         {
-            var callback = callbackItem.GetInterface<Callback>();
-            if (callback == null) throw new ArgumentException();
-
             var context = callback.Context.Clone(callback.RVcount);
+
             LoadContext(context);
             context.InstructionPointer = callback.Pointer.Position;
-
-            for (int x = callback.Params.Length - 1; x >= 0; x--)
-            {
-                Push(callback.Params[x]);
-            }
+            callback.PushArguments(context);
         }
 
         private static bool CheckItemForNotification(StackItem state)
