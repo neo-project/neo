@@ -69,14 +69,14 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Runtime_CreateCallbackFromSyscall()
+        public void Runtime_CreateSyscallCallback()
         {
             using var script = new ScriptBuilder();
 
             script.EmitPush(System.Array.Empty<byte>()); // Empty buffer
             script.EmitPush(1); // ParamCount
             script.EmitPush(ApplicationEngine.Neo_Crypto_SHA256.Hash); // Syscall
-            script.EmitSysCall(ApplicationEngine.CreateCallbackFromSyscall);
+            script.EmitSysCall(ApplicationEngine.CreateSyscallCallback);
             script.EmitSysCall(ApplicationEngine.InvokeCallback);
 
             // Execute

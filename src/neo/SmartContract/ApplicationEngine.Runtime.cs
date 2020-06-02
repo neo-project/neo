@@ -28,7 +28,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 0_00010000, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 0_00000400, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor CreateCallback = Register("System.Runtime.CreateCallback", nameof(Runtime_CreateCallback), 0_00000400, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor CreateCallbackFromSyscall = Register("System.Runtime.CreateCallbackFromSyscall", nameof(Runtime_CreateCallbackFromSyscall), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor CreateSyscallCallback = Register("System.Runtime.CreateSyscallCallback", nameof(Runtime_CreateSyscallCallback), 0_00000400, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor InvokeCallback = Register("System.Runtime.InvokeCallback", nameof(Runtime_InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
 
         internal void Runtime_InvokeCallback(Callback callback)
@@ -69,7 +69,7 @@ namespace Neo.SmartContract
             arguments)));
         }
 
-        internal void Runtime_CreateCallbackFromSyscall(uint method, int parcount)
+        internal void Runtime_CreateSyscallCallback(uint method, int parcount)
         {
             // Save arguments
 
