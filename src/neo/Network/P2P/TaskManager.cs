@@ -287,7 +287,7 @@ namespace Neo.Network.P2P
 
     internal class TaskManagerMailbox : PriorityMailbox
     {
-        private ConcurrentDictionary<UInt256, InventoryType> taskHashes = new ConcurrentDictionary<UInt256, InventoryType>();
+        private readonly ConcurrentDictionary<UInt256, InventoryType> taskHashes = new ConcurrentDictionary<UInt256, InventoryType>();
 
         public TaskManagerMailbox(Akka.Actor.Settings settings, Config config)
             : base(settings, config)
