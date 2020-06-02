@@ -67,5 +67,31 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.AreEqual(6, item.GetBigInteger());
         }
+
+        [TestMethod]
+        public void Runtime_CreateCallbackFromSyscall()
+        {
+            using var script = new ScriptBuilder();
+
+            script.EmitPush(System.Array.Empty<byte>()); // Empty buffer
+            script.EmitPush(1); // ParamCount
+            script.EmitPush(ApplicationEngine.Neo_Crypto_SHA256.Hash); // Syscall
+            script.EmitSysCall(ApplicationEngine.CreateCallbackFromSyscall);
+            script.EmitSysCall(ApplicationEngine.InvokeCallback);
+
+            // Execute
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 100_000_000, false);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+
+            // Check the results
+
+            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var item));
+            Assert.IsNotNull(item);
+
+            Assert.AreEqual("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", item.GetSpan().ToHexString());
+        }
     }
 }
