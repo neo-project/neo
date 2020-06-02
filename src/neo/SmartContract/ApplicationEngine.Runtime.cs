@@ -28,20 +28,73 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 0_00010000, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 0_00000400, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor CreateCallback = Register("System.Runtime.CreateCallback", nameof(Runtime_CreateCallback), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor CreateCallbackFromSyscall = Register("System.Runtime.CreateCallbackFromSyscall", nameof(Runtime_CreateCallbackFromSyscall), 0_00000400, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor InvokeCallback = Register("System.Runtime.InvokeCallback", nameof(Runtime_InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
-
-        internal void Runtime_CreateCallback(Pointer pointer, int parcount, int rvcount)
-        {
-            Push(new InteropInterface(new Callback(CurrentContext, pointer, parcount, rvcount)));
-        }
 
         internal void Runtime_InvokeCallback(Callback callback)
         {
-            var context = callback.Context.Clone(callback.RVcount);
+            callback.Action(this);
+        }
 
-            LoadContext(context);
-            context.InstructionPointer = callback.Pointer.Position;
-            callback.PushArguments(context);
+        internal void Runtime_CreateCallback(Pointer pointer, int parcount)
+        {
+            // Save arguments
+
+            var arguments = new StackItem[parcount];
+            for (int x = parcount - 1; x >= 0; x--)
+            {
+                arguments[x] = Pop();
+            }
+
+            // Push callback
+
+            Push(new InteropInterface(new Callback(engine =>
+            {
+                // Clone context
+
+                var newContext = CurrentContext.Clone(0);
+                newContext.InstructionPointer = pointer.Position;
+
+                // Copy arguments
+
+                foreach (var arg in arguments)
+                {
+                    newContext.EvaluationStack.Push(arg);
+                }
+
+                // Load context
+
+                LoadContext(newContext);
+            },
+            arguments)));
+        }
+
+        internal void Runtime_CreateCallbackFromSyscall(uint method, int parcount)
+        {
+            // Save arguments
+
+            var arguments = new StackItem[parcount];
+            for (int x = parcount - 1; x >= 0; x--)
+            {
+                arguments[x] = Pop();
+            }
+
+            // Push callback
+
+            Push(new InteropInterface(new Callback(engine =>
+            {
+                // Copy arguments
+
+                foreach (var arg in arguments)
+                {
+                    Push(arg);
+                }
+
+                // Execute syscall
+
+                OnSysCall(method);
+            },
+            arguments)));
         }
 
         private static bool CheckItemForNotification(StackItem state)

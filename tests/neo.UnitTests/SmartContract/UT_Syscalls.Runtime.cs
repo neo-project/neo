@@ -3,7 +3,6 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -15,7 +14,6 @@ namespace Neo.UnitTests.SmartContract
             using var script = new ScriptBuilder();
 
             script.EmitPush(5); // Callback argument
-            script.EmitPush(0); // RVcount
             script.EmitPush(1); // ParamCount
             script.Emit(OpCode.PUSHA, BitConverter.GetBytes(0));
             script.EmitSysCall(ApplicationEngine.CreateCallback);
@@ -33,9 +31,8 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsNotNull(item);
 
             Assert.IsTrue(item.TryGetInterface<Callback>(out var callback));
-            Assert.AreEqual(0, callback.RVcount);
-            Assert.AreEqual(1, callback.Params.Length);
-            Assert.AreEqual(5, callback.Params[0].GetBigInteger());
+            Assert.AreEqual(1, callback.Arguments.Length);
+            Assert.AreEqual(5, callback.Arguments[0].GetBigInteger());
         }
 
         [TestMethod]
@@ -45,7 +42,6 @@ namespace Neo.UnitTests.SmartContract
 
             script.EmitPush(5); // Callback argument 1
             script.EmitPush(1); // Callback argument 2
-            script.EmitPush(0); // RVcount
             script.EmitPush(2); // ParamCount
             script.Emit(OpCode.PUSHA, BitConverter.GetBytes(200)); // -> Nop area
             script.EmitSysCall(ApplicationEngine.CreateCallback);
