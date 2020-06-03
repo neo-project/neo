@@ -207,7 +207,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             storages.Add(tokenKey, new StorageItem(token));
             storages.Add(CreateOwnershipKey(Prefix_OwnerToTokenId, account, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
-            storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, account), new StorageItem(new byte[0]));
+            storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, account), new StorageItem(System.Array.Empty<byte>()));
 
             IncreaseTotalSupply(engine.Snapshot);
 
