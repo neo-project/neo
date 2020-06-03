@@ -83,23 +83,23 @@ namespace Neo.UnitTests.Cryptography
             str.Should().Be("00000000000000000000000000000000");
 
             byte[] nullData = null;
-            Action action = () => nullData.AESDecryptNoPadding(key, false,  iv);
+            Action action = () => nullData.AESDecryptNoPadding(key, false, iv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] nullKey = null;
-            action = () => data.AESDecryptNoPadding(nullKey, false,  iv);
+            action = () => data.AESDecryptNoPadding(nullKey, false, iv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] nullIv = null;
-            action = () => data.AESDecryptNoPadding(key, false,  nullIv);
+            action = () => data.AESDecryptNoPadding(key, false, nullIv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] wrongData = Encoding.ASCII.GetBytes("00000000000000001"); ;
-            action = () => wrongData.AESDecryptNoPadding(key, false,  iv);
+            action = () => wrongData.AESDecryptNoPadding(key, false, iv);
             action.Should().Throw<ArgumentException>();
 
             byte[] wrongKey = Encoding.ASCII.GetBytes("123456781234567812345678123456780"); ;
-            action = () => data.AESDecryptNoPadding(wrongKey, false,  iv);
+            action = () => data.AESDecryptNoPadding(wrongKey, false, iv);
             action.Should().Throw<ArgumentException>();
 
             byte[] wrongIv = Encoding.ASCII.GetBytes("12345678123456780"); ;

@@ -19,7 +19,7 @@ namespace Neo.Cryptography
             {
                 if (data == null || key == null || iv == null) throw new ArgumentNullException();
                 if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentNullException();
-            }            
+            }
             using (Aes aes = Aes.Create())
             {
                 aes.Key = key;
@@ -27,7 +27,7 @@ namespace Neo.Cryptography
                 if (ecb)
                     aes.Mode = CipherMode.ECB;
                 else
-                    aes.IV = iv;                    
+                    aes.IV = iv;
                 using (ICryptoTransform decryptor = aes.CreateDecryptor())
                 {
                     return decryptor.TransformFinalBlock(data, 0, data.Length);
@@ -41,7 +41,7 @@ namespace Neo.Cryptography
             {
                 if (data == null || key == null || iv == null) throw new ArgumentNullException();
                 if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentNullException();
-            }            
+            }
             using (Aes aes = Aes.Create())
             {
                 aes.Key = key;
@@ -56,7 +56,7 @@ namespace Neo.Cryptography
                 }
             }
         }
-        
+
         public static byte[] RIPEMD160(this byte[] value)
         {
             using var ripemd160 = new RIPEMD160Managed();
