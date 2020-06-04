@@ -182,7 +182,7 @@ namespace Neo.SmartContract.Native.Tokens
             snapshot.Storages.Delete(CreateOwnershipKey(Prefix_OwnerToTokenId, owner, innerKey));
             snapshot.Storages.Delete(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, owner));
             snapshot.Storages.Add(CreateOwnershipKey(Prefix_OwnerToTokenId, to, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
-            snapshot.Storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, to), new StorageItem(new System.Array.Empty<byte>()));
+            snapshot.Storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, to), new StorageItem(System.Array.Empty<byte>()));
 
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", owner.ToArray(), to.ToArray(), Factor, tokenId }));
             return true;
