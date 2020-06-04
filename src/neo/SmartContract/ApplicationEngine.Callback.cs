@@ -17,6 +17,7 @@ namespace Neo.SmartContract
         {
             // Save arguments
 
+            var context = CurrentContext;
             var arguments = new StackItem[parcount];
             for (int x = parcount - 1; x >= 0; x--)
             {
@@ -29,7 +30,7 @@ namespace Neo.SmartContract
             {
                 // Clone context
 
-                var newContext = CurrentContext.Clone(0);
+                var newContext = context.Clone(0);
                 newContext.InstructionPointer = pointer.Position;
 
                 // Copy arguments
