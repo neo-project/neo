@@ -1,27 +1,19 @@
-using Neo.Cryptography.ECC;
-using Neo.IO;
-using Neo.Network.P2P.Payloads;
 using Neo.VM.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor CreateCallback = Register("System.Runtime.CreateCallback", nameof(Runtime_CreateCallback), 0_00000400, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor CreateSyscallCallback = Register("System.Runtime.CreateSyscallCallback", nameof(Runtime_CreateSyscallCallback), 0_00000400, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor InvokeCallback = Register("System.Runtime.InvokeCallback", nameof(Runtime_InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor CreateCallback = Register("System.Callback.Create", nameof(Callback_CreateCallback), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor CreateSyscallCallback = Register("System.Callback.CreateFromSyscall", nameof(Callback_CreateSyscallCallback), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor InvokeCallback = Register("System.Callback.Invoke", nameof(Callback_InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
 
-        internal void Runtime_InvokeCallback(Callback callback)
+        internal void Callback_InvokeCallback(Callback callback)
         {
             callback.Action(this);
         }
 
-        internal void Runtime_CreateCallback(Pointer pointer, int parcount)
+        internal void Callback_CreateCallback(Pointer pointer, int parcount)
         {
             // Save arguments
 
@@ -54,7 +46,7 @@ namespace Neo.SmartContract
             arguments)));
         }
 
-        internal void Runtime_CreateSyscallCallback(uint method, int parcount)
+        internal void Callback_CreateSyscallCallback(uint method, int parcount)
         {
             // Save arguments
 
