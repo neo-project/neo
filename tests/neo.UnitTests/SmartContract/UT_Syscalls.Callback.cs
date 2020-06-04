@@ -76,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
             script.EmitPush(System.Array.Empty<byte>()); // Empty buffer
             script.EmitPush(1); // ParamCount
             script.EmitPush(ApplicationEngine.Neo_Crypto_SHA256.Hash); // Syscall
-            script.EmitSysCall(ApplicationEngine.CreateSyscallCallback);
+            script.EmitSysCall(ApplicationEngine.CreateFromSyscall);
             script.EmitSysCall(ApplicationEngine.InvokeCallback);
 
             // Execute
