@@ -9,7 +9,7 @@ namespace Neo.UnitTests.SmartContract
     public partial class UT_Syscalls
     {
         [TestMethod]
-        public void Runtime_CreateCallback()
+        public void CreateCallbackTest()
         {
             using var script = new ScriptBuilder();
 
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Runtime_InvokeCallback()
+        public void InvokeCallbackTest()
         {
             using var script = new ScriptBuilder();
 
@@ -69,7 +69,7 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void Runtime_CreateSyscallCallback()
+        public void CreateSyscallCallbackTest()
         {
             using var script = new ScriptBuilder();
 
