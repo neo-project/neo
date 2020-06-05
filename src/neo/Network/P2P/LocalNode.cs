@@ -127,6 +127,37 @@ namespace Neo.Network.P2P
             return null;
         }
 
+        /// <summary>
+        /// Check duplicated duplicated Nonce. Usually it occurs when a new remote connection is established, which checks its counterpart's Nonce value. <br/>
+        /// If Nonce is the same we check if the Remote can be added to the known LocalAddresses.<br/>
+        /// If it is equal to the Nonce of other RemoteNode, we just return true, else we'll return false and update the Listener address of the connected remote node.
+        /// </summary>
+        /// <param name="remoteActor">Remote node actor</param>
+        /// <param name="remoteNode">Remote node</param>
+        public bool CheckDuplicateNonce(IActorRef remoteActor, RemoteNode remoteNode)
+        {
+            var version = remoteNode.Version;
+            var remote = remoteNode.Remote;
+
+            if (remote is null) return false;
+            if (version.Nonce == Nonce) return true;
+
+            foreach (var pair in RemoteNodes)
+            {
+                var otherNode = pair.Value;
+                if (otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
+                {// filter duplicate connections
+                    return true;
+                }
+            }
+            if (remote.Port != remoteNode.ListenerTcpPort && remoteNode.ListenerTcpPort != 0)
+            {
+                ConnectedPeers.TryUpdate(remoteActor, remoteNode.Listener, remote);
+            }
+
+            return false;
+        }
+
         public IEnumerable<RemoteNode> GetRemoteNodes()
         {
             return RemoteNodes.Values;

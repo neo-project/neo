@@ -361,7 +361,7 @@ namespace Neo.Network.P2P
                 Disconnect(true);
                 return;
             }
-            if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == payload.Nonce))
+            if (LocalNode.Singleton.CheckDuplicateNonce(Self, this))
             {
                 Disconnect(true);
                 return;
