@@ -356,12 +356,7 @@ namespace Neo.Network.P2P
                         break;
                 }
             }
-            if (payload.Nonce == LocalNode.Nonce || payload.Magic != ProtocolSettings.Default.Magic)
-            {
-                Disconnect(true);
-                return;
-            }
-            if (LocalNode.Singleton.CheckDuplicateNonce(Self, this))
+            if (payload.Magic != ProtocolSettings.Default.Magic || LocalNode.Singleton.AllowNewConnection(Self, this))
             {
                 Disconnect(true);
                 return;
