@@ -6,6 +6,7 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Enumerators;
+using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -144,18 +145,23 @@ namespace Neo.SmartContract.Native.Tokens
         public StackItem OwnerOf(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
-            if (tokenId.Length > MaxTokenIdLength) return false;
-            return new InteropInterface(OwnerOf(engine.Snapshot, tokenId));
+            if (tokenId.Length > MaxTokenIdLength) throw new InvalidOperationException("Invalid tokenId");
+
+            var owner = OwnerOf(engine.Snapshot, tokenId);
+            if (owner is null) throw new InvalidOperationException("Token doesn't exist");
+
+            var array = new ArrayWrapper(new StackItem[] { owner.ToArray() });
+            return new InteropInterface(array);
         }
 
-        public virtual IEnumerator OwnerOf(StoreView snapshot, byte[] tokenId)
+        public virtual UInt160 OwnerOf(StoreView snapshot, byte[] tokenId)
         {
             UInt160 innerKey = GetInnerKey(tokenId);
-            return new CollectionWrapper(snapshot.Storages.Find(CreateStorageKey(Prefix_TokenIdToOwner, innerKey).ToArray()).Select(p =>
+            return snapshot.Storages.Find(CreateStorageKey(Prefix_TokenIdToOwner, innerKey).ToArray()).Select(p =>
             {
                 var owner = p.Key.Key.Skip(1 + UInt160.Length).Take(UInt160.Length).ToArray();
-                return (StackItem)owner;
-            }).GetEnumerator());
+                return new UInt160(owner);
+            })?.First();
         }
 
         [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.ByteArray }, ParameterNames = new[] { "to", "tokenId" })]
@@ -169,10 +175,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
-            IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
-            if (!enumerator.Next()) return false;
-            UInt160 owner = new UInt160(enumerator.Value().GetSpan().ToArray());
-            if (!engine.CheckWitnessInternal(owner)) return false;
+            UInt160 owner = OwnerOf(engine.Snapshot, tokenId);
+            if (owner is null || !engine.CheckWitnessInternal(owner)) return false;
 
             var snapshot = engine.Snapshot;
             ContractState contract_to = snapshot.Contracts.TryGet(to);
@@ -221,13 +225,9 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey tokenKey = CreateTokenKey(innerKey);
             if (!storages.Delete(tokenKey)) throw new InvalidOperationException("Token doesn't exist");
 
-            IEnumerator enumerator = OwnerOf(engine.Snapshot, tokenId);
-            if (enumerator.Next())
-            {
-                UInt160 owner = new UInt160(enumerator.Value().GetSpan().ToArray());
-                storages.Delete(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, owner));
-                storages.Delete(CreateOwnershipKey(Prefix_OwnerToTokenId, owner, innerKey));
-            }
+            UInt160 owner = OwnerOf(engine.Snapshot, tokenId);
+            storages.Delete(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, owner));
+            storages.Delete(CreateOwnershipKey(Prefix_OwnerToTokenId, owner, innerKey));
 
             DecreaseTotalSupply(engine.Snapshot);
 
