@@ -26,8 +26,6 @@ namespace Neo.SmartContract.Native.Tokens
         public abstract string Symbol { get; }
         public BigInteger Factor { get; }
 
-        public const byte Decimals = 0;
-
         private const byte Prefix_TotalSupply = 20;
         private const byte Prefix_OwnerToTokenId = 21;
         private const byte Prefix_TokenIdToOwner = 22;
@@ -37,7 +35,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected Nep11Token()
         {
-            this.Factor = BigInteger.Pow(10, Decimals);
+            this.Factor = 1;
 
             Manifest.Features = ContractFeatures.HasStorage;
 
@@ -91,7 +89,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0, ContractParameterType.Integer, CallFlags.None, Name = "decimals")]
         protected StackItem DecimalsMethod(ApplicationEngine engine, Array args)
         {
-            return (uint)Decimals;
+            return (uint)0;
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
@@ -186,7 +184,7 @@ namespace Neo.SmartContract.Native.Tokens
             snapshot.Storages.Delete(CreateOwnershipKey(Prefix_OwnerToTokenId, owner, innerKey));
             snapshot.Storages.Delete(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, owner));
             snapshot.Storages.Add(CreateOwnershipKey(Prefix_OwnerToTokenId, to, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
-            snapshot.Storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, to), new StorageItem(new byte[0]));
+            snapshot.Storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, to), new StorageItem(System.Array.Empty<byte>()));
 
             engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", owner.ToArray(), to.ToArray(), Factor, tokenId }));
             return true;
@@ -211,7 +209,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             storages.Add(tokenKey, new StorageItem(token));
             storages.Add(CreateOwnershipKey(Prefix_OwnerToTokenId, account, innerKey), new StorageItem(new TAccount() { Balance = Factor }));
-            storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, account), new StorageItem(new byte[0]));
+            storages.Add(CreateOwnershipKey(Prefix_TokenIdToOwner, innerKey, account), new StorageItem(System.Array.Empty<byte>()));
 
             IncreaseTotalSupply(engine.Snapshot);
 
