@@ -17,7 +17,6 @@ namespace Neo.SmartContract
         {
             // Save arguments
 
-            var context = CurrentContext;
             var arguments = new StackItem[parcount];
             for (int x = parcount - 1; x >= 0; x--)
             {
@@ -26,25 +25,7 @@ namespace Neo.SmartContract
 
             // Push callback
 
-            Push(new InteropInterface(new Callback(engine =>
-            {
-                // Clone context
-
-                var newContext = context.Clone(0);
-                newContext.InstructionPointer = pointer.Position;
-
-                // Copy arguments
-
-                foreach (var arg in arguments)
-                {
-                    newContext.EvaluationStack.Push(arg);
-                }
-
-                // Load context
-
-                LoadContext(newContext);
-            },
-            arguments)));
+            Push(new InteropInterface(new PointerCallback(CurrentContext, pointer, arguments)));
         }
 
         internal void CreateCallbackFromSyscall(uint method, int parcount)
@@ -59,21 +40,7 @@ namespace Neo.SmartContract
 
             // Push callback
 
-            Push(new InteropInterface(new Callback(engine =>
-            {
-                // Copy arguments
-
-                foreach (var arg in arguments)
-                {
-                    Push(arg);
-                }
-
-                // Execute syscall
-
-                OnSysCall(method);
-            },
-            arguments)));
+            Push(new InteropInterface(new SyscallCallback(method, arguments)));
         }
-
     }
 }
