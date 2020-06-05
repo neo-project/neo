@@ -22,7 +22,7 @@ namespace Neo.Network.P2P
         Disconnect = 0x1f,
 
         //synchronization
-        [ReflectionCache(typeof(GetBlocksPayload))]
+        [ReflectionCache(typeof(GetBlockByIndexPayload))]
         GetHeaders = 0x20,
         [ReflectionCache(typeof(HeadersPayload))]
         Headers = 0x21,
@@ -33,9 +33,8 @@ namespace Neo.Network.P2P
         Inv = 0x27,
         [ReflectionCache(typeof(InvPayload))]
         GetData = 0x28,
-        [ReflectionCache(typeof(GetBlockDataPayload))]
-        GetBlockData = 0x29,
-        [ReflectionCache(typeof(InvPayload))]
+        [ReflectionCache(typeof(GetBlockByIndexPayload))]
+        GetBlockByIndex = 0x29,
         NotFound = 0x2a,
         [ReflectionCache(typeof(Transaction))]
         Transaction = 0x2b,
