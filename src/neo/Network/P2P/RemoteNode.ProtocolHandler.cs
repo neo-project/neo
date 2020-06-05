@@ -356,7 +356,7 @@ namespace Neo.Network.P2P
                         break;
                 }
             }
-            if (payload.Magic != ProtocolSettings.Default.Magic || LocalNode.Singleton.AllowNewConnection(Self, this))
+            if (payload.Magic != ProtocolSettings.Default.Magic || !LocalNode.Singleton.AllowNewConnection(Self, this))
             {
                 Disconnect(true);
                 return;
