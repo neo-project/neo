@@ -129,7 +129,7 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Check the new connection <br/>
-        /// If it is equal to the Nonce of lcoal or any remote node, it'll return false, else we'll return true and update the Listener address of the connected remote node.
+        /// If it is equal to the Nonce of local or any remote node, it'll return false, else we'll return true and update the Listener address of the connected remote node.
         /// </summary>
         /// <param name="remoteActor">Remote node actor</param>
         /// <param name="remoteNode">Remote node</param>
