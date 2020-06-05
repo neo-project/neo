@@ -138,7 +138,7 @@ namespace Neo.Network.P2P
             var version = remoteNode.Version;
             var remote = remoteNode.Remote;
 
-            if (remote is null) return true;
+            if (remote is null) return false;
             if (version.Nonce == Nonce) return false;
 
             foreach (var pair in RemoteNodes)
