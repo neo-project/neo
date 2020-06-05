@@ -18,7 +18,6 @@ namespace Neo.Ledger
         public string Email;
         public string Description;
 
-
         public bool HasStorage => ContractProperties.HasFlag(ContractPropertyState.HasStorage);
         public bool HasDynamicInvoke => ContractProperties.HasFlag(ContractPropertyState.HasDynamicInvoke);
         public bool Payable => ContractProperties.HasFlag(ContractPropertyState.Payable);
@@ -36,7 +35,7 @@ namespace Neo.Ledger
             }
         }
 
-        public override int Size => base.Size + Script.GetVarSize() + ParameterList.GetVarSize() + sizeof(ContractParameterType) + sizeof(bool) + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
+        public override int Size => base.Size + Script.GetVarSize() + ParameterList.GetVarSize() + sizeof(ContractParameterType) + sizeof(ContractPropertyState) + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -57,15 +56,15 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Script = reader.ReadVarBytes();
-            ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
+            Script = reader.ReadVarBytes(1024 * 1024);
+            ParameterList = reader.ReadVarBytes(252).Select(p => (ContractParameterType)p).ToArray();
             ReturnType = (ContractParameterType)reader.ReadByte();
             ContractProperties = (ContractPropertyState)reader.ReadByte();
-            Name = reader.ReadVarString();
-            CodeVersion = reader.ReadVarString();
-            Author = reader.ReadVarString();
-            Email = reader.ReadVarString();
-            Description = reader.ReadVarString();
+            Name = reader.ReadVarString(252);
+            CodeVersion = reader.ReadVarString(252);
+            Author = reader.ReadVarString(252);
+            Email = reader.ReadVarString(252);
+            Description = reader.ReadVarString(65536);
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)

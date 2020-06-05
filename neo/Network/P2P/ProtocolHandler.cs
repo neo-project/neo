@@ -94,6 +94,15 @@ namespace Neo.Network.P2P
                 case "consensus":
                     OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
+                case "stateroot":
+                    OnInventoryReceived(msg.GetPayload<StateRoot>());
+                    break;
+                case "getroots":
+                    OnGetStateRootsReceived(msg.GetPayload<GetStateRootsPayload>());
+                    break;
+                case "roots":
+                    OnStateRootsReceived(msg.GetPayload<StateRootsPayload>());
+                    break;
                 case "filteradd":
                     OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
@@ -153,6 +162,29 @@ namespace Neo.Network.P2P
             {
                 EndPoints = payload.AddressList.Select(p => p.EndPoint)
             });
+        }
+
+        private void OnGetStateRootsReceived(GetStateRootsPayload payload)
+        {
+            var count = Math.Min(payload.Count, StateRootsPayload.MaxStateRootsCount);
+            var state_roots = new List<StateRoot>();
+            for (uint i = 0; i < count; i++)
+            {
+                var state = Blockchain.Singleton.GetStateRoot(payload.StartIndex + i);
+                if (state is null || state.Flag != StateRootVerifyFlag.Verified)
+                    break;
+                state_roots.Add(state.StateRoot);
+            }
+            foreach (StateRootsPayload pl in StateRootsPayload.Create(state_roots))
+            {
+                Context.Parent.Tell(Message.Create("roots", pl));
+            }
+        }
+
+        private void OnStateRootsReceived(StateRootsPayload payload)
+        {
+            if (payload.StateRoots.Length == 0) return;
+            system.Blockchain.Tell(payload.StateRoots, Context.Parent);
         }
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)

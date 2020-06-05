@@ -22,13 +22,16 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, AssetState> Assets { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
+        public abstract DataCache<UInt32Wrapper, StateRootState> StateRoots { get; }
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public abstract MetaDataCache<RootHashIndex> StateRootHashIndex { get; }
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
+        public long StateHeight => StateRootHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
@@ -134,10 +137,12 @@ namespace Neo.Persistence
             Assets.Commit();
             Contracts.Commit();
             Storages.Commit();
+            StateRoots.Commit();
             HeaderHashList.Commit();
             ValidatorsCount.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
+            StateRootHashIndex.Commit();
         }
 
         public virtual void Dispose()

@@ -117,6 +117,13 @@ namespace Neo.Consensus
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
+
+                StateRoot stateRoot = context.CreateStateRoot();
+                if (stateRoot != null)
+                {
+                    Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Hash}");
+                    localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });
+                }
             }
         }
 
@@ -219,12 +226,16 @@ namespace Neo.Consensus
             {
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted()} nf={context.CountFailed()}");
 
-                byte[] hashData = context.MakeHeader()?.GetHashData();
-                if (hashData == null)
+                byte[] hashData1 = context.MakeHeader()?.GetHashData();
+                byte[] hashData2 = context.MakeStateRoot()?.GetHashData();
+                if (hashData1 == null || hashData2 == null)
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.Default.VerifySignature(hashData, commit.Signature,
+                else if (Crypto.Default.VerifySignature(hashData1,
+                    commit.Signature,
+                    context.Validators[payload.ValidatorIndex].EncodePoint(false)) && Crypto.Default.VerifySignature(hashData2,
+                    commit.StateRootSignature,
                     context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 {
                     existingCommitPayload = payload;
@@ -240,9 +251,9 @@ namespace Neo.Consensus
         // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.SecondsPerBlock`
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
-           TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes*Blockchain.SecondsPerBlock * 1000.0 / context.M());
-           if (!context.WatchOnly() && !context.ViewChanging() && !context.CommitSent() && (nextDelay > TimeSpan.Zero))
-               ChangeTimer(nextDelay);
+            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * Blockchain.SecondsPerBlock * 1000.0 / context.M());
+            if (!context.WatchOnly() && !context.ViewChanging() && !context.CommitSent() && (nextDelay > TimeSpan.Zero))
+                ChangeTimer(nextDelay);
         }
 
         private void OnConsensusPayload(ConsensusPayload payload)
@@ -255,6 +266,11 @@ namespace Neo.Consensus
                 {
                     Log($"chain sync: expected={payload.BlockIndex} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
+                return;
+            }
+            if (ProtocolSettings.Default.StateRootEnableIndex + 1 < payload.BlockIndex && Blockchain.Singleton.StateHeight < payload.BlockIndex - 2)
+            {
+                Log($"root sync: expected={payload.BlockIndex - 1} current={Blockchain.Singleton.StateHeight}");
                 return;
             }
             if (payload.ValidatorIndex >= context.Validators.Length) return;
@@ -271,7 +287,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            context.LastSeenMessage[payload.ValidatorIndex] = (int) payload.BlockIndex;
+            context.LastSeenMessage[payload.ValidatorIndex] = (int)payload.BlockIndex;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;
@@ -409,10 +425,24 @@ namespace Neo.Consensus
                 return;
             }
 
+            StateRoot contextStateRoot = Blockchain.Singleton.GetStateRoot(Blockchain.Singleton.Height).StateRoot;
+            if (message.ProposalStateRoot.Index != contextStateRoot.Index) return;
+            if (message.ProposalStateRoot.PreHash != contextStateRoot.PreHash)
+            {
+                Log($"PreHash incorrect: {message.ProposalStateRoot.PreHash}", LogLevel.Warning);
+                return;
+            }
+            if (message.ProposalStateRoot.Root != contextStateRoot.Root)
+            {
+                Log($"StateRoot incorrect: {message.ProposalStateRoot.Root} local:{contextStateRoot.Root}", LogLevel.Warning);
+                return;
+            }
+
             // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
+            context.ProposalStateRoot = message.ProposalStateRoot;
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
@@ -424,9 +454,14 @@ namespace Neo.Consensus
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.MakeHeader().GetHashData();
+            byte[] stateData = context.MakeStateRoot().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    if (!Crypto.Default.VerifySignature(hashData,
+                        context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature,
+                        context.Validators[i].EncodePoint(false)) || !Crypto.Default.VerifySignature(stateData,
+                        context.CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature,
+                        context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();

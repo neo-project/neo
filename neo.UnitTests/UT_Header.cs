@@ -68,7 +68,7 @@ namespace Neo.UnitTests
             uut.NextConsensus.Should().Be(val160);
             uut.Witness.InvocationScript.Length.Should().Be(0);
             uut.Witness.Size.Should().Be(scriptVal.Size);
-            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);            
+            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
         }
 
         [TestMethod]
@@ -83,11 +83,11 @@ namespace Neo.UnitTests
         {
             uut.Equals(uut).Should().BeTrue();
         }
-     
+
         [TestMethod]
         public void Equals_SameHash()
         {
-            Header newHeader = new Header();            
+            Header newHeader = new Header();
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
             UInt256 merkRoot;
             UInt160 val160;

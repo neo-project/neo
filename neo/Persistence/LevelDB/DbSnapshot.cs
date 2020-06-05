@@ -12,7 +12,6 @@ namespace Neo.Persistence.LevelDB
         private readonly DB db;
         private readonly LSnapshot snapshot;
         private readonly WriteBatch batch;
-
         public override DataCache<UInt256, BlockState> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, AccountState> Accounts { get; }
@@ -22,10 +21,12 @@ namespace Neo.Persistence.LevelDB
         public override DataCache<UInt256, AssetState> Assets { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
+        public override DataCache<UInt32Wrapper, StateRootState> StateRoots { get; }
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public override MetaDataCache<RootHashIndex> StateRootHashIndex { get; }
 
         public DbSnapshot(DB db)
         {
@@ -41,11 +42,13 @@ namespace Neo.Persistence.LevelDB
             Validators = new DbCache<ECPoint, ValidatorState>(db, options, batch, Prefixes.ST_Validator);
             Assets = new DbCache<UInt256, AssetState>(db, options, batch, Prefixes.ST_Asset);
             Contracts = new DbCache<UInt160, ContractState>(db, options, batch, Prefixes.ST_Contract);
-            Storages = new DbCache<StorageKey, StorageItem>(db, options, batch, Prefixes.ST_Storage);
+            Storages = new DbCacheWithTrie<StorageKey, StorageItem>(db, options, batch, Prefixes.ST_Storage);
+            StateRoots = new DbCache<UInt32Wrapper, StateRootState>(db, options, batch, Prefixes.ST_StateRoot);
             HeaderHashList = new DbCache<UInt32Wrapper, HeaderHashList>(db, options, batch, Prefixes.IX_HeaderHashList);
             ValidatorsCount = new DbMetaDataCache<ValidatorsCountState>(db, options, batch, Prefixes.IX_ValidatorsCount);
             BlockHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentHeader);
+            StateRootHashIndex = new DbMetaDataCache<RootHashIndex>(db, options, batch, Prefixes.IX_CurrentStateRoot);
         }
 
         public override void Commit()

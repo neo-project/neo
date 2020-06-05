@@ -1,0 +1,33 @@
+name: .NET Core Test
+
+on:
+  push:
+    branches: master-2.x
+  pull_request:
+
+env:
+  DOTNET_VERSION: 2.1.805
+
+jobs:
+
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Check format
+      run: |
+        dotnet tool install --version 3.2.111002 --tool-path ./ dotnet-format --add-source https://dotnet.myget.org/F/format/api/v3/index.json
+        ./dotnet-format --check --dry-run -v diagnostic
+    - name: Test
+      run: |
+        find neo.UnitTests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
+        dotnet test -f netcoreapp2.0 --filter "ClassName!=UT_Culture" /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
