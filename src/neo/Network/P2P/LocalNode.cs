@@ -138,16 +138,14 @@ namespace Neo.Network.P2P
             if (node.Version.Magic != ProtocolSettings.Default.Magic) return false;
             if (node.Version.Nonce == Nonce) return false;
 
+            // filter duplicate connections
             foreach (var other in RemoteNodes.Values)
-            {
-                // filter duplicate connections
                 if (other != node && other.Remote.Address.Equals(node.Remote.Address) && other.Version?.Nonce == node.Version.Nonce)
                     return false;
-            }
+
             if (node.Remote.Port != node.ListenerTcpPort && node.ListenerTcpPort != 0)
-            {
                 ConnectedPeers.TryUpdate(actor, node.Listener, node.Remote);
-            }
+
             return true;
         }
 
