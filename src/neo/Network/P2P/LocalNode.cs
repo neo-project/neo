@@ -135,7 +135,6 @@ namespace Neo.Network.P2P
         /// <param name="node">Remote node</param>
         public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
-            if (node.Remote is null) return false;
             if (node.Version.Nonce == Nonce) return false;
 
             foreach (var other in RemoteNodes.Values)
