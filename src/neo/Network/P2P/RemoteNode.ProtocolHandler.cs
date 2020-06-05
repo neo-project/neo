@@ -361,7 +361,7 @@ namespace Neo.Network.P2P
                 DisconnectWithReason(DisconnectReason.MagicNumberIncompatible, BitConverter.GetBytes(ProtocolSettings.Default.Magic));
                 return;
             }
-            if (LocalNode.Singleton.CheckDuplicateNonce(Self, this))
+            if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == payload.Nonce))
             {
                 DisconnectWithReason(DisconnectReason.DuplicateNonce);
                 return;
