@@ -24,6 +24,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
         private const byte Prefix_MaxBlockSize = 16;
+        private const byte Prefix_MaxBlockSystemFee = 17;
 
         public PolicyContract()
         {
@@ -53,6 +54,10 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
             {
                 Value = BitConverter.GetBytes(512u)
+            });
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSystemFee), new StorageItem
+            {
+                Value = BitConverter.GetBytes(2560 * (long)GAS.Factor) // = 5 * 512 
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
             {
@@ -84,6 +89,17 @@ namespace Neo.SmartContract.Native
         public uint GetMaxBlockSize(StoreView snapshot)
         {
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)].Value, 0);
+        }
+
+        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
+        private StackItem GetMaxBlockSystemFee(ApplicationEngine engine, Array args)
+        {
+            return GetMaxBlockSystemFee(engine.Snapshot);
+        }
+
+        public long GetMaxBlockSystemFee(StoreView snapshot)
+        {
+            return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSystemFee)].Value, 0);
         }
 
         [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
@@ -125,6 +141,16 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittees(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
+            storage.Value = BitConverter.GetBytes(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
+        private StackItem SetMaxBlockSystemFee(ApplicationEngine engine, Array args)
+        {
+            if (!CheckCommittees(engine)) return false;
+            uint value = (uint)args[0].GetBigInteger();
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee));
             storage.Value = BitConverter.GetBytes(value);
             return true;
         }

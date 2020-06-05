@@ -90,9 +90,9 @@ namespace Neo.Consensus
                 if (context.IsPrimary || context.WatchOnly) return true;
 
                 // Check maximum block size via Native Contract policy
-                if (context.GetExpectedBlockSize() > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
+                if (context.GetExpectedBlockSize() > NativeContract.Policy.GetMaxBlockSize(context.Snapshot) || context.GetExpectedBlockSystemFee() > NativeContract.Policy.GetMaxBlockSystemFee(context.Snapshot))
                 {
-                    Log($"rejected block: {context.Block.Index}{Environment.NewLine} The size exceed the policy", LogLevel.Warning);
+                    Log($"rejected block: {context.Block.Index}{Environment.NewLine} block size or system fee exceed the policy", LogLevel.Warning);
                     RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
                     return false;
                 }

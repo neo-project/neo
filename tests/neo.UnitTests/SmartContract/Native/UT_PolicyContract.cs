@@ -31,7 +31,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
-            (keyCount + 4).Should().Be(snapshot.Storages.GetChangeSet().Count());
+            (keyCount + 5).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             var ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -40,6 +40,10 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetBigInteger().Should().Be(1024 * 256);
+
+            ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSystemFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetBigInteger().Should().Be(2560 * 100000000L);
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
