@@ -131,27 +131,22 @@ namespace Neo.Network.P2P
         /// Check the new connection <br/>
         /// If it is equal to the Nonce of local or any remote node, it'll return false, else we'll return true and update the Listener address of the connected remote node.
         /// </summary>
-        /// <param name="remoteActor">Remote node actor</param>
-        /// <param name="remoteNode">Remote node</param>
-        public bool AllowNewConnection(IActorRef remoteActor, RemoteNode remoteNode)
+        /// <param name="actor">Remote node actor</param>
+        /// <param name="node">Remote node</param>
+        public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
-            var version = remoteNode.Version;
-            var remote = remoteNode.Remote;
+            if (node.Remote is null) return false;
+            if (node.Version.Nonce == Nonce) return false;
 
-            if (remote is null) return false;
-            if (version.Nonce == Nonce) return false;
-
-            foreach (var pair in RemoteNodes)
+            foreach (var other in RemoteNodes.Values)
             {
-                var otherNode = pair.Value;
-                if (otherNode != remoteNode && otherNode.Remote.Address.Equals(remote.Address) && otherNode.Version?.Nonce == version.Nonce)
-                {// filter duplicate connections
+                // filter duplicate connections
+                if (other != node && other.Remote.Address.Equals(node.Remote.Address) && other.Version?.Nonce == node.Version.Nonce)
                     return false;
-                }
             }
-            if (remote.Port != remoteNode.ListenerTcpPort && remoteNode.ListenerTcpPort != 0)
+            if (node.Remote.Port != node.ListenerTcpPort && node.ListenerTcpPort != 0)
             {
-                ConnectedPeers.TryUpdate(remoteActor, remoteNode.Listener, remote);
+                ConnectedPeers.TryUpdate(actor, node.Listener, node.Remote);
             }
             return true;
         }
