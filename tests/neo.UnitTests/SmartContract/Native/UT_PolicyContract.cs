@@ -120,7 +120,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Without signature
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
-                "setMaxBlockSystemFee", new ContractParameter(ContractParameterType.Integer) { Value = 1024 * (long) NativeContract.GAS.Factor });
+                "setMaxBlockSystemFee", new ContractParameter(ContractParameterType.Integer) { Value = 1024 * (long)NativeContract.GAS.Factor });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.ToBoolean().Should().BeFalse();
 
