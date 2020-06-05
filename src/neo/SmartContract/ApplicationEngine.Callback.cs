@@ -4,16 +4,16 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor CreateCallback = Register("System.Callback.Create", nameof(Callback_Create), 0_00000400, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor CreateFromSyscall = Register("System.Callback.CreateFromSyscall", nameof(Callback_CreateFromSyscall), 0_00000400, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor InvokeCallback = Register("System.Callback.Invoke", nameof(Callback_Invoke), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor System_Callback_Create = Register("System.Callback.Create", nameof(CreateCallback), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor System_Callback_CreateFromSyscall = Register("System.Callback.CreateFromSyscall", nameof(CreateCallbackFromSyscall), 0_00000400, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor System_Callback_Invoke = Register("System.Callback.Invoke", nameof(InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
 
-        internal void Callback_Invoke(Callback callback)
+        internal void InvokeCallback(Callback callback)
         {
             callback.Action(this);
         }
 
-        internal void Callback_Create(Pointer pointer, int parcount)
+        internal void CreateCallback(Pointer pointer, int parcount)
         {
             // Save arguments
 
@@ -47,7 +47,7 @@ namespace Neo.SmartContract
             arguments)));
         }
 
-        internal void Callback_CreateFromSyscall(uint method, int parcount)
+        internal void CreateCallbackFromSyscall(uint method, int parcount)
         {
             // Save arguments
 

@@ -16,7 +16,7 @@ namespace Neo.UnitTests.SmartContract
             script.EmitPush(5); // Callback argument
             script.EmitPush(1); // ParamCount
             script.Emit(OpCode.PUSHA, BitConverter.GetBytes(0));
-            script.EmitSysCall(ApplicationEngine.CreateCallback);
+            script.EmitSysCall(ApplicationEngine.System_Callback_Create);
 
             // Execute
 
@@ -44,8 +44,8 @@ namespace Neo.UnitTests.SmartContract
             script.EmitPush(1); // Callback argument 2
             script.EmitPush(2); // ParamCount
             script.Emit(OpCode.PUSHA, BitConverter.GetBytes(200)); // -> Nop area
-            script.EmitSysCall(ApplicationEngine.CreateCallback);
-            script.EmitSysCall(ApplicationEngine.InvokeCallback);
+            script.EmitSysCall(ApplicationEngine.System_Callback_Create);
+            script.EmitSysCall(ApplicationEngine.System_Callback_Invoke);
             script.Emit(OpCode.RET);
 
             for (int x = 0; x < 250; x++) script.Emit(OpCode.NOP);
@@ -76,8 +76,8 @@ namespace Neo.UnitTests.SmartContract
             script.EmitPush(System.Array.Empty<byte>()); // Empty buffer
             script.EmitPush(1); // ParamCount
             script.EmitPush(ApplicationEngine.Neo_Crypto_SHA256.Hash); // Syscall
-            script.EmitSysCall(ApplicationEngine.CreateFromSyscall);
-            script.EmitSysCall(ApplicationEngine.InvokeCallback);
+            script.EmitSysCall(ApplicationEngine.System_Callback_CreateFromSyscall);
+            script.EmitSysCall(ApplicationEngine.System_Callback_Invoke);
 
             // Execute
 
