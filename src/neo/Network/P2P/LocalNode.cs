@@ -129,7 +129,6 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Check duplicated duplicated Nonce. Usually it occurs when a new remote connection is established, which checks its counterpart's Nonce value. <br/>
-        /// If Nonce is the same we check if the Remote can be added to the known LocalAddresses.<br/>
         /// If it is equal to the Nonce of other RemoteNode, we just return true, else we'll return false and update the Listener address of the connected remote node.
         /// </summary>
         /// <param name="remoteActor">Remote node actor</param>
@@ -154,7 +153,6 @@ namespace Neo.Network.P2P
             {
                 ConnectedPeers.TryUpdate(remoteActor, remoteNode.Listener, remote);
             }
-
             return false;
         }
 
