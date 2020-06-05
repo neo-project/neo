@@ -149,7 +149,8 @@ namespace Neo.SmartContract.Native
         private StackItem SetMaxBlockSystemFee(ApplicationEngine engine, Array args)
         {
             if (!CheckCommittees(engine)) return false;
-            uint value = (uint)args[0].GetBigInteger();
+            long value = (long)args[0].GetBigInteger();
+            if (value <= 0) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee));
             storage.Value = BitConverter.GetBytes(value);
             return true;
