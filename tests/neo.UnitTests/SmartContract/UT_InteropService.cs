@@ -441,7 +441,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = true
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Storages.Put(storageKey, storageItem);
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
@@ -499,7 +499,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = true
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Storages.Put(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             key = new byte[] { 0x01 };
@@ -508,11 +508,12 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsException<InvalidOperationException>(() => engine.Put(storageContext, key, value));
 
             //success
+            key = new byte[] { 0x02 };
             storageItem.IsConstant = false;
             engine.Put(storageContext, key, value);
 
             //value length == 0
-            key = new byte[] { 0x01 };
+            key = new byte[] { 0x02 };
             value = new byte[0];
             engine.Put(storageContext, key, value);
         }
@@ -535,7 +536,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = false
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Storages.Put(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             var key = new byte[] { 0x01 };
@@ -566,7 +567,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = false
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Storages.Put(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             state.Manifest.Features = ContractFeatures.HasStorage;
@@ -675,7 +676,7 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(scriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Storages.Put(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[0]);
             engine.DestroyContract();

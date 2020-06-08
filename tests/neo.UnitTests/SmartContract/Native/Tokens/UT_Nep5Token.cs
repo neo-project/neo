@@ -36,7 +36,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             key.Id = test.Id;
 
-            snapshot.Storages.Add(key, item);
+            snapshot.Storages.Put(key, item);
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             StackItem stackItem = test.TotalSupply(ae, null);
             stackItem.GetBigInteger().Should().Be(1);
@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             key.Id = test.Id;
 
-            snapshot.Storages.Add(key, item);
+            snapshot.Storages.Put(key, item);
 
             ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             StackItem stackItem = test.TotalSupply(ae, null);

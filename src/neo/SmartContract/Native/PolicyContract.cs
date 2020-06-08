@@ -46,19 +46,19 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
+            engine.Snapshot.Storages.Put(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
             {
                 Value = BitConverter.GetBytes(1024u * 256u)
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
+            engine.Snapshot.Storages.Put(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
             {
                 Value = BitConverter.GetBytes(512u)
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
+            engine.Snapshot.Storages.Put(CreateStorageKey(Prefix_FeePerByte), new StorageItem
             {
                 Value = BitConverter.GetBytes(1000L)
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_BlockedAccounts), new StorageItem
+            engine.Snapshot.Storages.Put(CreateStorageKey(Prefix_BlockedAccounts), new StorageItem
             {
                 Value = new UInt160[0].ToByteArray()
             });
@@ -114,8 +114,10 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittees(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
             if (Network.P2P.Message.PayloadMaxSize <= value) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize));
-            storage.Value = BitConverter.GetBytes(value);
+            StorageKey skey = CreateStorageKey(Prefix_MaxBlockSize);
+            StorageItem item = engine.Snapshot.Storages[skey];
+            item.Value = BitConverter.GetBytes(value);
+            engine.Snapshot.Storages.Put(skey, item);
             return true;
         }
 
@@ -124,8 +126,10 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
-            storage.Value = BitConverter.GetBytes(value);
+            StorageKey skey = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
+            StorageItem item = engine.Snapshot.Storages[skey];
+            item.Value = BitConverter.GetBytes(value);
+            engine.Snapshot.Storages.Put(skey, item);
             return true;
         }
 
@@ -134,8 +138,10 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             long value = (long)args[0].GetBigInteger();
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
-            storage.Value = BitConverter.GetBytes(value);
+            StorageKey skey = CreateStorageKey(Prefix_FeePerByte);
+            StorageItem item = engine.Snapshot.Storages[skey];
+            item.Value = BitConverter.GetBytes(value);
+            engine.Snapshot.Storages.Put(skey, item);
             return true;
         }
 
@@ -148,8 +154,8 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.Storages[key];
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Add(account)) return false;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = accounts.ToByteArray();
+            engine.Snapshot.Storages.Put(key, storage);
             return true;
         }
 
@@ -162,8 +168,8 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.Storages[key];
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Remove(account)) return false;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = accounts.ToByteArray();
+            engine.Snapshot.Storages.Put(key, storage);
             return true;
         }
     }

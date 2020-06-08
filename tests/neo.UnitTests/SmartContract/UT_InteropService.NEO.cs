@@ -179,7 +179,7 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Storages.Put(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(state.Script);
             engine.UpdateContract(script, manifest.ToJson().ToByteArray(false));
@@ -204,7 +204,7 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Storages.Put(storageKey, storageItem);
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 

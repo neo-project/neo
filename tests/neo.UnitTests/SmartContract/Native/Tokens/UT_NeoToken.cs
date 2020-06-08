@@ -100,14 +100,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            var keyCount = snapshot.Storages.GetChangeSet().Count();
             var point = Blockchain.StandbyValidators[0].EncodePoint(true);
 
             var ret = Check_RegisterValidator(snapshot, point); // Exists
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(++keyCount); // No changes
 
             point[20]++; // fake point
             ret = Check_RegisterValidator(snapshot, point); // New
@@ -115,7 +113,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // New validator
 
             // Check GetRegisteredValidators
 
@@ -141,7 +138,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             byte[] to = new byte[20];
 
-            var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             // Check unclaim
 
@@ -162,15 +158,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 4); // Gas + new balance
 
             // Return balance
 
-            keyCount = snapshot.Storages.GetChangeSet().Count();
 
             NativeContract.NEO.Transfer(snapshot, to, from, BigInteger.One, true).Should().BeTrue();
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount - 1);  // Remove neo balance from address two
 
             // Bad inputs
 
@@ -223,14 +216,15 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
-            snapshot.Storages.Add(key, new StorageItem(new NeoAccountState
+            snapshot.Storages.Put(key, new StorageItem(new NeoAccountState
             {
                 Balance = -100
             }));
             Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             action.Should().Throw<ArgumentOutOfRangeException>();
             snapshot.Storages.Delete(key);
-            snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
+
+            snapshot.Storages.Put(key, new StorageItem(new NeoAccountState
             {
                 Balance = 100
             }));
@@ -269,7 +263,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result[5].ToArray().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
             result[6].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
 
-            snapshot.Storages.Add(CreateStorageKey(14), new StorageItem()
+            snapshot.Storages.Put(CreateStorageKey(14), new StorageItem()
             {
                 Value = new ECPoint[] { ECCurve.Secp256r1.G }.ToByteArray()
             });
@@ -324,7 +318,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result[6].Votes.Should().Be(new BigInteger(1785714));
 
             StorageKey key = NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G);
-            snapshot.Storages.Add(key, new StorageItem(new CandidateState()));
+            snapshot.Storages.Put(key, new StorageItem(new CandidateState()));
             NativeContract.NEO.GetCandidates(snapshot).ToArray().Length.Should().Be(22);
         }
 
@@ -388,7 +382,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
-            snapshot.Storages.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
+            snapshot.Storages.Put(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
         }
 
@@ -407,17 +401,17 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
 
-            snapshot.Storages.Add(keyAccount, new StorageItem(new NeoAccountState()));
+            snapshot.Storages.Put(keyAccount, new StorageItem(new NeoAccountState()));
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
 
             snapshot.Storages.Delete(keyAccount);
-            snapshot.Storages.GetAndChange(keyAccount, () => new StorageItem(new NeoAccountState
+            snapshot.Storages.Put(keyAccount, new StorageItem(new NeoAccountState
             {
                 VoteTo = ECCurve.Secp256r1.G
             }));
-            snapshot.Storages.Add(keyValidator, new StorageItem(new CandidateState()));
+            snapshot.Storages.Put(keyValidator, new StorageItem(new CandidateState()));
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
@@ -433,16 +427,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot)[0];
             if (addVotes)
             {
-                snapshot.Storages.Add(CreateStorageKey(20, from.ToArray()), new StorageItem(new NeoAccountState
+                snapshot.Storages.Put(CreateStorageKey(20, from.ToArray()), new StorageItem(new NeoAccountState
                 {
                     VoteTo = ECCurve.Secp256r1.G,
                     Balance = new BigInteger(1000)
                 }));
-                snapshot.Storages.Add(NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G), new StorageItem(new CandidateState()));
+                snapshot.Storages.Put(NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G), new StorageItem(new CandidateState()));
             }
             else
             {
-                snapshot.Storages.Add(CreateStorageKey(20, from.ToArray()), new StorageItem(new NeoAccountState
+                snapshot.Storages.Put(CreateStorageKey(20, from.ToArray()), new StorageItem(new NeoAccountState
                 {
                     Balance = new BigInteger(1000)
                 }));

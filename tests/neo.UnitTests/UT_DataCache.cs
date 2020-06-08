@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.Persistence;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -11,14 +12,14 @@ namespace Neo.UnitTests
         [TestInitialize]
         public void TestSetup()
         {
-            TestBlockchain.InitializeMockNeoSystem();
+
         }
 
         [TestMethod]
         public void TestCachedFind_Between()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var storages = snapshot.Storages.CreateSnapshot();
+            var store = new MemoryStore();
+            var storages = new StoreDataCache<StorageKey, StorageItem>(store.GetSnapshot(), Prefixes.ST_Storage);
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
             storages.Add
@@ -56,8 +57,8 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestCachedFind_Last()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var storages = snapshot.Storages.CreateSnapshot();
+            var store = new MemoryStore();
+            var storages = new StoreDataCache<StorageKey, StorageItem>(store.GetSnapshot(), Prefixes.ST_Storage);
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
             storages.Add
@@ -88,8 +89,8 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestCachedFind_Empty()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var storages = snapshot.Storages.CreateSnapshot();
+            var store = new MemoryStore();
+            var storages = new StoreDataCache<StorageKey, StorageItem>(store.GetSnapshot(), Prefixes.ST_Storage);
             var cache = new CloneCache<StorageKey, StorageItem>(storages);
 
             cache.Add
