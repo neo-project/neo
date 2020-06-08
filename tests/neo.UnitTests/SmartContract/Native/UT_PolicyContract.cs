@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSystemFee");
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(2560 * 100000000L);
+            ret.GetBigInteger().Should().Be(9000 * 100000000L);
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSystemFee");
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(2560 * (long)NativeContract.GAS.Factor);
+            ret.GetBigInteger().Should().Be(9000 * (long)NativeContract.GAS.Factor);
 
             // Less than expected
 
@@ -137,7 +137,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSystemFee");
             ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetBigInteger().Should().Be(2560 * (long)NativeContract.GAS.Factor);
+            ret.GetBigInteger().Should().Be(9000 * (long)NativeContract.GAS.Factor);
 
             // With signature
 

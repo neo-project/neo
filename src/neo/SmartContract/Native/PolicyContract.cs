@@ -57,7 +57,7 @@ namespace Neo.SmartContract.Native
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSystemFee), new StorageItem
             {
-                Value = BitConverter.GetBytes(2560 * (long)GAS.Factor) // = 5 * 512 
+                Value = BitConverter.GetBytes(9000 * (long)GAS.Factor) // For the transfer method of NEP5, the maximum persisting time is about three seconds.
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
             {
