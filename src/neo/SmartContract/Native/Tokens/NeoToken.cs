@@ -15,7 +15,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public sealed class NeoToken : Nep5Token<NeoToken.AccountState>
+    public sealed class NeoToken : Nep5Token<NeoToken.NeoAccountState>
     {
         public override int Id => -1;
         public override string Name => "NEO";
@@ -36,7 +36,7 @@ namespace Neo.SmartContract.Native.Tokens
             return TotalAmount;
         }
 
-        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
+        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
             DistributeGas(engine, account, state);
             if (amount.IsZero) return;
@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        private void DistributeGas(ApplicationEngine engine, UInt160 account, AccountState state)
+        private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
@@ -87,24 +87,21 @@ namespace Neo.SmartContract.Native.Tokens
             return value * amount * GAS.Factor / TotalAmount;
         }
 
-        internal override bool Initialize(ApplicationEngine engine)
+        internal override void Initialize(ApplicationEngine engine)
         {
-            if (!base.Initialize(engine)) return false;
-            if (base.TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
             BigInteger amount = TotalAmount;
-            for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
+            for (int i = 0; i < Blockchain.StandbyCommittee.Length; i++)
             {
                 ECPoint pubkey = Blockchain.StandbyCommittee[i];
                 RegisterCandidate(engine.Snapshot, pubkey);
-                BigInteger balance = TotalAmount / 2 / (Blockchain.ValidatorsCount * 2 + (Blockchain.CommitteeMembersCount - Blockchain.ValidatorsCount));
-                if (i < Blockchain.ValidatorsCount) balance *= 2;
+                BigInteger balance = TotalAmount / 2 / (Blockchain.StandbyValidators.Length * 2 + (Blockchain.StandbyCommittee.Length - Blockchain.StandbyValidators.Length));
+                if (i < Blockchain.StandbyValidators.Length) balance *= 2;
                 UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
                 Mint(engine, account, balance);
                 Vote(engine.Snapshot, account, pubkey);
                 amount -= balance;
             }
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), amount);
-            return true;
         }
 
         protected override bool OnPersist(ApplicationEngine engine)
@@ -127,7 +124,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
-            AccountState state = storage.GetInteroperable<AccountState>();
+            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
@@ -135,7 +132,7 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem RegisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             return RegisterCandidate(engine.Snapshot, pubkey);
         }
@@ -153,7 +150,7 @@ namespace Neo.SmartContract.Native.Tokens
         private StackItem UnregisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             return UnregisterCandidate(engine.Snapshot, pubkey);
         }
@@ -176,7 +173,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             UInt160 account = new UInt160(args[0].GetSpan());
             ECPoint voteTo = args[1].IsNull ? null : args[1].GetSpan().AsSerializable<ECPoint>();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
+            if (!engine.CheckWitnessInternal(account)) return false;
             return Vote(engine.Snapshot, account, voteTo);
         }
 
@@ -185,7 +182,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key_account = CreateAccountKey(account);
             if (snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = snapshot.Storages.GetAndChange(key_account);
-            AccountState state_account = storage_account.GetInteroperable<AccountState>();
+            NeoAccountState state_account = storage_account.GetInteroperable<NeoAccountState>();
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray());
@@ -232,7 +229,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetValidators(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, Blockchain.ValidatorsCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxValidatorsCount).OrderBy(p => p).ToArray();
         }
 
         [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
@@ -243,7 +240,13 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, Blockchain.CommitteeMembersCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxCommitteeMembersCount).OrderBy(p => p).ToArray();
+        }
+
+        public UInt160 GetCommitteeAddress(StoreView snapshot)
+        {
+            ECPoint[] committees = GetCommittee(snapshot);
+            return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot, int count)
@@ -264,7 +267,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.Value.AsSerializableArray<ECPoint>();
         }
 
-        public class AccountState : Nep5AccountState
+        public class NeoAccountState : AccountState
         {
             public uint BalanceHeight;
             public ECPoint VoteTo;

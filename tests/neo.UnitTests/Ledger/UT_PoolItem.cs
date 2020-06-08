@@ -132,7 +132,7 @@ namespace Neo.UnitTests.Ledger
             };
 
             tx.Attributes.Length.Should().Be(0);
-            tx.Cosigners.Length.Should().Be(0);
+            tx.Cosigners.Count.Should().Be(0);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();

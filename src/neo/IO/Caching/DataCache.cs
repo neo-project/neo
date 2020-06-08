@@ -152,6 +152,7 @@ namespace Neo.IO.Caching
         public IEnumerable<(TKey Key, TValue Value)> Find(byte[] key_prefix = null)
         {
             IEnumerable<(byte[], TKey, TValue)> cached;
+            HashSet<TKey> cachedKeySet;
             lock (dictionary)
             {
                 cached = dictionary
@@ -164,9 +165,10 @@ namespace Neo.IO.Caching
                     ))
                     .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
                     .ToArray();
+                cachedKeySet = new HashSet<TKey>(dictionary.Keys);
             }
             var uncached = FindInternal(key_prefix ?? Array.Empty<byte>())
-                .Where(p => !dictionary.ContainsKey(p.Key))
+                .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
                 (
                     KeyBytes: p.Key.ToArray(),
