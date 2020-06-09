@@ -9,7 +9,6 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -92,7 +91,7 @@ namespace Neo.SmartContract
             if (script[i++] != (byte)OpCode.PUSHNULL) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
             if (script.Length != i + 4) return false;
-            if (BitConverter.ToUInt32(script, i) != InteropService.Crypto.CheckMultisigWithECDsaSecp256r1)
+            if (BitConverter.ToUInt32(script, i) != ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1)
                 return false;
             return true;
         }
@@ -104,7 +103,7 @@ namespace Neo.SmartContract
                 || script[1] != 33
                 || script[35] != (byte)OpCode.PUSHNULL
                 || script[36] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 37) != InteropService.Crypto.VerifyWithECDsaSecp256r1)
+                || BitConverter.ToUInt32(script, 37) != ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1)
                 return false;
             return true;
         }
@@ -112,11 +111,6 @@ namespace Neo.SmartContract
         public static bool IsStandardContract(this byte[] script)
         {
             return script.IsSignatureContract() || script.IsMultiSigContract();
-        }
-
-        public static uint ToInteropMethodHash(this string method)
-        {
-            return BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
         }
 
         public static UInt160 ToScriptHash(this byte[] script)

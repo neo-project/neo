@@ -203,22 +203,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // StandbyValidators
 
-            var validators = Check_GetValidators(snapshot);
-
-            for (var x = 0; x < Blockchain.StandbyValidators.Length; x++)
-            {
-                validators[x].Equals(Blockchain.StandbyValidators[x]);
-            }
-
-            // Check double call
-
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var result = NativeContract.NEO.Initialize(engine);
-
-            result.Should().Be(false);
+            Check_GetValidators(snapshot);
         }
 
         [TestMethod]
@@ -238,14 +223,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
-            snapshot.Storages.Add(key, new StorageItem(new AccountState
+            snapshot.Storages.Add(key, new StorageItem(new NeoAccountState
             {
                 Balance = -100
             }));
             Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             action.Should().Throw<ArgumentOutOfRangeException>();
             snapshot.Storages.Delete(key);
-            snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState
+            snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
             {
                 Balance = 100
             }));
@@ -376,23 +361,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void TestInitialize()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true);
-            Action action = () => NativeContract.NEO.Initialize(engine);
-            action.Should().Throw<InvalidOperationException>();
-
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.NEO.Initialize(engine).Should().BeFalse();
-
-            snapshot.Storages.Delete(CreateStorageKey(11));
-            snapshot.PersistingBlock = Blockchain.GenesisBlock;
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.NEO.Initialize(engine).Should().BeTrue();
-        }
-
-        [TestMethod]
         public void TestOnBalanceChanging()
         {
             var ret = Transfer4TesingOnBalanceChanging(new BigInteger(0), false);
@@ -420,7 +388,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
-            snapshot.Storages.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new AccountState()));
+            snapshot.Storages.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
         }
 
@@ -439,13 +407,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
 
-            snapshot.Storages.Add(keyAccount, new StorageItem(new AccountState()));
+            snapshot.Storages.Add(keyAccount, new StorageItem(new NeoAccountState()));
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
 
             snapshot.Storages.Delete(keyAccount);
-            snapshot.Storages.GetAndChange(keyAccount, () => new StorageItem(new AccountState
+            snapshot.Storages.GetAndChange(keyAccount, () => new StorageItem(new NeoAccountState
             {
                 VoteTo = ECCurve.Secp256r1.G
             }));
@@ -465,7 +433,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot)[0];
             if (addVotes)
             {
-                snapshot.Storages.Add(CreateStorageKey(20, from.ToArray()), new StorageItem(new AccountState
+                snapshot.Storages.Add(CreateStorageKey(20, from.ToArray()), new StorageItem(new NeoAccountState
                 {
                     VoteTo = ECCurve.Secp256r1.G,
                     Balance = new BigInteger(1000)
@@ -474,7 +442,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             }
             else
             {
-                snapshot.Storages.Add(CreateStorageKey(20, from.ToArray()), new StorageItem(new AccountState
+                snapshot.Storages.Add(CreateStorageKey(20, from.ToArray()), new StorageItem(new NeoAccountState
                 {
                     Balance = new BigInteger(1000)
                 }));

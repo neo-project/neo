@@ -1,3 +1,4 @@
+using Akka.Actor;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,8 +9,10 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
+using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -70,13 +73,13 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetCurrentBlockHash()
         {
-            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1"));
+            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0x3843c6d0dd2082a801cf3da0fe0e847ba8d5571e0606c5018f9a35ce49c55e18"));
         }
 
         [TestMethod]
         public void TestGetCurrentHeaderHash()
         {
-            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1"));
+            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0x3843c6d0dd2082a801cf3da0fe0e847ba8d5571e0606c5018f9a35ce49c55e18"));
         }
 
         [TestMethod]
@@ -88,7 +91,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlockHash()
         {
-            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1"));
+            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0x3843c6d0dd2082a801cf3da0fe0e847ba8d5571e0606c5018f9a35ce49c55e18"));
             Blockchain.Singleton.GetBlockHash(10).Should().BeNull();
         }
 
@@ -113,9 +116,9 @@ namespace Neo.UnitTests.Ledger
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new Nep5AccountState()));
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<Nep5AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
 
                 snapshot.Commit();
 
@@ -133,6 +136,46 @@ namespace Neo.UnitTests.Ledger
                 senderProbe.Send(system.Blockchain, tx);
                 senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
             }
+        }
+
+        [TestMethod]
+        public void TestInvalidTransactionInPersist()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[] { 1 },
+                Sender = UInt160.Zero,
+                SystemFee = 0,
+                ValidUntilBlock = Blockchain.GenesisBlock.Index + 1,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
+            StoreView clonedSnapshot = snapshot.Clone();
+            var state = new TransactionState
+            {
+                BlockIndex = 0,
+                Transaction = tx
+            };
+            clonedSnapshot.Transactions.Add(tx.Hash, state);
+            clonedSnapshot.Transactions.Commit();
+            state.VMState = VMState.FAULT;
+            snapshot.Transactions.TryGet(tx.Hash).VMState.Should().Be(VMState.FAULT);
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                Id = NativeContract.NEO.Id,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            key?.CopyTo(storageKey.Key.AsSpan(1));
+            return storageKey;
         }
 
         private Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)

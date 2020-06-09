@@ -24,7 +24,8 @@ namespace Neo.Plugins
 
         public virtual string ConfigFile => Combine(PluginsDirectory, GetType().Assembly.GetName().Name, "config.json");
         public virtual string Name => GetType().Name;
-        public string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
+        public virtual string Description => "";
+        public virtual string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
         protected static NeoSystem System { get; private set; }
         public virtual Version Version => GetType().Assembly.GetName().Version;
 

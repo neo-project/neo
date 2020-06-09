@@ -62,7 +62,7 @@ namespace Neo.UnitTests.VMT
             tempArray[9] = (byte)OpCode.PUSHDATA1;
             tempArray[10] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 11, 20);//operation.data
-            uint api = InteropService.Contract.Call;
+            uint api = ApplicationEngine.System_Contract_Call;
             tempArray[31] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 32, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.VMT
             tempArray[10] = (byte)OpCode.PUSHDATA1;
             tempArray[11] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
-            uint api = InteropService.Contract.Call;
+            uint api = ApplicationEngine.System_Contract_Call;
             tempArray[32] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -106,7 +106,7 @@ namespace Neo.UnitTests.VMT
             tempArray[10] = (byte)OpCode.PUSHDATA1;
             tempArray[11] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
-            uint api = InteropService.Contract.Call;
+            uint api = ApplicationEngine.System_Contract_Call;
             tempArray[32] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -117,7 +117,7 @@ namespace Neo.UnitTests.VMT
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
-            Assert.AreEqual("0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+            Assert.AreEqual("0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c14bcaf41d684c7d4ad6ee0d99da9707b9d1f0c8e6641627d5b52",
                             testScript.ToHexString());
         }
 
