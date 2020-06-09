@@ -21,7 +21,6 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HashState> LocalRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<HashIndexState> LocalRootHashIndex { get; }
         public override MetaDataCache<StateRoot> ConfirmedRootHashIndex { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
@@ -36,17 +35,14 @@ namespace Neo.Persistence
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
-            LocalRootHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentRoot);
             ConfirmedRootHashIndex = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
             Storages = new MPTTrie<StorageKey, StorageItem>(snapshot, CurrentRootHash);
         }
 
         private void PreCommit()
         {
-            if (LocalRootHashIndex.Get().Index != PersistingBlock?.Index || LocalRootHashIndex.Get().Hash != Storages.Root.Hash)
+            if (PersistingBlock != null && (LocalRoot.TryGet(PersistingBlock.Index) is null || LocalRoot.TryGet(PersistingBlock.Index).Hash != Storages.Root.Hash))
             {
-                LocalRootHashIndex.GetAndChange().Hash = Storages.Root.Hash;
-                LocalRootHashIndex.GetAndChange().Index = PersistingBlock.Index;
                 LocalRoot.GetAndChange(PersistingBlock.Index, () => new HashState()).Hash = Storages.Root.Hash;
             }
         }

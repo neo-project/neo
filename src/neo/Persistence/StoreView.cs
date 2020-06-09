@@ -19,7 +19,6 @@ namespace Neo.Persistence
         public abstract DataCache<SerializableWrapper<uint>, HashState> LocalRoot { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public abstract MetaDataCache<HashIndexState> LocalRootHashIndex { get; }
         public abstract MetaDataCache<StateRoot> ConfirmedRootHashIndex { get; }
         public abstract MetaDataCache<ContractIdState> ContractId { get; }
         public MPTTrie<StorageKey, StorageItem> Storages;
@@ -27,7 +26,7 @@ namespace Neo.Persistence
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
-        public UInt256 CurrentRootHash => LocalRootHashIndex.Get().Hash;
+        public UInt256 CurrentRootHash => LocalRoot.TryGet(Height)?.Hash ?? UInt256.Zero;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
 
@@ -46,7 +45,6 @@ namespace Neo.Persistence
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
             ContractId.Commit();
-            LocalRootHashIndex.Commit();
             ConfirmedRootHashIndex.Commit();
         }
 

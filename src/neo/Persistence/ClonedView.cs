@@ -14,7 +14,6 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HashState> LocalRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<HashIndexState> LocalRootHashIndex { get; }
         public override MetaDataCache<StateRoot> ConfirmedRootHashIndex { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
@@ -28,7 +27,6 @@ namespace Neo.Persistence
             this.LocalRoot = view.LocalRoot.CreateSnapshot();
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
-            this.LocalRootHashIndex = view.LocalRootHashIndex.CreateSnapshot();
             this.ConfirmedRootHashIndex = view.ConfirmedRootHashIndex.CreateSnapshot();
             this.ContractId = view.ContractId.CreateSnapshot();
             this.Storages = view.Storages;
