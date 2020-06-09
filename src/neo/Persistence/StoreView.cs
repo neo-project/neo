@@ -38,7 +38,6 @@ namespace Neo.Persistence
 
         public virtual void Commit()
         {
-            this.PreCommit();
             Blocks.Commit();
             Transactions.Commit();
             Contracts.Commit();
@@ -49,16 +48,6 @@ namespace Neo.Persistence
             ContractId.Commit();
             LocalRootHashIndex.Commit();
             ConfirmedRootHashIndex.Commit();
-        }
-
-        private void PreCommit()
-        {
-            if (LocalRootHashIndex.Get().Index != Height || LocalRootHashIndex.Get().Hash != Storages.Root.Hash)
-            {
-                LocalRootHashIndex.GetAndChange().Hash = Storages.Root.Hash;
-                LocalRootHashIndex.GetAndChange().Index = Height;
-                LocalRoot.GetAndChange(Height, () => new HashState()).Hash = Storages.Root.Hash;
-            }
         }
 
         public bool ContainsBlock(UInt256 hash)
