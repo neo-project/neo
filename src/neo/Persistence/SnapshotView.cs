@@ -43,13 +43,6 @@ namespace Neo.Persistence
 
         public override void Commit()
         {
-            var current_root = LocalRootHashIndex.GetAndChange();
-            current_root.Hash = Storages.Root.Hash;
-            current_root.Index = Height;
-            LocalRoot.Add(Height, new HashState()
-            {
-                Hash = Storages.Root.Hash
-            });
             base.Commit();
             snapshot.Commit();
         }
