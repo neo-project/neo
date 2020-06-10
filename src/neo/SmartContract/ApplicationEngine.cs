@@ -55,12 +55,21 @@ namespace Neo.SmartContract
             return testMode || GasConsumed <= gas_amount;
         }
 
+        internal void RaiseLoadContext(ExecutionContext context)
+        {
+            LoadContext(context);
+        }
+
+        internal bool RaiseOnSysCall(uint method)
+        {
+            return OnSysCall(method);
+        }
+
         protected override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
 
             context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
-
             base.LoadContext(context);
         }
 

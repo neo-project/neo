@@ -3,34 +3,36 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract
 {
-    internal class PointerCallback : Callback
+    internal class PointerCallback : CallbackBase
     {
-        public ExecutionContext Context;
-        public Pointer Pointer;
+        public readonly ExecutionContext Context;
+        public readonly Pointer Pointer;
+        public readonly int ParCount;
 
-        public PointerCallback(ExecutionContext context, Pointer pointer, params StackItem[] args) : base(args)
+        public PointerCallback(ExecutionContext context, Pointer pointer, int parCount)
         {
             Context = context;
             Pointer = pointer;
+            ParCount = parCount;
         }
 
         public override void Action(ApplicationEngine engine)
         {
-            // Clone context
+            // Clone context and seek to pointer position
 
             var newContext = Context.Clone(0);
             newContext.InstructionPointer = Pointer.Position;
 
             // Copy arguments
 
-            foreach (var arg in Arguments)
+            for (int x = 0; x < ParCount; x++)
             {
-                newContext.EvaluationStack.Push(arg);
+                newContext.EvaluationStack.Push(engine.Pop());
             }
 
             // Load context
 
-            engine.LoadContext(newContext);
+            engine.RaiseLoadContext(newContext);
         }
     }
 }

@@ -8,39 +8,19 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Callback_CreateFromSyscall = Register("System.Callback.CreateFromSyscall", nameof(CreateCallbackFromSyscall), 0_00000400, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor System_Callback_Invoke = Register("System.Callback.Invoke", nameof(InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
 
-        internal void InvokeCallback(Callback callback)
+        internal void InvokeCallback(CallbackBase callback)
         {
             callback.Action(this);
         }
 
         internal void CreateCallback(Pointer pointer, int parcount)
         {
-            // Save arguments
-
-            var arguments = new StackItem[parcount];
-            for (int x = parcount - 1; x >= 0; x--)
-            {
-                arguments[x] = Pop();
-            }
-
-            // Push callback
-
-            Push(new InteropInterface(new PointerCallback(CurrentContext, pointer, arguments)));
+            Push(new InteropInterface(new PointerCallback(CurrentContext, pointer, parcount)));
         }
 
-        internal void CreateCallbackFromSyscall(uint method, int parcount)
+        internal void CreateCallbackFromSyscall(uint method)
         {
-            // Save arguments
-
-            var arguments = new StackItem[parcount];
-            for (int x = parcount - 1; x >= 0; x--)
-            {
-                arguments[x] = Pop();
-            }
-
-            // Push callback
-
-            Push(new InteropInterface(new SyscallCallback(method, arguments)));
+            Push(new InteropInterface(new SyscallCallback(method)));
         }
     }
 }
