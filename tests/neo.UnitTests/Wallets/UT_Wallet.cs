@@ -296,6 +296,21 @@ namespace Neo.UnitTests.Wallets
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
+            // Make sure balance is 0
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
+
+            var entry1 = snapshot.Storages[key];
+            if (entry1 is null) entry1 = new StorageItem(new AccountState());
+            entry1.GetInteroperable<AccountState>().Balance = 0;
+            snapshot.Storages.Put(key, entry1);
+            key = NativeContract.NEO.CreateStorageKey(20, account.ScriptHash);
+            var entry2 = snapshot.Storages[key];
+            if (entry2 is null) entry2 = new StorageItem(new NeoToken.NeoAccountState());
+            entry2.GetInteroperable<NeoToken.NeoAccountState>().Balance = 0;
+            snapshot.Storages.Put(key, entry2);
+            snapshot.Commit();
+
             Action action = () => wallet.MakeTransaction(new TransferOutput[]
             {
                 new TransferOutput()
@@ -330,15 +345,15 @@ namespace Neo.UnitTests.Wallets
             action.Should().Throw<InvalidOperationException>();
 
             // Fake balance
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
+            snapshot = Blockchain.Singleton.GetSnapshot();
+            key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
 
-            var entry1 = snapshot.Storages[key];
+            entry1 = snapshot.Storages[key];
             if (entry1 is null) entry1 = new StorageItem(new AccountState());
             entry1.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
             snapshot.Storages.Put(key, entry1);
             key = NativeContract.NEO.CreateStorageKey(20, account.ScriptHash);
-            var entry2 = snapshot.Storages[key];
+            entry2 = snapshot.Storages[key];
             if (entry2 is null) entry2 = new StorageItem(new NeoToken.NeoAccountState());
             entry2.GetInteroperable<NeoToken.NeoAccountState>().Balance = 10000 * NativeContract.NEO.Factor;
             snapshot.Storages.Put(key, entry2);
