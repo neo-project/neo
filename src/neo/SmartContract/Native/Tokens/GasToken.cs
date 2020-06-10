@@ -1,5 +1,3 @@
-#pragma warning disable IDE0051
-
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -24,15 +22,14 @@ namespace Neo.SmartContract.Native.Tokens
             Mint(engine, account, 30_000_000 * Factor);
         }
 
-        protected override bool OnPersist(ApplicationEngine engine)
+        protected override void OnPersist(ApplicationEngine engine)
         {
-            if (!base.OnPersist(engine)) return false;
+            base.OnPersist(engine);
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-            return true;
         }
     }
 }
