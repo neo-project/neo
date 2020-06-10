@@ -1,3 +1,4 @@
+using Neo.Cryptography.MPT;
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
@@ -7,6 +8,7 @@ namespace Neo.Persistence
 {
     internal class ClonedView : StoreView
     {
+        private StoreView parent;
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
@@ -19,6 +21,7 @@ namespace Neo.Persistence
 
         public ClonedView(StoreView view)
         {
+            this.parent = view;
             this.PersistingBlock = view.PersistingBlock;
             this.Blocks = view.Blocks.CreateSnapshot();
             this.Transactions = view.Transactions.CreateSnapshot();
@@ -29,7 +32,13 @@ namespace Neo.Persistence
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
             this.ConfirmedRootHashIndex = view.ConfirmedRootHashIndex.CreateSnapshot();
             this.ContractId = view.ContractId.CreateSnapshot();
-            this.Storages = view.Storages;
+            this.Storages = view.Storages.Clone();
+        }
+
+        public override void Commit()
+        {
+            base.Commit();
+            parent.Storages = Storages;
         }
     }
 }

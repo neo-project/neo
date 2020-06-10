@@ -54,5 +54,10 @@ namespace Neo.Cryptography.MPT
         {
             store.Put(Prefix, node.Hash.ToArray(), node.Encode());
         }
+
+        public MPTTrie<TKey, TValue> Clone()
+        {
+            return new MPTTrie<TKey, TValue>(store, root.Hash);
+        }
     }
 }
