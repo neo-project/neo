@@ -18,10 +18,10 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
-        public override DataCache<SerializableWrapper<uint>, HashState> LocalRoot { get; }
+        public override DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<StateRoot> ConfirmedRootHashIndex { get; }
+        public override MetaDataCache<StateRoot> ConfirmedStateRootHashIndex { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
         public SnapshotView(IStore store)
@@ -31,20 +31,20 @@ namespace Neo.Persistence
             Transactions = new StoreDataCache<UInt256, TransactionState>(snapshot, Prefixes.DATA_Transaction);
             Contracts = new StoreDataCache<UInt160, ContractState>(snapshot, Prefixes.ST_Contract);
             HeaderHashList = new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(snapshot, Prefixes.IX_HeaderHashList);
-            LocalRoot = new StoreDataCache<SerializableWrapper<uint>, HashState>(snapshot, Prefixes.ST_Root);
+            LocalStateRoot = new StoreDataCache<SerializableWrapper<uint>, HashState>(snapshot, Prefixes.ST_Root);
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
-            ConfirmedRootHashIndex = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
-            Storages = new MPTTrie<StorageKey, StorageItem>(snapshot, CurrentRootHash);
+            ConfirmedStateRootHashIndex = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
+            Storages = new MPTTrie<StorageKey, StorageItem>(snapshot, CurrentStateRootHash);
         }
 
         private void PreCommit()
         {
             var index = PersistingBlock?.Index ?? Height;
-            if (LocalRoot.TryGet(index) is null || LocalRoot.TryGet(index).Hash != Storages.Root.Hash)
+            if (LocalStateRoot.TryGet(index) is null || LocalStateRoot.TryGet(index).Hash != Storages.Root.Hash)
             {
-                LocalRoot.GetAndChange(index, () => new HashState()).Hash = Storages.Root.Hash;
+                LocalStateRoot.GetAndChange(index, () => new HashState()).Hash = Storages.Root.Hash;
             }
         }
 

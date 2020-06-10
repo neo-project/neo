@@ -16,17 +16,17 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
-        public abstract DataCache<SerializableWrapper<uint>, HashState> LocalRoot { get; }
+        public abstract DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public abstract MetaDataCache<StateRoot> ConfirmedRootHashIndex { get; }
+        public abstract MetaDataCache<StateRoot> ConfirmedStateRootHashIndex { get; }
         public abstract MetaDataCache<ContractIdState> ContractId { get; }
         public MPTTrie<StorageKey, StorageItem> Storages;
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
-        public UInt256 CurrentRootHash => LocalRoot.TryGet(Height)?.Hash ?? UInt256.Zero;
+        public UInt256 CurrentStateRootHash => LocalStateRoot.TryGet(Height)?.Hash ?? UInt256.Zero;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
 
@@ -41,11 +41,11 @@ namespace Neo.Persistence
             Transactions.Commit();
             Contracts.Commit();
             HeaderHashList.Commit();
-            LocalRoot.Commit();
+            LocalStateRoot.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
             ContractId.Commit();
-            ConfirmedRootHashIndex.Commit();
+            ConfirmedStateRootHashIndex.Commit();
         }
 
         public bool ContainsBlock(UInt256 hash)

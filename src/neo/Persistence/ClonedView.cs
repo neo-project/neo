@@ -13,10 +13,10 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
-        public override DataCache<SerializableWrapper<uint>, HashState> LocalRoot { get; }
+        public override DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<StateRoot> ConfirmedRootHashIndex { get; }
+        public override MetaDataCache<StateRoot> ConfirmedStateRootHashIndex { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
         public ClonedView(StoreView view)
@@ -27,10 +27,10 @@ namespace Neo.Persistence
             this.Transactions = view.Transactions.CreateSnapshot();
             this.Contracts = view.Contracts.CreateSnapshot();
             this.HeaderHashList = view.HeaderHashList.CreateSnapshot();
-            this.LocalRoot = view.LocalRoot.CreateSnapshot();
+            this.LocalStateRoot = view.LocalStateRoot.CreateSnapshot();
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
-            this.ConfirmedRootHashIndex = view.ConfirmedRootHashIndex.CreateSnapshot();
+            this.ConfirmedStateRootHashIndex = view.ConfirmedStateRootHashIndex.CreateSnapshot();
             this.ContractId = view.ContractId.CreateSnapshot();
             this.Storages = view.Storages.Clone();
         }
