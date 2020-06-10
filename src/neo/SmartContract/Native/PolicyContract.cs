@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             long value = (long)args[0].GetBigInteger();
-            if (value <= 0) return false;
+            if (value <= 4007600) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee));
             storage.Value = BitConverter.GetBytes(value);
             return true;
