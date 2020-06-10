@@ -19,7 +19,7 @@ namespace Neo.Persistence
         public abstract DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public abstract MetaDataCache<StateRoot> ConfirmedStateRootHashIndex { get; }
+        public abstract MetaDataCache<StateRoot> ConfirmedStateRoot { get; }
         public abstract MetaDataCache<ContractIdState> ContractId { get; }
         public MPTTrie<StorageKey, StorageItem> Storages;
 
@@ -45,7 +45,7 @@ namespace Neo.Persistence
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
             ContractId.Commit();
-            ConfirmedStateRootHashIndex.Commit();
+            ConfirmedStateRoot.Commit();
         }
 
         public bool ContainsBlock(UInt256 hash)
