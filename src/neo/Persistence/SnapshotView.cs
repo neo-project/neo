@@ -41,15 +41,16 @@ namespace Neo.Persistence
 
         private void PreCommit()
         {
-            if (PersistingBlock != null && (LocalRoot.TryGet(PersistingBlock.Index) is null || LocalRoot.TryGet(PersistingBlock.Index).Hash != Storages.Root.Hash))
+            var index = PersistingBlock?.Index ?? Height;
+            if (LocalRoot.TryGet(index) is null || LocalRoot.TryGet(index).Hash != Storages.Root.Hash)
             {
-                LocalRoot.GetAndChange(PersistingBlock.Index, () => new HashState()).Hash = Storages.Root.Hash;
+                LocalRoot.GetAndChange(index, () => new HashState()).Hash = Storages.Root.Hash;
             }
         }
 
         public override void Commit()
         {
-            this.PreCommit();
+            PreCommit();
             base.Commit();
             snapshot.Commit();
         }
