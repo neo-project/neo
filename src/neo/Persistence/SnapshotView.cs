@@ -21,8 +21,9 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<StateRoot> ConfirmedStateRootHashIndex { get; }
+        public override MetaDataCache<StateRoot> ConfirmedStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
+        public override MPTTrie<StorageKey, StorageItem> Storages { get; set; }
 
         public SnapshotView(IStore store)
         {
@@ -35,7 +36,7 @@ namespace Neo.Persistence
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
-            ConfirmedStateRootHashIndex = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
+            ConfirmedStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
             Storages = new MPTTrie<StorageKey, StorageItem>(snapshot, CurrentStateRootHash);
         }
 

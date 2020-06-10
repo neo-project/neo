@@ -18,6 +18,7 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public override MetaDataCache<StateRoot> ConfirmedStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
+        public override MPTTrie<StorageKey, StorageItem> Storages { get; set; }
 
         public ClonedView(StoreView view)
         {

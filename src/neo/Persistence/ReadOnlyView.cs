@@ -21,9 +21,19 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot => new StoreDataCache<SerializableWrapper<uint>, HashState>(store, Prefixes.ST_Root);
         public override MetaDataCache<HashIndexState> BlockHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentBlock);
         public override MetaDataCache<HashIndexState> HeaderHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentHeader);
-        public override MetaDataCache<StateRoot> ConfirmedStateRootHashIndex => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ConfirmedRoot);
+        public override MetaDataCache<StateRoot> ConfirmedStateRoot => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ConfirmedRoot);
         public override MetaDataCache<ContractIdState> ContractId => new StoreMetaDataCache<ContractIdState>(store, Prefixes.IX_ContractId);
-        public new MPTTrie<StorageKey, StorageItem> Storages => new MPTTrie<StorageKey, StorageItem>((ISnapshot)store, CurrentStateRootHash);
+        public override MPTTrie<StorageKey, StorageItem> Storages
+        {
+            get
+            {
+                return new MPTTrie<StorageKey, StorageItem>((ISnapshot)store, CurrentStateRootHash);
+            }
+            set
+            {
+                Storages = value;
+            }
+        }
 
         public ReadOnlyView(IReadOnlyStore store)
         {
