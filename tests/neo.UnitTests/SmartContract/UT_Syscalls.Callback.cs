@@ -49,7 +49,7 @@ namespace Neo.UnitTests.SmartContract
 
             for (int x = 0; x < 250; x++) script.Emit(OpCode.NOP);
 
-            script.Emit(OpCode.ADD); // Should return 6
+            script.Emit(OpCode.DEC); // Should return 5-1
             script.Emit(OpCode.RET);
 
             // Execute
@@ -64,7 +64,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(engine.ResultStack.TryPop<PrimitiveType>(out var item));
             Assert.IsNotNull(item);
 
-            Assert.AreEqual(6, item.GetBigInteger());
+            Assert.AreEqual(4, item.GetBigInteger());
         }
 
         [TestMethod]
