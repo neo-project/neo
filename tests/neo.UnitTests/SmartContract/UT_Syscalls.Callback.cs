@@ -49,7 +49,7 @@ namespace Neo.UnitTests.SmartContract
 
             for (int x = 0; x < 250; x++) script.Emit(OpCode.NOP);
 
-            script.Emit(OpCode.DEC); // Should return 5-1
+            script.Emit(OpCode.SUB); // Should return 5-1
             script.Emit(OpCode.RET);
 
             // Execute
