@@ -2,16 +2,12 @@ namespace Neo.SmartContract.Callbacks
 {
     internal class SyscallCallback : CallbackBase
     {
-        public uint Method;
+        public uint Method { get; }
+        public override int ParametersCount => ApplicationEngine.Services[Method].Parameters.Length;
 
         public SyscallCallback(uint method) : base()
         {
-            Method = method;
-        }
-
-        public override void Action(ApplicationEngine engine)
-        {
-            engine.RaiseOnSysCall(Method);
+            this.Method = method;
         }
     }
 }

@@ -1,5 +1,7 @@
 using Neo.SmartContract.Callbacks;
 using Neo.VM.Types;
+using System;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
@@ -9,19 +11,26 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Callback_CreateFromSyscall = Register("System.Callback.CreateFromSyscall", nameof(CreateCallbackFromSyscall), 0_00000400, TriggerType.All, CallFlags.None);
         public static readonly InteropDescriptor System_Callback_Invoke = Register("System.Callback.Invoke", nameof(InvokeCallback), 0_00000400, TriggerType.All, CallFlags.None);
 
-        internal void InvokeCallback(CallbackBase callback)
+        internal void InvokeCallback(CallbackBase callback, Array args)
         {
-            callback.Action(this);
+            if (args.Count != callback.ParametersCount)
+                throw new InvalidOperationException();
+            if (callback is PointerCallback pointerCallback)
+                LoadContext(pointerCallback.GetContext());
+            for (int i = args.Count - 1; i >= 0; i--)
+                Push(args[i]);
+            if (callback is SyscallCallback syscallCallback)
+                OnSysCall(syscallCallback.Method);
         }
 
-        internal void CreateCallback(Pointer pointer, int parcount)
+        internal PointerCallback CreateCallback(Pointer pointer, int parcount)
         {
-            Push(new InteropInterface(new PointerCallback(CurrentContext, pointer, parcount)));
+            return new PointerCallback(CurrentContext, pointer, parcount);
         }
 
-        internal void CreateCallbackFromSyscall(uint method)
+        internal SyscallCallback CreateCallbackFromSyscall(uint method)
         {
-            Push(new InteropInterface(new SyscallCallback(method)));
+            return new SyscallCallback(method);
         }
     }
 }

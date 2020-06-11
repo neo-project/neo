@@ -5,34 +5,24 @@ namespace Neo.SmartContract.Callbacks
 {
     internal class PointerCallback : CallbackBase
     {
-        public readonly ExecutionContext Context;
-        public readonly Pointer Pointer;
-        public readonly int ParCount;
+        private readonly ExecutionContext context;
+        private readonly Pointer pointer;
 
-        public PointerCallback(ExecutionContext context, Pointer pointer, int parCount)
+        public override int ParametersCount { get; }
+
+        public PointerCallback(ExecutionContext context, Pointer pointer, int parametersCount)
         {
-            Context = context;
-            Pointer = pointer;
-            ParCount = parCount;
+            this.context = context;
+            this.pointer = pointer;
+            this.ParametersCount = parametersCount;
         }
 
-        public override void Action(ApplicationEngine engine)
+        public ExecutionContext GetContext()
         {
-            // Clone context and seek to pointer position
-
-            var newContext = Context.Clone(0);
-            newContext.InstructionPointer = Pointer.Position;
-
-            // Copy arguments
-
-            for (int x = 0; x < ParCount; x++)
-            {
-                newContext.EvaluationStack.Push(engine.Pop());
-            }
-
-            // Load context
-
-            engine.RaiseLoadContext(newContext);
+            //TODO: We should consider CallFlags
+            ExecutionContext newContext = context.Clone(0);
+            newContext.InstructionPointer = pointer.Position;
+            return newContext;
         }
     }
 }
