@@ -41,6 +41,7 @@ namespace Neo.SmartContract
             };
             return value.Sha256().Sha256();
         }
+
         internal byte[] Sha256(StackItem item)
         {
             ReadOnlySpan<byte> value = item switch
