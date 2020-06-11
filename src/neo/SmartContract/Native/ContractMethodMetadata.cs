@@ -1,4 +1,5 @@
 using Neo.Persistence;
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -14,11 +15,16 @@ namespace Neo.SmartContract.Native
         public long Price { get; }
         public CallFlags RequiredCallFlags { get; }
 
-        public ContractMethodMetadata(MethodInfo handler, ContractMethodAttribute attribute)
+        public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
-            this.Name = attribute.Name ?? GetDefaultMethodName(handler.Name);
-            this.Handler = handler;
-            ParameterInfo[] parameterInfos = handler.GetParameters();
+            this.Handler = member switch
+            {
+                MethodInfo m => m,
+                PropertyInfo p => p.GetMethod,
+                _ => throw new ArgumentException(nameof(member))
+            };
+            this.Name = attribute.Name ?? GetDefaultMethodName(member.Name);
+            ParameterInfo[] parameterInfos = this.Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
                 NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
@@ -34,7 +40,6 @@ namespace Neo.SmartContract.Native
 
         private static string GetDefaultMethodName(string name)
         {
-            if (name.StartsWith("get_")) name = name[4..];
             return name.ToLower()[0] + name[1..];
         }
     }

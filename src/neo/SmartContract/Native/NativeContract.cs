@@ -49,17 +49,11 @@ namespace Neo.SmartContract.Native
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
-                MethodInfo method = member switch
-                {
-                    MethodInfo m => m,
-                    PropertyInfo p => p.GetMethod,
-                    _ => throw new InvalidOperationException()
-                };
-                ContractMethodMetadata metadata = new ContractMethodMetadata(method, attribute);
+                ContractMethodMetadata metadata = new ContractMethodMetadata(member, attribute);
                 descriptors.Add(new ContractMethodDescriptor
                 {
                     Name = metadata.Name,
-                    ReturnType = ToParameterType(method.ReturnType),
+                    ReturnType = ToParameterType(metadata.Handler.ReturnType),
                     Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray()
                 });
                 if (!attribute.RequiredCallFlags.HasFlag(CallFlags.AllowModifyStates)) safeMethods.Add(metadata.Name);
@@ -71,11 +65,11 @@ namespace Neo.SmartContract.Native
                 Abi = new ContractAbi()
                 {
                     Hash = Hash,
-                    Events = new ContractEventDescriptor[0],
+                    Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },
                 Features = ContractFeatures.NoProperty,
-                Groups = new ContractGroup[0],
+                Groups = System.Array.Empty<ContractGroup>(),
                 SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null,
