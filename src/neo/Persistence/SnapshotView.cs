@@ -40,18 +40,8 @@ namespace Neo.Persistence
             Storages = new MPTTrie<StorageKey, StorageItem>(snapshot, CurrentStateRootHash);
         }
 
-        private void PreCommit()
-        {
-            var index = PersistingBlock?.Index ?? Height;
-            if (LocalStateRoot.TryGet(index) is null || LocalStateRoot.TryGet(index).Hash != Storages.Root.Hash)
-            {
-                LocalStateRoot.GetAndChange(index, () => new HashState()).Hash = Storages.Root.Hash;
-            }
-        }
-
         public override void Commit()
         {
-            PreCommit();
             base.Commit();
             snapshot.Commit();
         }
