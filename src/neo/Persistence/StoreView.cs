@@ -28,7 +28,6 @@ namespace Neo.Persistence
         public UInt256 CurrentStateRootHash => LocalStateRoot.TryGet(Height)?.Hash ?? UInt256.Zero;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
-
         public StoreView Clone()
         {
             return new ClonedView(this);
