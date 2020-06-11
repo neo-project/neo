@@ -111,7 +111,9 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    av = Array.CreateInstance(descriptor.Type.GetElementType(), (int)item.GetBigInteger());
+                    int count = (int)item.GetBigInteger();
+                    if (count > MaxStackSize) throw new InvalidOperationException();
+                    av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
                     for (int i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);
                 }
