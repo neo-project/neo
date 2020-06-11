@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsNotNull(item);
 
             Assert.IsTrue(item.TryGetInterface<PointerCallback>(out var callback));
-            Assert.AreEqual(1, callback.ParCount);
+            Assert.AreEqual(1, callback.ParametersCount);
         }
 
         [TestMethod]
@@ -42,6 +42,8 @@ namespace Neo.UnitTests.SmartContract
 
             script.EmitPush(5); // Callback argument 1
             script.EmitPush(1); // Callback argument 2
+            script.EmitPush(2); // ParamCount
+            script.Emit(OpCode.PACK);
             script.EmitPush(2); // ParamCount
             script.Emit(OpCode.PUSHA, BitConverter.GetBytes(200)); // -> Nop area
             script.EmitSysCall(ApplicationEngine.System_Callback_Create);
@@ -74,6 +76,8 @@ namespace Neo.UnitTests.SmartContract
             using var script = new ScriptBuilder();
 
             script.EmitPush(System.Array.Empty<byte>()); // Empty buffer
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
             script.EmitPush(ApplicationEngine.Neo_Crypto_SHA256.Hash); // Syscall
             script.EmitSysCall(ApplicationEngine.System_Callback_CreateFromSyscall);
             script.EmitSysCall(ApplicationEngine.System_Callback_Invoke);
