@@ -23,21 +23,12 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> HeaderHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentHeader);
         public override MetaDataCache<StateRoot> ConfirmedStateRoot => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ConfirmedRoot);
         public override MetaDataCache<ContractIdState> ContractId => new StoreMetaDataCache<ContractIdState>(store, Prefixes.IX_ContractId);
-        public override MPTTrie<StorageKey, StorageItem> Storages
-        {
-            get
-            {
-                return new MPTTrie<StorageKey, StorageItem>((ISnapshot)store, CurrentStateRootHash);
-            }
-            set
-            {
-                Storages = value;
-            }
-        }
+        public override MPTTrie<StorageKey, StorageItem> Storages { get; set; }
 
         public ReadOnlyView(IReadOnlyStore store)
         {
             this.store = store;
+            Storages = new MPTTrie<StorageKey, StorageItem>((ISnapshot)store, CurrentStateRootHash);
         }
 
         public override void Commit()
