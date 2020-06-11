@@ -25,19 +25,19 @@ namespace Neo.UnitTests
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
-                    Events = Array.Empty<ContractEventDescriptor>(),
-                    Methods = method == null ? Array.Empty<ContractMethodDescriptor>() : new ContractMethodDescriptor[]
+                    Events = new ContractEventDescriptor[0],
+                    Methods = method == null ? new ContractMethodDescriptor[0] : new ContractMethodDescriptor[]
                     {
                         new ContractMethodDescriptor()
                         {
                             Name = method,
-                            Parameters = Array.Empty<ContractParameterDefinition>(),
+                            Parameters = new ContractParameterDefinition[0],
                             ReturnType = ContractParameterType.Integer
                         }
                     }
                 },
                 Features = ContractFeatures.NoProperty,
-                Groups = Array.Empty<ContractGroup>(),
+                Groups = new ContractGroup[0],
                 SafeMethods = WildcardContainer<string>.Create(),
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null,

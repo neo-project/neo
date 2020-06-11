@@ -345,14 +345,6 @@ namespace Neo.UnitTests.SmartContract
                 contracts.Add(contractA.ScriptHash, contractA);
                 contracts.Add(contractB.ScriptHash, contractB);
                 contracts.Add(contractC.ScriptHash, contractC);
-
-                contractA.Manifest.Abi.Methods[0].Parameters =
-                contractB.Manifest.Abi.Methods[0].Parameters =
-                contractC.Manifest.Abi.Methods[0].Parameters = new Neo.SmartContract.Manifest.ContractParameterDefinition[]
-                {
-                    new Neo.SmartContract.Manifest.ContractParameterDefinition(){ Name="a", Type= ContractParameterType.Integer},
-                    new Neo.SmartContract.Manifest.ContractParameterDefinition(){ Name="b", Type= ContractParameterType.Integer}
-                };
             }
 
             // Call A,B,B,C
