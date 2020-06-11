@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using Neo.SmartContract.Callbacks;
 using Neo.VM;
 using Neo.VM.Types;
 using System;

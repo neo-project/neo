@@ -1,7 +1,7 @@
 using Neo.VM;
 using Neo.VM.Types;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Callbacks
 {
     internal class PointerCallback : CallbackBase
     {

@@ -1,4 +1,4 @@
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Callbacks
 {
     internal class SyscallCallback : CallbackBase
     {

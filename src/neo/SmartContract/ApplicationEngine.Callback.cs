@@ -1,3 +1,4 @@
+using Neo.SmartContract.Callbacks;
 using Neo.VM.Types;
 
 namespace Neo.SmartContract
