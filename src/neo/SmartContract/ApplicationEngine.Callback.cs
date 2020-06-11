@@ -13,6 +13,8 @@ namespace Neo.SmartContract
 
         internal void InvokeCallback(CallbackBase callback, Array args)
         {
+            //TODO: We should check the count of the return values
+
             if (args.Count != callback.ParametersCount)
                 throw new InvalidOperationException();
             if (callback is PointerCallback pointerCallback)
