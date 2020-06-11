@@ -21,7 +21,7 @@ namespace Neo.Persistence
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public abstract MetaDataCache<StateRoot> ConfirmedStateRoot { get; }
         public abstract MetaDataCache<ContractIdState> ContractId { get; }
-        public abstract MPTTrie<StorageKey, StorageItem> Storages { get; set; }
+        public abstract DataCache<StorageKey, StorageItem> Storages { get; set; }
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;

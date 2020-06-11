@@ -1,4 +1,3 @@
-using Neo.Cryptography.MPT;
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
@@ -23,7 +22,7 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public override MetaDataCache<StateRoot> ConfirmedStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
-        public override MPTTrie<StorageKey, StorageItem> Storages { get; set; }
+        public override DataCache<StorageKey, StorageItem> Storages { get; set; }
 
         public SnapshotView(IStore store)
         {
@@ -37,7 +36,7 @@ namespace Neo.Persistence
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
             ConfirmedStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
-            Storages = new MPTTrie<StorageKey, StorageItem>(snapshot, CurrentStateRootHash);
+            Storages = new MPTDataCache<StorageKey, StorageItem>(snapshot, Prefixes.IX_ConfirmedRoot, CurrentStateRootHash); // TODO 
         }
 
         public override void Commit()

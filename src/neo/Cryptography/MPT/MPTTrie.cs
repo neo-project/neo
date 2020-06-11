@@ -8,16 +8,17 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private const byte Prefix = 0xf0;
+        private byte Prefix = 0xf0;
 
         private readonly ISnapshot store;
         private MPTNode root;
 
         public MPTNode Root => root;
 
-        public MPTTrie(ISnapshot store, UInt256 root)
+        public MPTTrie(ISnapshot store, byte prefix, UInt256 root)
         {
             this.store = store ?? throw new ArgumentNullException();
+            this.Prefix = prefix;
             this.root = root is null || root == UInt256.Zero ? HashNode.EmptyNode : new HashNode(root);
         }
 
@@ -53,11 +54,6 @@ namespace Neo.Cryptography.MPT
         private void PutToStore(MPTNode node)
         {
             store.Put(Prefix, node.Hash.ToArray(), node.Encode());
-        }
-
-        public MPTTrie<TKey, TValue> Clone()
-        {
-            return new MPTTrie<TKey, TValue>(store, root.Hash);
         }
     }
 }
