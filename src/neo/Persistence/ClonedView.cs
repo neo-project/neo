@@ -13,7 +13,7 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
-        public override DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot { get; }
+        public override DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public override MetaDataCache<StateRoot> ConfirmedStateRoot { get; }

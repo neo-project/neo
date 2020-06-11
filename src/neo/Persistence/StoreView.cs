@@ -16,7 +16,7 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
-        public abstract DataCache<SerializableWrapper<uint>, HashState> LocalStateRoot { get; }
+        public abstract DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public abstract MetaDataCache<StateRoot> ConfirmedStateRoot { get; }
