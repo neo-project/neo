@@ -5,7 +5,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections;
 
 namespace Neo.SmartContract
 {
