@@ -63,6 +63,12 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
+        internal void LoadContext(ExecutionContext context, int initialPosition)
+        {
+            context.InstructionPointer = initialPosition;
+            LoadContext(context);
+        }
+
         public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
         {
             ExecutionContext context = LoadScript(script, rvcount);

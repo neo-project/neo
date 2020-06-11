@@ -6,22 +6,22 @@ namespace Neo.SmartContract.Callbacks
     internal class PointerCallback : CallbackBase
     {
         private readonly ExecutionContext context;
-        private readonly Pointer pointer;
+        private readonly int pointer;
 
         public override int ParametersCount { get; }
 
         public PointerCallback(ExecutionContext context, Pointer pointer, int parametersCount)
         {
             this.context = context;
-            this.pointer = pointer;
+            this.pointer = pointer.Position;
             this.ParametersCount = parametersCount;
         }
 
-        public ExecutionContext GetContext()
+        public override void LoadContext(ApplicationEngine engine, Array args)
         {
-            ExecutionContext newContext = context.Clone(0);
-            newContext.InstructionPointer = pointer.Position;
-            return newContext;
+            engine.LoadContext(context.Clone(0), pointer);
+            for (int i = args.Count - 1; i >= 0; i--)
+                engine.Push(args[i]);
         }
     }
 }
