@@ -19,7 +19,6 @@ namespace Neo.SmartContract.Callbacks
 
         public ExecutionContext GetContext()
         {
-            //TODO: We should consider CallFlags
             ExecutionContext newContext = context.Clone(0);
             newContext.InstructionPointer = pointer.Position;
             return newContext;
