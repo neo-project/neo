@@ -52,11 +52,17 @@ namespace Neo.UnitTests.SmartContract
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.Contracts.Delete(scriptHash2);
-                snapshot.Contracts.Add(scriptHash2, new ContractState()
+                var state = new ContractState()
                 {
                     Script = script.ToArray(),
                     Manifest = TestUtils.CreateDefaultManifest(scriptHash2, "test"),
-                });
+                };
+                state.Manifest.Abi.Methods[0].Parameters = new ContractParameterDefinition[]
+                {
+                    new ContractParameterDefinition(){ Name="a", Type= ContractParameterType.Integer},
+                    new ContractParameterDefinition(){ Name="b", Type= ContractParameterType.Integer}
+                };
+                snapshot.Contracts.Add(scriptHash2, state);
             }
 
             // Wrong length
@@ -217,8 +223,6 @@ namespace Neo.UnitTests.SmartContract
             // Test real
 
             using ScriptBuilder scriptA = new ScriptBuilder();
-            scriptA.Emit(OpCode.DROP); // Drop arguments
-            scriptA.Emit(OpCode.DROP); // Drop method
             scriptA.EmitSysCall(ApplicationEngine.System_Runtime_GetCallingScriptHash);
 
             var contract = new ContractState()
@@ -230,7 +234,7 @@ namespace Neo.UnitTests.SmartContract
             engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitAppCall(contract.ScriptHash, "test", 0, 1);
+            scriptB.EmitAppCall(contract.ScriptHash, "test");
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -601,6 +605,11 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract("method");
+            state.Manifest.Abi.Methods[0].Parameters = new ContractParameterDefinition[]
+            {
+                new ContractParameterDefinition(){ Name="a", Type= ContractParameterType.Integer},
+                new ContractParameterDefinition(){ Name="b", Type= ContractParameterType.Integer}
+            };
             state.Manifest.Features = ContractFeatures.HasStorage;
             string method = "method";
             var args = new VM.Types.Array { 0, 1 };
@@ -628,6 +637,11 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
             var state = TestUtils.GetContract("method");
+            state.Manifest.Abi.Methods[0].Parameters = new ContractParameterDefinition[]
+            {
+                new ContractParameterDefinition(){ Name="a", Type= ContractParameterType.Integer},
+                new ContractParameterDefinition(){ Name="b", Type= ContractParameterType.Integer}
+            };
             state.Manifest.Features = ContractFeatures.HasStorage;
             snapshot.Contracts.Add(state.ScriptHash, state);
 
