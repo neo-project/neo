@@ -17,13 +17,13 @@ namespace Neo.SmartContract.Native
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
+            this.Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
             this.Handler = member switch
             {
                 MethodInfo m => m,
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(nameof(member))
             };
-            this.Name = attribute.Name ?? GetDefaultMethodName(member.Name);
             ParameterInfo[] parameterInfos = this.Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
@@ -36,11 +36,6 @@ namespace Neo.SmartContract.Native
                 this.Parameters = parameterInfos.Select(p => new InteropParameterDescriptor(p)).ToArray();
             this.Price = attribute.Price;
             this.RequiredCallFlags = attribute.RequiredCallFlags;
-        }
-
-        private static string GetDefaultMethodName(string name)
-        {
-            return name.ToLower()[0] + name[1..];
         }
     }
 }
