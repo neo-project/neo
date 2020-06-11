@@ -8,7 +8,7 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private byte Prefix = 0xf0;
+        private byte Prefix;
 
         private readonly ISnapshot store;
         private MPTNode root;

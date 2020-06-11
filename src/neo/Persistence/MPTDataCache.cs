@@ -13,9 +13,9 @@ namespace Neo.Persistence
     {
         private MPTTrie<TKey, TValue> mptTrie;
 
-        public MPTDataCache(IReadOnlyStore store, byte prefix, UInt256 CurrentStateRootHash)
+        public MPTDataCache(IReadOnlyStore store, byte prefix, UInt256 root)
         {
-            this.mptTrie = new MPTTrie<TKey, TValue>(store as ISnapshot, prefix, CurrentStateRootHash);
+            mptTrie = new MPTTrie<TKey, TValue>(store as ISnapshot, prefix, root);
         }
 
         protected override void AddInternal(TKey key, TValue value)
@@ -30,8 +30,7 @@ namespace Neo.Persistence
 
         protected override IEnumerable<(TKey Key, TValue Value)> FindInternal(byte[] key_prefix)
         {
-            //return mptTrie.Find(prefix);
-            return null;
+            return mptTrie.Find(key_prefix);
         }
 
         protected override TValue GetInternal(TKey key)
