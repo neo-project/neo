@@ -32,11 +32,11 @@ namespace Neo.Persistence
             Transactions = new StoreDataCache<UInt256, TransactionState>(snapshot, Prefixes.DATA_Transaction);
             Contracts = new StoreDataCache<UInt160, ContractState>(snapshot, Prefixes.ST_Contract);
             HeaderHashList = new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(snapshot, Prefixes.IX_HeaderHashList);
-            LocalStateRoot = new StoreDataCache<SerializableWrapper<uint>, HashIndexState>(snapshot, Prefixes.ST_Root);
+            LocalStateRoot = new StoreDataCache<SerializableWrapper<uint>, HashIndexState>(snapshot, Prefixes.ST_LocalStateRoot);
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
-            ValidatorsStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
+            ValidatorsStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ValidatorsStateRoot);
             Storages = new MPTDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage, CurrentStateRootHash);
         }
 
