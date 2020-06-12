@@ -99,7 +99,7 @@ namespace Neo.Consensus
                 // Check maximum block system fee via Native Contract policy
                 if (context.GetExpectedBlockSystemFee() > NativeContract.Policy.GetMaxBlockSystemFee(context.Snapshot))
                 {
-                    Log($"rejected block: {context.Block.Index}{Environment.NewLine} The system fee exceed the policy", LogLevel.Warning);
+                    Log($"rejected block: {context.Block.Index} The system fee exceed the policy", LogLevel.Warning);
                     RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
                     return false;
                 }
