@@ -755,6 +755,8 @@ namespace Neo.Ledger
             {
                 case Header[] _:
                 case Block _:
+                case StateRoot _:
+                case StateRoot[] _:
                 case ConsensusPayload _:
                 case Terminated _:
                     return true;

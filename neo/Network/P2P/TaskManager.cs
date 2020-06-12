@@ -66,7 +66,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
+            if (payload.Type == InventoryType.TX && (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight || Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1) + 1 < Blockchain.Singleton.Height))
             {
                 RequestTasks(session);
                 return;
