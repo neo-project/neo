@@ -24,7 +24,6 @@ namespace Neo.Persistence
         public override MetaDataCache<StateRoot> ValidatorsStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
-
         public SnapshotView(IStore store)
         {
             this.snapshot = store.GetSnapshot();

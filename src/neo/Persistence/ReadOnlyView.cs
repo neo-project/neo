@@ -25,7 +25,6 @@ namespace Neo.Persistence
         public override MetaDataCache<StateRoot> ValidatorsStateRoot => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ValidatorsStateRoot);
         public override MetaDataCache<ContractIdState> ContractId => new StoreMetaDataCache<ContractIdState>(store, Prefixes.IX_ContractId);
 
-
         public ReadOnlyView(IReadOnlyStore store)
         {
             this.store = store;
