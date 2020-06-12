@@ -99,8 +99,7 @@ namespace Neo.Network.P2P.Payloads
 
         public bool Verify(StoreView snapshot)
         {
-            return this.VerifyWitnesses(snapshot,
-                ApplicationEngine.ECDsaVerifyPrice * (NativeContract.NEO.GetValidators(Blockchain.Singleton.GetSnapshot()).Length + 1));
+            return this.VerifyWitnesses(snapshot, 1_00000000);
         }
 
         public virtual UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
