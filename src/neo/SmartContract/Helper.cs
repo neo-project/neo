@@ -14,6 +14,11 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
+        public static UInt160 GetScriptHash(this ExecutionContext context)
+        {
+            return context.GetState<ExecutionContextState>().ScriptHash;
+        }
+
         public static bool IsMultiSigContract(this byte[] script)
         {
             return IsMultiSigContract(script, out _, out _, null);

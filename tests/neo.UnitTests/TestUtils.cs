@@ -17,7 +17,7 @@ namespace Neo.UnitTests
     {
         public static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-        public static ContractManifest CreateDefaultManifest(UInt160 hash, string method = null)
+        public static ContractManifest CreateDefaultManifest(UInt160 hash)
         {
             return new ContractManifest()
             {
@@ -26,15 +26,7 @@ namespace Neo.UnitTests
                 {
                     Hash = hash,
                     Events = new ContractEventDescriptor[0],
-                    Methods = method == null ? new ContractMethodDescriptor[0] : new ContractMethodDescriptor[]
-                    {
-                        new ContractMethodDescriptor()
-                        {
-                            Name = method,
-                            Parameters = new ContractParameterDefinition[0],
-                            ReturnType = ContractParameterType.Integer
-                        }
-                    }
+                    Methods = new ContractMethodDescriptor[0]
                 },
                 Features = ContractFeatures.NoProperty,
                 Groups = new ContractGroup[0],
@@ -42,6 +34,25 @@ namespace Neo.UnitTests
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null,
             };
+        }
+
+        public static ContractManifest CreateManifest(UInt160 hash, string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
+        {
+            ContractManifest manifest = CreateDefaultManifest(hash);
+            manifest.Abi.Methods = new ContractMethodDescriptor[]
+            {
+                new ContractMethodDescriptor()
+                {
+                    Name = method,
+                    Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                    {
+                        Name = $"p{i}",
+                        Type = p
+                    }).ToArray(),
+                    ReturnType = returnType
+                }
+            };
+            return manifest;
         }
 
         public static byte[] GetByteArray(int length, byte firstByte)
@@ -82,13 +93,13 @@ namespace Neo.UnitTests
             };
         }
 
-        internal static ContractState GetContract(string method = null)
+        internal static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
             return new ContractState
             {
                 Id = 0x43000000,
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
-                Manifest = CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method)
+                Manifest = CreateManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
 
