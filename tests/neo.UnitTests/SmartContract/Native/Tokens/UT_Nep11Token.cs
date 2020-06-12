@@ -206,7 +206,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return base.TotalSupply(engine, args);
         }
 
-        public  StackItem NameMethod(ApplicationEngine engine, VM.Types.Array args)
+        public StackItem NameMethod(ApplicationEngine engine, VM.Types.Array args)
         {
             return Name;
         }
