@@ -44,6 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             byte[] to = new byte[20];
 
+            var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(3000000000000000);
@@ -66,14 +67,17 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             // Check unclaim
 
             unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(300000048000));
+            unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(3000300000048000);
 
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 
             // Transfer
+
+            keyCount = snapshot.Storages.GetChangeSet().Count();
 
             NativeContract.GAS.Transfer(snapshot, from, to, 3000300000048000, false).Should().BeFalse(); // Not signed
             NativeContract.GAS.Transfer(snapshot, from, to, 3000300000048001, true).Should().BeFalse(); // More than balance
@@ -84,9 +88,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000300000048000);
             NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(0);
 
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // All
+
             // Burn
 
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            keyCount = snapshot.Storages.GetChangeSet().Count();
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
                 NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
@@ -102,10 +109,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000300000047999);
 
+            keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             // Burn all
 
             NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000300000047999));
+
+            (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             // Bad inputs
 

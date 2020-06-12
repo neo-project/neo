@@ -272,7 +272,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
-            mockContext.Object.Snapshot.Storages.Put(CreateStorageKeyForNativeNeo(14), new StorageItem()
+            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem()
             {
                 Value = mockContext.Object.Validators.ToByteArray()
             });

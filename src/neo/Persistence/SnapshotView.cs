@@ -16,13 +16,13 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
-        public override DataCache<StorageKey, StorageItem> Storages { get; }
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public override DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<StateRoot> ConfirmedStateRoot { get; }
+        public override MetaDataCache<StateRoot> LatestVerifiedStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
+        public override DataCache<StorageKey, StorageItem> Storages { get; }
 
         public SnapshotView(IStore store)
         {
@@ -30,18 +30,22 @@ namespace Neo.Persistence
             Blocks = new StoreDataCache<UInt256, TrimmedBlock>(snapshot, Prefixes.DATA_Block);
             Transactions = new StoreDataCache<UInt256, TransactionState>(snapshot, Prefixes.DATA_Transaction);
             Contracts = new StoreDataCache<UInt160, ContractState>(snapshot, Prefixes.ST_Contract);
-            Storages = new MPTDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage, CurrentStateRootHash);
             HeaderHashList = new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(snapshot, Prefixes.IX_HeaderHashList);
             LocalStateRoot = new StoreDataCache<SerializableWrapper<uint>, HashIndexState>(snapshot, Prefixes.ST_Root);
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
-            ConfirmedStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
+            LatestVerifiedStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
+            Storages = new MPTDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage, CurrentStateRootHash);
         }
 
         public override void Commit()
         {
             base.Commit();
+            var root = LocalStateRoot.GetAndChange(Height, () => new HashIndexState());
+            root.Index = Height;
+            root.Hash = ((MPTDataCache<StorageKey, StorageItem>)Storages).Root.Hash;
+            LocalStateRoot.Commit();
             snapshot.Commit();
         }
 

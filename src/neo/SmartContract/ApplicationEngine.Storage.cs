@@ -55,11 +55,11 @@ namespace Neo.SmartContract
 
         internal byte[] Get(StorageContext context, byte[] key)
         {
-            return Snapshot.Storages[new StorageKey
+            return Snapshot.Storages.TryGet(new StorageKey
             {
                 Id = context.Id,
                 Key = key.ToArray()
-            }]?.Value;
+            })?.Value;
         }
 
         internal IIterator Find(StorageContext context, byte[] prefix)
@@ -91,11 +91,11 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            StorageItem item = Snapshot.Storages[skey];
+            StorageItem item = Snapshot.Storages.GetAndChange(skey);
             if (item is null)
             {
                 newDataSize = key.Length + value.Length;
-                Snapshot.Storages.Put(skey, item = new StorageItem());
+                Snapshot.Storages.Add(skey, item = new StorageItem());
             }
             else
             {
@@ -119,7 +119,7 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            if (Snapshot.Storages[skey]?.IsConstant == true)
+            if (Snapshot.Storages.TryGet(skey)?.IsConstant == true)
                 throw new InvalidOperationException();
             Snapshot.Storages.Delete(skey);
         }

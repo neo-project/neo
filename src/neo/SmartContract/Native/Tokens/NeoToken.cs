@@ -42,11 +42,9 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
-                StorageKey skey = CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray());
-                StorageItem storage_validator = engine.Snapshot.Storages[skey];
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes += amount;
-                engine.Snapshot.Storages.Put(skey, storage_validator);
             }
         }
 
@@ -109,11 +107,8 @@ namespace Neo.SmartContract.Native.Tokens
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;
-            StorageItem storage = new StorageItem()
-            {
-                Value = GetValidators(engine.Snapshot).ToByteArray()
-            };
-            engine.Snapshot.Storages.Put(CreateStorageKey(Prefix_NextValidators), storage);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
+            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
             return true;
         }
 
@@ -127,7 +122,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public BigInteger UnclaimedGas(StoreView snapshot, UInt160 account, uint end)
         {
-            StorageItem storage = snapshot.Storages[CreateAccountKey(account)];
+            StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
@@ -145,10 +140,9 @@ namespace Neo.SmartContract.Native.Tokens
         private bool RegisterCandidate(StoreView snapshot, ECPoint pubkey)
         {
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
-            StorageItem item = new StorageItem(new CandidateState());
+            StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
             state.Registered = true;
-            snapshot.Storages.Put(key, item);
             return true;
         }
 
@@ -164,16 +158,13 @@ namespace Neo.SmartContract.Native.Tokens
         private bool UnregisterCandidate(StoreView snapshot, ECPoint pubkey)
         {
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
-            if (snapshot.Storages[key] is null) return true;
-            StorageItem item = snapshot.Storages[key];
+            if (snapshot.Storages.TryGet(key) is null) return true;
+            StorageItem item = snapshot.Storages.GetAndChange(key);
             CandidateState state = item.GetInteroperable<CandidateState>();
             if (state.Votes.IsZero)
                 snapshot.Storages.Delete(key);
             else
-            {
                 state.Registered = false;
-                snapshot.Storages.Put(key, item);
-            }
             return true;
         }
 
@@ -189,30 +180,27 @@ namespace Neo.SmartContract.Native.Tokens
         private bool Vote(StoreView snapshot, UInt160 account, ECPoint voteTo)
         {
             StorageKey key_account = CreateAccountKey(account);
-            if (snapshot.Storages[key_account] is null) return false;
-            StorageItem storage_account = snapshot.Storages[key_account];
+            if (snapshot.Storages.TryGet(key_account) is null) return false;
+            StorageItem storage_account = snapshot.Storages.GetAndChange(key_account);
             NeoAccountState state_account = storage_account.GetInteroperable<NeoAccountState>();
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, state_account.VoteTo.ToArray());
-                StorageItem storage_validator = snapshot.Storages[key];
+                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes -= state_account.Balance;
                 if (!state_validator.Registered && state_validator.Votes.IsZero)
                     snapshot.Storages.Delete(key);
-                else
-                    snapshot.Storages.Put(key, storage_validator);
             }
             state_account.VoteTo = voteTo;
             if (voteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, voteTo.ToArray());
-                if (snapshot.Storages[key] is null) return false;
-                StorageItem storage_validator = snapshot.Storages[key];
+                if (snapshot.Storages.TryGet(key) is null) return false;
+                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 if (!state_validator.Registered) return false;
                 state_validator.Votes += state_account.Balance;
-                snapshot.Storages.Put(key, storage_validator);
             }
             return true;
         }
@@ -274,7 +262,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetNextBlockValidators(StoreView snapshot)
         {
-            StorageItem storage = snapshot.Storages[CreateStorageKey(Prefix_NextValidators)];
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
             if (storage is null) return Blockchain.StandbyValidators;
             return storage.Value.AsSerializableArray<ECPoint>();
         }

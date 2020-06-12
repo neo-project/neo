@@ -55,7 +55,7 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.Contracts.Add(scriptHash2, new ContractState()
                 {
                     Script = script.ToArray(),
-                    Manifest = TestUtils.CreateManifest(scriptHash2, "test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
+                    Manifest = TestUtils.CreateDefaultManifest(scriptHash2, "test"),
                 });
             }
 
@@ -223,7 +223,7 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Manifest = TestUtils.CreateManifest(scriptA.ToArray().ToScriptHash(), "test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
+                Manifest = TestUtils.CreateDefaultManifest(scriptA.ToArray().ToScriptHash(), "test"),
                 Script = scriptA.ToArray()
             };
             engine = GetEngine(true, true, false);
@@ -441,7 +441,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = true
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Put(storageKey, storageItem);
+            snapshot.Storages.Add(storageKey, storageItem);
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
@@ -499,7 +499,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = true
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Put(storageKey, storageItem);
+            snapshot.Storages.Add(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             key = new byte[] { 0x01 };
@@ -508,12 +508,11 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsException<InvalidOperationException>(() => engine.Put(storageContext, key, value));
 
             //success
-            key = new byte[] { 0x02 };
             storageItem.IsConstant = false;
             engine.Put(storageContext, key, value);
 
             //value length == 0
-            key = new byte[] { 0x02 };
+            key = new byte[] { 0x01 };
             value = new byte[0];
             engine.Put(storageContext, key, value);
         }
@@ -536,7 +535,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = false
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Put(storageKey, storageItem);
+            snapshot.Storages.Add(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             var key = new byte[] { 0x01 };
@@ -567,7 +566,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = false
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
-            snapshot.Storages.Put(storageKey, storageItem);
+            snapshot.Storages.Add(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             state.Manifest.Features = ContractFeatures.HasStorage;
@@ -601,10 +600,10 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_Call()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            var state = TestUtils.GetContract("method");
+            state.Manifest.Features = ContractFeatures.HasStorage;
             string method = "method";
             var args = new VM.Types.Array { 0, 1 };
-            var state = TestUtils.GetContract(method, args.Count);
-            state.Manifest.Features = ContractFeatures.HasStorage;
 
             snapshot.Contracts.Add(state.ScriptHash, state);
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
@@ -628,12 +627,12 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            string method = "method";
-            var args = new VM.Types.Array { 0, 1 };
-            var state = TestUtils.GetContract(method, args.Count);
+            var state = TestUtils.GetContract("method");
             state.Manifest.Features = ContractFeatures.HasStorage;
             snapshot.Contracts.Add(state.ScriptHash, state);
 
+            string method = "method";
+            var args = new VM.Types.Array { 0, 1 };
 
             foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
             {
@@ -676,7 +675,7 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.Contracts.Add(scriptHash, state);
-            snapshot.Storages.Put(storageKey, storageItem);
+            snapshot.Storages.Add(storageKey, storageItem);
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[0]);
             engine.DestroyContract();

@@ -442,9 +442,6 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
-                var root_hash_index = snapshot.LocalStateRoot.GetAndChange(block.Index, () => new HashIndexState());
-                root_hash_index.Index = block.Index;
-                root_hash_index.Hash = snapshot.Storages.Root.Hash;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();

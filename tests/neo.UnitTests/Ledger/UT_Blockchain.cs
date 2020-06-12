@@ -116,10 +116,10 @@ namespace Neo.UnitTests.Ledger
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages[key];
-                if (entry is null) entry = new StorageItem(new AccountState());
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
+
                 entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
-                snapshot.Storages.Put(key, entry);
+
                 snapshot.Commit();
 
                 typeof(Blockchain)

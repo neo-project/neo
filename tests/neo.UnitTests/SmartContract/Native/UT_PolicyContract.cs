@@ -27,9 +27,11 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Initialize()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
+            (keyCount + 4).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             var ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -239,7 +241,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Key = new byte[sizeof(byte)]
             };
             storageKey.Key[0] = 15;
-            snapshot.Storages.Put(storageKey, new StorageItem
+            snapshot.Storages.Add(storageKey, new StorageItem
             {
                 Value = new UInt160[] { tx.Sender }.ToByteArray(),
             });
