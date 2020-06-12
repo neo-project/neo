@@ -23,7 +23,10 @@ namespace Neo.SmartContract.Native.Tokens
         where TAccount : AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-10", "NEP-11" };
+        [ContractMethod(0, CallFlags.None)]
         public abstract string Symbol { get; }
+        [ContractMethod(0, CallFlags.None)]
+        public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
         private const byte Prefix_TotalSupply = 20;
@@ -74,25 +77,7 @@ namespace Neo.SmartContract.Native.Tokens
             Manifest.Abi.Events = events.ToArray();
         }
 
-        [ContractMethod(0, ContractParameterType.String, CallFlags.None, Name = "name")]
-        protected StackItem NameMethod(ApplicationEngine engine, Array args)
-        {
-            return Name;
-        }
-
-        [ContractMethod(0, ContractParameterType.String, CallFlags.None, Name = "symbol")]
-        protected StackItem SymbolMethod(ApplicationEngine engine, Array args)
-        {
-            return Symbol;
-        }
-
-        [ContractMethod(0, ContractParameterType.Integer, CallFlags.None, Name = "decimals")]
-        protected StackItem DecimalsMethod(ApplicationEngine engine, Array args)
-        {
-            return (uint)0;
-        }
-
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         protected StackItem TotalSupply(ApplicationEngine engine, Array args)
         {
             return TotalSupply(engine.Snapshot);
@@ -105,7 +90,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.ByteArray }, ParameterNames = new[] { "account", "tokenId" })]
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         protected StackItem BalanceOf(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
@@ -122,7 +107,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.GetInteroperable<TAccount>().Balance;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "owner" })]
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public StackItem TokensOf(ApplicationEngine engine, Array args)
         {
             UInt160 owner = new UInt160(args[0].GetSpan());
@@ -139,7 +124,7 @@ namespace Neo.SmartContract.Native.Tokens
             }).GetEnumerator());
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.InteropInterface, CallFlags.None, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
+        [ContractMethod(0_01000000, CallFlags.None)]
         public StackItem OwnerOf(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
@@ -162,7 +147,7 @@ namespace Neo.SmartContract.Native.Tokens
             })?.First();
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.ByteArray }, ParameterNames = new[] { "to", "tokenId" })]
+        [ContractMethod(0_08000000, CallFlags.AllowModifyStates)]
         public virtual StackItem Transfer(ApplicationEngine engine, Array args)
         {
             UInt160 to = new UInt160(args[0].GetSpan());
@@ -190,7 +175,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray }, ParameterNames = new[] { "tokenId" })]
+        [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
         protected StackItem Properties(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();

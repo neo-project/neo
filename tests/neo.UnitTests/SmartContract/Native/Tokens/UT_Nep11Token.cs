@@ -189,6 +189,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         public override string Symbol => "tt";
 
+        public override byte Decimals => 0;
+
         public override JObject Properties(StoreView snapshot, byte[] tokenid)
         {
             throw new NotImplementedException();
@@ -204,19 +206,19 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return base.TotalSupply(engine, args);
         }
 
-        public new StackItem NameMethod(ApplicationEngine engine, VM.Types.Array args)
+        public  StackItem NameMethod(ApplicationEngine engine, VM.Types.Array args)
         {
-            return base.NameMethod(engine, args);
+            return Name;
         }
 
-        public new StackItem SymbolMethod(ApplicationEngine engine, VM.Types.Array args)
+        public StackItem SymbolMethod(ApplicationEngine engine, VM.Types.Array args)
         {
-            return base.SymbolMethod(engine, args);
+            return Symbol;
         }
 
-        public new StackItem DecimalsMethod(ApplicationEngine engine, VM.Types.Array args)
+        public StackItem DecimalsMethod(ApplicationEngine engine, VM.Types.Array args)
         {
-            return base.DecimalsMethod(engine, args);
+            return new byte[] { Decimals };
         }
 
         public StackItem BalanceOfMethod(ApplicationEngine engine, VM.Types.Array args)
