@@ -271,6 +271,7 @@ namespace Neo.Consensus
             if (ProtocolSettings.Default.StateRootEnableIndex + 1 < payload.BlockIndex && Blockchain.Singleton.StateHeight < payload.BlockIndex - 2)
             {
                 Log($"root sync: expected={payload.BlockIndex - 1} current={Blockchain.Singleton.StateHeight}");
+                localNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create((uint)Blockchain.Singleton.StateHeight + 1, (uint)(payload.BlockIndex - 2 - Blockchain.Singleton.StateHeight))));
                 return;
             }
             if (payload.ValidatorIndex >= context.Validators.Length) return;
