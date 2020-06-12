@@ -3,12 +3,14 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Reflection;
 
 namespace Neo.SmartContract
 {
     internal class InteropParameterDescriptor
     {
+        public string Name { get; }
         public Type Type { get; }
         public Func<StackItem, object> Converter { get; }
         public bool IsEnum => Type.IsEnum;
@@ -28,6 +30,7 @@ namespace Neo.SmartContract
             [typeof(uint)] = p => (uint)p.GetBigInteger(),
             [typeof(long)] = p => (long)p.GetBigInteger(),
             [typeof(ulong)] = p => (ulong)p.GetBigInteger(),
+            [typeof(BigInteger)] = p => p.GetBigInteger(),
             [typeof(byte[])] = p => p.IsNull ? null : p.GetSpan().ToArray(),
             [typeof(string)] = p => p.IsNull ? null : p.GetString(),
             [typeof(UInt160)] = p => p.IsNull ? null : new UInt160(p.GetSpan()),
@@ -37,6 +40,7 @@ namespace Neo.SmartContract
 
         public InteropParameterDescriptor(ParameterInfo parameterInfo)
         {
+            Name = parameterInfo.Name;
             Type = parameterInfo.ParameterType;
             if (IsEnum)
             {

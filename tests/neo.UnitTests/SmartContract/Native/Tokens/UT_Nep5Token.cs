@@ -2,10 +2,7 @@ using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
-using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
-using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Numerics;
 
@@ -37,9 +34,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             key.Id = test.Id;
 
             snapshot.Storages.Add(key, item);
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            StackItem stackItem = test.TotalSupply(ae, null);
-            stackItem.GetBigInteger().Should().Be(1);
+            test.TotalSupply(snapshot).Should().Be(1);
         }
 
         [TestMethod]
@@ -60,9 +55,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             snapshot.Storages.Add(key, item);
 
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            StackItem stackItem = test.TotalSupply(ae, null);
-            stackItem.GetBigInteger().Should().Be(10_000_000_000_000_000);
+            test.TotalSupply(snapshot).Should().Be(10_000_000_000_000_000);
         }
 
         public StorageKey CreateStorageKey(byte prefix, byte[] key = null)
@@ -87,10 +80,5 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override string Symbol => throw new NotImplementedException();
 
         public override byte Decimals => 8;
-
-        public new StackItem TotalSupply(ApplicationEngine engine, VM.Types.Array args)
-        {
-            return base.TotalSupply(engine, args);
-        }
     }
 }
