@@ -45,7 +45,6 @@ namespace Neo.Persistence
             HeaderHashIndex.Commit();
             ContractId.Commit();
             ValidatorsStateRoot.Commit();
-
         }
 
         public bool ContainsBlock(UInt256 hash)
