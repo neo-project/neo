@@ -19,10 +19,10 @@ namespace Neo.Persistence
         public override DataCache<UInt160, ContractState> Contracts => new StoreDataCache<UInt160, ContractState>(store, Prefixes.ST_Contract);
         public override DataCache<StorageKey, StorageItem> Storages => new MPTDataCache<StorageKey, StorageItem>(store, Prefixes.ST_Storage, CurrentStateRootHash);
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList => new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(store, Prefixes.IX_HeaderHashList);
-        public override DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot => new StoreDataCache<SerializableWrapper<uint>, HashIndexState>(store, Prefixes.ST_Root);
+        public override DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot => new StoreDataCache<SerializableWrapper<uint>, HashIndexState>(store, Prefixes.ST_LocalStateRoot);
         public override MetaDataCache<HashIndexState> BlockHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentBlock);
         public override MetaDataCache<HashIndexState> HeaderHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentHeader);
-        public override MetaDataCache<StateRoot> ValidatorsStateRoot => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ConfirmedRoot);
+        public override MetaDataCache<StateRoot> ValidatorsStateRoot => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ValidatorsStateRoot);
         public override MetaDataCache<ContractIdState> ContractId => new StoreMetaDataCache<ContractIdState>(store, Prefixes.IX_ContractId);
 
 
