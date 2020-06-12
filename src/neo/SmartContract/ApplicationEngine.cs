@@ -76,7 +76,7 @@ namespace Neo.SmartContract
             return context;
         }
 
-        private StackItem ConvertReturnValue(object value)
+        internal StackItem Convert(object value)
         {
             return value switch
             {
@@ -90,16 +90,49 @@ namespace Neo.SmartContract
                 uint i => i,
                 long i => i,
                 ulong i => i,
-                Enum e => ConvertReturnValue(Convert.ChangeType(e, e.GetTypeCode())),
+                Enum e => Convert(System.Convert.ChangeType(e, e.GetTypeCode())),
                 byte[] data => data,
                 string s => s,
-                UInt160 i => i.ToArray(),
-                UInt256 i => i.ToArray(),
+                BigInteger i => i,
                 IInteroperable interoperable => interoperable.ToStackItem(ReferenceCounter),
-                IInteroperable[] array => new VMArray(ReferenceCounter, array.Select(p => p.ToStackItem(ReferenceCounter))),
+                ISerializable i => i.ToArray(),
                 StackItem item => item,
+                (object a, object b) => new Struct(ReferenceCounter) { Convert(a), Convert(b) },
+                Array array => new VMArray(ReferenceCounter, array.OfType<object>().Select(p => Convert(p))),
                 _ => StackItem.FromInterface(value)
             };
+        }
+
+        internal object Convert(StackItem item, InteropParameterDescriptor descriptor)
+        {
+            if (descriptor.IsArray)
+            {
+                Array av;
+                if (item is VMArray array)
+                {
+                    av = Array.CreateInstance(descriptor.Type.GetElementType(), array.Count);
+                    for (int i = 0; i < av.Length; i++)
+                        av.SetValue(descriptor.Converter(array[i]), i);
+                }
+                else
+                {
+                    int count = (int)item.GetBigInteger();
+                    if (count > MaxStackSize) throw new InvalidOperationException();
+                    av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
+                    for (int i = 0; i < av.Length; i++)
+                        av.SetValue(descriptor.Converter(Pop()), i);
+                }
+                return av;
+            }
+            else
+            {
+                object value = descriptor.Converter(item);
+                if (descriptor.IsEnum)
+                    value = System.Convert.ChangeType(value, descriptor.Type);
+                else if (descriptor.IsInterface)
+                    value = ((InteropInterface)value).GetInterface<object>();
+                return value;
+            }
         }
 
         public override void Dispose()
@@ -125,39 +158,10 @@ namespace Neo.SmartContract
                 ? new List<object>()
                 : null;
             foreach (var pd in descriptor.Parameters)
-            {
-                StackItem item = Pop();
-                object value;
-                if (pd.IsArray)
-                {
-                    Array av;
-                    if (item is VMArray array)
-                    {
-                        av = Array.CreateInstance(pd.Type.GetElementType(), array.Count);
-                        for (int i = 0; i < av.Length; i++)
-                            av.SetValue(pd.Converter(array[i]), i);
-                    }
-                    else
-                    {
-                        av = Array.CreateInstance(pd.Type.GetElementType(), (int)item.GetBigInteger());
-                        for (int i = 0; i < av.Length; i++)
-                            av.SetValue(pd.Converter(Pop()), i);
-                    }
-                    value = av;
-                }
-                else
-                {
-                    value = pd.Converter(item);
-                    if (pd.IsEnum)
-                        value = Convert.ChangeType(value, pd.Type);
-                    else if (pd.IsInterface)
-                        value = ((InteropInterface)value).GetInterface<object>();
-                }
-                parameters.Add(value);
-            }
+                parameters.Add(Convert(Pop(), pd));
             object returnValue = descriptor.Handler.Invoke(this, parameters?.ToArray());
             if (descriptor.Handler.ReturnType != typeof(void))
-                Push(ConvertReturnValue(returnValue));
+                Push(Convert(returnValue));
             return true;
         }
 

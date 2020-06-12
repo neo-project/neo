@@ -31,7 +31,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestInvoke()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0);
             engine.LoadScript(testNativeContract.Script);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
@@ -51,15 +51,12 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestOnPersistWithArgs()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            VMArray args = new VMArray();
 
-            VM.Types.Boolean result1 = new VM.Types.Boolean(false);
-            testNativeContract.TestOnPersist(engine1, args).Should().Be(result1);
+            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestOnPersist(engine1));
 
             ApplicationEngine engine2 = new ApplicationEngine(TriggerType.System, null, snapshot, 0);
-            VM.Types.Boolean result2 = new VM.Types.Boolean(true);
-            testNativeContract.TestOnPersist(engine2, args).Should().Be(result2);
+            testNativeContract.TestOnPersist(engine2);
         }
 
         [TestMethod]
@@ -76,9 +73,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
         public override int Id => 0x10000006;
 
-        public StackItem TestOnPersist(ApplicationEngine engine, VMArray args)
+        public void TestOnPersist(ApplicationEngine engine)
         {
-            return OnPersist(engine, args);
+            OnPersist(engine);
         }
     }
 }
