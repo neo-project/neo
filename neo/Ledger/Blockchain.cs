@@ -631,7 +631,7 @@ namespace Neo.Ledger
                     snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(snapshot.Clone(), all_application_executed);
+                    plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
