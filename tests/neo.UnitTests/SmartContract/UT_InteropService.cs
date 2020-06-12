@@ -55,7 +55,7 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.Contracts.Add(scriptHash2, new ContractState()
                 {
                     Script = script.ToArray(),
-                    Manifest = TestUtils.CreateDefaultManifest(scriptHash2, "test"),
+                    Manifest = TestUtils.CreateManifest(scriptHash2, "test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
                 });
             }
 
@@ -223,7 +223,7 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Manifest = TestUtils.CreateDefaultManifest(scriptA.ToArray().ToScriptHash(), "test"),
+                Manifest = TestUtils.CreateManifest(scriptA.ToArray().ToScriptHash(), "test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
                 Script = scriptA.ToArray()
             };
             engine = GetEngine(true, true, false);
@@ -601,10 +601,10 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_Call()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var state = TestUtils.GetContract("method");
-            state.Manifest.Features = ContractFeatures.HasStorage;
             string method = "method";
             var args = new VM.Types.Array { 0, 1 };
+            var state = TestUtils.GetContract(method, args.Count);
+            state.Manifest.Features = ContractFeatures.HasStorage;
 
             snapshot.Contracts.Add(state.ScriptHash, state);
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
@@ -628,12 +628,12 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            var state = TestUtils.GetContract("method");
+            string method = "method";
+            var args = new VM.Types.Array { 0, 1 };
+            var state = TestUtils.GetContract(method, args.Count);
             state.Manifest.Features = ContractFeatures.HasStorage;
             snapshot.Contracts.Add(state.ScriptHash, state);
 
-            string method = "method";
-            var args = new VM.Types.Array { 0, 1 };
 
             foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
             {
