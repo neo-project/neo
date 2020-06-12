@@ -17,13 +17,14 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TrimmedBlock> Blocks => new StoreDataCache<UInt256, TrimmedBlock>(store, Prefixes.DATA_Block);
         public override DataCache<UInt256, TransactionState> Transactions => new StoreDataCache<UInt256, TransactionState>(store, Prefixes.DATA_Transaction);
         public override DataCache<UInt160, ContractState> Contracts => new StoreDataCache<UInt160, ContractState>(store, Prefixes.ST_Contract);
+        public override DataCache<StorageKey, StorageItem> Storages => new MPTDataCache<StorageKey, StorageItem>(store, Prefixes.ST_Storage, CurrentStateRootHash);
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList => new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(store, Prefixes.IX_HeaderHashList);
         public override DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot => new StoreDataCache<SerializableWrapper<uint>, HashIndexState>(store, Prefixes.ST_Root);
         public override MetaDataCache<HashIndexState> BlockHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentBlock);
         public override MetaDataCache<HashIndexState> HeaderHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentHeader);
-        public override MetaDataCache<StateRoot> LatestVerifiedStateRoot => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ConfirmedRoot);
+        public override MetaDataCache<StateRoot> ValidatorsStateRoot => new StoreMetaDataCache<StateRoot>(store, Prefixes.IX_ConfirmedRoot);
         public override MetaDataCache<ContractIdState> ContractId => new StoreMetaDataCache<ContractIdState>(store, Prefixes.IX_ContractId);
-        public override DataCache<StorageKey, StorageItem> Storages => new MPTDataCache<StorageKey, StorageItem>(store, Prefixes.ST_Storage, CurrentStateRootHash);
+
 
         public ReadOnlyView(IReadOnlyStore store)
         {

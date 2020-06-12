@@ -16,13 +16,14 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
+        public override DataCache<StorageKey, StorageItem> Storages { get; }
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public override DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<StateRoot> LatestVerifiedStateRoot { get; }
+        public override MetaDataCache<StateRoot> ValidatorsStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
-        public override DataCache<StorageKey, StorageItem> Storages { get; }
+
 
         public SnapshotView(IStore store)
         {
@@ -35,7 +36,7 @@ namespace Neo.Persistence
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
-            LatestVerifiedStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
+            ValidatorsStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ConfirmedRoot);
             Storages = new MPTDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage, CurrentStateRootHash);
         }
 
