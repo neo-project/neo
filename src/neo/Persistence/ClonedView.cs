@@ -19,7 +19,6 @@ namespace Neo.Persistence
         public override MetaDataCache<StateRoot> ValidatorsStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
-
         public ClonedView(StoreView view)
         {
             this.PersistingBlock = view.PersistingBlock;
