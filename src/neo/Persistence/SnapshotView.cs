@@ -37,7 +37,7 @@ namespace Neo.Persistence
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
             ContractId = new StoreMetaDataCache<ContractIdState>(snapshot, Prefixes.IX_ContractId);
             ValidatorsStateRoot = new StoreMetaDataCache<StateRoot>(snapshot, Prefixes.IX_ValidatorsStateRoot);
-            Storages = new MPTDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage, CurrentStateRootHash);
+            Storages = new MPTDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage, CurrentStateRootHash);//Need BlockHashIndex and LocalStateRoot loaded.
         }
 
         public override void Commit()
