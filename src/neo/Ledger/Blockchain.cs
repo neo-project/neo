@@ -443,7 +443,7 @@ namespace Neo.Ledger
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(snapshot.Clone(), all_application_executed);
+                    plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
