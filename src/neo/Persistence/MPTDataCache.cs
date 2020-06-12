@@ -13,6 +13,8 @@ namespace Neo.Persistence
     {
         private MPTTrie<TKey, TValue> mptTrie;
 
+        public MPTNode Root => mptTrie.Root;
+
         public MPTDataCache(IReadOnlyStore store, byte prefix, UInt256 root)
         {
             mptTrie = new MPTTrie<TKey, TValue>(store as ISnapshot, prefix, root);
