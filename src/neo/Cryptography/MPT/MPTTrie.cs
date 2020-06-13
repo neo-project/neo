@@ -8,17 +8,16 @@ namespace Neo.Cryptography.MPT
         where TKey : notnull, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
-        private byte Prefix;
+        private const byte Prefix = 0xf0;
 
         private readonly ISnapshot store;
         private MPTNode root;
 
         public MPTNode Root => root;
 
-        public MPTTrie(ISnapshot store, byte prefix, UInt256 root)
+        public MPTTrie(ISnapshot store, UInt256 root)
         {
             this.store = store ?? throw new ArgumentNullException();
-            this.Prefix = prefix;
             this.root = root is null || root == UInt256.Zero ? HashNode.EmptyNode : new HashNode(root);
         }
 
