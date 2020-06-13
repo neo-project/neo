@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
-        private const byte Prefix_MaxBlockSize = 16;
+        private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
 
         public PolicyContract()
