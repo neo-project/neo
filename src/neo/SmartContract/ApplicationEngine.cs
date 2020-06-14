@@ -19,7 +19,6 @@ namespace Neo.SmartContract
     {
         private class InvocationState
         {
-            public ExecutionContext Context;
             public Type ReturnType;
             public Delegate Callback;
         }
@@ -67,7 +66,6 @@ namespace Neo.SmartContract
         {
             invocationStates.Add(CurrentContext, new InvocationState
             {
-                Context = CurrentContext,
                 ReturnType = typeof(void),
                 Callback = onComplete
             });
@@ -78,7 +76,6 @@ namespace Neo.SmartContract
         {
             invocationStates.Add(CurrentContext, new InvocationState
             {
-                Context = CurrentContext,
                 ReturnType = typeof(T),
                 Callback = onComplete
             });
