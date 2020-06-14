@@ -39,20 +39,25 @@ namespace Neo.SmartContract
         };
 
         public InteropParameterDescriptor(ParameterInfo parameterInfo)
+            : this(parameterInfo.ParameterType)
         {
-            Name = parameterInfo.Name;
-            Type = parameterInfo.ParameterType;
+            this.Name = parameterInfo.Name;
+        }
+
+        public InteropParameterDescriptor(Type type)
+        {
+            this.Type = type;
             if (IsEnum)
             {
-                Converter = converters[Type.GetEnumUnderlyingType()];
+                Converter = converters[type.GetEnumUnderlyingType()];
             }
             else if (IsArray)
             {
-                Converter = converters[Type.GetElementType()];
+                Converter = converters[type.GetElementType()];
             }
             else
             {
-                IsInterface = !converters.TryGetValue(Type, out var converter);
+                IsInterface = !converters.TryGetValue(type, out var converter);
                 if (IsInterface)
                     Converter = converters[typeof(InteropInterface)];
                 else
