@@ -107,6 +107,16 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
+                case MessageCommand.StateRoot:
+                    if (msg.Payload is null)
+                    {
+                        OnGetRootReceived();
+                    }
+                    else
+                    {
+                        OnRootReceived((StateRoot)msg.Payload);
+                    }
+                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
@@ -117,6 +127,20 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
+        }
+
+        private void OnGetRootReceived()
+        {
+            var state_root = Blockchain.Singleton.LatestValidatorsStateRoot;
+            if (state_root is null) return;
+            EnqueueMessage(Message.Create(MessageCommand.StateRoot, state_root));
+        }
+
+        private void OnRootReceived(StateRoot payload)
+        {
+            if (knownHashes.Contains(payload.Hash)) return;
+            system.Blockchain.Tell(payload);
+            knownHashes.Add(payload.Hash);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
