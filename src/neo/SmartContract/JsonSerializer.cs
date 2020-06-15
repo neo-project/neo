@@ -48,6 +48,11 @@ namespace Neo.SmartContract
 
                         foreach (var entry in map)
                         {
+                            if (!(entry.Key is ByteString))
+                            {
+                                throw new FormatException();
+                            }
+
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);
 
