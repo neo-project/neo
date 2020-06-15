@@ -306,7 +306,7 @@ namespace Neo.Network.P2P
                     .ThenBy(p => p.Value.IndexTasks.Count)
                     .FirstOrDefault();
                 if (session.Value != null)
-                    session.Key.Tell(Message.Create(MessageCommand.StateRoot, null));
+                    session.Key.Tell(Message.Create(MessageCommand.GetStateRoot, GetStateRootPayload.Create((uint)(Blockchain.Singleton.StateHeight + 1))));
             }
         }
 

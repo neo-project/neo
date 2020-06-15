@@ -108,14 +108,10 @@ namespace Neo.Network.P2P
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
                 case MessageCommand.StateRoot:
-                    if (msg.Payload is null)
-                    {
-                        OnGetRootReceived();
-                    }
-                    else
-                    {
-                        OnRootReceived((StateRoot)msg.Payload);
-                    }
+                    OnRootReceived((StateRoot)msg.Payload);
+                    break;
+                case MessageCommand.GetStateRoot:
+                    OnGetRootReceived((GetStateRootPayload)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
@@ -129,10 +125,11 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnGetRootReceived()
+        private void OnGetRootReceived(GetStateRootPayload payload)
         {
             var state_root = Blockchain.Singleton.LatestValidatorsStateRoot;
             if (state_root is null) return;
+            if (state_root.Index < payload.Index) return;
             EnqueueMessage(Message.Create(MessageCommand.StateRoot, state_root));
         }
 

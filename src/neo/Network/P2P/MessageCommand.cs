@@ -42,7 +42,8 @@ namespace Neo.Network.P2P
         Consensus = 0x2d,
         [ReflectionCache(typeof(StateRoot))]
         StateRoot = 0x2e,
-        Reject = 0x2f,
+        [ReflectionCache(typeof(GetStateRootPayload))]
+        GetStateRoot = 0x2f,
 
         //SPV protocol
         [ReflectionCache(typeof(FilterLoadPayload))]
@@ -55,5 +56,6 @@ namespace Neo.Network.P2P
 
         //others
         Alert = 0x40,
+        Reject = 0x41,
     }
 }
