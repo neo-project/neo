@@ -15,8 +15,8 @@ namespace Neo.Wallets
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(asset_id, "decimals");
-                sb.EmitAppCall(asset_id, "name");
+                sb.EmitAppCall(asset_id, ContractParameterType.Integer, "decimals");
+                sb.EmitAppCall(asset_id, ContractParameterType.String, "name");
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: 3_000_000);
