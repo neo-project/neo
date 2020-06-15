@@ -458,7 +458,7 @@ namespace Neo.Consensus
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)Block.Index;
-            ProposalStateRoot = Blockchain.Singleton.GetStateRoot(Block.Index - 1);
+            ProposalStateRoot = Blockchain.Singleton.GetLocalStateRoot(Block.Index - 1);
         }
 
         public void Save()

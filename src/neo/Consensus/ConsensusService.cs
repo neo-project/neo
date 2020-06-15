@@ -430,7 +430,7 @@ namespace Neo.Consensus
                 return;
             }
 
-            if (message.ProposalStateRoot != Blockchain.Singleton.GetStateRoot(context.Block.Index - 1))
+            if (message.ProposalStateRoot != Blockchain.Singleton.GetLocalStateRoot(context.Block.Index - 1))
             {
                 Log($"Invalid request: state root incorrect.", LogLevel.Warning);
             }
