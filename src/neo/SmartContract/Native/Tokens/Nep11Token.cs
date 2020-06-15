@@ -78,11 +78,6 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public BigInteger TotalSupply(ApplicationEngine engine, Array args)
-        {
-            return TotalSupply(engine.Snapshot);
-        }
-
         public virtual BigInteger TotalSupply(StoreView snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
@@ -91,16 +86,9 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public BigInteger BalanceOf(ApplicationEngine engine, Array args)
-        {
-            UInt160 account = new UInt160(args[0].GetSpan());
-            byte[] tokenId = args[1].GetSpan().ToArray();
-            if (tokenId.Length > MaxTokenIdLength) return BigInteger.Zero;
-            return BalanceOf(engine.Snapshot, account, tokenId);
-        }
-
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account, byte[] tokenId)
         {
+            if (tokenId.Length > MaxTokenIdLength) return BigInteger.Zero;
             UInt160 innerKey = GetInnerKey(tokenId);
             StorageItem storage = snapshot.Storages.TryGet(CreateOwnershipKey(Prefix_OwnerToTokenId, account, innerKey));
             if (storage is null) return BigInteger.Zero;
@@ -108,12 +96,6 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public IEnumerator TokensOf(ApplicationEngine engine, Array args)
-        {
-            UInt160 owner = new UInt160(args[0].GetSpan());
-            return TokensOf(engine.Snapshot, owner);
-        }
-
         public virtual IEnumerator TokensOf(StoreView snapshot, UInt160 owner)
         {
             return new CollectionWrapper(snapshot.Storages.Find(CreateStorageKey(Prefix_OwnerToTokenId, owner).ToArray()).Select(p =>
@@ -125,9 +107,8 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]
-        public IEnumerator OwnerOf(ApplicationEngine engine, Array args)
+        public IEnumerator OwnerOf(ApplicationEngine engine, byte[] tokenId)
         {
-            byte[] tokenId = args[0].GetSpan().ToArray();
             if (tokenId.Length > MaxTokenIdLength) throw new InvalidOperationException("Invalid tokenId");
 
             var owner = OwnerOf(engine.Snapshot, tokenId);
@@ -148,16 +129,9 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_08000000, CallFlags.AllowModifyStates)]
-        public virtual bool Transfer(ApplicationEngine engine, Array args)
-        {
-            UInt160 to = new UInt160(args[0].GetSpan());
-            byte[] tokenId = args[1].GetSpan().ToArray();
-            if (tokenId.Length > MaxTokenIdLength) return false;
-            return Transfer(engine, to, tokenId);
-        }
-
         public virtual bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
+            if (tokenId.Length > MaxTokenIdLength) return false;
             UInt160 owner = OwnerOf(engine.Snapshot, tokenId);
             if (owner is null || !engine.CheckWitnessInternal(owner)) return false;
 
@@ -176,9 +150,8 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
-        public string Properties(ApplicationEngine engine, Array args)
+        public string Properties(ApplicationEngine engine, byte[] tokenId)
         {
-            byte[] tokenId = args[0].GetSpan().ToArray();
             if (tokenId.Length > MaxTokenIdLength) return null;
             return Properties(engine.Snapshot, tokenId).ToString();
         }

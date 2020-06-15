@@ -31,10 +31,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestProperties()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            VM.Types.Array array = new VM.Types.Array();
-            array.Add(UInt256.Zero.ToArray());
-            Action action = () => test.Properties(ae, array);
+            Action action = () => test.Properties(snapshot, UInt256.Zero.ToArray());
             action.Should().Throw<NotImplementedException>();
         }
 
@@ -42,8 +39,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestTotalSupply()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            BigInteger result = test.TotalSupply(ae, null);
+            BigInteger result = test.TotalSupply(snapshot);
             result.Should().Be(0);
         }
 
@@ -78,11 +74,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestBalanceOfMethod()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            VM.Types.Array array = new VM.Types.Array();
-            array.Add(UInt160.Zero.ToArray());
-            array.Add(UInt160.Zero.ToArray());
-            BigInteger result = test.BalanceOf(ae, array);
+            BigInteger result = test.BalanceOf(snapshot, UInt160.Zero, UInt160.Zero.ToArray());
             result.Should().Be(0);
         }
 
@@ -95,9 +87,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Action action = () => test.Mint(ae, UInt160.Zero, new TestNep11TokenState { Id = UInt256.Zero.ToArray() });
             action.Should().NotThrow<Exception>();
             //tokensOf
-            VM.Types.Array array = new VM.Types.Array();
-            array.Add(UInt160.Zero.ToArray());
-            IEnumerator enumerator = test.TokensOf(ae, array);
+            IEnumerator enumerator = test.TokensOf(snapshot, UInt160.Zero);
             enumerator.Next().Should().BeTrue();
             enumerator.Value().GetSpan().ToArray().Should().BeEquivalentTo(UInt256.Zero.ToArray());
         }
@@ -113,7 +103,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             //ownerOf
             VM.Types.Array array = new VM.Types.Array();
             array.Add(UInt256.Zero.ToArray());
-            IEnumerator enumerator = test.OwnerOf(ae, array);
+            IEnumerator enumerator = test.OwnerOf(ae, UInt256.Zero.ToArray());
             enumerator.Next().Should().BeTrue();
             enumerator.Value().GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
         }
@@ -154,28 +144,19 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action.Should().NotThrow<Exception>();
 
             //transfer amount greater than balance wrong
-            VM.Types.Array array = new VM.Types.Array();
-            array.Add(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray());
-            array.Add(UInt256.Zero.ToArray());
-            action = () => test.Transfer(ae, array);
+            action = () => test.Transfer(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt256.Zero.ToArray());
             action.Should().Equals(false);
 
             //transfer
-            array.Add(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray());
-            array.Add(UInt256.Zero.ToArray());
-            action = () => test.Transfer(ae, array);
+            action = () => test.Transfer(ae, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt256.Zero.ToArray());
             action.Should().NotThrow<Exception>();
 
             //transfer no witness wrong
-            array.Add(UInt160.Zero.ToArray());
-            array.Add(UInt256.Zero.ToArray());
-            action = () => test.Transfer(ae, array);
+            action = () => test.Transfer(ae, UInt160.Zero, UInt256.Zero.ToArray());
             action.Should().Equals(false);
 
             //transfer no token wrong
-            array.Add(UInt160.Zero.ToArray());
-            array.Add(test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
-            action = () => test.Transfer(ae, array);
+            action = () => test.Transfer(ae, UInt160.Zero, test.GetInnerKey(UInt256.Zero.ToArray()).ToArray());
             action.Should().Equals(false);
         }
     }
