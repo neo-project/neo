@@ -6,7 +6,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.VM.Types;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -14,7 +13,7 @@ namespace Neo.UnitTests.SmartContract
     public class UT_ApplicationEngine
     {
         private string message = null;
-        private StackItem item = null;
+        private string eventName = null;
 
         [TestInitialize]
         public void TestSetup()
@@ -28,23 +27,23 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             ApplicationEngine.Notify += Test_Notify1;
-            StackItem notifyItem = "TestItem";
+            const string notifyEvent = "TestEvent";
 
-            engine.SendNotification(UInt160.Zero, notifyItem);
-            item.Should().Be(notifyItem);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            eventName.Should().Be(notifyEvent);
 
             ApplicationEngine.Notify += Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyItem);
-            item.Should().Be(null);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            eventName.Should().Be(null);
 
-            item = notifyItem;
+            eventName = notifyEvent;
             ApplicationEngine.Notify -= Test_Notify1;
-            engine.SendNotification(UInt160.Zero, notifyItem);
-            item.Should().Be(null);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            eventName.Should().Be(null);
 
             ApplicationEngine.Notify -= Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyItem);
-            item.Should().Be(null);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            eventName.Should().Be(null);
         }
 
         private void Test_Log1(object sender, LogEventArgs e)
@@ -59,12 +58,12 @@ namespace Neo.UnitTests.SmartContract
 
         private void Test_Notify1(object sender, NotifyEventArgs e)
         {
-            item = e.State;
+            eventName = e.EventName;
         }
 
         private void Test_Notify2(object sender, NotifyEventArgs e)
         {
-            item = null;
+            eventName = null;
         }
 
         [TestMethod]
