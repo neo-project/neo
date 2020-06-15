@@ -55,6 +55,15 @@ namespace Neo.SmartContract
             return testMode || GasConsumed <= gas_amount;
         }
 
+        protected override void ContextUnloaded(ExecutionContext context)
+        {
+            base.ContextUnloaded(context);
+            if (context.EvaluationStack == CurrentContext?.EvaluationStack) return;
+            int rvcount = context.GetState<ExecutionContextState>().RVCount;
+            if (rvcount != -1 && rvcount != context.EvaluationStack.Count)
+                throw new InvalidOperationException();
+        }
+
         protected override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
@@ -64,9 +73,9 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags)
         {
-            ExecutionContext context = LoadScript(script, rvcount);
+            ExecutionContext context = LoadScript(script);
             context.GetState<ExecutionContextState>().CallFlags = callFlags;
             return context;
         }
@@ -123,7 +132,7 @@ namespace Neo.SmartContract
             {
                 object value = descriptor.Converter(item);
                 if (descriptor.IsEnum)
-                    value = System.Convert.ChangeType(value, descriptor.Type);
+                    value = Enum.ToObject(descriptor.Type, value);
                 else if (descriptor.IsInterface)
                     value = ((InteropInterface)value).GetInterface<object>();
                 return value;
