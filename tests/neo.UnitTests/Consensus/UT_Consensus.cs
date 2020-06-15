@@ -10,6 +10,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
@@ -47,7 +48,7 @@ namespace Neo.UnitTests.Consensus
 
             var mockContext = new Mock<ConsensusContext>(mockWallet.Object, Blockchain.Singleton.Store);
             mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0 };
-
+            mockContext.Object.ProposalStateRoot = UInt256.Zero;
             KeyPair[] kp_array = new KeyPair[7]
                 {
                     UT_Crypto.generateKey(32), // not used, kept for index consistency, didactically
@@ -283,6 +284,7 @@ namespace Neo.UnitTests.Consensus
             var originalBlockHashData = mockContext.Object.Block.GetHashData();
             mockContext.Object.Block.NextConsensus = updatedContract.ScriptHash;
             mockContext.Object.Block.Header.NextConsensus = updatedContract.ScriptHash;
+            var originalStateRootData = mockContext.Object.EnsureStateRoot().GetHashData();
             var originalBlockMerkleRoot = mockContext.Object.Block.MerkleRoot;
             Console.WriteLine($"\noriginalBlockMerkleRoot: {originalBlockMerkleRoot}");
             var updatedBlockHashData = mockContext.Object.Block.GetHashData();
@@ -292,11 +294,11 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nBasic commits Signatures verification");
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
-            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData);
-            Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
-            Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
-            Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6]).Should().BeFalse();
-            Crypto.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6]).Should().BeTrue();
+            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData, originalStateRootData);
+            Crypto.VerifySignature(originalBlockHashData, cm.BlockSignature, mockContext.Object.Validators[0]).Should().BeFalse();
+            Crypto.VerifySignature(updatedBlockHashData, cm.BlockSignature, mockContext.Object.Validators[0]).Should().BeFalse();
+            Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).BlockSignature, mockContext.Object.Validators[6]).Should().BeFalse();
+            Crypto.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).BlockSignature, mockContext.Object.Validators[6]).Should().BeTrue();
             Console.WriteLine("\n==========================");
 
             Console.WriteLine("\n==========================");
@@ -311,7 +313,7 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(1);
 
             Console.WriteLine("\nCN6 simulation time");
-            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData));
+            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData, originalStateRootData));
             tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             rmPayload = (ConsensusPayload)tempPayloadToBlockAndWait.Inventory;
             rmm = (RecoveryMessage)rmPayload.ConsensusMessage;
@@ -321,7 +323,7 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(0);
 
             Console.WriteLine("\nCN5 simulation time");
-            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData));
+            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData, originalStateRootData));
             tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine("\nAsserting CountCommitted is 4...");
             mockContext.Object.CountCommitted.Should().Be(4);
@@ -350,6 +352,13 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.Block.PrevHash = UInt256.Zero;
             //Payload should also be forced, otherwise OnConsensus will not pass
             commitPayload.PrevHash = UInt256.Zero;
+            var root = mockContext.Object.EnsureStateRoot();
+            var mockRoot = new Mock<StateRoot>();
+            mockRoot.Object.Version = root.Version;
+            mockRoot.Object.Index = root.Index;
+            mockRoot.Object.Root = root.Root;
+            mockRoot.Setup(p => p.GetScriptHashesForVerifying(It.IsAny<StoreView>())).Returns<StoreView>(p => new UInt160[] { updatedContract.ScriptHash });
+            mockContext.Object.StateRoot = mockRoot.Object;
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
             Console.WriteLine($"\nForcing block VerificationScript to {updatedContract.Script.ToScriptHash()}");
             // The default behavior for BlockBase, when PrevHash = UInt256.Zero, is to use its own Witness
@@ -359,10 +368,11 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
 
             Console.WriteLine("\nCN4 simulation time - Final needed signatures");
-            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], mockContext.Object.Block.GetHashData()));
+            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], mockContext.Object.Block.GetHashData(), originalStateRootData));
 
             Console.WriteLine("\nWait for subscriber Block");
             var utBlock = subscriber.ExpectMsg<Block>();
+            var stateroot = subscriber.ExpectMsg<StateRoot>();
             Console.WriteLine("\nAsserting CountCommitted is 5...");
             mockContext.Object.CountCommitted.Should().Be(5);
 
@@ -377,7 +387,6 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.Block.Transactions = null;
             // ensuring same hash as snapshot
             mockContext.Object.Block.PrevHash = oldPrevHash;
-
             Console.WriteLine("\nAsserting CountCommitted is 0...");
             mockContext.Object.CountCommitted.Should().Be(0);
             Console.WriteLine($"\nAsserting CountFailed is 0...");
@@ -427,7 +436,7 @@ namespace Neo.UnitTests.Consensus
         /// <param name="vI">new ValidatorIndex for the cpToCopy
         /// <param name="kp">KeyPair that will be used for signing the Commit message used for creating blocks
         /// <param name="blockHashToSign">HashCode of the Block that is being produced and current being signed
-        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
+        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign, byte[] rootHashToSign)
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
@@ -435,7 +444,8 @@ namespace Neo.UnitTests.Consensus
             cpCommitTemp.ConsensusMessage = new Commit
             {
                 ViewNumber = oldViewNumber,
-                Signature = Crypto.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray())
+                BlockSignature = Crypto.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false)[1..]),
+                StateRootSignature = Crypto.Sign(rootHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false)[1..]),
             };
             SignPayload(cpCommitTemp, kp);
             return cpCommitTemp;
@@ -486,6 +496,7 @@ namespace Neo.UnitTests.Consensus
                     }
                 },
                 ViewNumber = 2,
+                ProposalStateRoot = UInt256.Zero,
                 Validators = new ECPoint[7]
                 {
                     ECPoint.Parse("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", Neo.Cryptography.ECC.ECCurve.Secp256r1),
@@ -517,7 +528,8 @@ namespace Neo.UnitTests.Consensus
             var prepareRequestMessage = new PrepareRequest
             {
                 TransactionHashes = consensusContext.TransactionHashes,
-                Timestamp = 23
+                Timestamp = 23,
+                ProposalStateRoot = UInt256.Zero
             };
             consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
             consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 0, new[] { (byte)'t', (byte)'e' });
@@ -530,8 +542,16 @@ namespace Neo.UnitTests.Consensus
             consensusContext.CommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             using (SHA256 sha256 = SHA256.Create())
             {
-                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()).Concat(sha256.ComputeHash(testTx1.Hash.ToArray())).ToArray() }, 3, new[] { (byte)'3', (byte)'4' });
-                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()).Concat(sha256.ComputeHash(testTx2.Hash.ToArray())).ToArray() }, 3, new[] { (byte)'6', (byte)'7' });
+                consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit
+                {
+                    BlockSignature = sha256.ComputeHash(testTx1.Hash.ToArray()).Concat(sha256.ComputeHash(testTx1.Hash.ToArray())).ToArray(),
+                    StateRootSignature = sha256.ComputeHash(testTx1.Hash.ToArray()).Concat(sha256.ComputeHash(testTx1.Hash.ToArray())).ToArray()
+                }, 3, new[] { (byte)'3', (byte)'4' });
+                consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit
+                {
+                    BlockSignature = sha256.ComputeHash(testTx2.Hash.ToArray()).Concat(sha256.ComputeHash(testTx2.Hash.ToArray())).ToArray(),
+                    StateRootSignature = sha256.ComputeHash(testTx2.Hash.ToArray()).Concat(sha256.ComputeHash(testTx1.Hash.ToArray())).ToArray()
+                }, 3, new[] { (byte)'6', (byte)'7' });
             }
 
             consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS();
@@ -711,7 +731,8 @@ namespace Neo.UnitTests.Consensus
                 },
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    ProposalStateRoot = UInt256.Zero
                 },
                 PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -764,7 +785,8 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    ProposalStateRoot = UInt256.Zero
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -824,7 +846,8 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    ProposalStateRoot = UInt256.Zero
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -868,7 +891,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.CommitPayloadCompact
                         {
                             ValidatorIndex = 1,
-                            Signature = new byte[64] { (byte)'1', (byte)'2', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                            BlockSignature = new byte[64] { (byte)'1', (byte)'2', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                            StateRootSignature = new byte[64] { (byte)'1', (byte)'2', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
                             InvocationScript = new[] { (byte)'1', (byte)'2' }
                         }
                     },
@@ -877,7 +901,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.CommitPayloadCompact
                         {
                             ValidatorIndex = 6,
-                            Signature = new byte[64] { (byte)'3', (byte)'D', (byte)'R', (byte)'I', (byte)'N', (byte)'K', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                            BlockSignature = new byte[64] { (byte)'3', (byte)'D', (byte)'R', (byte)'I', (byte)'N', (byte)'K', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                            StateRootSignature = new byte[64] { (byte)'1', (byte)'2', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
                             InvocationScript = new[] { (byte)'6', (byte)'7' }
                         }
                     }
