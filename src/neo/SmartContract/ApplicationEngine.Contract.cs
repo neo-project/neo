@@ -139,6 +139,7 @@ namespace Neo.SmartContract
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException();
+            if (args.Count != md.Parameters.Length) throw new InvalidOperationException();
             if (returnType == ContractParameterType.Void && md.ReturnType != ContractParameterType.Void)
                 throw new InvalidOperationException();
             if (returnType != ContractParameterType.Any && md.ReturnType != returnType)
