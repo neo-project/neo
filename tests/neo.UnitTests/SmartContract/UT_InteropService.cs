@@ -34,12 +34,9 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                // Drop arguments
-
-                script.Emit(OpCode.NIP);
-
                 // Notify method
 
+                script.Emit(OpCode.SWAP, OpCode.NEWARRAY, OpCode.SWAP);
                 script.EmitSysCall(ApplicationEngine.System_Runtime_Notify);
 
                 // Add return
@@ -81,14 +78,16 @@ namespace Neo.UnitTests.SmartContract
             using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true))
             using (var script = new ScriptBuilder())
             {
-                // Notification 1 -> 13
+                // Notification
 
-                script.EmitPush(13);
+                script.EmitPush(0);
+                script.Emit(OpCode.NEWARRAY);
+                script.EmitPush("testEvent1");
                 script.EmitSysCall(ApplicationEngine.System_Runtime_Notify);
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", 2, 1);
+                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -114,16 +113,16 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[1], scriptHash2, 2);
-                AssertNotification(array[0], currentScriptHash, 13);
+                AssertNotification(array[1], scriptHash2, "testEvent2");
+                AssertNotification(array[0], currentScriptHash, "testEvent1");
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
+                Assert.AreEqual("testEvent2", engine.Notifications[1].EventName);
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
-                Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());
+                Assert.AreEqual("testEvent1", engine.Notifications[0].EventName);
             }
 
             // Script notifications
@@ -131,14 +130,16 @@ namespace Neo.UnitTests.SmartContract
             using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true))
             using (var script = new ScriptBuilder())
             {
-                // Notification 1 -> 13
+                // Notification
 
-                script.EmitPush(13);
+                script.EmitPush(0);
+                script.Emit(OpCode.NEWARRAY);
+                script.EmitPush("testEvent1");
                 script.EmitSysCall(ApplicationEngine.System_Runtime_Notify);
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", 2, 1);
+                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -164,15 +165,15 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[0], scriptHash2, 2);
+                AssertNotification(array[0], scriptHash2, "testEvent2");
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
+                Assert.AreEqual("testEvent2", engine.Notifications[1].EventName);
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
-                Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());
+                Assert.AreEqual("testEvent1", engine.Notifications[0].EventName);
             }
 
             // Clean storage
@@ -185,19 +186,9 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
 
             var array = (VM.Types.Array)stackItem;
-            Assert.AreEqual(2, array.Count);
+            Assert.AreEqual(3, array.Count);
             CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
             Assert.AreEqual(notification, array[1].GetString());
-        }
-
-        private void AssertNotification(StackItem stackItem, UInt160 scriptHash, int notification)
-        {
-            Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
-
-            var array = (VM.Types.Array)stackItem;
-            Assert.AreEqual(2, array.Count);
-            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
-            Assert.AreEqual(notification, array[1].GetBigInteger());
         }
 
         [TestMethod]

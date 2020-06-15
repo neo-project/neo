@@ -12,6 +12,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
+        public const int MaxEventName = 32;
         public const int MaxNotificationSize = 1024;
 
         public static readonly InteropDescriptor System_Runtime_Platform = Register("System.Runtime.Platform", nameof(GetPlatform), 0_00000250, TriggerType.All, CallFlags.None);
@@ -146,15 +147,16 @@ namespace Neo.SmartContract
             Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
         }
 
-        internal void RuntimeNotify(StackItem state)
+        internal void RuntimeNotify(byte[] eventName, Array state)
         {
+            if (eventName.Length > MaxEventName) throw new ArgumentException();
             if (!CheckItemForNotification(state)) throw new ArgumentException();
-            SendNotification(CurrentScriptHash, state);
+            SendNotification(CurrentScriptHash, Encoding.UTF8.GetString(eventName), state);
         }
 
-        internal void SendNotification(UInt160 script_hash, StackItem state)
+        internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, script_hash, state);
+            NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, state);
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
         }
