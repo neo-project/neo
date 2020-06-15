@@ -93,7 +93,7 @@ namespace Neo.SmartContract
             }
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
-            if (!invocationStates.TryGetValue(CurrentContext, out InvocationState state)) return;
+            if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
             if (state.Callback is Action action)
                 action();
             else
