@@ -29,10 +29,10 @@ namespace Neo.SmartContract.Native.Tokens
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
-        private const byte Prefix_TotalSupply = 20;
-        private const byte Prefix_OwnerToTokenId = 21;
-        private const byte Prefix_TokenIdToOwner = 22;
-        private const byte Prefix_TokenId = 23;
+        private const byte Prefix_TotalSupply = 23;
+        private const byte Prefix_OwnerToTokenId = 17;
+        private const byte Prefix_TokenIdToOwner = 21;
+        private const byte Prefix_TokenId = 19;
 
         private const int MaxTokenIdLength = 256;
 
@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        protected StackItem TotalSupply(ApplicationEngine engine, Array args)
+        public BigInteger TotalSupply(ApplicationEngine engine, Array args)
         {
             return TotalSupply(engine.Snapshot);
         }
@@ -91,11 +91,11 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        protected StackItem BalanceOf(ApplicationEngine engine, Array args)
+        public BigInteger BalanceOf(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
             byte[] tokenId = args[1].GetSpan().ToArray();
-            if (tokenId.Length > MaxTokenIdLength) return false;
+            if (tokenId.Length > MaxTokenIdLength) return BigInteger.Zero;
             return BalanceOf(engine.Snapshot, account, tokenId);
         }
 
@@ -108,10 +108,10 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public StackItem TokensOf(ApplicationEngine engine, Array args)
+        public IEnumerator TokensOf(ApplicationEngine engine, Array args)
         {
             UInt160 owner = new UInt160(args[0].GetSpan());
-            return new InteropInterface(TokensOf(engine.Snapshot, owner));
+            return TokensOf(engine.Snapshot, owner);
         }
 
         public virtual IEnumerator TokensOf(StoreView snapshot, UInt160 owner)
@@ -125,7 +125,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]
-        public StackItem OwnerOf(ApplicationEngine engine, Array args)
+        public IEnumerator OwnerOf(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
             if (tokenId.Length > MaxTokenIdLength) throw new InvalidOperationException("Invalid tokenId");
@@ -134,7 +134,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (owner is null) throw new InvalidOperationException("Token doesn't exist");
 
             var array = new ArrayWrapper(new StackItem[] { owner.ToArray() });
-            return new InteropInterface(array);
+            return array;
         }
 
         public virtual UInt160 OwnerOf(StoreView snapshot, byte[] tokenId)
@@ -148,7 +148,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_08000000, CallFlags.AllowModifyStates)]
-        public virtual StackItem Transfer(ApplicationEngine engine, Array args)
+        public virtual bool Transfer(ApplicationEngine engine, Array args)
         {
             UInt160 to = new UInt160(args[0].GetSpan());
             byte[] tokenId = args[1].GetSpan().ToArray();
@@ -176,10 +176,10 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
-        protected StackItem Properties(ApplicationEngine engine, Array args)
+        public string Properties(ApplicationEngine engine, Array args)
         {
             byte[] tokenId = args[0].GetSpan().ToArray();
-            if (tokenId.Length > MaxTokenIdLength) return false;
+            if (tokenId.Length > MaxTokenIdLength) return null;
             return Properties(engine.Snapshot, tokenId).ToString();
         }
 
