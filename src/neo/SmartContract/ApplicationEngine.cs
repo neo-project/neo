@@ -85,6 +85,12 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
+            if (context.EvaluationStack != CurrentContext?.EvaluationStack)
+            {
+                int rvcount = context.GetState<ExecutionContextState>().RVCount;
+                if (rvcount != -1 && rvcount != context.EvaluationStack.Count)
+                    throw new InvalidOperationException();
+            }
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.TryGetValue(CurrentContext, out InvocationState state)) return;
@@ -103,9 +109,9 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int rvcount = -1)
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags)
         {
-            ExecutionContext context = LoadScript(script, rvcount);
+            ExecutionContext context = LoadScript(script);
             context.GetState<ExecutionContextState>().CallFlags = callFlags;
             return context;
         }
@@ -162,7 +168,7 @@ namespace Neo.SmartContract
             {
                 object value = descriptor.Converter(item);
                 if (descriptor.IsEnum)
-                    value = System.Convert.ChangeType(value, descriptor.Type);
+                    value = Enum.ToObject(descriptor.Type, value);
                 else if (descriptor.IsInterface)
                     value = ((InteropInterface)value).GetInterface<object>();
                 return value;
