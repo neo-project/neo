@@ -128,7 +128,7 @@ namespace Neo.Network.P2P
                     OnRegister(register.Version);
                     break;
                 case Update update:
-                    OnUpdate(update.LastBlockIndex, update.LastStateIndex);
+                    OnUpdate(update.LastBlockIndex);
                     break;
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
@@ -168,12 +168,11 @@ namespace Neo.Network.P2P
             RequestTasks();
         }
 
-        private void OnUpdate(uint lastBlockIndex, long lastStateIndex)
+        private void OnUpdate(uint lastBlockIndex)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
             session.LastBlockIndex = lastBlockIndex;
-            session.LastStateIndex = lastStateIndex;
             RequestTasks();
         }
 
@@ -301,8 +300,8 @@ namespace Neo.Network.P2P
         {
             if (Blockchain.Singleton.StateHeight + 1 < Blockchain.Singleton.Height)
             {
-                var session = sessions.Where(p => Blockchain.Singleton.StateHeight < p.Value.LastStateIndex)
-                    .OrderByDescending(p => p.Value.LastStateIndex)
+                var session = sessions.Where(p => Blockchain.Singleton.StateHeight <= p.Value.LastBlockIndex)
+                    .OrderByDescending(p => p.Value.LastBlockIndex)
                     .ThenBy(p => p.Value.IndexTasks.Count)
                     .FirstOrDefault();
                 if (session.Value != null)
@@ -323,7 +322,7 @@ namespace Neo.Network.P2P
                     {
                         node.Tell(Message.Create(MessageCommand.Mempool));
                     }
-                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height, Blockchain.Singleton.StateHeight)));
+                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
                 }
             }
         }

@@ -13,7 +13,6 @@ namespace Neo.Network.P2P
 
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
-        public long LastStateIndex { get; set; }
         public uint TimeoutTimes = 0;
         public uint InvalidBlockCount = 0;
 
