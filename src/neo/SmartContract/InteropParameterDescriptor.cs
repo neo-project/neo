@@ -22,6 +22,7 @@ namespace Neo.SmartContract
             [typeof(StackItem)] = p => p,
             [typeof(VM.Types.Array)] = p => p,
             [typeof(InteropInterface)] = p => p,
+            [typeof(bool)] = p => p.ToBoolean(),
             [typeof(sbyte)] = p => (sbyte)p.GetBigInteger(),
             [typeof(byte)] = p => (byte)p.GetBigInteger(),
             [typeof(short)] = p => (short)p.GetBigInteger(),
