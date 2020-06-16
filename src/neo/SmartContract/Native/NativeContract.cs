@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(Hash, operation, args);
+                sb.EmitAppCall(Hash, ContractParameterType.Any, operation, args);
                 return ApplicationEngine.Run(sb.ToArray(), testMode: true);
             }
         }
@@ -170,7 +170,7 @@ namespace Neo.SmartContract.Native
             if (type == typeof(ulong)) return ContractParameterType.Integer;
             if (type == typeof(BigInteger)) return ContractParameterType.Integer;
             if (type == typeof(byte[])) return ContractParameterType.ByteArray;
-            if (type == typeof(string)) return ContractParameterType.ByteArray;
+            if (type == typeof(string)) return ContractParameterType.String;
             if (type == typeof(VM.Types.Boolean)) return ContractParameterType.Boolean;
             if (type == typeof(Integer)) return ContractParameterType.Integer;
             if (type == typeof(ByteString)) return ContractParameterType.ByteArray;
