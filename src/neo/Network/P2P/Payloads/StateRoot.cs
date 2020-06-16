@@ -47,10 +47,10 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public int Size =>
-            sizeof(byte) +
-            sizeof(uint) +
-            UInt256.Length +
-            Witness.Size;
+            sizeof(byte) +          //Version
+            sizeof(uint) +          //Index
+            UInt256.Length +        //Root
+            Witness.Size;           //Witness
 
         StateRoot ICloneable<StateRoot>.Clone()
         {
@@ -107,11 +107,6 @@ namespace Neo.Network.P2P.Payloads
             var script_hash = Blockchain.Singleton.GetBlock(Index)?.NextConsensus;
             if (script_hash is null) throw new System.InvalidOperationException("No script hash for state root verifying");
             return new UInt160[] { script_hash };
-        }
-
-        public byte[] GetMessage()
-        {
-            return this.GetHashData();
         }
 
         public JObject ToJson()
