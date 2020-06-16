@@ -105,7 +105,8 @@ namespace Neo.Network.P2P.Payloads
         public virtual UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             var script_hash = Blockchain.Singleton.GetBlock(Index)?.NextConsensus;
-            return script_hash is null ? Array.Empty<UInt160>() : new UInt160[] { script_hash };
+            if (script_hash is null) throw new System.InvalidOperationException("No script hash for state root verifying");
+            return new UInt160[] { script_hash };
         }
 
         public byte[] GetMessage()
