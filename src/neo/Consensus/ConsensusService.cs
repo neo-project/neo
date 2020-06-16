@@ -453,7 +453,8 @@ namespace Neo.Consensus
             byte[] stateRootHashData = context.EnsureStateRoot().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.VerifySignature(headerHashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().BlockSignature, context.Validators[i]) || !Crypto.VerifySignature(stateRootHashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature, context.Validators[i]))
+                    if (!Crypto.VerifySignature(headerHashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().BlockSignature, context.Validators[i]) || 
+                        !Crypto.VerifySignature(stateRootHashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature, context.Validators[i]))
                         context.CommitPayloads[i] = null;
 
             if (context.TransactionHashes.Length == 0)
