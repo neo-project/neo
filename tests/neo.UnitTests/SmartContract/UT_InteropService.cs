@@ -34,12 +34,9 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                // Drop arguments
-
-                script.Emit(OpCode.NIP);
-
                 // Notify method
 
+                script.Emit(OpCode.SWAP, OpCode.NEWARRAY, OpCode.SWAP);
                 script.EmitSysCall(ApplicationEngine.System_Runtime_Notify);
 
                 // Add return
@@ -81,14 +78,16 @@ namespace Neo.UnitTests.SmartContract
             using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true))
             using (var script = new ScriptBuilder())
             {
-                // Notification 1 -> 13
+                // Notification
 
-                script.EmitPush(13);
+                script.EmitPush(0);
+                script.Emit(OpCode.NEWARRAY);
+                script.EmitPush("testEvent1");
                 script.EmitSysCall(ApplicationEngine.System_Runtime_Notify);
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", 2, 1);
+                script.EmitAppCall(scriptHash2, ContractParameterType.Any, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -114,16 +113,16 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[1], scriptHash2, 2);
-                AssertNotification(array[0], currentScriptHash, 13);
+                AssertNotification(array[1], scriptHash2, "testEvent2");
+                AssertNotification(array[0], currentScriptHash, "testEvent1");
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
+                Assert.AreEqual("testEvent2", engine.Notifications[1].EventName);
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
-                Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());
+                Assert.AreEqual("testEvent1", engine.Notifications[0].EventName);
             }
 
             // Script notifications
@@ -131,14 +130,16 @@ namespace Neo.UnitTests.SmartContract
             using (var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true))
             using (var script = new ScriptBuilder())
             {
-                // Notification 1 -> 13
+                // Notification
 
-                script.EmitPush(13);
+                script.EmitPush(0);
+                script.Emit(OpCode.NEWARRAY);
+                script.EmitPush("testEvent1");
                 script.EmitSysCall(ApplicationEngine.System_Runtime_Notify);
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", 2, 1);
+                script.EmitAppCall(scriptHash2, ContractParameterType.Any, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -164,15 +165,15 @@ namespace Neo.UnitTests.SmartContract
 
                 // Check syscall result
 
-                AssertNotification(array[0], scriptHash2, 2);
+                AssertNotification(array[0], scriptHash2, "testEvent2");
 
                 // Check notifications
 
                 Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
-                Assert.AreEqual(2, engine.Notifications[1].State.GetBigInteger());
+                Assert.AreEqual("testEvent2", engine.Notifications[1].EventName);
 
                 Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
-                Assert.AreEqual(13, engine.Notifications[0].State.GetBigInteger());
+                Assert.AreEqual("testEvent1", engine.Notifications[0].EventName);
             }
 
             // Clean storage
@@ -185,19 +186,9 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
 
             var array = (VM.Types.Array)stackItem;
-            Assert.AreEqual(2, array.Count);
+            Assert.AreEqual(3, array.Count);
             CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
             Assert.AreEqual(notification, array[1].GetString());
-        }
-
-        private void AssertNotification(StackItem stackItem, UInt160 scriptHash, int notification)
-        {
-            Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
-
-            var array = (VM.Types.Array)stackItem;
-            Assert.AreEqual(2, array.Count);
-            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
-            Assert.AreEqual(notification, array[1].GetBigInteger());
         }
 
         [TestMethod]
@@ -230,7 +221,7 @@ namespace Neo.UnitTests.SmartContract
             engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitAppCall(contract.ScriptHash, "test", 0, 1);
+            scriptB.EmitAppCall(contract.ScriptHash, ContractParameterType.Any, "test", 0, 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -609,17 +600,17 @@ namespace Neo.UnitTests.SmartContract
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.CallContract(state.ScriptHash, method, args);
+            engine.CallContract(state.ScriptHash, ContractParameterType.Any, method, args);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.ScriptHash, method, args));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.ScriptHash, ContractParameterType.Any, method, args));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
-            engine.CallContract(state.ScriptHash, method, args);
+            engine.CallContract(state.ScriptHash, ContractParameterType.Any, method, args);
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, args));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, ContractParameterType.Any, method, args));
         }
 
         [TestMethod]
@@ -639,15 +630,15 @@ namespace Neo.UnitTests.SmartContract
                 var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(new byte[] { 0x01 });
 
-                engine.CallContractEx(state.ScriptHash, method, args, CallFlags.All);
+                engine.CallContractEx(state.ScriptHash, ContractParameterType.Any, method, args, CallFlags.All);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
                 // Contract doesn't exists
-                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.All));
+                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, ContractParameterType.Any, method, args, CallFlags.All));
 
                 // Call with rights
-                engine.CallContractEx(state.ScriptHash, method, args, flags);
+                engine.CallContractEx(state.ScriptHash, ContractParameterType.Any, method, args, flags);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
             }
