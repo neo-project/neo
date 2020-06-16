@@ -430,7 +430,7 @@ namespace Neo.Consensus
                 return;
             }
 
-            if (message.ProposalStateRoot != Blockchain.Singleton.GetLocalStateRoot(context.Block.Index - 1))
+            if (message.PreviousBlockStateRoot != Blockchain.Singleton.GetLocalStateRoot(context.Block.Index - 1))
             {
                 Log($"Invalid request: state root incorrect.", LogLevel.Warning);
             }
@@ -440,7 +440,7 @@ namespace Neo.Consensus
 
             context.Block.Timestamp = message.Timestamp;
             context.Block.ConsensusData.Nonce = message.Nonce;
-            context.ProposalStateRoot = message.ProposalStateRoot;
+            context.ProposalStateRoot = message.PreviousBlockStateRoot;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.SendersFeeMonitor = new SendersFeeMonitor();

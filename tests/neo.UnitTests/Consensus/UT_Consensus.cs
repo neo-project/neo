@@ -529,7 +529,7 @@ namespace Neo.UnitTests.Consensus
             {
                 TransactionHashes = consensusContext.TransactionHashes,
                 Timestamp = 23,
-                ProposalStateRoot = UInt256.Zero
+                PreviousBlockStateRoot = UInt256.Zero
             };
             consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
             consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 0, new[] { (byte)'t', (byte)'e' });
@@ -732,7 +732,7 @@ namespace Neo.UnitTests.Consensus
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    ProposalStateRoot = UInt256.Zero
+                    PreviousBlockStateRoot = UInt256.Zero
                 },
                 PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -786,7 +786,7 @@ namespace Neo.UnitTests.Consensus
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    ProposalStateRoot = UInt256.Zero
+                    PreviousBlockStateRoot = UInt256.Zero
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -847,7 +847,7 @@ namespace Neo.UnitTests.Consensus
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    ProposalStateRoot = UInt256.Zero
+                    PreviousBlockStateRoot = UInt256.Zero
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
