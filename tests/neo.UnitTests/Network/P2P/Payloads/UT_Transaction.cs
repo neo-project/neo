@@ -5,6 +5,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
@@ -111,6 +112,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 // Make transaction
@@ -180,7 +182,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
                 entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 // Make transaction
@@ -291,7 +293,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
                 entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 // Make transaction
@@ -377,7 +379,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
                 entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 // Make transaction
@@ -464,7 +466,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
                 entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 // Make transaction
@@ -604,7 +606,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
                 entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 // Make transaction
@@ -942,7 +944,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
                 entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 // Make transaction

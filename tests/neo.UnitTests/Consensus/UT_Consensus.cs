@@ -10,6 +10,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
@@ -276,6 +277,7 @@ namespace Neo.UnitTests.Consensus
             {
                 Value = mockContext.Object.Validators.ToByteArray()
             });
+            mockContext.Object.Snapshot.UpdateLocalStateRoot();
             mockContext.Object.Snapshot.Commit();
             // ===============================================================
 
@@ -408,6 +410,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
+            mockContext.Object.Snapshot.UpdateLocalStateRoot();
             mockContext.Object.Snapshot.Commit();
 
             Console.WriteLine("mockContext Reset.");

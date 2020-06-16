@@ -42,10 +42,6 @@ namespace Neo.Persistence
         public override void Commit()
         {
             base.Commit();
-            var root = LocalStateRoot.GetAndChange(Height, () => new HashIndexState());
-            root.Index = Height;
-            root.Hash = ((MPTDataCache<StorageKey, StorageItem>)Storages).Root.Hash;
-            LocalStateRoot.Commit();
             snapshot.Commit();
         }
 
