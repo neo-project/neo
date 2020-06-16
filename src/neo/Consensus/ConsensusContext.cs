@@ -341,7 +341,7 @@ namespace Neo.Consensus
                 Timestamp = Block.Timestamp,
                 Nonce = Block.ConsensusData.Nonce,
                 TransactionHashes = TransactionHashes,
-                ProposalStateRoot = ProposalStateRoot
+                PreviousBlockStateRoot = ProposalStateRoot
             });
         }
 
@@ -364,7 +364,7 @@ namespace Neo.Consensus
                     Timestamp = Block.Timestamp,
                     Nonce = Block.ConsensusData.Nonce,
                     TransactionHashes = TransactionHashes,
-                    ProposalStateRoot = ProposalStateRoot
+                    PreviousBlockStateRoot = ProposalStateRoot
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
