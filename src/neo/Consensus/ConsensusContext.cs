@@ -1,20 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using Neo;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Consensus
 {
@@ -26,8 +24,7 @@ namespace Neo.Consensus
         private const byte ConsensusStatePrefix = 0xf4;
 
         public Block Block;
-        public UInt256 ProposalStateRoot { get; set; }
-        public StateRoot StateRoot { get; set; }
+        public StateRoot PreviousBlockStateRoot;
         public byte ViewNumber;
         public ECPoint[] Validators;
         public int MyIndex;
@@ -92,7 +89,7 @@ namespace Neo.Consensus
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
             {
                 if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
-                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().BlockSignature);
+                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                 j++;
             }
             Block.Witness = sc.GetWitnesses()[0];
@@ -102,18 +99,20 @@ namespace Neo.Consensus
 
         public StateRoot CreateStateRoot()
         {
-            EnsureStateRoot();
-            if (StateRoot == null) return null;
+            EnsureHeader();
             Contract contract = Contract.CreateMultiSigContract(M, Validators);
-            ContractParametersContext sc = new ContractParametersContext(StateRoot);
+            ContractParametersContext sc = new ContractParametersContext(PreviousBlockStateRoot);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
             {
-                if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
-                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature);
+                if (PreparationPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
+                if (i == GetPrimaryIndex(ViewNumber))
+                    sc.AddSignature(contract, Validators[i], PreparationPayloads[i].GetDeserializedMessage<PrepareRequest>().StateRootSignature);
+                else
+                    sc.AddSignature(contract, Validators[i], PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().StateRootSignature);
                 j++;
             }
-            StateRoot.Witness = sc.GetWitnesses()[0];
-            return StateRoot;
+            PreviousBlockStateRoot.Witness = sc.GetWitnesses()[0];
+            return PreviousBlockStateRoot;
         }
 
         public void Deserialize(BinaryReader reader)
@@ -126,7 +125,6 @@ namespace Neo.Consensus
             if (Block.NextConsensus.Equals(UInt160.Zero))
                 Block.NextConsensus = null;
             Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
-            ProposalStateRoot.Deserialize(reader);
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
@@ -160,16 +158,16 @@ namespace Neo.Consensus
 
         public StateRoot EnsureStateRoot()
         {
-            if (StateRoot is null)
+            if (PreviousBlockStateRoot is null)
             {
-                StateRoot = new StateRoot()
+                PreviousBlockStateRoot = new StateRoot
                 {
                     Version = 0,
                     Index = Block.Index - 1,
-                    Root = ProposalStateRoot
+                    RootHash = Blockchain.Singleton.GetLocalStateRoot(Block.Index - 1)
                 };
             }
-            return StateRoot;
+            return PreviousBlockStateRoot;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -211,8 +209,7 @@ namespace Neo.Consensus
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                BlockSignature = EnsureHeader().Sign(keyPair),
-                StateRootSignature = EnsureStateRoot().Sign(keyPair),
+                Signature = EnsureHeader().Sign(keyPair)
             }));
         }
 
@@ -340,8 +337,8 @@ namespace Neo.Consensus
             {
                 Timestamp = Block.Timestamp,
                 Nonce = Block.ConsensusData.Nonce,
-                TransactionHashes = TransactionHashes,
-                PreviousBlockStateRoot = ProposalStateRoot
+                StateRootSignature = EnsureStateRoot().Sign(keyPair),
+                TransactionHashes = TransactionHashes
             });
         }
 
@@ -363,8 +360,7 @@ namespace Neo.Consensus
                     ViewNumber = ViewNumber,
                     Timestamp = Block.Timestamp,
                     Nonce = Block.ConsensusData.Nonce,
-                    TransactionHashes = TransactionHashes,
-                    PreviousBlockStateRoot = ProposalStateRoot
+                    TransactionHashes = TransactionHashes
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -384,7 +380,8 @@ namespace Neo.Consensus
         {
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareResponse
             {
-                PreparationHash = PreparationPayloads[Block.ConsensusData.PrimaryIndex].Hash
+                PreparationHash = PreparationPayloads[Block.ConsensusData.PrimaryIndex].Hash,
+                StateRootSignature = EnsureStateRoot().Sign(keyPair)
             });
         }
 
@@ -437,7 +434,7 @@ namespace Neo.Consensus
                     keyPair = account.GetKey();
                     break;
                 }
-                StateRoot = null;
+                PreviousBlockStateRoot = null;
             }
             else
             {
@@ -458,7 +455,6 @@ namespace Neo.Consensus
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)Block.Index;
-            ProposalStateRoot = Blockchain.Singleton.GetLocalStateRoot(Block.Index - 1);
         }
 
         public void Save()
@@ -473,7 +469,6 @@ namespace Neo.Consensus
             writer.Write(Block.Timestamp);
             writer.Write(Block.NextConsensus ?? UInt160.Zero);
             writer.Write(Block.ConsensusData);
-            writer.Write(ProposalStateRoot);
             writer.Write(ViewNumber);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);

@@ -134,9 +134,6 @@ namespace Neo.Consensus
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 blockchain.Tell(block);
-                StateRoot root = context.CreateStateRoot();
-                Log($"relay state root: height={root.Index} hash={root.Hash} root={root.Root}");
-                blockchain.Tell(root);
             }
         }
 
@@ -168,6 +165,10 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MillisecondsPerBlock));
+
+                StateRoot stateRoot = context.CreateStateRoot();
+                Log($"relay state root, index={stateRoot.Index}, root_hash={stateRoot.RootHash}");
+                blockchain.Tell(stateRoot);
                 CheckCommits();
             }
         }
@@ -239,14 +240,12 @@ namespace Neo.Consensus
             {
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted} nf={context.CountFailed}");
 
-                byte[] headerHashData = context.EnsureHeader()?.GetHashData();
-                byte[] stateRootHashData = context.EnsureStateRoot()?.GetHashData();
-                if (headerHashData == null || stateRootHashData == null)
+                byte[] hashData = context.EnsureHeader()?.GetHashData();
+                if (hashData == null)
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.VerifySignature(headerHashData, commit.BlockSignature, context.Validators[payload.ValidatorIndex])
-                && Crypto.VerifySignature(stateRootHashData, commit.StateRootSignature, context.Validators[payload.ValidatorIndex]))
+                else if (Crypto.VerifySignature(hashData, commit.Signature, context.Validators[payload.ValidatorIndex]))
                 {
                     existingCommitPayload = payload;
                     CheckCommits();
@@ -429,18 +428,19 @@ namespace Neo.Consensus
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
                 return;
             }
-
-            if (message.PreviousBlockStateRoot != Blockchain.Singleton.GetLocalStateRoot(context.Block.Index - 1))
+            var stateRootHashData = context.EnsureStateRoot().GetHashData();
+            if (!Crypto.VerifySignature(stateRootHashData, message.StateRootSignature, context.Validators[payload.ValidatorIndex]))
             {
-                Log($"Invalid request: state root incorrect.", LogLevel.Warning);
+                Log($"Invalid request: invalid state root signature", LogLevel.Warning);
+                return;
             }
+
             // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
             context.Block.Timestamp = message.Timestamp;
             context.Block.ConsensusData.Nonce = message.Nonce;
-            context.ProposalStateRoot = message.PreviousBlockStateRoot;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.SendersFeeMonitor = new SendersFeeMonitor();
@@ -449,12 +449,10 @@ namespace Neo.Consensus
                     if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
-            byte[] headerHashData = context.EnsureHeader().GetHashData();
-            byte[] stateRootHashData = context.EnsureStateRoot().GetHashData();
+            byte[] hashData = context.EnsureHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.VerifySignature(headerHashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().BlockSignature, context.Validators[i])
-                        || !Crypto.VerifySignature(stateRootHashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().StateRootSignature, context.Validators[i]))
+                    if (!Crypto.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i]))
                         context.CommitPayloads[i] = null;
 
             if (context.TransactionHashes.Length == 0)
@@ -498,6 +496,12 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging) return;
             if (context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex].Hash))
                 return;
+            byte[] stateRootHashData = context.EnsureStateRoot()?.GetHashData();
+            if (!Crypto.VerifySignature(stateRootHashData, message.StateRootSignature, context.Validators[payload.ValidatorIndex]))
+            {
+                Log($"Invalid response: invalid state root signature, height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}", LogLevel.Warning);
+                return;
+            }
 
             // Timeout extension: prepare response has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
