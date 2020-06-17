@@ -229,7 +229,7 @@ namespace Neo.SmartContract
         {
             if (TryPop(out ReadOnlySpan<byte> b))
             {
-                s = Encoding.UTF8.GetString(b);
+                s = Utility.StrictUTF8.GetString(b);
                 return true;
             }
             else
