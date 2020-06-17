@@ -24,7 +24,7 @@ namespace Neo
 
         static Utility()
         {
-            StrictUTF8 = Encoding.UTF8;
+            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
             StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
