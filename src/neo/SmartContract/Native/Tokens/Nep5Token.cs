@@ -6,7 +6,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -79,7 +78,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, "Transfer", new Array { StackItem.Null, account.ToArray(), amount });
+            engine.SendNotification(Hash, "Transfer", StackItem.Null, account.ToArray(), amount);
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -99,7 +98,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
+            engine.SendNotification(Hash, "Transfer", account.ToArray(), StackItem.Null, amount);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -159,7 +158,7 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            engine.SendNotification(Hash, "Transfer", new Array { from.ToArray(), to.ToArray(), amount });
+            engine.SendNotification(Hash, "Transfer", from.ToArray(), to.ToArray(), amount);
             return true;
         }
 
