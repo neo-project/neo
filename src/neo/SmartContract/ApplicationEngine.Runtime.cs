@@ -151,11 +151,10 @@ namespace Neo.SmartContract
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException();
             if (!CheckItemForNotification(state)) throw new ArgumentException();
-            if (state.Any(p => !p.IsNull && !(p is PrimitiveType))) throw new ArgumentException();
-            SendNotification(CurrentScriptHash, Encoding.UTF8.GetString(eventName), state.ToArray());
+            SendNotification(CurrentScriptHash, Encoding.UTF8.GetString(eventName), state);
         }
 
-        internal void SendNotification(UInt160 hash, string eventName, params StackItem[] state)
+        internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, state);
             Notify?.Invoke(this, notification);

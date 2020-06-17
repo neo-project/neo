@@ -29,20 +29,20 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
-            engine.SendNotification(UInt160.Zero, notifyEvent);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
             eventName.Should().Be(notifyEvent);
 
             ApplicationEngine.Notify += Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
             eventName.Should().Be(null);
 
             eventName = notifyEvent;
             ApplicationEngine.Notify -= Test_Notify1;
-            engine.SendNotification(UInt160.Zero, notifyEvent);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
             eventName.Should().Be(null);
 
             ApplicationEngine.Notify -= Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent);
+            engine.SendNotification(UInt160.Zero, notifyEvent, null);
             eventName.Should().Be(null);
         }
 
