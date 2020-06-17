@@ -10,23 +10,20 @@ namespace Neo.Consensus
         {
             public byte ViewNumber;
             public ushort ValidatorIndex;
-            public byte[] BlockSignature;
-            public byte[] StateRootSignature;
+            public byte[] Signature;
             public byte[] InvocationScript;
 
             int ISerializable.Size =>
                 sizeof(byte) +                  //ViewNumber
                 sizeof(ushort) +                //ValidatorIndex
-                BlockSignature.Length +         //BlockSignature
-                StateRootSignature.Length +     //StateRootSignature
+                Signature.Length +              //Signature
                 InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
                 ViewNumber = reader.ReadByte();
                 ValidatorIndex = reader.ReadUInt16();
-                BlockSignature = reader.ReadFixedBytes(64);
-                StateRootSignature = reader.ReadFixedBytes(64);
+                Signature = reader.ReadFixedBytes(64);
                 InvocationScript = reader.ReadVarBytes(1024);
             }
 
@@ -37,8 +34,7 @@ namespace Neo.Consensus
                 {
                     ViewNumber = message.ViewNumber,
                     ValidatorIndex = payload.ValidatorIndex,
-                    BlockSignature = message.BlockSignature,
-                    StateRootSignature = message.StateRootSignature,
+                    Signature = message.Signature,
                     InvocationScript = payload.Witness.InvocationScript
                 };
             }
@@ -47,8 +43,7 @@ namespace Neo.Consensus
             {
                 writer.Write(ViewNumber);
                 writer.Write(ValidatorIndex);
-                writer.Write(BlockSignature);
-                writer.Write(StateRootSignature);
+                writer.Write(Signature);
                 writer.WriteVarBytes(InvocationScript);
             }
         }

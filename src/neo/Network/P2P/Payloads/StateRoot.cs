@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
     {
         public byte Version;
         public uint Index;
-        public UInt256 Root;
+        public UInt256 RootHash;
         public Witness Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.StateRoot;
@@ -47,10 +47,10 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public int Size =>
-            sizeof(byte) +          //Version
-            sizeof(uint) +          //Index
-            UInt256.Length +        //Root
-            Witness.Size;           //Witness
+            sizeof(byte) +
+            sizeof(uint) +
+            UInt256.Length +
+            Witness.Size;
 
         StateRoot ICloneable<StateRoot>.Clone()
         {
@@ -58,7 +58,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 Version = Version,
                 Index = Index,
-                Root = Root,
+                RootHash = RootHash,
                 Witness = Witness,
             };
         }
@@ -67,7 +67,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Version = replica.Version;
             Index = replica.Index;
-            Root = replica.Root;
+            RootHash = replica.RootHash;
             Witness = replica.Witness;
         }
 
@@ -81,7 +81,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Version = reader.ReadByte();
             Index = reader.ReadUInt32();
-            Root = reader.ReadSerializable<UInt256>();
+            RootHash = reader.ReadSerializable<UInt256>();
         }
 
         public void Serialize(BinaryWriter writer)
@@ -94,7 +94,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(Version);
             writer.Write(Index);
-            writer.Write(Root);
+            writer.Write(RootHash);
         }
 
         public bool Verify(StoreView snapshot)
@@ -109,12 +109,17 @@ namespace Neo.Network.P2P.Payloads
             return new UInt160[] { script_hash };
         }
 
+        public byte[] GetMessage()
+        {
+            return this.GetHashData();
+        }
+
         public JObject ToJson()
         {
             var json = new JObject();
             json["version"] = Version;
             json["index"] = Index;
-            json["stateroot"] = Root.ToString();
+            json["stateroot"] = RootHash.ToString();
             json["witness"] = Witness.ToJson();
             return json;
         }
