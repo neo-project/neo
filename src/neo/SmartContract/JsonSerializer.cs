@@ -48,6 +48,8 @@ namespace Neo.SmartContract
 
                         foreach (var entry in map)
                         {
+                            if (!(entry.Key is ByteString)) throw new FormatException();
+
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);
 
@@ -106,6 +108,7 @@ namespace Neo.SmartContract
                         stack.Push(JsonTokenType.EndObject);
                         foreach (var pair in map.Reverse())
                         {
+                            if (!(pair.Key is ByteString)) throw new FormatException();
                             stack.Push(pair.Value);
                             stack.Push(pair.Key);
                             stack.Push(JsonTokenType.PropertyName);
@@ -115,7 +118,7 @@ namespace Neo.SmartContract
                         writer.WriteEndObject();
                         break;
                     case JsonTokenType.PropertyName:
-                        writer.WritePropertyName(((PrimitiveType)stack.Pop()).GetSpan());
+                        writer.WritePropertyName(((ByteString)stack.Pop()).GetSpan());
                         break;
                     case Null _:
                         writer.WriteNullValue();
