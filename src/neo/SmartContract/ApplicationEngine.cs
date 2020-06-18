@@ -69,7 +69,7 @@ namespace Neo.SmartContract
                 ReturnType = typeof(void),
                 Callback = onComplete
             });
-            CallContract(hash, ContractParameterType.Void, method, new VMArray(args));
+            CallContract(hash, method, new VMArray(args));
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -79,7 +79,7 @@ namespace Neo.SmartContract
                 ReturnType = typeof(T),
                 Callback = onComplete
             });
-            CallContract(hash, ContractParameterType.Any, method, new VMArray(args));
+            CallContract(hash, method, new VMArray(args));
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
