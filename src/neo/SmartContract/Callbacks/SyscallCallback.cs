@@ -1,4 +1,5 @@
-using Neo.VM.Types;
+using System;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Callbacks
 {
@@ -10,6 +11,8 @@ namespace Neo.SmartContract.Callbacks
         public SyscallCallback(uint method)
         {
             this.Method = ApplicationEngine.Services[method];
+            if (!Method.AllowCallback)
+                throw new InvalidOperationException("This SYSCALL is not allowed for creating callback.");
         }
 
         public override void LoadContext(ApplicationEngine engine, Array args)
