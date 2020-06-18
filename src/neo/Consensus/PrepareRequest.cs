@@ -29,10 +29,10 @@ namespace Neo.Consensus
             base.Deserialize(reader);
             Timestamp = reader.ReadUInt64();
             Nonce = reader.ReadUInt64();
-            StateRootSignature = reader.ReadVarBytes(1024);
             TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
+            StateRootSignature = reader.ReadVarBytes(1024);
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -40,8 +40,8 @@ namespace Neo.Consensus
             base.Serialize(writer);
             writer.Write(Timestamp);
             writer.Write(Nonce);
-            writer.WriteVarBytes(StateRootSignature);
             writer.Write(TransactionHashes);
+            writer.WriteVarBytes(StateRootSignature);
         }
     }
 }
