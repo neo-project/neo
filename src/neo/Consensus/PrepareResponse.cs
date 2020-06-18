@@ -7,6 +7,7 @@ namespace Neo.Consensus
     {
         public UInt256 PreparationHash;
         public byte[] StateRootSignature;
+
         public override int Size => base.Size + PreparationHash.Size + StateRootSignature.Length;
 
         public PrepareResponse()
