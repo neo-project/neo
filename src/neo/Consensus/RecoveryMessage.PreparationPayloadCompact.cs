@@ -14,8 +14,9 @@ namespace Neo.Consensus
             public byte[] StateRootSignature;
 
             int ISerializable.Size =>
-                sizeof(ushort) +                //ValidatorIndex
-                InvocationScript.GetVarSize();  //InvocationScript
+                sizeof(ushort) +                    //ValidatorIndex
+                InvocationScript.GetVarSize() +     //InvocationScript
+                StateRootSignature.GetVarSize();    //StateRootSignature
 
             void ISerializable.Deserialize(BinaryReader reader)
             {

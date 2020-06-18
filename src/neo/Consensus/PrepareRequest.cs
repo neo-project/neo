@@ -10,8 +10,8 @@ namespace Neo.Consensus
     {
         public ulong Timestamp;
         public ulong Nonce;
-        public byte[] StateRootSignature;
         public UInt256[] TransactionHashes;
+        public byte[] StateRootSignature;
 
         public override int Size => base.Size
             + sizeof(ulong)                      //Timestamp
