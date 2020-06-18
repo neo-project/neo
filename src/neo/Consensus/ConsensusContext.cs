@@ -355,14 +355,7 @@ namespace Neo.Consensus
             PrepareRequest prepareRequestMessage = null;
             if (TransactionHashes != null)
             {
-                prepareRequestMessage = new PrepareRequest
-                {
-                    ViewNumber = ViewNumber,
-                    Timestamp = Block.Timestamp,
-                    Nonce = Block.ConsensusData.Nonce,
-                    TransactionHashes = TransactionHashes,
-                    StateRootSignature = EnsureStateRoot().Sign(keyPair)
-                };
+                prepareRequestMessage = PreparationPayloads[GetPrimaryIndex(ViewNumber)].GetDeserializedMessage<PrepareRequest>();
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
