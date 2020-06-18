@@ -105,7 +105,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = value.Length - item.Value.Length;
             }
-            if (!AddGas(newDataSize * StoragePrice)) throw new InvalidOperationException();
+            AddGas(newDataSize * StoragePrice);
 
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);

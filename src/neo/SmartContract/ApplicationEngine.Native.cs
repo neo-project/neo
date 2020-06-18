@@ -27,8 +27,7 @@ namespace Neo.SmartContract
 
         internal void CallNativeContract(string name)
         {
-            if (!NativeContract.GetContract(name).Invoke(this))
-                throw new InvalidOperationException();
+            NativeContract.GetContract(name).Invoke(this);
         }
     }
 }

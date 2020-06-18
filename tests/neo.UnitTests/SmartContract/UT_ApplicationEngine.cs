@@ -3,8 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 
 namespace Neo.UnitTests.SmartContract
@@ -75,18 +73,6 @@ namespace Neo.UnitTests.SmartContract
             snapshot.PersistingBlock.Version.Should().Be(0);
             snapshot.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
             snapshot.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
-        }
-    }
-
-    public class TestApplicationEngine : ApplicationEngine
-    {
-        public TestApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false) : base(trigger, container, snapshot, gas, testMode)
-        {
-        }
-
-        public bool GetOnSysCall(uint method)
-        {
-            return OnSysCall(method);
         }
     }
 
