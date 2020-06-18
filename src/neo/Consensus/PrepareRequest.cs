@@ -14,10 +14,10 @@ namespace Neo.Consensus
         public byte[] StateRootSignature;
 
         public override int Size => base.Size
-            + sizeof(ulong)                      //Timestamp
+            + sizeof(ulong)                     //Timestamp
             + sizeof(ulong)                     //Nonce
-            + StateRootSignature.GetVarSize()   //StateRootSignature
-            + TransactionHashes.GetVarSize();   //TransactionHashes
+            + TransactionHashes.GetVarSize()    //TransactionHashes
+            + StateRootSignature.GetVarSize();  //StateRootSignature
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
