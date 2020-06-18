@@ -360,7 +360,8 @@ namespace Neo.Consensus
                     ViewNumber = ViewNumber,
                     Timestamp = Block.Timestamp,
                     Nonce = Block.ConsensusData.Nonce,
-                    TransactionHashes = TransactionHashes
+                    TransactionHashes = TransactionHashes,
+                    StateRootSignature = EnsureStateRoot().Sign(keyPair)
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
