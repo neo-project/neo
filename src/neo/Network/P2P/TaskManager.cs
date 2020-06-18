@@ -15,7 +15,7 @@ namespace Neo.Network.P2P
     internal class TaskManager : UntypedActor
     {
         public class Register { public VersionPayload Version; }
-        public class Update { public uint LastBlockIndex; public long LastStateIndex; }
+        public class Update { public uint LastBlockIndex; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
