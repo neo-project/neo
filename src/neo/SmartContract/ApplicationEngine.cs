@@ -91,10 +91,17 @@ namespace Neo.SmartContract
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            if (state.Callback is Action action)
-                action();
-            else
-                state.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(state.ReturnType)));
+            switch (state.Callback)
+            {
+                case null:
+                    break;
+                case Action action:
+                    action();
+                    break;
+                default:
+                    state.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(state.ReturnType)));
+                    break;
+            }
         }
 
         protected override void LoadContext(ExecutionContext context)
