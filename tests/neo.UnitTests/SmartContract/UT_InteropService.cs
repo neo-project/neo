@@ -87,7 +87,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, ContractParameterType.Any, "test", "testEvent2", 1);
+                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, ContractParameterType.Any, "test", "testEvent2", 1);
+                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -221,7 +221,7 @@ namespace Neo.UnitTests.SmartContract
             engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitAppCall(contract.ScriptHash, ContractParameterType.Any, "test", 0, 1);
+            scriptB.EmitAppCall(contract.ScriptHash, "test", 0, 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -600,17 +600,17 @@ namespace Neo.UnitTests.SmartContract
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.CallContract(state.ScriptHash, ContractParameterType.Any, method, args);
+            engine.CallContract(state.ScriptHash, method, args);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.ScriptHash, ContractParameterType.Any, method, args));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.ScriptHash, method, args));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
-            engine.CallContract(state.ScriptHash, ContractParameterType.Any, method, args);
+            engine.CallContract(state.ScriptHash, method, args);
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, ContractParameterType.Any, method, args));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, args));
         }
 
         [TestMethod]
@@ -630,15 +630,15 @@ namespace Neo.UnitTests.SmartContract
                 var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(new byte[] { 0x01 });
 
-                engine.CallContractEx(state.ScriptHash, ContractParameterType.Any, method, args, CallFlags.All);
+                engine.CallContractEx(state.ScriptHash, method, args, CallFlags.All);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
                 // Contract doesn't exists
-                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, ContractParameterType.Any, method, args, CallFlags.All));
+                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.All));
 
                 // Call with rights
-                engine.CallContractEx(state.ScriptHash, ContractParameterType.Any, method, args, flags);
+                engine.CallContractEx(state.ScriptHash, method, args, flags);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
             }
