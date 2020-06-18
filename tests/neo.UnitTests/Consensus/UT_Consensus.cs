@@ -10,6 +10,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
@@ -182,6 +183,7 @@ namespace Neo.UnitTests.Consensus
             // Forcing hashes to 0 because mempool is currently shared
             ppToSend.TransactionHashes = new UInt256[0];
             ppToSend.TransactionHashes.Length.Should().Be(0);
+            prepReq.Data = ppToSend.ToArray();
             Console.WriteLine($"\nAsserting PreparationPayloads is 1 (After MakePrepareRequest)...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(1);
             mockContext.Object.PreparationPayloads[prepReq.ValidatorIndex] = null;
@@ -215,6 +217,10 @@ namespace Neo.UnitTests.Consensus
                     kp_array[5].PublicKey,
                     kp_array[6].PublicKey
                 };
+            mockContext.Object.GetPrimaryIndex(mockContext.Object.ViewNumber).Should().Be(1);
+            mockContext.Object.MyIndex.Should().Be(0);
+            Console.WriteLine($"\nAsserting tx count is 0...");
+            prepReq.GetDeserializedMessage<PrepareRequest>().TransactionHashes.Count().Should().Be(0);
 
             TellConsensusPayload(actorConsensus, prepReq);
             var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
@@ -225,6 +231,10 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(2);
             Console.WriteLine($"\nAsserting CountFailed is 5...");
             mockContext.Object.CountFailed.Should().Be(5);
+            Console.WriteLine("\nAsserting PrepareResponse ValidatorIndex is 0...");
+            prepResponsePayload.ValidatorIndex.Should().Be(0);
+            // Using correct signed response to replace prepareresponse sent
+            mockContext.Object.PreparationPayloads[prepResponsePayload.ValidatorIndex] = GetPrepareResponsePayloadAndSignStateRoot(prepResponsePayload, 0, kp_array[0], stateRootData);
 
             // Simulating CN 3
             TellConsensusPayload(actorConsensus, GetPrepareResponsePayloadAndSignStateRoot(prepResponsePayload, 2, kp_array[2], stateRootData));
@@ -251,10 +261,20 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(4);
             Console.WriteLine($"\nAsserting CountFailed is 3...");
             mockContext.Object.CountFailed.Should().Be(3);
+            var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
+            // Mock StateRoot to use mock Validators to sign
+            var root = mockContext.Object.EnsureStateRoot();
+            var mockRoot = new Mock<StateRoot>();
+            mockRoot.Object.Version = root.Version;
+            mockRoot.Object.Index = root.Index;
+            mockRoot.Object.RootHash = root.RootHash;
+            mockRoot.Setup(p => p.GetScriptHashesForVerifying(It.IsAny<StoreView>())).Returns<StoreView>(p => new UInt160[] { updatedContract.ScriptHash });
+            mockContext.Object.PreviousBlockStateRoot = mockRoot.Object;
 
             // Simulating CN 4
             TellConsensusPayload(actorConsensus, GetPrepareResponsePayloadAndSignStateRoot(prepResponsePayload, 3, kp_array[3], stateRootData));
             var onCommitPayload = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            var onStateRoot = subscriber.ExpectMsg<StateRoot>();
             var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
             Commit cm = (Commit)commitPayload.ConsensusMessage;
             Console.WriteLine("\nAsserting PreparationPayloads count is 5...");
@@ -270,7 +290,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"Generated keypairs PKey:");
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
-            var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
