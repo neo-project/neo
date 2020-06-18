@@ -7,7 +7,7 @@ namespace Neo.Consensus
     {
         public UInt256 PreparationHash;
         public byte[] StateRootSignature;
-        public override int Size => base.Size + PreparationHash.Size + StateRootSignature.GetVarSize();
+        public override int Size => base.Size + PreparationHash.Size + StateRootSignature.Length;
 
         public PrepareResponse()
             : base(ConsensusMessageType.PrepareResponse)
@@ -18,14 +18,14 @@ namespace Neo.Consensus
         {
             base.Deserialize(reader);
             PreparationHash = reader.ReadSerializable<UInt256>();
-            StateRootSignature = reader.ReadVarBytes(1024);
+            StateRootSignature = reader.ReadFixedBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
             writer.Write(PreparationHash);
-            writer.WriteVarBytes(StateRootSignature);
+            writer.Write(StateRootSignature);
         }
     }
 }

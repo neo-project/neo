@@ -337,8 +337,8 @@ namespace Neo.Consensus
             {
                 Timestamp = Block.Timestamp,
                 Nonce = Block.ConsensusData.Nonce,
-                StateRootSignature = EnsureStateRoot().Sign(keyPair),
-                TransactionHashes = TransactionHashes
+                TransactionHashes = TransactionHashes,
+                StateRootSignature = EnsureStateRoot().Sign(keyPair)
             });
         }
 

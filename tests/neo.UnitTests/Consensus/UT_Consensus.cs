@@ -559,13 +559,13 @@ namespace Neo.UnitTests.Consensus
             {
                 TransactionHashes = consensusContext.TransactionHashes,
                 Timestamp = 23,
-                StateRootSignature = new byte[] { 0x01 }
+                StateRootSignature = new byte[64]
             };
             consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
-            consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[] { 0x01 } }, 0, new[] { (byte)'t', (byte)'e' });
-            consensusContext.PreparationPayloads[1] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[] { 0x01 } }, 1, new[] { (byte)'s', (byte)'t' });
+            consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[64] }, 0, new[] { (byte)'t', (byte)'e' });
+            consensusContext.PreparationPayloads[1] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[64] }, 1, new[] { (byte)'s', (byte)'t' });
             consensusContext.PreparationPayloads[2] = null;
-            consensusContext.PreparationPayloads[3] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[] { 0x01 } }, 3, new[] { (byte)'1', (byte)'2' });
+            consensusContext.PreparationPayloads[3] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[64] }, 3, new[] { (byte)'1', (byte)'2' });
             consensusContext.PreparationPayloads[4] = null;
             consensusContext.PreparationPayloads[5] = null;
 
@@ -664,7 +664,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' },
-                            StateRootSignature = new byte[] { 0x01 }
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -673,7 +673,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' },
-                            StateRootSignature = new byte[] { 0x01 }
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -682,7 +682,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 6,
                             InvocationScript = new[] { (byte)'3', (byte)'!' },
-                            StateRootSignature = new byte[] { 0x01 }
+                            StateRootSignature = new byte[64]
                         }
                     }
                 },
@@ -756,7 +756,7 @@ namespace Neo.UnitTests.Consensus
                 },
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    StateRootSignature = new byte[] { 0x01 },
+                    StateRootSignature = new byte[64],
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
@@ -768,7 +768,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' },
-                            StateRootSignature = new byte[] { 0x01 },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -777,7 +777,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 1,
                             InvocationScript = new[] { (byte)'s', (byte)'t' },
-                            StateRootSignature = new byte[] { 0x01 },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -786,7 +786,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' },
-                            StateRootSignature = new byte[] { 0x01 },
+                            StateRootSignature = new byte[64],
                         }
                     }
                 },
@@ -813,7 +813,7 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    StateRootSignature = new byte[] { 0x01 },
+                    StateRootSignature = new byte[64],
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -824,7 +824,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' },
-                            StateRootSignature = new byte[] { 0x01 }
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -833,7 +833,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 1,
                             InvocationScript = new[] { (byte)'s', (byte)'t' },
-                            StateRootSignature = new byte[] { 0x01 }
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -842,7 +842,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' },
-                            StateRootSignature = new byte[] { 0x01 }
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -851,7 +851,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 6,
                             InvocationScript = new[] { (byte)'3', (byte)'!' },
-                            StateRootSignature = new byte[] { 0x01 }
+                            StateRootSignature = new byte[64]
                         }
                     }
                 },
@@ -878,7 +878,7 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    StateRootSignature = new byte[] { 0x01 },
+                    StateRootSignature = new byte[64],
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -889,7 +889,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' },
-                            StateRootSignature = new byte[] { 0x01 },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -898,7 +898,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 1,
                             InvocationScript = new[] { (byte)'s', (byte)'t' },
-                            StateRootSignature = new byte[] { 0x01 },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -907,7 +907,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' },
-                            StateRootSignature = new byte[] { 0x01 },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -916,7 +916,7 @@ namespace Neo.UnitTests.Consensus
                         {
                             ValidatorIndex = 6,
                             InvocationScript = new[] { (byte)'3', (byte)'!' },
-                            StateRootSignature = new byte[] { 0x01 },
+                            StateRootSignature = new byte[64],
                         }
                     }
                 },

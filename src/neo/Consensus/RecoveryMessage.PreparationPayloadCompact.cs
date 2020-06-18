@@ -16,13 +16,13 @@ namespace Neo.Consensus
             int ISerializable.Size =>
                 sizeof(ushort) +                    //ValidatorIndex
                 InvocationScript.GetVarSize() +     //InvocationScript
-                StateRootSignature.GetVarSize();    //StateRootSignature
+                StateRootSignature.Length;          //StateRootSignature
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
                 ValidatorIndex = reader.ReadUInt16();
                 InvocationScript = reader.ReadVarBytes(1024);
-                StateRootSignature = reader.ReadVarBytes(1024);
+                StateRootSignature = reader.ReadFixedBytes(64);
             }
 
             public static PreparationPayloadCompact FromPayload(ConsensusPayload payload)
@@ -44,7 +44,7 @@ namespace Neo.Consensus
             {
                 writer.Write(ValidatorIndex);
                 writer.WriteVarBytes(InvocationScript);
-                writer.WriteVarBytes(StateRootSignature);
+                writer.Write(StateRootSignature);
             }
         }
     }
