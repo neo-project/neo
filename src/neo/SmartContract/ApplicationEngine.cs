@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using System.Text;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -49,10 +48,11 @@ namespace Neo.SmartContract
             this.Snapshot = snapshot;
         }
 
-        internal bool AddGas(long gas)
+        internal void AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
-            return testMode || GasConsumed <= gas_amount;
+            if (!testMode && GasConsumed > gas_amount)
+                throw new InvalidOperationException("Insufficient GAS.");
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
@@ -146,17 +146,15 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        protected override bool OnSysCall(uint method)
+        protected override void OnSysCall(uint method)
         {
-            if (!services.TryGetValue(method, out InteropDescriptor descriptor))
-                return false;
+            InteropDescriptor descriptor = services[method];
             if (!descriptor.AllowedTriggers.HasFlag(Trigger))
-                return false;
+                throw new InvalidOperationException($"Cannot call this SYSCALL with the trigger {Trigger}.");
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
-                return false;
-            if (!AddGas(descriptor.FixedPrice))
-                return false;
+                throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
+            AddGas(descriptor.FixedPrice);
             List<object> parameters = descriptor.Parameters.Length > 0
                 ? new List<object>()
                 : null;
@@ -165,14 +163,12 @@ namespace Neo.SmartContract
             object returnValue = descriptor.Handler.Invoke(this, parameters?.ToArray());
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
-            return true;
         }
 
-        protected override bool PreExecuteInstruction()
+        protected override void PreExecuteInstruction()
         {
-            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
-                return true;
-            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+            if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
+                AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)
@@ -221,20 +217,6 @@ namespace Neo.SmartContract
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 return Run(script, snapshot, container, persistingBlock, offset, testMode, extraGAS);
-            }
-        }
-
-        public bool TryPop(out string s)
-        {
-            if (TryPop(out ReadOnlySpan<byte> b))
-            {
-                s = Encoding.UTF8.GetString(b);
-                return true;
-            }
-            else
-            {
-                s = default;
-                return false;
             }
         }
     }

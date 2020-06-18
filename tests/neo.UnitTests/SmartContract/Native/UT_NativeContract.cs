@@ -5,6 +5,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -38,13 +39,13 @@ namespace Neo.UnitTests.SmartContract.Native
             VMArray args1 = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(args1);
             engine.CurrentContext.EvaluationStack.Push(method1);
-            testNativeContract.Invoke(engine).Should().BeFalse();
+            Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine));
 
             ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("onPersist"));
             VMArray args2 = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(args2);
             engine.CurrentContext.EvaluationStack.Push(method2);
-            testNativeContract.Invoke(engine).Should().BeTrue();
+            testNativeContract.Invoke(engine);
         }
 
         [TestMethod]
