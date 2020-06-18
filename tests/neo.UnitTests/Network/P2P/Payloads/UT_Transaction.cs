@@ -160,8 +160,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 Assert.AreEqual(2000810, verificationGas);
-                Assert.AreEqual(368000, sizeGas);
-                Assert.AreEqual(2368810, tx.NetworkFee);
+                Assert.AreEqual(367000, sizeGas);
+                Assert.AreEqual(2367810, tx.NetworkFee);
             }
         }
 
@@ -202,7 +202,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsNull(tx.Witnesses);
 
                 // check pre-computed network fee (already guessing signature sizes)
-                tx.NetworkFee.Should().Be(1265390);
+                tx.NetworkFee.Should().Be(1264390);
 
                 // ----
                 // Sign
@@ -244,7 +244,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // ------------------
                 // check tx_size cost
                 // ------------------
-                Assert.AreEqual(265, tx.Size);
+                Assert.AreEqual(264, tx.Size);
 
                 // will verify tx size, step by step
 
@@ -258,18 +258,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
                 Assert.AreEqual(22, tx.Cosigners.Values.First().Size);
                 // Part III
-                Assert.AreEqual(87, tx.Script.GetVarSize());
+                Assert.AreEqual(86, tx.Script.GetVarSize());
                 // Part IV
                 Assert.AreEqual(110, tx.Witnesses.GetVarSize());
                 // I + II + III + IV
-                Assert.AreEqual(45 + 23 + 87 + 110, tx.Size);
+                Assert.AreEqual(45 + 23 + 86 + 110, tx.Size);
 
                 Assert.AreEqual(1000, NativeContract.Policy.GetFeePerByte(snapshot));
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-                Assert.AreEqual(265000, sizeGas);
+                Assert.AreEqual(264000, sizeGas);
 
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1265390, verificationGas + sizeGas);
+                Assert.AreEqual(1264390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -304,7 +304,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
-                    sb.EmitAppCall(NativeContract.GAS.Hash, ContractParameterType.Boolean, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
@@ -355,7 +355,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1265390, verificationGas + sizeGas);
+                Assert.AreEqual(1264390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -390,7 +390,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
-                    sb.EmitAppCall(NativeContract.GAS.Hash, ContractParameterType.Boolean, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
@@ -442,7 +442,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1286390, verificationGas + sizeGas);
+                Assert.AreEqual(1285390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -477,7 +477,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
-                    sb.EmitAppCall(NativeContract.GAS.Hash, ContractParameterType.Boolean, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
@@ -532,7 +532,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1286390, verificationGas + sizeGas);
+                Assert.AreEqual(1285390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -565,7 +565,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
-                    sb.EmitAppCall(NativeContract.GAS.Hash, ContractParameterType.Boolean, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
@@ -617,7 +617,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
-                    sb.EmitAppCall(NativeContract.GAS.Hash, ContractParameterType.Boolean, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
@@ -674,7 +674,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1306390, verificationGas + sizeGas);
+                Assert.AreEqual(1305390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -707,7 +707,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
-                    sb.EmitAppCall(NativeContract.GAS.Hash, ContractParameterType.Boolean, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
@@ -955,7 +955,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     // self-transfer of 1e-8 GAS
                     System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
-                    sb.EmitAppCall(NativeContract.GAS.Hash, ContractParameterType.Boolean, "transfer", acc.ScriptHash, acc.ScriptHash, value);
+                    sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
                 }
@@ -1005,7 +1005,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1265390, verificationGas + sizeGas);
+                Assert.AreEqual(1264390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
