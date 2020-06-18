@@ -85,12 +85,9 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (context.EvaluationStack != CurrentContext?.EvaluationStack)
-            {
-                int rvcount = context.GetState<ExecutionContextState>().RVCount;
-                if (rvcount != -1 && rvcount != context.EvaluationStack.Count)
-                    throw new InvalidOperationException();
-            }
+            if (CurrentContext != null && context.EvaluationStack != CurrentContext.EvaluationStack)
+                if (context.EvaluationStack.Count == 0)
+                    Push(StackItem.Null);
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
