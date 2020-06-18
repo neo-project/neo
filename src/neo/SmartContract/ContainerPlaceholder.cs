@@ -14,7 +14,7 @@ namespace Neo.SmartContract
             ElementCount = count;
         }
 
-        public override bool Equals(object other)
+        public override bool Equals(StackItem other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is ContainerPlaceholder b)
