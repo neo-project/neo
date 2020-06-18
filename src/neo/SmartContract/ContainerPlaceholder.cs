@@ -14,7 +14,7 @@ namespace Neo.SmartContract
             ElementCount = count;
         }
 
-        public override bool Equals(object obj) => throw new NotSupportedException();
+        public override bool Equals(StackItem other) => throw new NotSupportedException();
 
         public override int GetHashCode() => throw new NotSupportedException();
 
