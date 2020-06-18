@@ -137,10 +137,10 @@ namespace Neo.Wallets
                 sb.EmitPush(0);
                 foreach (UInt160 account in accounts)
                 {
-                    sb.EmitAppCall(asset_id, ContractParameterType.Integer, "balanceOf", account);
+                    sb.EmitAppCall(asset_id, "balanceOf", account);
                     sb.Emit(OpCode.ADD);
                 }
-                sb.EmitAppCall(asset_id, ContractParameterType.Integer, "decimals");
+                sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: 20000000L * accounts.Length);
@@ -246,7 +246,7 @@ namespace Neo.Wallets
                         foreach (UInt160 account in accounts)
                             using (ScriptBuilder sb2 = new ScriptBuilder())
                             {
-                                sb2.EmitAppCall(assetId, ContractParameterType.Integer, "balanceOf", account);
+                                sb2.EmitAppCall(assetId, "balanceOf", account);
                                 using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, testMode: true))
                                 {
                                     if (engine.State.HasFlag(VMState.FAULT))
@@ -265,7 +265,7 @@ namespace Neo.Wallets
                             cosignerList.UnionWith(balances_used.Select(p => p.Account));
                             foreach (var (account, value) in balances_used)
                             {
-                                sb.EmitAppCall(output.AssetId, ContractParameterType.Boolean, "transfer", account, output.ScriptHash, value);
+                                sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
                                 sb.Emit(OpCode.ASSERT);
                             }
                         }
