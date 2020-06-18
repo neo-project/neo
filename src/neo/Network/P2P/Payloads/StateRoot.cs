@@ -47,10 +47,10 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public int Size =>
-            sizeof(byte) +
-            sizeof(uint) +
-            UInt256.Length +
-            Witness.Size;
+            sizeof(byte) +      //Version
+            sizeof(uint) +      //Index
+            UInt256.Length +    //RootHash
+            Witness.Size;       //Witness
 
         StateRoot ICloneable<StateRoot>.Clone()
         {
