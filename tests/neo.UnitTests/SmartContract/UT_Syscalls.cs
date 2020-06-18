@@ -351,10 +351,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitAppCall(contractA.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
-                script.EmitAppCall(contractC.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
+                script.EmitAppCall(contractA.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractC.ScriptHash, "dummyMain", 0, 1);
 
                 // Execute
 
