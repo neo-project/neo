@@ -293,6 +293,7 @@ namespace Neo.Network.P2P
                 if (lastTaskIndex >= highestBlockIndex) break;
                 if (!AssignSyncTask(++lastTaskIndex)) break;
             }
+
             SyncStateRoot();
         }
 
@@ -305,7 +306,7 @@ namespace Neo.Network.P2P
                     .ThenBy(p => p.Value.IndexTasks.Count)
                     .FirstOrDefault();
                 if (session.Value != null)
-                    session.Key.Tell(Message.Create(MessageCommand.GetStateRoot, GetStateRootPayload.Create((uint)(Blockchain.Singleton.StateHeight + 1))));
+                    session.Key.Tell(Message.Create(MessageCommand.GetStateRoot, GetStateRootPayload.Create(Blockchain.Singleton.Height - 1)));
             }
         }
 
