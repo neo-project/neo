@@ -108,15 +108,17 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        internal bool Invoke(ApplicationEngine engine)
+        internal void Invoke(ApplicationEngine engine)
         {
-            if (!engine.CurrentScriptHash.Equals(Hash)) return false;
-            if (!engine.TryPop(out string operation)) return false;
-            if (!engine.TryPop(out Array args)) return false;
-            if (!methods.TryGetValue(operation, out ContractMethodMetadata method)) return false;
+            if (!engine.CurrentScriptHash.Equals(Hash))
+                throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
+            string operation = engine.PopString();
+            Array args = engine.Pop<Array>();
+            ContractMethodMetadata method = methods[operation];
             ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(method.RequiredCallFlags)) return false;
-            if (!engine.AddGas(method.Price)) return false;
+            if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
+                throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
+            engine.AddGas(method.Price);
             List<object> parameters = new List<object>();
             if (method.NeedApplicationEngine) parameters.Add(engine);
             if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
@@ -128,7 +130,6 @@ namespace Neo.SmartContract.Native
             object returnValue = method.Handler.Invoke(this, parameters.ToArray());
             if (method.Handler.ReturnType != typeof(void))
                 engine.Push(engine.Convert(returnValue));
-            return true;
         }
 
         public static bool IsNative(UInt160 hash)
