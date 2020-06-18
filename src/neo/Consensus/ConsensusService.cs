@@ -496,7 +496,7 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging) return;
             if (context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex].Hash))
                 return;
-            byte[] stateRootHashData = context.EnsureStateRoot()?.GetHashData();
+            byte[] stateRootHashData = context.EnsureStateRoot().GetHashData();
             if (!Crypto.VerifySignature(stateRootHashData, message.StateRootSignature, context.Validators[payload.ValidatorIndex]))
             {
                 Log($"Invalid response: invalid state root signature, height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}", LogLevel.Warning);
