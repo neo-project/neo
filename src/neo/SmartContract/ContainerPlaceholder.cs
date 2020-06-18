@@ -14,9 +14,20 @@ namespace Neo.SmartContract
             ElementCount = count;
         }
 
-        public override bool Equals(object obj) => throw new NotSupportedException();
+        public override bool Equals(object other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (other is ContainerPlaceholder b)
+            {
+                return Type == b.Type && ElementCount == b.ElementCount;
+            }
+            return false;
+        }
 
-        public override int GetHashCode() => throw new NotSupportedException();
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, ElementCount);
+        }
 
         public override bool ToBoolean() => throw new NotSupportedException();
     }
