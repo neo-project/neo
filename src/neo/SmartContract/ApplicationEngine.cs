@@ -28,7 +28,7 @@ namespace Neo.SmartContract
         private readonly List<IDisposable> disposables = new List<IDisposable>();
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
 
-        public static IEnumerable<InteropDescriptor> Services => services.Values;
+        public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
@@ -68,8 +68,13 @@ namespace Neo.SmartContract
             // Set default execution context state
 
             context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
-
             base.LoadContext(context);
+        }
+
+        internal void LoadContext(ExecutionContext context, int initialPosition)
+        {
+            context.InstructionPointer = initialPosition;
+            LoadContext(context);
         }
 
         public ExecutionContext LoadScript(Script script, CallFlags callFlags)
@@ -192,11 +197,11 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        private static InteropDescriptor Register(string name, string handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags, bool allowCallback)
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, allowedTriggers, requiredCallFlags);
+            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, allowedTriggers, requiredCallFlags, allowCallback);
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
