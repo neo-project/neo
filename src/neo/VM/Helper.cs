@@ -198,7 +198,7 @@ namespace Neo.VM
 
         public static string GetString(this StackItem item)
         {
-            return Encoding.UTF8.GetString(item.GetSpan());
+            return Utility.StrictUTF8.GetString(item.GetSpan());
         }
 
         /// <summary>

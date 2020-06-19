@@ -143,7 +143,7 @@ namespace Neo.SmartContract
         internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize) throw new ArgumentException();
-            string message = Encoding.UTF8.GetString(state);
+            string message = Utility.StrictUTF8.GetString(state);
             Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
         }
 
@@ -151,7 +151,7 @@ namespace Neo.SmartContract
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException();
             if (!CheckItemForNotification(state)) throw new ArgumentException();
-            SendNotification(CurrentScriptHash, Encoding.UTF8.GetString(eventName), state);
+            SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
         internal void SendNotification(UInt160 hash, string eventName, Array state)
