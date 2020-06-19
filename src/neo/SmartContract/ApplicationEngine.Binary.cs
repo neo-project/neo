@@ -4,8 +4,8 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Binary_Serialize = Register("System.Binary.Serialize", nameof(BinarySerialize), 0_00100000, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor System_Binary_Deserialize = Register("System.Binary.Deserialize", nameof(BinaryDeserialize), 0_00500000, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor System_Binary_Serialize = Register("System.Binary.Serialize", nameof(BinarySerialize), 0_00100000, TriggerType.All, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Binary_Deserialize = Register("System.Binary.Deserialize", nameof(BinaryDeserialize), 0_00500000, TriggerType.All, CallFlags.None, true);
 
         internal byte[] BinarySerialize(StackItem item)
         {
