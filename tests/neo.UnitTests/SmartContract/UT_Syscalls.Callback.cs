@@ -28,10 +28,7 @@ namespace Neo.UnitTests.SmartContract
             // Check the results
 
             Assert.AreEqual(2, engine.ResultStack.Count);
-            Assert.IsTrue(engine.ResultStack.TryPop<InteropInterface>(out var item));
-            Assert.IsNotNull(item);
-
-            Assert.IsTrue(item.TryGetInterface<PointerCallback>(out var callback));
+            var callback = engine.ResultStack.Pop<InteropInterface>().GetInterface<PointerCallback>();
             Assert.AreEqual(1, callback.ParametersCount);
         }
 
@@ -64,9 +61,7 @@ namespace Neo.UnitTests.SmartContract
             // Check the results
 
             Assert.AreEqual(1, engine.ResultStack.Count);
-            Assert.IsTrue(engine.ResultStack.TryPop<PrimitiveType>(out var item));
-            Assert.IsNotNull(item);
-
+            var item = engine.ResultStack.Pop<PrimitiveType>();
             Assert.AreEqual(4, item.GetBigInteger());
         }
 
@@ -91,9 +86,7 @@ namespace Neo.UnitTests.SmartContract
             // Check the results
 
             Assert.AreEqual(1, engine.ResultStack.Count);
-            Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var item));
-            Assert.IsNotNull(item);
-
+            var item = engine.ResultStack.Pop<ByteString>();
             Assert.AreEqual("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", item.GetSpan().ToHexString());
         }
     }
