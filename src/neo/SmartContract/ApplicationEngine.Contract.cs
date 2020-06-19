@@ -32,8 +32,7 @@ namespace Neo.SmartContract
             if (script.Length == 0 || script.Length > MaxContractLength || manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException();
 
-            if (!AddGas(StoragePrice * (script.Length + manifest.Length)))
-                throw new InvalidOperationException();
+            AddGas(StoragePrice * (script.Length + manifest.Length));
 
             UInt160 hash = script.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
@@ -53,8 +52,7 @@ namespace Neo.SmartContract
 
         internal void UpdateContract(byte[] script, byte[] manifest)
         {
-            if (!AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0)))
-                throw new InvalidOperationException();
+            AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0));
 
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException();
@@ -100,19 +98,19 @@ namespace Neo.SmartContract
                     Snapshot.Storages.Delete(key);
         }
 
-        internal void CallContract(UInt160 contractHash, ContractParameterType returnType, string method, Array args)
+        internal void CallContract(UInt160 contractHash, string method, Array args)
         {
-            CallContractInternal(contractHash, returnType, method, args, CallFlags.All);
+            CallContractInternal(contractHash, method, args, CallFlags.All);
         }
 
-        internal void CallContractEx(UInt160 contractHash, ContractParameterType returnType, string method, Array args, CallFlags callFlags)
+        internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            CallContractInternal(contractHash, returnType, method, args, callFlags);
+            CallContractInternal(contractHash, method, args, callFlags);
         }
 
-        private void CallContractInternal(UInt160 contractHash, ContractParameterType returnType, string method, Array args, CallFlags flags)
+        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags)
         {
             if (method.StartsWith('_')) throw new ArgumentException();
 
@@ -140,15 +138,10 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException();
             if (args.Count != md.Parameters.Length) throw new InvalidOperationException();
-            if (returnType == ContractParameterType.Void && md.ReturnType != ContractParameterType.Void)
-                throw new InvalidOperationException();
-            if (returnType != ContractParameterType.Any && md.ReturnType != returnType)
-                throw new InvalidOperationException();
             ExecutionContext context_new = LoadScript(contract.Script);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = flags & callingFlags;
-            state.RVCount = returnType == ContractParameterType.Void ? 0 : 1;
 
             if (NativeContract.IsNative(contractHash))
             {

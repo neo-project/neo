@@ -126,8 +126,8 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(2, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<Null>(out _));
-                    Assert.IsTrue(engine.ResultStack.TryPop<Integer>(out var i) && i.GetBigInteger() == 123);
+                    engine.ResultStack.Pop<Null>();
+                    Assert.IsTrue(engine.ResultStack.Pop<Integer>().GetBigInteger() == 123);
                 }
             }
 
@@ -194,11 +194,11 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(5, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var m) && m.GetString() == "{\"key\":\"dmFsdWU=\"}");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var n) && n.GetString() == "null");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var s) && s.GetString() == "\"dGVzdA==\"");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var b) && b.GetString() == "true");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var i) && i.GetString() == "5");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"dmFsdWU=\"}");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"dGVzdA==\"");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "true");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
                 }
             }
 
@@ -351,10 +351,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitAppCall(contractA.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
-                script.EmitAppCall(contractC.ScriptHash, ContractParameterType.Any, "dummyMain", 0, 1);
+                script.EmitAppCall(contractA.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractC.ScriptHash, "dummyMain", 0, 1);
 
                 // Execute
 

@@ -5,7 +5,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -165,7 +164,7 @@ namespace Neo.SmartContract
                     engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
-                    if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().ToBoolean()) return false;
                     gas -= engine.GasConsumed;
                 }
             }

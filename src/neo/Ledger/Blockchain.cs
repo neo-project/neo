@@ -91,7 +91,10 @@ namespace Neo.Ledger
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 foreach (NativeContract contract in contracts)
-                    sb.EmitAppCall(contract.Hash, ContractParameterType.Boolean, "onPersist");
+                {
+                    sb.EmitAppCall(contract.Hash, "onPersist");
+                    sb.Emit(OpCode.DROP);
+                }
 
                 onPersistNativeContractScript = sb.ToArray();
             }

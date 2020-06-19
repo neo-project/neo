@@ -23,38 +23,35 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, ContractParameterType returnType, string operation)
+        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
         {
             sb.EmitPush(0);
             sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
-            sb.EmitPush(returnType);
             sb.EmitPush(scriptHash);
             sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, ContractParameterType returnType, string operation, params ContractParameter[] args)
+        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
-            sb.EmitPush(returnType);
             sb.EmitPush(scriptHash);
             sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, ContractParameterType returnType, string operation, params object[] args)
+        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
-            sb.EmitPush(returnType);
             sb.EmitPush(scriptHash);
             sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
@@ -211,14 +208,14 @@ namespace Neo.VM
         /// <param name="operation">contract operation</param>
         /// <param name="args">operation arguments</param>
         /// <returns></returns>
-        public static byte[] MakeScript(this UInt160 scriptHash, ContractParameterType returnType, string operation, params object[] args)
+        public static byte[] MakeScript(this UInt160 scriptHash, string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 if (args.Length > 0)
-                    sb.EmitAppCall(scriptHash, returnType, operation, args);
+                    sb.EmitAppCall(scriptHash, operation, args);
                 else
-                    sb.EmitAppCall(scriptHash, returnType, operation);
+                    sb.EmitAppCall(scriptHash, operation);
                 return sb.ToArray();
             }
         }
