@@ -152,7 +152,7 @@ namespace Neo.SmartContract
                     }
                 case JString str:
                     {
-                        return str.Value;
+                        return Convert.FromBase64String(str.Value);
                     }
                 case JNumber num:
                     {
