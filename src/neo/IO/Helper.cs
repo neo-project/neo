@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Neo.IO
 {
@@ -15,7 +14,7 @@ namespace Neo.IO
         public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, start, value.Length - start, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 return reader.ReadSerializable<T>();
             }
@@ -27,7 +26,7 @@ namespace Neo.IO
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
-                using BinaryReader reader = new BinaryReader(ms, Encoding.UTF8);
+                using BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8);
                 return reader.ReadSerializable<T>();
             }
         }
@@ -38,7 +37,7 @@ namespace Neo.IO
                 throw new InvalidCastException();
             ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 serializable.Deserialize(reader);
             }
@@ -48,7 +47,7 @@ namespace Neo.IO
         public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 return reader.ReadSerializableArray<T>(max);
             }
@@ -60,7 +59,7 @@ namespace Neo.IO
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
-                using BinaryReader reader = new BinaryReader(ms, Encoding.UTF8);
+                using BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8);
                 return reader.ReadSerializableArray<T>(max);
             }
         }
@@ -138,7 +137,7 @@ namespace Neo.IO
 
         public static int GetVarSize(this string value)
         {
-            int size = Encoding.UTF8.GetByteCount(value);
+            int size = Utility.StrictUTF8.GetByteCount(value);
             return GetVarSize(size) + size;
         }
 
@@ -166,7 +165,7 @@ namespace Neo.IO
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
             byte[] data = reader.ReadFixedBytes(length);
-            return Encoding.UTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
+            return Utility.StrictUTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
         }
 
         public static T[] ReadNullableArray<T>(this BinaryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
@@ -218,13 +217,13 @@ namespace Neo.IO
 
         public static string ReadVarString(this BinaryReader reader, int max = 0x1000000)
         {
-            return Encoding.UTF8.GetString(reader.ReadVarBytes(max));
+            return Utility.StrictUTF8.GetString(reader.ReadVarBytes(max));
         }
 
         public static byte[] ToArray(this ISerializable value)
         {
             using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            using (BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8))
             {
                 value.Serialize(writer);
                 writer.Flush();
@@ -235,7 +234,7 @@ namespace Neo.IO
         public static byte[] ToByteArray<T>(this IReadOnlyCollection<T> value) where T : ISerializable
         {
             using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            using (BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8))
             {
                 writer.Write(value);
                 writer.Flush();
@@ -263,7 +262,7 @@ namespace Neo.IO
                 throw new ArgumentNullException(nameof(value));
             if (value.Length > length)
                 throw new ArgumentException();
-            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            byte[] bytes = Utility.StrictUTF8.GetBytes(value);
             if (bytes.Length > length)
                 throw new ArgumentException();
             writer.Write(bytes);
@@ -316,7 +315,7 @@ namespace Neo.IO
 
         public static void WriteVarString(this BinaryWriter writer, string value)
         {
-            writer.WriteVarBytes(Encoding.UTF8.GetBytes(value));
+            writer.WriteVarBytes(Utility.StrictUTF8.GetBytes(value));
         }
     }
 }
