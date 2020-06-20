@@ -29,7 +29,12 @@ namespace Neo.SmartContract
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter) { ScriptHash.ToArray(), EventName, State };
+            return new Array(referenceCounter)
+            {
+                ScriptHash.ToArray(),
+                EventName,
+                State.DeepCopy()
+            };
         }
     }
 }
