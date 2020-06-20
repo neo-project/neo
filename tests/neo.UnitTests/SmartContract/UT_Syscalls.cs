@@ -11,7 +11,7 @@ using Array = System.Array;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public class UT_Syscalls
+    public partial class UT_Syscalls
     {
         [TestInitialize]
         public void TestSetup()
