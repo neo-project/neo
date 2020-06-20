@@ -20,6 +20,7 @@ namespace Neo.SmartContract
         private static readonly Dictionary<Type, Func<StackItem, object>> converters = new Dictionary<Type, Func<StackItem, object>>
         {
             [typeof(StackItem)] = p => p,
+            [typeof(VM.Types.Pointer)] = p => p,
             [typeof(VM.Types.Array)] = p => p,
             [typeof(InteropInterface)] = p => p,
             [typeof(bool)] = p => p.ToBoolean(),

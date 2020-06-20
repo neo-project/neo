@@ -118,7 +118,7 @@ namespace Neo.SmartContract
                         writer.WriteEndObject();
                         break;
                     case JsonTokenType.PropertyName:
-                        writer.WritePropertyName(((ByteString)stack.Pop()).GetSpan());
+                        writer.WritePropertyName(((ByteString)stack.Pop()).GetString());
                         break;
                     case Null _:
                         writer.WriteNullValue();
