@@ -4,6 +4,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.SmartContract;
+using Neo.VM.Types;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -27,20 +28,20 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
-            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             eventName.Should().Be(notifyEvent);
 
             ApplicationEngine.Notify += Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             eventName.Should().Be(null);
 
             eventName = notifyEvent;
             ApplicationEngine.Notify -= Test_Notify1;
-            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             eventName.Should().Be(null);
 
             ApplicationEngine.Notify -= Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent, null);
+            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
             eventName.Should().Be(null);
         }
 
