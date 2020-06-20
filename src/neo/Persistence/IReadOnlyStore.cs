@@ -7,7 +7,7 @@ namespace Neo.Persistence
     /// </summary>
     public interface IReadOnlyStore
     {
-        IEnumerable<(byte[] Key, byte[] Value)> Find(byte table, byte[] prefix);
+        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] key);
         byte[] TryGet(byte table, byte[] key);
     }
 }

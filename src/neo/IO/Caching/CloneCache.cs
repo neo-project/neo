@@ -24,10 +24,10 @@ namespace Neo.IO.Caching
             innerCache.Delete(key);
         }
 
-        protected override IEnumerable<(TKey, TValue)> FindInternal(byte[] key_prefix)
+        protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] key)
         {
-            foreach (var (key, value) in innerCache.Find(key_prefix))
-                yield return (key, value.Clone());
+            foreach (var (ikey, ivalue) in innerCache.Seek(key))
+                yield return (ikey, ivalue.Clone());
         }
 
         protected override TValue GetInternal(TKey key)

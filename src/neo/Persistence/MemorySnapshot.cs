@@ -1,5 +1,4 @@
 using Neo.IO;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -41,11 +40,11 @@ namespace Neo.Persistence
         {
         }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte table, byte[] prefix)
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] key)
         {
             IEnumerable<KeyValuePair<byte[], byte[]>> records = immutableData[table];
-            if (prefix?.Length > 0)
-                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
+            if (key?.Length > 0)
+                records = records.Where(p => ByteArrayComparer.Default.Compare(p.Key, key) >= 0);
             records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
             return records.Select(p => (p.Key, p.Value));
         }

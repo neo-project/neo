@@ -96,6 +96,11 @@ namespace Neo.SmartContract.Native
             return CreateStorageKey(prefix, key.ToArray());
         }
 
+        internal protected StorageKey CreateStorageKey(byte prefix, ISerializable keyLeft, uint keyRight)
+        {
+            return CreateStorageKey(prefix, keyLeft.ToArray().Concat(BitConverter.GetBytes(keyRight)).ToArray());
+        }
+
         public static NativeContract GetContract(UInt160 hash)
         {
             contractsHashDictionary.TryGetValue(hash, out var contract);
