@@ -6,6 +6,7 @@ using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -46,6 +47,17 @@ namespace Neo.UnitTests.SmartContract
             parsed = JObject.Parse(json);
 
             Assert.AreEqual("[1,\"a==\",-1.3,null]", parsed.ToString());
+        }
+
+        [TestMethod]
+        public void JsonTest_Serialize_Map_Test()
+        {
+            var entry = new Map
+            {
+                [new byte[] { 0xC1 }] = 1,
+                [new byte[] { 0xC2 }] = 2,
+            };
+            Assert.ThrowsException<DecoderFallbackException>(() => JsonSerializer.Serialize(entry));
         }
 
         [TestMethod]

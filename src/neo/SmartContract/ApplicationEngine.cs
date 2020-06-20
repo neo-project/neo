@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using System.Text;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -29,7 +28,7 @@ namespace Neo.SmartContract
         private readonly List<IDisposable> disposables = new List<IDisposable>();
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
 
-        public static IEnumerable<InteropDescriptor> Services => services.Values;
+        public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
@@ -49,19 +48,19 @@ namespace Neo.SmartContract
             this.Snapshot = snapshot;
         }
 
-        internal bool AddGas(long gas)
+        internal void AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
-            return testMode || GasConsumed <= gas_amount;
+            if (!testMode && GasConsumed > gas_amount)
+                throw new InvalidOperationException("Insufficient GAS.");
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (context.EvaluationStack == CurrentContext?.EvaluationStack) return;
-            int rvcount = context.GetState<ExecutionContextState>().RVCount;
-            if (rvcount != -1 && rvcount != context.EvaluationStack.Count)
-                throw new InvalidOperationException();
+            if (CurrentContext != null && context.EvaluationStack != CurrentContext.EvaluationStack)
+                if (context.EvaluationStack.Count == 0)
+                    Push(StackItem.Null);
         }
 
         protected override void LoadContext(ExecutionContext context)
@@ -69,8 +68,13 @@ namespace Neo.SmartContract
             // Set default execution context state
 
             context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
-
             base.LoadContext(context);
+        }
+
+        internal void LoadContext(ExecutionContext context, int initialPosition)
+        {
+            context.InstructionPointer = initialPosition;
+            LoadContext(context);
         }
 
         public ExecutionContext LoadScript(Script script, CallFlags callFlags)
@@ -147,17 +151,15 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        protected override bool OnSysCall(uint method)
+        protected override void OnSysCall(uint method)
         {
-            if (!services.TryGetValue(method, out InteropDescriptor descriptor))
-                return false;
+            InteropDescriptor descriptor = services[method];
             if (!descriptor.AllowedTriggers.HasFlag(Trigger))
-                return false;
+                throw new InvalidOperationException($"Cannot call this SYSCALL with the trigger {Trigger}.");
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
-                return false;
-            if (!AddGas(descriptor.FixedPrice))
-                return false;
+                throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
+            AddGas(descriptor.FixedPrice);
             List<object> parameters = descriptor.Parameters.Length > 0
                 ? new List<object>()
                 : null;
@@ -166,14 +168,12 @@ namespace Neo.SmartContract
             object returnValue = descriptor.Handler.Invoke(this, parameters?.ToArray());
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
-            return true;
         }
 
-        protected override bool PreExecuteInstruction()
+        protected override void PreExecuteInstruction()
         {
-            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
-                return true;
-            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+            if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
+                AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)
@@ -197,11 +197,11 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        private static InteropDescriptor Register(string name, string handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags, bool allowCallback)
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, allowedTriggers, requiredCallFlags);
+            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, allowedTriggers, requiredCallFlags, allowCallback);
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
@@ -222,20 +222,6 @@ namespace Neo.SmartContract
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 return Run(script, snapshot, container, persistingBlock, offset, testMode, extraGAS);
-            }
-        }
-
-        public bool TryPop(out string s)
-        {
-            if (TryPop(out ReadOnlySpan<byte> b))
-            {
-                s = Encoding.UTF8.GetString(b);
-                return true;
-            }
-            else
-            {
-                s = default;
-                return false;
             }
         }
     }

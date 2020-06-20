@@ -133,7 +133,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            NativeContract.GAS.Invoke(engine).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Invoke(engine));
         }
     }
 }

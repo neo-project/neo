@@ -215,7 +215,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            NativeContract.NEO.Invoke(engine).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.NEO.Invoke(engine));
         }
 
         [TestMethod]
@@ -283,7 +283,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             using (ApplicationEngine engine = NativeContract.NEO.TestCall("getCandidates"))
             {
-                engine.ResultStack.TryPop(out VM.Types.Array array).Should().BeTrue();
+                var array = engine.ResultStack.Pop<VM.Types.Array>();
                 array.Count.Should().Be(21);
                 ((VM.Types.Struct)array[0])[0].GetSpan().ToHexString().Should().Be("020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639");
                 ((VM.Types.Struct)array[0])[1].GetBigInteger().Should().Be(new BigInteger(1785714));
@@ -448,7 +448,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 }));
             }
 
-            sb.EmitAppCall(NativeContract.NEO.Hash, ContractParameterType.Boolean, "transfer", from, UInt160.Zero, amount);
+            sb.EmitAppCall(NativeContract.NEO.Hash, "transfer", from, UInt160.Zero, amount);
             engine.LoadScript(sb.ToArray());
             engine.Execute();
             var result = engine.ResultStack.Peek();
