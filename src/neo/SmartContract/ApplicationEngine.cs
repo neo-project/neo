@@ -227,7 +227,7 @@ namespace Neo.SmartContract
                 traceDebugSink.Trace(State, InvocationStack, storages);
             }
 
-            IEnumerable<(UInt160 scriptHash, byte[] key, StorageItem item)>  GetStorages(UInt160 scriptHash)
+            IEnumerable<(UInt160 scriptHash, byte[] key, StorageItem item)> GetStorages(UInt160 scriptHash)
             {
                 var contractState = Snapshot.Contracts.TryGet(scriptHash);
                 return contractState != null

@@ -8,7 +8,7 @@ namespace Neo.Plugins
 {
     public interface ITraceDebugSink : IDisposable
     {
-        void Trace(VMState vmState, IReadOnlyCollection<ExecutionContext> stackFrames, 
+        void Trace(VMState vmState, IReadOnlyCollection<ExecutionContext> stackFrames,
             IEnumerable<(UInt160 scriptHash, byte[] key, StorageItem item)> storages);
         void Log(LogEventArgs args);
         void Notify(NotifyEventArgs args);
