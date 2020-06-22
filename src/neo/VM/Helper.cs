@@ -29,7 +29,7 @@ namespace Neo.VM
             sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -41,7 +41,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -53,7 +53,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -198,7 +198,7 @@ namespace Neo.VM
 
         public static string GetString(this StackItem item)
         {
-            return Encoding.UTF8.GetString(item.GetSpan());
+            return Utility.StrictUTF8.GetString(item.GetSpan());
         }
 
         /// <summary>

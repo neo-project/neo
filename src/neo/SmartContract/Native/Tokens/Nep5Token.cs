@@ -1,10 +1,7 @@
-#pragma warning disable IDE0060
-
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -14,10 +11,12 @@ using Array = Neo.VM.Types.Array;
 namespace Neo.SmartContract.Native.Tokens
 {
     public abstract class Nep5Token<TState> : NativeContract
-        where TState : Nep5AccountState, new()
+        where TState : AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
+        [ContractMethod(0, CallFlags.None)]
         public abstract string Symbol { get; }
+        [ContractMethod(0, CallFlags.None)]
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
@@ -80,7 +79,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount }));
+            engine.SendNotification(Hash, "Transfer", new Array { StackItem.Null, account.ToArray(), amount });
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -100,33 +99,10 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount }));
+            engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
         }
 
-        [ContractMethod(0, ContractParameterType.String, CallFlags.None, Name = "name")]
-        protected StackItem NameMethod(ApplicationEngine engine, Array args)
-        {
-            return Name;
-        }
-
-        [ContractMethod(0, ContractParameterType.String, CallFlags.None, Name = "symbol")]
-        protected StackItem SymbolMethod(ApplicationEngine engine, Array args)
-        {
-            return Symbol;
-        }
-
-        [ContractMethod(0, ContractParameterType.Integer, CallFlags.None, Name = "decimals")]
-        protected StackItem DecimalsMethod(ApplicationEngine engine, Array args)
-        {
-            return (uint)Decimals;
-        }
-
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
-        protected StackItem TotalSupply(ApplicationEngine engine, Array args)
-        {
-            return TotalSupply(engine.Snapshot);
-        }
-
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public virtual BigInteger TotalSupply(StoreView snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
@@ -134,12 +110,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
-        protected StackItem BalanceOf(ApplicationEngine engine, Array args)
-        {
-            return BalanceOf(engine.Snapshot, new UInt160(args[0].GetSpan()));
-        }
-
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
@@ -147,19 +118,11 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.GetInteroperable<TState>().Balance;
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
-        protected StackItem Transfer(ApplicationEngine engine, Array args)
-        {
-            UInt160 from = new UInt160(args[0].GetSpan());
-            UInt160 to = new UInt160(args[1].GetSpan());
-            BigInteger amount = args[2].GetBigInteger();
-            return Transfer(engine, from, to, amount);
-        }
-
+        [ContractMethod(0_08000000, CallFlags.AllowModifyStates)]
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (!from.Equals(engine.CallingScriptHash) && !InteropService.Runtime.CheckWitnessInternal(engine, from))
+            if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
@@ -196,7 +159,7 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount }));
+            engine.SendNotification(Hash, "Transfer", new Array { from.ToArray(), to.ToArray(), amount });
             return true;
         }
 
