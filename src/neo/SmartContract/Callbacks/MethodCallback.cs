@@ -18,11 +18,11 @@ namespace Neo.SmartContract.Callbacks
             : base(ApplicationEngine.System_Contract_Call, false)
         {
             if (method.StartsWith('_')) throw new ArgumentException();
-            ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
-            if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
-                throw new InvalidOperationException();
             this.contract = engine.Snapshot.Contracts[hash];
-            this.method = contract.Manifest.Abi.Methods.First(p => p.Name == method);
+            ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
+            if (currentManifest != null && !currentManifest.CanCall(this.contract.Manifest, method))
+                throw new InvalidOperationException();
+            this.method = this.contract.Manifest.Abi.Methods.First(p => p.Name == method);
         }
 
         public override void LoadContext(ApplicationEngine engine, Array args)
