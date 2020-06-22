@@ -23,6 +23,7 @@ namespace Neo.SmartContract
             [typeof(VM.Types.Pointer)] = p => p,
             [typeof(VM.Types.Array)] = p => p,
             [typeof(InteropInterface)] = p => p,
+            [typeof(bool)] = p => p.ToBoolean(),
             [typeof(sbyte)] = p => (sbyte)p.GetBigInteger(),
             [typeof(byte)] = p => (byte)p.GetBigInteger(),
             [typeof(short)] = p => (short)p.GetBigInteger(),
@@ -40,20 +41,25 @@ namespace Neo.SmartContract
         };
 
         public InteropParameterDescriptor(ParameterInfo parameterInfo)
+            : this(parameterInfo.ParameterType)
         {
-            Name = parameterInfo.Name;
-            Type = parameterInfo.ParameterType;
+            this.Name = parameterInfo.Name;
+        }
+
+        public InteropParameterDescriptor(Type type)
+        {
+            this.Type = type;
             if (IsEnum)
             {
-                Converter = converters[Type.GetEnumUnderlyingType()];
+                Converter = converters[type.GetEnumUnderlyingType()];
             }
             else if (IsArray)
             {
-                Converter = converters[Type.GetElementType()];
+                Converter = converters[type.GetElementType()];
             }
             else
             {
-                IsInterface = !converters.TryGetValue(Type, out var converter);
+                IsInterface = !converters.TryGetValue(type, out var converter);
                 if (IsInterface)
                     Converter = converters[typeof(InteropInterface)];
                 else
