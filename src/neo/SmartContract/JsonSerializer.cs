@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Text.Json;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
 {
@@ -27,9 +28,10 @@ namespace Neo.SmartContract
                     {
                         return array.Select(p => Serialize(p)).ToArray();
                     }
-                case ByteString buffer:
+                case ByteString _:
+                case Buffer _:
                     {
-                        return Convert.ToBase64String(buffer.GetSpan());
+                        return item.GetString();
                     }
                 case Integer num:
                     {
@@ -89,8 +91,8 @@ namespace Neo.SmartContract
                     case JsonTokenType.EndArray:
                         writer.WriteEndArray();
                         break;
-                    case ByteString buffer:
-                        writer.WriteStringValue(Convert.ToBase64String(buffer.GetSpan()));
+                    case StackItem buffer when buffer is ByteString || buffer is Buffer:
+                        writer.WriteStringValue(buffer.GetString());
                         break;
                     case Integer num:
                         {
@@ -118,7 +120,7 @@ namespace Neo.SmartContract
                         writer.WriteEndObject();
                         break;
                     case JsonTokenType.PropertyName:
-                        writer.WritePropertyName(((ByteString)stack.Pop()).GetString());
+                        writer.WritePropertyName(((StackItem)stack.Pop()).GetString());
                         break;
                     case Null _:
                         writer.WriteNullValue();
@@ -152,7 +154,7 @@ namespace Neo.SmartContract
                     }
                 case JString str:
                     {
-                        return Convert.FromBase64String(str.Value);
+                        return str.Value;
                     }
                 case JNumber num:
                     {

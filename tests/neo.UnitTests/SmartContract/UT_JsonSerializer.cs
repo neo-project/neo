@@ -277,13 +277,13 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[true,\"dGVzdA==\",123]");
+            Assert.AreEqual(json, "[true,\"test\",123]");
         }
 
         [TestMethod]
         public void Deserialize_Array_Bool_Str_Num()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("[true,\"dGVzdA==\",123]"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("[true,\"test\",123]"));
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
             Assert.AreEqual(((VM.Types.Array)items).Count, 3);
@@ -306,13 +306,13 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[[true,\"dGVzdDE=\",123],[true,\"dGVzdDI=\",321]]");
+            Assert.AreEqual(json, "[[true,\"test1\",123],[true,\"test2\",321]]");
         }
 
         [TestMethod]
         public void Deserialize_Array_OfArray()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("[[true,\"dGVzdDE=\",123],[true,\"dGVzdDI=\",321]]"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"));
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
             Assert.AreEqual(((VM.Types.Array)items).Count, 2);
