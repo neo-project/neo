@@ -5,7 +5,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -156,7 +155,7 @@ namespace Neo.SmartContract
 
         internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, state);
+            NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
         }
