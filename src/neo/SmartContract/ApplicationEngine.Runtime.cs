@@ -143,7 +143,9 @@ namespace Neo.SmartContract
         {
             if (state.Length > MaxNotificationSize) throw new ArgumentException();
             string message = Utility.StrictUTF8.GetString(state);
-            Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
+            var args = new LogEventArgs(ScriptContainer, CurrentScriptHash, message);
+            Log?.Invoke(this, args);
+            traceDebugSink?.Log(args);
         }
 
         internal void RuntimeNotify(byte[] eventName, Array state)
@@ -157,6 +159,7 @@ namespace Neo.SmartContract
         {
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
             Notify?.Invoke(this, notification);
+            traceDebugSink?.Notify(notification);
             notifications.Add(notification);
         }
 

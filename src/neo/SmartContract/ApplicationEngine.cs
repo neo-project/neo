@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -30,10 +31,12 @@ namespace Neo.SmartContract
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private readonly bool testMode;
+        private bool preExecTrace = true;
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
+        private readonly ITraceDebugSink traceDebugSink;
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         public TriggerType Trigger { get; }
@@ -46,10 +49,11 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false, ITraceDebugSink traceDebugSink = null)
         {
             this.gas_amount = GasFree + gas;
             this.testMode = testMode;
+            this.traceDebugSink = traceDebugSink;
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
@@ -211,10 +215,49 @@ namespace Neo.SmartContract
                 Push(Convert(returnValue));
         }
 
+        internal void Trace()
+        {
+            if (traceDebugSink != null)
+            {
+                var storages = InvocationStack
+                    .Select(ec => ec.GetScriptHash())
+                    .Distinct()
+                    .SelectMany(GetStorages);
+
+                traceDebugSink.Trace(State, InvocationStack, storages);
+            }
+
+            IEnumerable<(UInt160 scriptHash, byte[] key, StorageItem item)>  GetStorages(UInt160 scriptHash)
+            {
+                var contractState = Snapshot.Contracts.TryGet(scriptHash);
+                return contractState != null
+                    ? Snapshot.Storages
+                        .Find(StorageKey.CreateSearchPrefix(contractState.Id, default))
+                        .Select(t => (scriptHash, t.Key.Key, t.Value))
+                    : Enumerable.Empty<(UInt160, byte[], StorageItem)>();
+            }
+        }
+
         protected override void PreExecuteInstruction()
         {
+            if (preExecTrace)
+            {
+                Trace();
+                preExecTrace = false;
+            }
+
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
                 AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+        }
+
+        protected override void PostExecuteInstruction(Instruction instruction)
+        {
+            Trace();
+        }
+
+        protected override void OnStateChanged()
+        {
+            Trace();
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)

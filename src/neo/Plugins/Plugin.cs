@@ -17,6 +17,7 @@ namespace Neo.Plugins
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
         internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
+        internal static readonly List<ITraceDebugPlugin> TraceDebugPlugins = new List<ITraceDebugPlugin>();
 
         public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
         private static readonly FileSystemWatcher configWatcher;
@@ -54,6 +55,7 @@ namespace Neo.Plugins
             if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
             if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
+            if (this is ITraceDebugPlugin traceDebug) TraceDebugPlugins.Add(traceDebug);
 
             Configure();
         }

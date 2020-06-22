@@ -427,10 +427,18 @@ namespace Neo.Ledger
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
 
+                    // For now, only support a first trace debug plugin that returns true to ShouldTrace
+                    var traceDebugPlugin = Plugin.TraceDebugPlugins
+                        .Where(p => p.ShouldTrace(block.Header, tx))
+                        .FirstOrDefault();
+
+                    using var traceDebugSink = traceDebugPlugin?.GetSink(block.Header, tx);
+
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
+                        traceDebugSink?.Results(state.VMState, engine.GasConsumed, engine.ResultStack);
                         if (state.VMState == VMState.HALT)
                         {
                             clonedSnapshot.Commit();
