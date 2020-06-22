@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Callbacks
         public override int ParametersCount => method.Parameters.Length;
 
         public MethodCallback(ApplicationEngine engine, UInt160 hash, string method)
-            : base(ApplicationEngine.System_Contract_Call)
+            : base(ApplicationEngine.System_Contract_Call, false)
         {
             if (method.StartsWith('_')) throw new ArgumentException();
             ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
