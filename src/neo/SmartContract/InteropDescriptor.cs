@@ -15,8 +15,9 @@ namespace Neo.SmartContract
         public long FixedPrice { get; }
         public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
+        public bool AllowCallback { get; }
 
-        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags)
+        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags, bool allowCallback)
         {
             this.Name = name;
             this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(name).Sha256(), 0);
@@ -25,6 +26,7 @@ namespace Neo.SmartContract
             this.FixedPrice = fixedPrice;
             this.AllowedTriggers = allowedTriggers;
             this.RequiredCallFlags = requiredCallFlags;
+            this.AllowCallback = allowCallback;
         }
 
         public static implicit operator uint(InteropDescriptor descriptor)
