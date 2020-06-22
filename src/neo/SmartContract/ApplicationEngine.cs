@@ -16,6 +16,12 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
+        private class InvocationState
+        {
+            public Type ReturnType;
+            public Delegate Callback;
+        }
+
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
@@ -27,6 +33,7 @@ namespace Neo.SmartContract
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
+        private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         public TriggerType Trigger { get; }
@@ -55,12 +62,46 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
+        internal void CallFromNativeContract(Action onComplete, UInt160 hash, string method, params StackItem[] args)
+        {
+            invocationStates.Add(CurrentContext, new InvocationState
+            {
+                ReturnType = typeof(void),
+                Callback = onComplete
+            });
+            CallContract(hash, method, new VMArray(args));
+        }
+
+        internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
+        {
+            invocationStates.Add(CurrentContext, new InvocationState
+            {
+                ReturnType = typeof(T),
+                Callback = onComplete
+            });
+            CallContract(hash, method, new VMArray(args));
+        }
+
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
             if (CurrentContext != null && context.EvaluationStack != CurrentContext.EvaluationStack)
                 if (context.EvaluationStack.Count == 0)
                     Push(StackItem.Null);
+            if (!(UncaughtException is null)) return;
+            if (invocationStates.Count == 0) return;
+            if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
+            switch (state.Callback)
+            {
+                case null:
+                    break;
+                case Action action:
+                    action();
+                    break;
+                default:
+                    state.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(state.ReturnType)));
+                    break;
+            }
         }
 
         protected override void LoadContext(ExecutionContext context)
