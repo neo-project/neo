@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -8,7 +9,9 @@ using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using System;
 using System.Linq;
+using static Neo.SmartContract.Native.Tokens.NeoToken;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -231,8 +234,29 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
+            //byte[] prefix_key = StorageKey.CreateSearchPrefix(-1, new[] { (byte)0x0d }.Concat("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes()).ToArray());
+            byte[] prefix_key = StorageKey.CreateSearchPrefix(-1, new[] { (byte)0x0d });
+            var enumerator = snapshot.Storages.Find(prefix_key).GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                Console.WriteLine("2 key => " + enumerator.Current.Key.ToArray().ToHexString() + " value: " + enumerator.Current.Value.ToArray().ToHexString());
+                var p = enumerator.Current;
+                var publicKey = p.Key.Key.AsSerializable<ECPoint>(1);
+                var state = p.Value.GetInteroperable<CandidateState>();
+            }
+
+            //prefix_key = StorageKey.CreateSearchPrefix(-1, new[] { (byte)0x0d });
+            //enumerator = snapshot.Storages.Find(prefix_key).GetEnumerator();
+            //while (enumerator.MoveNext())
+            //{
+            //    Console.WriteLine("1 key => " + enumerator.Current.Key.ToArray().ToHexString() + " value: " + enumerator.Current.Value.ToArray().ToHexString());
+            //    var p = enumerator.Current;
+            //    var publicKey = p.Key.Key.AsSerializable<ECPoint>(1);
+            //    var state = p.Value.GetInteroperable<CandidateState>();
+            //}
+
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
 
             // Block without signature

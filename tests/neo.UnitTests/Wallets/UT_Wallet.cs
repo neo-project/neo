@@ -10,6 +10,7 @@ using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Neo.UnitTests.Wallets
 {
@@ -332,6 +333,9 @@ namespace Neo.UnitTests.Wallets
             var entry2 = snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoToken.NeoAccountState()));
             entry2.GetInteroperable<NeoToken.NeoAccountState>().Balance = 10000 * NativeContract.NEO.Factor;
 
+            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 1 - 1), new StorageItem() { Value = new BigInteger(100).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
+
             snapshot.Commit();
 
             var tx = wallet.MakeTransaction(new TransferOutput[]
@@ -398,6 +402,23 @@ namespace Neo.UnitTests.Wallets
             MyWallet wallet = new MyWallet();
             Action action = () => wallet.VerifyPassword("Test");
             action.Should().NotThrow();
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                Id = NativeContract.NEO.Id,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            key?.CopyTo(storageKey.Key.AsSpan(1));
+            return storageKey;
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, uint key)
+        {
+            return CreateStorageKey(prefix, BitConverter.GetBytes(key));
         }
     }
 }
