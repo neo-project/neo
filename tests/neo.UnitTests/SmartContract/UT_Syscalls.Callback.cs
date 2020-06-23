@@ -62,7 +62,7 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.AreEqual(1, engine.ResultStack.Count);
             var item = engine.ResultStack.Pop<PrimitiveType>();
-            Assert.AreEqual(4, item.GetBigInteger());
+            Assert.AreEqual(4, item.GetInteger());
         }
 
         [TestMethod]

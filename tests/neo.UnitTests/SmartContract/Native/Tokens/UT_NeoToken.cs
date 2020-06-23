@@ -286,19 +286,19 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 var array = engine.ResultStack.Pop<VM.Types.Array>();
                 array.Count.Should().Be(21);
                 ((VM.Types.Struct)array[0])[0].GetSpan().ToHexString().Should().Be("020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639");
-                ((VM.Types.Struct)array[0])[1].GetBigInteger().Should().Be(new BigInteger(1785714));
+                ((VM.Types.Struct)array[0])[1].GetInteger().Should().Be(new BigInteger(1785714));
                 ((VM.Types.Struct)array[1])[0].GetSpan().ToHexString().Should().Be("0222038884bbd1d8ff109ed3bdef3542e768eef76c1247aea8bc8171f532928c30");
-                ((VM.Types.Struct)array[1])[1].GetBigInteger().Should().Be(new BigInteger(1785714));
+                ((VM.Types.Struct)array[1])[1].GetInteger().Should().Be(new BigInteger(1785714));
                 ((VM.Types.Struct)array[2])[0].GetSpan().ToHexString().Should().Be("0226933336f1b75baa42d42b71d9091508b638046d19abd67f4e119bf64a7cfb4d");
-                ((VM.Types.Struct)array[2])[1].GetBigInteger().Should().Be(new BigInteger(1785714));
+                ((VM.Types.Struct)array[2])[1].GetInteger().Should().Be(new BigInteger(1785714));
                 ((VM.Types.Struct)array[3])[0].GetSpan().ToHexString().Should().Be("023a36c72844610b4d34d1968662424011bf783ca9d984efa19a20babf5582f3fe");
-                ((VM.Types.Struct)array[3])[1].GetBigInteger().Should().Be(new BigInteger(1785714));
+                ((VM.Types.Struct)array[3])[1].GetInteger().Should().Be(new BigInteger(1785714));
                 ((VM.Types.Struct)array[4])[0].GetSpan().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
-                ((VM.Types.Struct)array[4])[1].GetBigInteger().Should().Be(new BigInteger(3571428));
+                ((VM.Types.Struct)array[4])[1].GetInteger().Should().Be(new BigInteger(3571428));
                 ((VM.Types.Struct)array[5])[0].GetSpan().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
-                ((VM.Types.Struct)array[5])[1].GetBigInteger().Should().Be(new BigInteger(3571428));
+                ((VM.Types.Struct)array[5])[1].GetInteger().Should().Be(new BigInteger(3571428));
                 ((VM.Types.Struct)array[6])[0].GetSpan().ToHexString().Should().Be("02504acbc1f4b3bdad1d86d6e1a08603771db135a73e61c9d565ae06a1938cd2ad");
-                ((VM.Types.Struct)array[6])[1].GetBigInteger().Should().Be(new BigInteger(1785714));
+                ((VM.Types.Struct)array[6])[1].GetInteger().Should().Be(new BigInteger(1785714));
             }
         }
 
@@ -453,7 +453,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             engine.Execute();
             var result = engine.ResultStack.Peek();
             result.GetType().Should().Be(typeof(VM.Types.Boolean));
-            return (true, result.ToBoolean());
+            return (true, result.GetBoolean());
         }
 
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)
@@ -483,7 +483,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
-            return (true, result.ToBoolean());
+            return (true, result.GetBoolean());
         }
 
         internal static (bool State, bool Result) Check_RegisterValidator(StoreView snapshot, byte[] pubkey)
@@ -508,7 +508,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
-            return (true, result.ToBoolean());
+            return (true, result.GetBoolean());
         }
 
         internal static ECPoint[] Check_GetValidators(StoreView snapshot)
@@ -553,7 +553,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
-            return ((result as VM.Types.Integer).GetBigInteger(), true);
+            return (result.GetInteger(), true);
         }
 
         internal static void CheckValidator(ECPoint eCPoint, DataCache<StorageKey, StorageItem>.Trackable trackable)
@@ -572,8 +572,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             st.Count.Should().Be(3);
             st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }); // Balance
 
-            st[0].GetBigInteger().Should().Be(balance); // Balance
-            st[1].GetBigInteger().Should().Be(height);  // BalanceHeight
+            st[0].GetInteger().Should().Be(balance); // Balance
+            st[1].GetInteger().Should().Be(height);  // BalanceHeight
             st[2].GetSpan().AsSerializable<ECPoint>().Should().BeEquivalentTo(voteTo);  // Votes
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
