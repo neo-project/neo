@@ -6,6 +6,7 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -14,7 +15,7 @@ namespace Neo.SmartContract.Native.Tokens
 {
     public partial class NeoToken
     {
-        private const byte Prefix_Candidate = 11;
+        private const byte Prefix_Candidate = 13;
         private const byte Prefix_NextValidators = 77;
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
@@ -26,7 +27,6 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
         private void RegisterCandidateInternal(StoreView snapshot, ECPoint pubkey)
-
         {
             StorageKey key = CreateStorageKey(Prefix_Candidate, pubkey);
             StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem(new CandidateState()));

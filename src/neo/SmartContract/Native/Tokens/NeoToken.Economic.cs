@@ -2,6 +2,8 @@
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Numerics;
 
@@ -15,6 +17,9 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_VotersRewardRatio = 67;
 
         private const byte Prefix_VoterRewardPerCommittee = 23;
+        private const byte Prefix_HolderRewardPerBlock = 57;
+
+        private const byte RewardIndexOffset = 1;
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
         private bool SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
@@ -92,20 +97,32 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
+            BigInteger neoHolderReward = CalculateNeoHolderBonus(snapshot, value, start, end);
+            if (votee is null) return neoHolderReward;
+
             var voteAddr = Contract.CreateSignatureContract(votee).ScriptHash;
-            var endKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue - start);
-            var startKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue - end);
+            var endKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue - start - RewardIndexOffset);
+            var startKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue - end - RewardIndexOffset);
+            var borderKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue);
 
             var enumerator = snapshot.Storages.FindRange(startKey, endKey).GetEnumerator();
-            if (!enumerator.MoveNext()) return BigInteger.Zero;
+            if (!enumerator.MoveNext()) return neoHolderReward;
+
             var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
             var startRewardPerNeo = BigInteger.Zero;
 
-            enumerator = snapshot.Storages.FindRange(endKey, null).GetEnumerator();
+            enumerator = snapshot.Storages.FindRange(endKey, borderKey).GetEnumerator();
             if (enumerator.MoveNext())
                 startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
 
-            return value * (endRewardPerNeo - startRewardPerNeo);
+            return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo);
+        }
+
+        private BigInteger CalculateNeoHolderBonus(StoreView snapshot, BigInteger value, uint start, uint end)
+        {
+            var endRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - end - RewardIndexOffset));
+            var startRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - start - RewardIndexOffset));
+            return value * (new BigInteger(endRewardItem.Value) - new BigInteger(startRewardItem.Value));
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
@@ -115,6 +132,26 @@ namespace Neo.SmartContract.Native.Tokens
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
+        }
+
+        internal class NeoHolderRewardState : IInteroperable
+        {
+            public uint End;
+            public BigInteger RewardPerBlock;
+            public BigInteger SumOfPrevReward;
+
+            public void FromStackItem(StackItem stackItem)
+            {
+                Struct @struct = (Struct)stackItem;
+                End = (uint)@struct[0].GetBigInteger();
+                RewardPerBlock = @struct[1].GetBigInteger();
+                SumOfPrevReward = @struct[2].GetBigInteger();
+            }
+
+            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            {
+                return new Struct(referenceCounter) { End, RewardPerBlock, SumOfPrevReward };
+            }
         }
     }
 }
