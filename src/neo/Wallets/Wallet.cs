@@ -146,8 +146,8 @@ namespace Neo.Wallets
             using ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: 20000000L * accounts.Length);
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
-            byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
-            BigInteger amount = engine.ResultStack.Pop().GetBigInteger();
+            byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
+            BigInteger amount = engine.ResultStack.Pop().GetInteger();
             return new BigDecimal(amount, decimals);
         }
 
@@ -251,7 +251,7 @@ namespace Neo.Wallets
                                 {
                                     if (engine.State.HasFlag(VMState.FAULT))
                                         throw new InvalidOperationException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
-                                    BigInteger value = engine.ResultStack.Pop().GetBigInteger();
+                                    BigInteger value = engine.ResultStack.Pop().GetInteger();
                                     if (value.Sign > 0) balances.Add((account, value));
                                 }
                             }

@@ -242,7 +242,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 base.FromStackItem(stackItem);
                 Struct @struct = (Struct)stackItem;
-                BalanceHeight = (uint)@struct[1].GetBigInteger();
+                BalanceHeight = (uint)@struct[1].GetInteger();
                 VoteTo = @struct[2].IsNull ? null : @struct[2].GetSpan().AsSerializable<ECPoint>();
             }
 
@@ -263,8 +263,8 @@ namespace Neo.SmartContract.Native.Tokens
             public void FromStackItem(StackItem stackItem)
             {
                 Struct @struct = (Struct)stackItem;
-                Registered = @struct[0].ToBoolean();
-                Votes = @struct[1].GetBigInteger();
+                Registered = @struct[0].GetBoolean();
+                Votes = @struct[1].GetInteger();
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)

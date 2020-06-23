@@ -9,7 +9,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -296,8 +295,8 @@ namespace Neo.UnitTests.SmartContract
             };
             ret = engine.CreateIterator(map);
             ret.Next();
-            ret.Key().GetBigInteger().Should().Be(1);
-            ret.Value().GetBigInteger().Should().Be(2);
+            ret.Key().GetInteger().Should().Be(1);
+            ret.Value().GetInteger().Should().Be(2);
         }
 
         [TestMethod]
@@ -310,7 +309,7 @@ namespace Neo.UnitTests.SmartContract
             };
             var wrapper = new ArrayWrapper(arr);
             wrapper.Next();
-            engine.IteratorKey(wrapper).GetBigInteger().Should().Be(0);
+            engine.IteratorKey(wrapper).GetInteger().Should().Be(0);
         }
 
         [TestMethod]
@@ -324,7 +323,7 @@ namespace Neo.UnitTests.SmartContract
             var wrapper = new ArrayWrapper(arr);
             var ret = engine.IteratorKeys(wrapper);
             ret.Next();
-            ret.Value().GetBigInteger().Should().Be(0);
+            ret.Value().GetInteger().Should().Be(0);
         }
 
         [TestMethod]
@@ -363,7 +362,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestJson_Deserialize()
         {
-            GetEngine().JsonDeserialize(new byte[] { (byte)'1' }).GetBigInteger().Should().Be(1);
+            GetEngine().JsonDeserialize(new byte[] { (byte)'1' }).GetInteger().Should().Be(1);
         }
 
         [TestMethod]

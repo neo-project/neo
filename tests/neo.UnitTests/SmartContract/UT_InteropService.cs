@@ -297,7 +297,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_Deserialize()
         {
             var engine = GetEngine();
-            engine.BinaryDeserialize(engine.BinarySerialize(100)).GetBigInteger().Should().Be(100);
+            engine.BinaryDeserialize(engine.BinarySerialize(100)).GetInteger().Should().Be(100);
 
             //FormatException
             Assert.ThrowsException<FormatException>(() => engine.BinaryDeserialize(new byte[] { 0xfa, 0x01 }));

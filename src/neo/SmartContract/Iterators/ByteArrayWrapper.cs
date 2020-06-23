@@ -10,7 +10,7 @@ namespace Neo.SmartContract.Iterators
 
         public ByteArrayWrapper(PrimitiveType value)
         {
-            this.array = value.Span.ToArray();
+            this.array = value.GetSpan().ToArray();
         }
 
         public void Dispose() { }
