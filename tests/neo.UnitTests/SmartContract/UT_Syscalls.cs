@@ -125,7 +125,7 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(2, engine.ResultStack.Count);
 
                     engine.ResultStack.Pop<Null>();
-                    Assert.IsTrue(engine.ResultStack.Pop<Integer>().GetBigInteger() == 123);
+                    Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
                 }
             }
 
@@ -286,7 +286,7 @@ namespace Neo.UnitTests.SmartContract
 
                 CollectionAssert.AreEqual
                     (
-                    engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
+                    engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[] { 99_999_570, 99_999_140, 99_998_650 }
                     );
             }
@@ -307,7 +307,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(-1, engine.ResultStack.Pop().GetBigInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop().GetInteger());
             }
         }
 
@@ -361,7 +361,7 @@ namespace Neo.UnitTests.SmartContract
 
                 CollectionAssert.AreEqual
                     (
-                    engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
+                    engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[]
                         {
                         1, /* A */

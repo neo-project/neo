@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CurrentScriptHash.Equals(Hash))
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
-            string operation = engine.PopString();
+            string operation = engine.Pop().GetString();
             Array args = engine.Pop<Array>();
             ContractMethodMetadata method = methods[operation];
             ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
