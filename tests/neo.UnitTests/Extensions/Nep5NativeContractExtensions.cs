@@ -65,7 +65,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
-            return result.ToBoolean();
+            return result.GetBoolean();
         }
 
         public static string[] SupportedStandards(this NativeContract contract)
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
-            return (result as VM.Types.Integer).GetBigInteger();
+            return result.GetInteger();
         }
 
         public static BigInteger BalanceOf(this NativeContract contract, StoreView snapshot, byte[] account)
@@ -128,7 +128,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
-            return (result as VM.Types.Integer).GetBigInteger();
+            return result.GetInteger();
         }
 
         public static BigInteger Decimals(this NativeContract contract)
@@ -148,7 +148,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
-            return (result as VM.Types.Integer).GetBigInteger();
+            return result.GetInteger();
         }
 
         public static string Symbol(this NativeContract contract)

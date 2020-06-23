@@ -35,14 +35,14 @@ namespace Neo.SmartContract
                     }
                 case Integer num:
                     {
-                        var integer = num.GetBigInteger();
+                        var integer = num.GetInteger();
                         if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
-                            return integer.ToString();
-                        return (double)num.GetBigInteger();
+                            throw new InvalidOperationException();
+                        return (double)integer;
                     }
                 case Boolean boolean:
                     {
-                        return boolean.ToBoolean();
+                        return boolean.GetBoolean();
                     }
                 case Map map:
                     {
@@ -96,14 +96,14 @@ namespace Neo.SmartContract
                         break;
                     case Integer num:
                         {
-                            var integer = num.GetBigInteger();
+                            var integer = num.GetInteger();
                             if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
                                 throw new InvalidOperationException();
-                            writer.WriteNumberValue((double)num.GetBigInteger());
+                            writer.WriteNumberValue((double)integer);
                             break;
                         }
                     case Boolean boolean:
-                        writer.WriteBooleanValue(boolean.ToBoolean());
+                        writer.WriteBooleanValue(boolean.GetBoolean());
                         break;
                     case Map map:
                         writer.WriteStartObject();
