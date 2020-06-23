@@ -1,3 +1,4 @@
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -11,6 +12,11 @@ namespace Neo.SmartContract.Iterators
         public ByteArrayWrapper(PrimitiveType value)
         {
             this.array = value.Span.ToArray();
+        }
+
+        public ByteArrayWrapper(VM.Types.Buffer value)
+        {
+            this.array = value.GetSpan().ToArray();
         }
 
         public void Dispose() { }
