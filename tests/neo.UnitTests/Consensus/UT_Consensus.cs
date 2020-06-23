@@ -292,7 +292,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nBasic commits Signatures verification");
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
-            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData);
+            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData); // TODO failed
             Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
             Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
             Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6]).Should().BeFalse();
