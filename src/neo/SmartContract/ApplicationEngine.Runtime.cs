@@ -27,6 +27,9 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 0_01000000, TriggerType.All, CallFlags.AllowNotify, false);
         public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 0_00010000, TriggerType.All, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 0_00000400, TriggerType.All, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_GetCounter = Register("System.Runtime.GetCounter", nameof(GetCounter), 0_01000000, TriggerType.Application, CallFlags.AllowStates | CallFlags.AllowModifyStates, false);
+
+        private Dictionary<UInt160, ulong> temporary_counter;
 
         private static bool CheckItemForNotification(StackItem state)
         {
@@ -168,6 +171,24 @@ namespace Neo.SmartContract
             NotifyEventArgs[] array = notifications.ToArray();
             if (array.Length > MaxStackSize) throw new InvalidOperationException();
             return array;
+        }
+
+        internal ulong GetCounter(CounterScope scope)
+        {
+            UInt160 hash = scope.HasFlag(CounterScope.Shared) ? UInt160.Zero : CurrentScriptHash;
+            if (scope.HasFlag(CounterScope.Persistent))
+            {
+                SerializableWrapper<ulong> wrapper = Snapshot.ContractCounter.GetAndChange(hash, () => 0);
+                return wrapper.Value++;
+            }
+            else
+            {
+                temporary_counter ??= new Dictionary<UInt160, ulong>();
+                if (!temporary_counter.TryGetValue(hash, out ulong value))
+                    value = 0;
+                temporary_counter[hash] = value + 1;
+                return value;
+            }
         }
     }
 }

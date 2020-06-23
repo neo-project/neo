@@ -3,11 +3,11 @@ using System.IO;
 
 namespace Neo.IO
 {
-    public class SerializableWrapper<T> : IEquatable<T>, IEquatable<SerializableWrapper<T>>, ISerializable
+    public class SerializableWrapper<T> : ICloneable<SerializableWrapper<T>>, IEquatable<T>, IEquatable<SerializableWrapper<T>>, ISerializable
         where T : unmanaged
     {
         private static unsafe readonly int ValueSize = sizeof(T);
-        private T value;
+        internal T Value;
 
         public SerializableWrapper()
         {
@@ -15,14 +15,19 @@ namespace Neo.IO
 
         private SerializableWrapper(T value)
         {
-            this.value = value;
+            this.Value = value;
         }
 
         public int Size => ValueSize;
 
+        public SerializableWrapper<T> Clone()
+        {
+            return Value;
+        }
+
         public unsafe void Deserialize(BinaryReader reader)
         {
-            fixed (T* p = &value)
+            fixed (T* p = &Value)
             {
                 Span<byte> buffer = new Span<byte>(p, ValueSize);
                 int i = 0;
@@ -37,17 +42,22 @@ namespace Neo.IO
 
         public bool Equals(T other)
         {
-            return value.Equals(other);
+            return Value.Equals(other);
         }
 
         public bool Equals(SerializableWrapper<T> other)
         {
-            return value.Equals(other.value);
+            return Value.Equals(other.Value);
+        }
+
+        public void FromReplica(SerializableWrapper<T> replica)
+        {
+            Value = replica.Value;
         }
 
         public unsafe void Serialize(BinaryWriter writer)
         {
-            fixed (T* p = &value)
+            fixed (T* p = &Value)
             {
                 ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(p, ValueSize);
                 writer.Write(buffer);
@@ -61,7 +71,7 @@ namespace Neo.IO
 
         public static implicit operator T(SerializableWrapper<T> wrapper)
         {
-            return wrapper.value;
+            return wrapper.Value;
         }
     }
 }

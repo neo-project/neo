@@ -15,6 +15,7 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
+        public override DataCache<UInt160, SerializableWrapper<ulong>> ContractCounter { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
@@ -27,6 +28,7 @@ namespace Neo.Persistence
             Blocks = new StoreDataCache<UInt256, TrimmedBlock>(snapshot, Prefixes.DATA_Block);
             Transactions = new StoreDataCache<UInt256, TransactionState>(snapshot, Prefixes.DATA_Transaction);
             Contracts = new StoreDataCache<UInt160, ContractState>(snapshot, Prefixes.ST_Contract);
+            ContractCounter = new StoreDataCache<UInt160, SerializableWrapper<ulong>>(snapshot, Prefixes.ST_ContractCounter);
             Storages = new StoreDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage);
             HeaderHashList = new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(snapshot, Prefixes.IX_HeaderHashList);
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
