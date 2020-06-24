@@ -133,25 +133,5 @@ namespace Neo.SmartContract.Native.Tokens
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
         }
-
-        internal class NeoHolderRewardState : IInteroperable
-        {
-            public uint End;
-            public BigInteger RewardPerBlock;
-            public BigInteger SumOfPrevReward;
-
-            public void FromStackItem(StackItem stackItem)
-            {
-                Struct @struct = (Struct)stackItem;
-                End = (uint)@struct[0].GetBigInteger();
-                RewardPerBlock = @struct[1].GetBigInteger();
-                SumOfPrevReward = @struct[2].GetBigInteger();
-            }
-
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
-            {
-                return new Struct(referenceCounter) { End, RewardPerBlock, SumOfPrevReward };
-            }
-        }
     }
 }

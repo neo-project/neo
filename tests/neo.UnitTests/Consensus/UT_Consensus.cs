@@ -272,7 +272,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
-            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem()
+            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(77), new StorageItem()
             {
                 Value = mockContext.Object.Validators.ToByteArray()
             });
@@ -292,7 +292,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nBasic commits Signatures verification");
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
-            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData); // TODO failed
+            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData);
             Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
             Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
             Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6]).Should().BeFalse();
@@ -407,7 +407,7 @@ namespace Neo.UnitTests.Consensus
             // Updating context.Snapshot with the one that was committed
             Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
-            mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
+            mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(77));
             mockContext.Object.Snapshot.Commit();
 
             Console.WriteLine("mockContext Reset.");
