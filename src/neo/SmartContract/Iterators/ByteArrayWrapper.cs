@@ -13,6 +13,11 @@ namespace Neo.SmartContract.Iterators
             this.array = value.GetSpan().ToArray();
         }
 
+        public ByteArrayWrapper(VM.Types.Buffer value)
+        {
+            this.array = value.GetSpan().ToArray();
+        }
+
         public void Dispose() { }
 
         public PrimitiveType Key()
