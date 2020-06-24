@@ -222,19 +222,16 @@ namespace Neo.SmartContract
                 var storages = InvocationStack
                     .Select(ec => ec.GetScriptHash())
                     .Distinct()
-                    .SelectMany(GetStorages);
+                    .SelectMany(scriptHash => {
+                        var contractState = Snapshot.Contracts.TryGet(scriptHash);
+                        return contractState != null
+                            ? Snapshot.Storages
+                                .Find(StorageKey.CreateSearchPrefix(contractState.Id, default))
+                                .Select(t => (scriptHash, t.Key.Key, t.Value))
+                            : Enumerable.Empty<(UInt160, byte[], StorageItem)>();
+                    });
 
                 traceDebugSink.Trace(State, InvocationStack, storages);
-            }
-
-            IEnumerable<(UInt160 scriptHash, byte[] key, StorageItem item)> GetStorages(UInt160 scriptHash)
-            {
-                var contractState = Snapshot.Contracts.TryGet(scriptHash);
-                return contractState != null
-                    ? Snapshot.Storages
-                        .Find(StorageKey.CreateSearchPrefix(contractState.Id, default))
-                        .Select(t => (scriptHash, t.Key.Key, t.Value))
-                    : Enumerable.Empty<(UInt160, byte[], StorageItem)>();
             }
         }
 
