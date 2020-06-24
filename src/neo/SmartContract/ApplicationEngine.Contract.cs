@@ -14,6 +14,7 @@ namespace Neo.SmartContract
     {
         public const int MaxContractLength = 1024 * 1024;
 
+        public static readonly InteropDescriptor System_Contract_Abi = Register("System.Contract.GetAbi", nameof(GetAbi), 0, TriggerType.Application, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates, false);
@@ -26,6 +27,14 @@ namespace Neo.SmartContract
         /// Warning: check first that input public key is valid, before creating the script.
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, TriggerType.All, CallFlags.None, true);
+
+        internal string GetAbi(UInt160 hash)
+        {
+            ContractState contract = Snapshot.Contracts.TryGet(hash);
+            if (contract == null) return null;
+
+            return contract.Manifest.Abi.ToJson().ToString();
+        }
 
         internal ContractState CreateContract(byte[] script, byte[] manifest)
         {

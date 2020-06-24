@@ -26,13 +26,19 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractEventDescriptor[] Events { get; set; }
 
+        /// <summary>
+        /// NEP10 - SupportedStandards
+        /// </summary>
+        public string[] SupportedStandards { get; set; }
+
         public ContractAbi Clone()
         {
             return new ContractAbi
             {
                 Hash = Hash,
                 Methods = Methods.Select(p => p.Clone()).ToArray(),
-                Events = Events.Select(p => p.Clone()).ToArray()
+                Events = Events.Select(p => p.Clone()).ToArray(),
+                SupportedStandards = SupportedStandards.Select(p => p).ToArray()
             };
         }
 
@@ -47,7 +53,8 @@ namespace Neo.SmartContract.Manifest
             {
                 Hash = UInt160.Parse(json["hash"].AsString()),
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
-                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
+                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray(),
+                SupportedStandards = ((JArray)json["supportedStandards"]).Select(u => u.AsString()).ToArray()
             };
         }
 
@@ -64,6 +71,7 @@ namespace Neo.SmartContract.Manifest
             json["hash"] = Hash.ToString();
             json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
             json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
+            json["supportedStandards"] = new JArray(SupportedStandards.Select(u => new JString(u)).ToArray());
             return json;
         }
     }
