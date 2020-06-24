@@ -222,7 +222,7 @@ namespace Neo.SmartContract
                 var storages = InvocationStack
                     .Select(ec => ec.GetScriptHash())
                     .Distinct()
-                    .SelectMany(scriptHash => 
+                    .SelectMany(scriptHash =>
                     {
                         var contractState = Snapshot.Contracts.TryGet(scriptHash);
                         return contractState != null
