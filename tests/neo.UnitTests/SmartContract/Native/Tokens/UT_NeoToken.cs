@@ -492,13 +492,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             ECPoint[] validators = NeoToken.NEO.GetValidators(snapshot);
             ECPoint[] committee = NeoToken.NEO.GetCommittee(snapshot);
-            for(var i = 0; i < committee.Length; i++)
+            for (var i = 0; i < committee.Length; i++)
             {
                 int factor = validators.Contains(committee[i]) ? 2 : 1;
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committee[i]).ScriptHash;
                 var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - 0 - 1));
                 var committeeValue = snapshot.Storages.TryGet(committeeKey);
-                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 / 100 / 28/ (1785714 * factor));
+                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 / 100 / 28 / (1785714 * factor));
 
                 GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21);
             }
@@ -530,7 +530,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             var oldValidators = NeoToken.NEO.GetValidators(snapshot);
             ECPoint[] newValidators = new ECPoint[7];
-            for(int i = 0; i < 7; i++)
+            for (int i = 0; i < 7; i++)
             {
                 Random random = new Random();
                 byte[] privateKey = new byte[32];
