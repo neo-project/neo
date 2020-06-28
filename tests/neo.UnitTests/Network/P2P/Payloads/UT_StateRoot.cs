@@ -20,7 +20,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0,
                 Index = 1234,
-                Root = UInt256.Parse("5f4f1af77b127c9037c0204f682420a5ce621f3d8f4c8bdd9fd37422e0c58e9b"),
+                RootHash = UInt256.Parse("5f4f1af77b127c9037c0204f682420a5ce621f3d8f4c8bdd9fd37422e0c58e9b"),
                 Witness = new Witness()
                 {
                     InvocationScript = new byte[] { 0x01 },
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.AreEqual(state_root.Version, state_root_d.Version);
             Assert.AreEqual(state_root.Index, state_root_d.Index);
-            Assert.AreEqual(state_root.Root, state_root_d.Root);
+            Assert.AreEqual(state_root.RootHash, state_root_d.RootHash);
         }
 
         [TestMethod]
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var json = state_root.ToJson();
             Assert.AreEqual(0, json["version"].AsNumber());
             Assert.AreEqual(1234, json["index"].AsNumber());
-            Assert.AreEqual(state_root.Root.ToString(), json["stateroot"].AsString());
+            Assert.AreEqual(state_root.RootHash.ToString(), json["stateroot"].AsString());
         }
     }
 }
