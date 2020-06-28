@@ -244,7 +244,7 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                StateRootSignature = MakeStateRoot()?.Sign(keyPair)
+                StateRootSignature = MakeStateRoot().Sign(keyPair)
             });
         }
 
@@ -281,7 +281,7 @@ namespace Neo.Consensus
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareResponse
             {
                 PreparationHash = PreparationPayloads[PrimaryIndex].Hash,
-                StateRootSignature = MakeStateRoot()?.Sign(keyPair)
+                StateRootSignature = MakeStateRoot().Sign(keyPair)
             });
         }
 
