@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Check unclaim
 
-            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100 * 100000000L).ToByteArray() });
             snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
             var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from);
             unclaim.Value.Should().Be(new BigInteger(5000000800));

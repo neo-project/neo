@@ -88,7 +88,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 
-            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100 * 100000000L).ToByteArray() });
             snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
@@ -150,7 +150,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Check unclaim
 
-            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100 * 100000000L).ToByteArray() });
             snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
@@ -259,7 +259,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 Balance = 100
             }));
 
-            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100 * 100000000L).ToByteArray() });
             snapshot.Storages.Add(CreateStorageKey(57, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(100 * 100));
             snapshot.Storages.Delete(key);
@@ -282,7 +282,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 VoteTo = Blockchain.StandbyCommittee[0]
             }));
             UInt160 voteeAddr = Contract.CreateSignatureContract(Blockchain.StandbyCommittee[0]).ScriptHash;
-            snapshot.Storages.Add(CreateStorageKey(23, voteeAddr, uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(23, voteeAddr, uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(100 * 100 + 50 * 100));
             snapshot.Storages.Delete(key);
         }
@@ -476,19 +476,24 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestOnPersist()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Clear
+            foreach (var item in snapshot.Storages.Find(CreateStorageKey(57).ToArray()))
+                snapshot.Storages.Delete(item.Key);
 
             // Initialize block
 
-            snapshot.PersistingBlock = new Block { Index = 0 };
+            snapshot.Storages.Delete(CreateStorageKey(57, uint.MaxValue - 1 - 1));
+
+            uint index = 1;
+            snapshot.PersistingBlock = new Block { Index = index };
             Check_OnPersist(snapshot).Should().BeTrue();
 
             var gasPerBlock = NeoToken.NEO.GetGasPerBlock(snapshot);
-            gasPerBlock.Should().Be(5 * GasToken.GAS.Factor);
-
-            var holderRewardKey = CreateStorageKey(57, uint.MaxValue - 0 - 1);
+            var holderRewardKey = CreateStorageKey(57, uint.MaxValue - 1 - 1);
             var storageItem = snapshot.Storages.TryGet(holderRewardKey);
-            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 / NeoToken.NEO.TotalAmount);
+            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 1);
 
             ECPoint[] validators = NeoToken.NEO.GetValidators(snapshot);
             ECPoint[] committee = NeoToken.NEO.GetCommittee(snapshot);
@@ -496,21 +501,21 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             {
                 int factor = validators.Contains(committee[i]) ? 2 : 1;
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committee[i]).ScriptHash;
-                var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - 0 - 1));
+                var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - index - 1));
                 var committeeValue = snapshot.Storages.TryGet(committeeKey);
-                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 / 100 / 28 / (1785714 * factor));
-
-                GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21);
+                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L * 1 / 100 / 28 / (1785714 * factor));
+                GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 * 1 / 100 / 21);
             }
 
             // Next block
 
-            snapshot.PersistingBlock = new Block { Index = 1 };
+            index = 2;
+            snapshot.PersistingBlock = new Block { Index = index };
             Check_OnPersist(snapshot).Should().BeTrue();
 
-            holderRewardKey = CreateStorageKey(57, uint.MaxValue - 1 - 1);
+            holderRewardKey = CreateStorageKey(57, uint.MaxValue - index - 1);
             storageItem = snapshot.Storages.TryGet(holderRewardKey);
-            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 / NeoToken.NEO.TotalAmount * 2);
+            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 2);
 
             validators = NeoToken.NEO.GetValidators(snapshot);
             committee = NeoToken.NEO.GetCommittee(snapshot);
@@ -518,9 +523,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             {
                 int factor = validators.Contains(committee[i]) ? 2 : 1;
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committee[i]).ScriptHash;
-                var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - 1 - 1));
+                var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - index - 1));
                 var committeeValue = snapshot.Storages.TryGet(committeeKey);
-                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 / 100 / 28 / (1785714 * factor) * 2);
+                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor) * 2);
 
                 GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21 * 2);
             }
@@ -565,12 +570,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 NeoToken.NEO.BalanceOf(snapshot, hash.ToArray()).Should().Be(1785714 * 2);
             }
 
-            snapshot.PersistingBlock = new Block { Index = 2 };
+            index = 3;
+            snapshot.PersistingBlock = new Block { Index = index };
             Check_OnPersist(snapshot).Should().BeTrue();
 
-            holderRewardKey = CreateStorageKey(57, uint.MaxValue - 2 - 1);
+            holderRewardKey = CreateStorageKey(57, uint.MaxValue - index - 1);
             storageItem = snapshot.Storages.TryGet(holderRewardKey);
-            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 / NeoToken.NEO.TotalAmount * 2);
+            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 3);
 
             var newValidatorCount = 0;
             committee = NeoToken.NEO.GetCommittee(snapshot);
@@ -579,20 +585,20 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 oldValidators.Contains(committee[i]).Should().BeFalse();
 
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committee[i]).ScriptHash;
-                var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - 2 - 1));
+                var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - index - 1));
                 var committeeValue = snapshot.Storages.TryGet(committeeKey);
                 if (newValidators.Contains(committee[i]))
                 {
                     newValidatorCount++;
 
                     int factor = 2;
-                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 / 100 / 28 / (1785714 * factor));
+                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor));
                     GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21);
                 }
                 else
                 {
                     int factor = 1;
-                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 / 100 / 28 / (1785714 * factor) * 3);
+                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor) * 3);
                     GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21 * 3);
                 }
             }
@@ -644,6 +650,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result = Check_GetEconomicParameter(snapshot, "getVotersRewardRatio");
             result.Item2.Should().BeTrue();
             result.Item1.Should().Be(80);
+        }
+        internal static bool Check_NativeDeploy(StoreView snapshot)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
+            engine.LoadScript(script.ToArray());
+            return engine.Execute() == VMState.HALT;
         }
 
         internal static (bool Value, bool State) Check_SetEconomicParameter(StoreView snapshot, string method, BigInteger value)
