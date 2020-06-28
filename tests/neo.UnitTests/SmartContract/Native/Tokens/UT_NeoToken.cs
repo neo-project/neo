@@ -476,7 +476,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestOnPersist()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
 
             // Initialize block
 
