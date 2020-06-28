@@ -9,7 +9,6 @@ namespace Neo.Consensus
 {
     public interface IConsensusContext : IDisposable, ISerializable
     {
-        StateRootBase ProposalStateRoot { get; set; }
 
         //public const uint Version = 0;
         UInt256 PrevHash { get; }

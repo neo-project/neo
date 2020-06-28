@@ -6,9 +6,7 @@ namespace Neo.Consensus
     {
         public byte[] Signature;
 
-        public byte[] StateRootSignature;
-
-        public override int Size => base.Size + Signature.Length + StateRootSignature.Length;
+        public override int Size => base.Size + Signature.Length;
 
         public Commit() : base(ConsensusMessageType.Commit) { }
 
@@ -16,14 +14,12 @@ namespace Neo.Consensus
         {
             base.Deserialize(reader);
             Signature = reader.ReadBytes(64);
-            StateRootSignature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
             writer.Write(Signature);
-            writer.Write(StateRootSignature);
         }
     }
 }

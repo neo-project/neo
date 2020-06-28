@@ -1,5 +1,6 @@
 ﻿using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.IO;
 
 namespace Neo.Consensus
@@ -10,6 +11,7 @@ namespace Neo.Consensus
         {
             public ushort ValidatorIndex;
             public byte[] InvocationScript;
+            public byte[] StateRootSignature;
 
             int ISerializable.Size =>
                 sizeof(ushort) +                //ValidatorIndex
@@ -19,14 +21,26 @@ namespace Neo.Consensus
             {
                 ValidatorIndex = reader.ReadUInt16();
                 InvocationScript = reader.ReadVarBytes(1024);
+                StateRootSignature = reader.ReadBytes(64);
             }
 
             public static PreparationPayloadCompact FromPayload(ConsensusPayload payload)
             {
+                byte[] StateRootSignature = Array.Empty<byte>();
+                ConsensusMessage message = payload.ConsensusMessage;
+                if (message is PrepareRequest req)
+                {
+                    StateRootSignature = req.StateRootSignature;
+                }
+                else if (message is PrepareResponse resp)
+                {
+                    StateRootSignature = resp.StateRootSignature;
+                }
                 return new PreparationPayloadCompact
                 {
                     ValidatorIndex = payload.ValidatorIndex,
-                    InvocationScript = payload.Witness.InvocationScript
+                    InvocationScript = payload.Witness.InvocationScript,
+                    StateRootSignature = StateRootSignature
                 };
             }
 
@@ -34,6 +48,7 @@ namespace Neo.Consensus
             {
                 writer.Write(ValidatorIndex);
                 writer.WriteVarBytes(InvocationScript);
+                writer.Write(StateRootSignature);
             }
         }
     }
