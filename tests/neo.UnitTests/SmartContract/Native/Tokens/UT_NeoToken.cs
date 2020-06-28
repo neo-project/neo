@@ -488,7 +488,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             var holderRewardKey = CreateStorageKey(57, uint.MaxValue - 0 - 1);
             var storageItem = snapshot.Storages.TryGet(holderRewardKey);
-            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10);
+            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 / NeoToken.NEO.TotalAmount);
 
             ECPoint[] validators = NeoToken.NEO.GetValidators(snapshot);
             ECPoint[] committee = NeoToken.NEO.GetCommittee(snapshot);
@@ -510,7 +510,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             holderRewardKey = CreateStorageKey(57, uint.MaxValue - 1 - 1);
             storageItem = snapshot.Storages.TryGet(holderRewardKey);
-            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 2);
+            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 / NeoToken.NEO.TotalAmount * 2);
 
             validators = NeoToken.NEO.GetValidators(snapshot);
             committee = NeoToken.NEO.GetCommittee(snapshot);
@@ -570,7 +570,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             holderRewardKey = CreateStorageKey(57, uint.MaxValue - 2 - 1);
             storageItem = snapshot.Storages.TryGet(holderRewardKey);
-            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 3);
+            new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 / NeoToken.NEO.TotalAmount * 2);
 
             var newValidatorCount = 0;
             committee = NeoToken.NEO.GetCommittee(snapshot);

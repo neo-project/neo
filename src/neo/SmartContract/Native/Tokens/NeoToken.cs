@@ -100,7 +100,7 @@ namespace Neo.SmartContract.Native.Tokens
             (ECPoint, BigInteger)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
             int validatorNumber = GetValidators(engine.Snapshot).Length;
             int totalRewardRatio = GetTotalRewardRatio(engine.Snapshot);
-            BigInteger holderRewardPerBlock = gasPerBlock * GetNeoHoldersRewardRatio(engine.Snapshot) / totalRewardRatio;
+            BigInteger holderRewardPerBlock = gasPerBlock * GetNeoHoldersRewardRatio(engine.Snapshot) / totalRewardRatio / TotalAmount;
             BigInteger committeeRewardPerBlock = gasPerBlock * GetCommitteeRewardRatio(engine.Snapshot) / totalRewardRatio / committeeVotes.Length;
             BigInteger voterRewardPerBlock = gasPerBlock * GetVotersRewardRatio(engine.Snapshot) / totalRewardRatio / (committeeVotes.Length + validatorNumber);
 
