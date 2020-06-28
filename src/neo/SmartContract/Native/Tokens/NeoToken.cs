@@ -97,41 +97,40 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Mint & Record
 
-            var index = engine.Snapshot.PersistingBlock.Index;
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             (ECPoint, BigInteger)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
             int validatorNumber = GetValidators(engine.Snapshot).Length;
-            int totalRewardRatio = GetCommitteeRewardRatio(engine.Snapshot) + GetVotersRewardRatio(engine.Snapshot) + GetNeoHoldersRewardRatio(engine.Snapshot);
+            int totalRewardRatio = GetTotalRewardRatio(engine.Snapshot);
             BigInteger holderRewardPerBlock = gasPerBlock * GetNeoHoldersRewardRatio(engine.Snapshot) / totalRewardRatio;
             BigInteger committeeRewardPerBlock = gasPerBlock * GetCommitteeRewardRatio(engine.Snapshot) / totalRewardRatio / committeeVotes.Length;
             BigInteger voterRewardPerBlock = gasPerBlock * GetVotersRewardRatio(engine.Snapshot) / totalRewardRatio / (committeeVotes.Length + validatorNumber);
 
             // Keep track of incremental gains of neo holders
 
+            var index = engine.Snapshot.PersistingBlock.Index;
             var holderRewards = holderRewardPerBlock;
             var holderRewardKey = CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - index - RewardIndexOffset);
-            var holderBoderKey = CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue);
-            var enumerator = storages.FindRange(holderRewardKey, holderBoderKey).GetEnumerator();
+            var holderBorderKey = CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue);
+            var enumerator = storages.FindRange(holderRewardKey, holderBorderKey).GetEnumerator();
             if (enumerator.MoveNext())
                 holderRewards += new BigInteger(enumerator.Current.Value.Value);
             storages.Add(holderRewardKey, new StorageItem() { Value = holderRewards.ToByteArray() });
 
             for (var i = 0; i < committeeVotes.Length; i++)
             {
-                // Keep track of incremental gains of committee voters
+                // Mint the reward for committee by each block
 
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committeeVotes[i].Item1).ScriptHash;
-                int coefficient = i < validatorNumber ? 2 : 1;
-                BigInteger voterRewardPerCommittee = coefficient * voterRewardPerBlock / committeeVotes[i].Item2;
+                GAS.Mint(engine, committeeAddr, committeeRewardPerBlock);
+
+                // Keep track of incremental gains of committee voters
+
+                BigInteger voterRewardPerCommittee = (i < validatorNumber ? 2 : 1) * voterRewardPerBlock / committeeVotes[i].Item2;
                 enumerator = storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee, committeeAddr).ToArray()).GetEnumerator();
                 if (enumerator.MoveNext())
                     voterRewardPerCommittee += new BigInteger(enumerator.Current.Value.Value);
                 var storageKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, committeeAddr, (uint.MaxValue - index - RewardIndexOffset));
                 storages.Add(storageKey, new StorageItem() { Value = voterRewardPerCommittee.ToByteArray() });
-
-                // Mint the reward for committee by each block
-
-                Mint(engine, committeeAddr, committeeRewardPerBlock);
             }
         }
     }

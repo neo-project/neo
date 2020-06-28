@@ -1,9 +1,6 @@
-
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Persistence;
-using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Numerics;
 
@@ -83,6 +80,11 @@ namespace Neo.SmartContract.Native.Tokens
         public int GetVotersRewardRatio(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_VotersRewardRatio)).Value[0];
+        }
+
+        private int GetTotalRewardRatio(StoreView snapshot)
+        {
+            return GetVotersRewardRatio(snapshot) + GetCommitteeRewardRatio(snapshot) + GetNeoHoldersRewardRatio(snapshot);
         }
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)

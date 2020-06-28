@@ -6,7 +6,6 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
