@@ -4,7 +4,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
-using System;
 using System.Linq;
 using System.Numerics;
 

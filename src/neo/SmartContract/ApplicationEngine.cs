@@ -16,6 +16,13 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
+        private class InvocationState
+        {
+            public Type ReturnType;
+            public Delegate Callback;
+            public bool NeedCheckReturnValue;
+        }
+
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
@@ -27,6 +34,7 @@ namespace Neo.SmartContract
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
+        private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         public TriggerType Trigger { get; }
@@ -55,12 +63,54 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
+        internal void CallFromNativeContract(Action onComplete, UInt160 hash, string method, params StackItem[] args)
+        {
+            InvocationState state = GetInvocationState(CurrentContext);
+            state.ReturnType = typeof(void);
+            state.Callback = onComplete;
+            CallContract(hash, method, new VMArray(args));
+        }
+
+        internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
+        {
+            InvocationState state = GetInvocationState(CurrentContext);
+            state.ReturnType = typeof(T);
+            state.Callback = onComplete;
+            CallContract(hash, method, new VMArray(args));
+        }
+
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (CurrentContext != null && context.EvaluationStack != CurrentContext.EvaluationStack)
+            if (!(UncaughtException is null)) return;
+            if (invocationStates.Count == 0) return;
+            if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
+            if (state.NeedCheckReturnValue)
                 if (context.EvaluationStack.Count == 0)
                     Push(StackItem.Null);
+                else if (context.EvaluationStack.Count > 1)
+                    throw new InvalidOperationException();
+            switch (state.Callback)
+            {
+                case null:
+                    break;
+                case Action action:
+                    action();
+                    break;
+                default:
+                    state.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(state.ReturnType)));
+                    break;
+            }
+        }
+
+        private InvocationState GetInvocationState(ExecutionContext context)
+        {
+            if (!invocationStates.TryGetValue(context, out InvocationState state))
+            {
+                state = new InvocationState();
+                invocationStates.Add(context, state);
+            }
+            return state;
         }
 
         protected override void LoadContext(ExecutionContext context)
@@ -73,6 +123,7 @@ namespace Neo.SmartContract
 
         internal void LoadContext(ExecutionContext context, int initialPosition)
         {
+            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
             context.InstructionPointer = initialPosition;
             LoadContext(context);
         }
@@ -124,7 +175,7 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    int count = (int)item.GetBigInteger();
+                    int count = (int)item.GetInteger();
                     if (count > MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
                     for (int i = 0; i < av.Length; i++)

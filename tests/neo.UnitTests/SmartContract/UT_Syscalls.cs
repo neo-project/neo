@@ -89,16 +89,14 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
-                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    "5b2261564e62466b35384f51717547373870747154766561762f48677941566a72634e41434d4e59705c7530303242366f6f3d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c302c224141414141414141414141414141414141414141414141414141413d222c315d");
-                Assert.AreEqual(0, engine.ResultStack.Count);
+
+                var array = engine.ResultStack.Pop<VM.Types.Array>();
+                Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
 
                 // Clean
 
@@ -127,7 +125,7 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(2, engine.ResultStack.Count);
 
                     engine.ResultStack.Pop<Null>();
-                    Assert.IsTrue(engine.ResultStack.Pop<Integer>().GetBigInteger() == 123);
+                    Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
                 }
             }
 
@@ -194,9 +192,9 @@ namespace Neo.UnitTests.SmartContract
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(5, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"dmFsdWU=\"}");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
                     Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"dGVzdA==\"");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
                     Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "true");
                     Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
                 }
@@ -238,8 +236,6 @@ namespace Neo.UnitTests.SmartContract
 
                 // With tx
 
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
-
                 var tx = new Transaction()
                 {
                     Script = new byte[] { 0x01 },
@@ -258,10 +254,9 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
-                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b224435724a376f755c753030324256574845456c5c75303032426e74486b414a424f614c4a6737496776303356337a4953646d6750413d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
-                Assert.AreEqual(0, engine.ResultStack.Count);
+
+                var array = engine.ResultStack.Pop<VM.Types.Array>();
+                Assert.AreEqual(tx.Hash, new UInt256(array[0].GetSpan()));
             }
         }
 
@@ -291,7 +286,7 @@ namespace Neo.UnitTests.SmartContract
 
                 CollectionAssert.AreEqual
                     (
-                    engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
+                    engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[] { 99_999_570, 99_999_140, 99_998_650 }
                     );
             }
@@ -312,7 +307,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(-1, engine.ResultStack.Pop().GetBigInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop().GetInteger());
             }
         }
 
@@ -366,7 +361,7 @@ namespace Neo.UnitTests.SmartContract
 
                 CollectionAssert.AreEqual
                     (
-                    engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
+                    engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[]
                         {
                         1, /* A */

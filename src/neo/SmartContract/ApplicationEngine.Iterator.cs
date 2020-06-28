@@ -20,6 +20,7 @@ namespace Neo.SmartContract
             {
                 Array array => new ArrayWrapper(array),
                 Map map => new MapWrapper(map),
+                VM.Types.Buffer buffer => new ByteArrayWrapper(buffer),
                 PrimitiveType primitive => new ByteArrayWrapper(primitive),
                 _ => throw new ArgumentException()
             };

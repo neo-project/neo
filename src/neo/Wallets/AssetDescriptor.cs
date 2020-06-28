@@ -23,7 +23,7 @@ namespace Neo.Wallets
             if (engine.State.HasFlag(VMState.FAULT)) throw new ArgumentException();
             this.AssetId = asset_id;
             this.AssetName = engine.ResultStack.Pop().GetString();
-            this.Decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
+            this.Decimals = (byte)engine.ResultStack.Pop().GetInteger();
         }
 
         public override string ToString()
