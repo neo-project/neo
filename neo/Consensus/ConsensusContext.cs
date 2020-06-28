@@ -314,6 +314,7 @@ namespace Neo.Consensus
                     keyPair = account.GetKey();
                     break;
                 }
+                PreviousBlockStateRoot = null;
             }
             else
             {
