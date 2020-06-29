@@ -202,11 +202,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["hash"].AsString().Should().Be("0xac84cebc5825cbe78941b301789bc43e8906bb9d86edd80cc94591088a26d9cc");
             jObj["size"].AsNumber().Should().Be(165);
             jObj["version"].AsNumber().Should().Be(0);
-            jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
-            jObj["merkleroot"].AsString().Should().Be("0xf616d65d5844a65476c8976a0849b9e171fa2fc4791b8327ddfcf1b44e0172bc");
+            jObj["previous_block_hash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
+            jObj["merkle_root"].AsString().Should().Be("0xf616d65d5844a65476c8976a0849b9e171fa2fc4791b8327ddfcf1b44e0172bc");
             jObj["time"].AsNumber().Should().Be(328665601001);
             jObj["index"].AsNumber().Should().Be(0);
-            jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
+            jObj["next_consensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
 
             JObject scObj = ((JArray)jObj["witnesses"])[0];
             scObj["invocation"].AsString().Should().Be("");

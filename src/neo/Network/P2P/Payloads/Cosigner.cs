@@ -53,9 +53,9 @@ namespace Neo.Network.P2P.Payloads
             json["account"] = Account.ToString();
             json["scopes"] = Scopes;
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
-                json["allowedContracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
+                json["allowed_contracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
-                json["allowedGroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+                json["allowed_groups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
             return json;
         }
     }
