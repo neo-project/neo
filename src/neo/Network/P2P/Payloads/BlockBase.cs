@@ -103,11 +103,11 @@ namespace Neo.Network.P2P.Payloads
             json["hash"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
-            json["previous_block_hash"] = PrevHash.ToString();
-            json["merkle_root"] = MerkleRoot.ToString();
+            json["previousblockhash"] = PrevHash.ToString();
+            json["merkleroot"] = MerkleRoot.ToString();
             json["time"] = Timestamp;
             json["index"] = Index;
-            json["next_consensus"] = NextConsensus.ToAddress();
+            json["nextconsensus"] = NextConsensus.ToAddress();
             json["witnesses"] = new JArray(Witness.ToJson());
             return json;
         }
