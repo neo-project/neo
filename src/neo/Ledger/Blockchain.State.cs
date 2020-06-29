@@ -72,7 +72,7 @@ namespace Neo.Ledger
             return VerifyResult.Invalid;
         }
 
-        private void CheckRootOnPersistCompleted()
+        private void CheckStateRootCache()
         {
             var index = Height - 1;
             if (0 <= index && state_root_cache.TryGetValue(index, out StateRoot root))

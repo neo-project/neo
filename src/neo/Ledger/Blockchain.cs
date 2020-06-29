@@ -472,6 +472,7 @@ namespace Neo.Ledger
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
+            CheckStateRootCache();
             block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
