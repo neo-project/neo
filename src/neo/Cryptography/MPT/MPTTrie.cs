@@ -18,7 +18,7 @@ namespace Neo.Cryptography.MPT
         public MPTTrie(ISnapshot store, UInt256 root)
         {
             this.store = store ?? throw new ArgumentNullException();
-            this.root = root is null ? HashNode.EmptyNode : new HashNode(root);
+            this.root = root is null || root == UInt256.Zero ? HashNode.EmptyNode : new HashNode(root);
         }
 
         private MPTNode Resolve(HashNode n)

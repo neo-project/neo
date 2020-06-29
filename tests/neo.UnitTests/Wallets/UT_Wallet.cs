@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
@@ -205,12 +206,14 @@ namespace Neo.UnitTests.Wallets
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
 
             wallet.GetAvailable(NativeContract.GAS.Hash).Should().Be(new BigDecimal(1000000000000, 8));
 
             entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
         }
 
@@ -227,6 +230,7 @@ namespace Neo.UnitTests.Wallets
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
 
             wallet.GetBalance(UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(0, 0));
@@ -234,6 +238,7 @@ namespace Neo.UnitTests.Wallets
 
             entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
         }
 
@@ -331,7 +336,7 @@ namespace Neo.UnitTests.Wallets
             key = NativeContract.NEO.CreateStorageKey(20, account.ScriptHash);
             var entry2 = snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoToken.NeoAccountState()));
             entry2.GetInteroperable<NeoToken.NeoAccountState>().Balance = 10000 * NativeContract.NEO.Factor;
-
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
 
             var tx = wallet.MakeTransaction(new TransferOutput[]
@@ -360,6 +365,7 @@ namespace Neo.UnitTests.Wallets
             entry2 = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry1.GetInteroperable<AccountState>().Balance = 0;
             entry2.GetInteroperable<NeoToken.NeoAccountState>().Balance = 0;
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
         }
 
@@ -379,6 +385,7 @@ namespace Neo.UnitTests.Wallets
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 1000000 * NativeContract.GAS.Factor;
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
 
             var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new[]{ new Signer()
@@ -394,6 +401,7 @@ namespace Neo.UnitTests.Wallets
 
             entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
+            snapshot.UpdateLocalStateRoot();
             snapshot.Commit();
         }
 
