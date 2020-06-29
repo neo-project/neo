@@ -131,6 +131,8 @@ namespace Neo.SmartContract
                 invocationCounter[contract.ScriptHash] = 1;
             }
 
+            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
+
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;

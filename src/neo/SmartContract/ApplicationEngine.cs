@@ -21,6 +21,7 @@ namespace Neo.SmartContract
         {
             public Type ReturnType;
             public Delegate Callback;
+            public bool NeedCheckReturnValue;
         }
 
         public static event EventHandler<NotifyEventArgs> Notify;
@@ -68,33 +69,31 @@ namespace Neo.SmartContract
 
         internal void CallFromNativeContract(Action onComplete, UInt160 hash, string method, params StackItem[] args)
         {
-            invocationStates.Add(CurrentContext, new InvocationState
-            {
-                ReturnType = typeof(void),
-                Callback = onComplete
-            });
+            InvocationState state = GetInvocationState(CurrentContext);
+            state.ReturnType = typeof(void);
+            state.Callback = onComplete;
             CallContract(hash, method, new VMArray(args));
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
         {
-            invocationStates.Add(CurrentContext, new InvocationState
-            {
-                ReturnType = typeof(T),
-                Callback = onComplete
-            });
+            InvocationState state = GetInvocationState(CurrentContext);
+            state.ReturnType = typeof(T);
+            state.Callback = onComplete;
             CallContract(hash, method, new VMArray(args));
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (CurrentContext != null && context.EvaluationStack != CurrentContext.EvaluationStack)
-                if (context.EvaluationStack.Count == 0)
-                    Push(StackItem.Null);
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
+            if (state.NeedCheckReturnValue)
+                if (context.EvaluationStack.Count == 0)
+                    Push(StackItem.Null);
+                else if (context.EvaluationStack.Count > 1)
+                    throw new InvalidOperationException();
             switch (state.Callback)
             {
                 case null:
@@ -108,6 +107,16 @@ namespace Neo.SmartContract
             }
         }
 
+        private InvocationState GetInvocationState(ExecutionContext context)
+        {
+            if (!invocationStates.TryGetValue(context, out InvocationState state))
+            {
+                state = new InvocationState();
+                invocationStates.Add(context, state);
+            }
+            return state;
+        }
+
         protected override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
@@ -118,6 +127,7 @@ namespace Neo.SmartContract
 
         internal void LoadContext(ExecutionContext context, int initialPosition)
         {
+            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
             context.InstructionPointer = initialPosition;
             LoadContext(context);
         }
