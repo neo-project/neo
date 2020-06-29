@@ -86,12 +86,13 @@ namespace Neo.UnitTests.Cryptography.MPT
     [TestClass]
     public class UT_MPTTrie
     {
+        private byte Prefix = 0xf0;
         private MPTNode root;
         private IStore mptdb;
 
         private void PutToStore(MPTNode node)
         {
-            mptdb.Put(0xf0, node.Hash.ToArray(), node.Encode());
+            mptdb.Put(Prefix, node.Hash.ToArray(), node.Encode());
         }
 
         [TestInitialize]

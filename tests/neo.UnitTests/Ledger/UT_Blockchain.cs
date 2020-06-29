@@ -119,7 +119,7 @@ namespace Neo.UnitTests.Ledger
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
                 entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
-
+                snapshot.UpdateLocalStateRoot();
                 snapshot.Commit();
 
                 typeof(Blockchain)

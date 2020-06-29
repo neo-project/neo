@@ -109,11 +109,6 @@ namespace Neo.Network.P2P.Payloads
             return new UInt160[] { script_hash };
         }
 
-        public byte[] GetMessage()
-        {
-            return this.GetHashData();
-        }
-
         public JObject ToJson()
         {
             var json = new JObject();

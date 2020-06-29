@@ -16,13 +16,16 @@ namespace Neo.Persistence
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
+        public abstract DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public abstract MetaDataCache<StateRoot> ValidatorsStateRoot { get; }
         public abstract MetaDataCache<ContractIdState> ContractId { get; }
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
+        public UInt256 CurrentStateRootHash => LocalStateRoot.TryGet(Height)?.Hash ?? UInt256.Zero;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
         public StoreView Clone()
@@ -37,9 +40,11 @@ namespace Neo.Persistence
             Contracts.Commit();
             Storages.Commit();
             HeaderHashList.Commit();
+            LocalStateRoot.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
             ContractId.Commit();
+            ValidatorsStateRoot.Commit();
         }
 
         public bool ContainsBlock(UInt256 hash)

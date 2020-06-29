@@ -297,6 +297,7 @@ namespace Neo.UnitTests.Consensus
             {
                 Value = mockContext.Object.Validators.ToByteArray()
             });
+            mockContext.Object.Snapshot.UpdateLocalStateRoot();
             mockContext.Object.Snapshot.Commit();
             // ===============================================================
 
@@ -430,6 +431,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
+            mockContext.Object.Snapshot.UpdateLocalStateRoot();
             mockContext.Object.Snapshot.Commit();
 
             Console.WriteLine("mockContext Reset.");
