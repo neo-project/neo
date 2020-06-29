@@ -1,6 +1,8 @@
+using Neo.Cryptography.MPT;
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.Persistence
 {
@@ -11,8 +13,10 @@ namespace Neo.Persistence
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
+        public override DataCache<SerializableWrapper<uint>, HashIndexState> LocalStateRoot { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public override MetaDataCache<StateRoot> ValidatorsStateRoot { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
         public ClonedView(StoreView view)
@@ -23,8 +27,10 @@ namespace Neo.Persistence
             this.Contracts = view.Contracts.CreateSnapshot();
             this.Storages = view.Storages.CreateSnapshot();
             this.HeaderHashList = view.HeaderHashList.CreateSnapshot();
+            this.LocalStateRoot = view.LocalStateRoot.CreateSnapshot();
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
+            this.ValidatorsStateRoot = view.ValidatorsStateRoot.CreateSnapshot();
             this.ContractId = view.ContractId.CreateSnapshot();
         }
     }
