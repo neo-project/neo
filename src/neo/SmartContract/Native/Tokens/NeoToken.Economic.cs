@@ -93,18 +93,18 @@ namespace Neo.SmartContract.Native.Tokens
             GAS.Mint(engine, account, gas);
         }
 
-        private BigInteger CalculateBonus(StoreView snapshot, ECPoint votee, BigInteger value, uint start, uint end)
+        private BigInteger CalculateBonus(StoreView snapshot, ECPoint vote, BigInteger value, uint start, uint end)
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
             BigInteger neoHolderReward = CalculateNeoHolderBonus(snapshot, value, start, end);
-            if (votee is null) return neoHolderReward;
+            if (vote is null) return neoHolderReward;
 
-            var voteAddr = Contract.CreateSignatureContract(votee).ScriptHash;
-            var endKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue - start - 1);
-            var startKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue - end - 1);
-            var borderKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteAddr, uint.MaxValue);
+            var voteScriptHash = Contract.CreateSignatureContract(vote).ScriptHash;
+            var endKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue - start - 1);
+            var startKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue - end - 1);
+            var borderKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue);
 
             var enumerator = snapshot.Storages.FindRange(startKey, endKey).GetEnumerator();
             if (!enumerator.MoveNext()) return neoHolderReward;
@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Native.Tokens
             (ECPoint, BigInteger)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
             int validatorNumber = GetValidators(engine.Snapshot).Length;
             int totalRewardRatio = GetTotalRewardRatio(engine.Snapshot);
-            BigInteger holderRewardPerBlock = gasPerBlock * GetNeoHoldersRewardRatio(engine.Snapshot) / totalRewardRatio;
+            BigInteger holderRewardPerBlock = gasPerBlock * GetNeoHoldersRewardRatio(engine.Snapshot) / totalRewardRatio; // The final calculation should be divided by the total number of NEO
             BigInteger committeeRewardPerBlock = gasPerBlock * GetCommitteeRewardRatio(engine.Snapshot) / totalRewardRatio / committeeVotes.Length;
             BigInteger voterRewardPerBlock = gasPerBlock * GetVotersRewardRatio(engine.Snapshot) / totalRewardRatio / (committeeVotes.Length + validatorNumber);
 
@@ -159,10 +159,10 @@ namespace Neo.SmartContract.Native.Tokens
 
             for (var i = 0; i < committeeVotes.Length; i++)
             {
-                // Keep track of incremental gains of committee voters
+                // Keep track of incremental gains for each committee's voters
 
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committeeVotes[i].Item1).ScriptHash;
-                BigInteger voterRewardPerCommittee = (i < validatorNumber ? 2 : 1) * voterRewardPerBlock * 10000L / committeeVotes[i].Item2;
+                BigInteger voterRewardPerCommittee = (i < validatorNumber ? 2 : 1) * voterRewardPerBlock * 10000L / committeeVotes[i].Item2; // Zoom in 10000 times, and the final calculation should be divided 10000L
                 enumerator = engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee, committeeAddr).ToArray()).GetEnumerator();
                 if (enumerator.MoveNext())
                     voterRewardPerCommittee += new BigInteger(enumerator.Current.Value.Value);
