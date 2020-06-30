@@ -31,9 +31,9 @@ namespace Neo.Persistence
             snapshot?.Delete(prefix, key.ToArray());
         }
 
-        protected override IEnumerable<(TKey, TValue)> FindInternal(byte[] key_prefix)
+        protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return store.Find(prefix, key_prefix).Select(p => (p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
+            return store.Seek(prefix, keyOrPrefix, direction).Select(p => (p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
         }
 
         protected override TValue GetInternal(TKey key)
