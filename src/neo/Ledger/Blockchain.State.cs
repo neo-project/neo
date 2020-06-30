@@ -26,17 +26,6 @@ namespace Neo.Ledger
             return currentSnapshot.LocalStateRoot.TryGet(index)?.Hash;
         }
 
-        public HashSet<byte[]> GetStateProof(UInt256 root, StorageKey skey)
-        {
-            var trie = new MPTTrie<StorageKey, StorageItem>(Store.GetSnapshot(), root);
-            return trie.GetProof(skey);
-        }
-
-        public StorageItem VerifyProof(UInt256 root, StorageKey key, HashSet<byte[]> proof)
-        {
-            return MPTTrie<StorageKey, StorageItem>.VerifyProof(root, key, proof);
-        }
-
         private VerifyResult OnNewStateRoot(StateRoot root)
         {
             if (!(LatestValidatorsStateRoot is null) && root.Index <= LatestValidatorsStateRoot.Index) return VerifyResult.AlreadyExists;
