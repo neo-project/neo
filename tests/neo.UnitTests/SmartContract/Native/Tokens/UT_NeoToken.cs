@@ -619,19 +619,15 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestEconomicParameter()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            (bool, bool) ret1 = Check_SetEconomicParameter(snapshot, "setGasPerBlock", 2 * GasToken.GAS.Factor);
+            (bool, bool) ret1 = Check_SetGasPerByte(snapshot, 2 * GasToken.GAS.Factor);
             ret1.Item2.Should().BeTrue();
             ret1.Item1.Should().BeTrue();
 
-            ret1 = Check_SetEconomicParameter(snapshot, "setNeoHoldersRewardRatio", 10);
+            ret1 = Check_SetRewardRatio(snapshot, 20, 10, 80);
             ret1.Item2.Should().BeTrue();
-            ret1.Item1.Should().BeTrue();
+            ret1.Item1.Should().BeFalse();
 
-            ret1 = Check_SetEconomicParameter(snapshot, "setCommitteeRewardRatio", 10);
-            ret1.Item2.Should().BeTrue();
-            ret1.Item1.Should().BeTrue();
-
-            ret1 = Check_SetEconomicParameter(snapshot, "setVotersRewardRatio", 80);
+            ret1 = Check_SetRewardRatio(snapshot, 10, 10, 80);
             ret1.Item2.Should().BeTrue();
             ret1.Item1.Should().BeTrue();
 
@@ -660,7 +656,36 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return engine.Execute() == VMState.HALT;
         }
 
-        internal static (bool Value, bool State) Check_SetEconomicParameter(StoreView snapshot, string method, BigInteger value)
+        internal static (bool Value, bool State) Check_SetRewardRatio(StoreView snapshot, BigInteger holder, BigInteger committee, BigInteger voters)
+        {
+            ECPoint[] committees = NeoToken.NEO.GetCommittee(snapshot);
+            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+            var engine = new ApplicationEngine(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(voters);
+            script.EmitPush(committee);
+            script.EmitPush(holder);
+            script.EmitPush(3);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("setRewardRatio");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (result.GetBoolean(), true);
+        }
+
+        internal static (bool Value, bool State) Check_SetGasPerByte(StoreView snapshot, BigInteger value)
         {
             ECPoint[] committees = NeoToken.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
@@ -673,7 +698,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             script.EmitPush(value);
             script.EmitPush(1);
             script.Emit(OpCode.PACK);
-            script.EmitPush(method);
+            script.EmitPush("setGasPerBlock");
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)

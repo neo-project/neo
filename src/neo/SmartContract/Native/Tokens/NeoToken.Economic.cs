@@ -28,32 +28,16 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private bool SetNeoHoldersRewardRatio(ApplicationEngine engine, int neoHoldersRewardRatio)
+        private bool SetRewardRatio(ApplicationEngine engine, byte neoHoldersRewardRatio, byte committeesRewardRatio, byte votersRewardRatio)
         {
-            if (neoHoldersRewardRatio < 0 || neoHoldersRewardRatio > byte.MaxValue) return false;
+            if (checked(neoHoldersRewardRatio + committeesRewardRatio + votersRewardRatio) != 100) return false;
             if (!CheckCommitteeWitness(engine)) return false;
-            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NeoHoldersRewardRatio));
-            item.Value = new byte[] { (byte)neoHoldersRewardRatio };
-            return true;
-        }
-
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private bool SetCommitteeRewardRatio(ApplicationEngine engine, int committeesRewardRatio)
-        {
-            if (committeesRewardRatio < 0 || committeesRewardRatio > byte.MaxValue) return false;
-            if (!CheckCommitteeWitness(engine)) return false;
-            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_CommitteeRewardRatio));
-            item.Value = new byte[] { (byte)committeesRewardRatio };
-            return true;
-        }
-
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private bool SetVotersRewardRatio(ApplicationEngine engine, int votersRewardRatio)
-        {
-            if (votersRewardRatio < 0 || votersRewardRatio > byte.MaxValue) return false;
-            if (!CheckCommitteeWitness(engine)) return false;
-            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersRewardRatio));
-            item.Value = new byte[] { (byte)votersRewardRatio };
+            StorageItem holderItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NeoHoldersRewardRatio));
+            holderItem.Value = new byte[] { (byte)neoHoldersRewardRatio };
+            StorageItem committeeItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_CommitteeRewardRatio));
+            committeeItem.Value = new byte[] { (byte)committeesRewardRatio };
+            StorageItem voterItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersRewardRatio));
+            voterItem.Value = new byte[] { (byte)votersRewardRatio };
             return true;
         }
 
@@ -79,11 +63,6 @@ namespace Neo.SmartContract.Native.Tokens
         public int GetVotersRewardRatio(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_VotersRewardRatio)).Value[0];
-        }
-
-        private int GetTotalRewardRatio(StoreView snapshot)
-        {
-            return GetVotersRewardRatio(snapshot) + GetCommitteeRewardRatio(snapshot) + GetNeoHoldersRewardRatio(snapshot);
         }
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
@@ -141,10 +120,9 @@ namespace Neo.SmartContract.Native.Tokens
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             (ECPoint, BigInteger)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
             int validatorNumber = GetValidators(engine.Snapshot).Length;
-            int totalRewardRatio = GetTotalRewardRatio(engine.Snapshot);
-            BigInteger holderRewardPerBlock = gasPerBlock * GetNeoHoldersRewardRatio(engine.Snapshot) / totalRewardRatio; // The final calculation should be divided by the total number of NEO
-            BigInteger committeeRewardPerBlock = gasPerBlock * GetCommitteeRewardRatio(engine.Snapshot) / totalRewardRatio / committeeVotes.Length;
-            BigInteger voterRewardPerBlock = gasPerBlock * GetVotersRewardRatio(engine.Snapshot) / totalRewardRatio / (committeeVotes.Length + validatorNumber);
+            BigInteger holderRewardPerBlock = gasPerBlock * GetNeoHoldersRewardRatio(engine.Snapshot) / 100; // The final calculation should be divided by the total number of NEO
+            BigInteger committeeRewardPerBlock = gasPerBlock * GetCommitteeRewardRatio(engine.Snapshot) / 100 / committeeVotes.Length;
+            BigInteger voterRewardPerBlock = gasPerBlock * GetVotersRewardRatio(engine.Snapshot) / 100 / (committeeVotes.Length + validatorNumber);
 
             // Keep track of incremental gains of neo holders
 
