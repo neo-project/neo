@@ -134,7 +134,7 @@ namespace Neo.SmartContract
             ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!turingComplete && callFlags.HasFlag(CallFlags.AllowCall))
             {
-                throw new ArgumentException("Combine AllowCall and turingComplete it's not allowed");
+                throw new ArgumentException("AllowCall is not allowed in turing-incomplete mode.");
             }
             state.CallFlags = callFlags;
             state.TuringComplete = turingComplete;
