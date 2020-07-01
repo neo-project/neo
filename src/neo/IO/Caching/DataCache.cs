@@ -210,10 +210,9 @@ namespace Neo.IO.Caching
         /// <returns>Entries found with the desired prefix</returns>
         public IEnumerable<(TKey Key, TValue Value)> Find(byte[] key_prefix = null)
         {
-            var enumerator = Seek(key_prefix, SeekDirection.Forward).GetEnumerator();
-            while (enumerator.MoveNext())
-                if (enumerator.Current.Key.ToArray().AsSpan().StartsWith(key_prefix))
-                    yield return enumerator.Current;
+            foreach (var (key, value) in Seek(key_prefix, SeekDirection.Forward))
+                if (key.ToArray().AsSpan().StartsWith(key_prefix))
+                    yield return (key, value);
         }
 
         public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end)
