@@ -217,11 +217,10 @@ namespace Neo.IO.Caching
 
         public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end)
         {
-            var enumerator = Seek(start.ToArray(), SeekDirection.Forward).GetEnumerator();
-            var endKey = end?.ToArray();
-            while (enumerator.MoveNext())
-                if (endKey is null || ByteArrayComparer.Default.Compare(enumerator.Current.Key.ToArray(), endKey) < 0)
-                    yield return enumerator.Current;
+            var endKey = end.ToArray();
+            foreach (var (key, value) in Seek(start.ToArray(), SeekDirection.Forward))
+                if (ByteArrayComparer.Default.Compare(key.ToArray(), endKey) < 0)
+                    yield return (key, value);
         }
 
         protected abstract IEnumerable<(TKey Key, TValue Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward);
