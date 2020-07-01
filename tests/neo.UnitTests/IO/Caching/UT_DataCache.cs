@@ -117,7 +117,8 @@ namespace Neo.UnitTests.IO.Caching
 
         protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return InnerDict.Where(kvp => ByteArrayComparer.Default.Compare(kvp.Key.ToArray(), keyOrPrefix) * Convert.ToSByte(direction) >= 0).Select(p => (p.Key, p.Value));
+            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            return InnerDict.Where(kvp => comparer.Compare(kvp.Key.ToArray(), keyOrPrefix) >= 0).Select(p => (p.Key, p.Value));
         }
 
         protected override TValue GetInternal(TKey key)

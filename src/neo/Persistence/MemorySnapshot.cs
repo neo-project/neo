@@ -44,10 +44,11 @@ namespace Neo.Persistence
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] keyOrPrefix, SeekDirection direction)
         {
+            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = immutableData[table];
             if (keyOrPrefix?.Length > 0)
-                records = records.Where(p => ByteArrayComparer.Default.Compare(p.Key, keyOrPrefix) * Convert.ToSByte(direction) >= 0);
-            records = records.OrderBy(p => p.Key, direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse);
+                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+            records = records.OrderBy(p => p.Key, comparer);
             return records.Select(p => (p.Key, p.Value));
         }
 

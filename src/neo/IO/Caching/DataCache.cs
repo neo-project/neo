@@ -153,17 +153,18 @@ namespace Neo.IO.Caching
         {
             IEnumerable<(byte[], TKey, TValue)> cached;
             HashSet<TKey> cachedKeySet;
+            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             lock (dictionary)
             {
                 cached = dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && (keyOrPrefix == null || ByteArrayComparer.Default.Compare(p.Key.ToArray(), keyOrPrefix) * Convert.ToSByte(direction) >= 0))
+                    .Where(p => p.Value.State != TrackState.Deleted && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
                     .Select(p =>
                     (
                         KeyBytes: p.Key.ToArray(),
                         p.Key,
                         p.Value.Item
                     ))
-                    .OrderBy(p => p.KeyBytes, direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse)
+                    .OrderBy(p => p.KeyBytes, comparer)
                     .ToArray();
                 cachedKeySet = new HashSet<TKey>(dictionary.Keys);
             }
@@ -185,7 +186,7 @@ namespace Neo.IO.Caching
                 i2 = c2 ? e2.Current : default;
                 while (c1 || c2)
                 {
-                    if (!c2 || (c1 && ByteArrayComparer.Default.Compare(i1.KeyBytes, i2.KeyBytes) * Convert.ToSByte(direction) < 0))
+                    if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                     {
                         yield return (i1.Key, i1.Item);
                         c1 = e1.MoveNext();
