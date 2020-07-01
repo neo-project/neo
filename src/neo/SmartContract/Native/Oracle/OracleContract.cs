@@ -24,9 +24,15 @@ namespace Neo.SmartContract.Native.Oracle
         public override int Id => -4;
         public override string Name => "Oracle";
 
+        internal OracleContract()
+        {
+            //TODO: Setup manifest
+        }
+
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void Finish(ApplicationEngine engine)
         {
+            //TODO: Also need to consider the failure.
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
             StorageKey key = CreateStorageKey(Prefix_Request, BitConverter.GetBytes(response.Id));
@@ -77,6 +83,8 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0_50000000, CallFlags.AllowModifyStates)]
         private void Request(ApplicationEngine engine, string url, string callback)
         {
+            //TODO: Add filter
+            //TODO: We support https only now
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
                 throw new ArgumentException();
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
@@ -95,6 +103,7 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         private void SetOracleNodes(ApplicationEngine engine, ECPoint[] nodes)
         {
+            //TODO: How to incentivize oracle nodes?
             if (!CheckCommittees(engine)) throw new InvalidOperationException();
             NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NodeList)).GetInteroperable<NodeList>();
             list.Clear();
