@@ -145,11 +145,11 @@ namespace Neo.IO.Caching
         protected abstract void DeleteInternal(TKey key);
 
         /// <summary>
-        /// Find entries that are not less/more than the `keyOrPrefix`
+        /// Find the entries that start with the `keyOrPrefix`
         /// </summary>
         /// <param name="keyOrPrefix">Must maintain the deserialized format of TKey</param>
-        /// <param name="direction">SeekDirection.Forward means not less than `keyOrPrefix`, SeekDirection.Backward means not more than `keyOrPrefix`</param>
-        /// <returns>Entries that are not less/more than the `keyOrPrefix`</returns>
+        /// <param name="direction">Forward or Backward</param>
+        /// <returns>Entries found with the desired prefix</returns>
         public IEnumerable<(TKey Key, TValue Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
             IEnumerable<(byte[], TKey, TValue)> cached;
