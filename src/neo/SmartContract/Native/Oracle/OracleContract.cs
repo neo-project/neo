@@ -5,6 +5,7 @@ using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         internal OracleContract()
         {
-            //TODO: Setup manifest
+            Manifest.Features = ContractFeatures.HasStorage;
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
