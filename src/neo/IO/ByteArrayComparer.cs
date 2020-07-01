@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Neo.IO
 {
@@ -17,17 +18,21 @@ namespace Neo.IO
 
         public int Compare(byte[] x, byte[] y)
         {
-            int r;
+            return direction > 0
+                ? CompareInternal(x, y)
+                : -CompareInternal(x, y);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int CompareInternal(byte[] x, byte[] y)
+        {
             int length = Math.Min(x.Length, y.Length);
             for (int i = 0; i < length; i++)
             {
-                r = x[i].CompareTo(y[i]);
-                if (direction == -1) r = -r;
+                int r = x[i].CompareTo(y[i]);
                 if (r != 0) return r;
             }
-            r = x.Length.CompareTo(y.Length);
-            if (direction == -1) r = -r;
-            return r;
+            return x.Length.CompareTo(y.Length);
         }
     }
 }
