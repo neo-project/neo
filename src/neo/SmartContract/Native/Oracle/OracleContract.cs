@@ -24,7 +24,6 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void Finish(ApplicationEngine engine)
         {
-            //TODO: The witnesses from the request tx should be copied to the response tx.
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
             StorageKey key = CreateStorageKey(Prefix_Request, BitConverter.GetBytes(response.Id));

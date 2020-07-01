@@ -201,6 +201,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 throw new FormatException();
             }
+            if (IsOracleResponse && Cosigners.Count > 0) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
