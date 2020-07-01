@@ -5,7 +5,15 @@ namespace Neo.IO
 {
     internal class ByteArrayComparer : IComparer<byte[]>
     {
-        public static readonly ByteArrayComparer Default = new ByteArrayComparer();
+        public static readonly ByteArrayComparer Default = new ByteArrayComparer(1);
+        public static readonly ByteArrayComparer Reverse = new ByteArrayComparer(-1);
+
+        private int Direction;
+
+        private ByteArrayComparer(int direction)
+        {
+            Direction = direction;
+        }
 
         public int Compare(byte[] x, byte[] y)
         {
@@ -13,9 +21,9 @@ namespace Neo.IO
             for (int i = 0; i < length; i++)
             {
                 int r = x[i].CompareTo(y[i]);
-                if (r != 0) return r;
+                if (r != 0) return r * Direction;
             }
-            return x.Length.CompareTo(y.Length);
+            return x.Length.CompareTo(y.Length) * Direction;
         }
     }
 }

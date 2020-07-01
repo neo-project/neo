@@ -265,6 +265,43 @@ namespace Neo.UnitTests.IO.Caching
         }
 
         [TestMethod]
+        public void TestSeek()
+        {
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+
+            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
+
+            var items = myDataCache.Seek(new MyKey("key3").ToArray(), SeekDirection.Backward).ToArray();
+            items[0].Key.Should().Be(new MyKey("key3"));
+            items[0].Value.Should().Be(new MyValue("value3"));
+            items[1].Key.Should().Be(new MyKey("key2"));
+            items[1].Value.Should().Be(new MyValue("value2"));
+            items.Count().Should().Be(3);
+
+            items = myDataCache.Seek(new MyKey("key5").ToArray(), SeekDirection.Forward).ToArray();
+            items.Count().Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestFindRange()
+        {
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+
+            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
+
+            var items = myDataCache.FindRange(new MyKey("key3"), new MyKey("key5")).ToArray();
+            items[0].Key.Should().Be(new MyKey("key3"));
+            items[0].Value.Should().Be(new MyValue("value3"));
+            items[1].Key.Should().Be(new MyKey("key4"));
+            items[1].Value.Should().Be(new MyValue("value4"));
+            items.Count().Should().Be(2);
+        }
+
+        [TestMethod]
         public void TestGetChangeSet()
         {
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));  // trackable.State = TrackState.Added 

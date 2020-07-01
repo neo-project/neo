@@ -32,7 +32,7 @@ namespace Neo.Persistence
             IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData[table];
             if (keyOrPrefix?.Length > 0)
                 records = records.Where(p => ByteArrayComparer.Default.Compare(p.Key, keyOrPrefix) * Convert.ToSByte(direction) >= 0);
-            records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
+            records = records.OrderBy(p => p.Key, direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse);
             foreach (var pair in records)
                 yield return (pair.Key, pair.Value);
         }

@@ -163,7 +163,7 @@ namespace Neo.IO.Caching
                         p.Key,
                         p.Value.Item
                     ))
-                    .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
+                    .OrderBy(p => p.KeyBytes, direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse)
                     .ToArray();
                 cachedKeySet = new HashSet<TKey>(dictionary.Keys);
             }
