@@ -74,8 +74,7 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        //TODO: We should check the price later.
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_50000000, CallFlags.AllowModifyStates)]
         private void Request(ApplicationEngine engine, string url, string callback)
         {
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
