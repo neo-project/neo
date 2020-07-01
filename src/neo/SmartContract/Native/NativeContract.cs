@@ -79,6 +79,12 @@ namespace Neo.SmartContract.Native
             contractsHashDictionary.Add(Hash, this);
         }
 
+        protected bool CheckCommittees(ApplicationEngine engine)
+        {
+            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
+            return engine.CheckWitnessInternal(committeeMultiSigAddr);
+        }
+
         protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
             StorageKey storageKey = new StorageKey

@@ -1,6 +1,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -10,8 +11,9 @@ using System.Linq;
 
 namespace Neo.SmartContract.Native.Oracle
 {
-    public sealed class OracleContract : NativeContract
+    public sealed partial class OracleContract : NativeContract
     {
+        private const byte Prefix_NodeList = 8;
         private const byte Prefix_RequestId = 9;
         private const byte Prefix_Request = 7;
         private const byte Prefix_IdList = 6;
@@ -36,6 +38,12 @@ namespace Neo.SmartContract.Native.Oracle
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, response.Result);
         }
 
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public ECPoint[] GetOracleNodes(StoreView snapshot)
+        {
+            return snapshot.Storages[CreateStorageKey(Prefix_NodeList)].GetInteroperable<NodeList>().ToArray();
+        }
+
         public IEnumerable<OracleRequest> GetRequests(StoreView snapshot)
         {
             return snapshot.Storages.Find(new byte[] { Prefix_Request }).Select(p => p.Value.GetInteroperable<OracleRequest>());
@@ -56,6 +64,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         internal override void Initialize(ApplicationEngine engine)
         {
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_NodeList), new StorageItem(new NodeList()));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
@@ -76,6 +85,15 @@ namespace Neo.SmartContract.Native.Oracle
                 CallbackMethod = callback
             }));
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        private void SetOracleNodes(ApplicationEngine engine, ECPoint[] nodes)
+        {
+            if (!CheckCommittees(engine)) throw new InvalidOperationException();
+            NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NodeList)).GetInteroperable<NodeList>();
+            list.Clear();
+            list.AddRange(nodes);
         }
     }
 }
