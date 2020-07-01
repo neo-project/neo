@@ -162,7 +162,7 @@ namespace Neo.SmartContract
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
                 {
                     engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
+                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None, turingComplete: false);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                     gas -= engine.GasConsumed;

@@ -128,10 +128,12 @@ namespace Neo.SmartContract
             LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags)
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, bool turingComplete = true)
         {
             ExecutionContext context = LoadScript(script);
-            context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
+            state.CallFlags = callFlags;
+            state.TuringComplete = turingComplete;
             return context;
         }
 
@@ -223,6 +225,10 @@ namespace Neo.SmartContract
 
         protected override void PreExecuteInstruction()
         {
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            if (!state.TuringComplete)
+                if (CurrentContext.CurrentInstruction.OpCode >= OpCode.JMP && CurrentContext.CurrentInstruction.OpCode <= OpCode.CALLA)
+                    throw new InvalidOperationException();
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
                 AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
