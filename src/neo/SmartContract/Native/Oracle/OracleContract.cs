@@ -13,6 +13,9 @@ namespace Neo.SmartContract.Native.Oracle
 {
     public sealed partial class OracleContract : NativeContract
     {
+        private const int MaxUrlLength = 256;
+        private const int MaxCallbackLength = 32;
+
         private const byte Prefix_NodeList = 8;
         private const byte Prefix_RequestId = 9;
         private const byte Prefix_Request = 7;
@@ -75,8 +78,8 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void Request(ApplicationEngine engine, string url, string callback)
         {
-            //TODO: The sender of this tx should pay for the response tx.
-            //TODO: Limitations on the requests.
+            if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
+                throw new ArgumentException();
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
             ulong id = BitConverter.ToUInt64(item_id.Value) + 1;
             item_id.Value = BitConverter.GetBytes(id);
