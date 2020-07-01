@@ -1,6 +1,7 @@
 using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
@@ -24,6 +25,7 @@ namespace Neo.SmartContract.Native
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
+        public static OracleContract Oracle { get; } = new OracleContract();
 
         [ContractMethod(0, CallFlags.None)]
         public abstract string Name { get; }

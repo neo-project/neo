@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
@@ -52,6 +53,8 @@ namespace Neo.Network.P2P.Payloads
 
         private Dictionary<UInt160, Cosigner> _cosigners;
         public IReadOnlyDictionary<UInt160, Cosigner> Cosigners => _cosigners ??= attributes.OfType<Cosigner>().ToDictionary(p => p.Account);
+
+        public bool IsOracleResponse => Attributes.Any(p => p is OracleResponse);
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -144,6 +147,15 @@ namespace Neo.Network.P2P.Payloads
             set { witnesses = value; _size = 0; }
         }
 
+        private bool CheckOracleResponse(StoreView snapshot)
+        {
+            OracleResponse response = Attributes.OfType<OracleResponse>().FirstOrDefault();
+            if (response is null) return true;
+            OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, response.Id);
+            Transaction request_tx = snapshot.GetTransaction(request.Txid);
+            return Sender.Equals(request_tx.Sender);
+        }
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             int startPosition = -1;
@@ -217,7 +229,12 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160>(Cosigners.Keys) { Sender };
+            var hashes = new HashSet<UInt160>(Cosigners.Keys)
+            {
+                IsOracleResponse
+                ? Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot))
+                : Sender
+            };
             return hashes.OrderBy(p => p).ToArray();
         }
 
@@ -286,9 +303,9 @@ namespace Neo.Network.P2P.Payloads
         {
             VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
             if (result != VerifyResult.Succeed) return result;
-            int size = Size;
-            if (size > MaxTransactionSize) return VerifyResult.Invalid;
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (!CheckOracleResponse(snapshot)) return VerifyResult.Invalid;
+            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;

@@ -24,7 +24,6 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void Finish(ApplicationEngine engine)
         {
-            //TODO: Check witness for oracle nodes.
             //TODO: The witnesses from the request tx should be copied to the response tx.
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
@@ -42,6 +41,11 @@ namespace Neo.SmartContract.Native.Oracle
         public ECPoint[] GetOracleNodes(StoreView snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_NodeList)].GetInteroperable<NodeList>().ToArray();
+        }
+
+        public OracleRequest GetRequest(StoreView snapshot, ulong id)
+        {
+            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Request, BitConverter.GetBytes(id)))?.GetInteroperable<OracleRequest>();
         }
 
         public IEnumerable<OracleRequest> GetRequests(StoreView snapshot)
