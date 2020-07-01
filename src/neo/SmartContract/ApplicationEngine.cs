@@ -132,6 +132,10 @@ namespace Neo.SmartContract
         {
             ExecutionContext context = LoadScript(script);
             ExecutionContextState state = context.GetState<ExecutionContextState>();
+            if (!turingComplete)
+            {
+                callFlags &= ~CallFlags.AllowCall;
+            }
             state.CallFlags = callFlags;
             state.TuringComplete = turingComplete;
             return context;
