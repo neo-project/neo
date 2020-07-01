@@ -33,7 +33,6 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void Finish(ApplicationEngine engine)
         {
-            //TODO: Also need to consider the failure.
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
             StorageKey key = CreateStorageKey(Prefix_Request, BitConverter.GetBytes(response.Id));
@@ -43,7 +42,7 @@ namespace Neo.SmartContract.Native.Oracle
             IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
             if (!list.Remove(response.Id)) throw new InvalidOperationException();
             if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
-            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, response.Result);
+            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, response.Success, response.Result);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -86,6 +85,7 @@ namespace Neo.SmartContract.Native.Oracle
         {
             //TODO: Add filter
             //TODO: We support https only now
+            //TODO: Add userdata
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
                 throw new ArgumentException();
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
