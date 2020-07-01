@@ -42,7 +42,12 @@ namespace Neo.Persistence
         {
         }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] keyOrPrefix, SeekDirection direction)
+        public void Put(byte table, byte[] key, byte[] value)
+        {
+            writeBatch[table][key.EnsureNotNull()] = value;
+        }
+
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = immutableData[table];
@@ -50,11 +55,6 @@ namespace Neo.Persistence
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
             return records.Select(p => (p.Key, p.Value));
-        }
-
-        public void Put(byte table, byte[] key, byte[] value)
-        {
-            writeBatch[table][key.EnsureNotNull()] = value;
         }
 
         public byte[] TryGet(byte table, byte[] key)

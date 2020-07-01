@@ -24,15 +24,15 @@ namespace Neo.IO.Caching
             innerCache.Delete(key);
         }
 
-        protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPreifx, SeekDirection direction = SeekDirection.Forward)
-        {
-            foreach (var (key, value) in innerCache.Seek(keyOrPreifx, direction))
-                yield return (key, value.Clone());
-        }
-
         protected override TValue GetInternal(TKey key)
         {
             return innerCache[key].Clone();
+        }
+
+        protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPreifx, SeekDirection direction)
+        {
+            foreach (var (key, value) in innerCache.Seek(keyOrPreifx, direction))
+                yield return (key, value.Clone());
         }
 
         protected override TValue TryGetInternal(TKey key)
