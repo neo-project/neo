@@ -16,6 +16,7 @@ namespace Neo.Network.P2P.Payloads
             base.Size +                                 // Base size
             UInt256.Length +                            // Request tx hash
             sizeof(long) +                              // Filter cost
+            1 +                                         // Data type, 0x01 means normal data, 0x00 means null
             (Data is null ? 1 : Data.GetVarSize());     // Data
 
         public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
