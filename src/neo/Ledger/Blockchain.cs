@@ -86,8 +86,7 @@ namespace Neo.Ledger
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
-
-            NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
+            NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO, NativeContract.Oracle };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 foreach (NativeContract contract in contracts)
