@@ -10,6 +10,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native.Oracle
 {
@@ -25,12 +26,14 @@ namespace Neo.SmartContract.Native.Oracle
         private const byte Prefix_Request = 7;
         private const byte Prefix_IdList = 6;
 
+        private const long OracleRequestPrice = 0_50000000;
+
         public override int Id => -4;
         public override string Name => "Oracle";
 
         internal OracleContract()
         {
-            Manifest.Features = ContractFeatures.HasStorage;
+            Manifest.Features = ContractFeatures.HasStorage | ContractFeatures.Payable;
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
@@ -45,6 +48,7 @@ namespace Neo.SmartContract.Native.Oracle
             IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
             if (!list.Remove(response.Id)) throw new InvalidOperationException();
             if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
+            GAS.Mint(engine, Hash, OracleRequestPrice);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
         }
@@ -78,13 +82,26 @@ namespace Neo.SmartContract.Native.Oracle
             return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
         }
 
+        [ContractMethod(1_00000000, CallFlags.AllowModifyStates)]
+        private void Incentivize(ApplicationEngine engine)
+        {
+            ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
+            BigInteger gas = GAS.BalanceOf(engine.Snapshot, Hash) / nodes.Length;
+            if (gas.IsZero) return;
+            foreach (ECPoint node in nodes)
+            {
+                UInt160 to = Contract.CreateSignatureRedeemScript(node).ToScriptHash();
+                GAS.TransferInternal(engine, Hash, to, gas);
+            }
+        }
+
         internal override void Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_NodeList), new StorageItem(new NodeList()));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        [ContractMethod(0_50000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData)
         {
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
@@ -106,10 +123,9 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void SetOracleNodes(ApplicationEngine engine, ECPoint[] nodes)
         {
-            //TODO: How to incentivize oracle nodes?
             if (!CheckCommittees(engine)) throw new InvalidOperationException();
             NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NodeList)).GetInteroperable<NodeList>();
             list.Clear();
