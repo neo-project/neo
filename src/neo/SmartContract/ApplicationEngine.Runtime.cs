@@ -116,6 +116,7 @@ namespace Neo.SmartContract
                 {
                     OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
                     Transaction request_tx = Snapshot.GetTransaction(request.Txid);
+                    if (request_tx == null) return false;
                     cosigners = request_tx.Cosigners;
                 }
                 if (!cosigners.TryGetValue(hash, out Cosigner cosigner)) return false;
