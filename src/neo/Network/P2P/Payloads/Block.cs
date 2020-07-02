@@ -108,7 +108,7 @@ namespace Neo.Network.P2P.Payloads
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["consensus_data"] = ConsensusData.ToJson();
+            json["consensusdata"] = ConsensusData.ToJson();
             json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
             return json;
         }
