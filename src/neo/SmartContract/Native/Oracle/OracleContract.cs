@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Native.Oracle
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData)
         {
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
-                || Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength
+                || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
                 || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
                 throw new ArgumentException();
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));

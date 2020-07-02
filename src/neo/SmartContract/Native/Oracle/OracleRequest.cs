@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native.Oracle
             {
                 Txid.ToArray(),
                 Url,
-                Filter,
+                Filter ?? StackItem.Null,
                 CallbackContract.ToArray(),
                 CallbackMethod,
                 UserData
