@@ -1031,9 +1031,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["size"].AsNumber().Should().Be(82);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
-            jObj["net_fee"].AsString().Should().Be("0");
+            jObj["netfee"].AsString().Should().Be("0");
             jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
-            jObj["sys_fee"].AsString().Should().Be("4200000000");
+            jObj["sysfee"].AsString().Should().Be("4200000000");
         }
     }
 }
