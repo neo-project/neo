@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public class OracleRequest : IInteroperable, ISerializable
+    public class OracleRequest : IInteroperable
     {
         public UInt256 RequestTxHash;
         public string FilterPath;
@@ -25,30 +25,6 @@ namespace Neo.SmartContract.Native.Tokens
             sizeof(long) +                // Oracle Fee
             Url.GetVarSize() +            // Url
             sizeof(byte);                 // Status
-
-        public virtual void Serialize(BinaryWriter writer)
-        {
-            writer.Write(RequestTxHash);
-            writer.WriteVarString(FilterPath);
-            writer.Write(CallbackContract);
-            writer.WriteVarString(CallbackMethod);
-            writer.Write(ValidHeight);
-            writer.Write(OracleFee);
-            writer.WriteVarString(Url);
-            writer.Write((byte)Status);
-        }
-
-        public virtual void Deserialize(BinaryReader reader)
-        {
-            RequestTxHash = new UInt256(reader.ReadBytes(UInt160.Length));
-            FilterPath = reader.ReadVarString();
-            CallbackContract = new UInt160(reader.ReadBytes(UInt160.Length));
-            CallbackMethod = reader.ReadVarString();
-            ValidHeight = reader.ReadUInt32();
-            OracleFee = reader.ReadInt64();
-            Url = reader.ReadVarString();
-            Status = (RequestStatusType)reader.ReadByte();
-        }
 
         public virtual void FromStackItem(StackItem stackItem)
         {

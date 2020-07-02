@@ -160,7 +160,7 @@ namespace Neo.SmartContract.Native
         public OracleResponseAttribute GetResponse(ApplicationEngine engine, UInt256 requestTxHash)
         {
             var item = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Response, requestTxHash));
-            if (item is null || item.Value is null) throw new ArgumentException("Response dose not exist");
+            if (item is null || item.Value is null) throw new ArgumentException("Response does not exist");
             var responseTxHash = new UInt256(item.Value);
             return engine.Snapshot.Transactions.TryGet(responseTxHash).Transaction.Attributes.OfType<OracleResponseAttribute>().First();
         }
