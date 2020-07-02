@@ -16,16 +16,6 @@ namespace Neo.SmartContract.Native.Tokens
         public string Url;
         public RequestStatusType Status;
 
-        public virtual int Size =>
-            UInt256.Length +              // Request Tx Hash
-            FilterPath.GetVarSize() +     // Filter Path
-            UInt160.Length +              // Callback Contract
-            CallbackMethod.GetVarSize() + // Callback Method
-            sizeof(uint) +                // Valid Height
-            sizeof(long) +                // Oracle Fee
-            Url.GetVarSize() +            // Url
-            sizeof(byte);                 // Status
-
         public virtual void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
