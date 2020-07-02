@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
@@ -168,39 +167,6 @@ namespace Neo.VM
             return sb.EmitSysCall(method);
         }
 
-        public static BigInteger GetBigInteger(this StackItem item)
-        {
-            if (!(item is PrimitiveType primitive))
-                throw new ArgumentException();
-            return primitive.ToBigInteger();
-        }
-
-        public static int GetByteLength(this StackItem item)
-        {
-            return item switch
-            {
-                PrimitiveType p => p.Size,
-                Buffer b => b.Size,
-                Null _ => 0,
-                _ => throw new ArgumentException(),
-            };
-        }
-
-        public static ReadOnlySpan<byte> GetSpan(this StackItem item)
-        {
-            return item switch
-            {
-                PrimitiveType p => p.Span,
-                Buffer b => b.InnerBuffer,
-                _ => throw new ArgumentException(),
-            };
-        }
-
-        public static string GetString(this StackItem item)
-        {
-            return Encoding.UTF8.GetString(item.GetSpan());
-        }
-
         /// <summary>
         /// Generate scripts to call a specific method from a specific contract.
         /// </summary>
@@ -237,16 +203,14 @@ namespace Neo.VM
                     json["value"] = new JArray(array.Select(p => ToJson(p, context)));
                     break;
                 case Boolean boolean:
-                    json["value"] = boolean.ToBoolean();
+                    json["value"] = boolean.GetBoolean();
                     break;
-                case Buffer buffer:
-                    json["value"] = Convert.ToBase64String(buffer.InnerBuffer);
-                    break;
-                case ByteString byteString:
-                    json["value"] = Convert.ToBase64String(byteString.Span);
+                case Buffer _:
+                case ByteString _:
+                    json["value"] = Convert.ToBase64String(item.GetSpan());
                     break;
                 case Integer integer:
-                    json["value"] = integer.ToBigInteger().ToString();
+                    json["value"] = integer.GetInteger().ToString();
                     break;
                 case Map map:
                     context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
@@ -305,21 +269,21 @@ namespace Neo.VM
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Boolean,
-                        Value = item.ToBoolean()
+                        Value = item.GetBoolean()
                     };
                     break;
                 case ByteString array:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
-                        Value = array.Span.ToArray()
+                        Value = array.GetSpan().ToArray()
                     };
                     break;
                 case Integer i:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Integer,
-                        Value = i.ToBigInteger()
+                        Value = i.GetInteger()
                     };
                     break;
                 case InteropInterface _:

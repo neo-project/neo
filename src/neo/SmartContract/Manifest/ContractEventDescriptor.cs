@@ -25,13 +25,13 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Parse ContractMethodDescription from json
+        /// Parse ContractEventDescriptor from json
         /// </summary>
         /// <param name="json">Json</param>
-        /// <returns>Return ContractMethodDescription</returns>
-        public static ContractMethodDescriptor FromJson(JObject json)
+        /// <returns>Return ContractEventDescriptor</returns>
+        public static ContractEventDescriptor FromJson(JObject json)
         {
-            return new ContractMethodDescriptor
+            return new ContractEventDescriptor
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),

@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Manifest
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
                 Offset = (int)json["offset"].AsNumber(),
-                ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returnType"].AsString()),
+                ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returntype"].AsString()),
             };
         }
 
@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = base.ToJson();
             json["offset"] = Offset;
-            json["returnType"] = ReturnType.ToString();
+            json["returntype"] = ReturnType.ToString();
             return json;
         }
     }

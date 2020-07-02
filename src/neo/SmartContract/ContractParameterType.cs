@@ -2,21 +2,22 @@ namespace Neo.SmartContract
 {
     public enum ContractParameterType : byte
     {
-        Signature = 0x00,
-        Boolean = 0x01,
-        Integer = 0x02,
-        Hash160 = 0x03,
-        Hash256 = 0x04,
-        ByteArray = 0x05,
-        PublicKey = 0x06,
-        String = 0x07,
+        Any = 0x00,
 
-        Array = 0x10,
-        Map = 0x12,
+        Boolean = 0x10,
+        Integer = 0x11,
+        ByteArray = 0x12,
+        String = 0x13,
+        Hash160 = 0x14,
+        Hash256 = 0x15,
+        PublicKey = 0x16,
+        Signature = 0x17,
 
-        InteropInterface = 0xf0,
+        Array = 0x20,
+        Map = 0x22,
 
-        Any = 0xfe,
+        InteropInterface = 0x30,
+
         Void = 0xff
     }
 }

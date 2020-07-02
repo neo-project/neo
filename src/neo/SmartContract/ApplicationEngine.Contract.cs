@@ -14,26 +14,25 @@ namespace Neo.SmartContract
     {
         public const int MaxContractLength = 1024 * 1024;
 
-        public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates);
-        public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates);
-        public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates);
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
-        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, TriggerType.All, CallFlags.None);
-        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, TriggerType.All, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, TriggerType.All, CallFlags.None, false);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
         /// Warning: check first that input public key is valid, before creating the script.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, TriggerType.All, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, TriggerType.All, CallFlags.None, true);
 
         internal ContractState CreateContract(byte[] script, byte[] manifest)
         {
             if (script.Length == 0 || script.Length > MaxContractLength || manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException();
 
-            if (!AddGas(StoragePrice * (script.Length + manifest.Length)))
-                throw new InvalidOperationException();
+            AddGas(StoragePrice * (script.Length + manifest.Length));
 
             UInt160 hash = script.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
@@ -53,8 +52,7 @@ namespace Neo.SmartContract
 
         internal void UpdateContract(byte[] script, byte[] manifest)
         {
-            if (!AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0)))
-                throw new InvalidOperationException();
+            AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0));
 
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException();
@@ -133,6 +131,8 @@ namespace Neo.SmartContract
                 invocationCounter[contract.ScriptHash] = 1;
             }
 
+            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
+
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
@@ -140,8 +140,7 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException();
             if (args.Count != md.Parameters.Length) throw new InvalidOperationException();
-            int rvcount = md.ReturnType == ContractParameterType.Void ? 0 : 1;
-            ExecutionContext context_new = LoadScript(contract.Script, rvcount);
+            ExecutionContext context_new = LoadScript(contract.Script);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = flags & callingFlags;

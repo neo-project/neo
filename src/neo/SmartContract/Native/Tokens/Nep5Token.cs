@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
-                new ContractMethodDescriptor()
+                new ContractEventDescriptor
                 {
                     Name = "Transfer",
                     Parameters = new ContractParameterDefinition[]
@@ -51,8 +51,7 @@ namespace Neo.SmartContract.Native.Tokens
                             Name = "amount",
                             Type = ContractParameterType.Integer
                         }
-                    },
-                    ReturnType = ContractParameterType.Boolean
+                    }
                 }
             };
 
@@ -79,7 +78,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount }));
+            engine.SendNotification(Hash, "Transfer", new Array { StackItem.Null, account.ToArray(), amount });
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -99,7 +98,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArrayStandard();
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount }));
+            engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -159,7 +158,7 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            engine.SendNotification(Hash, new Array(new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount }));
+            engine.SendNotification(Hash, "Transfer", new Array { from.ToArray(), to.ToArray(), amount });
             return true;
         }
 
