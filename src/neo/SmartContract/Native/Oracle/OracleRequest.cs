@@ -11,6 +11,7 @@ namespace Neo.SmartContract.Native.Oracle
         public UInt256 Txid;
         public UInt160 CallbackContract;
         public string CallbackMethod;
+        public byte[] UserData;
 
         public void FromStackItem(StackItem stackItem)
         {
@@ -19,6 +20,7 @@ namespace Neo.SmartContract.Native.Oracle
             Txid = new UInt256(array[1].GetSpan());
             CallbackContract = new UInt160(array[2].GetSpan());
             CallbackMethod = array[3].GetString();
+            UserData = array[4].GetSpan().ToArray();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -28,7 +30,8 @@ namespace Neo.SmartContract.Native.Oracle
                 Url,
                 Txid.ToArray(),
                 CallbackContract.ToArray(),
-                CallbackMethod
+                CallbackMethod,
+                UserData
             };
         }
     }

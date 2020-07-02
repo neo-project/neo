@@ -6,6 +6,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace Neo.SmartContract.Native.Oracle
     {
         private const int MaxUrlLength = 256;
         private const int MaxCallbackLength = 32;
+        private const int MaxUserDataLength = 128;
 
         private const byte Prefix_NodeList = 8;
         private const byte Prefix_RequestId = 9;
@@ -42,7 +44,8 @@ namespace Neo.SmartContract.Native.Oracle
             IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
             if (!list.Remove(response.Id)) throw new InvalidOperationException();
             if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
-            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, response.Success, response.Result);
+            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
+            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -81,11 +84,9 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         [ContractMethod(0_50000000, CallFlags.AllowModifyStates)]
-        private void Request(ApplicationEngine engine, string url, string callback)
+        private void Request(ApplicationEngine engine, string url, string callback, StackItem userData)
         {
             //TODO: Add filter
-            //TODO: We support https only now
-            //TODO: Add userdata
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
                 throw new ArgumentException();
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
@@ -96,7 +97,8 @@ namespace Neo.SmartContract.Native.Oracle
                 Url = url,
                 Txid = ((Transaction)engine.ScriptContainer).Hash,
                 CallbackContract = engine.CallingScriptHash,
-                CallbackMethod = callback
+                CallbackMethod = callback,
+                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
             }));
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
         }
