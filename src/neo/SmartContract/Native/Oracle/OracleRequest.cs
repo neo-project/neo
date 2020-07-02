@@ -7,8 +7,9 @@ namespace Neo.SmartContract.Native.Oracle
 {
     public class OracleRequest : IInteroperable
     {
-        public string Url;
         public UInt256 Txid;
+        public string Url;
+        public string Filter;
         public UInt160 CallbackContract;
         public string CallbackMethod;
         public byte[] UserData;
@@ -16,19 +17,21 @@ namespace Neo.SmartContract.Native.Oracle
         public void FromStackItem(StackItem stackItem)
         {
             Array array = (Array)stackItem;
-            Url = array[0].GetString();
-            Txid = new UInt256(array[1].GetSpan());
-            CallbackContract = new UInt160(array[2].GetSpan());
-            CallbackMethod = array[3].GetString();
-            UserData = array[4].GetSpan().ToArray();
+            Txid = new UInt256(array[0].GetSpan());
+            Url = array[1].GetString();
+            Filter = array[2].GetString();
+            CallbackContract = new UInt160(array[3].GetSpan());
+            CallbackMethod = array[4].GetString();
+            UserData = array[5].GetSpan().ToArray();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
             {
-                Url,
                 Txid.ToArray(),
+                Url,
+                Filter,
                 CallbackContract.ToArray(),
                 CallbackMethod,
                 UserData

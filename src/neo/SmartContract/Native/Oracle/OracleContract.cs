@@ -16,8 +16,9 @@ namespace Neo.SmartContract.Native.Oracle
     public sealed partial class OracleContract : NativeContract
     {
         private const int MaxUrlLength = 256;
+        private const int MaxFilterLength = 128;
         private const int MaxCallbackLength = 32;
-        private const int MaxUserDataLength = 128;
+        private const int MaxUserDataLength = 512;
 
         private const byte Prefix_NodeList = 8;
         private const byte Prefix_RequestId = 9;
@@ -84,18 +85,20 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         [ContractMethod(0_50000000, CallFlags.AllowModifyStates)]
-        private void Request(ApplicationEngine engine, string url, string callback, StackItem userData)
+        private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData)
         {
-            //TODO: Add filter
-            if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
+            if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
+                || Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength
+                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
                 throw new ArgumentException();
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
             ulong id = BitConverter.ToUInt64(item_id.Value) + 1;
             item_id.Value = BitConverter.GetBytes(id);
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request, item_id.Value), new StorageItem(new OracleRequest
             {
-                Url = url,
                 Txid = ((Transaction)engine.ScriptContainer).Hash,
+                Url = url,
+                Filter = filter,
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
