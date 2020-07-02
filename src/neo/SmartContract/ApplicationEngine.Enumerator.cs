@@ -18,6 +18,7 @@ namespace Neo.SmartContract
             return item switch
             {
                 Array array => new ArrayWrapper(array),
+                VM.Types.Buffer buffer => new ByteArrayWrapper(buffer),
                 PrimitiveType primitive => new ByteArrayWrapper(primitive),
                 _ => throw new ArgumentException()
             };

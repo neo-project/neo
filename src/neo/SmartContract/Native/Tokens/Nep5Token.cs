@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
-                new ContractMethodDescriptor()
+                new ContractEventDescriptor
                 {
                     Name = "Transfer",
                     Parameters = new ContractParameterDefinition[]
@@ -51,8 +51,7 @@ namespace Neo.SmartContract.Native.Tokens
                             Name = "amount",
                             Type = ContractParameterType.Integer
                         }
-                    },
-                    ReturnType = ContractParameterType.Boolean
+                    }
                 }
             };
 
