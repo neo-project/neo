@@ -10,7 +10,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 
 namespace Neo.SmartContract.Native.Oracle
 {
@@ -48,7 +47,7 @@ namespace Neo.SmartContract.Native.Oracle
             IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
             if (!list.Remove(response.Id)) throw new InvalidOperationException();
             if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
-            GAS.Mint(engine, Hash, OracleRequestPrice);
+            MintGasForOracleNode(engine, request, response);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
         }
@@ -82,23 +81,18 @@ namespace Neo.SmartContract.Native.Oracle
             return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowModifyStates)]
-        private void Incentivize(ApplicationEngine engine)
-        {
-            ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
-            BigInteger gas = GAS.BalanceOf(engine.Snapshot, Hash) / nodes.Length;
-            if (gas.IsZero) return;
-            foreach (ECPoint node in nodes)
-            {
-                UInt160 to = Contract.CreateSignatureRedeemScript(node).ToScriptHash();
-                GAS.TransferInternal(engine, Hash, to, gas);
-            }
-        }
-
         internal override void Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_NodeList), new StorageItem(new NodeList()));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
+        }
+
+        private void MintGasForOracleNode(ApplicationEngine engine, OracleRequest request, OracleResponse response)
+        {
+            ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
+            int i = (int)(response.Id % (ulong)nodes.Length);
+            UInt160 account = Contract.CreateSignatureRedeemScript(nodes[i]).ToScriptHash();
+            GAS.Mint(engine, account, OracleRequestPrice);
         }
 
         [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]
