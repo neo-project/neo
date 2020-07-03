@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Manifest
             json["abi"] = Abi.ToJson();
             json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
             json["trusts"] = Trusts.ToJson();
-            json["safeMethods"] = SafeMethods.ToJson();
+            json["safemethods"] = SafeMethods.ToJson();
             json["extra"] = Extra;
 
             return json;
@@ -158,7 +158,7 @@ namespace Neo.SmartContract.Manifest
             Features = ContractFeatures.NoProperty;
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
-            SafeMethods = WildcardContainer<string>.FromJson(json["safeMethods"], u => u.AsString());
+            SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());
             Extra = json["extra"];
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
