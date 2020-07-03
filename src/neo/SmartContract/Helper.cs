@@ -13,6 +13,8 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
+        private const long MaxVerificationGas = 0_50000000;
+
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
             return context.GetState<ExecutionContextState>().ScriptHash;
@@ -130,6 +132,7 @@ namespace Neo.SmartContract
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
+            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
             try
