@@ -118,16 +118,11 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_08000000, CallFlags.AllowModifyStates)]
-        protected bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
-        {
-            if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
-                return false;
-            return TransferInternal(engine, from, to, amount);
-        }
-
-        internal virtual bool TransferInternal(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
+                return false;
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
             StorageKey key_from = CreateAccountKey(from);
