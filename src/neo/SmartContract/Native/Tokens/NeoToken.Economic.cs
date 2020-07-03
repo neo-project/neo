@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
         private bool SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
-            if (gasPerBlock < 0) return false;
+            if (gasPerBlock < 0 || gasPerBlock > 8 * GAS.Factor) return false;
             if (!CheckCommitteeWitness(engine)) return false;
             StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock));
             item.Value = gasPerBlock.ToByteArray();
@@ -48,19 +48,19 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
-        public int GetNeoHoldersRewardRatio(StoreView snapshot)
+        public byte GetNeoHoldersRewardRatio(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_NeoHoldersRewardRatio)).Value[0];
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
-        public int GetCommitteeRewardRatio(StoreView snapshot)
+        public byte GetCommitteeRewardRatio(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_CommitteeRewardRatio)).Value[0];
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
-        public int GetVotersRewardRatio(StoreView snapshot)
+        public byte GetVotersRewardRatio(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_VotersRewardRatio)).Value[0];
         }
@@ -77,20 +77,18 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
-            BigInteger neoHolderReward = CalculateNeoHolderBonus(snapshot, value, start, end);
+            BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
 
             var voteScriptHash = Contract.CreateSignatureContract(vote).ScriptHash;
             var endKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue - start - 1);
             var startKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue - end - 1);
-            var borderKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue);
-
             var enumerator = snapshot.Storages.FindRange(startKey, endKey).GetEnumerator();
             if (!enumerator.MoveNext()) return neoHolderReward;
 
             var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
             var startRewardPerNeo = BigInteger.Zero;
-
+            var borderKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue);
             enumerator = snapshot.Storages.FindRange(endKey, borderKey).GetEnumerator();
             if (enumerator.MoveNext())
                 startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
@@ -98,7 +96,7 @@ namespace Neo.SmartContract.Native.Tokens
             return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 10000L;
         }
 
-        private BigInteger CalculateNeoHolderBonus(StoreView snapshot, BigInteger value, uint start, uint end)
+        private BigInteger CalculateNeoHolderReward(StoreView snapshot, BigInteger value, uint start, uint end)
         {
             var endRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - end - 1));
             var startRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - start - 1));
