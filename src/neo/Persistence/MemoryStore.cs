@@ -1,4 +1,5 @@
 using Neo.IO;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,11 +26,11 @@ namespace Neo.Persistence
         {
         }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] key)
+        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte table, byte[] prefix)
         {
             IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData[table];
-            if (key?.Length > 0)
-                records = records.Where(p => ByteArrayComparer.Default.Compare(p.Key, key) >= 0);
+            if (prefix?.Length > 0)
+                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
             records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
             foreach (var pair in records)
                 yield return (pair.Key, pair.Value);

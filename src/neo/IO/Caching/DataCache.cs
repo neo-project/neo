@@ -145,14 +145,19 @@ namespace Neo.IO.Caching
 
         protected abstract void DeleteInternal(TKey key);
 
-        public IEnumerable<(TKey key, TValue value)> Seek(byte[] key)
+        /// <summary>
+        /// Find the entries that start with the `key_prefix`
+        /// </summary>
+        /// <param name="key_prefix">Must maintain the deserialized format of TKey</param>
+        /// <returns>Entries found with the desired prefix</returns>
+        public IEnumerable<(TKey Key, TValue Value)> Find(byte[] key_prefix = null)
         {
             IEnumerable<(byte[], TKey, TValue)> cached;
             HashSet<TKey> cachedKeySet;
             lock (dictionary)
             {
                 cached = dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && (key == null || ByteArrayComparer.Default.Compare(p.Key.ToArray(), key) >= 0))
+                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().AsSpan().StartsWith(key_prefix)))
                     .Select(p =>
                     (
                         KeyBytes: p.Key.ToArray(),
@@ -163,7 +168,7 @@ namespace Neo.IO.Caching
                     .ToArray();
                 cachedKeySet = new HashSet<TKey>(dictionary.Keys);
             }
-            var uncached = SeekInternal(key ?? Array.Empty<byte>())
+            var uncached = FindInternal(key_prefix ?? Array.Empty<byte>())
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
                 (
@@ -197,29 +202,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        /// <summary>
-        /// Find the entries that start with the `key_prefix`
-        /// </summary>
-        /// <param name="key_prefix">Must maintain the deserialized format of TKey</param>
-        /// <returns>Entries found with the desired prefix</returns>
-        public IEnumerable<(TKey Key, TValue Value)> Find(byte[] key_prefix = null)
-        {
-            var enumerator = Seek(key_prefix).GetEnumerator();
-            while (enumerator.MoveNext())
-                if (enumerator.Current.key.ToArray().AsSpan().StartsWith(key_prefix))
-                    yield return enumerator.Current;
-        }
-
-        public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end)
-        {
-            var enumerator = Seek(start.ToArray()).GetEnumerator();
-            var endKey = end?.ToArray();
-            while (enumerator.MoveNext())
-                if (endKey is null || ByteArrayComparer.Default.Compare(enumerator.Current.key.ToArray(), endKey) < 0)
-                    yield return enumerator.Current;
-        }
-
-        protected abstract IEnumerable<(TKey Key, TValue Value)> SeekInternal(byte[] key_prefix);
+        protected abstract IEnumerable<(TKey Key, TValue Value)> FindInternal(byte[] key_prefix);
 
         public IEnumerable<Trackable> GetChangeSet()
         {
