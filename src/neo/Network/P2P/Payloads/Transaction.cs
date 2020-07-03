@@ -161,6 +161,7 @@ namespace Neo.Network.P2P.Payloads
             OracleResponse response = Attributes.OfType<OracleResponse>().FirstOrDefault();
             if (response is null) return true;
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, response.Id);
+            if (request is null) return false;
             Transaction request_tx = snapshot.GetTransaction(request.Txid);
             return Sender.Equals(request_tx.Sender);
         }
