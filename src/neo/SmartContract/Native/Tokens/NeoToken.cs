@@ -4,7 +4,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
-using System;
 using System.Linq;
 using System.Numerics;
 
@@ -34,14 +33,14 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
-                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate, state.VoteTo.ToArray()));
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo));
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes += amount;
 
                 if (state_validator.Votes == 0)
                 {
                     UInt160 voteeAddr = Contract.CreateSignatureContract(state.VoteTo).ScriptHash;
-                    foreach (var (key, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee, voteeAddr.ToArray()).ToArray()))
+                    foreach (var (key, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr)))
                         engine.Snapshot.Storages.Delete(key);
                 }
             }

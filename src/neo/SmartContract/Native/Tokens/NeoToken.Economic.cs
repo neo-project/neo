@@ -81,14 +81,14 @@ namespace Neo.SmartContract.Native.Tokens
             if (vote is null) return neoHolderReward;
 
             var voteScriptHash = Contract.CreateSignatureContract(vote).ScriptHash;
-            var endKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue - start - 1);
-            var startKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue - end - 1);
+            var endKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteScriptHash).Add(uint.MaxValue - start - 1);
+            var startKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteScriptHash).Add(uint.MaxValue - end - 1);
             var enumerator = snapshot.Storages.FindRange(startKey, endKey).GetEnumerator();
             if (!enumerator.MoveNext()) return neoHolderReward;
 
             var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
             var startRewardPerNeo = BigInteger.Zero;
-            var borderKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, voteScriptHash, uint.MaxValue);
+            var borderKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteScriptHash).Add(uint.MaxValue);
             enumerator = snapshot.Storages.FindRange(endKey, borderKey).GetEnumerator();
             if (enumerator.MoveNext())
                 startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
@@ -98,8 +98,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         private BigInteger CalculateNeoHolderReward(StoreView snapshot, BigInteger value, uint start, uint end)
         {
-            var endRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - end - 1));
-            var startRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - start - 1));
+            var endRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - end - 1));
+            var startRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - start - 1));
             BigInteger startReward = startRewardItem is null ? 0 : new BigInteger(startRewardItem.Value);
             return value * (new BigInteger(endRewardItem.Value) - startReward) / TotalAmount;
         }
@@ -107,7 +107,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
         public BigInteger UnclaimedGas(StoreView snapshot, UInt160 account, uint end)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
@@ -126,8 +126,8 @@ namespace Neo.SmartContract.Native.Tokens
 
             var index = engine.Snapshot.PersistingBlock.Index;
             var holderRewards = holderRewardPerBlock;
-            var holderRewardKey = CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue - index - 1);
-            var holderBorderKey = CreateStorageKey(Prefix_HolderRewardPerBlock, uint.MaxValue);
+            var holderRewardKey = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - index - 1);
+            var holderBorderKey = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue);
             var enumerator = engine.Snapshot.Storages.FindRange(holderRewardKey, holderBorderKey).GetEnumerator();
             if (enumerator.MoveNext())
                 holderRewards += new BigInteger(enumerator.Current.Value.Value);
@@ -139,10 +139,10 @@ namespace Neo.SmartContract.Native.Tokens
 
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committeeVotes[i].Item1).ScriptHash;
                 BigInteger voterRewardPerCommittee = (i < validatorNumber ? 2 : 1) * voterRewardPerBlock * 10000L / committeeVotes[i].Item2; // Zoom in 10000 times, and the final calculation should be divided 10000L
-                enumerator = engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee, committeeAddr).ToArray()).GetEnumerator();
+                enumerator = engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeAddr)).GetEnumerator();
                 if (enumerator.MoveNext())
                     voterRewardPerCommittee += new BigInteger(enumerator.Current.Value.Value);
-                var storageKey = CreateStorageKey(Prefix_VoterRewardPerCommittee, committeeAddr, (uint.MaxValue - index - 1));
+                var storageKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeAddr).Add(uint.MaxValue - index - 1);
                 engine.Snapshot.Storages.Add(storageKey, new StorageItem() { Value = voterRewardPerCommittee.ToByteArray() });
 
                 // Mint the reward for committee by each block
