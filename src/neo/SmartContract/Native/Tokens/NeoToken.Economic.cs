@@ -1,5 +1,6 @@
+#pragma warning disable IDE0051
+
 using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using System;
@@ -13,7 +14,6 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_NeoHoldersRewardRatio = 73;
         private const byte Prefix_CommitteeRewardRatio = 19;
         private const byte Prefix_VotersRewardRatio = 67;
-
         private const byte Prefix_VoterRewardPerCommittee = 23;
         private const byte Prefix_HolderRewardPerBlock = 57;
 
