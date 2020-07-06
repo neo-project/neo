@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
@@ -53,6 +54,15 @@ namespace Neo.UnitTests
                 }
             };
             return manifest;
+        }
+
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
+        {
+            return new StorageKey
+            {
+                Id = contract.Id,
+                Key = key.ToArray().Prepend(prefix).ToArray()
+            };
         }
 
         public static byte[] GetByteArray(int length, byte firstByte)
