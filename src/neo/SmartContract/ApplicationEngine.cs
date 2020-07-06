@@ -26,13 +26,11 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
-        public const long GasFree = 0;
-
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private readonly bool testMode;
-        private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
-        private readonly List<IDisposable> disposables = new List<IDisposable>();
+        private List<NotifyEventArgs> notifications;
+        private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
 
@@ -45,15 +43,15 @@ namespace Neo.SmartContract
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
-        public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
+        public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
         public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
         {
-            this.gas_amount = GasFree + gas;
-            this.testMode = testMode;
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
+            this.gas_amount = gas;
+            this.testMode = testMode;
         }
 
         internal void AddGas(long gas)
@@ -196,9 +194,12 @@ namespace Neo.SmartContract
 
         public override void Dispose()
         {
-            foreach (IDisposable disposable in disposables)
-                disposable.Dispose();
-            disposables.Clear();
+            if (disposables != null)
+            {
+                foreach (IDisposable disposable in disposables)
+                    disposable.Dispose();
+                disposables = null;
+            }
             base.Dispose();
         }
 
@@ -259,20 +260,20 @@ namespace Neo.SmartContract
         }
 
         public static ApplicationEngine Run(byte[] script, StoreView snapshot,
-            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long extraGAS = default)
+            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, gas, testMode);
             engine.LoadScript(script).InstructionPointer = offset;
             engine.Execute();
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long extraGAS = default)
+        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
         {
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                return Run(script, snapshot, container, persistingBlock, offset, testMode, extraGAS);
+                return Run(script, snapshot, container, persistingBlock, offset, testMode, gas);
             }
         }
     }
