@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Native.Oracle
             IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
             if (!list.Remove(response.Id)) throw new InvalidOperationException();
             if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
-            MintGasForOracleNode(engine, request, response);
+            MintGasForOracleNode(engine, response.Id);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
         }
@@ -87,10 +87,10 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        private void MintGasForOracleNode(ApplicationEngine engine, OracleRequest request, OracleResponse response)
+        private void MintGasForOracleNode(ApplicationEngine engine, ulong id)
         {
             ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
-            int i = (int)(response.Id % (ulong)nodes.Length);
+            int i = (int)(id % (ulong)nodes.Length);
             UInt160 account = Contract.CreateSignatureRedeemScript(nodes[i]).ToScriptHash();
             GAS.Mint(engine, account, OracleRequestPrice);
         }
