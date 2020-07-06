@@ -434,7 +434,7 @@ namespace Neo.Ledger
 
                     using var traceDebugSink = traceDebugPlugin?.GetSink(block.Header, tx);
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee, traceDebugSink: traceDebugSink))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
