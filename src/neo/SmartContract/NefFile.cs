@@ -114,7 +114,7 @@ namespace Neo.SmartContract
             using var ms = new MemoryStream();
             using var wr = new BinaryWriter(ms, Encoding.UTF8, false);
 
-            file.Serialize(wr, false);
+            file.Serialize(wr);
             wr.Flush();
 
             // Read header without CRC
