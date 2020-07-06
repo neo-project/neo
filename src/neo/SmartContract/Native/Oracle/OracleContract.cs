@@ -40,10 +40,10 @@ namespace Neo.SmartContract.Native.Oracle
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
-            StorageKey key = CreateStorageKey(Prefix_Request, BitConverter.GetBytes(response.Id));
+            StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
             OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
             engine.Snapshot.Storages.Delete(key);
-            key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
+            key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
             IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
             if (!list.Remove(response.Id)) throw new InvalidOperationException();
             if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         public OracleRequest GetRequest(StoreView snapshot, ulong id)
         {
-            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Request, BitConverter.GetBytes(id)))?.GetInteroperable<OracleRequest>();
+            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Request).Add(id))?.GetInteroperable<OracleRequest>();
         }
 
         public IEnumerable<OracleRequest> GetRequests(StoreView snapshot)
@@ -70,10 +70,10 @@ namespace Neo.SmartContract.Native.Oracle
 
         public IEnumerable<OracleRequest> GetRequestsByUrl(StoreView snapshot, string url)
         {
-            IdList list = snapshot.Storages.TryGet(CreateStorageKey(Prefix_IdList, GetUrlHash(url)))?.GetInteroperable<IdList>();
+            IdList list = snapshot.Storages.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
             if (list is null) yield break;
             foreach (ulong id in list)
-                yield return snapshot.Storages[CreateStorageKey(Prefix_Request, BitConverter.GetBytes(id))].GetInteroperable<OracleRequest>();
+                yield return snapshot.Storages[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>();
         }
 
         private static byte[] GetUrlHash(string url)
@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native.Oracle
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
             ulong id = BitConverter.ToUInt64(item_id.Value) + 1;
             item_id.Value = BitConverter.GetBytes(id);
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request, item_id.Value), new StorageItem(new OracleRequest
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
                 Txid = ((Transaction)engine.ScriptContainer).Hash,
                 Url = url,
@@ -114,7 +114,7 @@ namespace Neo.SmartContract.Native.Oracle
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
             }));
-            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
