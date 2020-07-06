@@ -65,11 +65,6 @@ namespace Neo.SmartContract
 
         public void Serialize(BinaryWriter writer)
         {
-            Serialize(writer, true);
-        }
-        
-        private void Serialize(BinaryWriter writer, bool withChecksum)
-        {
             writer.Write(Magic);
             writer.WriteFixedString(Compiler, 32);
 
@@ -80,7 +75,7 @@ namespace Neo.SmartContract
             writer.Write(Version.Revision);
 
             writer.Write(ScriptHash);
-            if (withChecksum) writer.Write(CheckSum);
+            writer.Write(CheckSum);
             writer.WriteVarBytes(Script ?? Array.Empty<byte>());
         }
 
@@ -124,9 +119,11 @@ namespace Neo.SmartContract
 
             // Read header without CRC
 
+            Span<byte> buffer = stackalloc byte[HeaderSize - sizeof(uint)];
             ms.Seek(0, SeekOrigin.Begin);
+            ms.Read(buffer);
 
-            return BitConverter.ToUInt32(ms.ToArray().Sha256().Sha256(), 0);
+            return BitConverter.ToUInt32(buffer.Sha256().Sha256(), 0);
         }
     }
 }
