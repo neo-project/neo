@@ -46,18 +46,12 @@ namespace Neo.SmartContract
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
         public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
-            : this(trigger, container, snapshot, gas, new ReferenceCounter())
-        {
-            this.testMode = testMode;
-        }
-
-        private ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, ReferenceCounter referenceCounter)
-            : base(referenceCounter)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
             this.gas_amount = gas;
+            this.testMode = testMode;
         }
 
         internal void AddGas(long gas)
