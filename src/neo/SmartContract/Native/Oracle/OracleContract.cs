@@ -42,12 +42,6 @@ namespace Neo.SmartContract.Native.Oracle
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
             StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
             OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
-            engine.Snapshot.Storages.Delete(key);
-            key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
-            IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
-            if (!list.Remove(response.Id)) throw new InvalidOperationException();
-            if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
-            MintGasForOracleNode(engine, response.Id);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
         }
@@ -93,6 +87,24 @@ namespace Neo.SmartContract.Native.Oracle
             int i = (int)(id % (ulong)nodes.Length);
             UInt160 account = Contract.CreateSignatureRedeemScript(nodes[i]).ToScriptHash();
             GAS.Mint(engine, account, OracleRequestPrice);
+        }
+
+        protected override void PostPersist(ApplicationEngine engine)
+        {
+            base.PostPersist(engine);
+            foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
+            {
+                OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
+                if (response is null) continue;
+                StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
+                OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
+                engine.Snapshot.Storages.Delete(key);
+                key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
+                IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
+                if (!list.Remove(response.Id)) throw new InvalidOperationException();
+                if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
+                MintGasForOracleNode(engine, response.Id);
+            }
         }
 
         [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]

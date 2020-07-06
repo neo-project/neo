@@ -143,6 +143,13 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException();
         }
 
+        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        protected virtual void PostPersist(ApplicationEngine engine)
+        {
+            if (engine.Trigger != TriggerType.System)
+                throw new InvalidOperationException();
+        }
+
         public ApplicationEngine TestCall(string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
