@@ -119,11 +119,9 @@ namespace Neo.SmartContract
 
             // Read header without CRC
 
-            Span<byte> buffer = stackalloc byte[HeaderSize - sizeof(uint)];
             ms.Seek(0, SeekOrigin.Begin);
-            ms.Read(buffer);
 
-            return BitConverter.ToUInt32(buffer.Sha256().Sha256(), 0);
+            return BitConverter.ToUInt32(ms.ToArray().Sha256().Sha256(), 0);
         }
     }
 }
