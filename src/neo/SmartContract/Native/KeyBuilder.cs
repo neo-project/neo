@@ -37,6 +37,14 @@ namespace Neo.SmartContract.Native
             return Add(new ReadOnlySpan<byte>(&key, sizeof(T)));
         }
 
+        public byte[] ToArray()
+        {
+            using (stream)
+            {
+                return StorageKey.CreateSearchPrefix(id, stream.ToArray());
+            }
+        }
+
         public static implicit operator StorageKey(KeyBuilder builder)
         {
             using (builder.stream)
@@ -47,11 +55,6 @@ namespace Neo.SmartContract.Native
                     Key = builder.stream.ToArray()
                 };
             }
-        }
-
-        public static implicit operator byte[](KeyBuilder builder)
-        {
-            return StorageKey.CreateSearchPrefix(builder.id, builder.stream.ToArray());
         }
     }
 }
