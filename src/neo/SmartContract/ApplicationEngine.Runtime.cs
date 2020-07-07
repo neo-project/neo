@@ -104,23 +104,23 @@ namespace Neo.SmartContract
         {
             if (ScriptContainer is Transaction tx)
             {
-                if (!tx.Signers.TryGetValue(hash, out Signer cosigner)) return false;
-                if (cosigner.Scopes == WitnessScope.Global) return true;
-                if (cosigner.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                if (!tx.Signers.TryGetValue(hash, out Signer signer)) return false;
+                if (signer.Scopes == WitnessScope.Global) return true;
+                if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
                     if (CallingScriptHash == EntryScriptHash)
                         return true;
                 }
-                if (cosigner.Scopes.HasFlag(WitnessScope.CustomContracts))
+                if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
                 {
-                    if (cosigner.AllowedContracts.Contains(CurrentScriptHash))
+                    if (signer.AllowedContracts.Contains(CurrentScriptHash))
                         return true;
                 }
-                if (cosigner.Scopes.HasFlag(WitnessScope.CustomGroups))
+                if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
                     var contract = Snapshot.Contracts[CallingScriptHash];
                     // check if current group is the required one
-                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(cosigner.AllowedGroups).Any())
+                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
                         return true;
                 }
                 return false;
