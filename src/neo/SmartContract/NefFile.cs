@@ -2,7 +2,6 @@ using Neo.Cryptography;
 using Neo.IO;
 using System;
 using System.IO;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -111,19 +110,8 @@ namespace Neo.SmartContract
         /// <returns>Return checksum</returns>
         public static uint ComputeChecksum(NefFile file)
         {
-            using var ms = new MemoryStream();
-            using var wr = new BinaryWriter(ms, Encoding.UTF8, false);
-
-            file.Serialize(wr);
-            wr.Flush();
-
-            // Read header without CRC
-
-            Span<byte> buffer = stackalloc byte[HeaderSize - sizeof(uint)];
-            ms.Seek(0, SeekOrigin.Begin);
-            ms.Read(buffer);
-
-            return BitConverter.ToUInt32(buffer.Sha256().Sha256(), 0);
+            ReadOnlySpan<byte> header = file.ToArray().AsSpan(0, HeaderSize);
+            return BitConverter.ToUInt32(Crypto.Hash256(header), 0);
         }
     }
 }
