@@ -143,7 +143,7 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: 20000000L * accounts.Length);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
@@ -329,7 +329,7 @@ namespace Neo.Wallets
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
-                    tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
+                    tx.SystemFee = engine.GasConsumed;
                 }
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);

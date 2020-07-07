@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
@@ -79,21 +78,9 @@ namespace Neo.SmartContract.Native
             contractsHashDictionary.Add(Hash, this);
         }
 
-        protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        private protected KeyBuilder CreateStorageKey(byte prefix)
         {
-            StorageKey storageKey = new StorageKey
-            {
-                Id = Id,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
-            };
-            storageKey.Key[0] = prefix;
-            key?.CopyTo(storageKey.Key.AsSpan(1));
-            return storageKey;
-        }
-
-        internal protected StorageKey CreateStorageKey(byte prefix, ISerializable key)
-        {
-            return CreateStorageKey(prefix, key.ToArray());
+            return new KeyBuilder(Id, prefix);
         }
 
         public static NativeContract GetContract(UInt160 hash)
