@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -164,7 +165,27 @@ namespace Neo.SmartContract
         internal bool IsStandardContract(UInt160 hash)
         {
             ContractState contract = Snapshot.Contracts.TryGet(hash);
-            return contract is null || contract.Script.IsStandardContract();
+
+            // It's a stored contract
+
+            if (contract != null) return contract.Script.IsStandardContract();
+
+            // Try to find it in the transaction
+
+            if (ScriptContainer is Transaction tx)
+            {
+                foreach (var witness in tx.Witnesses)
+                {
+                    if (witness.ScriptHash == hash)
+                    {
+                        return witness.VerificationScript.IsStandardContract();
+                    }
+                }
+            }
+
+            // It's not possible to determine if it's standard
+
+            return false;
         }
 
         internal CallFlags GetCallFlags()
