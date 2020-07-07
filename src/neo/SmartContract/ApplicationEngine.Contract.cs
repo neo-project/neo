@@ -172,7 +172,7 @@ namespace Neo.SmartContract
         internal bool IsPayableContract(UInt160 hash)
         {
             ContractState contract = Snapshot.Contracts.TryGet(hash);
-            return contract!=null && contract.Payable;
+            return contract != null && contract.Payable;
         }
 
         internal bool IsStandardContract(UInt160 hash)
