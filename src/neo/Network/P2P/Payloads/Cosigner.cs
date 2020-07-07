@@ -1,12 +1,13 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using System;
 using System.IO;
 using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Cosigner : TransactionAttribute
+    public class Cosigner : TransactionAttribute, IEquatable<Cosigner>
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -35,6 +36,15 @@ namespace Neo.Network.P2P.Payloads
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
                 : new ECPoint[0];
+        }
+
+        public bool Equals(Cosigner other)
+        {
+            if (!Account.Equals(other.Account)) return false;
+            if (Scopes != other.Scopes) return false;
+            if (!AllowedContracts.SequenceEqual(other.AllowedContracts)) return false;
+            if (!AllowedGroups.SequenceEqual(other.AllowedGroups)) return false;
+            return true;
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
