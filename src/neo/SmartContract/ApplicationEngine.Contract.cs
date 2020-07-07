@@ -22,6 +22,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, TriggerType.All, CallFlags.None, true);
         public static readonly InteropDescriptor System_Contract_IsDeployed = Register("System.Contract.IsDeployed", nameof(IsDeployedContract), 0_00030000, TriggerType.All, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Contract_IsPayable = Register("System.Contract.IsPayable", nameof(IsPayableContract), 0_00030000, TriggerType.All, CallFlags.None, true);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, TriggerType.All, CallFlags.None, false);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
@@ -166,6 +167,12 @@ namespace Neo.SmartContract
         internal bool IsDeployedContract(UInt160 hash)
         {
             return Snapshot.Contracts.TryGet(hash) != null;
+        }
+
+        internal bool IsPayableContract(UInt160 hash)
+        {
+            ContractState contract = Snapshot.Contracts.TryGet(hash);
+            return contract!=null && contract.Payable;
         }
 
         internal bool IsStandardContract(UInt160 hash)
