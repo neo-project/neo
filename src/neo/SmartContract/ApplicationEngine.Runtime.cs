@@ -157,6 +157,7 @@ namespace Neo.SmartContract
         {
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
             Notify?.Invoke(this, notification);
+            notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
         }
 
