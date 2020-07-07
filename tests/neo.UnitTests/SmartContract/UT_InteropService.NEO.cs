@@ -110,7 +110,7 @@ namespace Neo.UnitTests.SmartContract
                                     0x01, 0x01, 0x01, 0x01, 0x01,
                                     0x01, 0x01, 0x01, 0x01, 0x01,
                                     0x01, 0x01, 0x01, 0x01, 0x01 };
-            engine.IsStandardContract(new UInt160(hash)).Should().BeTrue();
+            engine.IsStandardContract(new UInt160(hash)).Should().BeFalse();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
@@ -118,6 +118,11 @@ namespace Neo.UnitTests.SmartContract
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.ScriptHash).Should().BeFalse();
+
+            state.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(new byte[] { 0x01 });
+            engine.IsStandardContract(state.ScriptHash).Should().BeTrue();
         }
 
         [TestMethod]
