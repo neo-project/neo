@@ -220,12 +220,8 @@ namespace Neo.Network.P2P.Payloads
             }
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
-            if (IsOracleResponse)
-            {
-                if (Cosigners.Count > 0) throw new FormatException();
-                if (!Script.AsSpan().SequenceEqual(oracleResponseScript))
-                    throw new FormatException();
-            }
+            if (IsOracleResponse && !Script.AsSpan().SequenceEqual(oracleResponseScript))
+                throw new FormatException();
         }
 
         public bool Equals(Transaction other)
