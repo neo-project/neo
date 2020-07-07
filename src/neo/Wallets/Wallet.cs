@@ -12,6 +12,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
 using System.Text;
 using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -278,7 +279,7 @@ namespace Neo.Wallets
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
                 var cosigners = cosignerList.Select(p =>
-                         new Cosigner()
+                         new Signer()
                          {
                              // default access for transfers should be valid only for first invocation
                              Scopes = WitnessScope.CalledByEntry,
@@ -314,14 +315,35 @@ namespace Neo.Wallets
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
             {
+                var attr = new List<TransactionAttribute>();
+
+                if (!attributes.OfType<Signer>().Any(u => u.Account == account))
+                {
+                    // Add a new signer
+
+                    attr.Add(new Signer()
+                    {
+                        Account = account,
+                        Scopes = WitnessScope.CalledByEntry
+                    });
+                    attr.AddRange(attributes);
+                }
+                else
+                {
+                    // Use the first signer of this account
+
+                    var ac = attributes.OfType<Signer>().First(u => u.Account == account);
+                    attr.Add(ac);
+                    attr.AddRange(attributes.Where(u => u != ac));
+                }
+
                 Transaction tx = new Transaction
                 {
                     Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
-                    Sender = account,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = attributes,
+                    Attributes = attr.ToArray(),
                 };
 
                 // will try to execute 'transfer' script to check if it works

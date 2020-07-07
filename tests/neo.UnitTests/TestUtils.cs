@@ -88,13 +88,19 @@ namespace Neo.UnitTests
             return new NEP6Wallet(wallet);
         }
 
-        public static Transaction GetTransaction()
+        public static Transaction GetTransaction(UInt160 sender)
         {
             return new Transaction
             {
                 Script = new byte[1],
-                Sender = UInt160.Zero,
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = new TransactionAttribute[]
+                {
+                    new Signer()
+                    {
+                        Account = sender,
+                        Scopes = WitnessScope.CalledByEntry
+                    }
+                },
                 Witnesses = new Witness[]{ new Witness
                 {
                     InvocationScript = new byte[0],
@@ -154,7 +160,7 @@ namespace Neo.UnitTests
             {
                 for (int i = 0; i < numberOfTransactions; i++)
                 {
-                    transactionsVal[i] = TestUtils.GetTransaction();
+                    transactionsVal[i] = TestUtils.GetTransaction(UInt160.Zero);
                 }
             }
 
@@ -189,7 +195,6 @@ namespace Neo.UnitTests
             return new Transaction
             {
                 Script = randomBytes,
-                Sender = UInt160.Zero,
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {

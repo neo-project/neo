@@ -250,7 +250,7 @@ namespace Neo.UnitTests.SmartContract
             ECPoint pubkey = keyPair.PublicKey;
 
             var engine = GetEngine(true);
-            ((Transaction)engine.ScriptContainer).Sender = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            (((Transaction)engine.ScriptContainer).Attributes[0] as Signer).Account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
 
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
             engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeFalse();
@@ -698,7 +698,7 @@ namespace Neo.UnitTests.SmartContract
 
         private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool addScript = true)
         {
-            var tx = TestUtils.GetTransaction();
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
             var snapshot = Blockchain.Singleton.GetSnapshot();
             ApplicationEngine engine;
             if (hasContainer && hasSnapshot)

@@ -12,7 +12,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_Deserialize_Global()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.Global,
                 Account = UInt160.Zero
@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "01000000000000000000000000000000000000000000";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Cosigner>();
+            var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
@@ -30,7 +30,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_Deserialize_CalledByEntry()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.CalledByEntry,
                 Account = UInt160.Zero
@@ -39,7 +39,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "01000000000000000000000000000000000000000001";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Cosigner>();
+            var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_Deserialize_CustomContracts()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomContracts,
                 AllowedContracts = new[] { UInt160.Zero },
@@ -58,7 +58,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "01000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Cosigner>();
+            var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             CollectionAssert.AreEqual(attr.AllowedContracts, copy.AllowedContracts);
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize_Deserialize_CustomGroups()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomGroups,
                 AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "010000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Cosigner>();
+            var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Json_Global()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.Global,
                 Account = UInt160.Zero
@@ -101,7 +101,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Json_CalledByEntry()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.CalledByEntry,
                 Account = UInt160.Zero
@@ -114,7 +114,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Json_CustomContracts()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomContracts,
                 AllowedContracts = new[] { UInt160.Zero },
@@ -128,7 +128,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Json_CustomGroups()
         {
-            var attr = new Cosigner()
+            var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomGroups,
                 AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },

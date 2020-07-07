@@ -33,8 +33,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetComplete()
         {
-            Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066");
+            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
             var context = new ContractParametersContext(tx);
             context.Completed.Should().BeFalse();
         }
@@ -42,8 +41,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestToString()
         {
-            Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066");
+            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             string str = context.ToString();
@@ -68,11 +66,10 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestAdd()
         {
-            Transaction tx = TestUtils.GetTransaction();
+            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
             var context1 = new ContractParametersContext(tx);
             context1.Add(contract, 0, new byte[] { 0x01 }).Should().BeFalse();
 
-            tx.Sender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
             var context2 = new ContractParametersContext(tx);
             context2.Add(contract, 0, new byte[] { 0x01 }).Should().BeTrue();
             //test repeatlly createItem
@@ -82,8 +79,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetParameter()
         {
-            Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
+            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
             var context = new ContractParametersContext(tx);
             context.GetParameter(tx.Sender, 0).Should().BeNull();
 
@@ -95,8 +91,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetWitnesses()
         {
-            Transaction tx = TestUtils.GetTransaction();
-            tx.Sender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
+            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             Witness[] witnesses = context.GetWitnesses();
@@ -108,9 +103,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestAddSignature()
         {
-            Transaction tx = TestUtils.GetTransaction();
             var singleSender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
-            tx.Sender = singleSender;
+            Transaction tx = TestUtils.GetTransaction(singleSender);
 
             //singleSign
 
@@ -140,16 +134,16 @@ namespace Neo.UnitTests.SmartContract
                         key2.PublicKey
                     });
             var multiSender = UInt160.Parse("0x3593816cc1085a6328fea2b899c24d78cd0ba372");
-            tx.Sender = multiSender;
+            tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(tx);
             context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
             context.AddSignature(multiSignContract, key2.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
 
-            tx.Sender = singleSender;
+            tx = TestUtils.GetTransaction(singleSender);
             context = new ContractParametersContext(tx);
             context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeFalse();
 
-            tx.Sender = multiSender;
+            tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(tx);
             byte[] privateKey3 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                               0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,

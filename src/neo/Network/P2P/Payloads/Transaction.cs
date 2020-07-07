@@ -28,7 +28,6 @@ namespace Neo.Network.P2P.Payloads
 
         private byte version;
         private uint nonce;
-        private UInt160 sender;
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
@@ -47,11 +46,12 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _cosigners = null; _hash = null; _size = 0; }
+            set { attributes = value; _signers = null; _hash = null; _size = 0; }
         }
 
-        private Dictionary<UInt160, Cosigner> _cosigners;
-        public IReadOnlyDictionary<UInt160, Cosigner> Cosigners => _cosigners ??= attributes.OfType<Cosigner>().ToDictionary(p => p.Account);
+        private Dictionary<UInt160, Signer> _signers;
+        public IReadOnlyDictionary<UInt160, Signer> Signers => _signers ??= attributes.OfType<Signer>().ToDictionary(p => p.Account);
+        public UInt160 Sender => attributes.OfType<Signer>().Select(p => p.Account).First();
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -93,12 +93,6 @@ namespace Neo.Network.P2P.Payloads
         {
             get => script;
             set { script = value; _hash = null; _size = 0; }
-        }
-
-        public UInt160 Sender
-        {
-            get => sender;
-            set { sender = value; _hash = null; }
         }
 
         private int _size;
@@ -173,7 +167,6 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
-            Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
             if (SystemFee < 0) throw new FormatException();
             NetworkFee = reader.ReadInt64();
@@ -183,7 +176,7 @@ namespace Neo.Network.P2P.Payloads
             Attributes = DeserializeAttributes(reader).ToArray();
             try
             {
-                _ = Cosigners;
+                _ = Signers;
             }
             catch (ArgumentException)
             {
@@ -217,8 +210,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160>(Cosigners.Keys) { Sender };
-            return hashes.OrderBy(p => p).ToArray();
+            return Signers.Keys.OrderBy(p => p).ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

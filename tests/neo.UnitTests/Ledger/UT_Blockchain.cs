@@ -148,7 +148,6 @@ namespace Neo.UnitTests.Ledger
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[] { 1 },
-                Sender = UInt160.Zero,
                 SystemFee = 0,
                 ValidUntilBlock = Blockchain.GenesisBlock.Index + 1,
                 Version = 0,

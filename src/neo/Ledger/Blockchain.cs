@@ -166,9 +166,14 @@ namespace Neo.Ledger
             {
                 Version = 0,
                 Script = script,
-                Sender = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
                 SystemFee = 0,
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = new TransactionAttribute[]
+                {
+                    new Signer()
+                    {
+                         Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash()
+                    }
+                },
                 Witnesses = new[]
                 {
                     new Witness

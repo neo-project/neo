@@ -32,7 +32,6 @@ namespace Neo.UnitTests.SmartContract
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
-                Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
             };
 
             var block = new Block()
@@ -246,7 +245,6 @@ namespace Neo.UnitTests.SmartContract
                     ValidUntilBlock = 0x05,
                     Version = 0x06,
                     Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
-                    Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
                 };
 
                 engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);

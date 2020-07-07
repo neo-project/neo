@@ -24,7 +24,6 @@ namespace Neo.UnitTests.IO.Caching
             {
                 Version = 0,
                 Nonce = 1,
-                Sender = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 SystemFee = 0,
                 NetworkFee = 0,
                 ValidUntilBlock = 100,
@@ -33,7 +32,6 @@ namespace Neo.UnitTests.IO.Caching
                 Witnesses = new Witness[0]
             };
             relayCache.Add(tx);
-
             relayCache.Contains(tx).Should().BeTrue();
             relayCache.TryGet(tx.Hash, out IInventory tmp).Should().BeTrue();
             (tmp is Transaction).Should().BeTrue();

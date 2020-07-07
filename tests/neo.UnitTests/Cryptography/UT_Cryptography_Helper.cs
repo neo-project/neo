@@ -152,7 +152,6 @@ namespace Neo.UnitTests.Cryptography
             Transaction tx = new Transaction
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
-                Sender = UInt160.Zero,
                 SystemFee = 4200000000,
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]

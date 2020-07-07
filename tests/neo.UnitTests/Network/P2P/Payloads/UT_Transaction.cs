@@ -64,7 +64,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
-            uut.Sender = UInt160.Zero;
             uut.Attributes = Array.Empty<TransactionAttribute>();
             uut.Witnesses = new[]
             {
@@ -251,10 +250,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Part II
                 Assert.AreEqual(23, tx.Attributes.GetVarSize());
                 Assert.AreEqual(1, tx.Attributes.Length);
-                Assert.AreEqual(1, tx.Cosigners.Count);
-                Assert.AreEqual(23, tx.Cosigners.Values.ToArray().GetVarSize());
+                Assert.AreEqual(1, tx.Signers.Count);
+                Assert.AreEqual(23, tx.Signers.Values.ToArray().GetVarSize());
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
-                Assert.AreEqual(22, tx.Cosigners.Values.First().Size);
+                Assert.AreEqual(22, tx.Signers.Values.First().Size);
                 // Part III
                 Assert.AreEqual(86, tx.Script.GetVarSize());
                 // Part IV
@@ -308,7 +307,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new Cosigner[]{ new Cosigner
+                var cosigners = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.Global
@@ -394,7 +393,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new Cosigner[]{ new Cosigner
+                var cosigners = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -481,7 +480,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying CalledByEntry together with GAS
-                var cosigners = new Cosigner[]{ new Cosigner
+                var cosigners = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     // This combination is supposed to actually be an OR,
@@ -569,7 +568,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new Cosigner[]{ new Cosigner
+                var cosigners = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -621,7 +620,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying two custom hashes, for same target account
-                var cosigners = new Cosigner[]{ new Cosigner
+                var cosigners = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -650,7 +649,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // no attributes must exist
                 tx.Attributes.Length.Should().Be(1);
                 // one cosigner must exist
-                tx.Cosigners.Count.Should().Be(1);
+                tx.Signers.Count.Should().Be(1);
 
                 // Fast check
                 Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
@@ -731,13 +730,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                Sender = UInt160.Zero,
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new[]
                 {
-                    new Cosigner
+                    new Signer
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                         Scopes = WitnessScope.Global
@@ -759,7 +757,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                Sender = UInt160.Zero,
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
@@ -791,7 +788,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx2.NetworkFee.Should().Be(0x0000000000000001);
             tx2.ValidUntilBlock.Should().Be(0x01020304);
             tx2.Attributes.Should().BeEquivalentTo(new TransactionAttribute[0] { });
-            tx2.Cosigners.Should().BeEquivalentTo(new Cosigner[0] { });
+            tx2.Signers.Should().BeEquivalentTo(new Signer[0] { });
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
             tx2.Witnesses.Should().BeEquivalentTo(new Witness[0] { });
         }
@@ -805,18 +802,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                Sender = UInt160.Zero,
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new[]
                 {
-                    new Cosigner
+                    new Signer
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                         Scopes = WitnessScope.Global
                     },
-                    new Cosigner
+                    new Signer
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
                         Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
@@ -850,13 +846,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // --------------------------------------
             // this should pass (respecting max size)
 
-            var cosigners1 = new Cosigner[maxCosigners];
+            var cosigners1 = new Signer[maxCosigners];
             for (int i = 0; i < cosigners1.Length; i++)
             {
                 string hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
-                cosigners1[i] = new Cosigner
+                cosigners1[i] = new Signer
                 {
                     Account = UInt160.Parse(hex)
                 };
@@ -866,7 +862,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                Sender = UInt160.Zero,
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
@@ -884,13 +879,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // ----------------------------
             // this should fail (max + 1)
 
-            var cosigners = new Cosigner[maxCosigners + 1];
+            var cosigners = new Signer[maxCosigners + 1];
             for (var i = 0; i < maxCosigners + 1; i++)
             {
                 string hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
-                cosigners[i] = new Cosigner
+                cosigners[i] = new Signer
                 {
                     Account = UInt160.Parse(hex)
                 };
@@ -900,7 +895,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                Sender = UInt160.Zero,
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
@@ -924,7 +918,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             // Global is supposed to be default
 
-            Cosigner cosigner = new Cosigner();
+            Signer cosigner = new Signer();
             cosigner.Scopes.Should().Be(WitnessScope.Global);
 
             var wallet = TestUtils.GenerateTestWallet();
@@ -959,7 +953,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // default to global scope
-                var cosigners = new Cosigner[]{ new Cosigner
+                var cosigners = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash
                 } };
@@ -1013,7 +1007,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
-            uut.Sender = UInt160.Zero;
             uut.SystemFee = 4200000000;
             uut.Attributes = Array.Empty<TransactionAttribute>();
             uut.Witnesses = new[]

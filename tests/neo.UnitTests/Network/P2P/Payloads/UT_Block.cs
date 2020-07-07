@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             uut.Transactions = new[]
             {
-                TestUtils.GetTransaction()
+                TestUtils.GetTransaction(UInt160.Zero)
             };
 
             uut.Size.Should().Be(165);
@@ -70,9 +70,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             uut.Transactions = new[]
             {
-                TestUtils.GetTransaction(),
-                TestUtils.GetTransaction(),
-                TestUtils.GetTransaction()
+                TestUtils.GetTransaction(UInt160.Zero),
+                TestUtils.GetTransaction(UInt160.Zero),
+                TestUtils.GetTransaction(UInt160.Zero)
             };
 
             uut.Size.Should().Be(267);
