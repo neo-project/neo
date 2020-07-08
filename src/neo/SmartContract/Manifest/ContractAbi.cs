@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Hash = Hash,
                 Methods = Methods.Select(p => p.Clone()).ToArray(),
-                Events = Events.Select(p => p.Clone()).ToArray(),
+                Events = Events.Select(p => p.Clone()).ToArray()
             };
         }
 
@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Hash = UInt160.Parse(json["hash"].AsString()),
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
-                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray(),
+                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
         }
 
