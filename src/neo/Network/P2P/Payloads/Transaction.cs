@@ -312,6 +312,7 @@ namespace Neo.Network.P2P.Payloads
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
                 if (snapshot.Contracts.TryGet(hashes[i]) is null) return VerifyResult.Invalid;
             }
+            if (!CheckOracleResponse(snapshot)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
@@ -319,7 +320,6 @@ namespace Neo.Network.P2P.Payloads
         {
             VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
             if (result != VerifyResult.Succeed) return result;
-            if (!CheckOracleResponse(snapshot)) return VerifyResult.Invalid;
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
