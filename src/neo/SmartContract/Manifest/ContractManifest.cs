@@ -65,6 +65,11 @@ namespace Neo.SmartContract.Manifest
         public JObject Extra { get; set; }
 
         /// <summary>
+        /// NEP10 - SupportedStandards
+        /// </summary>
+        public string[] SupportedStandards { get; set; }
+
+        /// <summary>
         /// Return true if is allowed
         /// </summary>
         /// <param name="manifest">Manifest</param>
@@ -113,6 +118,7 @@ namespace Neo.SmartContract.Manifest
             json["trusts"] = Trusts.ToJson();
             json["safemethods"] = SafeMethods.ToJson();
             json["extra"] = Extra;
+            json["supportedstandards"] = new JArray(SupportedStandards.Select(u => new JString(u)).ToArray());
 
             return json;
         }
@@ -131,7 +137,8 @@ namespace Neo.SmartContract.Manifest
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
                 SafeMethods = SafeMethods,
-                Extra = Extra?.Clone()
+                Extra = Extra?.Clone(),
+                SupportedStandards = SupportedStandards.Select(p => p).ToArray()
             };
         }
 
@@ -160,6 +167,7 @@ namespace Neo.SmartContract.Manifest
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());
             Extra = json["extra"];
+            SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
         }
