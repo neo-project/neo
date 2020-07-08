@@ -167,13 +167,7 @@ namespace Neo.Ledger
                 Version = 0,
                 Script = script,
                 SystemFee = 0,
-                Attributes = new TransactionAttribute[]
-                {
-                    new Signer()
-                    {
-                         Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash()
-                    }
-                },
+                Signers = new Signer() { Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash() },
                 Witnesses = new[]
                 {
                     new Witness

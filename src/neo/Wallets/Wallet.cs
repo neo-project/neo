@@ -236,7 +236,7 @@ namespace Neo.Wallets
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                HashSet<UInt160> cosignerList = new HashSet<UInt160>();
+                HashSet<UInt160> signersList = new HashSet<UInt160>();
                 byte[] script;
                 List<(UInt160 Account, BigInteger Value)> balances_gas = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -263,7 +263,7 @@ namespace Neo.Wallets
                         {
                             balances = balances.OrderBy(p => p.Value).ToList();
                             var balances_used = FindPayingAccounts(balances, output.Value.Value);
-                            cosignerList.UnionWith(balances_used.Select(p => p.Account));
+                            signersList.UnionWith(balances_used.Select(p => p.Account));
                             foreach (var (account, value) in balances_used)
                             {
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
@@ -278,20 +278,21 @@ namespace Neo.Wallets
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-                var cosigners = cosignerList.Select(p =>
-                         new Signer()
-                         {
-                             // default access for transfers should be valid only for first invocation
-                             Scopes = WitnessScope.CalledByEntry,
-                             Account = new UInt160(p.ToArray())
-                         }).ToArray();
+                var signers = new Signers(signersList.Select(p =>
+                        new Signer()
+                        {
+                            // default access for transfers should be valid only for first invocation
+                            Scopes = WitnessScope.CalledByEntry,
+                            Account = new UInt160(p.ToArray())
+                        }).ToArray());
 
-                return MakeTransaction(snapshot, script, cosigners, balances_gas);
+                return MakeTransaction(snapshot, script, signers, null, balances_gas);
             }
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, TransactionAttribute[] attributes = null)
+        public Transaction MakeTransaction(byte[] script, Signers signers = null, TransactionAttribute[] attributes = null)
         {
+            var sender = signers?.Sender;
             UInt160[] accounts;
             if (sender is null)
             {
@@ -306,44 +307,23 @@ namespace Neo.Wallets
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, script, attributes ?? new TransactionAttribute[0], balances_gas);
+                return MakeTransaction(snapshot, script, signers, attributes ?? Array.Empty<TransactionAttribute>(), balances_gas);
             }
         }
 
-        private Transaction MakeTransaction(StoreView snapshot, byte[] script, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(StoreView snapshot, byte[] script, Signers signers, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
             {
-                var attr = new List<TransactionAttribute>();
-
-                if (!attributes.OfType<Signer>().Any(u => u.Account == account))
-                {
-                    // Add a new signer
-
-                    attr.Add(new Signer()
-                    {
-                        Account = account,
-                        Scopes = WitnessScope.CalledByEntry
-                    });
-                    attr.AddRange(attributes);
-                }
-                else
-                {
-                    // Use the first signer of this account
-
-                    var ac = attributes.OfType<Signer>().First(u => u.Account == account);
-                    attr.Add(ac);
-                    attr.AddRange(attributes.Where(u => u != ac));
-                }
-
                 Transaction tx = new Transaction
                 {
                     Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Attributes = attr.ToArray(),
+                    Signers = signers,
+                    Attributes = attributes ?? Array.Empty<TransactionAttribute>(),
                 };
 
                 // will try to execute 'transfer' script to check if it works

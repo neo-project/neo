@@ -93,13 +93,11 @@ namespace Neo.UnitTests
             return new Transaction
             {
                 Script = new byte[1],
-                Attributes = new TransactionAttribute[]
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new Signer()
                 {
-                    new Signer()
-                    {
-                        Account = sender,
-                        Scopes = WitnessScope.CalledByEntry
-                    }
+                    Account = sender,
+                    Scopes = WitnessScope.CalledByEntry
                 },
                 Witnesses = new Witness[]{ new Witness
                 {

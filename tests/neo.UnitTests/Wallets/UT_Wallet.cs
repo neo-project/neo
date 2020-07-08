@@ -367,7 +367,7 @@ namespace Neo.UnitTests.Wallets
         public void TestMakeTransaction2()
         {
             MyWallet wallet = new MyWallet();
-            Action action = () => wallet.MakeTransaction(new byte[] { }, UInt160.Zero, new TransactionAttribute[] { });
+            Action action = () => wallet.MakeTransaction(new byte[] { }, null, new TransactionAttribute[] { });
             action.Should().Throw<ArgumentException>();
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
@@ -381,7 +381,12 @@ namespace Neo.UnitTests.Wallets
             entry.GetInteroperable<AccountState>().Balance = 1000000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new TransactionAttribute[] { });
+            var tx = wallet.MakeTransaction(new byte[] { }, new Signers(new Signer()
+            {
+                Account = account.ScriptHash,
+                Scopes = WitnessScope.Global
+            }), new TransactionAttribute[] { });
+
             tx.Should().NotBeNull();
 
             tx = wallet.MakeTransaction(new byte[] { }, null, new TransactionAttribute[] { });

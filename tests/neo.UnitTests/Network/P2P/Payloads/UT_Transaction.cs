@@ -251,9 +251,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(23, tx.Attributes.GetVarSize());
                 Assert.AreEqual(1, tx.Attributes.Length);
                 Assert.AreEqual(1, tx.Signers.Count);
-                Assert.AreEqual(23, tx.Signers.Values.ToArray().GetVarSize());
+                Assert.AreEqual(23, tx.Signers.Size);
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
-                Assert.AreEqual(22, tx.Signers.Values.First().Size);
+                Assert.AreEqual(22, tx.Signers.First().Size);
                 // Part III
                 Assert.AreEqual(86, tx.Script.GetVarSize());
                 // Part IV
@@ -307,7 +307,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new Signer[]{ new Signer
+                var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.Global
@@ -315,7 +315,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners);
+                var tx = wallet.MakeTransaction(script, new Signers(signers));
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -393,7 +393,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new Signer[]{ new Signer
+                var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -402,7 +402,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners);
+                var tx = wallet.MakeTransaction(script, new Signers(signers));
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -480,7 +480,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying CalledByEntry together with GAS
-                var cosigners = new Signer[]{ new Signer
+                var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     // This combination is supposed to actually be an OR,
@@ -492,7 +492,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners);
+                var tx = wallet.MakeTransaction(script, new Signers(signers));
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -568,7 +568,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying global scope
-                var cosigners = new Signer[]{ new Signer
+                var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -580,7 +580,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // expects FAULT on execution of 'transfer' Application script
                 // due to lack of a valid witness validation
                 Transaction tx = null;
-                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners));
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, new Signers(signers)));
                 Assert.IsNull(tx);
             }
         }
@@ -620,7 +620,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // trying two custom hashes, for same target account
-                var cosigners = new Signer[]{ new Signer
+                var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
                     Scopes = WitnessScope.CustomContracts,
@@ -629,7 +629,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners);
+                var tx = wallet.MakeTransaction(script, new Signers(signers));
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -703,7 +703,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     // self-transfer of 1e-8 GAS
-                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
@@ -712,12 +712,19 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // trying with no scope
                 var attributes = new TransactionAttribute[] { };
 
+                var signers = new Signer[]{ new Signer
+                {
+                    Account = acc.ScriptHash,
+                    Scopes = (WitnessScope) 0xFF,
+                    AllowedContracts = new[] { NativeContract.NEO.Hash, NativeContract.GAS.Hash }
+                } };
+
                 // using this...
 
                 // expects FAULT on execution of 'transfer' Application script
                 // due to lack of a valid witness validation
                 Transaction tx = null;
-                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, acc.ScriptHash, attributes));
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, new Signers(signers), attributes));
                 Assert.IsNull(tx);
             }
         }
@@ -733,14 +740,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = new[]
-                {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new Signers(
                     new Signer
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                         Scopes = WitnessScope.Global
                     }
-                },
+                ),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -805,19 +812,20 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = new[]
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new Signers(new Signer[]
                 {
-                    new Signer
+                    new Signer()
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                         Scopes = WitnessScope.Global
                     },
-                    new Signer
+                    new Signer()
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
                         Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
                     }
-                },
+                }),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -865,7 +873,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = cosigners1, // max + 1 (should fail)
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new Signers(cosigners1), // max + 1 (should fail)
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -898,7 +907,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = cosigners, // max + 1 (should fail)
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new Signers(cosigners1), // max + 1 (should fail)
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -953,14 +963,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 // default to global scope
-                var cosigners = new Signer[]{ new Signer
+                var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash
                 } };
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, acc.ScriptHash, cosigners);
+                var tx = wallet.MakeTransaction(script, new Signers(signers));
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);

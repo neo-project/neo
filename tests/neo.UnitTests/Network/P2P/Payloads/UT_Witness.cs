@@ -54,14 +54,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var data = new ContractParametersContext(new Transaction()
             {
-                Attributes = new TransactionAttribute[]
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new Signers(new Signer()
                 {
-                    new Signer()
-                    {
-                         Account = multiSignContract.ScriptHash,
-                         Scopes = WitnessScope.CalledByEntry
-                    }
-                },
+                    Account = multiSignContract.ScriptHash,
+                    Scopes = WitnessScope.CalledByEntry
+                }),
                 NetworkFee = 0,
                 Nonce = 0,
                 Script = new byte[0],

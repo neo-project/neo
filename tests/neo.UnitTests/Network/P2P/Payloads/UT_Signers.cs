@@ -7,7 +7,7 @@ using Neo.Network.P2P.Payloads;
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
     [TestClass]
-    public class UT_Cosigner
+    public class UT_Signers
     {
         [TestMethod]
         public void Serialize_Deserialize_Global()

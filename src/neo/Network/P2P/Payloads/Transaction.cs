@@ -34,6 +34,7 @@ namespace Neo.Network.P2P.Payloads
         private TransactionAttribute[] attributes;
         private byte[] script;
         private Witness[] witnesses;
+        private Signers _signers;
 
         public const int HeaderSize =
             sizeof(byte) +  //Version
@@ -49,9 +50,16 @@ namespace Neo.Network.P2P.Payloads
             set { attributes = value; _signers = null; _hash = null; _size = 0; }
         }
 
-        private Dictionary<UInt160, Signer> _signers;
-        public IReadOnlyDictionary<UInt160, Signer> Signers => _signers ??= attributes.OfType<Signer>().ToDictionary(p => p.Account);
-        public UInt160 Sender => attributes.OfType<Signer>().Select(p => p.Account).First();
+        public Signers Signers
+        {
+            get => _signers;
+            set { Signers = value; _hash = null; _size = 0; }
+        }
+
+        /// <summary>
+        /// Correspond with the first entry of Signers
+        /// </summary>
+        public UInt160 Sender => _signers.Sender;
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -174,14 +182,7 @@ namespace Neo.Network.P2P.Payloads
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = DeserializeAttributes(reader).ToArray();
-            try
-            {
-                _ = Signers;
-            }
-            catch (ArgumentException)
-            {
-                throw new FormatException();
-            }
+            Signers = reader.ReadSerializable<Signers>();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -228,6 +229,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
             writer.Write(Attributes);
+            writer.Write(Signers);
             writer.WriteVarBytes(Script);
         }
 
@@ -243,6 +245,7 @@ namespace Neo.Network.P2P.Payloads
             json["netfee"] = NetworkFee.ToString();
             json["validuntilblock"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
+            json["signers"] = Signers.ToJson();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
