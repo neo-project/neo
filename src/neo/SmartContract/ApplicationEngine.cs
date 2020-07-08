@@ -16,18 +16,23 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        internal static IApplicationEngineProvider ApplicationEngineProvider { get; set; }
+        private static IApplicationEngineProvider applicationEngineProvider;
+
+        public static bool SetApplicationEngineProvider(IApplicationEngineProvider applicationEngineProvider)
+        {
+            return System.Threading.Interlocked.CompareExchange(
+                ref ApplicationEngine.applicationEngineProvider,
+                applicationEngineProvider, null) == null;
+        }
+
+        public static void ResetApplicationEngineProvider()
+        {
+            System.Threading.Interlocked.Exchange(ref applicationEngineProvider, null);
+        }
 
         internal static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
-        {
-            var appEngineProvider = ApplicationEngineProvider;
-            if (appEngineProvider != null)
-            {
-                return appEngineProvider.Create(trigger, container, snapshot, gas, testMode);
-            }
-
-            return new ApplicationEngine(trigger, container, snapshot, gas, testMode);
-        }
+            => applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
+                ?? new ApplicationEngine(trigger, container, snapshot, gas, testMode);
 
         private class InvocationState
         {
