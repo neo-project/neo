@@ -126,42 +126,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestAccount_IsDeployed()
-        {
-            var engine = GetEngine(false, true);
-            var hash = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01,
-                                    0x01, 0x01, 0x01, 0x01, 0x01,
-                                    0x01, 0x01, 0x01, 0x01, 0x01,
-                                    0x01, 0x01, 0x01, 0x01, 0x01 };
-            engine.IsDeployedContract(new UInt160(hash)).Should().BeFalse();
-
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.ScriptHash, state);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            engine.LoadScript(new byte[] { 0x01 });
-            engine.IsDeployedContract(state.ScriptHash).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestAccount_IsPayable()
-        {
-            var engine = GetEngine(false, true);
-            var hash = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01,
-                                    0x01, 0x01, 0x01, 0x01, 0x01,
-                                    0x01, 0x01, 0x01, 0x01, 0x01,
-                                    0x01, 0x01, 0x01, 0x01, 0x01 };
-            engine.IsPayableContract(new UInt160(hash)).Should().BeFalse();
-
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.ScriptHash, state);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            engine.LoadScript(new byte[] { 0x01 });
-            engine.IsPayableContract(state.ScriptHash).Should().BeFalse();
-        }
-
-        [TestMethod]
         public void TestContract_Create()
         {
             var engine = GetEngine(false, true);
