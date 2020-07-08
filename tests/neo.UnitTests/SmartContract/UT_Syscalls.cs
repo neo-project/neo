@@ -61,7 +61,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Without block
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
                 blocks.Add(block.Hash, block.Trim());
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
 
-                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -117,7 +117,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("null");
                 script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -136,7 +136,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("***");
                 script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -152,7 +152,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("123.45");
                 script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -185,7 +185,7 @@ namespace Neo.UnitTests.SmartContract
                 script.Emit(OpCode.SETITEM);
                 script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -207,7 +207,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitSysCall(ApplicationEngine.System_Storage_GetContext);
                 script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -227,7 +227,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Without tx
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -249,7 +249,7 @@ namespace Neo.UnitTests.SmartContract
                     Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
                 };
 
-                engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -278,7 +278,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 100_000_000, false);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000, false);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -299,7 +299,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 // Check the results
@@ -353,7 +353,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
 

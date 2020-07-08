@@ -115,12 +115,12 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.Contracts.Add(state.ScriptHash, state);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.ScriptHash).Should().BeFalse();
 
             state.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.ScriptHash).Should().BeTrue();
         }
@@ -141,7 +141,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.Contracts.Add(state.ScriptHash, state);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
             Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(state.Script, manifest.ToJson().ToByteArray(false)));
         }
@@ -184,7 +184,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(state.Script);
             engine.UpdateContract(script, manifest.ToJson().ToByteArray(false));
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
@@ -209,7 +209,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
             var iterator = engine.Find(new StorageContext

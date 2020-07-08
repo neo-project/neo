@@ -404,7 +404,7 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0, true))
                     {
                         engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
@@ -427,7 +427,7 @@ namespace Neo.Ledger
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();

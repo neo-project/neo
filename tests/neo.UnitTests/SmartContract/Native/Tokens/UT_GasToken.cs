@@ -92,7 +92,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Burn
 
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
@@ -127,7 +127,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), 0);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), 0);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);

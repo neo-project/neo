@@ -16,6 +16,19 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
+        internal static IApplicationEngineProvider ApplicationEngineProvider { get; set; }
+
+        internal static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        {
+            var appEngineProvider = ApplicationEngineProvider;
+            if (appEngineProvider != null)
+            {
+                return appEngineProvider.Create(trigger, container, snapshot, gas, testMode);
+            }
+
+            return new ApplicationEngine(trigger, container, snapshot, gas, testMode);
+        }
+
         private class InvocationState
         {
             public Type ReturnType;
@@ -45,7 +58,7 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        private ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -263,7 +276,7 @@ namespace Neo.SmartContract
             IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, gas, testMode);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode);
             engine.LoadScript(script).InstructionPointer = offset;
             engine.Execute();
             return engine;

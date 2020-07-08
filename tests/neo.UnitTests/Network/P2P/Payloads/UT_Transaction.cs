@@ -145,7 +145,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -227,7 +227,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -340,7 +340,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -427,7 +427,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -517,7 +517,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -659,7 +659,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -732,7 +732,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new[]
@@ -760,7 +760,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -776,7 +776,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             "0000000000000000000000000000000000000000" + // sender
             "00e1f50500000000" + // system fee (1 GAS)
             "0100000000000000" + // network fee (1 satoshi)
-            "04030201" + // timelimit 
+            "04030201" + // timelimit
             "00" + // no attributes
             "0111" + // push1 script
             "00"); // no witnesses
@@ -806,7 +806,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = new[]
@@ -867,7 +867,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = cosigners1, // max + 1 (should fail)
@@ -901,7 +901,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0x00,
                 Nonce = 0x01020304,
                 Sender = UInt160.Zero,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = cosigners, // max + 1 (should fail)
@@ -990,7 +990,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
