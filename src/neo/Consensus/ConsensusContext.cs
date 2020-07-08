@@ -92,6 +92,7 @@ namespace Neo.Consensus
                 sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                 j++;
             }
+            if (!sc.Completed) throw new Exception("There are not enough signatures for sign the Block.");
             Block.Witness = sc.GetWitnesses()[0];
             Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return Block;
@@ -111,6 +112,7 @@ namespace Neo.Consensus
                     sc.AddSignature(contract, Validators[i], PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().StateRootSignature);
                 j++;
             }
+            if (!sc.Completed) throw new Exception("There are not enough signatures for sign the state root.");
             PreviousBlockStateRoot.Witness = sc.GetWitnesses()[0];
             return PreviousBlockStateRoot;
         }
