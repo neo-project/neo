@@ -368,7 +368,7 @@ namespace Neo.UnitTests.Wallets
         {
             MyWallet wallet = new MyWallet();
             Action action = () => wallet.MakeTransaction(new byte[] { }, null, new TransactionAttribute[] { });
-            action.Should().Throw<ArgumentException>();
+            action.Should().Throw<InvalidOperationException>();
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
