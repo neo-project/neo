@@ -8,23 +8,23 @@ namespace Neo.SmartContract.Native.Oracle
     public class OracleRequest : IInteroperable
     {
         public UInt256 Txid;
+        public long GasForResponse;
         public string Url;
         public string Filter;
         public UInt160 CallbackContract;
         public string CallbackMethod;
         public byte[] UserData;
-        public long GasForResponse;
 
         public void FromStackItem(StackItem stackItem)
         {
             Array array = (Array)stackItem;
             Txid = new UInt256(array[0].GetSpan());
-            Url = array[1].GetString();
-            Filter = array[2].GetString();
-            CallbackContract = new UInt160(array[3].GetSpan());
-            CallbackMethod = array[4].GetString();
-            UserData = array[5].GetSpan().ToArray();
-            GasForResponse = (long)array[6].GetInteger();
+            GasForResponse = (long)array[1].GetInteger();
+            Url = array[2].GetString();
+            Filter = array[3].GetString();
+            CallbackContract = new UInt160(array[4].GetSpan());
+            CallbackMethod = array[5].GetString();
+            UserData = array[6].GetSpan().ToArray();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -32,12 +32,12 @@ namespace Neo.SmartContract.Native.Oracle
             return new Array(referenceCounter)
             {
                 Txid.ToArray(),
+                GasForResponse,
                 Url,
                 Filter ?? StackItem.Null,
                 CallbackContract.ToArray(),
                 CallbackMethod,
-                UserData,
-                GasForResponse
+                UserData
             };
         }
     }

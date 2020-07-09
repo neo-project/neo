@@ -132,12 +132,12 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
                 Txid = ((Transaction)engine.ScriptContainer).Hash,
+                GasForResponse = gasForRepsonse,
                 Url = url,
                 Filter = filter,
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
-                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength),
-                GasForResponse = gasForRepsonse
+                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
             }));
 
             //Add the id to the IdList
