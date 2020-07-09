@@ -13,7 +13,6 @@ namespace Neo.SmartContract.Native.Tokens
     public abstract class Nep5Token<TState> : NativeContract
         where TState : AccountState, new()
     {
-        public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         [ContractMethod(0, CallFlags.None)]
         public abstract string Symbol { get; }
         [ContractMethod(0, CallFlags.None)]
@@ -28,6 +27,7 @@ namespace Neo.SmartContract.Native.Tokens
             this.Factor = BigInteger.Pow(10, Decimals);
 
             Manifest.Features = ContractFeatures.HasStorage;
+            Manifest.SupportedStandards = new[] { "NEP-5" };
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {

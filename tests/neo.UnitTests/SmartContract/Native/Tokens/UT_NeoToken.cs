@@ -37,9 +37,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Decimals() => NativeContract.NEO.Decimals().Should().Be(0);
 
         [TestMethod]
-        public void Check_SupportedStandards() => NativeContract.NEO.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
-
-        [TestMethod]
         public void Check_Vote()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();

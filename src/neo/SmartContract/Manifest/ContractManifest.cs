@@ -20,7 +20,14 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Serialized size
         /// </summary>
-        public int Size => ToJson().ToString().GetVarSize();
+        public int Size
+        {
+            get
+            {
+                int size = Utility.StrictUTF8.GetByteCount(ToString());
+                return IO.Helper.GetVarSize(size) + size;
+            }
+        }
 
         /// <summary>
         /// Contract hash
@@ -150,7 +157,7 @@ namespace Neo.SmartContract.Manifest
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteVarString(ToJson().ToString());
+            writer.WriteVarString(ToString());
         }
 
         public void Deserialize(BinaryReader reader)
