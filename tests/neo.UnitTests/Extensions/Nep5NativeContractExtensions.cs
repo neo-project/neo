@@ -6,7 +6,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.UnitTests.Extensions
@@ -66,28 +65,6 @@ namespace Neo.UnitTests.Extensions
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
             return result.GetBoolean();
-        }
-
-        public static string[] SupportedStandards(this NativeContract contract)
-        {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, testMode: true);
-
-            engine.LoadScript(contract.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("supportedStandards");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute().Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
-
-            return (result as VM.Types.Array).ToArray()
-                .Select(u => u.GetString())
-                .ToArray();
         }
 
         public static BigInteger TotalSupply(this NativeContract contract, StoreView snapshot)
