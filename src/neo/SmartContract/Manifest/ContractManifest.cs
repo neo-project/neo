@@ -106,18 +106,21 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["groups"] = new JArray(Groups.Select(u => u.ToJson()).ToArray());
-            json["features"] = new JObject();
-            json["features"]["storage"] = Features.HasFlag(ContractFeatures.HasStorage);
-            json["features"]["payable"] = Features.HasFlag(ContractFeatures.Payable);
-            json["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray();
-            json["abi"] = Abi.ToJson();
-            json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
-            json["trusts"] = Trusts.ToJson();
-            json["safemethods"] = SafeMethods.ToJson();
-            json["extra"] = Extra;
-            return json;
+            return new JObject
+            {
+                ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
+                ["features"] = new JObject
+                {
+                    ["storage"] = Features.HasFlag(ContractFeatures.HasStorage),
+                    ["payable"] = Features.HasFlag(ContractFeatures.Payable)
+                },
+                ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
+                ["abi"] = Abi.ToJson(),
+                ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
+                ["trusts"] = Trusts.ToJson(),
+                ["safemethods"] = SafeMethods.ToJson(),
+                ["extra"] = Extra
+            };
         }
 
         /// <summary>
