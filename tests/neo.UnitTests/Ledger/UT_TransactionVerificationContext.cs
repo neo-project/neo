@@ -4,13 +4,24 @@ using Moq;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using System;
+using System.Numerics;
 
 namespace Neo.UnitTests.Ledger
 {
     [TestClass]
     public class UT_TransactionVerificationContext
     {
+        private static NeoSystem testBlockchain;
+
+        [ClassInitialize]
+        public static void TestSetup(TestContext ctx)
+        {
+            testBlockchain = TestBlockchain.TheNeoSystem;
+        }
+
         private Transaction CreateTransactionWithFee(long networkFee, long systemFee)
         {
             Random random = new Random();
@@ -36,19 +47,25 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void TestMemPoolSenderFee()
+        public void TestTransactionSenderFee()
         {
-            Transaction transaction = CreateTransactionWithFee(1, 2);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, null, snapshot, long.MaxValue);
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
+            NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            NativeContract.GAS.Mint(engine, UInt160.Zero, 8);
+
             TransactionVerificationContext verificationContext = new TransactionVerificationContext();
-            verificationContext.GetSenderFee(transaction.Sender).Should().Be(0);
-            verificationContext.AddTransaction(transaction);
-            verificationContext.GetSenderFee(transaction.Sender).Should().Be(3);
-            verificationContext.AddTransaction(transaction);
-            verificationContext.GetSenderFee(transaction.Sender).Should().Be(6);
-            verificationContext.RemoveTransaction(transaction);
-            verificationContext.GetSenderFee(transaction.Sender).Should().Be(3);
-            verificationContext.RemoveTransaction(transaction);
-            verificationContext.GetSenderFee(transaction.Sender).Should().Be(0);
+            var tx = CreateTransactionWithFee(1, 2);
+            verificationContext.CheckTransaction(tx, snapshot).Should().BeTrue();
+            verificationContext.AddTransaction(tx);
+            verificationContext.CheckTransaction(tx, snapshot).Should().BeTrue();
+            verificationContext.AddTransaction(tx);
+            verificationContext.CheckTransaction(tx, snapshot).Should().BeFalse();
+            verificationContext.RemoveTransaction(tx);
+            verificationContext.CheckTransaction(tx, snapshot).Should().BeTrue();
+            verificationContext.AddTransaction(tx);
+            verificationContext.CheckTransaction(tx, snapshot).Should().BeFalse();
         }
     }
 }
