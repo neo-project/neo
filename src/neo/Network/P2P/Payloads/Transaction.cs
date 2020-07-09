@@ -227,7 +227,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            return _signersCache.Keys.OrderBy(p => p).ToArray();
+            return _signersCache.Keys.ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
