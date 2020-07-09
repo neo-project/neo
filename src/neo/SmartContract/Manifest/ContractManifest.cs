@@ -38,6 +38,11 @@ namespace Neo.SmartContract.Manifest
         public ContractFeatures Features { get; set; }
 
         /// <summary>
+        /// NEP10 - SupportedStandards
+        /// </summary>
+        public string[] SupportedStandards { get; set; }
+
+        /// <summary>
         /// For technical details of ABI, please refer to NEP-3: NeoContract ABI. (https://github.com/neo-project/proposals/blob/master/nep-3.mediawiki)
         /// </summary>
         public ContractAbi Abi { get; set; }
@@ -63,11 +68,6 @@ namespace Neo.SmartContract.Manifest
         /// Custom user data
         /// </summary>
         public JObject Extra { get; set; }
-
-        /// <summary>
-        /// NEP10 - SupportedStandards
-        /// </summary>
-        public string[] SupportedStandards { get; set; }
 
         /// <summary>
         /// Return true if is allowed
@@ -106,20 +106,17 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public JObject ToJson()
         {
-            var feature = new JObject();
-            feature["storage"] = Features.HasFlag(ContractFeatures.HasStorage);
-            feature["payable"] = Features.HasFlag(ContractFeatures.Payable);
-
             var json = new JObject();
             json["groups"] = new JArray(Groups.Select(u => u.ToJson()).ToArray());
-            json["features"] = feature;
+            json["features"] = new JObject();
+            json["features"]["storage"] = Features.HasFlag(ContractFeatures.HasStorage);
+            json["features"]["payable"] = Features.HasFlag(ContractFeatures.Payable);
+            json["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray();
             json["abi"] = Abi.ToJson();
             json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
             json["trusts"] = Trusts.ToJson();
             json["safemethods"] = SafeMethods.ToJson();
             json["extra"] = Extra;
-            json["supportedstandards"] = new JArray(SupportedStandards.Select(u => new JString(u)).ToArray());
-
             return json;
         }
 
@@ -133,12 +130,12 @@ namespace Neo.SmartContract.Manifest
             {
                 Groups = Groups.Select(p => p.Clone()).ToArray(),
                 Features = Features,
+                SupportedStandards = SupportedStandards[..],
                 Abi = Abi.Clone(),
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
                 SafeMethods = SafeMethods,
-                Extra = Extra?.Clone(),
-                SupportedStandards = SupportedStandards.Select(p => p).ToArray()
+                Extra = Extra?.Clone()
             };
         }
 
@@ -160,16 +157,16 @@ namespace Neo.SmartContract.Manifest
 
         private void DeserializeFromJson(JObject json)
         {
-            Abi = ContractAbi.FromJson(json["abi"]);
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
             Features = ContractFeatures.NoProperty;
+            if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
+            if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
+            SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
+            Abi = ContractAbi.FromJson(json["abi"]);
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());
             Extra = json["extra"];
-            SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
-            if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
-            if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
         }
 
         /// <summary>
