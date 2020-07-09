@@ -81,29 +81,31 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        private void MintGasForOracleNode(ApplicationEngine engine, ulong id)
-        {
-            ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
-            int i = (int)(id % (ulong)nodes.Length);
-            UInt160 account = Contract.CreateSignatureRedeemScript(nodes[i]).ToScriptHash();
-            GAS.Mint(engine, account, OracleRequestPrice);
-        }
-
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
+                //Filter the response transactions
                 OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
                 if (response is null) continue;
+
+                //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
                 OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
                 engine.Snapshot.Storages.Delete(key);
+
+                //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
                 IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
-                MintGasForOracleNode(engine, response.Id);
+
+                //Mint GAS for oracle nodes
+                ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
+                int index = (int)(response.Id % (ulong)nodes.Length);
+                UInt160 account = Contract.CreateSignatureRedeemScript(nodes[index]).ToScriptHash();
+                GAS.Mint(engine, account, OracleRequestPrice);
             }
         }
 
