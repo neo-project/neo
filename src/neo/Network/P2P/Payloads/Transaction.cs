@@ -163,7 +163,6 @@ namespace Neo.Network.P2P.Payloads
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, response.Id);
             if (request is null) return false;
             Transaction request_tx = snapshot.GetTransaction(request.Txid);
-            if (!Sender.Equals(request_tx.Sender)) return false;
             foreach (Cosigner cosigner in Cosigners.Values)
             {
                 if (!request_tx.Cosigners.TryGetValue(cosigner.Account, out Cosigner other))
@@ -248,9 +247,11 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
+            var hashes = new HashSet<UInt160> { Sender };
             if (IsOracleResponse)
-                return new[] { Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot)) };
-            var hashes = new HashSet<UInt160>(Cosigners.Keys) { Sender };
+                hashes.Add(Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot)));
+            else
+                hashes.UnionWith(Cosigners.Keys);
             return hashes.OrderBy(p => p).ToArray();
         }
 

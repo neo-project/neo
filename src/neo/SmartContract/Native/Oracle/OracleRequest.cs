@@ -13,6 +13,7 @@ namespace Neo.SmartContract.Native.Oracle
         public UInt160 CallbackContract;
         public string CallbackMethod;
         public byte[] UserData;
+        public long GasForResponse;
 
         public void FromStackItem(StackItem stackItem)
         {
@@ -23,6 +24,7 @@ namespace Neo.SmartContract.Native.Oracle
             CallbackContract = new UInt160(array[3].GetSpan());
             CallbackMethod = array[4].GetString();
             UserData = array[5].GetSpan().ToArray();
+            GasForResponse = (long)array[6].GetInteger();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -34,7 +36,8 @@ namespace Neo.SmartContract.Native.Oracle
                 Filter ?? StackItem.Null,
                 CallbackContract.ToArray(),
                 CallbackMethod,
-                UserData
+                UserData,
+                GasForResponse
             };
         }
     }

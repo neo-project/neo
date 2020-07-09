@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         internal OracleContract()
         {
-            Manifest.Features = ContractFeatures.HasStorage | ContractFeatures.Payable;
+            Manifest.Features = ContractFeatures.HasStorage;
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
@@ -110,15 +110,25 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]
-        private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData)
+        private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForRepsonse)
         {
+            //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
                 || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
-                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength)
+                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
+                || gasForRepsonse <= 0)
                 throw new ArgumentException();
+
+            //Mint gas for the response
+            engine.AddGas(gasForRepsonse);
+            GAS.Mint(engine, Hash, gasForRepsonse);
+
+            //Increase the request id
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
             ulong id = BitConverter.ToUInt64(item_id.Value) + 1;
             item_id.Value = BitConverter.GetBytes(id);
+
+            //Put the request to storage
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
                 Txid = ((Transaction)engine.ScriptContainer).Hash,
@@ -126,8 +136,11 @@ namespace Neo.SmartContract.Native.Oracle
                 Filter = filter,
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
-                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
+                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength),
+                GasForResponse = gasForRepsonse
             }));
+
+            //Add the id to the IdList
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
         }
 
@@ -138,6 +151,18 @@ namespace Neo.SmartContract.Native.Oracle
             NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NodeList)).GetInteroperable<NodeList>();
             list.Clear();
             list.AddRange(nodes);
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        private bool Verify(ApplicationEngine engine)
+        {
+            Transaction tx = (Transaction)engine.ScriptContainer;
+            OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
+            if (response is null) return false;
+            StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
+            OracleRequest request = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<OracleRequest>();
+            if (request is null) return false;
+            return tx.NetworkFee + tx.SystemFee <= request.GasForResponse;
         }
     }
 }
