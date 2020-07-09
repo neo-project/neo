@@ -250,7 +250,7 @@ namespace Neo.UnitTests.SmartContract
             ECPoint pubkey = keyPair.PublicKey;
 
             var engine = GetEngine(true);
-            (((Transaction)engine.ScriptContainer).Signers.Entries[0]).Account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            ((Transaction)engine.ScriptContainer).Signers[0].Account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
 
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
             engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeFalse();

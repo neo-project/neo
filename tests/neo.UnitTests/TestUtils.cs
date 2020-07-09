@@ -80,7 +80,7 @@ namespace Neo.UnitTests
         {
             JObject wallet = new JObject();
             wallet["name"] = "noname";
-            wallet["version"] = new System.Version("3.0").ToString();
+            wallet["version"] = new Version("3.0").ToString();
             wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
@@ -94,11 +94,11 @@ namespace Neo.UnitTests
             {
                 Script = new byte[1],
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new Signer()
+                Signers = new[]{ new Signer()
                 {
                     Account = sender,
                     Scopes = WitnessScope.CalledByEntry
-                },
+                } },
                 Witnesses = new Witness[]{ new Witness
                 {
                     InvocationScript = new byte[0],
@@ -194,6 +194,7 @@ namespace Neo.UnitTests
             {
                 Script = randomBytes,
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = Array.Empty<Signer>(),
                 Witnesses = new[]
                 {
                     new Witness

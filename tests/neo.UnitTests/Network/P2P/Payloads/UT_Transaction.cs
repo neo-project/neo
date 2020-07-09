@@ -64,6 +64,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
+            uut.Signers = Array.Empty<Signer>();
             uut.Attributes = Array.Empty<TransactionAttribute>();
             uut.Witnesses = new[]
             {
@@ -77,7 +78,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(82);
+            uut.Size.Should().Be(63);
         }
 
         [TestMethod]
@@ -157,8 +158,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 Assert.AreEqual(2000810, verificationGas);
-                Assert.AreEqual(367000, sizeGas);
-                Assert.AreEqual(2367810, tx.NetworkFee);
+                Assert.AreEqual(347000, sizeGas);
+                Assert.AreEqual(2347810, tx.NetworkFee);
             }
         }
 
@@ -199,7 +200,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsNull(tx.Witnesses);
 
                 // check pre-computed network fee (already guessing signature sizes)
-                tx.NetworkFee.Should().Be(1264390);
+                tx.NetworkFee.Should().Be(1244390L);
 
                 // ----
                 // Sign
@@ -241,32 +242,32 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // ------------------
                 // check tx_size cost
                 // ------------------
-                Assert.AreEqual(264, tx.Size);
+                Assert.AreEqual(244, tx.Size);
 
                 // will verify tx size, step by step
 
                 // Part I
-                Assert.AreEqual(45, Transaction.HeaderSize);
+                Assert.AreEqual(25, Transaction.HeaderSize);
                 // Part II
-                Assert.AreEqual(23, tx.Attributes.GetVarSize());
-                Assert.AreEqual(1, tx.Attributes.Length);
-                Assert.AreEqual(1, tx.Signers.Count);
-                Assert.AreEqual(23, tx.Signers.Size);
+                Assert.AreEqual(1, tx.Attributes.GetVarSize());
+                Assert.AreEqual(0, tx.Attributes.Length);
+                Assert.AreEqual(1, tx.Signers.Length);
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
-                Assert.AreEqual(22, tx.Signers.First().Size);
+                Assert.AreEqual(22, tx.Signers.GetVarSize());
                 // Part III
                 Assert.AreEqual(86, tx.Script.GetVarSize());
                 // Part IV
                 Assert.AreEqual(110, tx.Witnesses.GetVarSize());
                 // I + II + III + IV
-                Assert.AreEqual(45 + 23 + 86 + 110, tx.Size);
+                Assert.AreEqual(25 + 22 + 1 + 86 + 110, tx.Size);
 
                 Assert.AreEqual(1000, NativeContract.Policy.GetFeePerByte(snapshot));
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-                Assert.AreEqual(264000, sizeGas);
 
-                // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1264390, verificationGas + sizeGas);
+                // final check: verification_cost and tx_size
+                Assert.AreEqual(244000, sizeGas);
+                Assert.AreEqual(1000390, verificationGas);
+
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -300,7 +301,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     // self-transfer of 1e-8 GAS
-                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
@@ -315,7 +316,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, new Signers(signers));
+                var tx = wallet.MakeTransaction(script, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -352,7 +353,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1264390, verificationGas + sizeGas);
+                Assert.AreEqual(1244390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -386,7 +387,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     // self-transfer of 1e-8 GAS
-                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
@@ -402,7 +403,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, new Signers(signers));
+                var tx = wallet.MakeTransaction(script, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -439,7 +440,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1285390, verificationGas + sizeGas);
+                Assert.AreEqual(1265390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -492,7 +493,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, new Signers(signers));
+                var tx = wallet.MakeTransaction(script, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -529,7 +530,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1285390, verificationGas + sizeGas);
+                Assert.AreEqual(1265390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -580,7 +581,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // expects FAULT on execution of 'transfer' Application script
                 // due to lack of a valid witness validation
                 Transaction tx = null;
-                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, new Signers(signers)));
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, signers));
                 Assert.IsNull(tx);
             }
         }
@@ -613,7 +614,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     // self-transfer of 1e-8 GAS
-                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
@@ -629,7 +630,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, new Signers(signers));
+                var tx = wallet.MakeTransaction(script, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -647,9 +648,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // only a single witness should exist
                 tx.Witnesses.Length.Should().Be(1);
                 // no attributes must exist
-                tx.Attributes.Length.Should().Be(1);
+                tx.Attributes.Length.Should().Be(0);
                 // one cosigner must exist
-                tx.Signers.Count.Should().Be(1);
+                tx.Signers.Length.Should().Be(1);
 
                 // Fast check
                 Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
@@ -671,7 +672,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1305390, verificationGas + sizeGas);
+                Assert.AreEqual(1285390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -724,7 +725,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // expects FAULT on execution of 'transfer' Application script
                 // due to lack of a valid witness validation
                 Transaction tx = null;
-                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, new Signers(signers), attributes));
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, signers, attributes));
                 Assert.IsNull(tx);
             }
         }
@@ -741,18 +742,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new Signers(
+                Signers = new[]{
                     new Signer
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                         Scopes = WitnessScope.Global
                     }
-                ),
+                },
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
-            Assert.AreEqual(2, hashes.Length);
+            Assert.AreEqual(1, hashes.Length);
             Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyForEachBlock(snapshot, BigInteger.Zero));
         }
 
@@ -767,6 +768,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
+                Signers = Array.Empty<Signer>(),
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
@@ -777,11 +779,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // detailed hexstring info (basic checking)
             sTx.ToHexString().Should().Be("00" + // version
             "04030201" + // nonce
-            "0000000000000000000000000000000000000000" + // sender
             "00e1f50500000000" + // system fee (1 GAS)
             "0100000000000000" + // network fee (1 satoshi)
             "04030201" + // timelimit 
             "00" + // no attributes
+            "00" + // no signer
             "0111" + // push1 script
             "00"); // no witnesses
 
@@ -813,7 +815,21 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new Signers(new Signer[]
+                Signers = Array.Empty<Signer>(),
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            byte[] sTx = txDoubleCosigners.ToArray();
+
+            // no need for detailed hexstring here (see basic tests for it)
+            sTx.ToHexString().Should().Be("000403020100e1f505000000000100000000000000040302010000011100");
+
+            // back to transaction (should fail, due to non-distinct cosigners)
+            Transaction tx2 = null;
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                txDoubleCosigners.Signers = new Signer[]
                 {
                     new Signer()
                     {
@@ -825,21 +841,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
                         Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
                     }
-                }),
-                Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = new Witness[0] { }
-            };
-
-            byte[] sTx = txDoubleCosigners.ToArray();
-
-            // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("0004030201000000000000000000000000000000000000000000e1f50500000000010000000000000004030201020109080706050403020100090807060504030201000001090807060504030201000908070605040302010001011100");
-
-            // back to transaction (should fail, due to non-distinct cosigners)
-            Transaction tx2 = null;
-            Assert.ThrowsException<FormatException>(() =>
-                tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx)
-            );
+                };
+            });
             Assert.IsNull(tx2);
         }
 
@@ -874,7 +877,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new Signers(cosigners1), // max + 1 (should fail)
+                Signers = cosigners1, // max + 1 (should fail)
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -908,7 +911,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new Signers(cosigners1), // max + 1 (should fail)
+                Signers = cosigners, // max + 1 (should fail)
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
             };
@@ -956,7 +959,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     // self-transfer of 1e-8 GAS
-                    System.Numerics.BigInteger value = (new BigDecimal(1, 8)).Value;
+                    BigInteger value = (new BigDecimal(1, 8)).Value;
                     sb.EmitAppCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                     sb.Emit(OpCode.ASSERT);
                     script = sb.ToArray();
@@ -970,7 +973,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, new Signers(signers));
+                var tx = wallet.MakeTransaction(script, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -1007,7 +1010,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1264390, verificationGas + sizeGas);
+                Assert.AreEqual(1244390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -1018,6 +1021,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.SystemFee = 4200000000;
+            uut.Signers = Array.Empty<Signer>();
             uut.Attributes = Array.Empty<TransactionAttribute>();
             uut.Witnesses = new[]
             {
@@ -1030,8 +1034,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0xfe08a23db645733a95914622ead5e738b03918680e927e00928116395e571758");
-            jObj["size"].AsNumber().Should().Be(82);
+            jObj["hash"].AsString().Should().Be("0xb1fa52d0778d1e31d0c419e6006d522c5a0e006f7fd83489e7360f7847a6edfe");
+            jObj["size"].AsNumber().Should().Be(63);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["netfee"].AsString().Should().Be("0");

@@ -153,6 +153,7 @@ namespace Neo.UnitTests.Cryptography
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
                 SystemFee = 4200000000,
+                Signers = Array.Empty<Signer>(),
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {

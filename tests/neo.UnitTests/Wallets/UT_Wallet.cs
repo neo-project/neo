@@ -381,11 +381,11 @@ namespace Neo.UnitTests.Wallets
             entry.GetInteroperable<AccountState>().Balance = 1000000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            var tx = wallet.MakeTransaction(new byte[] { }, new Signers(new Signer()
+            var tx = wallet.MakeTransaction(new byte[] { }, new[]{ new Signer()
             {
                 Account = account.ScriptHash,
-                Scopes = WitnessScope.Global
-            }), new TransactionAttribute[] { });
+                Scopes = WitnessScope.CalledByEntry
+            }}, new TransactionAttribute[] { });
 
             tx.Should().NotBeNull();
 

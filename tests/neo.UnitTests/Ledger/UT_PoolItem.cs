@@ -120,6 +120,7 @@ namespace Neo.UnitTests.Ledger
                 Script = overrideScriptBytes ?? new byte[0],
                 NetworkFee = networkFee,
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = Array.Empty<Signer>(),
                 Witnesses = new[]
                 {
                     new Witness
@@ -131,7 +132,7 @@ namespace Neo.UnitTests.Ledger
             };
 
             tx.Attributes.Length.Should().Be(0);
-            tx.Signers.Count.Should().Be(0);
+            tx.Signers.Length.Should().Be(0);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();

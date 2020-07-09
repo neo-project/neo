@@ -45,13 +45,13 @@ namespace Neo.UnitTests.SmartContract
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             string str = context.ToString();
-            str.Should().Be(@"{""type"":""Neo.Network.P2P.Payloads.Transaction"",""hex"":""AAAAAABmUJDLobcPtqo9vZKIdjXsd8fVGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAEA"",""items"":{}}");
+            str.Should().Be(@"{""type"":""Neo.Network.P2P.Payloads.Transaction"",""hex"":""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABZlCQy6G3D7aqPb2SiHY17HfH1RsBAQA="",""items"":{}}");
         }
 
         [TestMethod]
         public void TestParse()
         {
-            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAABmUJDLobcPtqo9vZKIdjXsd8fVGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAEA\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
+            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABZlCQy6G3D7aqPb2SiHY17HfH1RsBAQA=\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
             ret.ScriptHashes[0].ToString().Should().Be("0x1bd5c777ec35768892bd3daab60fb7a1cb905066");
             ((Transaction)ret.Verifiable).Script.ToHexString().Should().Be(new byte[1].ToHexString());
         }
@@ -66,10 +66,11 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestAdd()
         {
-            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
+            Transaction tx = TestUtils.GetTransaction(UInt160.Zero);
             var context1 = new ContractParametersContext(tx);
             context1.Add(contract, 0, new byte[] { 0x01 }).Should().BeFalse();
 
+            tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
             var context2 = new ContractParametersContext(tx);
             context2.Add(contract, 0, new byte[] { 0x01 }).Should().BeTrue();
             //test repeatlly createItem

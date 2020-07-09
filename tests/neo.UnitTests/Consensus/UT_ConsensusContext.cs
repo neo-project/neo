@@ -125,6 +125,7 @@ namespace Neo.UnitTests.Consensus
             var tx = new Transaction()
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
+                Signers = System.Array.Empty<Signer>(),
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],
@@ -144,6 +145,7 @@ namespace Neo.UnitTests.Consensus
             var tx = new Transaction()
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
+                Signers = System.Array.Empty<Signer>(),
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],

@@ -104,7 +104,7 @@ namespace Neo.SmartContract
         {
             if (ScriptContainer is Transaction tx)
             {
-                if (!tx.Signers.TryGetValue(hash, out Signer signer)) return false;
+                if (!tx.TryGetSigner(hash, out Signer signer)) return false;
                 if (signer.Scopes == WitnessScope.Global) return true;
                 if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
