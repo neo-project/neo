@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,6 +55,7 @@ namespace Neo.Plugins
             if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
             if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
+            if (this is IApplicationEngineProvider provider) ApplicationEngine.SetApplicationEngineProvider(provider);
 
             Configure();
         }
