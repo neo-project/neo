@@ -277,13 +277,12 @@ namespace Neo.Wallets
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-                var cosigners = cosignerList.Select(p =>
-                        new Signer()
-                        {
-                            // default access for transfers should be valid only for first invocation
-                            Scopes = WitnessScope.CalledByEntry,
-                            Account = new UInt160(p.ToArray())
-                        }).ToArray();
+                var cosigners = cosignerList.Select(p => new Signer()
+                {
+                    // default access for transfers should be valid only for first invocation
+                    Scopes = WitnessScope.CalledByEntry,
+                    Account = p
+                }).ToArray();
 
                 return MakeTransaction(snapshot, script, cosigners, Array.Empty<TransactionAttribute>(), balances_gas);
             }
