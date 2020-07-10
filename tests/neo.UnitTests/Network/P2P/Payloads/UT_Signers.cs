@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Account = UInt160.Zero
             };
 
-            var hex = "000000000000000000000000000000000000000000";
+            var hex = "000000000000000000000000000000000000000080";
             attr.ToArray().ToHexString().Should().Be(hex);
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();

@@ -927,12 +927,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void FeeIsSignatureContract_TestScope_Global_Default()
+        public void FeeIsSignatureContract_TestScope_FeeOnly_Default()
         {
             // Global is supposed to be default
 
             Signer cosigner = new Signer();
-            cosigner.Scopes.Should().Be(WitnessScope.Global);
+            cosigner.Scopes.Should().Be(WitnessScope.FeeOnly);
 
             var wallet = TestUtils.GenerateTestWallet();
             var snapshot = Blockchain.Singleton.GetSnapshot();
