@@ -14,6 +14,24 @@ namespace Neo.SmartContract
 {
     internal static class BinarySerializer
     {
+        private class ContainerPlaceholder : StackItem
+        {
+            public override StackItemType Type { get; }
+            public int ElementCount { get; }
+
+            public ContainerPlaceholder(StackItemType type, int count)
+            {
+                Type = type;
+                ElementCount = count;
+            }
+
+            public override bool Equals(StackItem other) => throw new NotSupportedException();
+
+            public override int GetHashCode() => throw new NotSupportedException();
+
+            public override bool GetBoolean() => throw new NotSupportedException();
+        }
+
         public static StackItem Deserialize(byte[] data, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter = null)
         {
             using MemoryStream ms = new MemoryStream(data, false);
@@ -137,16 +155,12 @@ namespace Neo.SmartContract
                     case Null _:
                         break;
                     case Boolean _:
-                        writer.Write(item.ToBoolean());
+                        writer.Write(item.GetBoolean());
                         break;
-                    case Integer integer:
-                        writer.WriteVarBytes(integer.Span);
-                        break;
-                    case ByteString bytes:
-                        writer.WriteVarBytes(bytes.Span);
-                        break;
-                    case Buffer buffer:
-                        writer.WriteVarBytes(buffer.InnerBuffer);
+                    case Integer _:
+                    case ByteString _:
+                    case Buffer _:
+                        writer.WriteVarBytes(item.GetSpan());
                         break;
                     case Array array:
                         if (serialized.Any(p => ReferenceEquals(p, array)))

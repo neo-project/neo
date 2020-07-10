@@ -5,7 +5,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -14,6 +13,13 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
+        private const long MaxVerificationGas = 0_50000000;
+
+        public static UInt160 GetScriptHash(this ExecutionContext context)
+        {
+            return context.GetState<ExecutionContextState>().ScriptHash;
+        }
+
         public static bool IsMultiSigContract(this byte[] script)
         {
             return IsMultiSigContract(script, out _, out _, null);
@@ -126,6 +132,7 @@ namespace Neo.SmartContract
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
+            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -160,7 +167,7 @@ namespace Neo.SmartContract
                     engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
-                    if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                     gas -= engine.GasConsumed;
                 }
             }

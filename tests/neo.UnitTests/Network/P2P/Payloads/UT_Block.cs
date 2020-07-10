@@ -218,7 +218,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             txObj[0]["size"].AsNumber().Should().Be(51);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
-            txObj[0]["net_fee"].AsString().Should().Be("0");
+            txObj[0]["netfee"].AsString().Should().Be("0");
         }
     }
 }

@@ -6,7 +6,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.UnitTests.Extensions
@@ -65,29 +64,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
-            return result.ToBoolean();
-        }
-
-        public static string[] SupportedStandards(this NativeContract contract)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
-
-            engine.LoadScript(contract.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("supportedStandards");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute().Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
-
-            return (result as VM.Types.Array).ToArray()
-                .Select(u => u.GetString())
-                .ToArray();
+            return result.GetBoolean();
         }
 
         public static BigInteger TotalSupply(this NativeContract contract, StoreView snapshot)
@@ -107,7 +84,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
-            return (result as VM.Types.Integer).GetBigInteger();
+            return result.GetInteger();
         }
 
         public static BigInteger BalanceOf(this NativeContract contract, StoreView snapshot, byte[] account)
@@ -128,7 +105,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
-            return (result as VM.Types.Integer).GetBigInteger();
+            return result.GetInteger();
         }
 
         public static BigInteger Decimals(this NativeContract contract)
@@ -148,7 +125,7 @@ namespace Neo.UnitTests.Extensions
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
-            return (result as VM.Types.Integer).GetBigInteger();
+            return result.GetInteger();
         }
 
         public static string Symbol(this NativeContract contract)

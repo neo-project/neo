@@ -32,9 +32,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Decimals() => NativeContract.GAS.Decimals().Should().Be(8);
 
         [TestMethod]
-        public void Check_SupportedStandards() => NativeContract.GAS.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
-
-        [TestMethod]
         public void Check_BalanceOfTransferAndBurn()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -133,7 +130,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            NativeContract.GAS.Invoke(engine).Should().BeFalse();
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Invoke(engine));
         }
     }
 }

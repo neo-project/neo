@@ -247,9 +247,9 @@ namespace Neo.Network.P2P.Payloads
             json["version"] = Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
-            json["sys_fee"] = SystemFee.ToString();
-            json["net_fee"] = NetworkFee.ToString();
-            json["valid_until_block"] = ValidUntilBlock;
+            json["sysfee"] = SystemFee.ToString();
+            json["netfee"] = NetworkFee.ToString();
+            json["validuntilblock"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
@@ -267,6 +267,8 @@ namespace Neo.Network.P2P.Payloads
                 return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
+                return VerifyResult.PolicyFail;
+            if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
