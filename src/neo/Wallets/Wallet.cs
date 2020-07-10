@@ -235,7 +235,7 @@ namespace Neo.Wallets
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                HashSet<UInt160> signersList = new HashSet<UInt160>();
+                HashSet<UInt160> cosignerList = new HashSet<UInt160>();
                 byte[] script;
                 List<(UInt160 Account, BigInteger Value)> balances_gas = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -262,7 +262,7 @@ namespace Neo.Wallets
                         {
                             balances = balances.OrderBy(p => p.Value).ToList();
                             var balances_used = FindPayingAccounts(balances, output.Value.Value);
-                            signersList.UnionWith(balances_used.Select(p => p.Account));
+                            cosignerList.UnionWith(balances_used.Select(p => p.Account));
                             foreach (var (account, value) in balances_used)
                             {
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
@@ -277,7 +277,7 @@ namespace Neo.Wallets
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-                var signers = signersList.Select(p =>
+                var cosigners = cosignerList.Select(p =>
                         new Signer()
                         {
                             // default access for transfers should be valid only for first invocation
@@ -285,7 +285,7 @@ namespace Neo.Wallets
                             Account = new UInt160(p.ToArray())
                         }).ToArray();
 
-                return MakeTransaction(snapshot, script, signers, Array.Empty<TransactionAttribute>(), balances_gas);
+                return MakeTransaction(snapshot, script, cosigners, Array.Empty<TransactionAttribute>(), balances_gas);
             }
         }
 
