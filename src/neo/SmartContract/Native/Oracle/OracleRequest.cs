@@ -7,7 +7,7 @@ namespace Neo.SmartContract.Native.Oracle
 {
     public class OracleRequest : IInteroperable
     {
-        public UInt256 Txid;
+        public UInt256 OriginalTxid;
         public long GasForResponse;
         public string Url;
         public string Filter;
@@ -18,7 +18,7 @@ namespace Neo.SmartContract.Native.Oracle
         public void FromStackItem(StackItem stackItem)
         {
             Array array = (Array)stackItem;
-            Txid = new UInt256(array[0].GetSpan());
+            OriginalTxid = new UInt256(array[0].GetSpan());
             GasForResponse = (long)array[1].GetInteger();
             Url = array[2].GetString();
             Filter = array[3].GetString();
@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native.Oracle
         {
             return new Array(referenceCounter)
             {
-                Txid.ToArray(),
+                OriginalTxid.ToArray(),
                 GasForResponse,
                 Url,
                 Filter ?? StackItem.Null,

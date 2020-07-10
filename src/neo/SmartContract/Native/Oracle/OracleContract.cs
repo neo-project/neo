@@ -40,8 +40,7 @@ namespace Neo.SmartContract.Native.Oracle
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
-            StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
-            OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
+            OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
         }
@@ -50,6 +49,15 @@ namespace Neo.SmartContract.Native.Oracle
         public ECPoint[] GetOracleNodes(StoreView snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_NodeList)].GetInteroperable<NodeList>().ToArray();
+        }
+
+        private UInt256 GetOriginalTxid(ApplicationEngine engine)
+        {
+            Transaction tx = (Transaction)engine.ScriptContainer;
+            OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
+            if (response is null) return tx.Hash;
+            OracleRequest request = GetRequest(engine.Snapshot, response.Id);
+            return request.OriginalTxid;
         }
 
         public OracleRequest GetRequest(StoreView snapshot, ulong id)
@@ -131,7 +139,7 @@ namespace Neo.SmartContract.Native.Oracle
             //Put the request to storage
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
-                Txid = ((Transaction)engine.ScriptContainer).Hash,
+                OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForRepsonse,
                 Url = url,
                 Filter = filter,

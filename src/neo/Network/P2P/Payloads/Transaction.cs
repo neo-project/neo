@@ -162,13 +162,6 @@ namespace Neo.Network.P2P.Payloads
             if (response is null) return true;
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, response.Id);
             if (request is null) return false;
-            Transaction request_tx = snapshot.GetTransaction(request.Txid);
-            foreach (Cosigner cosigner in Cosigners.Values)
-            {
-                if (!request_tx.Cosigners.TryGetValue(cosigner.Account, out Cosigner other))
-                    return false;
-                if (!cosigner.Equals(other)) return false;
-            }
             return true;
         }
 
@@ -219,8 +212,13 @@ namespace Neo.Network.P2P.Payloads
             }
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
-            if (IsOracleResponse && !Script.AsSpan().SequenceEqual(oracleResponseScript))
-                throw new FormatException();
+            if (IsOracleResponse)
+            {
+                if (Cosigners.Count > 0)
+                    throw new FormatException();
+                if (!Script.AsSpan().SequenceEqual(oracleResponseScript))
+                    throw new FormatException();
+            }
         }
 
         public bool Equals(Transaction other)
@@ -247,11 +245,9 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160> { Sender };
+            var hashes = new HashSet<UInt160>(Cosigners.Keys) { Sender };
             if (IsOracleResponse)
                 hashes.Add(Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot)));
-            else
-                hashes.UnionWith(Cosigners.Keys);
             return hashes.OrderBy(p => p).ToArray();
         }
 
