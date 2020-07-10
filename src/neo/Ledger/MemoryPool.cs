@@ -307,6 +307,9 @@ namespace Neo.Ledger
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
                 removedTransactions.Add(minItem.Tx);
+
+                if (ReferenceEquals(sortedPool, _sortedTransactions))
+                    VerificationContext.RemoveTransaction(minItem.Tx);
             } while (Count > Capacity);
 
             return removedTransactions;
