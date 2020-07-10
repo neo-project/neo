@@ -328,7 +328,10 @@ namespace Neo.Wallets
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
+                    {
+                        if (engine.FaultException != null) throw engine.FaultException;
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
+                    }
                     tx.SystemFee = engine.GasConsumed;
                 }
 
