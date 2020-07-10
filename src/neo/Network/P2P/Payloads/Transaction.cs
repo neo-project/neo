@@ -31,10 +31,10 @@ namespace Neo.Network.P2P.Payloads
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
+        private Signer[] _signers;
         private TransactionAttribute[] attributes;
         private byte[] script;
         private Witness[] witnesses;
-        private Signer[] _signers;
 
         public const int HeaderSize =
             sizeof(byte) +  //Version
@@ -110,8 +110,8 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.GetVarSize() +   // Attributes
                         Signers.GetVarSize() +      // Signers
+                        Attributes.GetVarSize() +   // Attributes
                         Script.GetVarSize() +       // Script
                         Witnesses.GetVarSize();     // Witnesses
                 }
@@ -157,9 +157,9 @@ namespace Neo.Network.P2P.Payloads
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
 
-        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader)
+        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader, int maxCount)
         {
-            int count = (int)reader.ReadVarInt(MaxTransactionAttributes);
+            int count = (int)reader.ReadVarInt((ulong)maxCount);
             HashSet<TransactionAttributeType> hashset = new HashSet<TransactionAttributeType>();
             while (count-- > 0)
             {
@@ -167,6 +167,18 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.AllowMultiple && !hashset.Add(attribute.Type))
                     throw new FormatException();
                 yield return attribute;
+            }
+        }
+
+        private static IEnumerable<Signer> DeserializeSigners(BinaryReader reader, int maxCount)
+        {
+            int count = (int)reader.ReadVarInt((ulong)maxCount);
+            HashSet<UInt160> hashset = new HashSet<UInt160>();
+            while (count-- > 0)
+            {
+                Signer signer = reader.ReadSerializable<Signer>();
+                if (!hashset.Add(signer.Account)) throw new FormatException();
+                yield return signer;
             }
         }
 
@@ -181,8 +193,8 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = DeserializeAttributes(reader).ToArray();
-            Signers = reader.ReadSerializableArray<Signer>(MaxTransactionAttributes);
+            Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
+            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -227,8 +239,8 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
-            writer.Write(Attributes);
             writer.Write(Signers);
+            writer.Write(Attributes);
             writer.WriteVarBytes(Script);
         }
 
@@ -243,8 +255,8 @@ namespace Neo.Network.P2P.Payloads
             json["sysfee"] = SystemFee.ToString();
             json["netfee"] = NetworkFee.ToString();
             json["validuntilblock"] = ValidUntilBlock;
-            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
+            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
