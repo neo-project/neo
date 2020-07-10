@@ -973,14 +973,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     script = sb.ToArray();
                 }
 
-                // default to global scope
+                // try to use fee only inside the smart contract
                 var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
-                    Scopes =  WitnessScope.CalledByEntry
+                    Scopes =  WitnessScope.FeeOnly
                 } };
 
-                // using this...
+                Assert.ThrowsException<InvalidOperationException>(() => wallet.MakeTransaction(script, acc.ScriptHash, signers));
+
+                // change to global scope
+                signers[0].Scopes = WitnessScope.Global;
 
                 var tx = wallet.MakeTransaction(script, acc.ScriptHash, signers);
 
