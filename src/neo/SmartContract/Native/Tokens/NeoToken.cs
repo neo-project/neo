@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 Value = (5 * GAS.Factor).ToByteArray()
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RewardRatio), new StorageItem(new RewardRatio() {
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RewardRatio), new StorageItem(new RewardRatio(){
                 NeoHolder = 10,
                 Committee = 5,
                 Voter = 85

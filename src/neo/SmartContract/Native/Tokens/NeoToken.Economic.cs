@@ -148,7 +148,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public void FromStackItem(StackItem stackItem)
         {
-            Array array = (Array) stackItem;
+            Array array = (Array)stackItem;
             NeoHolder = (int)array[0].GetInteger();
             Committee = (int)array[1].GetInteger();
             Voter = (int)array[2].GetInteger();
