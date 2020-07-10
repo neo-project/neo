@@ -174,10 +174,13 @@ namespace Neo.Network.P2P.Payloads
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             HashSet<UInt160> hashset = new HashSet<UInt160>();
-            while (count-- > 0)
+            for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
-                if (!hashset.Add(signer.Account)) throw new FormatException();
+                if (i == 0 ^ signer.Scopes == WitnessScope.FeeOnly)
+                    throw new FormatException();
+                if (!hashset.Add(signer.Account))
+                    throw new FormatException();
                 yield return signer;
             }
         }

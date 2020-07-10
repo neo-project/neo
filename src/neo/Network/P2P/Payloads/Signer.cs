@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -26,6 +27,10 @@ namespace Neo.Network.P2P.Payloads
         {
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
+            if ((Scopes & ~(WitnessScope.CalledByEntry | WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.Global)) != 0)
+                throw new FormatException();
+            if (Scopes.HasFlag(WitnessScope.Global) && Scopes != WitnessScope.Global)
+                throw new FormatException();
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
                 ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
                 : new UInt160[0];
