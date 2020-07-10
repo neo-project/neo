@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_RewardRatio)).GetInteroperable<RewardRatio>();
         }
-        
+
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
