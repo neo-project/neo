@@ -327,7 +327,7 @@ namespace Neo.Wallets
                 // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
                 {
-                    if (engine.State.HasFlag(VMState.FAULT))
+                    if (engine.State == VMState.FAULT)
                     {
                         if (engine.FaultException != null) throw engine.FaultException;
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
