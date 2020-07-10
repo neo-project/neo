@@ -22,18 +22,19 @@ namespace Neo.UnitTests
         {
             return new ContractManifest()
             {
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Groups = new ContractGroup[0],
+                Features = ContractFeatures.NoProperty,
+                SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
                     Events = new ContractEventDescriptor[0],
                     Methods = new ContractMethodDescriptor[0]
                 },
-                Features = ContractFeatures.NoProperty,
-                Groups = new ContractGroup[0],
-                SafeMethods = WildcardContainer<string>.Create(),
+                Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = null,
+                SafeMethods = WildcardContainer<string>.Create(),
+                Extra = null
             };
         }
 
