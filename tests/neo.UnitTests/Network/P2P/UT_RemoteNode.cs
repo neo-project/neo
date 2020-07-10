@@ -6,6 +6,7 @@ using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System.Net;
 
 namespace Neo.UnitTests.Network.P2P
 {
@@ -54,7 +55,7 @@ namespace Neo.UnitTests.Network.P2P
         public void RemoteNode_Test_Accept_IfSameMagic()
         {
             var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
+            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080)));
 
             var msg = Message.Create(MessageCommand.Version, new VersionPayload()
             {

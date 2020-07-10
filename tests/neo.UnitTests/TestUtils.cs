@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
@@ -17,30 +18,51 @@ namespace Neo.UnitTests
     {
         public static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-        public static ContractManifest CreateDefaultManifest(UInt160 hash, string method = null)
+        public static ContractManifest CreateDefaultManifest(UInt160 hash)
         {
             return new ContractManifest()
             {
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Groups = new ContractGroup[0],
+                Features = ContractFeatures.NoProperty,
+                SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
                     Events = new ContractEventDescriptor[0],
-                    Methods = method == null ? new ContractMethodDescriptor[0] : new ContractMethodDescriptor[]
-                    {
-                        new ContractMethodDescriptor()
-                        {
-                            Name = method,
-                            Parameters = new ContractParameterDefinition[0],
-                            ReturnType = ContractParameterType.Integer
-                        }
-                    }
+                    Methods = new ContractMethodDescriptor[0]
                 },
-                Features = ContractFeatures.NoProperty,
-                Groups = new ContractGroup[0],
-                SafeMethods = WildcardContainer<string>.Create(),
+                Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = null,
+                SafeMethods = WildcardContainer<string>.Create(),
+                Extra = null
+            };
+        }
+
+        public static ContractManifest CreateManifest(UInt160 hash, string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
+        {
+            ContractManifest manifest = CreateDefaultManifest(hash);
+            manifest.Abi.Methods = new ContractMethodDescriptor[]
+            {
+                new ContractMethodDescriptor()
+                {
+                    Name = method,
+                    Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                    {
+                        Name = $"p{i}",
+                        Type = p
+                    }).ToArray(),
+                    ReturnType = returnType
+                }
+            };
+            return manifest;
+        }
+
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
+        {
+            return new StorageKey
+            {
+                Id = contract.Id,
+                Key = key.ToArray().Prepend(prefix).ToArray()
             };
         }
 
@@ -82,13 +104,13 @@ namespace Neo.UnitTests
             };
         }
 
-        internal static ContractState GetContract(string method = null)
+        internal static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
             return new ContractState
             {
                 Id = 0x43000000,
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
-                Manifest = CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method)
+                Manifest = CreateManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
 

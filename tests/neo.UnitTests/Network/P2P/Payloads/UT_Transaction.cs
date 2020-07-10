@@ -151,7 +151,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -233,7 +233,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -346,7 +346,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -433,7 +433,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -523,7 +523,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -665,7 +665,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -996,7 +996,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         Assert.AreEqual(VMState.HALT, engine.Execute());
                         Assert.AreEqual(1, engine.ResultStack.Count);
-                        Assert.IsTrue(engine.ResultStack.Pop().ToBoolean());
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                         verificationGas += engine.GasConsumed;
                     }
                 }
@@ -1031,9 +1031,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["size"].AsNumber().Should().Be(82);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
-            jObj["net_fee"].AsString().Should().Be("0");
+            jObj["netfee"].AsString().Should().Be("0");
             jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
-            jObj["sys_fee"].AsString().Should().Be("4200000000");
+            jObj["sysfee"].AsString().Should().Be("4200000000");
         }
 
         [TestMethod]

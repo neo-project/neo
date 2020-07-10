@@ -80,7 +80,7 @@ namespace Neo.IO.Json
 
         public static JObject Parse(string value, int max_nest = 100)
         {
-            return Parse(Encoding.UTF8.GetBytes(value), max_nest);
+            return Parse(Utility.StrictUTF8.GetBytes(value), max_nest);
         }
 
         private static JObject Read(ref Utf8JsonReader reader, bool skipReading = false)
@@ -158,7 +158,7 @@ namespace Neo.IO.Json
 
         public string ToString(bool indented)
         {
-            return Encoding.UTF8.GetString(ToByteArray(indented));
+            return Utility.StrictUTF8.GetString(ToByteArray(indented));
         }
 
         public virtual T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false) where T : Enum
