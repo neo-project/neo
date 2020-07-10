@@ -288,7 +288,7 @@ namespace Neo.Wallets
             }
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender, Signer[] cosigners = null, TransactionAttribute[] attributes = null)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null)
         {
             UInt160[] accounts;
             if (sender is null)
