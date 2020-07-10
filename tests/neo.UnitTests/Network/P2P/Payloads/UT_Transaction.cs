@@ -316,7 +316,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, signers);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -403,7 +403,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, signers);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -493,7 +493,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, signers);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -581,7 +581,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // expects FAULT on execution of 'transfer' Application script
                 // due to lack of a valid witness validation
                 Transaction tx = null;
-                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, signers));
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, acc.ScriptHash, signers));
                 Assert.IsNull(tx);
             }
         }
@@ -630,7 +630,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, signers);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -725,7 +725,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // expects FAULT on execution of 'transfer' Application script
                 // due to lack of a valid witness validation
                 Transaction tx = null;
-                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, signers, attributes));
+                Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(script, acc.ScriptHash, signers, attributes));
                 Assert.IsNull(tx);
             }
         }
@@ -768,7 +768,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Signers = Array.Empty<Signer>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = new Witness[0] { }
@@ -777,15 +777,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx = txSimple.ToArray();
 
             // detailed hexstring info (basic checking)
-            sTx.ToHexString().Should().Be("00" + // version
-            "04030201" + // nonce
-            "00e1f50500000000" + // system fee (1 GAS)
-            "0100000000000000" + // network fee (1 satoshi)
-            "04030201" + // timelimit 
-            "00" + // no attributes
-            "00" + // no signer
-            "0111" + // push1 script
-            "00"); // no witnesses
+            sTx.ToHexString().Should().Be(
+                "00" + // version
+                "04030201" + // nonce
+                "00e1f50500000000" + // system fee (1 GAS)
+                "0100000000000000" + // network fee (1 satoshi)
+                "04030201" + // timelimit 
+                "01000000000000000000000000000000000000000000" + // empty signer
+                "00" + // no attributes
+                "0111" + // push1 script
+                "00"); // no witnesses
 
             // try to deserialize
             Transaction tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx);
@@ -797,7 +798,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx2.NetworkFee.Should().Be(0x0000000000000001);
             tx2.ValidUntilBlock.Should().Be(0x01020304);
             tx2.Attributes.Should().BeEquivalentTo(new TransactionAttribute[0] { });
-            tx2.Signers.Should().BeEquivalentTo(new Signer[0] { });
+            tx2.Signers.Should().BeEquivalentTo(new Signer[] {
+                new Signer()
+                {
+                    Account = UInt160.Zero,
+                    AllowedContracts = Array.Empty<UInt160>(),
+                    AllowedGroups = Array.Empty<ECPoint>() }
+                }
+            );
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
             tx2.Witnesses.Should().BeEquivalentTo(new Witness[0] { });
         }
@@ -815,21 +823,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
-                Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = new Witness[0] { }
-            };
-
-            byte[] sTx = txDoubleCosigners.ToArray();
-
-            // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("000403020100e1f505000000000100000000000000040302010000011100");
-
-            // back to transaction (should fail, due to non-distinct cosigners)
-            Transaction tx2 = null;
-            Assert.ThrowsException<ArgumentException>(() =>
-            {
-                txDoubleCosigners.Signers = new Signer[]
+                Signers = new Signer[]
                 {
                     new Signer()
                     {
@@ -841,8 +835,21 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
                         Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
                     }
-                };
-            });
+                },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            byte[] sTx = txDoubleCosigners.ToArray();
+
+            // no need for detailed hexstring here (see basic tests for it)
+            sTx.ToHexString().Should().Be("000403020100e1f505000000000100000000000000040302010209080706050403020100090807060504030201008009080706050403020100090807060504030201000100011100");
+
+            // back to transaction (should fail, due to non-distinct cosigners)
+            Transaction tx2 = null;
+            Assert.ThrowsException<FormatException>(() =>
+                tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx)
+            );
             Assert.IsNull(tx2);
         }
 
@@ -865,7 +872,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     hex = hex.Insert(0, "0");
                 cosigners1[i] = new Signer
                 {
-                    Account = UInt160.Parse(hex)
+                    Account = UInt160.Parse(hex),
+                    Scopes = WitnessScope.CalledByEntry
                 };
             }
 
@@ -968,12 +976,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // default to global scope
                 var signers = new Signer[]{ new Signer
                 {
-                    Account = acc.ScriptHash
+                    Account = acc.ScriptHash,
+                    Scopes =  WitnessScope.CalledByEntry
                 } };
 
                 // using this...
 
-                var tx = wallet.MakeTransaction(script, signers);
+                var tx = wallet.MakeTransaction(script, acc.ScriptHash, signers);
 
                 Assert.IsNotNull(tx);
                 Assert.IsNull(tx.Witnesses);
@@ -1021,7 +1030,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.SystemFee = 4200000000;
-            uut.Signers = Array.Empty<Signer>();
+            uut.Signers = new Signer[] { new Signer() { Account = UInt160.Zero } };
             uut.Attributes = Array.Empty<TransactionAttribute>();
             uut.Witnesses = new[]
             {
@@ -1034,8 +1043,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0xb1fa52d0778d1e31d0c419e6006d522c5a0e006f7fd83489e7360f7847a6edfe");
-            jObj["size"].AsNumber().Should().Be(63);
+            jObj["hash"].AsString().Should().Be("0xe17382d26702bde77b00a9f23ea156b77c418764cbc45b2692088b5fde0336e3");
+            jObj["size"].AsNumber().Should().Be(84);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["netfee"].AsString().Should().Be("0");

@@ -195,7 +195,7 @@ namespace Neo.UnitTests
             {
                 Script = randomBytes,
                 Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 Witnesses = new[]
                 {
                     new Witness
