@@ -12,7 +12,6 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Policy;
 using System.Text;
 using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -292,14 +291,14 @@ namespace Neo.Wallets
 
         public Transaction MakeTransaction(byte[] script, Signer[] signers = null, TransactionAttribute[] attributes = null)
         {
-            var sender = signers?.Length > 0 ? signers[0].Account : UInt160.Zero;
             UInt160[] accounts;
-            if (sender == UInt160.Zero)
+            if (signers is null)
             {
                 accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
             }
             else
             {
+                UInt160 sender = signers[0].Account;
                 if (!Contains(sender))
                     throw new ArgumentException($"The address {sender} was not found in the wallet");
                 accounts = new[] { sender };
