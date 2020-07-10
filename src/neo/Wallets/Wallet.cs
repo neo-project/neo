@@ -329,8 +329,7 @@ namespace Neo.Wallets
                 {
                     if (engine.State == VMState.FAULT)
                     {
-                        if (engine.FaultException != null) throw engine.FaultException;
-                        throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
+                        throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'", engine.FaultException);
                     }
                     tx.SystemFee = engine.GasConsumed;
                 }
