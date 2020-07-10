@@ -353,8 +353,8 @@ namespace Neo.Wallets
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
-                // base size for transaction: includes const_header + attributes + script + hashes
-                int size = Transaction.HeaderSize + tx.Attributes.GetVarSize() + tx.Signers.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+                // base size for transaction: includes const_header + signers + attributes + script + hashes
+                int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()+ script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
 
                 foreach (UInt160 hash in hashes)
                 {
