@@ -50,11 +50,6 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Correspond with the first entry of Signers
-        /// </summary>
-        public UInt160 Sender => _signers.Length > 0 ? _signers[0].Account : UInt160.Zero;
-
-        /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
         /// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
         /// </summary>
@@ -95,6 +90,11 @@ namespace Neo.Network.P2P.Payloads
             get => script;
             set { script = value; _hash = null; _size = 0; }
         }
+
+        /// <summary>
+        /// Correspond with the first entry of Signers
+        /// </summary>
+        public UInt160 Sender => _signers[0].Account;
 
         public Signer[] Signers
         {
@@ -173,6 +173,7 @@ namespace Neo.Network.P2P.Payloads
         private static IEnumerable<Signer> DeserializeSigners(BinaryReader reader, int maxCount)
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
+            if (count == 0) throw new FormatException();
             HashSet<UInt160> hashset = new HashSet<UInt160>();
             for (int i = 0; i < count; i++)
             {
