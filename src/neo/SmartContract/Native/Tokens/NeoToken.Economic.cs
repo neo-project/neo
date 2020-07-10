@@ -1,3 +1,5 @@
+#pragma warning disable IDE0051
+
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -125,7 +127,7 @@ namespace Neo.SmartContract.Native.Tokens
 
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committeeVotes[i].Item1).ScriptHash;
                 BigInteger voterRewardPerCommittee = (i < validatorNumber ? 2 : 1) * voterRewardPerBlock * 10000L / committeeVotes[i].Item2; // Zoom in 10000 times, and the final calculation should be divided 10000L
-                enumerator = engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeAddr)).GetEnumerator();
+                enumerator = engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeAddr).ToArray()).GetEnumerator();
                 if (enumerator.MoveNext())
                     voterRewardPerCommittee += new BigInteger(enumerator.Current.Value.Value);
                 var storageKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeAddr).Add(uint.MaxValue - index - 1);
