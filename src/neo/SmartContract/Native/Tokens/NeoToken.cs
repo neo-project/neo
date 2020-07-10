@@ -54,18 +54,11 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 Value = (5 * GAS.Factor).ToByteArray()
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_NeoHoldersRewardRatio), new StorageItem
-            {
-                Value = new byte[] { 10 }
-            }); ;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_CommitteeRewardRatio), new StorageItem
-            {
-                Value = new byte[] { 5 }
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersRewardRatio), new StorageItem
-            {
-                Value = new byte[] { 85 }
-            });
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RewardRatio), new StorageItem(new RewardRatio() {
+                NeoHolder = 10,
+                Committee = 5,
+                Voter = 85
+            }));
 
             // Predistribution
 
