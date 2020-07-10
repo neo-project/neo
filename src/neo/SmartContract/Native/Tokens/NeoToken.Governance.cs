@@ -25,6 +25,7 @@ namespace Neo.SmartContract.Native.Tokens
             RegisterCandidateInternal(engine.Snapshot, pubkey);
             return true;
         }
+
         private void RegisterCandidateInternal(StoreView snapshot, ECPoint pubkey)
         {
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
