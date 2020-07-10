@@ -192,6 +192,26 @@ namespace Neo.Wallets
             return privateKey;
         }
 
+        private static Signer[] GetSigners(UInt160 sender, Signer[] cosigners)
+        {
+            for (int i = 0; i < cosigners.Length; i++)
+            {
+                if (cosigners[i].Account.Equals(sender))
+                {
+                    if (i == 0) return cosigners;
+                    List<Signer> list = new List<Signer>(cosigners);
+                    list.RemoveAt(i);
+                    list.Insert(0, cosigners[i]);
+                    return list.ToArray();
+                }
+            }
+            return cosigners.Prepend(new Signer
+            {
+                Account = sender,
+                Scopes = WitnessScope.FeeOnly
+            }).ToArray();
+        }
+
         public virtual WalletAccount Import(X509Certificate2 cert)
         {
             byte[] privateKey;
@@ -288,16 +308,15 @@ namespace Neo.Wallets
             }
         }
 
-        public Transaction MakeTransaction(byte[] script, Signer[] signers = null, TransactionAttribute[] attributes = null)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null)
         {
             UInt160[] accounts;
-            if (signers is null || signers.Length > 0)
+            if (sender is null)
             {
                 accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
             }
             else
             {
-                var sender = signers[0].Account;
                 if (!Contains(sender))
                     throw new ArgumentException($"The address {sender} was not found in the wallet");
                 accounts = new[] { sender };
@@ -305,11 +324,11 @@ namespace Neo.Wallets
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                return MakeTransaction(snapshot, script, signers ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas);
+                return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas);
             }
         }
 
-        private Transaction MakeTransaction(StoreView snapshot, byte[] script, Signer[] signers, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(StoreView snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
@@ -320,7 +339,7 @@ namespace Neo.Wallets
                     Nonce = (uint)rand.Next(),
                     Script = script,
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
-                    Signers = signers.Prepend(new Signer { Account = account }).ToArray(),
+                    Signers = GetSigners(account, cosigners),
                     Attributes = attributes,
                 };
 
