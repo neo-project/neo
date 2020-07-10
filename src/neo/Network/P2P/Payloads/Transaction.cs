@@ -35,7 +35,6 @@ namespace Neo.Network.P2P.Payloads
         private byte[] script;
         private Witness[] witnesses;
         private Signer[] _signers;
-        private Dictionary<UInt160, Signer> _signersCache;
 
         public const int HeaderSize =
             sizeof(byte) +  //Version
@@ -48,22 +47,6 @@ namespace Neo.Network.P2P.Payloads
         {
             get => attributes;
             set { attributes = value; _hash = null; _size = 0; }
-        }
-
-        public Signer[] Signers
-        {
-            get => _signers;
-            set
-            {
-                var cache = value.ToDictionary(u => u.Account);
-                if (cache.Count != value.Length)
-                    throw new FormatException("Signers accounts must be unique");
-
-                _signersCache = cache;
-                _signers = value;
-                _hash = null;
-                _size = 0;
-            }
         }
 
         /// <summary>
@@ -111,6 +94,12 @@ namespace Neo.Network.P2P.Payloads
         {
             get => script;
             set { script = value; _hash = null; _size = 0; }
+        }
+
+        public Signer[] Signers
+        {
+            get => _signers;
+            set { _signers = value; _hash = null; _size = 0; }
         }
 
         private int _size;
@@ -181,11 +170,6 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public bool TryGetSigner(UInt160 hash, out Signer signer)
-        {
-            return _signersCache.TryGetValue(hash, out signer);
-        }
-
         public void DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadByte();
@@ -227,7 +211,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            return _signersCache.Keys.ToArray();
+            return Signers.Select(p => p.Account).ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
