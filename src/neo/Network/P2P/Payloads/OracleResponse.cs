@@ -1,9 +1,13 @@
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
+using Neo.Persistence;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.VM;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -54,6 +58,14 @@ namespace Neo.Network.P2P.Payloads
             json["success"] = Success;
             json["result"] = Convert.ToBase64String(Result);
             return json;
+        }
+
+        public override bool Verify(StoreView snapshot, Transaction tx)
+        {
+            OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
+            if (request is null) return false;
+            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot));
+            return tx.Signers.Any(p => p.Account.Equals(oracleAccount));
         }
     }
 }

@@ -5,7 +5,6 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Oracle;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
@@ -145,16 +144,6 @@ namespace Neo.Network.P2P.Payloads
         {
             get => witnesses;
             set { witnesses = value; _size = 0; }
-        }
-
-        private bool CheckOracleResponse(StoreView snapshot)
-        {
-            OracleResponse response = Attributes.OfType<OracleResponse>().FirstOrDefault();
-            if (response is null) return true;
-            OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, response.Id);
-            if (request is null) return false;
-            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot));
-            return Signers.Any(p => p.Account.Equals(oracleAccount));
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -301,13 +290,15 @@ namespace Neo.Network.P2P.Payloads
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return VerifyResult.InsufficientFunds;
+            foreach (TransactionAttribute attribute in Attributes)
+                if (!attribute.Verify(snapshot, this))
+                    return VerifyResult.Invalid;
             if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
                 if (snapshot.Contracts.TryGet(hashes[i]) is null) return VerifyResult.Invalid;
             }
-            if (!CheckOracleResponse(snapshot)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
