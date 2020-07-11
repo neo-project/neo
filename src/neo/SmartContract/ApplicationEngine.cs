@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using static System.Threading.Interlocked;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -26,6 +28,7 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
+        private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private readonly bool testMode;
@@ -46,7 +49,7 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -107,6 +110,10 @@ namespace Neo.SmartContract
                     break;
             }
         }
+
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+            => applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
+                ?? new ApplicationEngine(trigger, container, snapshot, gas, testMode);
 
         private InvocationState GetInvocationState(ExecutionContext context)
         {
@@ -266,11 +273,16 @@ namespace Neo.SmartContract
             return descriptor;
         }
 
+        internal static void ResetApplicationEngineProvider()
+        {
+            Exchange(ref applicationEngineProvider, null);
+        }
+
         public static ApplicationEngine Run(byte[] script, StoreView snapshot,
             IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, gas, testMode);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode);
             engine.LoadScript(script).InstructionPointer = offset;
             engine.Execute();
             return engine;
@@ -282,6 +294,11 @@ namespace Neo.SmartContract
             {
                 return Run(script, snapshot, container, persistingBlock, offset, testMode, gas);
             }
+        }
+
+        internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)
+        {
+            return CompareExchange(ref applicationEngineProvider, provider, null) is null;
         }
     }
 }

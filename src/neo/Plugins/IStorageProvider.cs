@@ -2,7 +2,7 @@ using Neo.Persistence;
 
 namespace Neo.Plugins
 {
-    public interface IStoragePlugin
+    public interface IStorageProvider
     {
         IStore GetStore();
     }

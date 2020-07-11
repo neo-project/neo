@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +14,7 @@ namespace Neo.Plugins
     {
         public static readonly List<Plugin> Plugins = new List<Plugin>();
         internal static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
-        internal static readonly Dictionary<string, IStoragePlugin> Storages = new Dictionary<string, IStoragePlugin>();
+        internal static readonly Dictionary<string, IStorageProvider> Storages = new Dictionary<string, IStorageProvider>();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
         internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
@@ -50,10 +51,11 @@ namespace Neo.Plugins
             Plugins.Add(this);
 
             if (this is ILogPlugin logger) Loggers.Add(logger);
-            if (this is IStoragePlugin storage) Storages.Add(Name, storage);
+            if (this is IStorageProvider storage) Storages.Add(Name, storage);
             if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
             if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
+            if (this is IApplicationEngineProvider provider) ApplicationEngine.SetApplicationEngineProvider(provider);
 
             Configure();
         }
