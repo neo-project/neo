@@ -106,34 +106,35 @@ namespace Neo.SmartContract
         {
             if (ScriptContainer is Transaction tx)
             {
-                IReadOnlyDictionary<UInt160, Cosigner> cosigners;
+                Signer[] signers;
                 OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
                 if (response is null)
                 {
-                    cosigners = tx.Cosigners;
+                    signers = tx.Signers;
                 }
                 else
                 {
                     OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
-                    cosigners = Snapshot.GetTransaction(request.OriginalTxid).Cosigners;
+                    signers = Snapshot.GetTransaction(request.OriginalTxid).Signers;
                 }
-                if (!cosigners.TryGetValue(hash, out Cosigner cosigner)) return false;
-                if (cosigner.Scopes == WitnessScope.Global) return true;
-                if (cosigner.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                Signer signer = tx.Signers.FirstOrDefault(p => p.Account.Equals(hash));
+                if (signer is null) return false;
+                if (signer.Scopes == WitnessScope.Global) return true;
+                if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
                     if (CallingScriptHash == EntryScriptHash)
                         return true;
                 }
-                if (cosigner.Scopes.HasFlag(WitnessScope.CustomContracts))
+                if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
                 {
-                    if (cosigner.AllowedContracts.Contains(CurrentScriptHash))
+                    if (signer.AllowedContracts.Contains(CurrentScriptHash))
                         return true;
                 }
-                if (cosigner.Scopes.HasFlag(WitnessScope.CustomGroups))
+                if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
                     var contract = Snapshot.Contracts[CallingScriptHash];
                     // check if current group is the required one
-                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(cosigner.AllowedGroups).Any())
+                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
                         return true;
                 }
                 return false;
