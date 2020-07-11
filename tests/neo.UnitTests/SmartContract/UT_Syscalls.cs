@@ -26,13 +26,13 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = Array.Empty<Signer>(),
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
-                Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
             };
 
             var block = new Block()
@@ -239,6 +239,7 @@ namespace Neo.UnitTests.SmartContract
                 var tx = new Transaction()
                 {
                     Script = new byte[] { 0x01 },
+                    Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.FeeOnly } },
                     Attributes = Array.Empty<TransactionAttribute>(),
                     NetworkFee = 0x02,
                     SystemFee = 0x03,
@@ -246,7 +247,6 @@ namespace Neo.UnitTests.SmartContract
                     ValidUntilBlock = 0x05,
                     Version = 0x06,
                     Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
-                    Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
                 };
 
                 engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
