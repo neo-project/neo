@@ -43,6 +43,7 @@ namespace Neo.SmartContract
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
+        public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
@@ -62,6 +63,12 @@ namespace Neo.SmartContract
             GasConsumed = checked(GasConsumed + gas);
             if (!testMode && GasConsumed > gas_amount)
                 throw new InvalidOperationException("Insufficient GAS.");
+        }
+
+        protected override void OnFault(Exception e)
+        {
+            FaultException = e;
+            base.OnFault(e);
         }
 
         internal void CallFromNativeContract(Action onComplete, UInt160 hash, string method, params StackItem[] args)
