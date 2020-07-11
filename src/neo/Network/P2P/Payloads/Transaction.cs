@@ -164,7 +164,8 @@ namespace Neo.Network.P2P.Payloads
             if (response is null) return true;
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, response.Id);
             if (request is null) return false;
-            return true;
+            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot));
+            return Signers.Any(p => p.Account.Equals(oracleAccount));
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -224,6 +225,8 @@ namespace Neo.Network.P2P.Payloads
             if (Script.Length == 0) throw new FormatException();
             if (IsOracleResponse)
             {
+                if (Signers.Any(p => p.Scopes != WitnessScope.FeeOnly))
+                    throw new FormatException();
                 if (!Script.AsSpan().SequenceEqual(oracleResponseScript))
                     throw new FormatException();
             }
@@ -253,10 +256,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160>(Signers.Select(p => p.Account));
-            if (IsOracleResponse)
-                hashes.Add(Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot)));
-            return hashes.OrderBy(p => p).ToArray();
+            return Signers.Select(p => p.Account).ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
