@@ -28,10 +28,10 @@ namespace Neo.Network.P2P.Payloads
 
         private byte version;
         private uint nonce;
-        private UInt160 sender;
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
+        private Signer[] _signers;
         private TransactionAttribute[] attributes;
         private byte[] script;
         private Witness[] witnesses;
@@ -39,7 +39,6 @@ namespace Neo.Network.P2P.Payloads
         public const int HeaderSize =
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
-            20 +            //Sender
             sizeof(long) +  //SystemFee
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
@@ -47,11 +46,8 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _cosigners = null; _hash = null; _size = 0; }
+            set { attributes = value; _hash = null; _size = 0; }
         }
-
-        private Dictionary<UInt160, Cosigner> _cosigners;
-        public IReadOnlyDictionary<UInt160, Cosigner> Cosigners => _cosigners ??= attributes.OfType<Cosigner>().ToDictionary(p => p.Account);
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -95,10 +91,15 @@ namespace Neo.Network.P2P.Payloads
             set { script = value; _hash = null; _size = 0; }
         }
 
-        public UInt160 Sender
+        /// <summary>
+        /// Correspond with the first entry of Signers
+        /// </summary>
+        public UInt160 Sender => _signers[0].Account;
+
+        public Signer[] Signers
         {
-            get => sender;
-            set { sender = value; _hash = null; }
+            get => _signers;
+            set { _signers = value; _hash = null; _size = 0; }
         }
 
         private int _size;
@@ -109,6 +110,7 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
+                        Signers.GetVarSize() +      // Signers
                         Attributes.GetVarSize() +   // Attributes
                         Script.GetVarSize() +       // Script
                         Witnesses.GetVarSize();     // Witnesses
@@ -155,9 +157,9 @@ namespace Neo.Network.P2P.Payloads
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
 
-        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader)
+        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader, int maxCount)
         {
-            int count = (int)reader.ReadVarInt(MaxTransactionAttributes);
+            int count = (int)reader.ReadVarInt((ulong)maxCount);
             HashSet<TransactionAttributeType> hashset = new HashSet<TransactionAttributeType>();
             while (count-- > 0)
             {
@@ -168,27 +170,35 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
+        private static IEnumerable<Signer> DeserializeSigners(BinaryReader reader, int maxCount)
+        {
+            int count = (int)reader.ReadVarInt((ulong)maxCount);
+            if (count == 0) throw new FormatException();
+            HashSet<UInt160> hashset = new HashSet<UInt160>();
+            for (int i = 0; i < count; i++)
+            {
+                Signer signer = reader.ReadSerializable<Signer>();
+                if (i > 0 && signer.Scopes == WitnessScope.FeeOnly)
+                    throw new FormatException();
+                if (!hashset.Add(signer.Account))
+                    throw new FormatException();
+                yield return signer;
+            }
+        }
+
         public void DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
-            Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
             if (SystemFee < 0) throw new FormatException();
             NetworkFee = reader.ReadInt64();
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = DeserializeAttributes(reader).ToArray();
-            try
-            {
-                _ = Cosigners;
-            }
-            catch (ArgumentException)
-            {
-                throw new FormatException();
-            }
+            Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
+            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -217,8 +227,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160>(Cosigners.Keys) { Sender };
-            return hashes.OrderBy(p => p).ToArray();
+            return Signers.Select(p => p.Account).ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -231,10 +240,10 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(Version);
             writer.Write(Nonce);
-            writer.Write(Sender);
             writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
+            writer.Write(Signers);
             writer.Write(Attributes);
             writer.WriteVarBytes(Script);
         }
@@ -250,6 +259,7 @@ namespace Neo.Network.P2P.Payloads
             json["sysfee"] = SystemFee.ToString();
             json["netfee"] = NetworkFee.ToString();
             json["validuntilblock"] = ValidUntilBlock;
+            json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
