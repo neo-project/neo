@@ -73,8 +73,6 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
-        public bool IsOracleResponse => Attributes.Any(p => p is OracleResponse);
-
         /// <summary>
         /// Distributed to consensus nodes.
         /// </summary>
@@ -223,7 +221,7 @@ namespace Neo.Network.P2P.Payloads
             Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
-            if (IsOracleResponse)
+            if (Attributes.Any(p => p is OracleResponse))
             {
                 if (Signers.Any(p => p.Scopes != WitnessScope.FeeOnly))
                     throw new FormatException();
