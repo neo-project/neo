@@ -117,7 +117,7 @@ namespace Neo.SmartContract
                     OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
                     signers = Snapshot.GetTransaction(request.OriginalTxid).Signers;
                 }
-                Signer signer = tx.Signers.FirstOrDefault(p => p.Account.Equals(hash));
+                Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
                 if (signer.Scopes == WitnessScope.Global) return true;
                 if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
