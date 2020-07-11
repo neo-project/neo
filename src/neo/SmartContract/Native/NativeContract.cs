@@ -30,8 +30,6 @@ namespace Neo.SmartContract.Native
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
-        [ContractMethod(0, CallFlags.None)]
-        public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
         protected NativeContract()
         {
@@ -60,18 +58,19 @@ namespace Neo.SmartContract.Native
             }
             this.Manifest = new ContractManifest
             {
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Groups = System.Array.Empty<ContractGroup>(),
+                Features = ContractFeatures.NoProperty,
+                SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
                     Hash = Hash,
                     Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },
-                Features = ContractFeatures.NoProperty,
-                Groups = System.Array.Empty<ContractGroup>(),
-                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
+                Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = null,
+                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
+                Extra = null
             };
             contractsList.Add(this);
             contractsNameDictionary.Add(Name, this);
