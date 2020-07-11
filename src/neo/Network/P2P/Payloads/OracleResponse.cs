@@ -62,6 +62,8 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(StoreView snapshot, Transaction tx)
         {
+            if (tx.Signers.Any(p => p.Scopes != WitnessScope.FeeOnly)) return false;
+            if (!tx.Script.AsSpan().SequenceEqual(FixedScript)) return false;
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
             UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot));
