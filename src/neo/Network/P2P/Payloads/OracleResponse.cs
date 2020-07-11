@@ -1,5 +1,7 @@
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.SmartContract.Native;
+using Neo.VM;
 using System;
 using System.IO;
 
@@ -8,6 +10,8 @@ namespace Neo.Network.P2P.Payloads
     public class OracleResponse : TransactionAttribute
     {
         private const int MaxResultSize = 1024;
+
+        public static readonly byte[] FixedScript;
 
         public ulong Id;
         public bool Success;
@@ -20,6 +24,13 @@ namespace Neo.Network.P2P.Payloads
             sizeof(ulong) +         //Id
             sizeof(bool) +          //Success
             Result.GetVarSize();    //Result
+
+        static OracleResponse()
+        {
+            using ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitAppCall(NativeContract.Oracle.Hash, "finish");
+            FixedScript = sb.ToArray();
+        }
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {

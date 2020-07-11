@@ -27,8 +27,6 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public const int MaxTransactionAttributes = 16;
 
-        private static readonly byte[] oracleResponseScript;
-
         private byte version;
         private uint nonce;
         private long sysfee;
@@ -149,13 +147,6 @@ namespace Neo.Network.P2P.Payloads
             set { witnesses = value; _size = 0; }
         }
 
-        static Transaction()
-        {
-            using ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitAppCall(NativeContract.Oracle.Hash, "finish");
-            oracleResponseScript = sb.ToArray();
-        }
-
         private bool CheckOracleResponse(StoreView snapshot)
         {
             OracleResponse response = Attributes.OfType<OracleResponse>().FirstOrDefault();
@@ -225,7 +216,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (Signers.Any(p => p.Scopes != WitnessScope.FeeOnly))
                     throw new FormatException();
-                if (!Script.AsSpan().SequenceEqual(oracleResponseScript))
+                if (!Script.AsSpan().SequenceEqual(OracleResponse.FixedScript))
                     throw new FormatException();
             }
         }
