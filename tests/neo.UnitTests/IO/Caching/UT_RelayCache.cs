@@ -24,16 +24,15 @@ namespace Neo.UnitTests.IO.Caching
             {
                 Version = 0,
                 Nonce = 1,
-                Sender = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 SystemFee = 0,
                 NetworkFee = 0,
                 ValidUntilBlock = 100,
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = Array.Empty<Signer>(),
                 Script = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04 },
-                Witnesses = new Witness[0]
+                Witnesses = Array.Empty<Witness>()
             };
             relayCache.Add(tx);
-
             relayCache.Contains(tx).Should().BeTrue();
             relayCache.TryGet(tx.Hash, out IInventory tmp).Should().BeTrue();
             (tmp is Transaction).Should().BeTrue();
