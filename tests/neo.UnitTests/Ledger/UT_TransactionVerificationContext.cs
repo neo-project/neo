@@ -50,7 +50,7 @@ namespace Neo.UnitTests.Ledger
         public void TestTransactionSenderFee()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, null, snapshot, long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             NativeContract.GAS.Mint(engine, UInt160.Zero, 8);
