@@ -322,7 +322,6 @@ namespace Neo.Ledger
                 return false;
 
             _unsortedTransactions.Remove(hash);
-            VerificationContext.RemoveTransaction(item.Tx);
             _sortedTransactions.Remove(item);
 
             return true;
