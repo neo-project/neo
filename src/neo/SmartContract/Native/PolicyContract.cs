@@ -17,7 +17,6 @@ namespace Neo.SmartContract.Native
         public override int Id => -3;
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
-        private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
@@ -55,10 +54,6 @@ namespace Neo.SmartContract.Native
             {
                 Value = BitConverter.GetBytes(9000 * (long)GAS.Factor) // For the transfer method of NEP5, the maximum persisting time is about three seconds.
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
-            {
-                Value = BitConverter.GetBytes(1000L)
-            });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_BlockedAccounts), new StorageItem
             {
                 Value = new UInt160[0].ToByteArray()
@@ -81,12 +76,6 @@ namespace Neo.SmartContract.Native
         public long GetMaxBlockSystemFee(StoreView snapshot)
         {
             return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSystemFee)].Value, 0);
-        }
-
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public long GetFeePerByte(StoreView snapshot)
-        {
-            return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -120,15 +109,6 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittees(engine)) return false;
             if (value <= 4007600) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee));
-            storage.Value = BitConverter.GetBytes(value);
-            return true;
-        }
-
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
-        private bool SetFeePerByte(ApplicationEngine engine, long value)
-        {
-            if (!CheckCommittees(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
             storage.Value = BitConverter.GetBytes(value);
             return true;
         }

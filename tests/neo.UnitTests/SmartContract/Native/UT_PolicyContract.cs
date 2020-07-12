@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
-            (keyCount + 5).Should().Be(snapshot.Storages.GetChangeSet().Count());
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 4);
 
             var ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -40,10 +40,6 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSystemFee");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(9000 * 100000000L);
-
-            ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
-            ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetInteger().Should().Be(1000);
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
@@ -177,41 +173,6 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetBoolean().Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
-            ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetInteger().Should().Be(1);
-        }
-
-        [TestMethod]
-        public void Check_SetFeePerByte()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            // Fake blockchain
-
-            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
-
-            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
-
-            // Without signature
-
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
-                "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
-
-            ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
-            ret.Should().BeOfType<VM.Types.Integer>();
-            ret.GetInteger().Should().Be(1000);
-
-            // With signature
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeTrue();
-
-            ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(1);
         }

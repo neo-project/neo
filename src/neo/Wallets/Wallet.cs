@@ -354,35 +354,27 @@ namespace Neo.Wallets
                 }
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
-
-                // base size for transaction: includes const_header + signers + attributes + script + hashes
-                int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
-
                 foreach (UInt160 hash in hashes)
                 {
                     byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
                     if (witness_script is null) continue;
-                    tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
+                    tx.NetworkFee += CalculateNetworkFee(witness_script);
                 }
-                tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public static long CalculateNetworkFee(byte[] witness_script, ref int size)
+        public static long CalculateNetworkFee(byte[] witness_script)
         {
             long networkFee = 0;
 
             if (witness_script.IsSignatureContract())
             {
-                size += 67 + witness_script.GetVarSize();
                 networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice;
             }
             else if (witness_script.IsMultiSigContract(out int m, out int n))
             {
-                int size_inv = 66 * m;
-                size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
                 networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
                 using (ScriptBuilder sb = new ScriptBuilder())
                     networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];

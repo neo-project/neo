@@ -136,7 +136,6 @@ namespace Neo.Ledger
                 else
                 {
                     UpdateCurrentSnapshot();
-                    MemPool.LoadPolicy(currentSnapshot);
                 }
                 singleton = this;
             }
