@@ -11,11 +11,13 @@ namespace Neo.Consensus
         public ulong Timestamp;
         public ulong Nonce;
         public UInt256[] TransactionHashes;
+        public byte[] StateRootSignature;
 
         public override int Size => base.Size
-            + sizeof(ulong)                      //Timestamp
+            + sizeof(ulong)                     //Timestamp
             + sizeof(ulong)                     //Nonce
-            + TransactionHashes.GetVarSize();   //TransactionHashes
+            + TransactionHashes.GetVarSize()    //TransactionHashes
+            + StateRootSignature.Length;        //StateRootSignature
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
@@ -30,6 +32,7 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
+            StateRootSignature = reader.ReadFixedBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -38,6 +41,7 @@ namespace Neo.Consensus
             writer.Write(Timestamp);
             writer.Write(Nonce);
             writer.Write(TransactionHashes);
+            writer.Write(StateRootSignature);
         }
     }
 }
