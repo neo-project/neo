@@ -106,15 +106,15 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
             engine.AddGas(method.Price);
 
+            // Clean cache
+
+            foreach (var key in method.CleanCacheKeys)
+            {
+                engine.Snapshot.ToCache(key, null);
+            }
+
             if (method.CacheKey != uint.MinValue)
             {
-                // Clean
-
-                foreach (var key in method.CleanCacheKeys)
-                {
-                    engine.Snapshot.ToCache(key, null);
-                }
-
                 // Set
 
                 if (engine.Snapshot.TryGetFromCache(method.CacheKey, out object o))
