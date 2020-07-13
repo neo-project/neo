@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.IO.Caching;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +9,11 @@ namespace Neo.Persistence
     public class MemoryStore : IStore
     {
         private readonly ConcurrentDictionary<byte[], byte[]>[] innerData;
+        private readonly Dictionary<uint, object> cache;
 
         public MemoryStore()
         {
+            cache = new Dictionary<uint, object>();
             innerData = new ConcurrentDictionary<byte[], byte[]>[256];
             for (int i = 0; i < innerData.Length; i++)
                 innerData[i] = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
@@ -25,6 +26,11 @@ namespace Neo.Persistence
 
         public void Dispose()
         {
+        }
+
+        public Dictionary<uint, object> GetCache()
+        {
+            return cache;
         }
 
         public ISnapshot GetSnapshot()

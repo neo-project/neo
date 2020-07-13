@@ -105,6 +105,27 @@ namespace Neo.SmartContract.Native
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
             engine.AddGas(method.Price);
+
+            if (method.CacheKey != uint.MinValue)
+            {
+                // Clean
+
+                foreach (var key in method.CleanCacheKeys)
+                {
+                    engine.Snapshot.ToCache(key, null);
+                }
+
+                // Set
+
+                if (engine.Snapshot.TryGetFromCache(method.CacheKey, out object o))
+                {
+                    engine.Push(engine.Convert(o));
+                    return;
+                }
+            }
+
+            // Execute
+
             List<object> parameters = new List<object>();
             if (method.NeedApplicationEngine) parameters.Add(engine);
             if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
@@ -113,9 +134,19 @@ namespace Neo.SmartContract.Native
                 StackItem item = i < args.Count ? args[i] : StackItem.Null;
                 parameters.Add(engine.Convert(item, method.Parameters[i]));
             }
+
             object returnValue = method.Handler.Invoke(this, parameters.ToArray());
             if (method.Handler.ReturnType != typeof(void))
+            {
                 engine.Push(engine.Convert(returnValue));
+
+                if (method.CacheKey != uint.MinValue)
+                {
+                    // Append to the cache
+
+                    engine.Snapshot.ToCache(method.CacheKey, returnValue);
+                }
+            }
         }
 
         public static bool IsNative(UInt160 hash)

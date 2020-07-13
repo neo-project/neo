@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
@@ -10,6 +11,7 @@ namespace Neo.Persistence
     /// </summary>
     public abstract class StoreView
     {
+        public IStore Store { get; }
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
@@ -24,6 +26,18 @@ namespace Neo.Persistence
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
+
+        private readonly Dictionary<uint, object> storedCache;
+        private readonly Dictionary<uint, object> snapshotCache;
+        class RemoveFromCache { }
+
+        public StoreView(IStore store)
+        {
+            Store = store;
+            storedCache = store.GetCache();
+            snapshotCache = new Dictionary<uint, object>();
+        }
+
 
         public StoreView Clone()
         {
@@ -40,6 +54,48 @@ namespace Neo.Persistence
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
             ContractId.Commit();
+
+            // Copy cache changes
+
+            foreach (var entry in snapshotCache)
+            {
+                if (entry.Value is RemoveFromCache)
+                {
+                    storedCache.Remove(entry.Key);
+                }
+                else
+                {
+                    storedCache[entry.Key] = entry.Value;
+                }
+            }
+        }
+
+        public bool TryGetFromCache<T>(uint key, out T value)
+        {
+            if (snapshotCache.TryGetValue(key, out var o))
+            {
+                value = (T)o;
+                return true;
+            }
+
+            if (storedCache.TryGetValue(key, out o))
+            {
+                value = (T)o;
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public void ToCache(uint key, object value)
+        {
+            if (value == null)
+            {
+                value = new RemoveFromCache();
+            }
+
+            snapshotCache[key] = value;
         }
 
         public bool ContainsBlock(UInt256 hash)

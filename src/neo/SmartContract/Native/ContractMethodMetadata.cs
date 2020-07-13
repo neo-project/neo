@@ -14,9 +14,13 @@ namespace Neo.SmartContract.Native
         public bool NeedSnapshot { get; }
         public long Price { get; }
         public CallFlags RequiredCallFlags { get; }
+        public uint CacheKey { get; }
+        public uint[] CleanCacheKeys { get; }
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
+            this.CacheKey = attribute.CacheKey;
+            this.CleanCacheKeys = attribute.CleanCacheKeys;
             this.Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
             this.Handler = member switch
             {

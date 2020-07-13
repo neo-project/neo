@@ -21,7 +21,7 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> HeaderHashIndex => new StoreMetaDataCache<HashIndexState>(store, Prefixes.IX_CurrentHeader);
         public override MetaDataCache<ContractIdState> ContractId => new StoreMetaDataCache<ContractIdState>(store, Prefixes.IX_ContractId);
 
-        public ReadOnlyView(IReadOnlyStore store)
+        public ReadOnlyView(IReadOnlyStore store) : base(store as IStore)
         {
             this.store = store;
         }

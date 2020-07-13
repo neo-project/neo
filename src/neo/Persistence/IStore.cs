@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
@@ -9,6 +10,7 @@ namespace Neo.Persistence
     {
         void Delete(byte table, byte[] key);
         ISnapshot GetSnapshot();
+        Dictionary<uint, object> GetCache();
         void Put(byte table, byte[] key, byte[] value);
         void PutSync(byte table, byte[] key, byte[] value)
         {

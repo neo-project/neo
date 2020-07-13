@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(5_00000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(5_00000000, CallFlags.AllowModifyStates, cleanCacheKeys: new uint[] { 1, 2 })]
         private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
@@ -202,13 +202,13 @@ namespace Neo.SmartContract.Native.Tokens
             )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, CallFlags.AllowStates, cacheKey: 2)]
         public ECPoint[] GetValidators(StoreView snapshot)
         {
             return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, CallFlags.AllowStates, cacheKey: 1)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
             return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxCommitteeMembersCount).OrderBy(p => p).ToArray();

@@ -15,7 +15,7 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
-        public ClonedView(StoreView view)
+        public ClonedView(StoreView view) : base(view.Store)
         {
             this.PersistingBlock = view.PersistingBlock;
             this.Blocks = view.Blocks.CreateSnapshot();

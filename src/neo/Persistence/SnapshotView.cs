@@ -11,7 +11,6 @@ namespace Neo.Persistence
     public class SnapshotView : StoreView, IDisposable
     {
         private readonly ISnapshot snapshot;
-
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
@@ -21,9 +20,10 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
         public override MetaDataCache<ContractIdState> ContractId { get; }
 
-        public SnapshotView(IStore store)
+        public SnapshotView(IStore store) : base(store)
         {
             this.snapshot = store.GetSnapshot();
+
             Blocks = new StoreDataCache<UInt256, TrimmedBlock>(snapshot, Prefixes.DATA_Block);
             Transactions = new StoreDataCache<UInt256, TransactionState>(snapshot, Prefixes.DATA_Transaction);
             Contracts = new StoreDataCache<UInt160, ContractState>(snapshot, Prefixes.ST_Contract);
