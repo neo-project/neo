@@ -183,6 +183,7 @@ namespace Neo.UnitTests.Consensus
             // Forcing hashes to 0 because mempool is currently shared
             ppToSend.TransactionHashes = new UInt256[0];
             ppToSend.TransactionHashes.Length.Should().Be(0);
+            prepReq.Data = ppToSend.ToArray();
             Console.WriteLine($"\nAsserting PreparationPayloads is 1 (After MakePrepareRequest)...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(1);
             mockContext.Object.PreparationPayloads[prepReq.ValidatorIndex] = null;
@@ -199,61 +200,11 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(6);
 
             Console.WriteLine("\nFailed because it is not primary and it created the prereq...Time to adjust");
-            prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
+            var stateRootData = mockContext.Object.EnsureStateRoot().GetHashData();
+            prepReq = GetPrepareRequestAndSignStateRoot(prepReq, 1, kp_array[1], stateRootData);
+            //prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
             // cleaning old try with Self ValidatorIndex
             mockContext.Object.PreparationPayloads[mockContext.Object.MyIndex] = null;
-
-            TellConsensusPayload(actorConsensus, prepReq);
-            var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var prepResponsePayload = (ConsensusPayload)OnPrepResponse.Inventory;
-            PrepareResponse prm = (PrepareResponse)prepResponsePayload.ConsensusMessage;
-            prm.PreparationHash.Should().Be(prepReq.Hash);
-            Console.WriteLine("\nAsserting PreparationPayloads count is 2...");
-            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(2);
-            Console.WriteLine($"\nAsserting CountFailed is 5...");
-            mockContext.Object.CountFailed.Should().Be(5);
-
-            // Simulating CN 3
-            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(prepResponsePayload, 2));
-            //Waiting for RecoveryRequest for a more deterministic UT
-            backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
-            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
-            rrm.Timestamp.Should().Be(defaultTimestamp);
-            //Asserts
-            Console.WriteLine("\nAsserting PreparationPayloads count is 3...");
-            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(3);
-            Console.WriteLine($"\nAsserting CountFailed is 4...");
-            mockContext.Object.CountFailed.Should().Be(4);
-
-            // Simulating CN 5
-            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(prepResponsePayload, 4));
-            //Waiting for RecoveryRequest for a more deterministic UT
-            backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
-            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
-            rrm.Timestamp.Should().Be(defaultTimestamp);
-            //Asserts            
-            Console.WriteLine("\nAsserting PreparationPayloads count is 4...");
-            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(4);
-            Console.WriteLine($"\nAsserting CountFailed is 3...");
-            mockContext.Object.CountFailed.Should().Be(3);
-
-            // Simulating CN 4
-            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(prepResponsePayload, 3));
-            var onCommitPayload = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
-            Commit cm = (Commit)commitPayload.ConsensusMessage;
-            Console.WriteLine("\nAsserting PreparationPayloads count is 5...");
-            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(5);
-            Console.WriteLine("\nAsserting CountCommitted is 1...");
-            mockContext.Object.CountCommitted.Should().Be(1);
-            Console.WriteLine($"\nAsserting CountFailed is 2...");
-            mockContext.Object.CountFailed.Should().Be(2);
-
-            Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
-            Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
-
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             mockContext.Object.Validators = new ECPoint[7]
@@ -266,10 +217,79 @@ namespace Neo.UnitTests.Consensus
                     kp_array[5].PublicKey,
                     kp_array[6].PublicKey
                 };
+            mockContext.Object.GetPrimaryIndex(mockContext.Object.ViewNumber).Should().Be(1);
+            mockContext.Object.MyIndex.Should().Be(0);
+            Console.WriteLine($"\nAsserting tx count is 0...");
+            prepReq.GetDeserializedMessage<PrepareRequest>().TransactionHashes.Count().Should().Be(0);
+
+            TellConsensusPayload(actorConsensus, prepReq);
+            var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            var prepResponsePayload = (ConsensusPayload)OnPrepResponse.Inventory;
+            PrepareResponse prm = (PrepareResponse)prepResponsePayload.ConsensusMessage;
+            prm.PreparationHash.Should().Be(prepReq.Hash);
+            Console.WriteLine("\nAsserting PreparationPayloads count is 2...");
+            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(2);
+            Console.WriteLine($"\nAsserting CountFailed is 5...");
+            mockContext.Object.CountFailed.Should().Be(5);
+            Console.WriteLine("\nAsserting PrepareResponse ValidatorIndex is 0...");
+            prepResponsePayload.ValidatorIndex.Should().Be(0);
+            // Using correct signed response to replace prepareresponse sent
+            mockContext.Object.PreparationPayloads[prepResponsePayload.ValidatorIndex] = GetPrepareResponsePayloadAndSignStateRoot(prepResponsePayload, 0, kp_array[0], stateRootData);
+
+            // Simulating CN 3
+            TellConsensusPayload(actorConsensus, GetPrepareResponsePayloadAndSignStateRoot(prepResponsePayload, 2, kp_array[2], stateRootData));
+            //Waiting for RecoveryRequest for a more deterministic UT
+            backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
+            rrm.Timestamp.Should().Be(defaultTimestamp);
+            //Asserts
+            Console.WriteLine("\nAsserting PreparationPayloads count is 3...");
+            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(3);
+            Console.WriteLine($"\nAsserting CountFailed is 4...");
+            mockContext.Object.CountFailed.Should().Be(4);
+
+            // Simulating CN 5
+            TellConsensusPayload(actorConsensus, GetPrepareResponsePayloadAndSignStateRoot(prepResponsePayload, 4, kp_array[4], stateRootData));
+            //Waiting for RecoveryRequest for a more deterministic UT
+            backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
+            rrm.Timestamp.Should().Be(defaultTimestamp);
+            //Asserts            
+            Console.WriteLine("\nAsserting PreparationPayloads count is 4...");
+            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(4);
+            Console.WriteLine($"\nAsserting CountFailed is 3...");
+            mockContext.Object.CountFailed.Should().Be(3);
+            var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
+            // Mock StateRoot to use mock Validators to sign
+            var root = mockContext.Object.EnsureStateRoot();
+            var mockRoot = new Mock<StateRoot>();
+            mockRoot.Object.Version = root.Version;
+            mockRoot.Object.Index = root.Index;
+            mockRoot.Object.RootHash = root.RootHash;
+            mockRoot.Setup(p => p.GetScriptHashesForVerifying(It.IsAny<StoreView>())).Returns<StoreView>(p => new UInt160[] { updatedContract.ScriptHash });
+            mockContext.Object.PreviousBlockStateRoot = mockRoot.Object;
+
+            // Simulating CN 4
+            TellConsensusPayload(actorConsensus, GetPrepareResponsePayloadAndSignStateRoot(prepResponsePayload, 3, kp_array[3], stateRootData));
+            var onCommitPayload = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            var onStateRoot = subscriber.ExpectMsg<StateRoot>();
+            var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
+            Commit cm = (Commit)commitPayload.ConsensusMessage;
+            Console.WriteLine("\nAsserting PreparationPayloads count is 5...");
+            mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(5);
+            Console.WriteLine("\nAsserting CountCommitted is 1...");
+            mockContext.Object.CountCommitted.Should().Be(1);
+            Console.WriteLine($"\nAsserting CountFailed is 2...");
+            mockContext.Object.CountFailed.Should().Be(2);
+
+            Console.WriteLine($"ORIGINAL BlockHash: {mockContext.Object.Block.Hash}");
+            Console.WriteLine($"ORIGINAL Block NextConsensus: {mockContext.Object.Block.NextConsensus}");
+
             Console.WriteLine($"Generated keypairs PKey:");
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
-            var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
@@ -303,6 +323,7 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("\n==========================");
             Console.WriteLine("\nCN7 simulation time");
+
             TellConsensusPayload(actorConsensus, cmPayloadTemp);
             var tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             var rmPayload = (ConsensusPayload)tempPayloadToBlockAndWait.Inventory;
@@ -456,6 +477,25 @@ namespace Neo.UnitTests.Consensus
             return cpTemp;
         }
 
+        public ConsensusPayload GetPrepareRequestAndSignStateRoot(ConsensusPayload req, ushort vI, KeyPair kp, byte[] stateRootData)
+        {
+            var tmp = req.ToArray().AsSerializable<ConsensusPayload>();
+            tmp.ValidatorIndex = vI;
+            var message = tmp.GetDeserializedMessage<PrepareRequest>();
+            message.StateRootSignature = Crypto.Sign(stateRootData, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            tmp.ConsensusMessage = message;
+            return tmp;
+        }
+        public ConsensusPayload GetPrepareResponsePayloadAndSignStateRoot(ConsensusPayload resp, ushort vI, KeyPair kp, byte[] stateRootData)
+        {
+            var tmp = resp.ToArray().AsSerializable<ConsensusPayload>();
+            tmp.ValidatorIndex = vI;
+            var message = tmp.GetDeserializedMessage<PrepareResponse>();
+            message.StateRootSignature = Crypto.Sign(stateRootData, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            tmp.ConsensusMessage = message;
+            return tmp;
+        }
+
         private void SignPayload(ConsensusPayload payload, KeyPair kp)
         {
             ContractParametersContext sc;
@@ -520,13 +560,14 @@ namespace Neo.UnitTests.Consensus
             var prepareRequestMessage = new PrepareRequest
             {
                 TransactionHashes = consensusContext.TransactionHashes,
-                Timestamp = 23
+                Timestamp = 23,
+                StateRootSignature = new byte[64]
             };
             consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
-            consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 0, new[] { (byte)'t', (byte)'e' });
-            consensusContext.PreparationPayloads[1] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 1, new[] { (byte)'s', (byte)'t' });
+            consensusContext.PreparationPayloads[0] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[64] }, 0, new[] { (byte)'t', (byte)'e' });
+            consensusContext.PreparationPayloads[1] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[64] }, 1, new[] { (byte)'s', (byte)'t' });
             consensusContext.PreparationPayloads[2] = null;
-            consensusContext.PreparationPayloads[3] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 3, new[] { (byte)'1', (byte)'2' });
+            consensusContext.PreparationPayloads[3] = MakeSignedPayload(consensusContext, new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash, StateRootSignature = new byte[64] }, 3, new[] { (byte)'1', (byte)'2' });
             consensusContext.PreparationPayloads[4] = null;
             consensusContext.PreparationPayloads[5] = null;
 
@@ -624,7 +665,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
-                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                            InvocationScript = new[] { (byte)'t', (byte)'e' },
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -632,7 +674,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
-                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                            InvocationScript = new[] { (byte)'1', (byte)'2' },
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -640,7 +683,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 6,
-                            InvocationScript = new[] { (byte)'3', (byte)'!' }
+                            InvocationScript = new[] { (byte)'3', (byte)'!' },
+                            StateRootSignature = new byte[64]
                         }
                     }
                 },
@@ -714,6 +758,7 @@ namespace Neo.UnitTests.Consensus
                 },
                 PrepareRequestMessage = new PrepareRequest
                 {
+                    StateRootSignature = new byte[64],
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
@@ -724,7 +769,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
-                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                            InvocationScript = new[] { (byte)'t', (byte)'e' },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -732,7 +778,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 1,
-                            InvocationScript = new[] { (byte)'s', (byte)'t' }
+                            InvocationScript = new[] { (byte)'s', (byte)'t' },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -740,7 +787,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
-                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                            InvocationScript = new[] { (byte)'1', (byte)'2' },
+                            StateRootSignature = new byte[64],
                         }
                     }
                 },
@@ -767,6 +815,7 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
+                    StateRootSignature = new byte[64],
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -776,7 +825,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
-                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                            InvocationScript = new[] { (byte)'t', (byte)'e' },
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -784,7 +834,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 1,
-                            InvocationScript = new[] { (byte)'s', (byte)'t' }
+                            InvocationScript = new[] { (byte)'s', (byte)'t' },
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -792,7 +843,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
-                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                            InvocationScript = new[] { (byte)'1', (byte)'2' },
+                            StateRootSignature = new byte[64]
                         }
                     },
                     {
@@ -800,7 +852,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 6,
-                            InvocationScript = new[] { (byte)'3', (byte)'!' }
+                            InvocationScript = new[] { (byte)'3', (byte)'!' },
+                            StateRootSignature = new byte[64]
                         }
                     }
                 },
@@ -827,6 +880,7 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
+                    StateRootSignature = new byte[64],
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -836,7 +890,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
-                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                            InvocationScript = new[] { (byte)'t', (byte)'e' },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -844,7 +899,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 1,
-                            InvocationScript = new[] { (byte)'s', (byte)'t' }
+                            InvocationScript = new[] { (byte)'s', (byte)'t' },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -852,7 +908,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
-                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                            InvocationScript = new[] { (byte)'1', (byte)'2' },
+                            StateRootSignature = new byte[64],
                         }
                     },
                     {
@@ -860,7 +917,8 @@ namespace Neo.UnitTests.Consensus
                         new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 6,
-                            InvocationScript = new[] { (byte)'3', (byte)'!' }
+                            InvocationScript = new[] { (byte)'3', (byte)'!' },
+                            StateRootSignature = new byte[64],
                         }
                     }
                 },
