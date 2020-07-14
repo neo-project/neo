@@ -31,8 +31,7 @@ namespace Neo.Ledger
             if (!(LatestValidatorsStateRoot is null) && root.Index <= LatestValidatorsStateRoot.Index) return VerifyResult.AlreadyExists;
             if (Height < root.Index && root.Index < Height + StateRootCacheCount)
             {
-                if (state_root_cache.ContainsKey(root.Index)) return VerifyResult.AlreadyExists;
-                state_root_cache.Add(root.Index, root);
+                if (!state_root_cache.TryAdd(root.Index, root)) return VerifyResult.AlreadyExists;
                 return VerifyResult.Succeed;
             }
             var result = PersistCnStateRoot(root);
