@@ -290,15 +290,10 @@ namespace Neo.Ledger
             {
                 if (View.ContainsTransaction(tx.Hash))
                     continue;
-                if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
-                    continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
-                // Verify the the transaction
-                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
-                    continue;
                 // Add to the memory pool
-                MemPool.TryAdd(tx.Hash, tx);
+                MemPool.TryAdd(tx, currentSnapshot);
             }
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
@@ -362,11 +357,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
-            if (!MemPool.CanTransactionFitInPool(transaction)) return VerifyResult.OutOfMemory;
-            VerifyResult reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
-            if (reason != VerifyResult.Succeed) return reason;
-            if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
-            return VerifyResult.Succeed;
+            return MemPool.TryAdd(transaction, currentSnapshot);
         }
 
         protected override void OnReceive(object message)
@@ -411,7 +402,7 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0, true))
                     {
                         engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
@@ -434,7 +425,7 @@ namespace Neo.Ledger
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
