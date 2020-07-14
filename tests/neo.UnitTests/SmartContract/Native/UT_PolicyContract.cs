@@ -237,28 +237,5 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(0);
         }
-
-        [TestMethod]
-        public void TestCheckPolicy()
-        {
-            Transaction tx = Blockchain.GenesisBlock.Transactions[0];
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            StorageKey storageKey = new StorageKey
-            {
-                Id = NativeContract.Policy.Id,
-                Key = new byte[sizeof(byte)]
-            };
-            storageKey.Key[0] = 15;
-            snapshot.Storages.Add(storageKey, new StorageItem
-            {
-                Value = new UInt160[] { tx.Sender }.ToByteArray(),
-            });
-
-            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeFalse();
-
-            snapshot = Blockchain.Singleton.GetSnapshot();
-            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeTrue();
-        }
     }
 }
