@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo)).GetInteroperable<CandidateState>().Votes += amount;
                 StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
-                BigInteger votersCount = new BigInteger(item.Value) + amount;
+                BigInteger votersCount = item.GetBigInteger() + amount;
                 item.Value = votersCount.ToByteArray();
             }
         }
@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (state_account.VoteTo is null ^ voteTo is null)
             {
                 StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
-                BigInteger votersCount = new BigInteger(item.Value);
+                BigInteger votersCount = item.GetBigInteger();
                 if (state_account.VoteTo is null)
                     votersCount += state_account.Balance;
                 else
