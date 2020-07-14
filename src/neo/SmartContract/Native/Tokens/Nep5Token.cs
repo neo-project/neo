@@ -66,13 +66,10 @@ namespace Neo.SmartContract.Native.Tokens
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
-            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
-            {
-                Value = BigInteger.Zero.ToByteArrayStandard()
-            });
+            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             BigInteger totalSupply = storage.GetBigInteger();
             totalSupply += amount;
-            storage.Value = totalSupply.ToByteArrayStandard();
+            storage.Set(totalSupply);
             engine.SendNotification(Hash, "Transfer", new Array { StackItem.Null, account.ToArray(), amount });
         }
 
@@ -92,7 +89,7 @@ namespace Neo.SmartContract.Native.Tokens
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             BigInteger totalSupply = storage.GetBigInteger();
             totalSupply -= amount;
-            storage.Value = totalSupply.ToByteArrayStandard();
+            storage.Set(totalSupply);
             engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
         }
 

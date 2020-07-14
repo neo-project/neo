@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.SmartContract;
+using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
@@ -33,6 +34,13 @@ namespace Neo.Ledger
         public StorageItem(byte[] value, bool isConstant = false)
         {
             this.value = value;
+            this.IsConstant = isConstant;
+        }
+
+        public StorageItem(BigInteger value, bool isConstant = false)
+        {
+            this.value = value.ToByteArrayStandard();
+            this.cached = value;
             this.IsConstant = isConstant;
         }
 
@@ -82,6 +90,18 @@ namespace Neo.Ledger
             var ret = new BigInteger(Value);
             cached = ret;
             return ret;
+        }
+
+        public void Set(BigInteger value)
+        {
+            this.value = value.ToByteArrayStandard();
+            this.cached = value;
+        }
+
+        public void Set<T>(IReadOnlyCollection<T> value) where T : ISerializable
+        {
+            this.value = value.ToByteArray();
+            this.cached = value;
         }
 
         void ICloneable<StorageItem>.FromReplica(StorageItem replica)

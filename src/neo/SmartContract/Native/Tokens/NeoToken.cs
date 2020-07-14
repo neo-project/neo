@@ -46,7 +46,7 @@ namespace Neo.SmartContract.Native.Tokens
                 engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo)).GetInteroperable<CandidateState>().Votes += amount;
                 StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
                 BigInteger votersCount = item.GetBigInteger() + amount;
-                item.Value = votersCount.ToByteArray();
+                item.Set(votersCount);
             }
         }
 
@@ -99,7 +99,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             base.OnPersist(engine);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
-            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
+            storage.Set(GetValidators(engine.Snapshot));
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
@@ -155,7 +155,7 @@ namespace Neo.SmartContract.Native.Tokens
                     votersCount += state_account.Balance;
                 else
                     votersCount -= state_account.Balance;
-                item.Value = votersCount.ToByteArray();
+                item.Set(votersCount);
             }
             if (state_account.VoteTo != null)
             {

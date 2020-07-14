@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.GetSerializableArray<UInt160>());
             if (!accounts.Add(account)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToByteArray();
+            storage.Set(accounts);
             return true;
         }
 
@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
             SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.GetSerializableArray<UInt160>());
             if (!accounts.Remove(account)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToByteArray();
+            storage.Set(accounts);
             return true;
         }
     }
