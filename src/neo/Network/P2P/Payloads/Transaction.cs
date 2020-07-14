@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -268,10 +267,10 @@ namespace Neo.Network.P2P.Payloads
 
         bool IInventory.Verify(StoreView snapshot)
         {
-            return Verify(snapshot, BigInteger.Zero) == VerifyResult.Succeed;
+            return Verify(snapshot, null) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot, TransactionVerificationContext context)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
@@ -280,9 +279,7 @@ namespace Neo.Network.P2P.Payloads
                 return VerifyResult.PolicyFail;
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return VerifyResult.InsufficientFunds;
+            if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
@@ -295,9 +292,9 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult Verify(StoreView snapshot, TransactionVerificationContext context)
         {
-            VerifyResult result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
+            VerifyResult result = VerifyForEachBlock(snapshot, context);
             if (result != VerifyResult.Succeed) return result;
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
