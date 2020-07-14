@@ -487,21 +487,21 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.PersistingBlock = new Block { Index = index };
             Check_OnPersist(snapshot).Should().BeTrue();
 
-            var gasPerBlock = NeoToken.NEO.GetGasPerBlock(snapshot);
+            var gasPerBlock = NativeContract.NEO.GetGasPerBlock(snapshot);
             var holderRewardKey = CreateStorageKey(57, uint.MaxValue - 1 - 1);
             var storageItem = snapshot.Storages.TryGet(holderRewardKey);
             new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 1);
 
-            ECPoint[] validators = NeoToken.NEO.GetValidators(snapshot);
-            ECPoint[] committee = NeoToken.NEO.GetCommittee(snapshot);
+            ECPoint[] validators = NativeContract.NEO.GetValidators(snapshot);
+            ECPoint[] committee = NativeContract.NEO.GetCommittee(snapshot);
             for (var i = 0; i < committee.Length; i++)
             {
                 int factor = validators.Contains(committee[i]) ? 2 : 1;
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committee[i]).ScriptHash;
                 var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - index - 1));
                 var committeeValue = snapshot.Storages.TryGet(committeeKey);
-                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L * 1 / 100 / 28 / (1785714 * factor));
-                GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 * 1 / 100 / 21);
+                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * NativeContract.GAS.Factor * 85 * 10000L * 1 / 100 / 28 / (1785714 * factor));
+                NativeContract.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * NativeContract.GAS.Factor * 5 * 1 / 100 / 21);
             }
 
             // Next block
@@ -514,23 +514,23 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             storageItem = snapshot.Storages.TryGet(holderRewardKey);
             new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 2);
 
-            validators = NeoToken.NEO.GetValidators(snapshot);
-            committee = NeoToken.NEO.GetCommittee(snapshot);
+            validators = NativeContract.NEO.GetValidators(snapshot);
+            committee = NativeContract.NEO.GetCommittee(snapshot);
             for (var i = 0; i < committee.Length; i++)
             {
                 int factor = validators.Contains(committee[i]) ? 2 : 1;
                 UInt160 committeeAddr = Contract.CreateSignatureContract(committee[i]).ScriptHash;
                 var committeeKey = CreateStorageKey(23, committeeAddr, (uint.MaxValue - index - 1));
                 var committeeValue = snapshot.Storages.TryGet(committeeKey);
-                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor) * 2);
+                new BigInteger(committeeValue.Value).Should().Be(factor * 5 * NativeContract.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor) * 2);
 
-                GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21 * 2);
+                NativeContract.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * NativeContract.GAS.Factor * 5 / 100 / 21 * 2);
             }
 
 
             // New committee
 
-            var oldValidators = NeoToken.NEO.GetValidators(snapshot);
+            var oldValidators = NativeContract.NEO.GetValidators(snapshot);
             ECPoint[] newValidators = new ECPoint[7];
             for (int i = 0; i < 7; i++)
             {
@@ -564,7 +564,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                     VoteTo = newValidators[i],
                     Balance = 1785714 * 2
                 }));
-                NeoToken.NEO.BalanceOf(snapshot, hash.ToArray()).Should().Be(1785714 * 2);
+                NativeContract.NEO.BalanceOf(snapshot, hash.ToArray()).Should().Be(1785714 * 2);
             }
 
             index = 3;
@@ -576,7 +576,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 3);
 
             var newValidatorCount = 0;
-            committee = NeoToken.NEO.GetCommittee(snapshot);
+            committee = NativeContract.NEO.GetCommittee(snapshot);
             for (var i = 0; i < committee.Length; i++)
             {
                 oldValidators.Contains(committee[i]).Should().BeFalse();
@@ -589,14 +589,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                     newValidatorCount++;
 
                     int factor = 2;
-                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor));
-                    GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21);
+                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * NativeContract.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor));
+                    NativeContract.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * NativeContract.GAS.Factor * 5 / 100 / 21);
                 }
                 else
                 {
                     int factor = 1;
-                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * GasToken.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor) * 3);
-                    GasToken.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * GasToken.GAS.Factor * 5 / 100 / 21 * 3);
+                    new BigInteger(committeeValue.Value).Should().Be(factor * 5 * NativeContract.GAS.Factor * 85 * 10000L / 100 / 28 / (1785714 * factor) * 3);
+                    NativeContract.GAS.BalanceOf(snapshot, committeeAddr.ToArray()).Should().Be(5 * NativeContract.GAS.Factor * 5 / 100 / 21 * 3);
                 }
             }
             newValidatorCount.Should().Be(7);
@@ -605,9 +605,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             var oldValidatorHash = Contract.CreateSignatureContract(oldValidators[0]).ScriptHash;
             var newValidatorHash = Contract.CreateSignatureContract(newValidators[0]).ScriptHash;
-            BigInteger amount = NeoToken.NEO.BalanceOf(snapshot, newValidatorHash.ToArray());
+            BigInteger amount = NativeContract.NEO.BalanceOf(snapshot, newValidatorHash.ToArray());
             amount.Should().Be(1785714 * 2);
-            bool result = NeoToken.NEO.Transfer(snapshot, newValidatorHash.ToArray(), oldValidatorHash.ToArray(), amount, true);
+            bool result = NativeContract.NEO.Transfer(snapshot, newValidatorHash.ToArray(), oldValidatorHash.ToArray(), amount, true);
             result.Should().BeTrue();
             snapshot.Storages.Find(CreateStorageKey(23, newValidatorHash.ToArray()).ToArray()).ToArray().Length.Should().Be(0); // it'll be removed after `OnBalanceChanging`
         }
@@ -616,13 +616,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestEconomicParameter()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            (bool, bool) ret1 = Check_SetGasPerByte(snapshot, 2 * GasToken.GAS.Factor);
+            (bool, bool) ret1 = Check_SetGasPerByte(snapshot, 2 * NativeContract.GAS.Factor);
             ret1.Item2.Should().BeTrue();
             ret1.Item1.Should().BeTrue();
 
             (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
             result.Item2.Should().BeTrue();
-            result.Item1.Should().Be(2 * GasToken.GAS.Factor);
+            result.Item1.Should().Be(2 * NativeContract.GAS.Factor);
 
             ret1 = Check_SetRewardRatio(snapshot, 10, 10, 80);
             ret1.Item2.Should().BeTrue();
@@ -634,9 +634,10 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result2.Item1[1].GetInteger().Should().Be(10);
             result2.Item1[2].GetInteger().Should().Be(80);
         }
+
         internal static bool Check_NativeDeploy(StoreView snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
             engine.LoadScript(script.ToArray());
@@ -645,9 +646,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (bool Value, bool State) Check_SetRewardRatio(StoreView snapshot, BigInteger holder, BigInteger committee, BigInteger voters)
         {
-            ECPoint[] committees = NeoToken.NEO.GetCommittee(snapshot);
+            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = new ApplicationEngine(TriggerType.Application,
+            var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
 
             engine.LoadScript(NativeContract.NEO.Script);
@@ -674,9 +675,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (bool Value, bool State) Check_SetGasPerByte(StoreView snapshot, BigInteger value)
         {
-            ECPoint[] committees = NeoToken.NEO.GetCommittee(snapshot);
+            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = new ApplicationEngine(TriggerType.Application,
+            var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
 
             engine.LoadScript(NativeContract.NEO.Script);
@@ -701,7 +702,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StoreView snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -724,7 +725,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (VM.Types.Array Value, bool State) Check_GetEconomicParameter(StoreView snapshot, string method)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -747,9 +748,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static bool Check_OnPersist(StoreView snapshot)
         {
-            ECPoint[] committees = NeoToken.NEO.GetCommittee(snapshot);
+            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = new ApplicationEngine(TriggerType.System,
+            var engine = ApplicationEngine.Create(TriggerType.System,
                 new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
 
             engine.LoadScript(NativeContract.NEO.Script);
