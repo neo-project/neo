@@ -8,7 +8,6 @@ namespace Neo.Ledger
     public class StorageItem : ICloneable<StorageItem>, ISerializable
     {
         private byte[] value;
-        private IInteroperable interoperable;
         public bool IsConstant;
         private object cached;
 
@@ -18,13 +17,13 @@ namespace Neo.Ledger
         {
             get
             {
-                if (value is null && interoperable != null)
+                if (value is null && cached is IInteroperable interoperable)
                     value = BinarySerializer.Serialize(interoperable.ToStackItem(null), 4096);
                 return value;
             }
             set
             {
-                cached = interoperable = null;
+                cached = null;
                 this.value = value;
             }
         }
@@ -39,7 +38,7 @@ namespace Neo.Ledger
 
         public StorageItem(IInteroperable interoperable, bool isConstant = false)
         {
-            this.cached = this.interoperable = interoperable;
+            this.cached = interoperable;
             this.IsConstant = isConstant;
         }
 
@@ -93,13 +92,14 @@ namespace Neo.Ledger
 
         public T GetInteroperable<T>() where T : IInteroperable, new()
         {
-            if (interoperable is null)
+            if (cached is null)
             {
-                interoperable = new T();
+                var interoperable = new T();
                 interoperable.FromStackItem(BinarySerializer.Deserialize(value, 16, 34));
+                cached = interoperable;
             }
             value = null;
-            return (T)interoperable;
+            return (T)cached;
         }
 
         public void Serialize(BinaryWriter writer)
