@@ -210,7 +210,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
-            decimal votersCount = (decimal)new BigInteger(snapshot.Storages[CreateStorageKey(Prefix_VotersCount)].Value);
+            decimal votersCount = (decimal)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)].GetBigInteger();
             decimal VoterTurnout = votersCount / (decimal)TotalAmount;
             if (VoterTurnout < EffectiveVoterTurnout)
                 return Blockchain.StandbyCommittee;
@@ -225,7 +225,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
             if (storage is null) return Blockchain.StandbyValidators;
-            return storage.Value.AsSerializableArray<ECPoint>();
+            return storage.GetSerializableArray<ECPoint>();
         }
 
         public class NeoAccountState : AccountState

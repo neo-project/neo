@@ -1,6 +1,8 @@
 using Neo.IO;
 using Neo.SmartContract;
+using System;
 using System.IO;
+using System.Numerics;
 
 namespace Neo.Ledger
 {
@@ -9,6 +11,7 @@ namespace Neo.Ledger
         private byte[] value;
         private IInteroperable interoperable;
         public bool IsConstant;
+        private object cached;
 
         public int Size => Value.GetVarSize() + sizeof(bool);
 
@@ -22,14 +25,12 @@ namespace Neo.Ledger
             }
             set
             {
-                interoperable = null;
+                cached = interoperable = null;
                 this.value = value;
             }
         }
 
-        public StorageItem()
-        {
-        }
+        public StorageItem() { }
 
         public StorageItem(byte[] value, bool isConstant = false)
         {
@@ -39,7 +40,7 @@ namespace Neo.Ledger
 
         public StorageItem(IInteroperable interoperable, bool isConstant = false)
         {
-            this.interoperable = interoperable;
+            this.cached = this.interoperable = interoperable;
             this.IsConstant = isConstant;
         }
 
@@ -56,6 +57,33 @@ namespace Neo.Ledger
         {
             Value = reader.ReadVarBytes();
             IsConstant = reader.ReadBoolean();
+        }
+
+        public T[] GetSerializableArray<T>(int max = 0x1000000) where T : ISerializable, new()
+        {
+            if (cached is T[] value) return value;
+
+            var ret = Value.AsSerializableArray<T>(max);
+            cached = ret;
+            return ret;
+        }
+
+        public T GetSerializable<T>() where T : ISerializable, new()
+        {
+            if (cached is T value) return value;
+
+            var ret = Value.AsSerializable<T>();
+            cached = ret;
+            return ret;
+        }
+
+        public BigInteger GetBigInteger()
+        {
+            if (cached is BigInteger value) return value;
+
+            var ret = new BigInteger(Value);
+            cached = ret;
+            return ret;
         }
 
         void ICloneable<StorageItem>.FromReplica(StorageItem replica)
