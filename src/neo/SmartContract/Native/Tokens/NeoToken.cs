@@ -14,7 +14,7 @@ namespace Neo.SmartContract.Native.Tokens
         public override string Symbol => "neo";
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
-        
+
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;

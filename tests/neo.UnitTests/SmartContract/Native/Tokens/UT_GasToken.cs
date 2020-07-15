@@ -99,8 +99,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Burn more than expected
 
-            Assert.ThrowsException<InvalidOperationException>(() =>NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000005000000801)));
-
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000005000000801)));
 
             // Real burn
 
