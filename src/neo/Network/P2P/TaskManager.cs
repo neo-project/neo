@@ -295,6 +295,21 @@ namespace Neo.Network.P2P
                 if (lastTaskIndex >= highestBlockIndex) break;
                 if (!AssignSyncTask(++lastTaskIndex)) break;
             }
+
+            SyncStateRoot();
+        }
+
+        private void SyncStateRoot()
+        {
+            if (Blockchain.Singleton.StateHeight + 1 < Blockchain.Singleton.Height)
+            {
+                var session = sessions.Where(p => Blockchain.Singleton.StateHeight <= p.Value.LastBlockIndex)
+                    .OrderByDescending(p => p.Value.LastBlockIndex)
+                    .ThenBy(p => p.Value.IndexTasks.Count)
+                    .FirstOrDefault();
+                if (session.Value != null)
+                    session.Key.Tell(Message.Create(MessageCommand.GetStateRoot, GetStateRootPayload.Create(Blockchain.Singleton.Height - 1)));
+            }
         }
 
         private void SendPingMessage()
