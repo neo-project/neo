@@ -42,6 +42,8 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
+        Message IInventory.OriginalMessage { get; set; }
+
         public TransactionAttribute[] Attributes
         {
             get => attributes;
@@ -142,7 +144,7 @@ namespace Neo.Network.P2P.Payloads
         public Witness[] Witnesses
         {
             get => witnesses;
-            set { witnesses = value; _size = 0; }
+            set { witnesses = value; _size = 0; ((IInventory)this).OriginalMessage = null; }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)

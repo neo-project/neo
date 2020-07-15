@@ -62,10 +62,10 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
+                    OnInventoryReceived(msg, (Block)msg.Payload);
                     break;
                 case MessageCommand.Consensus:
-                    OnInventoryReceived((ConsensusPayload)msg.Payload);
+                    OnInventoryReceived(msg, (ConsensusPayload)msg.Payload);
                     break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
@@ -105,7 +105,7 @@ namespace Neo.Network.P2P
                     break;
                 case MessageCommand.Transaction:
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived((Transaction)msg.Payload);
+                        OnInventoryReceived(msg, (Transaction)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
@@ -284,8 +284,9 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
-        private void OnInventoryReceived(IInventory inventory)
+        private void OnInventoryReceived(Message originalMessage, IInventory inventory)
         {
+            inventory.OriginalMessage = originalMessage;
             system.TaskManager.Tell(inventory);
             if (inventory is Transaction transaction)
                 system.Consensus?.Tell(transaction);

@@ -19,6 +19,8 @@ namespace Neo.Network.P2P.Payloads
         public byte[] Data;
         public Witness Witness;
 
+        Message IInventory.OriginalMessage { get; set; }
+
         private ConsensusMessage _deserializedMessage = null;
         public ConsensusMessage ConsensusMessage
         {

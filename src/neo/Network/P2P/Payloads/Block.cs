@@ -21,6 +21,8 @@ namespace Neo.Network.P2P.Payloads
         public ConsensusData ConsensusData;
         public Transaction[] Transactions;
 
+        Message IInventory.OriginalMessage { get; set; }
+
         private Header _header = null;
         public Header Header
         {
