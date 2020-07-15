@@ -18,7 +18,8 @@ namespace Neo.Ledger
             }
         }
         public long StateHeight => LatestValidatorsStateRoot is null ? -1 : (long)LatestValidatorsStateRoot.Index;
-        private readonly int StateRootCacheCount = 100;
+
+        private readonly int MaxStateRootCacheCount = 100;
         private Dictionary<uint, StateRoot> state_root_cache = new Dictionary<uint, StateRoot>();
 
         public UInt256 GetLocalStateRoot(uint index)
@@ -28,8 +29,9 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewStateRoot(StateRoot root)
         {
-            if (!(LatestValidatorsStateRoot is null) && root.Index <= LatestValidatorsStateRoot.Index) return VerifyResult.AlreadyExists;
-            if (Height < root.Index && root.Index < Height + StateRootCacheCount)
+            if (LatestValidatorsStateRoot != null && root.Index <= LatestValidatorsStateRoot.Index) return VerifyResult.AlreadyExists;
+            if (Height + StateRootCacheCount < root.Index) return VerifyResult.Invalid;
+            if (Height < root.Index && root.Index <= Height + StateRootCacheCount)
             {
                 if (!state_root_cache.TryAdd(root.Index, root)) return VerifyResult.AlreadyExists;
                 return VerifyResult.Succeed;
