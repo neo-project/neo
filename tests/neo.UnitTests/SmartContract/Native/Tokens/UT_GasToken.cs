@@ -57,9 +57,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             // Transfer
 
             NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true).Should().BeTrue();
-            NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(50000008);
+            NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000);
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
-
             NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(3000005000000800);
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(0);
 
@@ -71,6 +70,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(3000005000000800);
+
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 5); // Gas
 
@@ -99,13 +99,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Burn more than expected
 
-            Assert.ThrowsException<InvalidOperationException>(() =>
-                NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000005000000801)));
+            Assert.ThrowsException<InvalidOperationException>(() =>NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000005000000801)));
+
 
             // Real burn
 
             NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
-
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000005000000799);
 
             keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());

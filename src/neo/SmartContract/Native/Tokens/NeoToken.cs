@@ -1,6 +1,5 @@
 #pragma warning disable IDE0051
 
-using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -15,7 +14,7 @@ namespace Neo.SmartContract.Native.Tokens
         public override string Symbol => "neo";
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
-
+        
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
@@ -42,6 +41,10 @@ namespace Neo.SmartContract.Native.Tokens
                     foreach (var (key, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
                         engine.Snapshot.Storages.Delete(key);
                 }
+
+                StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
+                BigInteger votersCount = new BigInteger(item.Value) + amount;
+                item.Value = votersCount.ToByteArray();
             }
         }
 
@@ -62,27 +65,15 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Predistribution
 
-            BigInteger amount = TotalAmount;
-            for (int i = 0; i < Blockchain.StandbyCommittee.Length; i++)
-            {
-                ECPoint pubkey = Blockchain.StandbyCommittee[i];
-                RegisterCandidateInternal(engine.Snapshot, pubkey);
-                BigInteger balance = TotalAmount / 2 / (Blockchain.StandbyValidators.Length * 2 + (Blockchain.StandbyCommittee.Length - Blockchain.StandbyValidators.Length));
-                if (i < Blockchain.StandbyValidators.Length) balance *= 2;
-                UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-                Mint(engine, account, balance);
-                VoteInternal(engine.Snapshot, account, pubkey);
-                amount -= balance;
-            }
-            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), amount);
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
+            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
         }
 
         protected override void OnPersist(ApplicationEngine engine)
         {
             base.OnPersist(engine);
 
-            var storages = engine.Snapshot.Storages;
-            StorageItem nextValidatorItem = storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
+            StorageItem nextValidatorItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
             nextValidatorItem.Value = GetValidators(engine.Snapshot).ToByteArray();
 
             DistributeGasForCommittee(engine);

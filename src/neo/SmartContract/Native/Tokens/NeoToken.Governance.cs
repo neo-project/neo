@@ -14,8 +14,11 @@ namespace Neo.SmartContract.Native.Tokens
 {
     public partial class NeoToken
     {
+        private const byte Prefix_VotersCount = 1;
         private const byte Prefix_Candidate = 13;
         private const byte Prefix_NextValidators = 77;
+
+        public const decimal EffectiveVoterTurnout = 0.2M;
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
@@ -54,30 +57,35 @@ namespace Neo.SmartContract.Native.Tokens
         private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
-            return VoteInternal(engine.Snapshot, account, voteTo);
-        }
-
-        private bool VoteInternal(StoreView snapshot, UInt160 account, ECPoint voteTo)
-        {
             StorageKey key_account = CreateStorageKey(Prefix_Account).Add(account);
-            if (snapshot.Storages.TryGet(key_account) is null) return false;
-            StorageItem storage_account = snapshot.Storages.GetAndChange(key_account);
+            if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
+            StorageItem storage_account = engine.Snapshot.Storages.GetAndChange(key_account);
             NeoAccountState state_account = storage_account.GetInteroperable<NeoAccountState>();
+            if (state_account.VoteTo is null ^ voteTo is null)
+            {
+                StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
+                BigInteger votersCount = new BigInteger(item.Value);
+                if (state_account.VoteTo is null)
+                    votersCount += state_account.Balance;
+                else
+                    votersCount -= state_account.Balance;
+                item.Value = votersCount.ToByteArray();
+            }
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state_account.VoteTo);
-                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes -= state_account.Balance;
                 if (!state_validator.Registered && state_validator.Votes.IsZero)
-                    snapshot.Storages.Delete(key);
+                    engine.Snapshot.Storages.Delete(key);
             }
             state_account.VoteTo = voteTo;
             if (voteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(voteTo);
-                if (snapshot.Storages.TryGet(key) is null) return false;
-                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
+                if (engine.Snapshot.Storages.TryGet(key) is null) return false;
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 if (!state_validator.Registered) return false;
                 state_validator.Votes += state_account.Balance;
@@ -88,29 +96,24 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(StoreView snapshot)
         {
-            return GetCandidatesInternal(snapshot).ToArray();
-        }
-
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetCandidatesInternal(StoreView snapshot)
-        {
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Candidate });
+            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetValidators(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxValidatorsCount).ToArray();
+            return GetCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxCommitteeMembersCount).ToArray();
+            return GetCommitteeMembers(snapshot).OrderBy(p => p).ToArray();
         }
 
         public UInt160 GetCommitteeAddress(StoreView snapshot)
@@ -119,14 +122,32 @@ namespace Neo.SmartContract.Native.Tokens
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot, int count)
+        private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
-            return GetCandidatesInternal(snapshot).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p);
+            decimal votersCount = (decimal)new BigInteger(snapshot.Storages[CreateStorageKey(Prefix_VotersCount)].Value);
+            decimal VoterTurnout = votersCount / (decimal)TotalAmount;
+            if (VoterTurnout < EffectiveVoterTurnout)
+                return Blockchain.StandbyCommittee;
+            var candidates = GetCandidates(snapshot);
+            if (candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
+                return Blockchain.StandbyCommittee;
+            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
         }
 
         private (ECPoint PublicKey, BigInteger Votes)[] GetCommitteeVotes(StoreView snapshot)
         {
-            return GetCandidatesInternal(snapshot).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(ProtocolSettings.Default.MaxCommitteeMembersCount).ToArray();
+            (ECPoint PublicKey, BigInteger Votes)[] committeeVotes = new (ECPoint PublicKey, BigInteger Votes)[ProtocolSettings.Default.CommitteeMembersCount];
+            var i = 0;
+            foreach (var commiteePubKey in GetCommitteeMembers(snapshot))
+            {
+                var item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(commiteePubKey));
+                if (item is null)
+                    committeeVotes[i] = (commiteePubKey, BigInteger.Zero);
+                else
+                    committeeVotes[i] = (commiteePubKey, item.GetInteroperable<CandidateState>().Votes);
+                i++;
+            }
+            return committeeVotes;
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
@@ -137,7 +158,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.Value.AsSerializableArray<ECPoint>();
         }
 
-        public bool CheckCommitteeWitness(ApplicationEngine engine)
+        public bool CheckCommittees(ApplicationEngine engine)
         {
             UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
