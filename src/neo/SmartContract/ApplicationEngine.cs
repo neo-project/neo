@@ -220,8 +220,6 @@ namespace Neo.SmartContract
         protected override void OnSysCall(uint method)
         {
             InteropDescriptor descriptor = services[method];
-            if (!descriptor.AllowedTriggers.HasFlag(Trigger))
-                throw new InvalidOperationException($"Cannot call this SYSCALL with the trigger {Trigger}.");
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
@@ -263,11 +261,11 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags, bool allowCallback)
+        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback)
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, allowedTriggers, requiredCallFlags, allowCallback);
+            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags, allowCallback);
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
