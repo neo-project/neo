@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native.Oracle
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
-            foreach (uint responseId in engine.OracleResponses)
+            foreach (ulong responseId in engine.OracleResponses)
             {
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).Add(responseId);
