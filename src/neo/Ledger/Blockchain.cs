@@ -405,6 +405,7 @@ namespace Neo.Ledger
                     header_index.Add(block.Hash);
                     snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
+                HashSet<OracleResponse> oracleResponses = new HashSet<OracleResponse>();
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
@@ -432,6 +433,7 @@ namespace Neo.Ledger
 
                     using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
+                        engine.OracleResponses = oracleResponses;
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
                         if (state.VMState == VMState.HALT)

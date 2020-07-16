@@ -35,16 +35,6 @@ namespace Neo.SmartContract.Native.Oracle
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
-        private void Finish(ApplicationEngine engine)
-        {
-            Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
-            OracleRequest request = GetRequest(engine.Snapshot, response.Id);
-            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
-            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
-        }
-
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public ECPoint[] GetOracleNodes(StoreView snapshot)
         {
@@ -89,15 +79,22 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
+        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        private void Finish(ApplicationEngine engine)
+        {
+            Transaction tx = (Transaction)engine.ScriptContainer;
+            OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
+            engine.OracleResponses.Add(response);
+            OracleRequest request = GetRequest(engine.Snapshot, response.Id);
+            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
+            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
+        }
+
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
-            foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
+            foreach (OracleResponse response in engine.OracleResponses)
             {
-                //Filter the response transactions
-                OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
-                if (response is null) continue;
-
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
                 OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
