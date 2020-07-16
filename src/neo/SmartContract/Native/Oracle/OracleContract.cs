@@ -93,6 +93,9 @@ namespace Neo.SmartContract.Native.Oracle
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
+
+            if (engine.OracleResponses == null) return;
+
             foreach (ulong responseId in engine.OracleResponses)
             {
                 //Remove the request from storage
