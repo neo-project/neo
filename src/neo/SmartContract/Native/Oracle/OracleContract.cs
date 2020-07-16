@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native.Oracle
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
-            engine.OracleResponses.Add(response);
+            engine.OracleResponses?.Add(response);
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
