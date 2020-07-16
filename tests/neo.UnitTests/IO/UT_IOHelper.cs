@@ -127,6 +127,21 @@ namespace Neo.UnitTests.IO
             var result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
 
             CollectionAssert.AreEqual(result, data);
+
+            // Compress
+
+            data = new byte[255];
+            for (int x = 0; x < data.Length; x++) data[x] = 1;
+
+            byteArray = Neo.IO.Helper.CompressLz4(data);
+            result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
+
+            Assert.IsTrue(byteArray.Length < result.Length);
+            CollectionAssert.AreEqual(result, data);
+
+            // Error
+
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue - 1));
         }
 
         [TestMethod]
