@@ -71,7 +71,7 @@ namespace Neo.IO
             using var buffer = MemoryPool<byte>.Shared.Rent(maxLength);
             int length = LZ4Codec.Encode(data, buffer.Memory.Span);
             byte[] result = new byte[sizeof(uint) + length];
-            BinaryPrimitives.WriteInt32LittleEndian(result, length);
+            BinaryPrimitives.WriteInt32LittleEndian(result, data.Length);
             buffer.Memory[..length].CopyTo(result.AsMemory(4));
             return result;
         }
