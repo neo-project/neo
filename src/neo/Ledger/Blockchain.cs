@@ -72,8 +72,6 @@ namespace Neo.Ledger
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
-        public StateRoot LatestValidatorsStateRoot => new StateRoot();
-        public long StateHeight => -1;
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -470,6 +468,7 @@ namespace Neo.Ledger
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
+            CheckStateRootCache();
             block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
