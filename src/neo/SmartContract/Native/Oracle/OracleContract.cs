@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native.Oracle
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
-            engine.OracleResponses?.Add(response);
+            engine.OracleResponses?.Add(response.Id);
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
@@ -93,22 +93,22 @@ namespace Neo.SmartContract.Native.Oracle
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
-            foreach (OracleResponse response in engine.OracleResponses)
+            foreach (uint responseId in engine.OracleResponses)
             {
                 //Remove the request from storage
-                StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
+                StorageKey key = CreateStorageKey(Prefix_Request).Add(responseId);
                 OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
                 engine.Snapshot.Storages.Delete(key);
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
                 IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
-                if (!list.Remove(response.Id)) throw new InvalidOperationException();
+                if (!list.Remove(responseId)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
                 ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
-                int index = (int)(response.Id % (ulong)nodes.Length);
+                int index = (int)(responseId % (ulong)nodes.Length);
                 UInt160 account = Contract.CreateSignatureRedeemScript(nodes[index]).ToScriptHash();
                 GAS.Mint(engine, account, OracleRequestPrice);
             }

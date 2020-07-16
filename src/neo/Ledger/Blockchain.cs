@@ -405,7 +405,7 @@ namespace Neo.Ledger
                     header_index.Add(block.Hash);
                     snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
-                HashSet<OracleResponse> oracleResponses = new HashSet<OracleResponse>();
+                HashSet<ulong> oracleResponses = new HashSet<ulong>();
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
