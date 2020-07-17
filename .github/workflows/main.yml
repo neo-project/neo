@@ -100,7 +100,7 @@ jobs:
         prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
     - name: Setup .NET Core
       if: steps.check_tag.outputs.statusCode == '404'
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     - name: Publish to NuGet
