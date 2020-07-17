@@ -10,6 +10,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native.Oracle
 {
@@ -92,6 +93,7 @@ namespace Neo.SmartContract.Native.Oracle
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
+            (UInt160 Account, BigInteger GAS)[] nodes = GetOracleNodes(engine.Snapshot).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
                 //Filter the response transactions
@@ -110,11 +112,15 @@ namespace Neo.SmartContract.Native.Oracle
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
-                if (nodes.Length == 0) continue;
-                int index = (int)(response.Id % (ulong)nodes.Length);
-                UInt160 account = Contract.CreateSignatureRedeemScript(nodes[index]).ToScriptHash();
-                GAS.Mint(engine, account, OracleRequestPrice);
+                if (nodes.Length > 0)
+                {
+                    int index = (int)(response.Id % (ulong)nodes.Length);
+                    nodes[index].GAS += OracleRequestPrice;
+                }
+            }
+            foreach (var (account, gas) in nodes)
+            {
+                if (gas.Sign > 0) GAS.Mint(engine, account, gas);
             }
         }
 
