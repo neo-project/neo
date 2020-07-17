@@ -111,6 +111,7 @@ namespace Neo.SmartContract.Native.Oracle
 
                 //Mint GAS for oracle nodes
                 ECPoint[] nodes = GetOracleNodes(engine.Snapshot);
+                if (nodes.Length == 0) continue;
                 int index = (int)(response.Id % (ulong)nodes.Length);
                 UInt160 account = Contract.CreateSignatureRedeemScript(nodes[index]).ToScriptHash();
                 GAS.Mint(engine, account, OracleRequestPrice);
