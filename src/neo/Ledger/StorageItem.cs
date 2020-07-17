@@ -3,7 +3,6 @@ using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.Ledger
@@ -11,9 +10,8 @@ namespace Neo.Ledger
     public class StorageItem : ICloneable<StorageItem>, ISerializable
     {
         private byte[] value;
-        public bool IsConstant;
         private object cache;
-        private Func<byte[]> serializer;
+        public bool IsConstant;
 
         public int Size => Value.GetVarSize() + sizeof(bool);
 
@@ -21,15 +19,19 @@ namespace Neo.Ledger
         {
             get
             {
-                if (value is null && serializer != null)
-                    value = serializer();
-                return value;
+                return value ??= cache switch
+                {
+                    BigInteger bi => bi.ToByteArrayStandard(),
+                    IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 4096),
+                    IReadOnlyCollection<ISerializable> list => list.ToByteArray(),
+                    null => null,
+                    _ => throw new InvalidCastException()
+                };
             }
             set
             {
-                cache = null;
-                serializer = null;
                 this.value = value;
+                cache = null;
             }
         }
 
@@ -37,25 +39,25 @@ namespace Neo.Ledger
 
         public StorageItem(byte[] value, bool isConstant = false)
         {
-            this.IsConstant = isConstant;
             this.value = value;
-            this.cache = null;
-            this.serializer = null;
+            this.IsConstant = isConstant;
         }
 
         public StorageItem(BigInteger value, bool isConstant = false)
         {
-            this.IsConstant = isConstant;
-            this.value = value.ToByteArrayStandard();
             this.cache = value;
+            this.IsConstant = isConstant;
         }
 
         public StorageItem(IInteroperable interoperable, bool isConstant = false)
         {
-            this.IsConstant = isConstant;
-            this.value = null;
             this.cache = interoperable;
-            this.serializer = () => BinarySerializer.Serialize(interoperable.ToStackItem(null), 4096);
+            this.IsConstant = isConstant;
+        }
+
+        public void Add(BigInteger integer)
+        {
+            Set(this + integer);
         }
 
         StorageItem ICloneable<StorageItem>.Clone()
@@ -73,19 +75,6 @@ namespace Neo.Ledger
             IsConstant = reader.ReadBoolean();
         }
 
-        public void Set(BigInteger value)
-        {
-            this.value = value.ToByteArrayStandard();
-            this.cache = value;
-        }
-
-        public void Set<T>(IReadOnlyCollection<T> value) where T : ISerializable
-        {
-            this.value = null;
-            this.cache = value;
-            this.serializer = () => value.ToByteArray();
-        }
-
         void ICloneable<StorageItem>.FromReplica(StorageItem replica)
         {
             Value = replica.Value;
@@ -98,41 +87,35 @@ namespace Neo.Ledger
             {
                 var interoperable = new T();
                 interoperable.FromStackItem(BinarySerializer.Deserialize(value, 16, 34));
-                this.serializer = () => BinarySerializer.Serialize(interoperable.ToStackItem(null), 4096);
                 cache = interoperable;
             }
             value = null;
             return (T)cache;
         }
 
-        public T[] GetSerializableArray<T>(int max = 0x1000000) where T : ISerializable, new()
+        public List<T> GetSerializableList<T>() where T : ISerializable, new()
         {
-            if (cache is null)
-            {
-                var ret = Value.AsSerializableArray<T>(max);
-                this.serializer = () => ret.ToByteArray();
-                cache = ret;
-            }
+            cache ??= new List<T>(value.AsSerializableArray<T>());
             value = null;
-            return ((IReadOnlyCollection<T>)cache).ToArray();
-        }
-
-        public BigInteger GetBigInteger()
-        {
-            if (cache is null)
-            {
-                var ret = new BigInteger(Value);
-                this.serializer = () => ret.ToByteArrayStandard();
-                cache = ret;
-            }
-            value = null;
-            return (BigInteger)cache;
+            return (List<T>)cache;
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.WriteVarBytes(Value);
             writer.Write(IsConstant);
+        }
+
+        public void Set(BigInteger integer)
+        {
+            cache = integer;
+            value = null;
+        }
+
+        public static implicit operator BigInteger(StorageItem item)
+        {
+            item.cache ??= new BigInteger(item.value);
+            return (BigInteger)item.cache;
         }
     }
 }

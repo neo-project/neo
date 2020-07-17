@@ -44,9 +44,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (state.VoteTo != null)
             {
                 engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo)).GetInteroperable<CandidateState>().Votes += amount;
-                StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
-                BigInteger votersCount = item.GetBigInteger() + amount;
-                item.Set(votersCount);
+                engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
             }
         }
 
@@ -99,7 +97,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             base.OnPersist(engine);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
-            storage.Set(GetValidators(engine.Snapshot));
+            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
@@ -150,12 +148,10 @@ namespace Neo.SmartContract.Native.Tokens
             if (state_account.VoteTo is null ^ voteTo is null)
             {
                 StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
-                BigInteger votersCount = item.GetBigInteger();
                 if (state_account.VoteTo is null)
-                    votersCount += state_account.Balance;
+                    item.Add(state_account.Balance);
                 else
-                    votersCount -= state_account.Balance;
-                item.Set(votersCount);
+                    item.Add(-state_account.Balance);
             }
             if (state_account.VoteTo != null)
             {
@@ -210,7 +206,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
-            decimal votersCount = (decimal)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)].GetBigInteger();
+            decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
             decimal VoterTurnout = votersCount / (decimal)TotalAmount;
             if (VoterTurnout < EffectiveVoterTurnout)
                 return Blockchain.StandbyCommittee;
@@ -225,7 +221,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
             if (storage is null) return Blockchain.StandbyValidators;
-            return storage.GetSerializableArray<ECPoint>();
+            return storage.GetSerializableList<ECPoint>().ToArray();
         }
 
         public class NeoAccountState : AccountState
