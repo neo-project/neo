@@ -120,6 +120,37 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
+        public void TestCompression()
+        {
+            var data = new byte[] { 1, 2, 3, 4 };
+            var byteArray = Neo.IO.Helper.CompressLz4(data);
+            var result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
+
+            CollectionAssert.AreEqual(result, data);
+
+            // Compress
+
+            data = new byte[255];
+            for (int x = 0; x < data.Length; x++) data[x] = 1;
+
+            byteArray = Neo.IO.Helper.CompressLz4(data);
+            result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
+
+            Assert.IsTrue(byteArray.Length < result.Length);
+            CollectionAssert.AreEqual(result, data);
+
+            // Error max length
+
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue - 1));
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, -1));
+
+            // Error length
+
+            byteArray[0]++;
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue));
+        }
+
+        [TestMethod]
         public void TestAsSerializableArray()
         {
             byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
