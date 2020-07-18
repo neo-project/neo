@@ -139,9 +139,15 @@ namespace Neo.UnitTests.IO
             Assert.IsTrue(byteArray.Length < result.Length);
             CollectionAssert.AreEqual(result, data);
 
-            // Error
+            // Error max length
 
             Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue - 1));
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, -1));
+
+            // Error length
+
+            byteArray[0]++;
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue));
         }
 
         [TestMethod]
