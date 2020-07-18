@@ -179,10 +179,7 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
-                if (i > 0 && signer.Scopes == WitnessScope.FeeOnly)
-                    throw new FormatException();
-                if (!hashset.Add(signer.Account))
-                    throw new FormatException();
+                if (!hashset.Add(signer.Account)) throw new FormatException();
                 yield return signer;
             }
         }
