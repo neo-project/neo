@@ -6,6 +6,7 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -58,31 +59,31 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
-            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
+            return (uint)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)];
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public uint GetMaxBlockSize(StoreView snapshot)
         {
-            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)].Value, 0);
+            return (uint)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)];
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public long GetMaxBlockSystemFee(StoreView snapshot)
         {
-            return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSystemFee)].Value, 0);
+            return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSystemFee)];
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public long GetFeePerByte(StoreView snapshot)
         {
-            return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
+            return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)];
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public UInt160[] GetBlockedAccounts(StoreView snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
+            return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].GetSerializableList<UInt160>().ToArray();
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
@@ -91,7 +92,7 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittees(engine)) return false;
             if (Network.P2P.Message.PayloadMaxSize <= value) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize));
-            storage.Value = BitConverter.GetBytes(value);
+            storage.Set(value);
             return true;
         }
 
@@ -100,7 +101,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
-            storage.Value = BitConverter.GetBytes(value);
+            storage.Set(value);
             return true;
         }
 
@@ -110,7 +111,7 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittees(engine)) return false;
             if (value <= 4007600) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee));
-            storage.Value = BitConverter.GetBytes(value);
+            storage.Set(value);
             return true;
         }
 
@@ -119,7 +120,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
-            storage.Value = BitConverter.GetBytes(value);
+            storage.Set(value);
             return true;
         }
 
@@ -129,10 +130,10 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittees(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
-            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
-            if (!accounts.Add(account)) return false;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToByteArray();
+            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
+            if (accounts.Contains(account)) return false;
+            engine.Snapshot.Storages.GetAndChange(key);
+            accounts.Add(account);
             return true;
         }
 
@@ -142,10 +143,11 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittees(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages[key];
-            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
-            if (!accounts.Remove(account)) return false;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToByteArray();
+            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
+            int index = accounts.IndexOf(account);
+            if (index < 0) return false;
+            engine.Snapshot.Storages.GetAndChange(key);
+            accounts.RemoveAt(index);
             return true;
         }
     }
