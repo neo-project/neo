@@ -107,7 +107,7 @@ namespace Neo.SmartContract
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
-                OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
+                OracleResponse response = tx.GetAttribute<OracleResponse>();
                 if (response is null)
                 {
                     signers = tx.Signers;

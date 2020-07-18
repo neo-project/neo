@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native.Oracle
         private void Finish(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.Attributes.OfType<OracleResponse>().First();
+            OracleResponse response = tx.GetAttribute<OracleResponse>();
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native.Oracle
         private UInt256 GetOriginalTxid(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
+            OracleResponse response = tx.GetAttribute<OracleResponse>();
             if (response is null) return tx.Hash;
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             return request.OriginalTxid;
@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Native.Oracle
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
                 //Filter the response transactions
-                OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
+                OracleResponse response = tx.GetAttribute<OracleResponse>();
                 if (response is null) continue;
 
                 //Remove the request from storage
@@ -174,7 +174,7 @@ namespace Neo.SmartContract.Native.Oracle
         private bool Verify(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.Attributes.OfType<OracleResponse>().FirstOrDefault();
+            OracleResponse response = tx.GetAttribute<OracleResponse>();
             if (response is null) return false;
             StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
             OracleRequest request = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<OracleRequest>();
