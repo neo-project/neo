@@ -42,10 +42,11 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
+        private Dictionary<Type, TransactionAttribute[]> _attributesCache;
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _hash = null; _size = 0; }
+            set { attributes = value; _attributesCache = null; _hash = null; _size = 0; }
         }
 
         /// <summary>
@@ -217,6 +218,18 @@ namespace Neo.Network.P2P.Payloads
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             throw new NotSupportedException();
+        }
+
+        public T GetAttribute<T>() where T : TransactionAttribute
+        {
+            return GetAttributes<T>()?.First();
+        }
+
+        public T[] GetAttributes<T>() where T : TransactionAttribute
+        {
+            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => (TransactionAttribute[])p.OfType<T>().ToArray());
+            _attributesCache.TryGetValue(typeof(T), out var result);
+            return (T[])result;
         }
 
         public override int GetHashCode()
