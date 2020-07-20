@@ -31,7 +31,7 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            ChangeViewMessages = reader.ReadSerializableArray<ChangeViewPayloadCompact>(ProtocolSettings.Default.MaxValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
+            ChangeViewMessages = reader.ReadSerializableArray<ChangeViewPayloadCompact>(ProtocolSettings.Default.ValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
             if (reader.ReadBoolean())
                 PrepareRequestMessage = reader.ReadSerializable<PrepareRequest>();
             else
@@ -41,8 +41,8 @@ namespace Neo.Consensus
                     PreparationHash = new UInt256(reader.ReadFixedBytes(preparationHashSize));
             }
 
-            PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(ProtocolSettings.Default.MaxValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
-            CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(ProtocolSettings.Default.MaxValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
+            PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(ProtocolSettings.Default.ValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
+            CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(ProtocolSettings.Default.ValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
         internal ConsensusPayload[] GetChangeViewPayloads(ConsensusContext context, ConsensusPayload payload)

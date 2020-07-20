@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using static System.Threading.Interlocked;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -26,13 +28,12 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
-        public const long GasFree = 0;
-
+        private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private readonly bool testMode;
-        private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
-        private readonly List<IDisposable> disposables = new List<IDisposable>();
+        private List<NotifyEventArgs> notifications;
+        private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
 
@@ -42,18 +43,19 @@ namespace Neo.SmartContract
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
+        public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
-        public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
+        public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
         {
-            this.gas_amount = GasFree + gas;
-            this.testMode = testMode;
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
+            this.gas_amount = gas;
+            this.testMode = testMode;
         }
 
         internal void AddGas(long gas)
@@ -61,6 +63,12 @@ namespace Neo.SmartContract
             GasConsumed = checked(GasConsumed + gas);
             if (!testMode && GasConsumed > gas_amount)
                 throw new InvalidOperationException("Insufficient GAS.");
+        }
+
+        protected override void OnFault(Exception e)
+        {
+            FaultException = e;
+            base.OnFault(e);
         }
 
         internal void CallFromNativeContract(Action onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -102,6 +110,10 @@ namespace Neo.SmartContract
                     break;
             }
         }
+
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+            => applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
+                ?? new ApplicationEngine(trigger, container, snapshot, gas, testMode);
 
         private InvocationState GetInvocationState(ExecutionContext context)
         {
@@ -196,17 +208,18 @@ namespace Neo.SmartContract
 
         public override void Dispose()
         {
-            foreach (IDisposable disposable in disposables)
-                disposable.Dispose();
-            disposables.Clear();
+            if (disposables != null)
+            {
+                foreach (IDisposable disposable in disposables)
+                    disposable.Dispose();
+                disposables = null;
+            }
             base.Dispose();
         }
 
         protected override void OnSysCall(uint method)
         {
             InteropDescriptor descriptor = services[method];
-            if (!descriptor.AllowedTriggers.HasFlag(Trigger))
-                throw new InvalidOperationException($"Cannot call this SYSCALL with the trigger {Trigger}.");
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
@@ -248,32 +261,42 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags, bool allowCallback)
+        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback)
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, allowedTriggers, requiredCallFlags, allowCallback);
+            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags, allowCallback);
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
         }
 
+        internal static void ResetApplicationEngineProvider()
+        {
+            Exchange(ref applicationEngineProvider, null);
+        }
+
         public static ApplicationEngine Run(byte[] script, StoreView snapshot,
-            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long extraGAS = default)
+            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode);
             engine.LoadScript(script).InstructionPointer = offset;
             engine.Execute();
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long extraGAS = default)
+        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
         {
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                return Run(script, snapshot, container, persistingBlock, offset, testMode, extraGAS);
+                return Run(script, snapshot, container, persistingBlock, offset, testMode, gas);
             }
+        }
+
+        internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)
+        {
+            return CompareExchange(ref applicationEngineProvider, provider, null) is null;
         }
     }
 }

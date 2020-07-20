@@ -367,8 +367,8 @@ namespace Neo.UnitTests.Wallets
         public void TestMakeTransaction2()
         {
             MyWallet wallet = new MyWallet();
-            Action action = () => wallet.MakeTransaction(new byte[] { }, UInt160.Zero, new TransactionAttribute[] { });
-            action.Should().Throw<ArgumentException>();
+            Action action = () => wallet.MakeTransaction(new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
+            action.Should().Throw<InvalidOperationException>();
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
@@ -381,10 +381,15 @@ namespace Neo.UnitTests.Wallets
             entry.GetInteroperable<AccountState>().Balance = 1000000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new TransactionAttribute[] { });
+            var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new[]{ new Signer()
+            {
+                Account = account.ScriptHash,
+                Scopes = WitnessScope.CalledByEntry
+            }}, new TransactionAttribute[] { });
+
             tx.Should().NotBeNull();
 
-            tx = wallet.MakeTransaction(new byte[] { }, null, new TransactionAttribute[] { });
+            tx = wallet.MakeTransaction(new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
             tx.Should().NotBeNull();
 
             entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));

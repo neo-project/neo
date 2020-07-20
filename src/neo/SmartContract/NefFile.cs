@@ -14,7 +14,7 @@ namespace Neo.SmartContract
     /// | Version    | 16 bytes  | Compiler version (Mayor, Minor, Build, Version)            |
     /// | ScriptHash | 20 bytes  | ScriptHash for the script                                  |
     /// +------------+-----------+------------------------------------------------------------+
-    /// | Checksum   | 4 bytes   | Sha256 of the header (CRC)                                 |
+    /// | Checksum   | 4 bytes   | First four bytes of double SHA256 hash                     |
     /// +------------+-----------+------------------------------------------------------------+
     /// | Script     | Var bytes | Var bytes for the payload                                  |
     /// +------------+-----------+------------------------------------------------------------+
@@ -52,17 +52,24 @@ namespace Neo.SmartContract
         public byte[] Script { get; set; }
 
         private const int HeaderSize =
-            sizeof(uint) +              // Magic
-            32 +                        // Compiler
-            (sizeof(int) * 4) +         // Version
-            UInt160.Length +            // ScriptHash
-            sizeof(uint);               // Checksum
+            sizeof(uint) +      // Magic
+            32 +                // Compiler
+            (sizeof(int) * 4) + // Version
+            UInt160.Length;     // ScriptHash
 
         public int Size =>
-            HeaderSize +              // Header
-            Script.GetVarSize();      // Script
+            HeaderSize +        // Header
+            sizeof(uint) +      // Checksum
+            Script.GetVarSize();// Script
 
         public void Serialize(BinaryWriter writer)
+        {
+            SerializeHeader(writer);
+            writer.Write(CheckSum);
+            writer.WriteVarBytes(Script ?? Array.Empty<byte>());
+        }
+
+        private void SerializeHeader(BinaryWriter writer)
         {
             writer.Write(Magic);
             writer.WriteFixedString(Compiler, 32);
@@ -74,8 +81,6 @@ namespace Neo.SmartContract
             writer.Write(Version.Revision);
 
             writer.Write(ScriptHash);
-            writer.Write(CheckSum);
-            writer.WriteVarBytes(Script ?? Array.Empty<byte>());
         }
 
         public void Deserialize(BinaryReader reader)
@@ -108,22 +113,17 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="file">File</param>
         /// <returns>Return checksum</returns>
-        public static uint ComputeChecksum(NefFile file)
+        unsafe public static uint ComputeChecksum(NefFile file)
         {
-            using (var ms = new MemoryStream())
-            using (var wr = new BinaryWriter(ms))
-            {
-                file.Serialize(wr);
-                wr.Flush();
-
-                // Read header without CRC
-
-                Span<byte> buffer = stackalloc byte[HeaderSize - sizeof(uint)];
-                ms.Seek(0, SeekOrigin.Begin);
-                ms.Read(buffer);
-
-                return BitConverter.ToUInt32(buffer.Sha256(), 0);
-            }
+            Span<byte> header = stackalloc byte[HeaderSize];
+            fixed (byte* p = header)
+                using (UnmanagedMemoryStream ms = new UnmanagedMemoryStream(p, HeaderSize, HeaderSize, FileAccess.Write))
+                using (BinaryWriter wr = new BinaryWriter(ms, Utility.StrictUTF8, false))
+                {
+                    file.SerializeHeader(wr);
+                    wr.Flush();
+                }
+            return BitConverter.ToUInt32(Crypto.Hash256(header), 0);
         }
     }
 }

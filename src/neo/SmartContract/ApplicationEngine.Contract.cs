@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -14,18 +15,18 @@ namespace Neo.SmartContract
     {
         public const int MaxContractLength = 1024 * 1024;
 
-        public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, TriggerType.Application, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, TriggerType.Application, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, TriggerType.System | TriggerType.Application, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, TriggerType.All, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, CallFlags.None, false);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
         /// Warning: check first that input public key is valid, before creating the script.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, TriggerType.All, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
         internal ContractState CreateContract(byte[] script, byte[] manifest)
         {
@@ -164,7 +165,27 @@ namespace Neo.SmartContract
         internal bool IsStandardContract(UInt160 hash)
         {
             ContractState contract = Snapshot.Contracts.TryGet(hash);
-            return contract is null || contract.Script.IsStandardContract();
+
+            // It's a stored contract
+
+            if (contract != null) return contract.Script.IsStandardContract();
+
+            // Try to find it in the transaction
+
+            if (ScriptContainer is Transaction tx)
+            {
+                foreach (var witness in tx.Witnesses)
+                {
+                    if (witness.ScriptHash == hash)
+                    {
+                        return witness.VerificationScript.IsStandardContract();
+                    }
+                }
+            }
+
+            // It's not possible to determine if it's standard
+
+            return false;
         }
 
         internal CallFlags GetCallFlags()
