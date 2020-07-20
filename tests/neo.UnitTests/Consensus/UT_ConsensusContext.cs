@@ -125,10 +125,10 @@ namespace Neo.UnitTests.Consensus
             var tx = new Transaction()
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],
-                Sender = UInt160.Zero,
                 SystemFee = 0,
                 ValidUntilBlock = (uint)r.Next(),
                 Version = 0,
@@ -145,10 +145,10 @@ namespace Neo.UnitTests.Consensus
             var tx = new Transaction()
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],
-                Sender = UInt160.Zero,
                 SystemFee = fee,
                 ValidUntilBlock = int.MaxValue,
                 Version = 0,

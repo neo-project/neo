@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            PrimaryIndex = (uint)reader.ReadVarInt((ulong)ProtocolSettings.Default.MaxValidatorsCount - 1);
+            PrimaryIndex = (uint)reader.ReadVarInt((ulong)ProtocolSettings.Default.ValidatorsCount - 1);
             Nonce = reader.ReadUInt64();
         }
 

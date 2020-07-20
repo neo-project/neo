@@ -13,7 +13,6 @@ namespace Neo.SmartContract.Native.Tokens
     public abstract class Nep5Token<TState> : NativeContract
         where TState : AccountState, new()
     {
-        public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         [ContractMethod(0, CallFlags.None)]
         public abstract string Symbol { get; }
         [ContractMethod(0, CallFlags.None)]
@@ -28,6 +27,7 @@ namespace Neo.SmartContract.Native.Tokens
             this.Factor = BigInteger.Pow(10, Decimals);
 
             Manifest.Features = ContractFeatures.HasStorage;
+            Manifest.SupportedStandards = new[] { "NEP-5" };
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
@@ -66,13 +66,8 @@ namespace Neo.SmartContract.Native.Tokens
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
-            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
-            {
-                Value = BigInteger.Zero.ToByteArrayStandard()
-            });
-            BigInteger totalSupply = new BigInteger(storage.Value);
-            totalSupply += amount;
-            storage.Value = totalSupply.ToByteArrayStandard();
+            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
+            storage.Add(amount);
             engine.SendNotification(Hash, "Transfer", new Array { StackItem.Null, account.ToArray(), amount });
         }
 
@@ -90,9 +85,7 @@ namespace Neo.SmartContract.Native.Tokens
             else
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
-            BigInteger totalSupply = new BigInteger(storage.Value);
-            totalSupply -= amount;
-            storage.Value = totalSupply.ToByteArrayStandard();
+            storage.Add(-amount);
             engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
         }
 
@@ -101,7 +94,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
-            return new BigInteger(storage.Value);
+            return storage;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]

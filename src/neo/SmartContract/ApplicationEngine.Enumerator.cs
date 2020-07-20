@@ -8,10 +8,10 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Enumerator_Create = Register("System.Enumerator.Create", nameof(CreateEnumerator), 0_00000400, TriggerType.All, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Enumerator_Next = Register("System.Enumerator.Next", nameof(EnumeratorNext), 0_01000000, TriggerType.All, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Enumerator_Value = Register("System.Enumerator.Value", nameof(EnumeratorValue), 0_00000400, TriggerType.All, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Enumerator_Concat = Register("System.Enumerator.Concat", nameof(ConcatEnumerators), 0_00000400, TriggerType.All, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Create = Register("System.Enumerator.Create", nameof(CreateEnumerator), 0_00000400, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Next = Register("System.Enumerator.Next", nameof(EnumeratorNext), 0_01000000, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Value = Register("System.Enumerator.Value", nameof(EnumeratorValue), 0_00000400, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Concat = Register("System.Enumerator.Concat", nameof(ConcatEnumerators), 0_00000400, CallFlags.None, false);
 
         internal IEnumerator CreateEnumerator(StackItem item)
         {
