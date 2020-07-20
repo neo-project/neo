@@ -1,12 +1,12 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
@@ -28,7 +28,7 @@ namespace Neo.VM
             sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -40,7 +40,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -52,7 +52,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(InteropService.Contract.Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -167,38 +167,6 @@ namespace Neo.VM
             return sb.EmitSysCall(method);
         }
 
-        public static BigInteger GetBigInteger(this StackItem item)
-        {
-            if (!(item is PrimitiveType primitive))
-                throw new ArgumentException();
-            return primitive.ToBigInteger();
-        }
-
-        public static int GetByteLength(this StackItem item)
-        {
-            return item switch
-            {
-                PrimitiveType p => p.Size,
-                Buffer b => b.Size,
-                _ => throw new ArgumentException(),
-            };
-        }
-
-        public static ReadOnlySpan<byte> GetSpan(this StackItem item)
-        {
-            return item switch
-            {
-                PrimitiveType p => p.Span,
-                Buffer b => b.InnerBuffer,
-                _ => throw new ArgumentException(),
-            };
-        }
-
-        public static string GetString(this StackItem item)
-        {
-            return Encoding.UTF8.GetString(item.GetSpan());
-        }
-
         /// <summary>
         /// Generate scripts to call a specific method from a specific contract.
         /// </summary>
@@ -218,6 +186,50 @@ namespace Neo.VM
             }
         }
 
+        public static JObject ToJson(this StackItem item)
+        {
+            return ToJson(item, null);
+        }
+
+        private static JObject ToJson(StackItem item, HashSet<StackItem> context)
+        {
+            JObject json = new JObject();
+            json["type"] = item.Type;
+            switch (item)
+            {
+                case Array array:
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    if (!context.Add(array)) throw new InvalidOperationException();
+                    json["value"] = new JArray(array.Select(p => ToJson(p, context)));
+                    break;
+                case Boolean boolean:
+                    json["value"] = boolean.GetBoolean();
+                    break;
+                case Buffer _:
+                case ByteString _:
+                    json["value"] = Convert.ToBase64String(item.GetSpan());
+                    break;
+                case Integer integer:
+                    json["value"] = integer.GetInteger().ToString();
+                    break;
+                case Map map:
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    if (!context.Add(map)) throw new InvalidOperationException();
+                    json["value"] = new JArray(map.Select(p =>
+                    {
+                        JObject item = new JObject();
+                        item["key"] = ToJson(p.Key, context);
+                        item["value"] = ToJson(p.Value, context);
+                        return item;
+                    }));
+                    break;
+                case Pointer pointer:
+                    json["value"] = pointer.Position;
+                    break;
+            }
+            return json;
+        }
+
         public static ContractParameter ToParameter(this StackItem item)
         {
             return ToParameter(item, null);
@@ -225,6 +237,7 @@ namespace Neo.VM
 
         private static ContractParameter ToParameter(StackItem item, List<(StackItem, ContractParameter)> context)
         {
+            if (item is null) throw new ArgumentNullException();
             ContractParameter parameter = null;
             switch (item)
             {
@@ -256,21 +269,21 @@ namespace Neo.VM
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Boolean,
-                        Value = item.ToBoolean()
+                        Value = item.GetBoolean()
                     };
                     break;
-                case ByteArray array:
+                case ByteString array:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
-                        Value = array.Span.ToArray()
+                        Value = array.GetSpan().ToArray()
                     };
                     break;
                 case Integer i:
                     parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Integer,
-                        Value = i.ToBigInteger()
+                        Value = i.GetInteger()
                     };
                     break;
                 case InteropInterface _:
@@ -286,7 +299,7 @@ namespace Neo.VM
                     };
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException($"StackItemType({item.Type}) is not supported to ContractParameter.");
             }
             return parameter;
         }
@@ -298,6 +311,8 @@ namespace Neo.VM
 
         private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
         {
+            if (parameter is null) throw new ArgumentNullException();
+            if (parameter.Value is null) return StackItem.Null;
             StackItem stackItem = null;
             switch (parameter.Type)
             {
@@ -347,8 +362,6 @@ namespace Neo.VM
                     break;
                 case ContractParameterType.String:
                     stackItem = (string)parameter.Value;
-                    break;
-                case ContractParameterType.InteropInterface:
                     break;
                 default:
                     throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");

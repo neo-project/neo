@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +14,7 @@ namespace Neo.Plugins
     {
         public static readonly List<Plugin> Plugins = new List<Plugin>();
         internal static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
-        internal static readonly Dictionary<string, IStoragePlugin> Storages = new Dictionary<string, IStoragePlugin>();
+        internal static readonly Dictionary<string, IStorageProvider> Storages = new Dictionary<string, IStorageProvider>();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
         internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
@@ -24,7 +25,8 @@ namespace Neo.Plugins
 
         public virtual string ConfigFile => Combine(PluginsDirectory, GetType().Assembly.GetName().Name, "config.json");
         public virtual string Name => GetType().Name;
-        public string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
+        public virtual string Description => "";
+        public virtual string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
         protected static NeoSystem System { get; private set; }
         public virtual Version Version => GetType().Assembly.GetName().Version;
 
@@ -49,10 +51,11 @@ namespace Neo.Plugins
             Plugins.Add(this);
 
             if (this is ILogPlugin logger) Loggers.Add(logger);
-            if (this is IStoragePlugin storage) Storages.Add(Name, storage);
+            if (this is IStorageProvider storage) Storages.Add(Name, storage);
             if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
             if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
+            if (this is IApplicationEngineProvider provider) ApplicationEngine.SetApplicationEngineProvider(provider);
 
             Configure();
         }
@@ -66,7 +69,11 @@ namespace Neo.Plugins
             switch (GetExtension(e.Name))
             {
                 case ".json":
-                    Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath)?.Configure();
+                    try
+                    {
+                        Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath)?.Configure();
+                    }
+                    catch (FormatException) { }
                     break;
                 case ".dll":
                     if (e.ChangeType != WatcherChangeTypes.Created) return;
@@ -105,7 +112,7 @@ namespace Neo.Plugins
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to resolve assembly or its dependency: {ex.Message}");
+                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
                 return null;
             }
         }
@@ -133,7 +140,7 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin: {ex.Message}");
+                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
                 }
             }
         }
@@ -157,7 +164,7 @@ namespace Neo.Plugins
             }
         }
 
-        protected void Log(string message, LogLevel level = LogLevel.Info)
+        protected void Log(object message, LogLevel level = LogLevel.Info)
         {
             Utility.Log($"{nameof(Plugin)}:{Name}", level, message);
         }

@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = (byte)OpCode.PUSHNULL;
             expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(InteropService.Crypto.ECDsaVerify), 0, expectedArray, 37, 4);
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
             Assert.AreEqual(expectedArray.ToScriptHash().ToAddress(), contract.Address);
         }
 
@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = (byte)OpCode.PUSHNULL;
             expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(InteropService.Crypto.ECDsaVerify), 0, expectedArray, 37, 4);
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
             Assert.AreEqual(expectedArray.ToScriptHash(), contract.ScriptHash);
         }
 
@@ -86,7 +86,7 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[71] = (byte)OpCode.PUSH2;
             expectedArray[72] = (byte)OpCode.PUSHNULL;
             expectedArray[73] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(InteropService.Crypto.ECDsaCheckMultiSig), 0, expectedArray, 74, 4);
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1), 0, expectedArray, 74, 4);
             CollectionAssert.AreEqual(expectedArray, contract.Script);
             Assert.AreEqual(2, contract.ParameterList.Length);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
@@ -122,7 +122,7 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[71] = (byte)OpCode.PUSH2;
             expectedArray[72] = (byte)OpCode.PUSHNULL;
             expectedArray[73] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(InteropService.Crypto.ECDsaCheckMultiSig), 0, expectedArray, 74, 4);
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1), 0, expectedArray, 74, 4);
             CollectionAssert.AreEqual(expectedArray, script);
         }
 
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.SmartContract
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = (byte)OpCode.PUSHNULL;
             expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(InteropService.Crypto.ECDsaVerify), 0, expectedArray, 37, 4);
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
             CollectionAssert.AreEqual(expectedArray, contract.Script);
             Assert.AreEqual(1, contract.ParameterList.Length);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
@@ -160,7 +160,7 @@ namespace Neo.UnitTests.SmartContract
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = (byte)OpCode.PUSHNULL;
             expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(InteropService.Crypto.ECDsaVerify), 0, expectedArray, 37, 4);
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
             CollectionAssert.AreEqual(expectedArray, script);
         }
     }

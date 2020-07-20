@@ -130,7 +130,7 @@ namespace Neo.SmartContract
 
         public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature)
         {
-            if (contract.Script.IsMultiSigContract(out _, out _))
+            if (contract.Script.IsMultiSigContract(out _, out ECPoint[] points))
             {
                 ContextItem item = CreateItem(contract);
                 if (item == null) return false;
@@ -139,24 +139,6 @@ namespace Neo.SmartContract
                     item.Signatures = new Dictionary<ECPoint, byte[]>();
                 else if (item.Signatures.ContainsKey(pubkey))
                     return false;
-                List<ECPoint> points = new List<ECPoint>();
-                {
-                    int i = 0;
-                    switch (contract.Script[i++])
-                    {
-                        case (byte)OpCode.PUSHINT8:
-                            ++i;
-                            break;
-                        case (byte)OpCode.PUSHINT16:
-                            i += 2;
-                            break;
-                    }
-                    while (contract.Script[i++] == (byte)OpCode.PUSHDATA1)
-                    {
-                        points.Add(ECPoint.DecodePoint(contract.Script.AsSpan(++i, 33), ECCurve.Secp256r1));
-                        i += 33;
-                    }
-                }
                 if (!points.Contains(pubkey)) return false;
                 item.Signatures.Add(pubkey, signature);
                 if (item.Signatures.Count == contract.ParameterList.Length)
@@ -216,7 +198,7 @@ namespace Neo.SmartContract
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["hex"].AsString()), false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 verifiable.DeserializeUnsigned(reader);
             }
@@ -280,7 +262,7 @@ namespace Neo.SmartContract
             JObject json = new JObject();
             json["type"] = Verifiable.GetType().FullName;
             using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            using (BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8))
             {
                 Verifiable.SerializeUnsigned(writer);
                 writer.Flush();

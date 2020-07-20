@@ -12,6 +12,7 @@ namespace Neo.Ledger
 {
     public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
+        public int Id;
         public byte[] Script;
         public ContractManifest Manifest;
 
@@ -31,12 +32,13 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
+        int ISerializable.Size => sizeof(int) + Script.GetVarSize() + Manifest.Size;
 
         ContractState ICloneable<ContractState>.Clone()
         {
             return new ContractState
             {
+                Id = Id,
                 Script = Script,
                 Manifest = Manifest.Clone()
             };
@@ -44,18 +46,26 @@ namespace Neo.Ledger
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            Id = reader.ReadInt32();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
+            Id = replica.Id;
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
         }
 
+        void IInteroperable.FromStackItem(StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
         void ISerializable.Serialize(BinaryWriter writer)
         {
+            writer.Write(Id);
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
         }
@@ -63,23 +73,16 @@ namespace Neo.Ledger
         public JObject ToJson()
         {
             JObject json = new JObject();
+            json["id"] = Id;
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
             return json;
         }
 
-        public static ContractState FromJson(JObject json)
-        {
-            ContractState contractState = new ContractState();
-            contractState.Script = Convert.FromBase64String(json["script"].AsString());
-            contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
-            return contractState;
-        }
-
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Script, HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { Script, Manifest.ToString(), HasStorage, Payable });
         }
     }
 }

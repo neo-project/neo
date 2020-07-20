@@ -2,21 +2,21 @@ using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System.Net;
 
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    [NotReRunnable]
     public class UT_RemoteNode : TestKit
     {
         private static NeoSystem testBlockchain;
 
         public UT_RemoteNode()
-            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
-                $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}")
+            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}")
         {
         }
 
@@ -32,9 +32,7 @@ namespace Neo.UnitTests.Network.P2P
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
-            connectionTestProbe.ExpectMsg<Tcp.Write>();
-
-            var payload = new VersionPayload()
+            var msg = Message.Create(MessageCommand.Version, new VersionPayload
             {
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
@@ -45,10 +43,10 @@ namespace Neo.UnitTests.Network.P2P
                 {
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
                 }
-            };
+            });
 
             var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActor, payload);
+            testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
 
             connectionTestProbe.ExpectMsg<Tcp.Abort>();
         }
@@ -57,11 +55,9 @@ namespace Neo.UnitTests.Network.P2P
         public void RemoteNode_Test_Accept_IfSameMagic()
         {
             var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
+            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080)));
 
-            connectionTestProbe.ExpectMsg<Tcp.Write>();
-
-            var payload = new VersionPayload()
+            var msg = Message.Create(MessageCommand.Version, new VersionPayload()
             {
                 UserAgent = "Unit Test".PadLeft(1024, '0'),
                 Nonce = 1,
@@ -72,10 +68,10 @@ namespace Neo.UnitTests.Network.P2P
                 {
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
                 }
-            };
+            });
 
             var testProbe = CreateTestProbe();
-            testProbe.Send(remoteNodeActor, payload);
+            testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
 
             var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
 

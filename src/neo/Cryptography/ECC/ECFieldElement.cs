@@ -10,6 +10,8 @@ namespace Neo.Cryptography.ECC
 
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
+            if (curve is null)
+                throw new ArgumentNullException(nameof(curve));
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
             this.Value = value;
@@ -19,6 +21,7 @@ namespace Neo.Cryptography.ECC
         public int CompareTo(ECFieldElement other)
         {
             if (ReferenceEquals(this, other)) return 0;
+            if (!curve.Equals(other.curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             return Value.CompareTo(other.Value);
         }
 
@@ -35,7 +38,7 @@ namespace Neo.Cryptography.ECC
 
         public bool Equals(ECFieldElement other)
         {
-            return Value.Equals(other.Value);
+            return Value.Equals(other.Value) && curve.Equals(other.curve);
         }
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)

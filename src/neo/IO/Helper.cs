@@ -1,23 +1,21 @@
 using K4os.Compression.LZ4;
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Neo.IO
 {
     public static class Helper
     {
-        public const int GroupingSizeInBytes = 16;
-
         public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, start, value.Length - start, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 return reader.ReadSerializable<T>();
             }
@@ -29,7 +27,7 @@ namespace Neo.IO
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
-                using BinaryReader reader = new BinaryReader(ms, Encoding.UTF8);
+                using BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8);
                 return reader.ReadSerializable<T>();
             }
         }
@@ -40,7 +38,7 @@ namespace Neo.IO
                 throw new InvalidCastException();
             ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 serializable.Deserialize(reader);
             }
@@ -50,7 +48,7 @@ namespace Neo.IO
         public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 return reader.ReadSerializableArray<T>(max);
             }
@@ -62,7 +60,7 @@ namespace Neo.IO
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
-                using BinaryReader reader = new BinaryReader(ms, Encoding.UTF8);
+                using BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8);
                 return reader.ReadSerializableArray<T>(max);
             }
         }
@@ -72,20 +70,19 @@ namespace Neo.IO
             int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
             using var buffer = MemoryPool<byte>.Shared.Rent(maxLength);
             int length = LZ4Codec.Encode(data, buffer.Memory.Span);
-            byte[] result = new byte[length];
-            buffer.Memory[..length].CopyTo(result);
+            byte[] result = new byte[sizeof(uint) + length];
+            BinaryPrimitives.WriteInt32LittleEndian(result, data.Length);
+            buffer.Memory[..length].CopyTo(result.AsMemory(4));
             return result;
         }
 
         public static byte[] DecompressLz4(this byte[] data, int maxOutput)
         {
-            var maxDecompressDataLength = data.Length * 255;
-            if (maxDecompressDataLength > 0) maxOutput = Math.Min(maxOutput, maxDecompressDataLength);
-            using var buffer = MemoryPool<byte>.Shared.Rent(maxOutput);
-            int length = LZ4Codec.Decode(data, buffer.Memory.Span);
+            int length = BinaryPrimitives.ReadInt32LittleEndian(data);
             if (length < 0 || length > maxOutput) throw new FormatException();
             byte[] result = new byte[length];
-            buffer.Memory[..length].CopyTo(result);
+            if (LZ4Codec.Decode(data.AsSpan(4), result) != length)
+                throw new FormatException();
             return result;
         }
 
@@ -140,32 +137,35 @@ namespace Neo.IO
 
         public static int GetVarSize(this string value)
         {
-            int size = Encoding.UTF8.GetByteCount(value);
+            int size = Utility.StrictUTF8.GetByteCount(value);
             return GetVarSize(size) + size;
         }
 
-        public static byte[] ReadBytesWithGrouping(this BinaryReader reader)
+        public static byte[] ReadFixedBytes(this BinaryReader reader, int size)
         {
-            using (MemoryStream ms = new MemoryStream())
+            var index = 0;
+            var data = new byte[size];
+
+            while (size > 0)
             {
-                int count;
-                do
+                var bytesRead = reader.Read(data, index, size);
+
+                if (bytesRead <= 0)
                 {
-                    byte[] group = reader.ReadBytes(GroupingSizeInBytes);
-                    count = reader.ReadByte();
-                    if (count > GroupingSizeInBytes)
-                        throw new FormatException();
-                    if (count > 0)
-                        ms.Write(group, 0, count);
-                } while (count == GroupingSizeInBytes);
-                return ms.ToArray();
+                    throw new FormatException();
+                }
+
+                size -= bytesRead;
+                index += bytesRead;
             }
+
+            return data;
         }
 
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
-            byte[] data = reader.ReadBytes(length);
-            return Encoding.UTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
+            byte[] data = reader.ReadFixedBytes(length);
+            return Utility.StrictUTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
         }
 
         public static T[] ReadNullableArray<T>(this BinaryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
@@ -196,7 +196,7 @@ namespace Neo.IO
 
         public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0x1000000)
         {
-            return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
+            return reader.ReadFixedBytes((int)reader.ReadVarInt((ulong)max));
         }
 
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
@@ -217,13 +217,13 @@ namespace Neo.IO
 
         public static string ReadVarString(this BinaryReader reader, int max = 0x1000000)
         {
-            return Encoding.UTF8.GetString(reader.ReadVarBytes(max));
+            return Utility.StrictUTF8.GetString(reader.ReadVarBytes(max));
         }
 
         public static byte[] ToArray(this ISerializable value)
         {
             using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            using (BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8))
             {
                 value.Serialize(writer);
                 writer.Flush();
@@ -234,7 +234,7 @@ namespace Neo.IO
         public static byte[] ToByteArray<T>(this IReadOnlyCollection<T> value) where T : ISerializable
         {
             using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            using (BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8))
             {
                 writer.Write(value);
                 writer.Flush();
@@ -256,32 +256,13 @@ namespace Neo.IO
             }
         }
 
-        public static void WriteBytesWithGrouping(this BinaryWriter writer, byte[] value)
-        {
-            int index = 0;
-            int remain = value.Length;
-            while (remain >= GroupingSizeInBytes)
-            {
-                writer.Write(value, index, GroupingSizeInBytes);
-                writer.Write((byte)GroupingSizeInBytes);
-                index += GroupingSizeInBytes;
-                remain -= GroupingSizeInBytes;
-            }
-            if (remain > 0)
-                writer.Write(value, index, remain);
-            int padding = GroupingSizeInBytes - remain;
-            for (int i = 0; i < padding; i++)
-                writer.Write((byte)0);
-            writer.Write((byte)remain);
-        }
-
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
             if (value.Length > length)
                 throw new ArgumentException();
-            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            byte[] bytes = Utility.StrictUTF8.GetBytes(value);
             if (bytes.Length > length)
                 throw new ArgumentException();
             writer.Write(bytes);
@@ -334,7 +315,7 @@ namespace Neo.IO
 
         public static void WriteVarString(this BinaryWriter writer, string value)
         {
-            writer.WriteVarBytes(Encoding.UTF8.GetBytes(value));
+            writer.WriteVarBytes(Utility.StrictUTF8.GetBytes(value));
         }
     }
 }

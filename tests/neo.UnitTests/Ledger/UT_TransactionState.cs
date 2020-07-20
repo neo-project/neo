@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetSize()
         {
-            ((ISerializable)origin).Size.Should().Be(62);
+            ((ISerializable)origin).Size.Should().Be(63);
         }
     }
 }

@@ -1,23 +1,27 @@
+using Neo.IO;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Neo
 {
     /// <summary>
     /// This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
+    /// Composed by ulong(64) + ulong(64) + ulong(64) + ulong(64) = UInt256(256)
     /// </summary>
-    public class UInt256 : UIntBase, IComparable<UInt256>, IEquatable<UInt256>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable
     {
         public const int Length = 32;
         public static readonly UInt256 Zero = new UInt256();
 
-        private ulong value1;
-        private ulong value2;
-        private ulong value3;
-        private ulong value4;
+        [FieldOffset(0)] private ulong value1;
+        [FieldOffset(8)] private ulong value2;
+        [FieldOffset(16)] private ulong value3;
+        [FieldOffset(24)] private ulong value4;
 
-        public override int Size => Length;
+        public int Size => Length;
 
         public UInt256()
         {
@@ -47,7 +51,7 @@ namespace Neo
             return value1.CompareTo(other.value1);
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
             value1 = reader.ReadUInt64();
             value2 = reader.ReadUInt64();
@@ -85,7 +89,7 @@ namespace Neo
         /// Method Parse receives a big-endian hex string and stores as a UInt256 little-endian 32-bytes array
         /// Example: Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01") should create UInt256 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
         /// </summary>
-        public static new UInt256 Parse(string s)
+        public static UInt256 Parse(string s)
         {
             if (s == null)
                 throw new ArgumentNullException();
@@ -98,12 +102,17 @@ namespace Neo
             return new UInt256(data);
         }
 
-        public override void Serialize(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
             writer.Write(value1);
             writer.Write(value2);
             writer.Write(value3);
             writer.Write(value4);
+        }
+
+        public override string ToString()
+        {
+            return "0x" + this.ToArray().ToHexString(reverse: true);
         }
 
         /// <summary>

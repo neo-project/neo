@@ -11,7 +11,7 @@ namespace Neo.UnitTests.Plugins
 
         protected override void Configure() { }
 
-        void ILogPlugin.Log(string source, LogLevel level, string message)
+        void ILogPlugin.Log(string source, LogLevel level, object message)
         {
             Output = source + "_" + level.ToString() + "_" + message;
         }

@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Text.Json;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
 {
@@ -27,20 +28,21 @@ namespace Neo.SmartContract
                     {
                         return array.Select(p => Serialize(p)).ToArray();
                     }
-                case ByteArray buffer:
+                case ByteString _:
+                case Buffer _:
                     {
-                        return Convert.ToBase64String(buffer.GetSpan());
+                        return item.GetString();
                     }
                 case Integer num:
                     {
-                        var integer = num.GetBigInteger();
+                        var integer = num.GetInteger();
                         if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
-                            return integer.ToString();
-                        return (double)num.GetBigInteger();
+                            throw new InvalidOperationException();
+                        return (double)integer;
                     }
                 case Boolean boolean:
                     {
-                        return boolean.ToBoolean();
+                        return boolean.GetBoolean();
                     }
                 case Map map:
                     {
@@ -48,6 +50,8 @@ namespace Neo.SmartContract
 
                         foreach (var entry in map)
                         {
+                            if (!(entry.Key is ByteString)) throw new FormatException();
+
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);
 
@@ -87,25 +91,26 @@ namespace Neo.SmartContract
                     case JsonTokenType.EndArray:
                         writer.WriteEndArray();
                         break;
-                    case ByteArray buffer:
-                        writer.WriteStringValue(Convert.ToBase64String(buffer.GetSpan()));
+                    case StackItem buffer when buffer is ByteString || buffer is Buffer:
+                        writer.WriteStringValue(buffer.GetString());
                         break;
                     case Integer num:
                         {
-                            var integer = num.GetBigInteger();
+                            var integer = num.GetInteger();
                             if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
                                 throw new InvalidOperationException();
-                            writer.WriteNumberValue((double)num.GetBigInteger());
+                            writer.WriteNumberValue((double)integer);
                             break;
                         }
                     case Boolean boolean:
-                        writer.WriteBooleanValue(boolean.ToBoolean());
+                        writer.WriteBooleanValue(boolean.GetBoolean());
                         break;
                     case Map map:
                         writer.WriteStartObject();
                         stack.Push(JsonTokenType.EndObject);
                         foreach (var pair in map.Reverse())
                         {
+                            if (!(pair.Key is ByteString)) throw new FormatException();
                             stack.Push(pair.Value);
                             stack.Push(pair.Key);
                             stack.Push(JsonTokenType.PropertyName);
@@ -115,7 +120,7 @@ namespace Neo.SmartContract
                         writer.WriteEndObject();
                         break;
                     case JsonTokenType.PropertyName:
-                        writer.WritePropertyName(((PrimitiveType)stack.Pop()).GetSpan());
+                        writer.WritePropertyName(((StackItem)stack.Pop()).GetString());
                         break;
                     case Null _:
                         writer.WriteNullValue();

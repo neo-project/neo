@@ -1,8 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
-using System.Globalization;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -29,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            PrimaryIndex = (uint)reader.ReadVarInt(Blockchain.MaxValidators - 1);
+            PrimaryIndex = (uint)reader.ReadVarInt((ulong)ProtocolSettings.Default.ValidatorsCount - 1);
             Nonce = reader.ReadUInt64();
         }
 
@@ -46,14 +44,5 @@ namespace Neo.Network.P2P.Payloads
             json["nonce"] = Nonce.ToString("x16");
             return json;
         }
-
-        public static ConsensusData FromJson(JObject json)
-        {
-            ConsensusData block = new ConsensusData();
-            block.PrimaryIndex = (uint)json["primary"].AsNumber();
-            block.Nonce = ulong.Parse(json["nonce"].AsString(), NumberStyles.HexNumber);
-            return block;
-        }
-
     }
 }

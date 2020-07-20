@@ -15,7 +15,7 @@ namespace Neo.Cryptography
 
         internal MerkleTree(UInt256[] hashes)
         {
-            if (hashes.Length == 0) throw new ArgumentException();
+            if (hashes is null || hashes.Length == 0) throw new ArgumentException();
             this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
             int depth = 1;
             for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)

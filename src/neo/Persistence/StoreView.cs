@@ -18,6 +18,7 @@ namespace Neo.Persistence
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public abstract MetaDataCache<ContractIdState> ContractId { get; }
 
         public uint Height => BlockHashIndex.Get().Index;
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
@@ -38,6 +39,7 @@ namespace Neo.Persistence
             HeaderHashList.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
+            ContractId.Commit();
         }
 
         public bool ContainsBlock(UInt256 hash)

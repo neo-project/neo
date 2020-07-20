@@ -28,18 +28,12 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestCompareTo()
         {
             ECFieldElement X1 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
-            ECFieldElement Y1 = new ECFieldElement(new BigInteger(200), ECCurve.Secp256k1);
-            ECFieldElement X2 = new ECFieldElement(new BigInteger(300), ECCurve.Secp256k1);
-            ECFieldElement Y2 = new ECFieldElement(new BigInteger(400), ECCurve.Secp256k1);
-            ECPoint point1 = new ECPoint(X1, Y1, ECCurve.Secp256k1);
-            ECPoint point2 = new ECPoint(X2, Y1, ECCurve.Secp256k1);
-            ECPoint point3 = new ECPoint(X1, Y2, ECCurve.Secp256k1);
+            ECFieldElement X2 = new ECFieldElement(new BigInteger(200), ECCurve.Secp256k1);
+            ECFieldElement X3 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256r1);
 
-            point1.CompareTo(point1).Should().Be(0);
-            point1.CompareTo(point2).Should().Be(-1);
-            point2.CompareTo(point1).Should().Be(1);
-            point1.CompareTo(point3).Should().Be(-1);
-            point3.CompareTo(point1).Should().Be(1);
+            X1.CompareTo(X2).Should().Be(-1);
+            Action action = () => X1.CompareTo(X3);
+            action.Should().Throw<InvalidOperationException>();
         }
 
         [TestMethod]
@@ -59,6 +53,8 @@ namespace Neo.UnitTests.Cryptography.ECC
             Action action = () => new ECPoint(X, null, ECCurve.Secp256k1);
             action.Should().Throw<ArgumentException>();
             action = () => new ECPoint(null, Y, ECCurve.Secp256k1);
+            action.Should().Throw<ArgumentException>();
+            action = () => new ECPoint(null, Y, null);
             action.Should().Throw<ArgumentException>();
         }
 

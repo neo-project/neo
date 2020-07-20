@@ -24,6 +24,40 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
+        public void TestReadFixedBytes()
+        {
+            byte[] data = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+
+            // Less data
+
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            {
+                byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 3);
+
+                Assert.AreEqual("010203", result.ToHexString());
+                Assert.AreEqual(3, reader.BaseStream.Position);
+            }
+
+            // Same data
+
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            {
+                byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 4);
+
+                Assert.AreEqual("01020304", result.ToHexString());
+                Assert.AreEqual(4, reader.BaseStream.Position);
+            }
+
+            // More data
+
+            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            {
+                Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.ReadFixedBytes(reader, 5));
+                Assert.AreEqual(4, reader.BaseStream.Position);
+            }
+        }
+
+        [TestMethod]
         public void TestNullableArray()
         {
             var caseArray = new UInt160[]
@@ -83,6 +117,37 @@ namespace Neo.UnitTests.IO
                     action.Should().Throw<InvalidCastException>();
                 }
             }
+        }
+
+        [TestMethod]
+        public void TestCompression()
+        {
+            var data = new byte[] { 1, 2, 3, 4 };
+            var byteArray = Neo.IO.Helper.CompressLz4(data);
+            var result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
+
+            CollectionAssert.AreEqual(result, data);
+
+            // Compress
+
+            data = new byte[255];
+            for (int x = 0; x < data.Length; x++) data[x] = 1;
+
+            byteArray = Neo.IO.Helper.CompressLz4(data);
+            result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
+
+            Assert.IsTrue(byteArray.Length < result.Length);
+            CollectionAssert.AreEqual(result, data);
+
+            // Error max length
+
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue - 1));
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, -1));
+
+            // Error length
+
+            byteArray[0]++;
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue));
         }
 
         [TestMethod]
@@ -252,45 +317,6 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestReadBytesWithGrouping()
-        {
-            for (int i = 0; i < 2; i++)
-            {
-                if (i == 0)
-                {
-                    byte[] caseArray = new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA};
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
-                    Neo.IO.Helper.WriteBytesWithGrouping(writer, caseArray);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
-                    byte[] result = Neo.IO.Helper.ReadBytesWithGrouping(reader);
-                    Assert.AreEqual(Encoding.Default.GetString(caseArray), Encoding.Default.GetString(result));
-                }
-                else
-                {
-                    byte[] caseArray = new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
-                                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x11};
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
-                    writer.Write(caseArray);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
-                    Action action = () => Neo.IO.Helper.ReadBytesWithGrouping(reader);
-                    action.Should().Throw<FormatException>();
-                }
-            }
-        }
-
-        [TestMethod]
         public void TestReadFixedString()
         {
             MemoryStream stream = new MemoryStream();
@@ -438,28 +464,6 @@ namespace Neo.UnitTests.IO
                                                                          0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
-        }
-
-
-        [TestMethod]
-        public void TestWriteBytesWithGrouping()
-        {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            Neo.IO.Helper.WriteBytesWithGrouping(writer, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                      0xAA, 0xAA, 0xAA, 0xAA});
-            stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
-            stream.Read(byteArray, 0, (int)stream.Length);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,0x10,
-                                                                    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
-                                                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x04}), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]

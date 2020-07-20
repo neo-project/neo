@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractGroup
             {
-                PubKey = ECPoint.Parse(json["pubKey"].AsString(), ECCurve.Secp256r1),
+                PubKey = ECPoint.Parse(json["pubkey"].AsString(), ECCurve.Secp256r1),
                 Signature = Convert.FromBase64String(json["signature"].AsString()),
             };
         }
@@ -52,13 +52,13 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool IsValid(UInt160 hash)
         {
-            return Crypto.VerifySignature(hash.ToArray(), Signature, PubKey.EncodePoint(false));
+            return Crypto.VerifySignature(hash.ToArray(), Signature, PubKey);
         }
 
         public virtual JObject ToJson()
         {
             var json = new JObject();
-            json["pubKey"] = PubKey.ToString();
+            json["pubkey"] = PubKey.ToString();
             json["signature"] = Convert.ToBase64String(Signature);
             return json;
         }

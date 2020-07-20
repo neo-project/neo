@@ -1,17 +1,51 @@
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
-using System.Text;
+using System.Collections.Generic;
 
 namespace Neo.SmartContract
 {
     public static class Helper
     {
+        private const long MaxVerificationGas = 0_50000000;
+
+        public static UInt160 GetScriptHash(this ExecutionContext context)
+        {
+            return context.GetState<ExecutionContextState>().ScriptHash;
+        }
+
+        public static bool IsMultiSigContract(this byte[] script)
+        {
+            return IsMultiSigContract(script, out _, out _, null);
+        }
+
         public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
+        {
+            return IsMultiSigContract(script, out m, out n, null);
+        }
+
+        public static bool IsMultiSigContract(this byte[] script, out int m, out ECPoint[] points)
+        {
+            List<ECPoint> list = new List<ECPoint>();
+            if (IsMultiSigContract(script, out m, out _, list))
+            {
+                points = list.ToArray();
+                return true;
+            }
+            else
+            {
+                points = null;
+                return false;
+            }
+        }
+
+        private static bool IsMultiSigContract(byte[] script, out int m, out int n, List<ECPoint> points)
         {
             m = 0; n = 0;
             int i = 0;
@@ -38,6 +72,7 @@ namespace Neo.SmartContract
             {
                 if (script.Length <= i + 35) return false;
                 if (script[++i] != 33) return false;
+                points?.Add(ECPoint.DecodePoint(script.AsSpan(i + 1, 33), ECCurve.Secp256r1));
                 i += 34;
                 ++n;
             }
@@ -62,7 +97,7 @@ namespace Neo.SmartContract
             if (script[i++] != (byte)OpCode.PUSHNULL) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
             if (script.Length != i + 4) return false;
-            if (BitConverter.ToUInt32(script, i) != InteropService.Crypto.ECDsaCheckMultiSig)
+            if (BitConverter.ToUInt32(script, i) != ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1)
                 return false;
             return true;
         }
@@ -74,19 +109,14 @@ namespace Neo.SmartContract
                 || script[1] != 33
                 || script[35] != (byte)OpCode.PUSHNULL
                 || script[36] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 37) != InteropService.Crypto.ECDsaVerify)
+                || BitConverter.ToUInt32(script, 37) != ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1)
                 return false;
             return true;
         }
 
         public static bool IsStandardContract(this byte[] script)
         {
-            return script.IsSignatureContract() || script.IsMultiSigContract(out _, out _);
-        }
-
-        public static uint ToInteropMethodHash(this string method)
-        {
-            return BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
+            return script.IsSignatureContract() || script.IsMultiSigContract();
         }
 
         public static UInt160 ToScriptHash(this byte[] script)
@@ -94,9 +124,15 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
+        public static UInt160 ToScriptHash(this ReadOnlySpan<byte> script)
+        {
+            return new UInt160(Crypto.Hash160(script));
+        }
+
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
+            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -110,22 +146,29 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
+                int offset;
                 byte[] verification = verifiable.Witnesses[i].VerificationScript;
                 if (verification.Length == 0)
                 {
-                    verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
-                    if (verification is null) return false;
+                    ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
+                    if (cs is null) return false;
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
+                    if (md is null) return false;
+                    verification = cs.Script;
+                    offset = md.Offset;
                 }
                 else
                 {
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+                    offset = 0;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot.Clone(), gas))
                 {
-                    engine.LoadScript(verification, CallFlags.ReadOnly);
+                    engine.LoadScript(verification, CallFlags.None).InstructionPointer = offset;
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
-                    if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                    gas -= engine.GasConsumed;
                 }
             }
             return true;

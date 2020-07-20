@@ -3,19 +3,25 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
-using System;
+using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
     public class UT_SmartContractHelper
     {
+        [TestInitialize]
+        public void TestSetup()
+        {
+            TestBlockchain.InitializeMockNeoSystem();
+        }
+
         [TestMethod]
         public void TestIsMultiSigContract()
         {
-            Neo.Cryptography.ECC.ECPoint[] publicKeys1 = new Neo.Cryptography.ECC.ECPoint[20];
+            ECPoint[] publicKeys1 = new ECPoint[20];
             for (int i = 0; i < 20; i++)
             {
                 byte[] privateKey1 = new byte[32];
@@ -25,7 +31,8 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys1[i] = key1.PublicKey;
             }
             byte[] script1 = Contract.CreateMultiSigRedeemScript(20, publicKeys1);
-            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script1, out int m1, out int n1));
+            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script1, out _, out ECPoint[] p1));
+            CollectionAssert.AreEqual(publicKeys1.OrderBy(p => p).ToArray(), p1);
 
             Neo.Cryptography.ECC.ECPoint[] publicKeys2 = new Neo.Cryptography.ECC.ECPoint[256];
             for (int i = 0; i < 256; i++)
@@ -37,7 +44,8 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys2[i] = key2.PublicKey;
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(256, publicKeys2);
-            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script2, out int m2, out int n2));
+            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script2, out _, out ECPoint[] p2));
+            CollectionAssert.AreEqual(publicKeys2.OrderBy(p => p).ToArray(), p2);
 
             Neo.Cryptography.ECC.ECPoint[] publicKeys3 = new Neo.Cryptography.ECC.ECPoint[3];
             for (int i = 0; i < 3; i++)
@@ -49,7 +57,8 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys3[i] = key3.PublicKey;
             }
             byte[] script3 = Contract.CreateMultiSigRedeemScript(3, publicKeys3);
-            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script3, out int m3, out int n3));
+            Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script3, out _, out ECPoint[] p3));
+            CollectionAssert.AreEqual(publicKeys3.OrderBy(p => p).ToArray(), p3);
 
             Neo.Cryptography.ECC.ECPoint[] publicKeys4 = new Neo.Cryptography.ECC.ECPoint[3];
             for (int i = 0; i < 3; i++)
@@ -62,8 +71,8 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script4 = Contract.CreateMultiSigRedeemScript(3, publicKeys4);
             script4[script4.Length - 1] = 0x00;
-            Assert.AreEqual(false, Neo.SmartContract.Helper.IsMultiSigContract(script4, out int m4, out int n4));
-
+            Assert.AreEqual(false, Neo.SmartContract.Helper.IsMultiSigContract(script4, out _, out ECPoint[] p4));
+            Assert.IsNull(p4);
         }
 
         [TestMethod]
@@ -103,24 +112,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestToInteropMethodHash()
-        {
-            byte[] temp1 = Encoding.ASCII.GetBytes("AAAA");
-            byte[] temp2 = Neo.Cryptography.Helper.Sha256(temp1);
-            uint result = BitConverter.ToUInt32(temp2, 0);
-            Assert.AreEqual(result, Neo.SmartContract.Helper.ToInteropMethodHash("AAAA"));
-        }
-
-        [TestMethod]
-        public void TestToScriptHash()
-        {
-            byte[] temp1 = Encoding.ASCII.GetBytes("AAAA");
-            byte[] temp2 = Neo.Cryptography.Helper.Sha256(temp1);
-            uint result = BitConverter.ToUInt32(temp2, 0);
-            Assert.AreEqual(result, Neo.SmartContract.Helper.ToInteropMethodHash("AAAA"));
-        }
-
-        [TestMethod]
         public void TestVerifyWitnesses()
         {
             var snapshot1 = Blockchain.Singleton.GetSnapshot();
@@ -146,7 +137,10 @@ namespace Neo.UnitTests.SmartContract
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
             Header header3 = new Header() { PrevHash = index3, Witness = new Witness { VerificationScript = new byte[0] } };
-            snapshot3.Contracts.Add(UInt160.Zero, new ContractState());
+            snapshot3.Contracts.Add(UInt160.Zero, new ContractState()
+            {
+                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
+            });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
         }
     }

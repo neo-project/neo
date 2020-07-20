@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using System.Collections.Generic;
@@ -32,18 +31,18 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            ChangeViewMessages = reader.ReadSerializableArray<ChangeViewPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
+            ChangeViewMessages = reader.ReadSerializableArray<ChangeViewPayloadCompact>(ProtocolSettings.Default.ValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
             if (reader.ReadBoolean())
                 PrepareRequestMessage = reader.ReadSerializable<PrepareRequest>();
             else
             {
                 int preparationHashSize = UInt256.Zero.Size;
                 if (preparationHashSize == (int)reader.ReadVarInt((ulong)preparationHashSize))
-                    PreparationHash = new UInt256(reader.ReadBytes(preparationHashSize));
+                    PreparationHash = new UInt256(reader.ReadFixedBytes(preparationHashSize));
             }
 
-            PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
-            CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
+            PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(ProtocolSettings.Default.ValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
+            CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(ProtocolSettings.Default.ValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
         internal ConsensusPayload[] GetChangeViewPayloads(ConsensusContext context, ConsensusPayload payload)

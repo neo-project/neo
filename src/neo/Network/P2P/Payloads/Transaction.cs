@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -24,41 +23,30 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
-        private const int MaxTransactionAttributes = 16;
-        /// <summary>
-        /// Maximum number of cosigners that can be contained within a transaction
-        /// </summary>
-        private const int MaxCosigners = 16;
+        public const int MaxTransactionAttributes = 16;
 
         private byte version;
         private uint nonce;
-        private UInt160 sender;
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
+        private Signer[] _signers;
         private TransactionAttribute[] attributes;
-        private Cosigner[] cosigners;
         private byte[] script;
         private Witness[] witnesses;
 
         public const int HeaderSize =
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
-            20 +            //Sender
             sizeof(long) +  //SystemFee
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
+        private Dictionary<Type, TransactionAttribute[]> _attributesCache;
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _hash = null; _size = 0; }
-        }
-
-        public Cosigner[] Cosigners
-        {
-            get => cosigners;
-            set { cosigners = value; _hash = null; _size = 0; }
+            set { attributes = value; _attributesCache = null; _hash = null; _size = 0; }
         }
 
         /// <summary>
@@ -103,10 +91,15 @@ namespace Neo.Network.P2P.Payloads
             set { script = value; _hash = null; _size = 0; }
         }
 
-        public UInt160 Sender
+        /// <summary>
+        /// Correspond with the first entry of Signers
+        /// </summary>
+        public UInt160 Sender => _signers[0].Account;
+
+        public Signer[] Signers
         {
-            get => sender;
-            set { sender = value; _hash = null; }
+            get => _signers;
+            set { _signers = value; _hash = null; _size = 0; }
         }
 
         private int _size;
@@ -117,17 +110,17 @@ namespace Neo.Network.P2P.Payloads
                 if (_size == 0)
                 {
                     _size = HeaderSize +
-                        Attributes.GetVarSize() +   //Attributes
-                        Cosigners.GetVarSize() +    //Cosigners
-                        Script.GetVarSize() +       //Script
-                        Witnesses.GetVarSize();     //Witnesses
+                        Signers.GetVarSize() +      // Signers
+                        Attributes.GetVarSize() +   // Attributes
+                        Script.GetVarSize() +       // Script
+                        Witnesses.GetVarSize();     // Witnesses
                 }
                 return _size;
             }
         }
 
         /// <summary>
-        /// Distributed to NEO holders.
+        /// Fee to be burned.
         /// </summary>
         public long SystemFee
         {
@@ -164,22 +157,48 @@ namespace Neo.Network.P2P.Payloads
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
 
+        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader, int maxCount)
+        {
+            int count = (int)reader.ReadVarInt((ulong)maxCount);
+            HashSet<TransactionAttributeType> hashset = new HashSet<TransactionAttributeType>();
+            while (count-- > 0)
+            {
+                TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(reader);
+                if (!attribute.AllowMultiple && !hashset.Add(attribute.Type))
+                    throw new FormatException();
+                yield return attribute;
+            }
+        }
+
+        private static IEnumerable<Signer> DeserializeSigners(BinaryReader reader, int maxCount)
+        {
+            int count = (int)reader.ReadVarInt((ulong)maxCount);
+            if (count == 0) throw new FormatException();
+            HashSet<UInt160> hashset = new HashSet<UInt160>();
+            for (int i = 0; i < count; i++)
+            {
+                Signer signer = reader.ReadSerializable<Signer>();
+                if (i > 0 && signer.Scopes == WitnessScope.FeeOnly)
+                    throw new FormatException();
+                if (!hashset.Add(signer.Account))
+                    throw new FormatException();
+                yield return signer;
+            }
+        }
+
         public void DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
-            Sender = reader.ReadSerializable<UInt160>();
             SystemFee = reader.ReadInt64();
             if (SystemFee < 0) throw new FormatException();
-            if (SystemFee % NativeContract.GAS.Factor != 0) throw new FormatException();
             NetworkFee = reader.ReadInt64();
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
-            Cosigners = reader.ReadSerializableArray<Cosigner>(MaxCosigners);
-            if (Cosigners.Select(u => u.Account).Distinct().Count() != Cosigners.Length) throw new FormatException();
+            Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
+            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
@@ -196,6 +215,23 @@ namespace Neo.Network.P2P.Payloads
             return Equals(obj as Transaction);
         }
 
+        void IInteroperable.FromStackItem(StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
+        public T GetAttribute<T>() where T : TransactionAttribute
+        {
+            return GetAttributes<T>()?.First();
+        }
+
+        public T[] GetAttributes<T>() where T : TransactionAttribute
+        {
+            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => (TransactionAttribute[])p.OfType<T>().ToArray());
+            _attributesCache.TryGetValue(typeof(T), out var result);
+            return (T[])result;
+        }
+
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
@@ -203,9 +239,7 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
-            var hashes = new HashSet<UInt160> { Sender };
-            hashes.UnionWith(Cosigners.Select(p => p.Account));
-            return hashes.OrderBy(p => p).ToArray();
+            return Signers.Select(p => p.Account).ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -218,12 +252,11 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(Version);
             writer.Write(Nonce);
-            writer.Write(Sender);
             writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
+            writer.Write(Signers);
             writer.Write(Attributes);
-            writer.Write(Cosigners);
             writer.WriteVarBytes(Script);
         }
 
@@ -235,71 +268,50 @@ namespace Neo.Network.P2P.Payloads
             json["version"] = Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
-            json["sys_fee"] = SystemFee.ToString();
-            json["net_fee"] = NetworkFee.ToString();
-            json["valid_until_block"] = ValidUntilBlock;
+            json["sysfee"] = SystemFee.ToString();
+            json["netfee"] = NetworkFee.ToString();
+            json["validuntilblock"] = ValidUntilBlock;
+            json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["cosigners"] = Cosigners.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
 
-        public static Transaction FromJson(JObject json)
-        {
-            Transaction tx = new Transaction();
-            tx.Version = byte.Parse(json["version"].AsString());
-            tx.Nonce = uint.Parse(json["nonce"].AsString());
-            tx.Sender = json["sender"].AsString().ToScriptHash();
-            tx.SystemFee = long.Parse(json["sys_fee"].AsString());
-            tx.NetworkFee = long.Parse(json["net_fee"].AsString());
-            tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
-            tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
-            tx.Cosigners = ((JArray)json["cosigners"]).Select(p => Cosigner.FromJson(p)).ToArray();
-            tx.Script = Convert.FromBase64String(json["script"].AsString());
-            tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
-            return tx;
-        }
-
         bool IInventory.Verify(StoreView snapshot)
         {
-            return Verify(snapshot, BigInteger.Zero) == RelayResultReason.Succeed;
+            return Verify(snapshot, null) == VerifyResult.Succeed;
         }
 
-        public virtual RelayResultReason Verify(StoreView snapshot, BigInteger totalSenderFeeFromPool)
-        {
-            RelayResultReason result = VerifyForEachBlock(snapshot, totalSenderFeeFromPool);
-            if (result != RelayResultReason.Succeed) return result;
-            return VerifyParallelParts(snapshot);
-        }
-
-        public virtual RelayResultReason VerifyForEachBlock(StoreView snapshot, BigInteger totalSenderFeeFromPool)
+        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot, TransactionVerificationContext context)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
-                return RelayResultReason.Expired;
+                return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
-                return RelayResultReason.PolicyFail;
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = SystemFee + NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return RelayResultReason.InsufficientFunds;
-            if (hashes.Length != Witnesses.Length) return RelayResultReason.Invalid;
+                return VerifyResult.PolicyFail;
+            if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
+                return VerifyResult.PolicyFail;
+            if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
+            if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (Witnesses[i].VerificationScript.Length > 0) continue;
-                if (snapshot.Contracts.TryGet(hashes[i]) is null) return RelayResultReason.Invalid;
+                if (snapshot.Contracts.TryGet(hashes[i]) is null) return VerifyResult.Invalid;
             }
-            return RelayResultReason.Succeed;
+            return VerifyResult.Succeed;
         }
 
-        public RelayResultReason VerifyParallelParts(StoreView snapshot)
+        public virtual VerifyResult Verify(StoreView snapshot, TransactionVerificationContext context)
         {
+            VerifyResult result = VerifyForEachBlock(snapshot, context);
+            if (result != VerifyResult.Succeed) return result;
             int size = Size;
-            if (size > MaxTransactionSize) return RelayResultReason.Invalid;
+            if (size > MaxTransactionSize) return VerifyResult.Invalid;
             long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return RelayResultReason.InsufficientFunds;
-            if (!this.VerifyWitnesses(snapshot, net_fee)) return RelayResultReason.Invalid;
-            return RelayResultReason.Succeed;
+            if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
+            return VerifyResult.Succeed;
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)

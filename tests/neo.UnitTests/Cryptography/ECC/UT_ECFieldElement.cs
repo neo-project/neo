@@ -24,12 +24,36 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
 
         [TestMethod]
+        public void TestCompareTo()
+        {
+            ECFieldElement X1 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            ECFieldElement Y1 = new ECFieldElement(new BigInteger(200), ECCurve.Secp256k1);
+            ECFieldElement X2 = new ECFieldElement(new BigInteger(300), ECCurve.Secp256k1);
+            ECFieldElement Y2 = new ECFieldElement(new BigInteger(400), ECCurve.Secp256k1);
+            ECFieldElement X3 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256r1);
+            ECFieldElement Y3 = new ECFieldElement(new BigInteger(400), ECCurve.Secp256r1);
+            ECPoint point1 = new ECPoint(X1, Y1, ECCurve.Secp256k1);
+            ECPoint point2 = new ECPoint(X2, Y1, ECCurve.Secp256k1);
+            ECPoint point3 = new ECPoint(X1, Y2, ECCurve.Secp256k1);
+            ECPoint point4 = new ECPoint(X3, Y3, ECCurve.Secp256r1);
+
+            point1.CompareTo(point1).Should().Be(0);
+            point1.CompareTo(point2).Should().Be(-1);
+            point2.CompareTo(point1).Should().Be(1);
+            point1.CompareTo(point3).Should().Be(-1);
+            point3.CompareTo(point1).Should().Be(1);
+            Action action = () => point3.CompareTo(point4);
+            action.Should().Throw<InvalidOperationException>();
+        }
+
+        [TestMethod]
         public void TestEquals()
         {
             BigInteger input = new BigInteger(100);
             object element = new ECFieldElement(input, ECCurve.Secp256k1);
             element.Equals(element).Should().BeTrue();
             element.Equals(1).Should().BeFalse();
+            element.Equals(new ECFieldElement(input, ECCurve.Secp256r1)).Should().BeFalse();
 
             input = new BigInteger(200);
             element.Equals(new ECFieldElement(input, ECCurve.Secp256k1)).Should().BeFalse();

@@ -1,4 +1,3 @@
-using Akka.Actor;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -9,23 +8,19 @@ namespace Neo.Network.P2P
 {
     internal class TaskSession
     {
-        public readonly IActorRef RemoteNode;
-        public readonly VersionPayload Version;
-        public readonly Dictionary<UInt256, DateTime> Tasks = new Dictionary<UInt256, DateTime>();
-        public readonly HashSet<UInt256> AvailableTasks = new HashSet<UInt256>();
+        public readonly Dictionary<UInt256, DateTime> InvTasks = new Dictionary<UInt256, DateTime>();
+        public readonly Dictionary<uint, DateTime> IndexTasks = new Dictionary<uint, DateTime>();
 
-        public bool HasTask => Tasks.Count > 0;
-        public uint StartHeight { get; }
+        public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
+        public uint TimeoutTimes = 0;
+        public uint InvalidBlockCount = 0;
 
-        public TaskSession(IActorRef node, VersionPayload version)
+        public TaskSession(VersionPayload version)
         {
-            this.RemoteNode = node;
-            this.Version = version;
-            this.StartHeight = version.Capabilities
-                .OfType<FullNodeCapability>()
-                .FirstOrDefault()?.StartHeight ?? 0;
-            this.LastBlockIndex = this.StartHeight;
+            var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
+            this.IsFullNode = fullNode != null;
+            this.LastBlockIndex = fullNode.StartHeight;
         }
     }
 }

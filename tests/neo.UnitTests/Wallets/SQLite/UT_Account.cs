@@ -15,13 +15,13 @@ namespace Neo.UnitTests.Wallets.SQLite
         }
 
         [TestMethod]
-        public void TestSetAndGetPrivateKeyEncrypted()
+        public void TestSetAndGetNep2key()
         {
             Account account = new Account
             {
-                PrivateKeyEncrypted = new byte[] { 0x01 }
+                Nep2key = "123"
             };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(account.PrivateKeyEncrypted));
+            Assert.AreEqual("123", account.Nep2key);
         }
 
         [TestMethod]

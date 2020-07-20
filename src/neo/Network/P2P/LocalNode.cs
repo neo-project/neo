@@ -1,6 +1,5 @@
 using Akka.Actor;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
@@ -16,7 +15,6 @@ namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
-        public class Relay { public IInventory Inventory; }
         internal class RelayDirectly { public IInventory Inventory; }
         internal class SendDirectly { public IInventory Inventory; }
 
@@ -60,11 +58,11 @@ namespace Neo.Network.P2P
                 singleton = this;
 
                 // Start dns resolution in parallel
-
-                for (int i = 0; i < ProtocolSettings.Default.SeedList.Length; i++)
+                string[] seedList = ProtocolSettings.Default.SeedList;
+                for (int i = 0; i < seedList.Length; i++)
                 {
                     int index = i;
-                    Task.Run(() => SeedList[index] = GetIpEndPoint(ProtocolSettings.Default.SeedList[index]));
+                    Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
                 }
             }
         }
@@ -129,6 +127,28 @@ namespace Neo.Network.P2P
             return null;
         }
 
+        /// <summary>
+        /// Check the new connection <br/>
+        /// If it is equal to the Nonce of local or any remote node, it'll return false, else we'll return true and update the Listener address of the connected remote node.
+        /// </summary>
+        /// <param name="actor">Remote node actor</param>
+        /// <param name="node">Remote node</param>
+        public bool AllowNewConnection(IActorRef actor, RemoteNode node)
+        {
+            if (node.Version.Magic != ProtocolSettings.Default.Magic) return false;
+            if (node.Version.Nonce == Nonce) return false;
+
+            // filter duplicate connections
+            foreach (var other in RemoteNodes.Values)
+                if (other != node && other.Remote.Address.Equals(node.Remote.Address) && other.Version?.Nonce == node.Version.Nonce)
+                    return false;
+
+            if (node.Remote.Port != node.ListenerTcpPort && node.ListenerTcpPort != 0)
+                ConnectedPeers.TryUpdate(actor, node.Listener, node.Remote);
+
+            return true;
+        }
+
         public IEnumerable<RemoteNode> GetRemoteNodes()
         {
             return RemoteNodes.Values;
@@ -170,31 +190,13 @@ namespace Neo.Network.P2P
                 case Message msg:
                     BroadcastMessage(msg);
                     break;
-                case Relay relay:
-                    OnRelay(relay.Inventory);
-                    break;
                 case RelayDirectly relay:
                     OnRelayDirectly(relay.Inventory);
                     break;
                 case SendDirectly send:
                     OnSendDirectly(send.Inventory);
                     break;
-                case RelayResultReason _:
-                    break;
             }
-        }
-
-        /// <summary>
-        /// For Transaction type of IInventory, it will tell Transaction to the actor of Consensus.
-        /// Otherwise, tell the inventory to the actor of Blockchain.
-        /// There are, currently, three implementations of IInventory: TX, Block and ConsensusPayload.
-        /// </summary>
-        /// <param name="inventory">The inventory to be relayed.</param>
-        private void OnRelay(IInventory inventory)
-        {
-            if (inventory is Transaction transaction)
-                system.Consensus?.Tell(transaction);
-            system.Blockchain.Tell(inventory);
         }
 
         private void OnRelayDirectly(IInventory inventory)
@@ -215,6 +217,11 @@ namespace Neo.Network.P2P
         }
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
+
+        protected override void OnTcpConnected(IActorRef connection)
+        {
+            connection.Tell(new RemoteNode.StartProtocol());
+        }
 
         public static Props Props(NeoSystem system)
         {

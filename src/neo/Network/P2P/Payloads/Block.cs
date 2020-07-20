@@ -81,6 +81,11 @@ namespace Neo.Network.P2P.Payloads
             return Equals(obj as Block);
         }
 
+        void IInteroperable.FromStackItem(StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
@@ -103,19 +108,9 @@ namespace Neo.Network.P2P.Payloads
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["consensus_data"] = ConsensusData.ToJson();
+            json["consensusdata"] = ConsensusData.ToJson();
             json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
             return json;
-        }
-
-        public new static Block FromJson(JObject json)
-        {
-            Block block = new Block();
-            BlockBase blockBase = block;
-            blockBase.FromJson(json);
-            block.ConsensusData = ConsensusData.FromJson(json["consensus_data"]);
-            block.Transactions = ((JArray)json["tx"]).Select(p => Transaction.FromJson(p)).ToArray();
-            return block;
         }
 
         public TrimmedBlock Trim()

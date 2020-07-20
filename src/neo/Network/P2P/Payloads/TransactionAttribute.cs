@@ -1,47 +1,49 @@
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class TransactionAttribute : ISerializable
+    public abstract class TransactionAttribute : ISerializable
     {
-        public TransactionAttributeUsage Usage;
-        public byte[] Data;
+        public abstract TransactionAttributeType Type { get; }
+        public abstract bool AllowMultiple { get; }
+        public virtual int Size => sizeof(TransactionAttributeType);
 
-        public int Size => sizeof(TransactionAttributeUsage) + Data.GetVarSize();
-
-        void ISerializable.Deserialize(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
-            Usage = (TransactionAttributeUsage)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
+            if (reader.ReadByte() != (byte)Type)
                 throw new FormatException();
-            Data = reader.ReadVarBytes(252);
+            DeserializeWithoutType(reader);
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public static TransactionAttribute DeserializeFrom(BinaryReader reader)
         {
-            writer.Write((byte)Usage);
-            writer.WriteVarBytes(Data);
+            TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
+            if (!(ReflectionCache<TransactionAttributeType>.CreateInstance(type) is TransactionAttribute attribute))
+                throw new FormatException();
+            attribute.DeserializeWithoutType(reader);
+            return attribute;
         }
 
-        public JObject ToJson()
+        protected abstract void DeserializeWithoutType(BinaryReader reader);
+
+        public virtual JObject ToJson()
         {
-            JObject json = new JObject();
-            json["usage"] = Usage;
-            json["data"] = Convert.ToBase64String(Data);
-            return json;
+            return new JObject
+            {
+                ["type"] = Type
+            };
         }
 
-        public static TransactionAttribute FromJson(JObject json)
+        public void Serialize(BinaryWriter writer)
         {
-            TransactionAttribute transactionAttribute = new TransactionAttribute();
-            transactionAttribute.Usage = (TransactionAttributeUsage)byte.Parse(json["usage"].AsString());
-            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), transactionAttribute.Usage))
-                throw new ArgumentException();
-            transactionAttribute.Data = Convert.FromBase64String(json["data"].AsString());
-            return transactionAttribute;
+            writer.Write((byte)Type);
+            SerializeWithoutType(writer);
         }
+
+        protected abstract void SerializeWithoutType(BinaryWriter writer);
     }
 }
