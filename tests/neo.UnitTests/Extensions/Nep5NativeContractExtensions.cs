@@ -6,6 +6,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.UnitTests.Extensions
@@ -18,7 +19,7 @@ namespace Neo.UnitTests.Extensions
 
             public Witness[] Witnesses
             {
-                get => throw new NotImplementedException();
+                get => _hashForVerify.Select(u => new Witness() { VerificationScript = new byte[0], InvocationScript = new byte[0] }).ToArray();
                 set => throw new NotImplementedException();
             }
 
