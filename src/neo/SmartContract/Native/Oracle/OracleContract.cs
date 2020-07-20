@@ -174,12 +174,7 @@ namespace Neo.SmartContract.Native.Oracle
         private bool Verify(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.GetAttribute<OracleResponse>();
-            if (response is null) return false;
-            StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
-            OracleRequest request = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<OracleRequest>();
-            if (request is null) return false;
-            return tx.NetworkFee + tx.SystemFee <= request.GasForResponse;
+            return tx.GetAttribute<OracleResponse>() != null;
         }
     }
 }
