@@ -223,7 +223,7 @@ namespace Neo.SmartContract
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
-        
+
         protected override void OnSysCall(uint method)
         {
             InteropDescriptor descriptor = services[method];
