@@ -3,7 +3,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Callbacks
 {
-    internal class SyscallCallback : CallbackBase
+    public class SyscallCallback : CallbackBase
     {
         public InteropDescriptor Method { get; }
         public override int ParametersCount => Method.Parameters.Count;
