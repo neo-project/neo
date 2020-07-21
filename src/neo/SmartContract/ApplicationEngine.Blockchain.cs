@@ -10,12 +10,12 @@ namespace Neo.SmartContract
     {
         public const uint MaxTraceableBlocks = Transaction.MaxValidUntilBlockIncrement;
 
-        public static readonly InteropDescriptor System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", nameof(GetBlockchainHeight), 0_00000400, TriggerType.Application, CallFlags.AllowStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", nameof(GetBlock), 0_02500000, TriggerType.Application, CallFlags.AllowStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", nameof(GetTransaction), 0_01000000, TriggerType.Application, CallFlags.AllowStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", nameof(GetTransactionHeight), 0_01000000, TriggerType.Application, CallFlags.AllowStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", nameof(GetTransactionFromBlock), 0_01000000, TriggerType.Application, CallFlags.AllowStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetContract = Register("System.Blockchain.GetContract", nameof(GetContract), 0_01000000, TriggerType.Application, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", nameof(GetBlockchainHeight), 0_00000400, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", nameof(GetBlock), 0_02500000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", nameof(GetTransaction), 0_01000000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", nameof(GetTransactionHeight), 0_01000000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", nameof(GetTransactionFromBlock), 0_01000000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetContract = Register("System.Blockchain.GetContract", nameof(GetContract), 0_01000000, CallFlags.AllowStates, true);
 
         internal uint GetBlockchainHeight()
         {

@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
@@ -31,8 +30,6 @@ namespace Neo.SmartContract.Native
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
-        [ContractMethod(0, CallFlags.None)]
-        public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
         protected NativeContract()
         {
@@ -61,39 +58,28 @@ namespace Neo.SmartContract.Native
             }
             this.Manifest = new ContractManifest
             {
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Groups = System.Array.Empty<ContractGroup>(),
+                Features = ContractFeatures.NoProperty,
+                SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
                     Hash = Hash,
                     Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },
-                Features = ContractFeatures.NoProperty,
-                Groups = System.Array.Empty<ContractGroup>(),
-                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
+                Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = null,
+                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
+                Extra = null
             };
             contractsList.Add(this);
             contractsNameDictionary.Add(Name, this);
             contractsHashDictionary.Add(Hash, this);
         }
 
-        protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        private protected KeyBuilder CreateStorageKey(byte prefix)
         {
-            StorageKey storageKey = new StorageKey
-            {
-                Id = Id,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
-            };
-            storageKey.Key[0] = prefix;
-            key?.CopyTo(storageKey.Key.AsSpan(1));
-            return storageKey;
-        }
-
-        internal protected StorageKey CreateStorageKey(byte prefix, ISerializable key)
-        {
-            return CreateStorageKey(prefix, key.ToArray());
+            return new KeyBuilder(Id, prefix);
         }
 
         public static NativeContract GetContract(UInt160 hash)
@@ -112,7 +98,7 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CurrentScriptHash.Equals(Hash))
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
-            string operation = engine.PopString();
+            string operation = engine.Pop().GetString();
             Array args = engine.Pop<Array>();
             ContractMethodMetadata method = methods[operation];
             ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();

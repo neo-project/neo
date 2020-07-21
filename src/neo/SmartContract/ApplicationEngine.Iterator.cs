@@ -8,11 +8,11 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Iterator_Create = Register("System.Iterator.Create", nameof(CreateIterator), 0_00000400, TriggerType.All, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Key = Register("System.Iterator.Key", nameof(IteratorKey), 0_00000400, TriggerType.All, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Keys = Register("System.Iterator.Keys", nameof(IteratorKeys), 0_00000400, TriggerType.All, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Values = Register("System.Iterator.Values", nameof(IteratorValues), 0_00000400, TriggerType.All, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Concat = Register("System.Iterator.Concat", nameof(ConcatIterators), 0_00000400, TriggerType.All, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Create = Register("System.Iterator.Create", nameof(CreateIterator), 0_00000400, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Key = Register("System.Iterator.Key", nameof(IteratorKey), 0_00000400, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Keys = Register("System.Iterator.Keys", nameof(IteratorKeys), 0_00000400, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Values = Register("System.Iterator.Values", nameof(IteratorValues), 0_00000400, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Concat = Register("System.Iterator.Concat", nameof(ConcatIterators), 0_00000400, CallFlags.None, false);
 
         internal IIterator CreateIterator(StackItem item)
         {
@@ -20,6 +20,7 @@ namespace Neo.SmartContract
             {
                 Array array => new ArrayWrapper(array),
                 Map map => new MapWrapper(map),
+                VM.Types.Buffer buffer => new ByteArrayWrapper(buffer),
                 PrimitiveType primitive => new ByteArrayWrapper(primitive),
                 _ => throw new ArgumentException()
             };

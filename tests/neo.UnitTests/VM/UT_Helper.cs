@@ -150,19 +150,19 @@ namespace Neo.UnitTests.VMT
             Assert.ThrowsException<ArgumentNullException>(() => parameter.ToStackItem());
 
             ContractParameter byteParameter = new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() };
-            Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetBigInteger());
+            Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetInteger());
 
             ContractParameter boolParameter = new ContractParameter { Type = ContractParameterType.Boolean, Value = false };
-            Assert.AreEqual(false, boolParameter.ToStackItem().ToBoolean());
+            Assert.AreEqual(false, boolParameter.ToStackItem().GetBoolean());
 
             ContractParameter intParameter = new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) };
-            Assert.AreEqual(1000, intParameter.ToStackItem().GetBigInteger());
+            Assert.AreEqual(1000, intParameter.ToStackItem().GetInteger());
 
             ContractParameter h160Parameter = new ContractParameter { Type = ContractParameterType.Hash160, Value = UInt160.Zero };
-            Assert.AreEqual(0, h160Parameter.ToStackItem().GetBigInteger());
+            Assert.AreEqual(0, h160Parameter.ToStackItem().GetInteger());
 
             ContractParameter h256Parameter = new ContractParameter { Type = ContractParameterType.Hash256, Value = UInt256.Zero };
-            Assert.AreEqual(0, h256Parameter.ToStackItem().GetBigInteger());
+            Assert.AreEqual(0, h256Parameter.ToStackItem().GetInteger());
 
             ContractParameter pkParameter = new ContractParameter { Type = ContractParameterType.PublicKey, Value = ECPoint.Parse("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", ECCurve.Secp256r1) };
             Assert.AreEqual("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", pkParameter.ToStackItem().GetSpan().ToHexString());
@@ -177,10 +177,10 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(StackItem.Null, interopParameter2.ToStackItem());
 
             ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter }.ToList() };
-            Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetBigInteger());
+            Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetInteger());
 
             ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
-            Assert.AreEqual(30000000000000L, (long)((VM.Types.Map)mapParameter.ToStackItem()).Keys.First().GetBigInteger());
+            Assert.AreEqual(30000000000000L, (long)((VM.Types.Map)mapParameter.ToStackItem()).Keys.First().GetInteger());
         }
 
         [TestMethod]
