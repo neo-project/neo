@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -11,7 +12,7 @@ namespace Neo.SmartContract
         public string Name { get; }
         public uint Hash { get; }
         internal MethodInfo Handler { get; }
-        internal InteropParameterDescriptor[] Parameters { get; }
+        public IReadOnlyList<InteropParameterDescriptor> Parameters { get; }
         public long FixedPrice { get; }
         public CallFlags RequiredCallFlags { get; }
         public bool AllowCallback { get; }
@@ -21,7 +22,7 @@ namespace Neo.SmartContract
             this.Name = name;
             this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(name).Sha256(), 0);
             this.Handler = handler;
-            this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToArray();
+            this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList();
             this.FixedPrice = fixedPrice;
             this.RequiredCallFlags = requiredCallFlags;
             this.AllowCallback = allowCallback;
