@@ -59,6 +59,8 @@ namespace Neo.Ledger
                 UpdateCurrentSnapshot();
                 return VerifyResult.Succeed;
             }
+            if (StateRoot.CurrentVersion < root.Version && Height < root.Index + 2)
+                system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = root });
             return VerifyResult.Invalid;
         }
 
