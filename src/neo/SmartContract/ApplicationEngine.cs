@@ -217,12 +217,17 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        protected override void OnSysCall(uint method)
+        protected void ValidateCallFlags(InteropDescriptor descriptor)
         {
-            InteropDescriptor descriptor = services[method];
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
+        }
+        
+        protected override void OnSysCall(uint method)
+        {
+            InteropDescriptor descriptor = services[method];
+            ValidateCallFlags(descriptor);
             AddGas(descriptor.FixedPrice);
             List<object> parameters = descriptor.Parameters.Length > 0
                 ? new List<object>()
