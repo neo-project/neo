@@ -37,7 +37,7 @@ namespace Neo.SmartContract
 
             UInt160 hash = script.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
-            if (contract != null) throw new InvalidOperationException();
+            if (contract != null) throw new InvalidOperationException("Contract Already Exists");
             contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
@@ -45,7 +45,7 @@ namespace Neo.SmartContract
                 Manifest = ContractManifest.Parse(manifest)
             };
 
-            if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException();
+            if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException("Invalid Manifest Hash");
 
             Snapshot.Contracts.Add(hash, contract);
             return contract;
