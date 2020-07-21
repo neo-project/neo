@@ -12,6 +12,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class StateRoot : ICloneable<StateRoot>, IInventory
     {
+        public static readonly byte CurrentVersion = 0;
         public byte Version;
         public uint Index;
         public UInt256 RootHash;

@@ -174,7 +174,7 @@ namespace Neo.Consensus
             {
                 PreviousBlockStateRoot = new StateRoot
                 {
-                    Version = 0,
+                    Version = StateRoot.CurrentVersion,
                     Index = Block.Index - 1,
                     RootHash = Blockchain.Singleton.GetLocalStateRoot(Block.Index - 1)
                 };
