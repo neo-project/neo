@@ -13,6 +13,8 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
+        private const long MaxVerificationGas = 0_50000000;
+
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
             return context.GetState<ExecutionContextState>().ScriptHash;
@@ -130,6 +132,7 @@ namespace Neo.SmartContract
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
+            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -159,12 +162,12 @@ namespace Neo.SmartContract
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot.Clone(), gas))
                 {
                     engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().ToBoolean()) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                     gas -= engine.GasConsumed;
                 }
             }

@@ -14,19 +14,19 @@ namespace Neo.SmartContract
         public const int MaxEventName = 32;
         public const int MaxNotificationSize = 1024;
 
-        public static readonly InteropDescriptor System_Runtime_Platform = Register("System.Runtime.Platform", nameof(GetPlatform), 0_00000250, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", nameof(Trigger), 0_00000250, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_GetTime = Register("System.Runtime.GetTime", nameof(GetTime), 0_00000250, TriggerType.Application, CallFlags.AllowStates, true);
-        public static readonly InteropDescriptor System_Runtime_GetScriptContainer = Register("System.Runtime.GetScriptContainer", nameof(GetScriptContainer), 0_00000250, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", nameof(CurrentScriptHash), 0_00000400, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", nameof(CallingScriptHash), 0_00000400, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", nameof(EntryScriptHash), 0_00000400, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 0_00030000, TriggerType.All, CallFlags.AllowStates, true);
-        public static readonly InteropDescriptor System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", nameof(GetInvocationCounter), 0_00000400, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 0_01000000, TriggerType.All, CallFlags.AllowNotify, false);
-        public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 0_01000000, TriggerType.All, CallFlags.AllowNotify, false);
-        public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 0_00010000, TriggerType.All, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 0_00000400, TriggerType.All, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_Platform = Register("System.Runtime.Platform", nameof(GetPlatform), 0_00000250, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", nameof(Trigger), 0_00000250, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_GetTime = Register("System.Runtime.GetTime", nameof(GetTime), 0_00000250, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Runtime_GetScriptContainer = Register("System.Runtime.GetScriptContainer", nameof(GetScriptContainer), 0_00000250, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", nameof(CurrentScriptHash), 0_00000400, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", nameof(CallingScriptHash), 0_00000400, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", nameof(EntryScriptHash), 0_00000400, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 0_00030000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", nameof(GetInvocationCounter), 0_00000400, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 0_01000000, CallFlags.AllowNotify, false);
+        public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 0_01000000, CallFlags.AllowNotify, false);
+        public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 0_00010000, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 0_00000400, CallFlags.None, true);
 
         private static bool CheckItemForNotification(StackItem state)
         {
@@ -104,23 +104,24 @@ namespace Neo.SmartContract
         {
             if (ScriptContainer is Transaction tx)
             {
-                if (!tx.Cosigners.TryGetValue(hash, out Cosigner cosigner)) return false;
-                if (cosigner.Scopes == WitnessScope.Global) return true;
-                if (cosigner.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                Signer signer = tx.Signers.FirstOrDefault(p => p.Account.Equals(hash));
+                if (signer is null) return false;
+                if (signer.Scopes == WitnessScope.Global) return true;
+                if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
                     if (CallingScriptHash == EntryScriptHash)
                         return true;
                 }
-                if (cosigner.Scopes.HasFlag(WitnessScope.CustomContracts))
+                if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
                 {
-                    if (cosigner.AllowedContracts.Contains(CurrentScriptHash))
+                    if (signer.AllowedContracts.Contains(CurrentScriptHash))
                         return true;
                 }
-                if (cosigner.Scopes.HasFlag(WitnessScope.CustomGroups))
+                if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
                     var contract = Snapshot.Contracts[CallingScriptHash];
                     // check if current group is the required one
-                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(cosigner.AllowedGroups).Any())
+                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
                         return true;
                 }
                 return false;
@@ -157,6 +158,7 @@ namespace Neo.SmartContract
         {
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
             Notify?.Invoke(this, notification);
+            notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
         }
 

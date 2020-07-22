@@ -13,18 +13,16 @@ namespace Neo.SmartContract
         internal MethodInfo Handler { get; }
         internal InteropParameterDescriptor[] Parameters { get; }
         public long FixedPrice { get; }
-        public TriggerType AllowedTriggers { get; }
         public CallFlags RequiredCallFlags { get; }
         public bool AllowCallback { get; }
 
-        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, TriggerType allowedTriggers, CallFlags requiredCallFlags, bool allowCallback)
+        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback)
         {
             this.Name = name;
             this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(name).Sha256(), 0);
             this.Handler = handler;
             this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToArray();
             this.FixedPrice = fixedPrice;
-            this.AllowedTriggers = allowedTriggers;
             this.RequiredCallFlags = requiredCallFlags;
             this.AllowCallback = allowCallback;
         }

@@ -13,7 +13,6 @@ namespace Neo.SmartContract.Native.Tokens
     public abstract class Nep5Token<TState> : NativeContract
         where TState : AccountState, new()
     {
-        public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         [ContractMethod(0, CallFlags.None)]
         public abstract string Symbol { get; }
         [ContractMethod(0, CallFlags.None)]
@@ -28,10 +27,11 @@ namespace Neo.SmartContract.Native.Tokens
             this.Factor = BigInteger.Pow(10, Decimals);
 
             Manifest.Features = ContractFeatures.HasStorage;
+            Manifest.SupportedStandards = new[] { "NEP-5" };
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
-                new ContractMethodDescriptor()
+                new ContractEventDescriptor
                 {
                     Name = "Transfer",
                     Parameters = new ContractParameterDefinition[]
@@ -51,24 +51,18 @@ namespace Neo.SmartContract.Native.Tokens
                             Name = "amount",
                             Type = ContractParameterType.Integer
                         }
-                    },
-                    ReturnType = ContractParameterType.Boolean
+                    }
                 }
             };
 
             Manifest.Abi.Events = events.ToArray();
         }
 
-        protected StorageKey CreateAccountKey(UInt160 account)
-        {
-            return CreateStorageKey(Prefix_Account, account);
-        }
-
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account), () => new StorageItem(new TState()));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
@@ -86,7 +80,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageKey key = CreateAccountKey(account);
+            StorageKey key = CreateStorageKey(Prefix_Account).Add(account);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
@@ -113,7 +107,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<TState>().Balance;
         }
@@ -126,7 +120,7 @@ namespace Neo.SmartContract.Native.Tokens
                 return false;
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
-            StorageKey key_from = CreateAccountKey(from);
+            StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
             StorageItem storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
             if (amount.IsZero)
             {
@@ -152,7 +146,7 @@ namespace Neo.SmartContract.Native.Tokens
                         engine.Snapshot.Storages.Delete(key_from);
                     else
                         state_from.Balance -= amount;
-                    StorageKey key_to = CreateAccountKey(to);
+                    StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
                     StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem(new TState()));
                     TState state_to = storage_to.GetInteroperable<TState>();
                     OnBalanceChanging(engine, to, state_to, amount);

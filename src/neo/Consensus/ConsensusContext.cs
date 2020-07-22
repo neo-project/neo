@@ -41,7 +41,7 @@ namespace Neo.Consensus
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
         /// </summary>
-        public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
+        public TransactionVerificationContext VerificationContext = new TransactionVerificationContext();
 
         public SnapshotView Snapshot { get; private set; }
         private KeyPair keyPair;
@@ -130,18 +130,18 @@ namespace Neo.Consensus
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
-            PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
-            CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
-            ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
-            LastChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
+            PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
+            CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
+            ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
+            LastChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
-            SendersFeeMonitor = new SendersFeeMonitor();
+            VerificationContext = new TransactionVerificationContext();
             if (Transactions != null)
             {
                 foreach (Transaction tx in Transactions.Values)
-                    SendersFeeMonitor.AddSenderFee(tx);
+                    VerificationContext.AddTransaction(tx);
             }
         }
 
@@ -301,7 +301,7 @@ namespace Neo.Consensus
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
-            SendersFeeMonitor = new SendersFeeMonitor();
+            VerificationContext = new TransactionVerificationContext();
 
             // Expected block size
             var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
@@ -320,7 +320,7 @@ namespace Neo.Consensus
 
                 hashes.Add(tx.Hash);
                 Transactions.Add(tx.Hash, tx);
-                SendersFeeMonitor.AddSenderFee(tx);
+                VerificationContext.AddTransaction(tx);
             }
 
             TransactionHashes = hashes.ToArray();

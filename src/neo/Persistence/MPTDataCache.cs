@@ -4,6 +4,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.Persistence
 {
@@ -30,9 +31,10 @@ namespace Neo.Persistence
             mptTrie.Delete(key);
         }
 
-        protected override IEnumerable<(TKey Key, TValue Value)> FindInternal(byte[] key_prefix)
+        protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            return mptTrie.Find(key_prefix);
+            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            return mptTrie.Find(keyOrPrefix).OrderBy(p => p.Key.ToArray(), comparer);
         }
 
         protected override TValue GetInternal(TKey key)

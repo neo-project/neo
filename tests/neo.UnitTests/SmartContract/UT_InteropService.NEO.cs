@@ -9,7 +9,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -111,14 +110,19 @@ namespace Neo.UnitTests.SmartContract
                                     0x01, 0x01, 0x01, 0x01, 0x01,
                                     0x01, 0x01, 0x01, 0x01, 0x01,
                                     0x01, 0x01, 0x01, 0x01, 0x01 };
-            engine.IsStandardContract(new UInt160(hash)).Should().BeTrue();
+            engine.IsStandardContract(new UInt160(hash)).Should().BeFalse();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.Contracts.Add(state.ScriptHash, state);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.ScriptHash).Should().BeFalse();
+
+            state.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            engine.LoadScript(new byte[] { 0x01 });
+            engine.IsStandardContract(state.ScriptHash).Should().BeTrue();
         }
 
         [TestMethod]
@@ -137,7 +141,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.Contracts.Add(state.ScriptHash, state);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
             Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(state.Script, manifest.ToJson().ToByteArray(false)));
         }
@@ -180,7 +184,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(state.Script);
             engine.UpdateContract(script, manifest.ToJson().ToByteArray(false));
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
@@ -205,7 +209,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
             engine.LoadScript(new byte[] { 0x01 });
 
             var iterator = engine.Find(new StorageContext
@@ -296,8 +300,8 @@ namespace Neo.UnitTests.SmartContract
             };
             ret = engine.CreateIterator(map);
             ret.Next();
-            ret.Key().GetBigInteger().Should().Be(1);
-            ret.Value().GetBigInteger().Should().Be(2);
+            ret.Key().GetInteger().Should().Be(1);
+            ret.Value().GetInteger().Should().Be(2);
         }
 
         [TestMethod]
@@ -310,7 +314,7 @@ namespace Neo.UnitTests.SmartContract
             };
             var wrapper = new ArrayWrapper(arr);
             wrapper.Next();
-            engine.IteratorKey(wrapper).GetBigInteger().Should().Be(0);
+            engine.IteratorKey(wrapper).GetInteger().Should().Be(0);
         }
 
         [TestMethod]
@@ -324,7 +328,7 @@ namespace Neo.UnitTests.SmartContract
             var wrapper = new ArrayWrapper(arr);
             var ret = engine.IteratorKeys(wrapper);
             ret.Next();
-            ret.Value().GetBigInteger().Should().Be(0);
+            ret.Value().GetInteger().Should().Be(0);
         }
 
         [TestMethod]
@@ -363,7 +367,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestJson_Deserialize()
         {
-            GetEngine().JsonDeserialize(new byte[] { (byte)'1' }).GetBigInteger().Should().Be(1);
+            GetEngine().JsonDeserialize(new byte[] { (byte)'1' }).GetInteger().Should().Be(1);
         }
 
         [TestMethod]

@@ -8,10 +8,10 @@ namespace Neo.SmartContract.Callbacks
         public InteropDescriptor Method { get; }
         public override int ParametersCount => Method.Parameters.Length;
 
-        public SyscallCallback(uint method)
+        public SyscallCallback(uint method, bool check = true)
         {
             this.Method = ApplicationEngine.Services[method];
-            if (!Method.AllowCallback)
+            if (check && !Method.AllowCallback)
                 throw new InvalidOperationException("This SYSCALL is not allowed for creating callback.");
         }
 

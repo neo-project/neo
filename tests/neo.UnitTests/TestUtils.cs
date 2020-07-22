@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
@@ -21,18 +22,19 @@ namespace Neo.UnitTests
         {
             return new ContractManifest()
             {
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Groups = new ContractGroup[0],
+                Features = ContractFeatures.NoProperty,
+                SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
                     Events = new ContractEventDescriptor[0],
                     Methods = new ContractMethodDescriptor[0]
                 },
-                Features = ContractFeatures.NoProperty,
-                Groups = new ContractGroup[0],
-                SafeMethods = WildcardContainer<string>.Create(),
+                Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                Extra = null,
+                SafeMethods = WildcardContainer<string>.Create(),
+                Extra = null
             };
         }
 
@@ -55,6 +57,15 @@ namespace Neo.UnitTests
             return manifest;
         }
 
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
+        {
+            return new StorageKey
+            {
+                Id = contract.Id,
+                Key = key.ToArray().Prepend(prefix).ToArray()
+            };
+        }
+
         public static byte[] GetByteArray(int length, byte firstByte)
         {
             byte[] array = new byte[length];
@@ -70,7 +81,7 @@ namespace Neo.UnitTests
         {
             JObject wallet = new JObject();
             wallet["name"] = "noname";
-            wallet["version"] = new System.Version("3.0").ToString();
+            wallet["version"] = new Version("3.0").ToString();
             wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
@@ -78,13 +89,17 @@ namespace Neo.UnitTests
             return new NEP6Wallet(wallet);
         }
 
-        public static Transaction GetTransaction()
+        public static Transaction GetTransaction(UInt160 sender)
         {
             return new Transaction
             {
                 Script = new byte[1],
-                Sender = UInt160.Zero,
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new[]{ new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CalledByEntry
+                } },
                 Witnesses = new Witness[]{ new Witness
                 {
                     InvocationScript = new byte[0],
@@ -144,7 +159,7 @@ namespace Neo.UnitTests
             {
                 for (int i = 0; i < numberOfTransactions; i++)
                 {
-                    transactionsVal[i] = TestUtils.GetTransaction();
+                    transactionsVal[i] = TestUtils.GetTransaction(UInt160.Zero);
                 }
             }
 
@@ -179,8 +194,8 @@ namespace Neo.UnitTests
             return new Transaction
             {
                 Script = randomBytes,
-                Sender = UInt160.Zero,
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 Witnesses = new[]
                 {
                     new Witness

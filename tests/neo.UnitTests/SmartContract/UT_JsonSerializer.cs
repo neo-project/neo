@@ -1,7 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
@@ -204,9 +203,7 @@ namespace Neo.UnitTests.SmartContract
         public void Serialize_Number()
         {
             var entry = new VM.Types.Array { 1, 9007199254740992 };
-            var json = JsonSerializer.Serialize(entry).ToString();
-
-            Assert.AreEqual(json, "[1,\"9007199254740992\"]");
+            Assert.ThrowsException<InvalidOperationException>(() => JsonSerializer.Serialize(entry));
         }
 
         [TestMethod]
@@ -262,12 +259,12 @@ namespace Neo.UnitTests.SmartContract
             var map = (Map)items;
 
             Assert.IsTrue(map.TryGetValue("test1", out var value));
-            Assert.AreEqual(value.GetBigInteger(), 123);
+            Assert.AreEqual(value.GetInteger(), 123);
 
             Assert.IsTrue(map.TryGetValue("test2", out value));
-            Assert.AreEqual(value.GetBigInteger(), 321);
+            Assert.AreEqual(value.GetInteger(), 321);
 
-            CollectionAssert.AreEqual(map.Values.Select(u => u.GetBigInteger()).ToArray(), new BigInteger[] { 123, 321 });
+            CollectionAssert.AreEqual(map.Values.Select(u => u.GetInteger()).ToArray(), new BigInteger[] { 123, 321 });
         }
 
         [TestMethod]
@@ -277,7 +274,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[true,\"dGVzdA==\",123]");
+            Assert.AreEqual(json, "[true,\"test\",123]");
         }
 
         [TestMethod]
@@ -290,9 +287,9 @@ namespace Neo.UnitTests.SmartContract
 
             var array = (VM.Types.Array)items;
 
-            Assert.IsTrue(array[0].ToBoolean());
+            Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual(array[1].GetString(), "test");
-            Assert.AreEqual(array[2].GetBigInteger(), 123);
+            Assert.AreEqual(array[2].GetInteger(), 123);
         }
 
         [TestMethod]
@@ -306,7 +303,7 @@ namespace Neo.UnitTests.SmartContract
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[[true,\"dGVzdDE=\",123],[true,\"dGVzdDI=\",321]]");
+            Assert.AreEqual(json, "[[true,\"test1\",123],[true,\"test2\",321]]");
         }
 
         [TestMethod]
@@ -325,17 +322,17 @@ namespace Neo.UnitTests.SmartContract
             array = (VM.Types.Array)array[0];
             Assert.AreEqual(array.Count, 3);
 
-            Assert.IsTrue(array[0].ToBoolean());
+            Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual(array[1].GetString(), "test1");
-            Assert.AreEqual(array[2].GetBigInteger(), 123);
+            Assert.AreEqual(array[2].GetInteger(), 123);
 
             array = (VM.Types.Array)items;
             array = (VM.Types.Array)array[1];
             Assert.AreEqual(array.Count, 3);
 
-            Assert.IsTrue(array[0].ToBoolean());
+            Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual(array[1].GetString(), "test2");
-            Assert.AreEqual(array[2].GetBigInteger(), 321);
+            Assert.AreEqual(array[2].GetInteger(), 321);
         }
     }
 }
