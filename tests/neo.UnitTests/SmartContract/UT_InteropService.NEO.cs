@@ -9,6 +9,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -134,6 +135,15 @@ namespace Neo.UnitTests.SmartContract
 
             var manifest = TestUtils.CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
             Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(script, manifest.ToJson().ToByteArray(false)));
+
+            var script_exceedMaxLength = new byte[ApplicationEngine.MaxContractLength + 1];
+            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(script_exceedMaxLength, manifest.ToJson().ToByteArray(true)));
+
+            var script_zeroLength = new byte[] { };
+            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(script_zeroLength, manifest.ToJson().ToByteArray(true)));
+
+            var manifest_zeroLength = new byte[] { };
+            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(script, manifest_zeroLength));
 
             manifest.Abi.Hash = script.ToScriptHash();
             engine.CreateContract(script, manifest.ToJson().ToByteArray(false));

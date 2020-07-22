@@ -44,9 +44,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (state.VoteTo != null)
             {
                 engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo)).GetInteroperable<CandidateState>().Votes += amount;
-                StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
-                BigInteger votersCount = new BigInteger(item.Value) + amount;
-                item.Value = votersCount.ToByteArray();
+                engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
             }
         }
 
@@ -150,12 +148,10 @@ namespace Neo.SmartContract.Native.Tokens
             if (state_account.VoteTo is null ^ voteTo is null)
             {
                 StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
-                BigInteger votersCount = new BigInteger(item.Value);
                 if (state_account.VoteTo is null)
-                    votersCount += state_account.Balance;
+                    item.Add(state_account.Balance);
                 else
-                    votersCount -= state_account.Balance;
-                item.Value = votersCount.ToByteArray();
+                    item.Add(-state_account.Balance);
             }
             if (state_account.VoteTo != null)
             {
@@ -210,7 +206,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
-            decimal votersCount = (decimal)new BigInteger(snapshot.Storages[CreateStorageKey(Prefix_VotersCount)].Value);
+            decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
             decimal VoterTurnout = votersCount / (decimal)TotalAmount;
             if (VoterTurnout < EffectiveVoterTurnout)
                 return Blockchain.StandbyCommittee;
@@ -225,7 +221,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
             if (storage is null) return Blockchain.StandbyValidators;
-            return storage.Value.AsSerializableArray<ECPoint>();
+            return storage.GetSerializableList<ECPoint>().ToArray();
         }
 
         public class NeoAccountState : AccountState
