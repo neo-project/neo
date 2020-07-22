@@ -58,7 +58,7 @@ namespace Neo.SmartContract
             this.testMode = testMode;
         }
 
-        internal void AddGas(long gas)
+        protected internal void AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
             if (!testMode && GasConsumed > gas_amount)
