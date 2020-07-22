@@ -22,7 +22,7 @@ namespace Neo.SmartContract
             this.Name = name;
             this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(name).Sha256(), 0);
             this.Handler = handler;
-            this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList();
+            this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
             this.FixedPrice = fixedPrice;
             this.RequiredCallFlags = requiredCallFlags;
             this.AllowCallback = allowCallback;
