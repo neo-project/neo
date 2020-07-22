@@ -1,11 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.Wallets;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -146,15 +143,18 @@ namespace Neo.UnitTests.SmartContract
             });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
 
-            // True test
+            // Smart contract verification
 
             var contract = new ContractState()
             {
                 Script = "11".HexToBytes(), // 17 PUSH1
-                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
+                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };
             snapshot3.Contracts.Add(contract.ScriptHash, contract);
-            var tx = new Extensions.Nep5NativeContractExtensions.ManualWitness(contract.ScriptHash);
+            var tx = new Extensions.Nep5NativeContractExtensions.ManualWitness(contract.ScriptHash)
+            {
+                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] } }
+            };
 
             Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, snapshot3, 1000));
         }
