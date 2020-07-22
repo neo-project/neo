@@ -114,9 +114,9 @@ namespace Neo.SmartContract
             }
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
-            => applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
-                ?? new ApplicationEngine(trigger, container, snapshot, gas, testMode);
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false, OracleExecutionCache oracle = null)
+            => applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode, oracle)
+                ?? new ApplicationEngine(trigger, container, snapshot, gas, testMode, oracle);
 
         private InvocationState GetInvocationState(ExecutionContext context)
         {
@@ -280,36 +280,20 @@ namespace Neo.SmartContract
         }
 
         public static ApplicationEngine Run(byte[] script, StoreView snapshot,
-<<<<<<<
-            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long extraGAS = default, OracleExecutionCache oracle = null)
-=======
-            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
->>>>>>>
+            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default, OracleExecutionCache oracle = null)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-<<<<<<<
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode, oracle);
-=======
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode);
->>>>>>>
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode, oracle);
             engine.LoadScript(script).InstructionPointer = offset;
             engine.Execute();
             return engine;
         }
 
-<<<<<<<
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long extraGAS = default, OracleExecutionCache oracle = null)
-=======
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
->>>>>>>
+        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default, OracleExecutionCache oracle = null)
         {
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-<<<<<<<
-                return Run(script, snapshot, container, persistingBlock, offset, testMode, extraGAS, oracle);
-=======
-                return Run(script, snapshot, container, persistingBlock, offset, testMode, gas);
->>>>>>>
+                return Run(script, snapshot, container, persistingBlock, offset, testMode, gas, oracle);
             }
         }
 
