@@ -68,6 +68,11 @@ namespace Neo.UnitTests.Oracle
                                 new Neo.SmartContract.Manifest.ContractMethodDescriptor()
                                 {
                                      Name = filter.FilterMethod,
+                                     Parameters = new Neo.SmartContract.Manifest.ContractParameterDefinition[]
+                                     {
+                                         new Neo.SmartContract.Manifest.ContractParameterDefinition(){ Name= "method", Type = Neo.SmartContract.ContractParameterType.String},
+                                         new Neo.SmartContract.Manifest.ContractParameterDefinition(){ Name= "value", Type = Neo.SmartContract.ContractParameterType.String},
+                                     },
                                      ReturnType = Neo.SmartContract.ContractParameterType.ByteArray,
                                      Offset = 0
                                 }

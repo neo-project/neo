@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Ledger
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-            Blockchain.Singleton.MemPool.TryAdd(txSample.Hash, txSample);
+            Blockchain.Singleton.MemPool.TryAdd(txSample, Blockchain.Singleton.GetSnapshot());
         }
 
         [TestMethod]
@@ -73,13 +73,13 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetCurrentBlockHash()
         {
-            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1"));
+            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0xecaee33262f1bc7c7c28f2b25b54a5d61d50670871f45c0c6fe755a40cbde4a8"));
         }
 
         [TestMethod]
         public void TestGetCurrentHeaderHash()
         {
-            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1"));
+            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0xecaee33262f1bc7c7c28f2b25b54a5d61d50670871f45c0c6fe755a40cbde4a8"));
         }
 
         [TestMethod]
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlockHash()
         {
-            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0x557f5c9d0c865a211a749899681e5b4fbf745b3bcf0c395e6d6a7f1edb0d86f1"));
+            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0xecaee33262f1bc7c7c28f2b25b54a5d61d50670871f45c0c6fe755a40cbde4a8"));
             Blockchain.Singleton.GetBlockHash(10).Should().BeNull();
         }
 
@@ -109,33 +109,29 @@ namespace Neo.UnitTests.Ledger
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var walletA = TestUtils.GenerateTestWallet();
 
-            using (var unlockA = walletA.Unlock("123"))
-            {
-                var acc = walletA.CreateAccount();
+            using var unlockA = walletA.Unlock("123");
+            var acc = walletA.CreateAccount();
 
-                // Fake balance
+            // Fake balance
 
-                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(acc.ScriptHash);
+            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
 
-                entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            typeof(Blockchain)
+                .GetMethod("UpdateCurrentSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(Blockchain.Singleton, null);
 
-                snapshot.Commit();
+            // Make transaction
 
-                typeof(Blockchain)
-                    .GetMethod("UpdateCurrentSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
-                    .Invoke(Blockchain.Singleton, null);
+            var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
 
-                // Make transaction
+            senderProbe.Send(system.Blockchain, tx);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
 
-                var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
-
-                senderProbe.Send(system.Blockchain, tx);
-                senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
-
-                senderProbe.Send(system.Blockchain, tx);
-                senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
-            }
+            senderProbe.Send(system.Blockchain, tx);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
         }
 
         [TestMethod]
@@ -145,10 +141,10 @@ namespace Neo.UnitTests.Ledger
             var tx = new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = Array.Empty<Signer>(),
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[] { 1 },
-                Sender = UInt160.Zero,
                 SystemFee = 0,
                 ValidUntilBlock = Blockchain.GenesisBlock.Index + 1,
                 Version = 0,
@@ -184,9 +180,9 @@ namespace Neo.UnitTests.Ledger
                 {
                     new TransferOutput()
                     {
-                            AssetId = NativeContract.GAS.Hash,
-                            ScriptHash = account,
-                            Value = new BigDecimal(1,8)
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = account,
+                        Value = new BigDecimal(1,8)
                     }
                 },
                 account);
@@ -198,7 +194,6 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(data.Completed);
 
             tx.Witnesses = data.GetWitnesses();
-
             return tx;
         }
     }

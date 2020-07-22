@@ -9,6 +9,7 @@ namespace Neo.Network.P2P.Payloads
     public abstract class TransactionAttribute : ISerializable
     {
         public abstract TransactionAttributeType Type { get; }
+        public abstract bool AllowMultiple { get; }
         public virtual int Size => sizeof(TransactionAttributeType);
 
         public void Deserialize(BinaryReader reader)

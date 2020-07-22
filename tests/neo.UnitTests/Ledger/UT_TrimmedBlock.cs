@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetIsBlock()
         {
             TrimmedBlock block = GetTrimmedBlockWithNoTransaction();
-            block.Hashes = new UInt256[] { TestUtils.GetTransaction().Hash };
+            block.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             block.IsBlock.Should().BeTrue();
         }
 
@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetBlock()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var tx1 = TestUtils.GetTransaction();
+            var tx1 = TestUtils.GetTransaction(UInt160.Zero);
             tx1.Script = new byte[] { 0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,
@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Ledger
                 Transaction = tx1,
                 BlockIndex = 1
             };
-            var tx2 = TestUtils.GetTransaction();
+            var tx2 = TestUtils.GetTransaction(UInt160.Zero);
             tx2.Script = new byte[] { 0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction().Hash };
+            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             tblock.Size.Should().Be(146);
         }
 
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.Ledger
         public void TestDeserialize()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction().Hash };
+            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             var newBlock = new TrimmedBlock();
             using (MemoryStream ms = new MemoryStream(1024))
             using (BinaryWriter writer = new BinaryWriter(ms))
@@ -119,7 +119,7 @@ namespace Neo.UnitTests.Ledger
         public void TestClone()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction().Hash };
+            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             ICloneable<TrimmedBlock> cloneable = tblock;
             var clonedBlock = cloneable.Clone();
             clonedBlock.ToJson().ToString().Should().Be(tblock.ToJson().ToString());
@@ -129,7 +129,7 @@ namespace Neo.UnitTests.Ledger
         public void TestFromReplica()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction().Hash };
+            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             ICloneable<TrimmedBlock> cloneable = new TrimmedBlock();
             cloneable.FromReplica(tblock);
             ((TrimmedBlock)cloneable).ToJson().ToString().Should().Be(tblock.ToJson().ToString());

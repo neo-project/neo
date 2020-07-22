@@ -22,7 +22,7 @@ namespace Neo.SmartContract.Native.Oracle
         {
             var array = (VM.Types.Array)stackItem;
 
-            TimeOut = (int)array[0].GetBigInteger();
+            TimeOut = (int)array[0].GetInteger();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)

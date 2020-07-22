@@ -83,7 +83,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["address"] = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             json["key"] = null;
             json["label"] = null;
-            json["isDefault"] = true;
+            json["isdefault"] = true;
             json["lock"] = false;
             json["contract"] = null;
             json["extra"] = null;
@@ -138,7 +138,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject json = _account.ToJson();
             json["address"].Should().Equals("AZk5bAanTtD6AvpeesmYgL8CLRYUt5JQsX");
             json["label"].Should().BeNull();
-            json["isDefault"].ToString().Should().Be("false");
+            json["isdefault"].ToString().Should().Be("false");
             json["lock"].ToString().Should().Be("false");
             json["key"].Should().BeNull();
             json["contract"]["script"].ToString().Should().Be(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""");

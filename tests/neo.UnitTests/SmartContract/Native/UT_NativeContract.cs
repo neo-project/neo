@@ -5,6 +5,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -23,48 +24,40 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestInitialize()
         {
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0);
-
-            testNativeContract.Initialize(ae).Should().BeTrue();
-
-            ae = new ApplicationEngine(TriggerType.System, null, null, 0);
-            Action action = () => testNativeContract.Initialize(ae);
-            action.Should().Throw<InvalidOperationException>();
+            ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0);
+            testNativeContract.Initialize(ae);
         }
 
         [TestMethod]
         public void TestInvoke()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0);
             engine.LoadScript(testNativeContract.Script);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             VMArray args1 = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(args1);
             engine.CurrentContext.EvaluationStack.Push(method1);
-            testNativeContract.Invoke(engine).Should().BeFalse();
+            Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine));
 
             ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("onPersist"));
             VMArray args2 = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(args2);
             engine.CurrentContext.EvaluationStack.Push(method2);
-            testNativeContract.Invoke(engine).Should().BeTrue();
+            testNativeContract.Invoke(engine);
         }
 
         [TestMethod]
         public void TestOnPersistWithArgs()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            VMArray args = new VMArray();
 
-            VM.Types.Boolean result1 = new VM.Types.Boolean(false);
-            testNativeContract.TestOnPersist(engine1, args).Should().Be(result1);
+            ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
+            Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestOnPersist(engine1));
 
-            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.System, null, snapshot, 0);
-            VM.Types.Boolean result2 = new VM.Types.Boolean(true);
-            testNativeContract.TestOnPersist(engine2, args).Should().Be(result2);
+            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0);
+            testNativeContract.TestOnPersist(engine2);
         }
 
         [TestMethod]
@@ -81,9 +74,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
         public override int Id => 0x10000006;
 
-        public StackItem TestOnPersist(ApplicationEngine engine, VMArray args)
+        public void TestOnPersist(ApplicationEngine engine)
         {
-            return OnPersist(engine, args);
+            OnPersist(engine);
         }
     }
 }

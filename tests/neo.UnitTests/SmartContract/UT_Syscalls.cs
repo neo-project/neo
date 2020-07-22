@@ -11,7 +11,7 @@ using Array = System.Array;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public class UT_Syscalls
+    public partial class UT_Syscalls
     {
         [TestInitialize]
         public void TestSetup()
@@ -26,13 +26,13 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = Array.Empty<Signer>(),
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
-                Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
             };
 
             var block = new Block()
@@ -57,11 +57,11 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush(block.Hash.ToArray());
-                script.EmitSysCall(InteropService.Blockchain.GetBlock);
+                script.EmitSysCall(ApplicationEngine.System_Blockchain_GetBlock);
 
                 // Without block
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
                 blocks.Add(block.Hash, block.Trim());
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
 
-                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -89,16 +89,14 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                script.EmitSysCall(InteropService.Json.Serialize);
-                engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
-                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    "5b2261564e62466b35384f51717547373870747154766561762f48677941566a72634e41434d4e59705c7530303242366f6f3d222c332c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c322c302c224141414141414141414141414141414141414141414141414141413d222c315d");
-                Assert.AreEqual(0, engine.ResultStack.Count);
+
+                var array = engine.ResultStack.Pop<VM.Types.Array>();
+                Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
 
                 // Clean
 
@@ -115,19 +113,19 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("123");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
                 script.EmitPush("null");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(2, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<Null>(out _));
-                    Assert.IsTrue(engine.ResultStack.TryPop<Integer>(out var i) && i.GetBigInteger() == 123);
+                    engine.ResultStack.Pop<Null>();
+                    Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
                 }
             }
 
@@ -136,9 +134,9 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("***");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -152,9 +150,9 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush("123.45");
-                script.EmitSysCall(InteropService.Json.Deserialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -172,33 +170,33 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush(5);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.Emit(OpCode.PUSH0);
                 script.Emit(OpCode.NOT);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.EmitPush("test");
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.Emit(OpCode.PUSHNULL);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
                 script.Emit(OpCode.NEWMAP);
                 script.Emit(OpCode.DUP);
                 script.EmitPush("key");
                 script.EmitPush("value");
                 script.Emit(OpCode.SETITEM);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
                     Assert.AreEqual(engine.Execute(), VMState.HALT);
                     Assert.AreEqual(5, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var m) && m.GetString() == "{\"key\":\"dmFsdWU=\"}");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var n) && n.GetString() == "null");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var s) && s.GetString() == "\"dGVzdA==\"");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var b) && b.GetString() == "true");
-                    Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var i) && i.GetString() == "5");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "true");
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
                 }
             }
 
@@ -206,10 +204,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Storage.GetContext);
-                script.EmitSysCall(InteropService.Json.Serialize);
+                script.EmitSysCall(ApplicationEngine.System_Storage_GetContext);
+                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
-                using (var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, true))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -225,11 +223,11 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Runtime.GetScriptContainer);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer);
 
                 // Without tx
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -238,11 +236,10 @@ namespace Neo.UnitTests.SmartContract
 
                 // With tx
 
-                script.EmitSysCall(InteropService.Json.Serialize);
-
                 var tx = new Transaction()
                 {
                     Script = new byte[] { 0x01 },
+                    Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.FeeOnly } },
                     Attributes = Array.Empty<TransactionAttribute>(),
                     NetworkFee = 0x02,
                     SystemFee = 0x03,
@@ -250,18 +247,16 @@ namespace Neo.UnitTests.SmartContract
                     ValidUntilBlock = 0x05,
                     Version = 0x06,
                     Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
-                    Sender = UInt160.Parse("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
                 };
 
-                engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(ByteString));
-                Assert.AreEqual(engine.ResultStack.Pop().GetSpan().ToHexString(),
-                    @"5b224435724a376f755c753030324256574845456c5c75303032426e74486b414a424f614c4a6737496776303356337a4953646d6750413d222c362c342c222f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f383d222c332c322c352c2241513d3d225d");
-                Assert.AreEqual(0, engine.ResultStack.Count);
+
+                var array = engine.ResultStack.Pop<VM.Types.Array>();
+                Assert.AreEqual(tx.Hash, new UInt256(array[0].GetSpan()));
             }
         }
 
@@ -273,17 +268,17 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.Emit(OpCode.NOP);
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
                 script.Emit(OpCode.NOP);
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
                 script.Emit(OpCode.NOP);
                 script.Emit(OpCode.NOP);
                 script.Emit(OpCode.NOP);
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
 
                 // Execute
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 100_000_000, false);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000, false);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -291,7 +286,7 @@ namespace Neo.UnitTests.SmartContract
 
                 CollectionAssert.AreEqual
                     (
-                    engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
+                    engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[] { 99_999_570, 99_999_140, 99_998_650 }
                     );
             }
@@ -300,11 +295,11 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Runtime.GasLeft);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
 
                 // Execute
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
 
                 // Check the results
@@ -312,7 +307,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(-1, engine.ResultStack.Pop().GetBigInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop().GetInteger());
             }
         }
 
@@ -327,7 +322,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitSysCall(InteropService.Runtime.GetInvocationCounter);
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GetInvocationCounter);
 
                 contractA = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() };
                 contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
@@ -339,9 +334,9 @@ namespace Neo.UnitTests.SmartContract
                 contracts.Delete(contractA.ScriptHash);
                 contracts.Delete(contractB.ScriptHash);
                 contracts.Delete(contractC.ScriptHash);
-                contractA.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
-                contractB.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
-                contractC.Manifest = TestUtils.CreateDefaultManifest(contractA.ScriptHash, "dummyMain");
+                contractA.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractB.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractC.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
                 contracts.Add(contractA.ScriptHash, contractA);
                 contracts.Add(contractB.ScriptHash, contractB);
                 contracts.Add(contractC.ScriptHash, contractC);
@@ -358,7 +353,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
 
@@ -366,7 +361,7 @@ namespace Neo.UnitTests.SmartContract
 
                 CollectionAssert.AreEqual
                     (
-                    engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
+                    engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
                     new int[]
                         {
                         1, /* A */

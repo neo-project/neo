@@ -281,7 +281,7 @@ namespace Neo.UnitTests.Oracle
                     new OracleRequestAttribute()
                 },
                 Script = script.ToArray(),
-                Sender = UInt160.Zero,
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.CalledByEntry } },
                 Witnesses = new Witness[0],
                 NetworkFee = 1_000_000,
                 SystemFee = 1_000_000,
@@ -325,12 +325,12 @@ namespace Neo.UnitTests.Oracle
 
                 Assert.ThrowsException<InvalidOperationException>(() =>
                 {
-                    _ = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], oracle: OracleWalletBehaviour.WithoutOracle);
+                    _ = wallet.MakeTransaction(script, acc.ScriptHash, oracle: OracleWalletBehaviour.WithoutOracle);
                 });
 
                 // OracleWithoutAssert
 
-                var txWithout = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], oracle: OracleWalletBehaviour.OracleWithoutAssert);
+                var txWithout = wallet.MakeTransaction(script, acc.ScriptHash, oracle: OracleWalletBehaviour.OracleWithoutAssert);
 
                 Assert.IsNotNull(txWithout);
                 Assert.IsNull(txWithout.Witnesses);
@@ -338,7 +338,7 @@ namespace Neo.UnitTests.Oracle
 
                 // OracleWithoutAssert
 
-                var txWith = wallet.MakeTransaction(script, acc.ScriptHash, new TransactionAttribute[0], oracle: OracleWalletBehaviour.OracleWithAssert);
+                var txWith = wallet.MakeTransaction(script, acc.ScriptHash, oracle: OracleWalletBehaviour.OracleWithAssert);
 
                 Assert.IsNotNull(txWith);
                 Assert.IsNull(txWith.Witnesses);

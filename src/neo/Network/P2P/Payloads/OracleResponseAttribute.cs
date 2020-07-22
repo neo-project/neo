@@ -8,6 +8,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 RequestTx;
 
         public override int Size => base.Size + UInt256.Length;
+        public override bool AllowMultiple => false;
 
         public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
 

@@ -70,7 +70,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
         /// </summary>
-        public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
+        private TransactionVerificationContext VerificationContext = new TransactionVerificationContext();
 
         /// <summary>
         /// Total count of transactions in the pool.
@@ -282,18 +282,21 @@ namespace Neo.Ledger
         /// <param name="hash"></param>
         /// <param name="tx"></param>
         /// <returns></returns>
-        internal bool TryAdd(UInt256 hash, Transaction tx)
+        internal VerifyResult TryAdd(Transaction tx, StoreView snapshot)
         {
             var poolItem = new PoolItem(tx);
 
-            if (_unsortedTransactions.ContainsKey(hash)) return false;
+            if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyExists;
 
             List<Transaction> removedTransactions = null;
             _txRwLock.EnterWriteLock();
             try
             {
-                _unsortedTransactions.Add(hash, poolItem);
-                SendersFeeMonitor.AddSenderFee(tx);
+                VerifyResult result = tx.Verify(snapshot, VerificationContext);
+                if (result != VerifyResult.Succeed) return result;
+
+                _unsortedTransactions.Add(tx.Hash, poolItem);
+                VerificationContext.AddTransaction(tx);
                 _sortedTransactions.Add(poolItem);
 
                 if (Count > Capacity)
@@ -311,7 +314,8 @@ namespace Neo.Ledger
                     plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
             }
 
-            return _unsortedTransactions.ContainsKey(hash);
+            if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
+            return VerifyResult.Succeed;
         }
 
         private List<Transaction> RemoveOverCapacity()
@@ -324,6 +328,9 @@ namespace Neo.Ledger
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
                 removedTransactions.Add(minItem.Tx);
+
+                if (ReferenceEquals(sortedPool, _sortedTransactions))
+                    VerificationContext.RemoveTransaction(minItem.Tx);
             } while (Count > Capacity);
 
             return removedTransactions;
@@ -336,7 +343,6 @@ namespace Neo.Ledger
                 return false;
 
             _unsortedTransactions.Remove(hash);
-            SendersFeeMonitor.RemoveSenderFee(item.Tx);
             _sortedTransactions.Remove(item);
 
             return true;
@@ -364,7 +370,7 @@ namespace Neo.Ledger
 
             // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
-            SendersFeeMonitor = new SendersFeeMonitor();
+            VerificationContext = new TransactionVerificationContext();
             _sortedTransactions.Clear();
         }
 
@@ -434,23 +440,23 @@ namespace Neo.Ledger
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
 
-            // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
-            foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
-            {
-                if (item.Tx.VerifyForEachBlock(snapshot, SendersFeeMonitor.GetSenderFee(item.Tx.Sender)) == VerifyResult.Succeed)
-                {
-                    reverifiedItems.Add(item);
-                    SendersFeeMonitor.AddSenderFee(item.Tx);
-                }
-                else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
-                    invalidItems.Add(item);
-
-                if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
-            }
-
             _txRwLock.EnterWriteLock();
             try
             {
+                // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
+                foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
+                {
+                    if (item.Tx.VerifyForEachBlock(snapshot, VerificationContext) == VerifyResult.Succeed)
+                    {
+                        reverifiedItems.Add(item);
+                        VerificationContext.AddTransaction(item.Tx);
+                    }
+                    else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
+                        invalidItems.Add(item);
+
+                    if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
+                }
+
                 int blocksTillRebroadcast = BlocksTillRebroadcast;
                 // Increases, proportionally, blocksTillRebroadcast if mempool has more items than threshold bigger RebroadcastMultiplierThreshold
                 if (Count > RebroadcastMultiplierThreshold)
@@ -472,7 +478,7 @@ namespace Neo.Ledger
                         }
                     }
                     else
-                        SendersFeeMonitor.RemoveSenderFee(item.Tx);
+                        VerificationContext.RemoveTransaction(item.Tx);
 
                     _unverifiedTransactions.Remove(item.Tx.Hash);
                     unverifiedSortedTxPool.Remove(item);

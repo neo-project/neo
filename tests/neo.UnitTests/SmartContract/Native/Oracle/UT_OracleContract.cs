@@ -38,7 +38,8 @@ namespace Neo.UnitTests.Oracle
             snapshot.Storages.Delete(CreateStorageKey(11));
             snapshot.PersistingBlock = Blockchain.GenesisBlock;
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-            NativeContract.Oracle.Initialize(engine).Should().BeFalse(); // already registered
+
+            Assert.ThrowsException<ArgumentException>(() => NativeContract.Oracle.Initialize(engine)); // already registered
         }
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
@@ -85,7 +86,7 @@ namespace Neo.UnitTests.Oracle
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
 
-                Assert.IsTrue(engine.ResultStack.TryPop<ByteString>(out var response));
+                var response = engine.ResultStack.Pop<ByteString>();
                 Assert.AreEqual("MyResponse", response.GetString());
             }
 
@@ -102,7 +103,8 @@ namespace Neo.UnitTests.Oracle
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
 
-                Assert.IsTrue(engine.ResultStack.TryPop<Null>(out var isNull));
+                var isNull = engine.ResultStack.Pop<Null>();
+                Assert.IsTrue(isNull.IsNull);
             }
 
             // Wrong schema
@@ -161,7 +163,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsTrue((result as VM.Types.Boolean).GetBoolean());
 
             // Set (wrong witness)
             script = new ScriptBuilder();
@@ -172,7 +174,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsFalse((result as VM.Types.Boolean).GetBoolean());
 
             // Set wrong (negative)
 
@@ -184,7 +186,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsFalse((result as VM.Types.Boolean).GetBoolean());
 
             // Get
 
@@ -239,7 +241,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsFalse((result as VM.Types.Boolean).GetBoolean());
 
             // Set good
 
@@ -251,7 +253,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsTrue((result as VM.Types.Boolean).GetBoolean());
 
             // Get
 
@@ -264,7 +266,7 @@ namespace Neo.UnitTests.Oracle
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
             var array = (VM.Types.Array)result;
-            Assert.AreEqual(array[0].GetBigInteger(), new BigInteger(value.TimeOut));
+            Assert.AreEqual(array[0].GetInteger(), new BigInteger(value.TimeOut));
         }
 
         [TestMethod]
@@ -375,7 +377,7 @@ namespace Neo.UnitTests.Oracle
             };
             snapshot.Storages.Add(invalidOracleValidatorKey, invalidOracleValidatorValue);
 
-            var tx = wallet.MakeTransaction(sb.ToArray(), account.ScriptHash, new TransactionAttribute[] { });
+            var tx = wallet.MakeTransaction(sb.ToArray(), account.ScriptHash);
             ContractParametersContext context = new ContractParametersContext(tx);
             wallet.Sign(context);
             tx.Witnesses = context.GetWitnesses();
@@ -387,7 +389,7 @@ namespace Neo.UnitTests.Oracle
             state.Should().Be(VMState.HALT);
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsFalse((result as VM.Types.Boolean).GetBoolean());
 
             //wrong witness
             using ScriptBuilder sb2 = new ScriptBuilder();
@@ -409,7 +411,7 @@ namespace Neo.UnitTests.Oracle
             state.Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsFalse((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsFalse((result as VM.Types.Boolean).GetBoolean());
 
             //correct
             from = Contract.CreateSignatureContract(pubkey0).ScriptHash;
@@ -420,7 +422,7 @@ namespace Neo.UnitTests.Oracle
             engine.Execute().Should().Be(VMState.HALT);
             result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));
-            Assert.IsTrue((result as VM.Types.Boolean).ToBoolean());
+            Assert.IsTrue((result as VM.Types.Boolean).GetBoolean());
 
             // The invalid oracle validator should be removed
             Assert.IsNull(snapshot.Storages.TryGet(invalidOracleValidatorKey));

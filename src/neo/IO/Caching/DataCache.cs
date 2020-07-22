@@ -151,55 +151,18 @@ namespace Neo.IO.Caching
         /// <returns>Entries found with the desired prefix</returns>
         public IEnumerable<(TKey Key, TValue Value)> Find(byte[] key_prefix = null)
         {
-            IEnumerable<(byte[], TKey, TValue)> cached;
-            lock (dictionary)
-            {
-                cached = dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().AsSpan().StartsWith(key_prefix)))
-                    .Select(p =>
-                    (
-                        KeyBytes: p.Key.ToArray(),
-                        p.Key,
-                        p.Value.Item
-                    ))
-                    .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
-                    .ToArray();
-            }
-            var uncached = FindInternal(key_prefix ?? Array.Empty<byte>())
-                .Where(p => !dictionary.ContainsKey(p.Key))
-                .Select(p =>
-                (
-                    KeyBytes: p.Key.ToArray(),
-                    p.Key,
-                    p.Value
-                ));
-            using (var e1 = cached.GetEnumerator())
-            using (var e2 = uncached.GetEnumerator())
-            {
-                (byte[] KeyBytes, TKey Key, TValue Item) i1, i2;
-                bool c1 = e1.MoveNext();
-                bool c2 = e2.MoveNext();
-                i1 = c1 ? e1.Current : default;
-                i2 = c2 ? e2.Current : default;
-                while (c1 || c2)
-                {
-                    if (!c2 || (c1 && ByteArrayComparer.Default.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
-                    {
-                        yield return (i1.Key, i1.Item);
-                        c1 = e1.MoveNext();
-                        i1 = c1 ? e1.Current : default;
-                    }
-                    else
-                    {
-                        yield return (i2.Key, i2.Item);
-                        c2 = e2.MoveNext();
-                        i2 = c2 ? e2.Current : default;
-                    }
-                }
-            }
+            foreach (var (key, value) in Seek(key_prefix, SeekDirection.Forward))
+                if (key.ToArray().AsSpan().StartsWith(key_prefix))
+                    yield return (key, value);
         }
 
-        protected abstract IEnumerable<(TKey Key, TValue Value)> FindInternal(byte[] key_prefix);
+        public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end)
+        {
+            var endKey = end.ToArray();
+            foreach (var (key, value) in Seek(start.ToArray(), SeekDirection.Forward))
+                if (ByteArrayComparer.Default.Compare(key.ToArray(), endKey) < 0)
+                    yield return (key, value);
+        }
 
         public IEnumerable<Trackable> GetChangeSet()
         {
@@ -296,6 +259,67 @@ namespace Neo.IO.Caching
                 return trackable.Item;
             }
         }
+
+        /// <summary>
+        /// Seek to the entry with specific key
+        /// </summary>
+        /// <param name="keyOrPrefix">The key to be sought</param>
+        /// <param name="direction">The direction of seek</param>
+        /// <returns>An enumerator containing all the entries after seeking.</returns>
+        public IEnumerable<(TKey Key, TValue Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        {
+            IEnumerable<(byte[], TKey, TValue)> cached;
+            HashSet<TKey> cachedKeySet;
+            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            lock (dictionary)
+            {
+                cached = dictionary
+                    .Where(p => p.Value.State != TrackState.Deleted && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
+                    .Select(p =>
+                    (
+                        KeyBytes: p.Key.ToArray(),
+                        p.Key,
+                        p.Value.Item
+                    ))
+                    .OrderBy(p => p.KeyBytes, comparer)
+                    .ToArray();
+                cachedKeySet = new HashSet<TKey>(dictionary.Keys);
+            }
+            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
+                .Where(p => !cachedKeySet.Contains(p.Key))
+                .Select(p =>
+                (
+                    KeyBytes: p.Key.ToArray(),
+                    p.Key,
+                    p.Value
+                ));
+            using (var e1 = cached.GetEnumerator())
+            using (var e2 = uncached.GetEnumerator())
+            {
+                (byte[] KeyBytes, TKey Key, TValue Item) i1, i2;
+                bool c1 = e1.MoveNext();
+                bool c2 = e2.MoveNext();
+                i1 = c1 ? e1.Current : default;
+                i2 = c2 ? e2.Current : default;
+                while (c1 || c2)
+                {
+                    if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
+                    {
+                        yield return (i1.Key, i1.Item);
+                        c1 = e1.MoveNext();
+                        i1 = c1 ? e1.Current : default;
+                    }
+                    else
+                    {
+                        yield return (i2.Key, i2.Item);
+                        c2 = e2.MoveNext();
+                        i2 = c2 ? e2.Current : default;
+                    }
+                }
+            }
+        }
+
+        protected abstract IEnumerable<(TKey Key, TValue Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction);
 
         public TValue TryGet(TKey key)
         {

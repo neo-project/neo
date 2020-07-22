@@ -40,7 +40,7 @@ namespace Neo.Consensus
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
         /// </summary>
-        public SendersFeeMonitor SendersFeeMonitor = new SendersFeeMonitor();
+        public TransactionVerificationContext VerificationContext = new TransactionVerificationContext();
 
         public SnapshotView Snapshot { get; private set; }
         private KeyPair keyPair;
@@ -109,18 +109,18 @@ namespace Neo.Consensus
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
-            PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
-            CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
-            ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
-            LastChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.MaxValidatorsCount);
+            PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
+            CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
+            ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
+            LastChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
-            SendersFeeMonitor = new SendersFeeMonitor();
+            VerificationContext = new TransactionVerificationContext();
             if (Transactions != null)
             {
                 foreach (Transaction tx in Transactions.Values)
-                    SendersFeeMonitor.AddSenderFee(tx);
+                    VerificationContext.AddTransaction(tx);
             }
         }
 
@@ -220,6 +220,14 @@ namespace Neo.Consensus
         }
 
         /// <summary>
+        /// Return the expected block system fee
+        /// </summary>
+        internal long GetExpectedBlockSystemFee()
+        {
+            return Transactions.Values.Sum(u => u.SystemFee);  // Sum Txs
+        }
+
+        /// <summary>
         /// Return the expected block size without txs
         /// </summary>
         /// <param name="expectedTransactions">Expected transactions</param>
@@ -248,30 +256,36 @@ namespace Neo.Consensus
         /// Prevent that block exceed the max size
         /// </summary>
         /// <param name="txs">Ordered transactions</param>
-        internal void EnsureMaxBlockSize(IEnumerable<Transaction> txs)
+        internal void EnsureMaxBlockLimitation(IEnumerable<Transaction> txs)
         {
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
+            long maxBlockSystemFee = NativeContract.Policy.GetMaxBlockSystemFee(Snapshot);
             uint maxTransactionsPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot);
 
             // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
-            SendersFeeMonitor = new SendersFeeMonitor();
+            VerificationContext = new TransactionVerificationContext();
 
             // Expected block size
             var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
+            var blockSystemFee = 0L;
 
-            // Iterate transaction until reach the size
+            // Iterate transaction until reach the size or maximum system fee
             foreach (Transaction tx in txs)
             {
                 // Check if maximum block size has been already exceeded with the current selected set
                 blockSize += tx.Size;
                 if (blockSize > maxBlockSize) break;
 
+                // Check if maximum block system fee has been already exceeded with the current selected set
+                blockSystemFee += tx.SystemFee;
+                if (blockSystemFee > maxBlockSystemFee) break;
+
                 hashes.Add(tx.Hash);
                 Transactions.Add(tx.Hash, tx);
-                SendersFeeMonitor.AddSenderFee(tx);
+                VerificationContext.AddTransaction(tx);
             }
 
             TransactionHashes = hashes.ToArray();
@@ -283,7 +297,7 @@ namespace Neo.Consensus
             Span<byte> buffer = stackalloc byte[sizeof(ulong)];
             random.NextBytes(buffer);
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer);
-            EnsureMaxBlockSize(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
+            EnsureMaxBlockLimitation(Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions());
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
 
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest

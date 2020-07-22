@@ -568,18 +568,20 @@ namespace Neo.Oracle
                 ValidUntilBlock = requestTx.ValidUntilBlock,
                 Attributes = new TransactionAttribute[]
                 {
-                    new Cosigner()
-                    {
-                        Account = contract.ScriptHash,
-                        AllowedContracts = new UInt160[]{ NativeContract.Oracle.Hash },
-                        Scopes = WitnessScope.CustomContracts
-                    },
                     new OracleResponseAttribute()
                     {
                          RequestTx = requestTx.Hash,
                     }
                 },
-                Sender = contract.ScriptHash,
+                Signers = new Signer[]
+                {
+                    new Signer()
+                    {
+                        Account = contract.ScriptHash,
+                        AllowedContracts = new UInt160[]{ NativeContract.Oracle.Hash },
+                        Scopes = WitnessScope.CustomContracts
+                    }
+                },
                 Witnesses = new Witness[0],
                 Script = script.ToArray(),
                 NetworkFee = 0,

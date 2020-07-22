@@ -33,38 +33,33 @@ namespace Neo.SmartContract.Native.Oracle
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        internal override bool Initialize(ApplicationEngine engine)
+        internal override void Initialize(ApplicationEngine engine)
         {
-            if (!base.Initialize(engine)) return false;
-            if (GetPerRequestFee(engine.Snapshot) != 0) return false;
+            base.Initialize(engine);
+            if (GetPerRequestFee(engine) != 0) throw new ArgumentException("Already initialized");
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config,
-                Encoding.UTF8.GetBytes(HttpConfig.Key)), new StorageItem(new HttpConfig(), false));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Config).Add(Encoding.UTF8.GetBytes(HttpConfig.Key)), new StorageItem(new HttpConfig(), false));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_PerRequestFee), new StorageItem
             {
                 Value = BitConverter.GetBytes(1000)
             });
-            return true;
         }
 
         /// <summary>
         /// Set Oracle Response Only
         /// </summary>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "transactionHash", "oracleResponse" })]
-        private StackItem SetOracleResponse(ApplicationEngine engine, Array args)
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetOracleResponse(ApplicationEngine engine, UInt256 txHash, byte[] response)
         {
-            if (args.Count != 2) return false;
-
             UInt160 account = GetOracleMultiSigAddress(engine.Snapshot);
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
+            if (!engine.CheckWitnessInternal(account)) return false;
 
             // This only can be called by the oracle's multi signature
 
-            var txHash = args[0].GetSpan().AsSerializable<UInt256>();
-            var response = args[1].GetSpan().AsSerializable<OracleExecutionCache>();
+            var oracleResponse = response.AsSerializable<OracleExecutionCache>();
 
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse, txHash.ToArray()), () => new StorageItem());
-            storage.Value = IO.Helper.ToArray(response);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_OracleResponse).Add(txHash), () => new StorageItem());
+            storage.Value = IO.Helper.ToArray(oracleResponse);
             return false;
         }
 
@@ -75,7 +70,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="txHash">Transaction Hash</param>
         public bool ContainsResponse(StoreView snapshot, UInt256 txHash)
         {
-            StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
+            StorageKey key = CreateStorageKey(Prefix_OracleResponse).Add(txHash);
             return snapshot.Storages.TryGet(key) != null;
         }
 
@@ -86,7 +81,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="txHash">Transaction Hash</param>
         public OracleExecutionCache ConsumeOracleResponse(ApplicationEngine engine, UInt256 txHash)
         {
-            StorageKey key = CreateStorageKey(Prefix_OracleResponse, txHash.ToArray());
+            StorageKey key = CreateStorageKey(Prefix_OracleResponse).Add(txHash);
             StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage == null) return null;
 
@@ -98,8 +93,7 @@ namespace Neo.SmartContract.Native.Oracle
 
             // Pay for the filter
 
-            if (!engine.AddGas(ret.FilterCost)) throw new ArgumentException("OutOfGas");
-
+            engine.AddGas(ret.FilterCost);
             return ret;
         }
 
@@ -109,17 +103,15 @@ namespace Neo.SmartContract.Native.Oracle
         /// <param name="engine">VM</param>
         /// <param name="args">Parameter Array</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.ByteArray, ContractParameterType.ByteArray }, ParameterNames = new[] { "consignorPubKey", "consigneePubKey" })]
-        private StackItem DelegateOracleValidator(ApplicationEngine engine, Array args)
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        public bool DelegateOracleValidator(ApplicationEngine engine, ECPoint consignorPubKey, ECPoint consigneePubKey)
         {
             StoreView snapshot = engine.Snapshot;
-            ECPoint consignorPubKey = args[0].GetSpan().AsSerializable<ECPoint>();
-            ECPoint consigneePubKey = args[1].GetSpan().AsSerializable<ECPoint>();
             ECPoint[] cnPubKeys = NEO.GetValidators(snapshot);
             if (!cnPubKeys.Contains(consignorPubKey)) return false;
             UInt160 account = Contract.CreateSignatureRedeemScript(consignorPubKey).ToScriptHash();
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            StorageKey key = CreateStorageKey(Prefix_Validator, consignorPubKey);
+            if (!engine.CheckWitnessInternal(account)) return false;
+            StorageKey key = CreateStorageKey(Prefix_Validator).Add(consignorPubKey);
             StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem());
             item.Value = consigneePubKey.ToArray();
 
@@ -132,7 +124,7 @@ namespace Neo.SmartContract.Native.Oracle
             {
                 if (!cnPubKeys.Contains(validator))
                 {
-                    snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator, validator));
+                    snapshot.Storages.Delete(CreateStorageKey(Prefix_Validator).Add(validator));
                 }
             }
             return true;
@@ -142,10 +134,9 @@ namespace Neo.SmartContract.Native.Oracle
         /// Get current authorized Oracle validator.
         /// </summary>
         /// <param name="engine">VM</param>
-        /// <param name="args">Parameter Array</param>
         /// <returns>Authorized Oracle validator</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates)]
-        private StackItem GetOracleValidators(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        private StackItem GetOracleValidators(ApplicationEngine engine)
         {
             return new Array(engine.ReferenceCounter, GetOracleValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
         }
@@ -163,7 +154,7 @@ namespace Neo.SmartContract.Native.Oracle
             for (int index = 0; index < oraclePubKeys.Length; index++)
             {
                 var oraclePubKey = oraclePubKeys[index];
-                StorageKey key = CreateStorageKey(Prefix_Validator, oraclePubKey);
+                StorageKey key = CreateStorageKey(Prefix_Validator).Add(oraclePubKey);
                 ECPoint delegatePubKey = snapshot.Storages.TryGet(key)?.Value.AsSerializable<ECPoint>();
                 if (delegatePubKey != null) { oraclePubKeys[index] = delegatePubKey; }
             }
@@ -174,22 +165,11 @@ namespace Neo.SmartContract.Native.Oracle
         /// Get number of current authorized Oracle validator
         /// </summary>
         /// <param name="engine">VM</param>
-        /// <param name="args">Parameter Array</param>
         /// <returns>The number of authorized Oracle validator</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Integer, CallFlags.AllowStates)]
-        private StackItem GetOracleValidatorsCount(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public int GetOracleValidatorsCount(ApplicationEngine engine)
         {
-            return GetOracleValidatorsCount(engine.Snapshot);
-        }
-
-        /// <summary>
-        /// Get number of current authorized Oracle validator
-        /// </summary>
-        /// <param name="snapshot">snapshot</param>
-        /// <returns>The number of authorized Oracle validator</returns>
-        public BigInteger GetOracleValidatorsCount(StoreView snapshot)
-        {
-            return GetOracleValidators(snapshot).Length;
+            return GetOracleValidators(engine.Snapshot).Length;
         }
 
         /// <summary>
@@ -217,23 +197,24 @@ namespace Neo.SmartContract.Native.Oracle
         /// Set HttpConfig
         /// </summary>
         /// <param name="engine">VM</param>
-        /// <param name="args">Parameter Array</param>
+        /// <param name="type">Type</param>
+        /// <param name="value">Value</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray }, ParameterNames = new[] { "configKey", "configValue" })]
-        private StackItem SetConfig(ApplicationEngine engine, Array args)
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        public StackItem SetConfig(ApplicationEngine engine, string type, VM.Types.Array value)
         {
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
+            if (!engine.CheckWitnessInternal(account)) return false;
 
-            switch (args[0].GetString())
+            switch (type)
             {
                 case HttpConfig.Key:
                     {
                         var newCfg = new HttpConfig();
-                        newCfg.FromStackItem(args[1]);
+                        newCfg.FromStackItem(value);
 
-                        StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Key)));
+                        StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config).Add(Encoding.UTF8.GetBytes(HttpConfig.Key)));
                         var config = storage.GetInteroperable<HttpConfig>();
                         config.TimeOut = newCfg.TimeOut;
                         return true;
@@ -246,11 +227,12 @@ namespace Neo.SmartContract.Native.Oracle
         /// Get HttpConfig
         /// </summary>
         /// <param name="engine">VM</param>
+        /// <param name="type">Typed</param>
         /// <returns>value</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Array, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.String }, ParameterNames = new[] { "configKey" })]
-        private StackItem GetConfig(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public object GetConfig(ApplicationEngine engine, string type)
         {
-            switch (args[0].GetString())
+            switch (type)
             {
                 case HttpConfig.Key:
                     {
@@ -268,7 +250,7 @@ namespace Neo.SmartContract.Native.Oracle
         /// <returns>value</returns>
         public HttpConfig GetHttpConfig(StoreView snapshot)
         {
-            var storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config, Encoding.UTF8.GetBytes(HttpConfig.Key)));
+            var storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Config).Add(Encoding.UTF8.GetBytes(HttpConfig.Key)));
             return storage.GetInteroperable<HttpConfig>();
         }
 
@@ -276,15 +258,14 @@ namespace Neo.SmartContract.Native.Oracle
         /// Set PerRequestFee
         /// </summary>
         /// <param name="engine">VM</param>
-        /// <param name="args">Parameter Array</param>
+        /// <param name="perRequestFee">Per Request fee</param>
         /// <returns>Returns true if the execution is successful, otherwise returns false</returns>
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "fee" })]
-        private StackItem SetPerRequestFee(ApplicationEngine engine, Array args)
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        public bool SetPerRequestFee(ApplicationEngine engine, int perRequestFee)
         {
             StoreView snapshot = engine.Snapshot;
             UInt160 account = GetOracleMultiSigAddress(snapshot);
-            if (!InteropService.Runtime.CheckWitnessInternal(engine, account)) return false;
-            int perRequestFee = (int)args[0].GetBigInteger();
+            if (!engine.CheckWitnessInternal(account)) return false;
             if (perRequestFee <= 0) return false;
             StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_PerRequestFee));
             storage.Value = BitConverter.GetBytes(perRequestFee);
@@ -295,22 +276,11 @@ namespace Neo.SmartContract.Native.Oracle
         /// Get PerRequestFee
         /// </summary>
         /// <param name="engine">VM</param>
-        /// <param name="args">Parameter Array</param>
         /// <returns>Value</returns>
-        [ContractMethod(0_01000000, ContractParameterType.Integer, requiredCallFlags: CallFlags.AllowStates)]
-        private StackItem GetPerRequestFee(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, requiredCallFlags: CallFlags.AllowStates)]
+        public int GetPerRequestFee(ApplicationEngine engine)
         {
-            return new Integer(GetPerRequestFee(engine.Snapshot));
-        }
-
-        /// <summary>
-        /// Get PerRequestFee
-        /// </summary>
-        /// <param name="snapshot">snapshot</param>
-        /// <returns>Value</returns>
-        public int GetPerRequestFee(StoreView snapshot)
-        {
-            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_PerRequestFee));
+            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_PerRequestFee));
             if (storage is null) return 0;
             return BitConverter.ToInt32(storage.Value);
         }
@@ -318,16 +288,16 @@ namespace Neo.SmartContract.Native.Oracle
         /// <summary>
         /// Oracle get the hash of the current OracleFlow [Request/Response]
         /// </summary>
-        [ContractMethod(0_01000000, ContractParameterType.Boolean, requiredCallFlags: CallFlags.None)]
-        private StackItem GetResponseHash(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, requiredCallFlags: CallFlags.None)]
+        public UInt160 GetResponseHash(ApplicationEngine engine)
         {
             if (engine.OracleCache == null)
             {
-                return StackItem.Null;
+                return null;
             }
             else
             {
-                return engine.OracleCache.Hash.ToArray();
+                return engine.OracleCache.Hash;
             }
         }
 
@@ -335,16 +305,9 @@ namespace Neo.SmartContract.Native.Oracle
         /// Oracle Get
         ///     string url, [UInt160 filter], [string filterMethod], [string filterArgs]
         /// </summary>
-        [ContractMethod(0_01000000, ContractParameterType.ByteArray, CallFlags.AllowModifyStates,
-            ParameterTypes = new[] { ContractParameterType.String, ContractParameterType.ByteArray, ContractParameterType.String, ContractParameterType.String },
-            ParameterNames = new[] { "url", "filterContract", "filterMethod", "filterArgs" })]
-        private StackItem Get(ApplicationEngine engine, Array args)
+        [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
+        public byte[] Get(ApplicationEngine engine, string url, byte[] filterContract, string filterMethod, string filterArgs)
         {
-            if (args.Count != 4)
-            {
-                throw new ArgumentException($"Provided arguments must be 4 instead of {args.Count}");
-            }
-
             if (engine.OracleCache == null)
             {
                 // We should enter here only during OnPersist with the OracleRequestTx
@@ -367,28 +330,24 @@ namespace Neo.SmartContract.Native.Oracle
                     throw new ArgumentException();
                 }
             }
-            if (!(args[0] is PrimitiveType urlItem) || !Uri.TryCreate(urlItem.GetString(), UriKind.Absolute, out var url) ||
-                !(args[1] is StackItem filterContractItem) ||
-                !(args[2] is StackItem filterMethodItem) ||
-                !(args[3] is StackItem filterArgsItem)
-                ) throw new ArgumentException();
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) throw new ArgumentException();
 
             // Create filter
 
             OracleFilter filter;
 
-            if (filterMethodItem is PrimitiveType filterMethod)
+            if (filterContract != null)
             {
                 filter = new OracleFilter()
                 {
-                    ContractHash = filterContractItem is PrimitiveType filterContract ? new UInt160(filterContract.Span) : engine.CallingScriptHash,
-                    FilterMethod = Encoding.UTF8.GetString(filterMethod.Span),
-                    FilterArgs = filterArgsItem is PrimitiveType filterArgs ? Encoding.UTF8.GetString(filterArgs.Span) : ""
+                    ContractHash = new UInt160(filterContract),
+                    FilterMethod = filterMethod,
+                    FilterArgs = filterArgs ?? ""
                 };
             }
             else
             {
-                if (!filterMethodItem.IsNull)
+                if (!string.IsNullOrEmpty(filterMethod))
                 {
                     throw new ArgumentException("If the filter it's defined, the values can't be null");
                 }
@@ -399,19 +358,19 @@ namespace Neo.SmartContract.Native.Oracle
             // Create request
 
             OracleRequest request;
-            switch (url.Scheme.ToLowerInvariant())
+            switch (uri.Scheme.ToLowerInvariant())
             {
                 case "https":
                     {
                         request = new OracleHttpsRequest()
                         {
                             Method = HttpMethod.GET,
-                            URL = url,
+                            URL = uri,
                             Filter = filter
                         };
                         break;
                     }
-                default: throw new ArgumentException($"The scheme '{url.Scheme}' is not allowed");
+                default: throw new ArgumentException($"The scheme '{uri.Scheme}' is not allowed");
             }
 
             // Execute the oracle request
@@ -420,7 +379,7 @@ namespace Neo.SmartContract.Native.Oracle
             {
                 // Add the gas filter cost
 
-                return response.Result ?? StackItem.Null;
+                return response.Result;
             }
 
             throw new ArgumentException();

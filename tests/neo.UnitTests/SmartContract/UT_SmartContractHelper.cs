@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract
             Header header3 = new Header() { PrevHash = index3, Witness = new Witness { VerificationScript = new byte[0] } };
             snapshot3.Contracts.Add(UInt160.Zero, new ContractState()
             {
-                Manifest = TestUtils.CreateDefaultManifest(UInt160.Zero, "verify"),
+                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
         }

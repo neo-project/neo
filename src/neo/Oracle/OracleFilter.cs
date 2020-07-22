@@ -66,14 +66,22 @@ namespace Neo.Oracle
             // Prepare the execution
 
             using ScriptBuilder script = new ScriptBuilder();
-            script.EmitSysCall(InteropService.Contract.CallEx, filter.ContractHash, filter.FilterMethod, new object[] { input, filter.FilterArgs }, (byte)CallFlags.None);
+            script.EmitSysCall(ApplicationEngine.System_Contract_CallEx, filter.ContractHash, filter.FilterMethod, new object[] { input, filter.FilterArgs }, (byte)CallFlags.None);
 
             // Execute
 
             using var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, MaxGasFilter, false, null);
             engine.LoadScript(script.ToArray(), CallFlags.AllowCall);
 
-            if (engine.Execute() != VMState.HALT || !engine.ResultStack.TryPop(out PrimitiveType ret))
+            if (engine.Execute() != VMState.HALT)
+            {
+                result = null;
+                gasCost = engine.GasConsumed;
+                return false;
+            }
+
+            var ret = engine.ResultStack.Pop();
+            if (!(ret is PrimitiveType))
             {
                 result = null;
                 gasCost = engine.GasConsumed;
