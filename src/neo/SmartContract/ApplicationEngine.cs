@@ -147,7 +147,7 @@ namespace Neo.SmartContract
             return context;
         }
 
-        internal StackItem Convert(object value)
+        protected internal StackItem Convert(object value)
         {
             return value switch
             {
@@ -174,7 +174,7 @@ namespace Neo.SmartContract
             };
         }
 
-        internal object Convert(StackItem item, InteropParameterDescriptor descriptor)
+        protected internal object Convert(StackItem item, InteropParameterDescriptor descriptor)
         {
             if (descriptor.IsArray)
             {
@@ -224,7 +224,7 @@ namespace Neo.SmartContract
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
             AddGas(descriptor.FixedPrice);
-            List<object> parameters = descriptor.Parameters.Length > 0
+            List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
                 : null;
             foreach (var pd in descriptor.Parameters)

@@ -28,7 +28,7 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
-        internal ContractState CreateContract(byte[] script, byte[] manifest)
+        protected internal ContractState CreateContract(byte[] script, byte[] manifest)
         {
             if (script.Length == 0 || script.Length > MaxContractLength || manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException();
@@ -51,7 +51,7 @@ namespace Neo.SmartContract
             return contract;
         }
 
-        internal void UpdateContract(byte[] script, byte[] manifest)
+        protected internal void UpdateContract(byte[] script, byte[] manifest)
         {
             AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0));
 
@@ -88,7 +88,7 @@ namespace Neo.SmartContract
             }
         }
 
-        internal void DestroyContract()
+        protected internal void DestroyContract()
         {
             UInt160 hash = CurrentScriptHash;
             ContractState contract = Snapshot.Contracts.TryGet(hash);
@@ -99,12 +99,12 @@ namespace Neo.SmartContract
                     Snapshot.Storages.Delete(key);
         }
 
-        internal void CallContract(UInt160 contractHash, string method, Array args)
+        protected internal void CallContract(UInt160 contractHash, string method, Array args)
         {
             CallContractInternal(contractHash, method, args, CallFlags.All);
         }
 
-        internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
+        protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
@@ -162,7 +162,7 @@ namespace Neo.SmartContract
             if (md != null) LoadClonedContext(md.Offset);
         }
 
-        internal bool IsStandardContract(UInt160 hash)
+        protected internal bool IsStandardContract(UInt160 hash)
         {
             ContractState contract = Snapshot.Contracts.TryGet(hash);
 
@@ -188,13 +188,13 @@ namespace Neo.SmartContract
             return false;
         }
 
-        internal CallFlags GetCallFlags()
+        protected internal CallFlags GetCallFlags()
         {
             var state = CurrentContext.GetState<ExecutionContextState>();
             return state.CallFlags;
         }
 
-        internal UInt160 CreateStandardAccount(ECPoint pubKey)
+        protected internal UInt160 CreateStandardAccount(ECPoint pubKey)
         {
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }

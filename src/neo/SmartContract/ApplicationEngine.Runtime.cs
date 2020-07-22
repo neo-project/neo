@@ -74,22 +74,22 @@ namespace Neo.SmartContract
             }
         }
 
-        internal string GetPlatform()
+        protected internal string GetPlatform()
         {
             return "NEO";
         }
 
-        internal ulong GetTime()
+        protected internal ulong GetTime()
         {
             return Snapshot.PersistingBlock.Timestamp;
         }
 
-        internal IInteroperable GetScriptContainer()
+        protected internal IInteroperable GetScriptContainer()
         {
             return ScriptContainer as IInteroperable;
         }
 
-        internal bool CheckWitness(byte[] hashOrPubkey)
+        protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
             UInt160 hash = hashOrPubkey.Length switch
             {
@@ -100,7 +100,7 @@ namespace Neo.SmartContract
             return CheckWitnessInternal(hash);
         }
 
-        internal bool CheckWitnessInternal(UInt160 hash)
+        protected internal bool CheckWitnessInternal(UInt160 hash)
         {
             if (ScriptContainer is Transaction tx)
             {
@@ -133,28 +133,28 @@ namespace Neo.SmartContract
             return hashes_for_verifying.Contains(hash);
         }
 
-        internal int GetInvocationCounter()
+        protected internal int GetInvocationCounter()
         {
             if (!invocationCounter.TryGetValue(CurrentScriptHash, out var counter))
                 throw new InvalidOperationException();
             return counter;
         }
 
-        internal void RuntimeLog(byte[] state)
+        protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize) throw new ArgumentException();
             string message = Utility.StrictUTF8.GetString(state);
             Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
         }
 
-        internal void RuntimeNotify(byte[] eventName, Array state)
+        protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException();
             if (!CheckItemForNotification(state)) throw new ArgumentException();
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
-        internal void SendNotification(UInt160 hash, string eventName, Array state)
+        protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
             Notify?.Invoke(this, notification);
@@ -162,7 +162,7 @@ namespace Neo.SmartContract
             notifications.Add(notification);
         }
 
-        internal NotifyEventArgs[] GetNotifications(UInt160 hash)
+        protected internal NotifyEventArgs[] GetNotifications(UInt160 hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
