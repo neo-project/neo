@@ -162,7 +162,6 @@ namespace Neo.SmartContract.Native.Tokens
                 if (!state_validator.Registered && state_validator.Votes.IsZero)
                     engine.Snapshot.Storages.Delete(key);
             }
-            state_account.VoteTo = voteTo;
             if (voteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(voteTo);
@@ -172,6 +171,7 @@ namespace Neo.SmartContract.Native.Tokens
                 if (!state_validator.Registered) return false;
                 state_validator.Votes += state_account.Balance;
             }
+            state_account.VoteTo = voteTo;
             return true;
         }
 
