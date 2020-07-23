@@ -77,7 +77,6 @@ namespace Neo.Consensus
 
         public StateRoot CreateStateRoot()
         {
-
             MakeStateRoot();
             Contract contract = Contract.CreateMultiSigContract(this.M(), Validators);
             ContractParametersContext sc = new ContractParametersContext(PreviousBlockStateRoot);
