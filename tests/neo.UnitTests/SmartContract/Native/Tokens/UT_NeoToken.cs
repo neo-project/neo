@@ -14,7 +14,6 @@ using Neo.VM;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Security.AccessControl;
 using static Neo.SmartContract.Native.Tokens.NeoToken;
 
 namespace Neo.UnitTests.SmartContract.Native.Tokens
@@ -48,20 +47,17 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             // No signature
 
             var ret = Check_Vote(snapshot, from, null, false);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeTrue();
+            ret.Should().BeFalse();
 
             // Wrong address
 
             ret = Check_Vote(snapshot, new byte[19], null, false);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeFalse();
+            ret.Should().BeFalse();
 
             // Wrong ec
 
             ret = Check_Vote(snapshot, from, new byte[19], true);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeFalse();
+            ret.Should().BeFalse();
 
             // no registered
 
@@ -70,24 +66,21 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             fakeAddr[5] = 0xFF;
 
             ret = Check_Vote(snapshot, fakeAddr, null, true);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeTrue();
+            ret.Should().BeFalse();
 
             // no registered
 
             var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo = null;
             ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeTrue();
+            ret.Should().BeFalse();
             accountState.VoteTo.Should().BeNull();
 
             // normal case
 
             snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
             ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            ret.Should().BeTrue();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             // TODO: More votes tests
@@ -119,16 +112,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var point = Blockchain.StandbyValidators[0].EncodePoint(true);
 
             var ret = Check_RegisterValidator(snapshot, point); // Exists
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            ret.Should().BeTrue();
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(++keyCount); // No changes
 
             point[20]++; // fake point
             ret = Check_RegisterValidator(snapshot, point); // New
 
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            ret.Should().BeTrue();
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // New validator
 
@@ -377,17 +368,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             StorageKey keyAccount = CreateStorageKey(20, account.ToArray());
             StorageKey keyValidator = CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray());
             var ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), false);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            ret.Should().BeFalse();
 
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            ret.Should().BeFalse();
 
             snapshot.Storages.Add(keyAccount, new StorageItem(new NeoAccountState()));
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            ret.Should().BeFalse();
 
             snapshot.Storages.Delete(keyAccount);
             snapshot.Storages.GetAndChange(keyAccount, () => new StorageItem(new NeoAccountState
@@ -396,8 +384,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             }));
             snapshot.Storages.Add(keyValidator, new StorageItem(new CandidateState()));
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            ret.Should().BeTrue();
         }
 
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
@@ -433,7 +420,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return (true, result.GetBoolean());
         }
 
-        internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)
+        internal static bool Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, 0, true);
@@ -452,18 +439,10 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             script.EmitPush("vote");
             engine.LoadScript(script.ToArray());
 
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (true, result.GetBoolean());
+            return engine.Execute() == VMState.HALT;
         }
 
-        internal static (bool State, bool Result) Check_RegisterValidator(StoreView snapshot, byte[] pubkey)
+        internal static bool Check_RegisterValidator(StoreView snapshot, byte[] pubkey)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep5NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, 0, true);
@@ -477,15 +456,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             script.EmitPush("registerCandidate");
             engine.LoadScript(script.ToArray());
 
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (true, result.GetBoolean());
+            return engine.Execute() == VMState.HALT;
         }
 
         internal static ECPoint[] Check_GetValidators(StoreView snapshot)

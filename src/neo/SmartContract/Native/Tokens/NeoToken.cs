@@ -110,39 +110,37 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
+        private void RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
-                return false;
+                throw new InvalidOperationException($"Missing the signature of {pubkey}");
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
             state.Registered = true;
-            return true;
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
+        private void UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
-                return false;
+                throw new InvalidOperationException($"Missing the signature of {pubkey}");
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
-            if (engine.Snapshot.Storages.TryGet(key) is null) return true;
+            if (engine.Snapshot.Storages.TryGet(key) is null) throw new InvalidOperationException("The candidate does not exist"); ;
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key);
             CandidateState state = item.GetInteroperable<CandidateState>();
             if (state.Votes.IsZero)
                 engine.Snapshot.Storages.Delete(key);
             else
                 state.Registered = false;
-            return true;
         }
 
         [ContractMethod(5_00000000, CallFlags.AllowModifyStates)]
-        private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
+        private void Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
-            if (!engine.CheckWitnessInternal(account)) return false;
+            if (!engine.CheckWitnessInternal(account)) throw new InvalidOperationException($"Missing the signature of {account}");
             StorageKey key_account = CreateStorageKey(Prefix_Account).Add(account);
-            if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
+            if (engine.Snapshot.Storages.TryGet(key_account) is null) throw new InvalidOperationException("The account does not exist or the balance is empty");
             StorageItem storage_account = engine.Snapshot.Storages.GetAndChange(key_account);
             NeoAccountState state_account = storage_account.GetInteroperable<NeoAccountState>();
             if (state_account.VoteTo is null ^ voteTo is null)
@@ -165,14 +163,13 @@ namespace Neo.SmartContract.Native.Tokens
             if (voteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(voteTo);
-                if (engine.Snapshot.Storages.TryGet(key) is null) return false;
+                if (engine.Snapshot.Storages.TryGet(key) is null) throw new InvalidOperationException("The candidate does not exist");
                 StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-                if (!state_validator.Registered) return false;
+                if (!state_validator.Registered) throw new InvalidOperationException("The candidate not yet registered");
                 state_validator.Votes += state_account.Balance;
             }
             state_account.VoteTo = voteTo;
-            return true;
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
