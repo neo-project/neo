@@ -27,7 +27,7 @@ namespace Neo.Consensus
             base.Deserialize(reader);
             Timestamp = reader.ReadUInt64();
             Nonce = reader.ReadUInt64();
-            TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
+            TransactionHashes = reader.ReadSerializableArray<UInt256>((int)Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
         }

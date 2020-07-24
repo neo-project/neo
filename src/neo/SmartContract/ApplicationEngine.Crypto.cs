@@ -1,7 +1,9 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
 
@@ -9,7 +11,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const long ECDsaVerifyPrice = 0_01000000;
+        public static long ECDsaVerifyPrice => (long)NativeContract.Policy.GetECDsaVerifyPrice(Blockchain.Singleton.GetSnapshot());
 
         public static readonly InteropDescriptor Neo_Crypto_RIPEMD160 = Register("Neo.Crypto.RIPEMD160", nameof(RIPEMD160), 0_01000000, CallFlags.None, true);
         public static readonly InteropDescriptor Neo_Crypto_SHA256 = Register("Neo.Crypto.SHA256", nameof(Sha256), 0_01000000, CallFlags.None, true);

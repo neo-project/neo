@@ -19,6 +19,14 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_BlockedAccounts = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
+        private const byte Prefix_PayloadMaxSize = 35;
+        private const byte Prefix_MaxTransactionSize = 36;
+        private const byte Prefix_MaxValidUntilBlockIncrement = 37;
+        private const byte Prefix_MaxTransactionAttributes = 38;
+        private const byte Prefix_MaxContractLength = 39;
+        private const byte Prefix_ECDsaVerifyPrice = 40;
+        private const byte Prefix_StoragePrice = 41;
+        private const byte Prefix_MaxVerificationGas = 42;
 
         public PolicyContract()
         {
@@ -69,6 +77,70 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
                 ?.GetSerializableList<UInt160>().ToArray()
                 ?? Array.Empty<UInt160>();
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public uint GetPayloadMaxSize(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_PayloadMaxSize));
+            if (item is null) return 0x02000000u;
+            return (uint) (BigInteger) item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public uint GetMaxTransactionSize(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionSize));
+            if (item is null) return 102400u;
+            return (uint)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public uint GetMaxValidUntilBlockIncrement(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxValidUntilBlockIncrement));
+            if (item is null) return 2102400u;
+            return (uint)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public uint GetMaxTransactionAttributes(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionAttributes));
+            if (item is null) return 16u;
+            return (uint)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public uint GetMaxContractLength(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxContractLength));
+            if (item is null) return 1048576u;
+            return (uint)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public ulong GetECDsaVerifyPrice(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ECDsaVerifyPrice));
+            if (item is null) return 0_01000000u;
+            return (ulong)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public ulong GetStoragePrice(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_StoragePrice));
+            if (item is null) return 100000u;
+            return (ulong)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public ulong GetMaxVerificationGas(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxVerificationGas));
+            if (item is null) return 0_50000000u;
+            return (ulong)(BigInteger)item;
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
@@ -134,6 +206,78 @@ namespace Neo.SmartContract.Native
             if (index < 0) return false;
             engine.Snapshot.Storages.GetAndChange(key);
             accounts.RemoveAt(index);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetPayloadMaxSize(ApplicationEngine engine, uint value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_PayloadMaxSize), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetMaxTransactionSize(ApplicationEngine engine, uint value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionSize), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxValidUntilBlockIncrement), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetMaxTransactionAttributes(ApplicationEngine engine, uint value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionAttributes), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetMaxContractLength(ApplicationEngine engine, uint value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxContractLength), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetECDsaVerifyPrice(ApplicationEngine engine, ulong value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ECDsaVerifyPrice), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetStoragePrice(ApplicationEngine engine, ulong value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetMaxVerificationGas(ApplicationEngine engine, ulong value)
+        {
+            if (!CheckCommittees(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxVerificationGas), () => new StorageItem());
+            storage.Set(value);
             return true;
         }
     }

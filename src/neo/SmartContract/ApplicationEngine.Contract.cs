@@ -13,7 +13,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const int MaxContractLength = 1024 * 1024;
+        public static uint MaxContractLength => NativeContract.Policy.GetMaxContractLength(Blockchain.Singleton.GetSnapshot());
 
         public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, CallFlags.AllowModifyStates, false);

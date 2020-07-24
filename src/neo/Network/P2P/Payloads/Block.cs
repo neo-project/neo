@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -15,8 +16,8 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Block : BlockBase, IInventory, IEquatable<Block>, IInteroperable
     {
-        public const int MaxContentsPerBlock = ushort.MaxValue;
-        public const int MaxTransactionsPerBlock = MaxContentsPerBlock - 1;
+        public static uint MaxContentsPerBlock => MaxTransactionsPerBlock + 1;
+        public static uint MaxTransactionsPerBlock => NativeContract.Policy.GetMaxTransactionsPerBlock(Blockchain.Singleton.GetSnapshot());
 
         public ConsensusData ConsensusData;
         public Transaction[] Transactions;

@@ -18,12 +18,12 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
-        public const int MaxTransactionSize = 102400;
-        public const uint MaxValidUntilBlockIncrement = 2102400;
+        public static uint MaxTransactionSize => NativeContract.Policy.GetMaxTransactionsPerBlock(Blockchain.Singleton.GetSnapshot());
+        public static uint MaxValidUntilBlockIncrement => NativeContract.Policy.GetMaxValidUntilBlockIncrement(Blockchain.Singleton.GetSnapshot());
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
-        public const int MaxTransactionAttributes = 16;
+        public static uint MaxTransactionAttributes => NativeContract.Policy.GetMaxTransactionAttributes(Blockchain.Singleton.GetSnapshot());
 
         private byte version;
         private uint nonce;
@@ -157,7 +157,7 @@ namespace Neo.Network.P2P.Payloads
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
 
-        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader, int maxCount)
+        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader, uint maxCount)
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             HashSet<TransactionAttributeType> hashset = new HashSet<TransactionAttributeType>();
@@ -170,7 +170,7 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        private static IEnumerable<Signer> DeserializeSigners(BinaryReader reader, int maxCount)
+        private static IEnumerable<Signer> DeserializeSigners(BinaryReader reader, uint maxCount)
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             if (count == 0) throw new FormatException();
@@ -198,7 +198,7 @@ namespace Neo.Network.P2P.Payloads
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
-            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
+            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - (uint)Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }

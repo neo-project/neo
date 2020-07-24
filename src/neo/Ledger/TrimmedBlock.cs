@@ -76,7 +76,7 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxContentsPerBlock);
+            Hashes = reader.ReadSerializableArray<UInt256>((int)Block.MaxContentsPerBlock);
             if (Hashes.Length > 0)
                 ConsensusData = reader.ReadSerializable<ConsensusData>();
         }

@@ -2,6 +2,8 @@ using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Caching;
+using Neo.Ledger;
+using Neo.SmartContract.Native;
 using System;
 using System.Buffers.Binary;
 using System.IO;
@@ -10,7 +12,7 @@ namespace Neo.Network.P2P
 {
     public class Message : ISerializable
     {
-        public const int PayloadMaxSize = 0x02000000;
+        public static int PayloadMaxSize => (int)NativeContract.Policy.GetPayloadMaxSize(Blockchain.Singleton.GetSnapshot());
         private const int CompressionMinSize = 128;
         private const int CompressionThreshold = 64;
 
@@ -103,7 +105,7 @@ namespace Neo.Network.P2P
                 payloadIndex += 8;
             }
 
-            if (length > PayloadMaxSize) throw new FormatException();
+            if (length > (ulong)PayloadMaxSize) throw new FormatException();
 
             if (data.Count < (int)length + payloadIndex) return 0;
 

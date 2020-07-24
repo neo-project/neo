@@ -1,5 +1,6 @@
 using Neo.Ledger;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const long StoragePrice = 100000;
+        public static long StoragePrice => (long)NativeContract.Policy.GetStoragePrice(Blockchain.Singleton.GetSnapshot());
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 
