@@ -24,7 +24,6 @@ namespace Neo.Network.P2P.Payloads
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         public const int MaxTransactionAttributes = 16;
-        private const long GasFreeForOracle = 1_00000000;
 
         private byte version;
         private uint nonce;
@@ -308,10 +307,7 @@ namespace Neo.Network.P2P.Payloads
             VerifyResult result = VerifyForEachBlock(snapshot, context);
             if (result != VerifyResult.Succeed) return result;
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
-            long net_fee = NetworkFee;
-            if (GetAttribute<OracleResponse>() != null)
-                net_fee += GasFreeForOracle;
-            net_fee -= Size * NativeContract.Policy.GetFeePerByte(snapshot);
+            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
