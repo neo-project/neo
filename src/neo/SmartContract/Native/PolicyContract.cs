@@ -1,6 +1,5 @@
 #pragma warning disable IDE0051
 
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -32,58 +31,44 @@ namespace Neo.SmartContract.Native
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
-        internal override void Initialize(ApplicationEngine engine)
-        {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
-            {
-                Value = BitConverter.GetBytes(1024u * 256u)
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
-            {
-                Value = BitConverter.GetBytes(512u)
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSystemFee), new StorageItem
-            {
-                Value = BitConverter.GetBytes(9000 * (long)GAS.Factor) // For the transfer method of NEP5, the maximum persisting time is about three seconds.
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
-            {
-                Value = BitConverter.GetBytes(1000L)
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_BlockedAccounts), new StorageItem
-            {
-                Value = new UInt160[0].ToByteArray()
-            });
-        }
-
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
-            return (uint)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)];
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
+            if (item is null) return 512;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public uint GetMaxBlockSize(StoreView snapshot)
         {
-            return (uint)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)];
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
+            if (item is null) return 1024 * 256;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public long GetMaxBlockSystemFee(StoreView snapshot)
         {
-            return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSystemFee)];
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
+            if (item is null) return 9000 * (long)GAS.Factor; // For the transfer method of NEP5, the maximum persisting time is about three seconds.
+            return (long)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public long GetFeePerByte(StoreView snapshot)
         {
-            return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)];
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
+            if (item is null) return 1000;
+            return (long)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public UInt160[] GetBlockedAccounts(StoreView snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].GetSerializableList<UInt160>().ToArray();
+            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
+                ?.GetSerializableList<UInt160>().ToArray()
+                ?? Array.Empty<UInt160>();
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
@@ -91,7 +76,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             if (Network.P2P.Message.PayloadMaxSize <= value) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -100,7 +85,7 @@ namespace Neo.SmartContract.Native
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
             if (!CheckCommittees(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -110,7 +95,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             if (value <= 4007600) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -119,7 +104,7 @@ namespace Neo.SmartContract.Native
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (!CheckCommittees(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -129,7 +114,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages[key];
+            StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
             List<UInt160> accounts = storage.GetSerializableList<UInt160>();
             if (accounts.Contains(account)) return false;
             engine.Snapshot.Storages.GetAndChange(key);
@@ -142,7 +127,8 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages[key];
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
+            if (storage is null) return false;
             List<UInt160> accounts = storage.GetSerializableList<UInt160>();
             int index = accounts.IndexOf(account);
             if (index < 0) return false;
