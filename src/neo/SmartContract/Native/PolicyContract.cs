@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_PayloadMaxSize));
             if (item is null) return 0x02000000u;
-            return (uint) (BigInteger) item;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
