@@ -131,7 +131,7 @@ namespace Neo.SmartContract.Native.Oracle
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
                 || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
                 || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
-                || gasForRepsonse <= 0)
+                || gasForRepsonse < 0_10000000)
                 throw new ArgumentException();
 
             //Mint gas for the response
