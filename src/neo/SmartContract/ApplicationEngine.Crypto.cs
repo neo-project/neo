@@ -11,7 +11,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static long ECDsaVerifyPrice => (long)NativeContract.Policy.GetECDsaVerifyPrice(Blockchain.Singleton.GetSnapshot());
+        public const long ECDsaVerifyPrice = 0_01000000;
 
         public static readonly InteropDescriptor Neo_Crypto_RIPEMD160 = Register("Neo.Crypto.RIPEMD160", nameof(RIPEMD160), 0_01000000, CallFlags.None, true);
         public static readonly InteropDescriptor Neo_Crypto_SHA256 = Register("Neo.Crypto.SHA256", nameof(Sha256), 0_01000000, CallFlags.None, true);

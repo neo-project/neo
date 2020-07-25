@@ -9,7 +9,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static long StoragePrice => (long)NativeContract.Policy.GetStoragePrice(Blockchain.Singleton.GetSnapshot());
+        public const long StoragePrice = 100000;
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 

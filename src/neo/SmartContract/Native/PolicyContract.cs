@@ -120,22 +120,6 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public ulong GetECDsaVerifyPrice(StoreView snapshot)
-        {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ECDsaVerifyPrice));
-            if (item is null) return 0_01000000u;
-            return (ulong)(BigInteger)item;
-        }
-
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public ulong GetStoragePrice(StoreView snapshot)
-        {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_StoragePrice));
-            if (item is null) return 100000u;
-            return (ulong)(BigInteger)item;
-        }
-
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public ulong GetMaxVerificationGas(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxVerificationGas));
@@ -250,24 +234,6 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxContractLength), () => new StorageItem());
-            storage.Set(value);
-            return true;
-        }
-
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
-        private bool SetECDsaVerifyPrice(ApplicationEngine engine, ulong value)
-        {
-            if (!CheckCommittees(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ECDsaVerifyPrice), () => new StorageItem());
-            storage.Set(value);
-            return true;
-        }
-
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
-        private bool SetStoragePrice(ApplicationEngine engine, ulong value)
-        {
-            if (!CheckCommittees(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
             storage.Set(value);
             return true;
         }
