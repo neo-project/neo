@@ -1,11 +1,11 @@
 #pragma warning disable IDE0051
 
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -31,58 +31,44 @@ namespace Neo.SmartContract.Native
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
-        internal override void Initialize(ApplicationEngine engine)
-        {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSize), new StorageItem
-            {
-                Value = BitConverter.GetBytes(1024u * 256u)
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
-            {
-                Value = BitConverter.GetBytes(512u)
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxBlockSystemFee), new StorageItem
-            {
-                Value = BitConverter.GetBytes(9000 * (long)GAS.Factor) // For the transfer method of NEP5, the maximum persisting time is about three seconds.
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem
-            {
-                Value = BitConverter.GetBytes(1000L)
-            });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_BlockedAccounts), new StorageItem
-            {
-                Value = new UInt160[0].ToByteArray()
-            });
-        }
-
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
-            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
+            if (item is null) return 512;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public uint GetMaxBlockSize(StoreView snapshot)
         {
-            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSize)].Value, 0);
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
+            if (item is null) return 1024 * 256;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public long GetMaxBlockSystemFee(StoreView snapshot)
         {
-            return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_MaxBlockSystemFee)].Value, 0);
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
+            if (item is null) return 9000 * (long)GAS.Factor; // For the transfer method of NEP5, the maximum persisting time is about three seconds.
+            return (long)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public long GetFeePerByte(StoreView snapshot)
         {
-            return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
+            if (item is null) return 1000;
+            return (long)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public UInt160[] GetBlockedAccounts(StoreView snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
+            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
+                ?.GetSerializableList<UInt160>().ToArray()
+                ?? Array.Empty<UInt160>();
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
@@ -90,8 +76,8 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             if (Network.P2P.Message.PayloadMaxSize <= value) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize));
-            storage.Value = BitConverter.GetBytes(value);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
+            storage.Set(value);
             return true;
         }
 
@@ -99,8 +85,8 @@ namespace Neo.SmartContract.Native
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
             if (!CheckCommittees(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
-            storage.Value = BitConverter.GetBytes(value);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
+            storage.Set(value);
             return true;
         }
 
@@ -109,8 +95,8 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             if (value <= 4007600) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee));
-            storage.Value = BitConverter.GetBytes(value);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
+            storage.Set(value);
             return true;
         }
 
@@ -118,8 +104,8 @@ namespace Neo.SmartContract.Native
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (!CheckCommittees(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
-            storage.Value = BitConverter.GetBytes(value);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
+            storage.Set(value);
             return true;
         }
 
@@ -128,11 +114,11 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages[key];
-            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
-            if (!accounts.Add(account)) return false;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToByteArray();
+            StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
+            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
+            if (accounts.Contains(account)) return false;
+            engine.Snapshot.Storages.GetAndChange(key);
+            accounts.Add(account);
             return true;
         }
 
@@ -141,11 +127,13 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittees(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages[key];
-            SortedSet<UInt160> accounts = new SortedSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
-            if (!accounts.Remove(account)) return false;
-            storage = engine.Snapshot.Storages.GetAndChange(key);
-            storage.Value = accounts.ToByteArray();
+            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
+            if (storage is null) return false;
+            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
+            int index = accounts.IndexOf(account);
+            if (index < 0) return false;
+            engine.Snapshot.Storages.GetAndChange(key);
+            accounts.RemoveAt(index);
             return true;
         }
     }

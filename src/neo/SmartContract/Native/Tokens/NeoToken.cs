@@ -31,20 +31,16 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
-                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo));
-                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-                state_validator.Votes += amount;
+                var candidate_state = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo)).GetInteroperable<CandidateState>();
+                candidate_state.Votes += amount;
+                engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
 
-                if (state_validator.Votes == 0)
+                if (candidate_state.Votes == 0)
                 {
                     UInt160 voteeAddr = Contract.CreateSignatureContract(state.VoteTo).ScriptHash;
                     foreach (var (key, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
                         engine.Snapshot.Storages.Delete(key);
                 }
-
-                StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
-                BigInteger votersCount = new BigInteger(item.Value) + amount;
-                item.Value = votersCount.ToByteArray();
             }
         }
 
