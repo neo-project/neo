@@ -8,11 +8,22 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class StateRoot : StateRootBase, IInventory
+    public class StateRoot : ISerializable, IInventory
     {
+        public byte Version;
+        public uint Index;
+        public UInt256 PreHash;
+        public UInt256 Root;
         public Witness Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.StateRoot;
+
+        public int Size =>
+            sizeof(byte) +          //Version
+            sizeof(uint) +          //Index
+            PreHash.Size +          //PrevHash
+            Root.Size +             //StateRoot
+            Witness.Size;           //Witness
 
         private UInt256 _hash = null;
 
@@ -36,19 +47,9 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public override int Size => base.Size + Witness.Size;           //Witness
-
         public StateRoot() { }
 
-        public StateRoot(StateRootBase @base)
-        {
-            Version = @base.Version;
-            Index = @base.Index;
-            PreHash = @base.PreHash;
-            Root = @base.Root;
-        }
-
-        void ISerializable.Deserialize(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(reader);
             Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
@@ -56,20 +57,26 @@ namespace Neo.Network.P2P.Payloads
             Witness = witnesses[0];
         }
 
-        void IVerifiable.DeserializeUnsigned(BinaryReader reader)
+        public void DeserializeUnsigned(BinaryReader reader)
         {
-            base.Deserialize(reader);
+            Version = reader.ReadByte();
+            Index = reader.ReadUInt32();
+            PreHash = reader.ReadSerializable<UInt256>();
+            Root = reader.ReadSerializable<UInt256>();
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
             writer.Write(Witness is null ? new Witness[] { } : new Witness[] { Witness });
         }
 
-        void IVerifiable.SerializeUnsigned(BinaryWriter writer)
+        public void SerializeUnsigned(BinaryWriter writer)
         {
-            base.Serialize(writer);
+            writer.Write(Version);
+            writer.Write(Index);
+            writer.Write(PreHash);
+            writer.Write(Root);
         }
 
         public bool Verify(Snapshot snapshot)
