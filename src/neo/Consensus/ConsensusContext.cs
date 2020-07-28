@@ -384,7 +384,7 @@ namespace Neo.Consensus
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 CommitPayloads = new ConsensusPayload[Validators.Length];
-                if (LastSeenMessage == null)
+                if (LastSeenMessage == null || Validators.Length != LastSeenMessage.Length)
                 {
                     LastSeenMessage = new int[Validators.Length];
                     for (int i = 0; i < Validators.Length; i++)
