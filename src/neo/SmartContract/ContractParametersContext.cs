@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -109,17 +108,17 @@ namespace Neo.SmartContract
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
         }
 
-        public bool Add(Contract contract, int index, object parameter)
+        public bool Add(Contract contract, int index, object parameter, bool copyScript = true)
         {
-            ContextItem item = CreateItem(contract);
+            ContextItem item = CreateItem(contract, copyScript);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
             return true;
         }
 
-        public bool Add(Contract contract, params object[] parameters)
+        public bool Add(Contract contract, bool copyScript = true, params object[] parameters)
         {
-            ContextItem item = CreateItem(contract);
+            ContextItem item = CreateItem(contract, copyScript);
             if (item == null) return false;
             for (int index = 0; index < parameters.Length; index++)
             {
@@ -180,7 +179,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private ContextItem CreateItem(Contract contract)
+        private ContextItem CreateItem(Contract contract, bool copyScript = true)
         {
             if (ContextItems.TryGetValue(contract.ScriptHash, out ContextItem item))
                 return item;
@@ -188,6 +187,7 @@ namespace Neo.SmartContract
                 return null;
             item = new ContextItem(contract);
             ContextItems.Add(contract.ScriptHash, item);
+            if (!copyScript) item.Script = null;
             return item;
         }
 

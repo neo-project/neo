@@ -435,8 +435,33 @@ namespace Neo.Wallets
                         byte[] signature = context.Verifiable.Sign(key);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                     }
+                    else
+                    {
+                        // Smart contract verification
+
+                        using var snapshot = Blockchain.Singleton.GetSnapshot();
+                        var contract = snapshot.Contracts.TryGet(account.ScriptHash);
+
+                        if (contract != null)
+                        {
+                            // Only works with verify without parameters
+
+                            var verify = contract.Manifest.Abi.GetMethod("verify");
+
+                            if (verify != null && verify.Parameters.Length == 0)
+                            {
+                                fSuccess |= context.Add(new Contract()
+                                {
+                                    Script = contract.Script,
+                                    ParameterList = verify.Parameters.Select(u => u.Type).ToArray()
+                                },
+                                false, new object[0]);
+                            }
+                        }
+                    }
                 }
             }
+
             return fSuccess;
         }
 
