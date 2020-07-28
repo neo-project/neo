@@ -245,7 +245,7 @@ namespace Neo.Persistence
             }
             int count = (int)snapshot.ValidatorsCount.Get().Votes.Select((p, i) => new
             {
-                Count = i,
+                Count = i + 1,
                 Votes = p
             }).Where(p => p.Votes > Fixed8.Zero).ToArray().WeightedFilter(0.25, 0.75, p => p.Votes.GetData(), (p, w) => new
             {
