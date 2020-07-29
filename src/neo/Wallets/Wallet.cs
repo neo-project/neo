@@ -361,7 +361,7 @@ namespace Neo.Wallets
 
                 foreach (UInt160 hash in hashes)
                 {
-                    byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
+                    byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? null;
                     if (witness_script is null)
                     {
                         var contract = snapshot.Contracts.TryGet(hash);
@@ -381,8 +381,6 @@ namespace Neo.Wallets
 
         public static long CalculateNetworkFee(StoreView snapshot, Transaction tx, ContractState contract, ref int size)
         {
-            long networkFee = 0;
-
             // Empty invocation and verification scripts
             size += Array.Empty<byte>().GetVarSize() * 2;
 
@@ -396,9 +394,9 @@ namespace Neo.Wallets
                 engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
                 if (engine.Execute() == VMState.FAULT) return 0;
                 if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return 0;
-            }
 
-            return networkFee;
+                return engine.GasConsumed;
+            }
         }
 
         public static long CalculateNetworkFee(byte[] witness_script, ref int size)
