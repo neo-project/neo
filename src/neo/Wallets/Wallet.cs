@@ -444,18 +444,13 @@ namespace Neo.Wallets
 
                         if (contract != null)
                         {
+                            var deployed = new DeployedContract(contract);
+
                             // Only works with verify without parameters
 
-                            var verify = contract.Manifest.Abi.GetMethod("verify");
-
-                            if (verify != null && verify.Parameters.Length == 0)
+                            if (deployed.Verify != null && deployed.ParameterList.Length == 0)
                             {
-                                fSuccess |= context.Add(new Contract()
-                                {
-                                    Script = contract.Script,
-                                    ParameterList = verify.Parameters.Select(u => u.Type).ToArray()
-                                },
-                                false, new object[0]);
+                                fSuccess |= context.Add(new DeployedContract(contract), new object[0]);
                             }
                         }
                     }

@@ -108,17 +108,17 @@ namespace Neo.SmartContract
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
         }
 
-        public bool Add(Contract contract, int index, object parameter, bool copyScript = true)
+        public bool Add(Contract contract, int index, object parameter)
         {
-            ContextItem item = CreateItem(contract, copyScript);
+            ContextItem item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
             return true;
         }
 
-        public bool Add(Contract contract, bool copyScript = true, params object[] parameters)
+        public bool Add(Contract contract, params object[] parameters)
         {
-            ContextItem item = CreateItem(contract, copyScript);
+            ContextItem item = CreateItem(contract);
             if (item == null) return false;
             for (int index = 0; index < parameters.Length; index++)
             {
@@ -179,7 +179,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private ContextItem CreateItem(Contract contract, bool copyScript = true)
+        private ContextItem CreateItem(Contract contract)
         {
             if (ContextItems.TryGetValue(contract.ScriptHash, out ContextItem item))
                 return item;
@@ -187,7 +187,6 @@ namespace Neo.SmartContract
                 return null;
             item = new ContextItem(contract);
             ContextItems.Add(contract.ScriptHash, item);
-            if (!copyScript) item.Script = null;
             return item;
         }
 
