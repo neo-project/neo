@@ -3,94 +3,94 @@ All notable changes to this project will be documented in this file.
 
 ## [3.0.0.preview2] - [3.0.0.preview3]
 ### Added
-- Add GetCallFlags
-- Add GasLeft syscall
-- Add Stateless to CallFlags
-- Add StackItem.ToJson
-- Add call __initialize automatically
-- Add vote for committee
-- Add secp256k1
-- Add relay-block-filter
-- Add a change list to optimize datacache commit
-- Add NotFound command
-- Add plugin Description field
-- Add base64 SYSCALLs
-- Add StrictUTF8
-- Add event name to System.Runtime.Notify
-- Add MaxBlockSystemFee
-- Add RIPEMD160 syscall
-- Add MPT
-- Create callback
-- Add EffectiveVoterTurnout
-- Add MaxVerificationGas
+- ([#1587](https://github.com/neo-project/neo/pull/1587)) Add GetCallFlags
+- ([#1509](https://github.com/neo-project/neo/pull/1509)) Add GasLeft syscall
+- ([#1549](https://github.com/neo-project/neo/pull/1549)) Add Stateless to CallFlags
+- ([#1569](https://github.com/neo-project/neo/pull/1569)) Add StackItem.ToJson
+- ([#1572](https://github.com/neo-project/neo/pull/1572)) Add call __initialize automatically
+- ([#1491](https://github.com/neo-project/neo/pull/1491)) Add vote for committee
+- ([#1419](https://github.com/neo-project/neo/pull/1419)) Add secp256k1
+- ([#1380](https://github.com/neo-project/neo/pull/1380)) Add relay-block-filter
+- ([#1619](https://github.com/neo-project/neo/pull/1619)) Add a change list to optimize datacache commit
+- ([#1645](https://github.com/neo-project/neo/pull/1645)) Add NotFound command
+- ([#1678](https://github.com/neo-project/neo/pull/1678)) Add plugin Description field
+- ([#1717](https://github.com/neo-project/neo/pull/1717)) Add base64 SYSCALLs
+- ([#1710](https://github.com/neo-project/neo/pull/1710)) Add StrictUTF8
+- ([#1701](https://github.com/neo-project/neo/pull/1701)) Add event name to System.Runtime.Notify
+- ([#1689](https://github.com/neo-project/neo/pull/1689)) Add MaxBlockSystemFee
+- ([#1694](https://github.com/neo-project/neo/pull/1694)) Add RIPEMD160 syscall
+- ([#1442](https://github.com/neo-project/neo/pull/1442)) Add MPT
+- ([#1629](https://github.com/neo-project/neo/pull/1629)) Create callback
+- ([#1762](https://github.com/neo-project/neo/pull/1762)) Add EffectiveVoterTurnout
+- ([#1745](https://github.com/neo-project/neo/pull/1745)) Add MaxVerificationGas
 
 ### Changed
-- Add simplify access to storage for native contracts
-- Sync try-catch opcodes
-- Cache most recent block
-- Remove grouping
-- Optimize the GetPrice() mechanism of SYSCALLs
-- Decouple NativeContract from InteropService
-- Subscribe to RelayResult messages in ConsensusService
-- Modify iterators to public
-- Move cosigners to transaction attributes
-- Make NEP6Wallet.path public
-- Unify unhandled exceptions
-- Remove FromJson
-- Unify akka logs with neo logs
-- Update neo-vm package
-- Complete the naming refactoring of the automation tool
-- Update StorageContext.cs
-- Allow to iterate buffer
-- Allow call from native contract
-- Restrict notifications, which can’t be modified by using clone data.
-- Always return a value for public methods
-- Check Json.Serialize map keys
-- Check return value of contracts
-- Refactor NativeContract
-- Check the parameters count 
-- GetBlocks by block index 
-- Optimize TransactionAttribute
-- Refactor InteropService
-- Inventory message stream optimization
-- Ask for mempool after sync
+- ([#1583](https://github.com/neo-project/neo/pull/1583)) Add simplify access to storage for native contracts
+- ([#1565](https://github.com/neo-project/neo/pull/1565)) Sync try-catch opcodes
+- ([#1592](https://github.com/neo-project/neo/pull/1592)) Cache most recent block
+- ([#1566](https://github.com/neo-project/neo/pull/1566)) Remove grouping
+- ([#1650](https://github.com/neo-project/neo/pull/1650)) Optimize the GetPrice() mechanism of SYSCALLs
+- ([#1649](https://github.com/neo-project/neo/pull/1649)) Decouple NativeContract from InteropService
+- ([#1647](https://github.com/neo-project/neo/pull/1647)) Subscribe to RelayResult messages in ConsensusService
+- ([#1639](https://github.com/neo-project/neo/pull/1639)) Modify iterators to public
+- ([#1620](https://github.com/neo-project/neo/pull/1620)) Move cosigners to transaction attributes
+- ([#1627](https://github.com/neo-project/neo/pull/1627)) Make NEP6Wallet.path public
+- ([#1626](https://github.com/neo-project/neo/pull/1626)) Unify unhandled exceptions
+- ([#1625](https://github.com/neo-project/neo/pull/1625)) Remove FromJson
+- ([#1623](https://github.com/neo-project/neo/pull/1623)) Unify akka logs with neo logs
+- ([#1624](https://github.com/neo-project/neo/pull/1624)) Update neo-vm package
+- ([#1655](https://github.com/neo-project/neo/pull/1655)) Complete the naming refactoring of the automation tool
+- ([#1728](https://github.com/neo-project/neo/pull/1728)) Update StorageContext.cs
+- ([#1726](https://github.com/neo-project/neo/pull/1726)) Allow to iterate buffer
+- ([#1700](https://github.com/neo-project/neo/pull/1700)) Allow call from native contract
+- ([#1708](https://github.com/neo-project/neo/pull/1708)) Restrict notifications, which can't be modified by using clone data.
+- ([#1706](https://github.com/neo-project/neo/pull/1706)) Always return a value for public methods
+- ([#1705](https://github.com/neo-project/neo/pull/1705)) Check Json.Serialize map keys
+- ([#1680](https://github.com/neo-project/neo/pull/1680)) Check return value of contracts
+- ([#1693](https://github.com/neo-project/neo/pull/1693)) Refactor NativeContract
+- ([#1695](https://github.com/neo-project/neo/pull/1695)) Check the parameters count 
+- ([#1397](https://github.com/neo-project/neo/pull/1397)) GetBlocks by block index 
+- ([#1674](https://github.com/neo-project/neo/pull/1674)) Optimize TransactionAttribute
+- ([#1655](https://github.com/neo-project/neo/pull/1655)) Refactor InteropService
+- ([#1667](https://github.com/neo-project/neo/pull/1667)) Inventory message stream optimization
+- ([#1544](https://github.com/neo-project/neo/pull/1544)) Ask for mempool after sync
+- ([#1739](https://github.com/neo-project/neo/pull/1739)) Ensure non predictable peers
+- ([#1775](https://github.com/neo-project/neo/pull/1775)) workflows: use checkout action v2
+- ([#1755](https://github.com/neo-project/neo/pull/1755)) Remove AllowedTriggers from SYSCALLs
+- ([#1749](https://github.com/neo-project/neo/pull/1749)) Speed up the initialization of ApplicationEngine
+- ([#1754](https://github.com/neo-project/neo/pull/1754)) Check witnesses on isStandard
+- ([#1736](https://github.com/neo-project/neo/pull/1736)) Change json fields to all lower case for consistency
+- ([#1751](https://github.com/neo-project/neo/pull/1751)) Change nef checksum to double SHA256
+- ([#1729](https://github.com/neo-project/neo/pull/1729)) Move NEP10 to manifest
+- ([#1752](https://github.com/neo-project/neo/pull/1752)) Sender from signers
+- ([#1785](https://github.com/neo-project/neo/pull/1785)) Classes related to Neo.SmartContract types should not be internal
+- ([#1756](https://github.com/neo-project/neo/pull/1756)) Remove the lock from SendersFeeMonitor and rename it to TransactionVerificationContext
+- ([#1787](https://github.com/neo-project/neo/pull/1787)) Add Exception Message For Contract operation
+- ([#1748](https://github.com/neo-project/neo/pull/1748)) Create KeyBuilder for native contracts
+- ([#1766](https://github.com/neo-project/neo/pull/1766)) Add cache to native contract executions
+- ([#1784](https://github.com/neo-project/neo/pull/1784)) Add AppEngine.ValidateCallFlags to be callable by subclasses
+- ([#1795](https://github.com/neo-project/neo/pull/1795)) Remove PolicyContract.Initialize()
+- ([#1740](https://github.com/neo-project/neo/pull/1740)) Replace DataCache.Find by DataCache.Seek
+- ([#1774](https://github.com/neo-project/neo/pull/1774)) Optimize transaction attributes
+- ([#1761](https://github.com/neo-project/neo/pull/1761)) Capture fault Exception
+- ([#1768](https://github.com/neo-project/neo/pull/1768)) Add length before compression data
 - PR test coverage reached 63%
-- Ensure non predictable peers
-- workflows: use checkout action v2
-- Remove AllowedTriggers from SYSCALLs
-- Speed up the initialization of ApplicationEngine
-- Check witnesses on isStandard
-- Change json fields to all lower case for consistency
-- Change nef checksum to double SHA256
-- Move NEP10 to manifest
-- Sender from signers
-- Classes related to Neo.SmartContract types should not be internal
-- Remove the lock from SendersFeeMonitor and rename it to TransactionVerificationContext
-- Add Exception Message For Contract operation
-- Create KeyBuilder for native contracts
-- Add cache to native contract executions
-- Add AppEngine.ValidateCallFlags to be callable by subclasses
-- Remove PolicyContract.Initialize()
-- Replace DataCache.Find by DataCache.Seek
-- Optimize transaction attributes
-- Capture fault Exception
-- Add length before compression data
 
 ### Fixed
-- Fix plugin configuration failure
-- Fix Datacache
-- Fix CallFlags
-- Fix LocalNode
-- Fix VerifyWitness
-- Fix MemPoolTaskHash
-- Fix the way to get the directory path of assembly
-- Fix DataCache.Find
-- Fix ContractEventDescriptor
-- Fix return value check
-- Fix MethodCallback
-- Fix duplicate connection
-- Fix policy check
-- Fix protocol.json
-- Fix ut
-- Fix VerifyWitnesses
-- Fix vote
+- ([#1564](https://github.com/neo-project/neo/pull/1564)) Fix plugin configuration failure
+- ([#1611](https://github.com/neo-project/neo/pull/1611)) Fix Datacache
+- ([#1589](https://github.com/neo-project/neo/pull/1589)) Fix CallFlags
+- ([#1616](https://github.com/neo-project/neo/pull/1616)) Fix LocalNode
+- ([#1628](https://github.com/neo-project/neo/pull/1628)) Fix VerifyWitness
+- ([#1660](https://github.com/neo-project/neo/pull/1660)) Fix MemPoolTaskHash
+- ([#1656](https://github.com/neo-project/neo/pull/1656)) Fix the way to get the directory path of assembly
+- ([#1673](https://github.com/neo-project/neo/pull/1673)) Fix DataCache.Find
+- ([#1733](https://github.com/neo-project/neo/pull/1733)) Fix ContractEventDescriptor
+- ([#1730](https://github.com/neo-project/neo/pull/1730)) Fix return value check
+- ([#1723](https://github.com/neo-project/neo/pull/1723)) Fix MethodCallback
+- ([#1685](https://github.com/neo-project/neo/pull/1685)) Fix duplicate connection
+- ([#1668](https://github.com/neo-project/neo/pull/1668)) Fix policy check
+- ([#1770](https://github.com/neo-project/neo/pull/1770)) Fix protocol.json
+- ([#1759](https://github.com/neo-project/neo/pull/1759)) Fix ut
+- ([#1776](https://github.com/neo-project/neo/pull/1776)) Fix VerifyWitnesses
+- ([#1792](https://github.com/neo-project/neo/pull/1792)) Fix vote
