@@ -478,7 +478,7 @@ namespace Neo.Wallets
 
                             // Only works with verify without parameters
 
-                            if (deployed.Verify != null && deployed.ParameterList.Length == 0)
+                            if (deployed.ParameterList.Length == 0)
                             {
                                 fSuccess |= context.Add(new DeployedContract(contract), new object[0]);
                             }
