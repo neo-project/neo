@@ -386,14 +386,14 @@ namespace Neo.Wallets
 
             // Check verify cost
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("verify");
-            if (md is null) return 0;
+            if (md is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone(), 0, testMode: true))
             {
                 engine.LoadScript(contract.Script, CallFlags.None).InstructionPointer = md.Offset;
                 engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
-                if (engine.Execute() == VMState.FAULT) return 0;
-                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return 0;
+                if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
+                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
 
                 return engine.GasConsumed;
             }
