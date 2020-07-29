@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -361,13 +362,43 @@ namespace Neo.Wallets
                 foreach (UInt160 hash in hashes)
                 {
                     byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
-                    if (witness_script is null) continue;
+                    if (witness_script is null)
+                    {
+                        var contract = snapshot.Contracts.TryGet(hash);
+                        if (contract != null)
+                        {
+                            tx.NetworkFee += CalculateNetworkFee(snapshot, tx, contract, ref size);
+                        }
+                        continue;
+                    }
                     tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
                 }
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
+        }
+
+        public static long CalculateNetworkFee(StoreView snapshot, Transaction tx, ContractState contract, ref int size)
+        {
+            long networkFee = 0;
+
+            // Empty invocation and verification scripts
+            size += Array.Empty<byte>().GetVarSize() * 2;
+
+            // Check verify cost
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("verify");
+            if (md is null) return 0;
+
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone(), 0, testMode: true))
+            {
+                engine.LoadScript(contract.Script, CallFlags.None).InstructionPointer = md.Offset;
+                engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
+                if (engine.Execute() == VMState.FAULT) return 0;
+                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return 0;
+            }
+
+            return networkFee;
         }
 
         public static long CalculateNetworkFee(byte[] witness_script, ref int size)
