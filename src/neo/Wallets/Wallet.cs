@@ -390,7 +390,7 @@ namespace Neo.Wallets
             ContractMethodDescriptor init = contract.Manifest.Abi.GetMethod("_initialize");
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone(), 0, testMode: true))
             {
-                engine.LoadScript(contract.Script, CallFlags.None).InstructionPointer = verify.Offset;
+                engine.LoadScript(contract.Script, CallFlags.All).InstructionPointer = verify.Offset;
                 if (init != null) engine.LoadClonedContext(init.Offset);
                 engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
                 if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
