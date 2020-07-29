@@ -1,0 +1,98 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+## [3.0.0.preview2] - [3.0.0.preview3]
+### Added
+- Add GetCallFlags
+- Add GasLeft syscall
+- Add Stateless to CallFlags
+- Add StackItem.ToJson
+- Add call __initialize automatically
+- Add vote for committee
+- Add secp256k1
+- Add relay-block-filter
+- Add a change list to optimize datacache commit
+- Add NotFound command
+- Add plugin Description field
+- Add base64 SYSCALLs
+- Add StrictUTF8
+- Add event name to System.Runtime.Notify
+- Add MaxBlockSystemFee
+- Add RIPEMD160 syscall
+- Add MPT
+- Create callback
+- Add EffectiveVoterTurnout
+- Add MaxVerificationGas
+
+### Changed
+- Add simplify access to storage for native contracts
+- Sync try-catch opcodes
+- Cache most recent block
+- Remove grouping
+- Optimize the GetPrice() mechanism of SYSCALLs
+- Decouple NativeContract from InteropService
+- Subscribe to RelayResult messages in ConsensusService
+- Modify iterators to public
+- Move cosigners to transaction attributes
+- Make NEP6Wallet.path public
+- Unify unhandled exceptions
+- Remove FromJson
+- Unify akka logs with neo logs
+- Update neo-vm package
+- Complete the naming refactoring of the automation tool
+- Update StorageContext.cs
+- Allow to iterate buffer
+- Neo.VM.3.0.0-CI00230
+- Allow call from native contract
+- Restrict notifications, which can’t be modified by using clone data.
+- Update to Neo.VM.3.0.0-CI0026
+- Always return a value for public methods
+- Check Json.Serialize map keys
+- Check return value of contracts
+- Refactor NativeContract
+- Check the parameters count 
+- GetBlocks by block index 
+- Optimize TransactionAttribute
+- Refactor InteropService
+- Inventory message stream optimization
+- Ask for mempool after sync
+- PR test coverage reached 63%
+- Ensure non predictable peers
+- workflows: use checkout action v2
+- Remove AllowedTriggers from SYSCALLs
+- Speed up the initialization of ApplicationEngine
+- Check witnesses on isStandard
+- Change json fields to all lower case for consistency
+- Change nef checksum to double SHA256
+- Move NEP10 to manifest
+- Sender from signers
+- Classes related to Neo.SmartContract types should not be internal
+- Remove the lock from SendersFeeMonitor and rename it to TransactionVerificationContext
+- Add Exception Message For Contract operation
+- Create KeyBuilder for native contracts
+- Add cache to native contract executions
+- Add AppEngine.ValidateCallFlags to be callable by subclasses
+- Remove PolicyContract.Initialize()
+- Replace DataCache.Find by DataCache.Seek
+- Optimize transaction attributes
+- Capture fault Exception
+- Add length before compression data
+
+### Fixed
+- Fix plugin configuration failure
+- Fix Datacache
+- Fix CallFlags
+- Fix LocalNode
+- Fix VerifyWitness
+- Fix MemPoolTaskHash
+- Fix the way to get the directory path of assembly
+- Fix DataCache.Find
+- Fix ContractEventDescriptor
+- Fix return value check
+- Fix MethodCallback
+- Fix duplicate connection
+- Fix policy check
+- Fix protocol.json
+- Fix ut
+- Fix VerifyWitnesses
+- Fix vote
