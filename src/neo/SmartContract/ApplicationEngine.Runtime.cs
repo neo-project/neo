@@ -127,6 +127,8 @@ namespace Neo.SmartContract
                 return false;
             }
 
+            // Check allow state callflag
+
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(CallFlags.AllowStates))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
