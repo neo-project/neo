@@ -382,7 +382,7 @@ namespace Neo.Wallets
         public static long CalculateNetworkFee(StoreView snapshot, Transaction tx, ContractState contract, ref int size)
         {
             // Empty verification scripts and PACK 0 as invocation
-            size += Array.Empty<byte>().GetVarSize() + (IO.Helper.GetVarSize(2) + 2);
+            size += Array.Empty<byte>().GetVarSize() + IO.Helper.GetVarSize(2);
 
             // Check verify cost
             ContractMethodDescriptor verify = contract.Manifest.Abi.GetMethod("verify");
