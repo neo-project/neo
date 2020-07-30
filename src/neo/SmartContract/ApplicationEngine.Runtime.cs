@@ -21,7 +21,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", nameof(CurrentScriptHash), 0_00000400, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", nameof(CallingScriptHash), 0_00000400, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", nameof(EntryScriptHash), 0_00000400, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 0_00030000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 0_00030000, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", nameof(GetInvocationCounter), 0_00000400, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 0_01000000, CallFlags.AllowNotify, false);
         public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 0_01000000, CallFlags.AllowNotify, false);
@@ -109,7 +109,7 @@ namespace Neo.SmartContract
                 if (signer.Scopes == WitnessScope.Global) return true;
                 if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
-                    if (CallingScriptHash == EntryScriptHash)
+                    if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash)
                         return true;
                 }
                 if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
@@ -126,6 +126,12 @@ namespace Neo.SmartContract
                 }
                 return false;
             }
+
+            // Check allow state callflag
+
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            if (!state.CallFlags.HasFlag(CallFlags.AllowStates))
+                throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
 
             // only for non-Transaction types (Block, etc)
 

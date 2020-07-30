@@ -381,26 +381,18 @@ namespace Neo.Wallets
 
         public static long CalculateNetworkFee(StoreView snapshot, Transaction tx, ContractState contract, ref int size)
         {
-            // Empty verification scripts and PACK 0 as invocation
-            size += Array.Empty<byte>().GetVarSize() + (IO.Helper.GetVarSize(2) + 2);
+            // Empty invocation and verification scripts
+            size += Array.Empty<byte>().GetVarSize() * 2;
 
             // Check verify cost
             ContractMethodDescriptor verify = contract.Manifest.Abi.GetMethod("verify");
             if (verify is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
-
-            using var invocation = new ScriptBuilder();
-            invocation.EmitPush(0);
-            invocation.Emit(OpCode.PACK);
-
-            using var verification = new ScriptBuilder();
-            verification.EmitPush("verify");
-            verification.EmitPush(contract.ScriptHash);
-            verification.EmitSysCall(ApplicationEngine.System_Contract_Call);
-
+            ContractMethodDescriptor init = contract.Manifest.Abi.GetMethod("_initialize");
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone(), 0, testMode: true))
             {
-                engine.LoadScript(verification.ToArray(), CallFlags.ReadOnly);
-                engine.LoadScript(invocation.ToArray(), CallFlags.None);
+                engine.LoadScript(contract.Script, CallFlags.None).InstructionPointer = verify.Offset;
+                if (init != null) engine.LoadClonedContext(init.Offset);
+                engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
                 if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
                 if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
 
@@ -486,9 +478,9 @@ namespace Neo.Wallets
 
                             // Only works with verify without parameters
 
-                            if (deployed.VerifyArguments.Length == 0)
+                            if (deployed.ParameterList.Length == 0)
                             {
-                                fSuccess |= context.Add(new DeployedContract(contract), new object[] { new ContractParameter[0] { } });
+                                fSuccess |= context.Add(new DeployedContract(contract), new object[0]);
                             }
                         }
                     }
