@@ -241,7 +241,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null)
+        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -251,7 +251,7 @@ namespace Neo.Wallets
             else
             {
                 if (!Contains(from))
-                    throw new ArgumentException($"The address {from.ToString()} was not found in the wallet");
+                    throw new ArgumentException($"The address {from} was not found in the wallet");
                 accounts = new[] { from };
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
@@ -298,12 +298,12 @@ namespace Neo.Wallets
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-                var cosigners = cosignerList.Select(p => new Signer()
+                cosigners = cosignerList.Select(p => new Signer()
                 {
                     // default access for transfers should be valid only for first invocation
                     Scopes = WitnessScope.CalledByEntry,
                     Account = p
-                }).ToArray();
+                }).Concat(cosigners?.Where(u => !cosignerList.Contains(u.Account)) ?? Array.Empty<Signer>()).ToArray();
 
                 return MakeTransaction(snapshot, script, cosigners, Array.Empty<TransactionAttribute>(), balances_gas);
             }
