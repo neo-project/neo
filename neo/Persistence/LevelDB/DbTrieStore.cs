@@ -12,7 +12,7 @@ namespace Neo.Persistence.LevelDB
         private readonly WriteBatch batch;
         private readonly byte prefix;
 
-        private readonly byte[] ROOT_KEY = Prefixes.ROOT_KEY;
+        private static readonly byte[] ROOT_KEY = Prefixes.ROOT_KEY;
 
         public DbTrieStore(DB db, ReadOptions options, WriteBatch batch, byte prefix)
         {

@@ -12,7 +12,7 @@ namespace Neo.Ledger
         private readonly Store store;
         private readonly byte prefix;
 
-        private readonly byte[] ROOT_KEY = Prefixes.ROOT_KEY;
+        private static readonly byte[] ROOT_KEY = Prefixes.ROOT_KEY;
 
         public TrieReadOnlyStore(Store store, byte prefix)
         {
