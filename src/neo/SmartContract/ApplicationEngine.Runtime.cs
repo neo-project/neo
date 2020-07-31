@@ -119,6 +119,11 @@ namespace Neo.SmartContract
                 }
                 if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
+                    // Check allow state callflag
+
+                    if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.AllowStates))
+                        throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
+
                     var contract = Snapshot.Contracts[CallingScriptHash];
                     // check if current group is the required one
                     if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
@@ -129,9 +134,8 @@ namespace Neo.SmartContract
 
             // Check allow state callflag
 
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(CallFlags.AllowStates))
-                throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
+            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.AllowStates))
+                throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
 
             // only for non-Transaction types (Block, etc)
 
