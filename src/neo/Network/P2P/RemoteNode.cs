@@ -7,6 +7,7 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,9 @@ namespace Neo.Network.P2P
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
         private ByteString msg_buffer = ByteString.Empty;
         private bool ack = true;
+        private int message_count = 0;
+        private DateTime start_message_time;
+        private readonly double time_threshold = 1000;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public int ListenerTcpPort { get; private set; } = 0;
@@ -112,7 +116,21 @@ namespace Neo.Network.P2P
             msg_buffer = msg_buffer.Concat(data);
 
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            {
+                if (message_count == 0)
+                    start_message_time = TimeProvider.Current.UtcNow;
+                else if (message_count > 1000)
+                {
+                    message_count = 0;
+                    if ((TimeProvider.Current.UtcNow - start_message_time).TotalMilliseconds < time_threshold)
+                    {
+                        Disconnect(true);
+                        return;
+                    }
+                }
                 OnMessage(message);
+                message_count++;
+            }
         }
 
         protected override void OnReceive(object message)

@@ -52,10 +52,8 @@ namespace Neo.Network.P2P
         {
             if (index <= Blockchain.Singleton.Height || sessions.Values.Any(p => p != filterSession && p.IndexTasks.ContainsKey(index)))
                 return true;
-            Random rand = new Random();
-            KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index)
-                .OrderBy(p => p.Value.IndexTasks.Count)
-                .ThenBy(s => rand.Next())
+            KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index && p.Value.IndexTasks.Count < TaskSession.MaxTaskCountPerNode)
+                .OrderByDescending(p => p.Value.Weight)
                 .FirstOrDefault();
             if (remoteNode.Value == null)
             {
@@ -64,6 +62,7 @@ namespace Neo.Network.P2P
             }
             TaskSession session = remoteNode.Value;
             session.IndexTasks.TryAdd(index, TimeProvider.Current.UtcNow);
+            session.UpdateWeight();
             remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(index, 1)));
             failedSyncTasks.Remove(index);
             return true;
@@ -73,7 +72,10 @@ namespace Neo.Network.P2P
         {
             var session = sessions.Values.FirstOrDefault(p => p.IndexTasks.ContainsKey(block.Index));
             if (session is null) return;
+            var newRTT = (TimeProvider.Current.UtcNow - session.IndexTasks[block.Index]).TotalMilliseconds;
+            session.UpdateRTT(newRTT);
             session.IndexTasks.Remove(block.Index);
+            session.UpdateWeight();
             receivedBlockIndex.TryAdd(block.Index, session);
             RequestTasks();
         }
@@ -82,10 +84,15 @@ namespace Neo.Network.P2P
         {
             receivedBlockIndex.TryGetValue(invalidBlock.Index, out TaskSession session);
             if (session is null) return;
-            session.InvalidBlockCount++;
-            session.IndexTasks.Remove(invalidBlock.Index);
+            if (++session.InvalidBlockCount > 3)
+                OnTerminated(sessions.Where(p => p.Value == session).First().Key);
+            else
+            {
+                session.IndexTasks.Remove(invalidBlock.Index);
+                session.UpdateWeight();
+                AssignSyncTask(invalidBlock.Index, session);
+            }
             receivedBlockIndex.Remove(invalidBlock.Index);
-            AssignSyncTask(invalidBlock.Index, session);
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -241,8 +248,13 @@ namespace Neo.Network.P2P
                     if (TimeProvider.Current.UtcNow - kvp.Value > TaskTimeout)
                     {
                         session.IndexTasks.Remove(kvp.Key);
-                        session.TimeoutTimes++;
-                        AssignSyncTask(kvp.Key, session);
+                        if (++session.TimeoutTimes > 3)
+                            OnTerminated(sessions.Where(p => p.Value == session).First().Key);
+                        else
+                        {
+                            session.UpdateWeight();
+                            AssignSyncTask(kvp.Key, session);
+                        }
                     }
                 }
 
