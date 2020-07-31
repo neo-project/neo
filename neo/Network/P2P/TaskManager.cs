@@ -6,6 +6,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -217,8 +218,16 @@ namespace Neo.Network.P2P
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
 
+        private readonly ConcurrentDictionary<ActorPath, DateTime> _expiredTimes = new ConcurrentDictionary<ActorPath, DateTime>();
+
         private void RequestTasks(TaskSession session)
         {
+            if (!_expiredTimes.ContainsKey(session.RemoteNode.Path) ||
+                _expiredTimes.TryGetValue(session.RemoteNode.Path, out var expireTime) && expireTime < DateTime.Now)
+            {
+                session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
+                _expiredTimes[session.RemoteNode.Path] = DateTime.Now.AddSeconds(PingCoolingOffPeriod);
+            }
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
             {
@@ -259,11 +268,6 @@ namespace Neo.Network.P2P
                     }
                 }
                 session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
-            }
-            else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
-            {
-                session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
             }
         }
     }
