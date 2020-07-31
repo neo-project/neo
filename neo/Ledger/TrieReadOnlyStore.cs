@@ -1,8 +1,5 @@
-using Neo.IO.Data.LevelDB;
 using Neo.Persistence;
 using Neo.Trie;
-using Neo.Trie.MPT;
-using System.Text;
 
 namespace Neo.Ledger
 {
