@@ -1,5 +1,6 @@
 using Neo.IO.Data.LevelDB;
 using Neo.Persistence;
+using Neo.Persistence.LevelDB;
 using Neo.Trie;
 using Neo.Trie.MPT;
 using System.Text;
@@ -11,7 +12,7 @@ namespace Neo.Ledger
         private readonly Store store;
         private readonly byte prefix;
 
-        private static readonly byte[] ROOT_KEY = Blockchain.GenesisBlock.Hash.ToArray();
+        private readonly byte[] ROOT_KEY = Prefixes.ROOT_KEY;
 
         public TrieReadOnlyStore(Store store, byte prefix)
         {
