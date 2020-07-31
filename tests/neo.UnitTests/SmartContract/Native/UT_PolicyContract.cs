@@ -20,14 +20,9 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_Initialize()
+        public void Check_Default()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var keyCount = snapshot.Storages.GetChangeSet().Count();
-
-            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
-
-            (keyCount + 5).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             var ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
