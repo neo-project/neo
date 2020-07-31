@@ -256,7 +256,7 @@ namespace Neo.Wallets
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                Dictionary<UInt160, Signer> cosignerList = cosigners.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
+                Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
                 byte[] script;
                 List<(UInt160 Account, BigInteger Value)> balances_gas = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
