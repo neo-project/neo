@@ -11,12 +11,12 @@ namespace Neo.SmartContract
 
         public DeployedContract(ContractState contract)
         {
-            if (contract == null) throw new ArgumentNullException(nameof(contract));
+            if (contract is null) throw new ArgumentNullException(nameof(contract));
 
             Script = null;
             ScriptHash = contract.ScriptHash;
             ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod("verify");
-            if (descriptor == null) throw new ArgumentNullException("The smart contract haven't got verify method.");
+            if (descriptor is null) throw new NotSupportedException("The smart contract haven't got verify method.");
 
             ParameterList = descriptor.Parameters.Select(u => u.Type).ToArray();
         }
