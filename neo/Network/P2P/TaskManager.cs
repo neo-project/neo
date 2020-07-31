@@ -222,11 +222,10 @@ namespace Neo.Network.P2P
 
         private void RequestTasks(TaskSession session)
         {
-            if (!_expiredTimes.ContainsKey(session.RemoteNode.Path) ||
-                _expiredTimes.TryGetValue(session.RemoteNode.Path, out var expireTime) && expireTime < DateTime.Now)
+            if (!_expiredTimes.TryGetValue(session.RemoteNode.Path, out var expireTime) || expireTime < DateTime.UtcNow)
             {
                 session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
-                _expiredTimes[session.RemoteNode.Path] = DateTime.Now.AddSeconds(PingCoolingOffPeriod);
+                _expiredTimes[session.RemoteNode.Path] = DateTime.UtcNow.AddSeconds(PingCoolingOffPeriod);
             }
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
