@@ -13,12 +13,11 @@ namespace Neo.Network.P2P
 
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
+        public const int MaxTaskCountPerNode = 10;
         public uint TimeoutTimes = 0;
         public uint InvalidBlockCount = 0;
         public double RTT = 100.0;
         public double Weight = 1000.0;
-
-        public const int MaxTaskCountPerNode = 10;
 
         public void UpdateRTT(double newRTT)
         {
