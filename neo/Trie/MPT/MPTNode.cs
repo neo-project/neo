@@ -1,6 +1,5 @@
 using Neo.Cryptography;
 using Neo.IO.Json;
-using System;
 using System.IO;
 using System.Text;
 
