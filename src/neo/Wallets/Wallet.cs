@@ -366,15 +366,12 @@ namespace Neo.Wallets
 
                 foreach (UInt160 hash in hashes)
                 {
-                    byte[] witness_script = GetAccount(hash)?.Contract?.Script ?? null;
+                    byte[] witness_script = GetAccount(hash)?.Contract?.Script;
                     if (witness_script is null)
                     {
                         var contract = snapshot.Contracts.TryGet(hash);
-                        if (contract != null)
-                        {
-                            tx.NetworkFee += CalculateNetworkFee(snapshot, tx, contract, ref size);
-                        }
-                        continue;
+                        if (contract is null) continue;
+                        tx.NetworkFee += CalculateNetworkFee(snapshot, tx, contract, ref size);
                     }
                     tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
                 }
