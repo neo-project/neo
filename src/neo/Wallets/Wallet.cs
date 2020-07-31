@@ -373,7 +373,10 @@ namespace Neo.Wallets
                         if (contract is null) continue;
                         tx.NetworkFee += CalculateNetworkFee(snapshot, tx, contract, ref size);
                     }
-                    tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
+                    else
+                    {
+                        tx.NetworkFee += CalculateNetworkFee(witness_script, ref size);
+                    }
                 }
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
