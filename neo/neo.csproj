@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Copyright>2015-2019 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
-    <Version>2.10.3-neox-preview1</Version>
+    <Version>2.11.0</Version>
     <Authors>The Neo Project</Authors>
     <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
