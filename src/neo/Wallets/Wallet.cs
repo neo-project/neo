@@ -256,7 +256,7 @@ namespace Neo.Wallets
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                HashSet<UInt160> cosignerList = new HashSet<UInt160>();
+                Dictionary<UInt160, Signer> cosignerList = cosigners.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
                 byte[] script;
                 List<(UInt160 Account, BigInteger Value)> balances_gas = null;
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -283,9 +283,21 @@ namespace Neo.Wallets
                         {
                             balances = balances.OrderBy(p => p.Value).ToList();
                             var balances_used = FindPayingAccounts(balances, output.Value.Value);
-                            cosignerList.UnionWith(balances_used.Select(p => p.Account));
                             foreach (var (account, value) in balances_used)
                             {
+                                if (cosignerList.TryGetValue(account, out Signer signer))
+                                {
+                                    if (signer.Scopes != WitnessScope.Global)
+                                        signer.Scopes |= WitnessScope.CalledByEntry;
+                                }
+                                else
+                                {
+                                    cosignerList.Add(account, new Signer
+                                    {
+                                        Account = account,
+                                        Scopes = WitnessScope.CalledByEntry
+                                    });
+                                }
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
                                 sb.Emit(OpCode.ASSERT);
                             }
@@ -298,14 +310,7 @@ namespace Neo.Wallets
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-                cosigners = cosignerList.Select(p => new Signer()
-                {
-                    // default access for transfers should be valid only for first invocation
-                    Scopes = WitnessScope.CalledByEntry,
-                    Account = p
-                }).Concat(cosigners?.Where(u => !cosignerList.Contains(u.Account)) ?? Array.Empty<Signer>()).ToArray();
-
-                return MakeTransaction(snapshot, script, cosigners, Array.Empty<TransactionAttribute>(), balances_gas);
+                return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
             }
         }
 
