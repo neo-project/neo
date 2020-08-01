@@ -428,54 +428,56 @@ namespace Neo.Wallets
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
                 WalletAccount account = GetAccount(scriptHash);
-                if (account is null) continue;
 
-                // Try to sign self-contained multiSig
-
-                Contract multiSigContract = account.Contract;
-
-                if (multiSigContract != null &&
-                    multiSigContract.Script.IsMultiSigContract(out int m, out ECPoint[] points))
+                if (account != null)
                 {
-                    foreach (var point in points)
-                    {
-                        account = GetAccount(point);
-                        if (account?.HasKey != true) continue;
-                        KeyPair key = account.GetKey();
-                        byte[] signature = context.Verifiable.Sign(key);
-                        fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
-                        if (fSuccess) m--;
-                        if (context.Completed || m <= 0) break;
-                    }
-                }
-                else
-                {
-                    // Try to sign with regular accounts
+                    // Try to sign self-contained multiSig
 
-                    if (account.HasKey)
+                    Contract multiSigContract = account.Contract;
+
+                    if (multiSigContract != null &&
+                        multiSigContract.Script.IsMultiSigContract(out int m, out ECPoint[] points))
                     {
-                        KeyPair key = account.GetKey();
-                        byte[] signature = context.Verifiable.Sign(key);
-                        fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+                        foreach (var point in points)
+                        {
+                            account = GetAccount(point);
+                            if (account?.HasKey != true) continue;
+                            KeyPair key = account.GetKey();
+                            byte[] signature = context.Verifiable.Sign(key);
+                            fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
+                            if (fSuccess) m--;
+                            if (context.Completed || m <= 0) break;
+                        }
+                        continue;
                     }
                     else
                     {
-                        // Smart contract verification
+                        // Try to sign with regular accounts
 
-                        using var snapshot = Blockchain.Singleton.GetSnapshot();
-                        var contract = snapshot.Contracts.TryGet(account.ScriptHash);
-
-                        if (contract != null)
+                        if (account.HasKey)
                         {
-                            var deployed = new DeployedContract(contract);
-
-                            // Only works with verify without parameters
-
-                            if (deployed.ParameterList.Length == 0)
-                            {
-                                fSuccess |= context.Add(new DeployedContract(contract), new object[0]);
-                            }
+                            KeyPair key = account.GetKey();
+                            byte[] signature = context.Verifiable.Sign(key);
+                            fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+                            continue;
                         }
+                    }
+                }
+
+                // Try Smart contract verification
+
+                using var snapshot = Blockchain.Singleton.GetSnapshot();
+                var contract = snapshot.Contracts.TryGet(scriptHash);
+
+                if (contract != null)
+                {
+                    var deployed = new DeployedContract(contract);
+
+                    // Only works with verify without parameters
+
+                    if (deployed.ParameterList.Length == 0)
+                    {
+                        fSuccess |= context.Add(new DeployedContract(contract), new object[0]);
                     }
                 }
             }
