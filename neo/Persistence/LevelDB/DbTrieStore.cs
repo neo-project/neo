@@ -1,7 +1,6 @@
 using Neo.IO.Data.LevelDB;
 using Neo.Trie;
 using Neo.Trie.MPT;
-using Neo.Ledger;
 
 namespace Neo.Persistence.LevelDB
 {

@@ -1,4 +1,4 @@
-﻿using Neo.Ledger;
+﻿using System;
 
 namespace Neo.Persistence.LevelDB
 {
@@ -29,6 +29,6 @@ namespace Neo.Persistence.LevelDB
          * Note: The saved consensus state uses the Prefix 0xf4
          */
 
-        public static readonly byte[] ROOT_KEY = Blockchain.GenesisBlock.Hash.ToArray();
+        public static readonly byte[] ROOT_KEY = BitConverter.GetBytes(ProtocolSettings.Default.Magic);
     }
 }
