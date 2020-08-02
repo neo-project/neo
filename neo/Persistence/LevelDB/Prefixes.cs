@@ -1,4 +1,6 @@
-﻿namespace Neo.Persistence.LevelDB
+﻿using System;
+
+namespace Neo.Persistence.LevelDB
 {
     internal static class Prefixes
     {
@@ -22,10 +24,11 @@
         public const byte IX_CurrentStateRoot = 0xc2;
 
         public const byte SYS_Version = 0xf0;
-
         /* Prefixes 0xf1 to 0xff are reserved for external use.
          *
          * Note: The saved consensus state uses the Prefix 0xf4
          */
+
+        public static readonly byte[] ROOT_KEY = BitConverter.GetBytes(ProtocolSettings.Default.Magic);
     }
 }
