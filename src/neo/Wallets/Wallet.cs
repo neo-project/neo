@@ -448,36 +448,32 @@ namespace Neo.Wallets
                             if (fSuccess) m--;
                             if (context.Completed || m <= 0) break;
                         }
-                        continue;
                     }
-                    else
+                    else if (account.HasKey)
                     {
                         // Try to sign with regular accounts
-
-                        if (account.HasKey)
-                        {
-                            KeyPair key = account.GetKey();
-                            byte[] signature = context.Verifiable.Sign(key);
-                            fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
-                            continue;
-                        }
+                        KeyPair key = account.GetKey();
+                        byte[] signature = context.Verifiable.Sign(key);
+                        fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                     }
                 }
-
-                // Try Smart contract verification
-
-                using var snapshot = Blockchain.Singleton.GetSnapshot();
-                var contract = snapshot.Contracts.TryGet(scriptHash);
-
-                if (contract != null)
+                else
                 {
-                    var deployed = new DeployedContract(contract);
+                    // Try Smart contract verification
 
-                    // Only works with verify without parameters
+                    using var snapshot = Blockchain.Singleton.GetSnapshot();
+                    var contract = snapshot.Contracts.TryGet(scriptHash);
 
-                    if (deployed.ParameterList.Length == 0)
+                    if (contract != null)
                     {
-                        fSuccess |= context.Add(new DeployedContract(contract), new object[0]);
+                        var deployed = new DeployedContract(contract);
+
+                        // Only works with verify without parameters
+
+                        if (deployed.ParameterList.Length == 0)
+                        {
+                            fSuccess |= context.Add(new DeployedContract(contract));
+                        }
                     }
                 }
             }
