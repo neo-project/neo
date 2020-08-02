@@ -472,7 +472,7 @@ namespace Neo.Wallets
 
                         if (deployed.ParameterList.Length == 0)
                         {
-                            fSuccess |= context.Add(new DeployedContract(contract));
+                            fSuccess |= context.Add(deployed);
                         }
                     }
                 }
