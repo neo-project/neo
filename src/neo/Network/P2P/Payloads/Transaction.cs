@@ -92,7 +92,8 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Correspond with the first entry of Signers
+        /// The first signer is the sender of the transaction, regardless of its WitnessScope.
+        /// The sender will pay the fees of the transaction.
         /// </summary>
         public UInt160 Sender => _signers[0].Account;
 
