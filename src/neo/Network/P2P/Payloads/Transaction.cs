@@ -178,10 +178,7 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
-                if (i > 0 && signer.Scopes == WitnessScope.FeeOnly)
-                    throw new FormatException();
-                if (!hashset.Add(signer.Account))
-                    throw new FormatException();
+                if (!hashset.Add(signer.Account)) throw new FormatException();
                 yield return signer;
             }
         }
@@ -293,6 +290,9 @@ namespace Neo.Network.P2P.Payloads
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
+            foreach (TransactionAttribute attribute in Attributes)
+                if (!attribute.Verify(snapshot, this))
+                    return VerifyResult.Invalid;
             if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -306,9 +306,8 @@ namespace Neo.Network.P2P.Payloads
         {
             VerifyResult result = VerifyForEachBlock(snapshot, context);
             if (result != VerifyResult.Succeed) return result;
-            int size = Size;
-            if (size > MaxTransactionSize) return VerifyResult.Invalid;
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
