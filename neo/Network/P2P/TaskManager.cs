@@ -39,6 +39,7 @@ namespace Neo.Network.P2P
 
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
+        private readonly ConcurrentDictionary<ActorPath, DateTime> _expiredTimes = new ConcurrentDictionary<ActorPath, DateTime>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private readonly UInt256 HeaderTaskHash = UInt256.Zero;
@@ -217,8 +218,6 @@ namespace Neo.Network.P2P
         {
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
-
-        private readonly ConcurrentDictionary<ActorPath, DateTime> _expiredTimes = new ConcurrentDictionary<ActorPath, DateTime>();
 
         private void RequestTasks(TaskSession session)
         {
