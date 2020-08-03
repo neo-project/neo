@@ -448,6 +448,7 @@ namespace Neo.Wallets
                             if (fSuccess) m--;
                             if (context.Completed || m <= 0) break;
                         }
+                        continue;
                     }
                     else if (account.HasKey)
                     {
@@ -455,25 +456,24 @@ namespace Neo.Wallets
                         KeyPair key = account.GetKey();
                         byte[] signature = context.Verifiable.Sign(key);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+                        continue;
                     }
                 }
-                else
+
+                // Try Smart contract verification
+
+                using var snapshot = Blockchain.Singleton.GetSnapshot();
+                var contract = snapshot.Contracts.TryGet(scriptHash);
+
+                if (contract != null)
                 {
-                    // Try Smart contract verification
+                    var deployed = new DeployedContract(contract);
 
-                    using var snapshot = Blockchain.Singleton.GetSnapshot();
-                    var contract = snapshot.Contracts.TryGet(scriptHash);
+                    // Only works with verify without parameters
 
-                    if (contract != null)
+                    if (deployed.ParameterList.Length == 0)
                     {
-                        var deployed = new DeployedContract(contract);
-
-                        // Only works with verify without parameters
-
-                        if (deployed.ParameterList.Length == 0)
-                        {
-                            fSuccess |= context.Add(deployed);
-                        }
+                        fSuccess |= context.Add(deployed);
                     }
                 }
             }
