@@ -209,7 +209,7 @@ namespace Neo.Wallets
             return cosigners.Prepend(new Signer
             {
                 Account = sender,
-                Scopes = WitnessScope.FeeOnly
+                Scopes = WitnessScope.None
             }).ToArray();
         }
 
