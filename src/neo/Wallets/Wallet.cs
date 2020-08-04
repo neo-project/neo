@@ -250,8 +250,6 @@ namespace Neo.Wallets
             }
             else
             {
-                if (!Contains(from))
-                    throw new ArgumentException($"The address {from} was not found in the wallet");
                 accounts = new[] { from };
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
@@ -323,8 +321,6 @@ namespace Neo.Wallets
             }
             else
             {
-                if (!Contains(sender))
-                    throw new ArgumentException($"The address {sender} was not found in the wallet");
                 accounts = new[] { sender };
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
