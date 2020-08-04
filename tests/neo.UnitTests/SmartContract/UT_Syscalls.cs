@@ -307,7 +307,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(-1, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(899999999600, engine.ResultStack.Pop().GetInteger());
             }
         }
 

@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -31,7 +32,6 @@ namespace Neo.SmartContract
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
-        private readonly bool testMode;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
@@ -42,26 +42,25 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
-        public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
+        public long GasLeft => gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
         public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
             this.gas_amount = gas;
-            this.testMode = testMode;
         }
 
         internal void AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
-            if (!testMode && GasConsumed > gas_amount)
+            if (GasConsumed > gas_amount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -112,8 +111,16 @@ namespace Neo.SmartContract
         }
 
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
-            => applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
-                ?? new ApplicationEngine(trigger, container, snapshot, gas, testMode);
+        {
+            if (testMode)
+            {
+                if (snapshot == null) gas = 9000 * (long)NativeContract.GAS.Factor;
+                else gas = NativeContract.Policy.GetMaxBlockSystemFee(snapshot);
+            }
+
+            return applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
+                  ?? new ApplicationEngine(trigger, container, snapshot, gas);
+        }
 
         private InvocationState GetInvocationState(ExecutionContext context)
         {
