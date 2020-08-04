@@ -191,6 +191,7 @@ namespace Neo.Network.P2P
             if (!sessions.TryGetValue(actor, out TaskSession session))
                 return;
             sessions.Remove(actor);
+            _expiredTimes.TryRemove(session.RemoteNode.Path, out _);
             foreach (UInt256 hash in session.Tasks.Keys)
                 DecrementGlobalTask(hash);
         }
