@@ -87,7 +87,7 @@ namespace Neo.UnitTests.Ledger
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.FeeOnly } };
+            mock.Object.Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } };
             mock.Object.Witnesses = new[]
             {
                 new Witness
@@ -110,7 +110,7 @@ namespace Neo.UnitTests.Ledger
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.FeeOnly } };
+            mock.Object.Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } };
             mock.Object.Witnesses = new[]
             {
                 new Witness
