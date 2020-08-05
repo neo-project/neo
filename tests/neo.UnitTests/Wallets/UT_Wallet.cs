@@ -298,7 +298,7 @@ namespace Neo.UnitTests.Wallets
                      Value = new BigDecimal(1,8)
                 }
             }, UInt160.Zero);
-            action.Should().Throw<ArgumentException>();
+            action.Should().Throw<InvalidOperationException>();
 
             action = () => wallet.MakeTransaction(new TransferOutput[]
             {
