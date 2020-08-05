@@ -239,7 +239,7 @@ namespace Neo.UnitTests.SmartContract
                 var tx = new Transaction()
                 {
                     Script = new byte[] { 0x01 },
-                    Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.FeeOnly } },
+                    Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } },
                     Attributes = Array.Empty<TransactionAttribute>(),
                     NetworkFee = 0x02,
                     SystemFee = 0x03,

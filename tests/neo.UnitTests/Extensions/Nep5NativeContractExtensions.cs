@@ -4,7 +4,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System;
 using System.IO;
 using System.Numerics;
 
@@ -16,13 +15,9 @@ namespace Neo.UnitTests.Extensions
         {
             private readonly UInt160[] _hashForVerify;
 
-            public Witness[] Witnesses
-            {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
-            }
-
             public int Size => 0;
+
+            public Witness[] Witnesses { get; set; }
 
             public ManualWitness(params UInt160[] hashForVerify)
             {
