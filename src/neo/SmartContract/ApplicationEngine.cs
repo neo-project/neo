@@ -133,16 +133,16 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        internal void LoadContext(ExecutionContext context, int initialPosition)
+        internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
-            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
-            context.InstructionPointer = initialPosition;
+            if (checkReturnValue)
+                GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
             LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags)
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
         {
-            ExecutionContext context = LoadScript(script);
+            ExecutionContext context = LoadScript(script, initialPosition);
             context.GetState<ExecutionContextState>().CallFlags = callFlags;
             return context;
         }
@@ -286,7 +286,7 @@ namespace Neo.SmartContract
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode);
-            engine.LoadScript(script).InstructionPointer = offset;
+            engine.LoadScript(script, offset);
             engine.Execute();
             return engine;
         }
