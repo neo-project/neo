@@ -29,7 +29,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// This constant can be used for testing scripts, by default has the same value as max block system fee.
         /// </summary>
-        public const long TestGas = 9000_00000000;
+        public const long TestGas = 20_00000000;
 
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
