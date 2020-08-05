@@ -65,7 +65,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas(snapshot)))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -99,7 +99,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas(snapshot)))
+            using (ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas))
             {
                 Debugger debugger = new Debugger(applicationEngine);
                 applicationEngine.LoadScript(script);
@@ -135,7 +135,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas(snapshot)))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -172,7 +172,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas(snapshot)))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);

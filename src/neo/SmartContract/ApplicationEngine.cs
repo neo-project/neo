@@ -26,6 +26,11 @@ namespace Neo.SmartContract
             public bool NeedCheckReturnValue;
         }
 
+        /// <summary>
+        /// This constant can be used for testing scripts, by default has the same value as max block system fee.
+        /// </summary>
+        public const long TestGas = 9000_00000000;
+
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
@@ -108,12 +113,6 @@ namespace Neo.SmartContract
                     state.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(state.ReturnType)));
                     break;
             }
-        }
-
-        public static long TestGas(StoreView snapshot = null)
-        {
-            if (snapshot == null) return 9000 * (long)NativeContract.GAS.Factor;
-            else return NativeContract.Policy.GetMaxBlockSystemFee(snapshot);
         }
 
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)

@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Native
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitAppCall(Hash, operation, args);
-                return ApplicationEngine.Run(sb.ToArray(), snapshot, gas: ApplicationEngine.TestGas(snapshot));
+                return ApplicationEngine.Run(sb.ToArray(), snapshot, gas: ApplicationEngine.TestGas);
             }
         }
 

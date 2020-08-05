@@ -402,7 +402,7 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, ApplicationEngine.TestGas(snapshot)))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, ApplicationEngine.TestGas))
                     {
                         engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
