@@ -144,7 +144,8 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
+            using SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 20000000L * accounts.Length);
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
@@ -266,7 +267,7 @@ namespace Neo.Wallets
                             using (ScriptBuilder sb2 = new ScriptBuilder())
                             {
                                 sb2.EmitAppCall(assetId, "balanceOf", account);
-                                using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, testMode: true))
+                                using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, gas: ApplicationEngine.TestGas(snapshot)))
                                 {
                                     if (engine.State.HasFlag(VMState.FAULT))
                                         throw new InvalidOperationException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
@@ -346,7 +347,7 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, gas: ApplicationEngine.TestGas(snapshot)))
                 {
                     if (engine.State == VMState.FAULT)
                     {
