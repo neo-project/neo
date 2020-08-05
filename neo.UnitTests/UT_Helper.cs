@@ -1,8 +1,8 @@
-﻿using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.SmartContract;
 using Neo.Wallets;
+using FluentAssertions;
 
 namespace Neo.UnitTests
 {
@@ -37,6 +37,5 @@ namespace Neo.UnitTests
             UInt160 res = testByteArray.ToScriptHash();
             res.Should().Be(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
         }
-
     }
 }

@@ -16,10 +16,12 @@ namespace Neo.Persistence
         public override DataCache<UInt256, AssetState> Assets { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
+        public override DataCache<UInt32Wrapper, StateRootState> StateRoots { get; }
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        public override MetaDataCache<RootHashIndex> StateRootHashIndex { get; }
 
         public CloneSnapshot(Snapshot snapshot)
         {
@@ -33,10 +35,12 @@ namespace Neo.Persistence
             this.Assets = snapshot.Assets.CreateSnapshot();
             this.Contracts = snapshot.Contracts.CreateSnapshot();
             this.Storages = snapshot.Storages.CreateSnapshot();
+            this.StateRoots = snapshot.StateRoots.CreateSnapshot();
             this.HeaderHashList = snapshot.HeaderHashList.CreateSnapshot();
             this.ValidatorsCount = snapshot.ValidatorsCount.CreateSnapshot();
             this.BlockHashIndex = snapshot.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = snapshot.HeaderHashIndex.CreateSnapshot();
+            this.StateRootHashIndex = snapshot.StateRootHashIndex.CreateSnapshot();
         }
     }
 }

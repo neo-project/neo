@@ -9,6 +9,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Trie.MPT;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ using System.Threading;
 
 namespace Neo.Ledger
 {
-    public sealed class Blockchain : UntypedActor
+    public sealed partial class Blockchain : UntypedActor
     {
         public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; }
         public class PersistCompleted { public Block Block; }
@@ -414,6 +415,7 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            CheckRootOnBlockPersistCompleted();
         }
 
         protected override void OnReceive(object message)
@@ -422,6 +424,9 @@ namespace Neo.Ledger
             {
                 case Import import:
                     OnImport(import.Blocks);
+                    break;
+                case ImportRoots importRoots:
+                    OnImportRoots(importRoots.Roots);
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
@@ -434,6 +439,12 @@ namespace Neo.Ledger
                     break;
                 case Transaction transaction:
                     Sender.Tell(OnNewTransaction(transaction));
+                    break;
+                case StateRoot stateRoot:
+                    OnNewStateRoot(stateRoot);
+                    break;
+                case StateRoot[] stateRoots:
+                    OnStateRoots(stateRoots);
                     break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
@@ -642,6 +653,7 @@ namespace Neo.Ledger
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
+            PersistLocalStateRoot();
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
         }
@@ -743,6 +755,8 @@ namespace Neo.Ledger
             {
                 case Header[] _:
                 case Block _:
+                case StateRoot _:
+                case StateRoot[] _:
                 case ConsensusPayload _:
                 case Terminated _:
                     return true;
