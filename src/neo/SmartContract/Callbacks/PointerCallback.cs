@@ -3,7 +3,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Callbacks
 {
-    internal class PointerCallback : CallbackBase
+    public class PointerCallback : CallbackBase
     {
         private readonly ExecutionContext context;
         private readonly int pointer;
