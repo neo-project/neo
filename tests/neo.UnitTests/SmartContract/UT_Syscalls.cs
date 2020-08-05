@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot,ApplicationEngine.TestGas);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
