@@ -88,8 +88,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
-
-            // TODO: More votes tests
         }
 
         [TestMethod]
@@ -117,7 +115,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             stateValidator.Votes.Should().Be(300);
-
         }
 
         [TestMethod]
