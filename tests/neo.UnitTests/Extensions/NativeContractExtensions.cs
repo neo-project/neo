@@ -17,7 +17,7 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(this NativeContract contract, StoreView snapshot, IVerifiable container, string method, params ContractParameter[] args)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, ApplicationEngine.TestGas(snapshot));
 
             engine.LoadScript(contract.Script);
 

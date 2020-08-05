@@ -383,7 +383,7 @@ namespace Neo.Wallets
                     ContractMethodDescriptor verify = contract.Manifest.Abi.GetMethod("verify");
                     if (verify is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
                     ContractMethodDescriptor init = contract.Manifest.Abi.GetMethod("_initialize");
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone(), 0, testMode: true);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone(), ApplicationEngine.TestGas(snapshot));
                     engine.LoadScript(contract.Script, CallFlags.None).InstructionPointer = verify.Offset;
                     if (init != null) engine.LoadClonedContext(init.Offset);
                     engine.LoadScript(Array.Empty<byte>(), CallFlags.None);

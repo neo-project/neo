@@ -110,15 +110,15 @@ namespace Neo.SmartContract
             }
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        public static long TestGas(StoreView snapshot = null)
         {
-            if (testMode)
-            {
-                if (snapshot == null) gas = 9000 * (long)NativeContract.GAS.Factor;
-                else gas = NativeContract.Policy.GetMaxBlockSystemFee(snapshot);
-            }
+            if (snapshot == null) return 9000 * (long)NativeContract.GAS.Factor;
+            else return NativeContract.Policy.GetMaxBlockSystemFee(snapshot);
+        }
 
-            return applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
+        {
+            return applicationEngineProvider?.Create(trigger, container, snapshot, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, gas);
         }
 
@@ -287,7 +287,7 @@ namespace Neo.SmartContract
             IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
             engine.LoadScript(script).InstructionPointer = offset;
             engine.Execute();
             return engine;
