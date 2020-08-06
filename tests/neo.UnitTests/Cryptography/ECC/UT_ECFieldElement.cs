@@ -73,7 +73,7 @@ namespace Neo.UnitTests.Cryptography.ECC
                 BigInteger.Parse("00FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551", NumberStyles.AllowHexSpecifier),
                 ("04" + "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296" + "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5").HexToBytes() }) as ECCurve;
             element = new ECFieldElement(new BigInteger(200), testCruve);
-            element.Sqrt().Should().Be(null);
+            Assert.ThrowsException<NotImplementedException>(() => element.Sqrt());
         }
 
         [TestMethod]
