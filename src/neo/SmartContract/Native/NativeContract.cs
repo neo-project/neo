@@ -1,6 +1,4 @@
 using Neo.IO;
-using Neo.Ledger;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
@@ -138,11 +136,10 @@ namespace Neo.SmartContract.Native
 
         public ApplicationEngine TestCall(string operation, params object[] args)
         {
-            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitAppCall(Hash, operation, args);
-                return ApplicationEngine.Run(sb.ToArray(), snapshot);
+                return ApplicationEngine.Run(sb.ToArray());
             }
         }
 

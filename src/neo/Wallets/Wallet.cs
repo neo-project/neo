@@ -144,8 +144,7 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
-            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 20000000L * accounts.Length);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();

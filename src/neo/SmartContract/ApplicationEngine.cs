@@ -42,6 +42,7 @@ namespace Neo.SmartContract
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
+        private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
@@ -286,11 +287,17 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, StoreView snapshot,
-            IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
         {
+            SnapshotView disposable = null;
+            if (snapshot is null)
+            {
+                disposable = Blockchain.Singleton.GetSnapshot();
+                snapshot = disposable;
+            }
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
+            if (disposable != null) engine.Disposables.Add(disposable);
             engine.LoadScript(script).InstructionPointer = offset;
             engine.Execute();
             return engine;
