@@ -21,7 +21,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestNotify()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
