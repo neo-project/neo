@@ -7,7 +7,7 @@ using System.Net;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    public class UT_LocalNode 
+    public class UT_LocalNode
     {
         private static NeoSystem testBlockchain;
 
