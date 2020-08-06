@@ -1,8 +1,11 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using System;
+using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -20,6 +23,47 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var test = new HighPriorityAttribute();
             test.Size.Should().Be(1);
+        }
+
+        [TestMethod]
+        public void ToJson()
+        {
+            var test = new HighPriorityAttribute();
+            var json = test.ToJson().ToString();
+            Assert.AreEqual(@"{""type"":""HighPriority""}", json);
+        }
+
+        [TestMethod]
+        public void DeserializeAndSerialize()
+        {
+            var test = new HighPriorityAttribute();
+
+            var clone = test.ToArray().AsSerializable<HighPriorityAttribute>();
+            Assert.AreEqual(clone.Type, test.Type);
+
+            // As transactionAttribute
+
+            using var msRead = new MemoryStream();
+            using var msWrite = new MemoryStream();
+            using (var stream = new BinaryWriter(msWrite))
+            {
+                var data = (test as TransactionAttribute).ToArray();
+                msRead.Write(data);
+                msRead.Seek(0, SeekOrigin.Begin);
+            }
+
+            using var reader = new BinaryReader(msRead);
+            clone = TransactionAttribute.DeserializeFrom(reader) as HighPriorityAttribute;
+            Assert.AreEqual(clone.Type, test.Type);
+
+            // Wrong type
+
+            msRead.Seek(0, SeekOrigin.Begin);
+            msRead.WriteByte(0xff);
+            msRead.Seek(0, SeekOrigin.Begin);
+            Assert.ThrowsException<FormatException>(() => TransactionAttribute.DeserializeFrom(reader));
+            msRead.Seek(0, SeekOrigin.Begin);
+            Assert.ThrowsException<FormatException>(() => new HighPriorityAttribute().Deserialize(reader));
         }
 
         [TestMethod]
