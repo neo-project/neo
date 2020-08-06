@@ -1,7 +1,6 @@
 using Neo.Ledger;
 using Neo.SmartContract.Iterators;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -67,8 +66,7 @@ namespace Neo.SmartContract
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
             StorageIterator iterator = new StorageIterator(Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator());
-            disposables ??= new List<IDisposable>();
-            disposables.Add(iterator);
+            Disposables.Add(iterator);
             return iterator;
         }
 
