@@ -46,6 +46,7 @@ namespace Neo.Network.P2P
             this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
             this.lastTaskIndex = Blockchain.Singleton.Height;
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         private bool AssignSyncTask(uint index, TaskSession filterSession = null)
