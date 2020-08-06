@@ -61,7 +61,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Without block
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
                 blocks.Add(block.Hash, block.Trim());
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
 
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -117,7 +117,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("null");
                 script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, ApplicationEngine.TestGas))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -136,7 +136,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("***");
                 script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, ApplicationEngine.TestGas))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -152,7 +152,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitPush("123.45");
                 script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, ApplicationEngine.TestGas))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -185,7 +185,7 @@ namespace Neo.UnitTests.SmartContract
                 script.Emit(OpCode.SETITEM);
                 script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, ApplicationEngine.TestGas))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -207,7 +207,7 @@ namespace Neo.UnitTests.SmartContract
                 script.EmitSysCall(ApplicationEngine.System_Storage_GetContext);
                 script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null, ApplicationEngine.TestGas))
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
                 {
                     engine.LoadScript(script.ToArray());
 
@@ -227,7 +227,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Without tx
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -249,7 +249,7 @@ namespace Neo.UnitTests.SmartContract
                     Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
                 };
 
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, ApplicationEngine.TestGas);
+                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -299,7 +299,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
                 // Check the results
@@ -307,7 +307,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(899999999600, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(1999999600, engine.ResultStack.Pop().GetInteger());
             }
         }
 
@@ -353,7 +353,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, ApplicationEngine.TestGas);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
 
