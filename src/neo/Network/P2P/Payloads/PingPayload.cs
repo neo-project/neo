@@ -17,10 +17,10 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +      //Timestamp
             sizeof(uint);       //Nonce
 
-        public static PingPayload Create(Block header)
+        public static PingPayload Create(Block block)
         {
             Random rand = new Random();
-            return Create(header.Index, header.Hash, (uint)rand.Next());
+            return Create(block.Index, block.Hash, (uint)rand.Next());
         }
 
         public static PingPayload Create(uint height, UInt256 hash, uint nonce)
