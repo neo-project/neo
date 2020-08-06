@@ -44,9 +44,9 @@ namespace Neo.SmartContract
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
-        public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
-        public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
         protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
