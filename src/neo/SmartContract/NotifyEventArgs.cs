@@ -11,12 +11,14 @@ namespace Neo.SmartContract
     {
         public IVerifiable ScriptContainer { get; }
         public UInt160 ScriptHash { get; }
-        public StackItem State { get; }
+        public string EventName { get; }
+        public Array State { get; }
 
-        public NotifyEventArgs(IVerifiable container, UInt160 script_hash, StackItem state)
+        public NotifyEventArgs(IVerifiable container, UInt160 script_hash, string eventName, Array state)
         {
             this.ScriptContainer = container;
             this.ScriptHash = script_hash;
+            this.EventName = eventName;
             this.State = state;
         }
 
@@ -27,7 +29,12 @@ namespace Neo.SmartContract
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new[] { ScriptHash.ToArray(), State });
+            return new Array(referenceCounter)
+            {
+                ScriptHash.ToArray(),
+                EventName,
+                State.DeepCopy()
+            };
         }
     }
 }

@@ -10,19 +10,19 @@ namespace Neo.SmartContract
     {
         public const uint MaxTraceableBlocks = Transaction.MaxValidUntilBlockIncrement;
 
-        public static readonly InteropDescriptor System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", nameof(GetBlockchainHeight), 0_00000400, TriggerType.Application, CallFlags.AllowStates);
-        public static readonly InteropDescriptor System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", nameof(GetBlock), 0_02500000, TriggerType.Application, CallFlags.AllowStates);
-        public static readonly InteropDescriptor System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", nameof(GetTransaction), 0_01000000, TriggerType.Application, CallFlags.AllowStates);
-        public static readonly InteropDescriptor System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", nameof(GetTransactionHeight), 0_01000000, TriggerType.Application, CallFlags.AllowStates);
-        public static readonly InteropDescriptor System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", nameof(GetTransactionFromBlock), 0_01000000, TriggerType.Application, CallFlags.AllowStates);
-        public static readonly InteropDescriptor System_Blockchain_GetContract = Register("System.Blockchain.GetContract", nameof(GetContract), 0_01000000, TriggerType.Application, CallFlags.AllowStates);
+        public static readonly InteropDescriptor System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", nameof(GetBlockchainHeight), 0_00000400, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", nameof(GetBlock), 0_02500000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", nameof(GetTransaction), 0_01000000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", nameof(GetTransactionHeight), 0_01000000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", nameof(GetTransactionFromBlock), 0_01000000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetContract = Register("System.Blockchain.GetContract", nameof(GetContract), 0_01000000, CallFlags.AllowStates, true);
 
-        internal uint GetBlockchainHeight()
+        protected internal uint GetBlockchainHeight()
         {
             return Snapshot.Height;
         }
 
-        internal Block GetBlock(byte[] indexOrHash)
+        protected internal Block GetBlock(byte[] indexOrHash)
         {
             UInt256 hash;
             if (indexOrHash.Length < UInt256.Length)
@@ -47,14 +47,14 @@ namespace Neo.SmartContract
             return block;
         }
 
-        internal Transaction GetTransaction(UInt256 hash)
+        protected internal Transaction GetTransaction(UInt256 hash)
         {
             TransactionState state = Snapshot.Transactions.TryGet(hash);
             if (state != null && !IsTraceableBlock(Snapshot, state.BlockIndex)) state = null;
             return state?.Transaction;
         }
 
-        internal int GetTransactionHeight(UInt256 hash)
+        protected internal int GetTransactionHeight(UInt256 hash)
         {
             TransactionState state = Snapshot.Transactions.TryGet(hash);
             if (state is null) return -1;
@@ -62,7 +62,7 @@ namespace Neo.SmartContract
             return (int)state.BlockIndex;
         }
 
-        internal Transaction GetTransactionFromBlock(byte[] blockIndexOrHash, int txIndex)
+        protected internal Transaction GetTransactionFromBlock(byte[] blockIndexOrHash, int txIndex)
         {
             UInt256 hash;
             if (blockIndexOrHash.Length < UInt256.Length)
@@ -89,7 +89,7 @@ namespace Neo.SmartContract
             return Snapshot.GetTransaction(block.Hashes[txIndex + 1]);
         }
 
-        internal ContractState GetContract(UInt160 hash)
+        protected internal ContractState GetContract(UInt160 hash)
         {
             return Snapshot.Contracts.TryGet(hash);
         }
