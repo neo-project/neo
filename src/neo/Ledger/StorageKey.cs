@@ -13,7 +13,7 @@ namespace Neo.Ledger
 
         int ISerializable.Size => sizeof(int) + Key.Length;
 
-        internal static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
+        public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
         {
             byte[] buffer = new byte[sizeof(int) + prefix.Length];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, id);

@@ -72,7 +72,110 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.Result.Should().BeFalse();
             ret.State.Should().BeTrue();
 
-            // TODO: More votes tests
+            // no registered
+
+            var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
+            accountState.VoteTo = null;
+            ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeFalse();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().BeNull();
+
+            // normal case
+
+            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+        }
+
+        [TestMethod]
+        public void Check_Vote_Sameaccounts()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
+
+            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
+            accountState.Balance = 100;
+            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            var ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+
+            //two account vote for the same account
+            var stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            stateValidator.Votes.Should().Be(100);
+            var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
+            var secondAccount = snapshot.Storages.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
+            ret = Check_Vote(snapshot, G_Account, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            stateValidator.Votes.Should().Be(300);
+        }
+
+        [TestMethod]
+        public void Check_Vote_ChangeVote()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            //from vote to G
+            byte[] from = Blockchain.StandbyValidators[0].ToArray();
+            var from_Account = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
+            var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            accountState.Balance = 100;
+            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+
+            //from change vote to itself
+            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            G_stateValidator.Votes.Should().Be(100);
+            var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
+            snapshot.Storages.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState()));
+            ret = Check_Vote(snapshot, from_Account, from, true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            G_stateValidator.Votes.Should().Be(0);
+            var from_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, from)).GetInteroperable<CandidateState>();
+            from_stateValidator.Votes.Should().Be(100);
+        }
+
+        [TestMethod]
+        public void Check_Vote_VoteToNull()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
+
+            byte[] from = Blockchain.StandbyValidators[0].ToArray();
+            var from_Account = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
+            var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            accountState.Balance = 100;
+            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+
+            //from vote to null account G votes becomes 0
+            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            G_stateValidator.Votes.Should().Be(100);
+            var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
+            snapshot.Storages.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState()));
+            ret = Check_Vote(snapshot, from_Account, null, true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            G_stateValidator.Votes.Should().Be(0);
+            accountState.VoteTo.Should().Be(null);
         }
 
         [TestMethod]
