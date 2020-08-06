@@ -179,7 +179,7 @@ namespace Neo.Ledger
                     new Signer
                     {
                         Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
-                        Scopes = WitnessScope.FeeOnly
+                        Scopes = WitnessScope.None
                     }
                 },
                 Attributes = Array.Empty<TransactionAttribute>(),

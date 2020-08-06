@@ -940,7 +940,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Global is supposed to be default
 
             Signer cosigner = new Signer();
-            cosigner.Scopes.Should().Be(WitnessScope.FeeOnly);
+            cosigner.Scopes.Should().Be(WitnessScope.None);
 
             var wallet = TestUtils.GenerateTestWallet();
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -977,7 +977,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
-                    Scopes =  WitnessScope.FeeOnly
+                    Scopes =  WitnessScope.None
                 } };
 
                 Assert.ThrowsException<InvalidOperationException>(() => wallet.MakeTransaction(script, acc.ScriptHash, signers));
