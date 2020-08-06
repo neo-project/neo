@@ -251,9 +251,13 @@ namespace Neo.UnitTests.SmartContract
 
             var engine = GetEngine(true);
             ((Transaction)engine.ScriptContainer).Signers[0].Account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            ((Transaction)engine.ScriptContainer).Signers[0].Scopes = WitnessScope.CalledByEntry;
 
+            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeTrue();
+            engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeTrue();
+
+            ((Transaction)engine.ScriptContainer).Signers = new Signer[0];
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
-            engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeFalse();
 
             Action action = () => engine.CheckWitness(new byte[0]);
             action.Should().Throw<ArgumentException>();
