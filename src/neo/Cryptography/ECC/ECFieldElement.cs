@@ -41,53 +41,6 @@ namespace Neo.Cryptography.ECC
             return Value.Equals(other.Value) && curve.Equals(other.curve);
         }
 
-        private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
-        {
-            int n = k.GetBitLength();
-            int s = k.GetLowestSetBit();
-
-            BigInteger Uh = 1;
-            BigInteger Vl = 2;
-            BigInteger Vh = P;
-            BigInteger Ql = 1;
-            BigInteger Qh = 1;
-
-            for (int j = n - 1; j >= s + 1; --j)
-            {
-                Ql = (Ql * Qh).Mod(p);
-
-                if (k.TestBit(j))
-                {
-                    Qh = (Ql * Q).Mod(p);
-                    Uh = (Uh * Vh).Mod(p);
-                    Vl = (Vh * Vl - P * Ql).Mod(p);
-                    Vh = ((Vh * Vh) - (Qh << 1)).Mod(p);
-                }
-                else
-                {
-                    Qh = Ql;
-                    Uh = (Uh * Vl - Ql).Mod(p);
-                    Vh = (Vh * Vl - P * Ql).Mod(p);
-                    Vl = ((Vl * Vl) - (Ql << 1)).Mod(p);
-                }
-            }
-
-            Ql = (Ql * Qh).Mod(p);
-            Qh = (Ql * Q).Mod(p);
-            Uh = (Uh * Vl - Ql).Mod(p);
-            Vl = (Vh * Vl - P * Ql).Mod(p);
-            Ql = (Ql * Qh).Mod(p);
-
-            for (int j = 1; j <= s; ++j)
-            {
-                Uh = Uh * Vl * p;
-                Vl = ((Vl * Vl) - (Ql << 1)).Mod(p);
-                Ql = (Ql * Ql).Mod(p);
-            }
-
-            return new BigInteger[] { Uh, Vl };
-        }
-
         public override int GetHashCode()
         {
             return Value.GetHashCode();
@@ -100,39 +53,8 @@ namespace Neo.Cryptography.ECC
                 ECFieldElement z = new ECFieldElement(BigInteger.ModPow(Value, (curve.Q >> 2) + 1, curve.Q), curve);
                 return z.Square().Equals(this) ? z : null;
             }
-            BigInteger qMinusOne = curve.Q - 1;
-            BigInteger legendreExponent = qMinusOne >> 1;
-            if (BigInteger.ModPow(Value, legendreExponent, curve.Q) != 1)
-                return null;
-            BigInteger u = qMinusOne >> 2;
-            BigInteger k = (u << 1) + 1;
-            BigInteger Q = this.Value;
-            BigInteger fourQ = (Q << 2).Mod(curve.Q);
-            BigInteger U, V;
-            do
-            {
-                Random rand = new Random();
-                BigInteger P;
-                do
-                {
-                    P = rand.NextBigInteger(curve.Q.GetBitLength());
-                }
-                while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
-                BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);
-                U = result[0];
-                V = result[1];
-                if ((V * V).Mod(curve.Q) == fourQ)
-                {
-                    if (V.TestBit(0))
-                    {
-                        V += curve.Q;
-                    }
-                    V >>= 1;
-                    return new ECFieldElement(V, curve);
-                }
-            }
-            while (U.Equals(BigInteger.One) || U.Equals(qMinusOne));
-            return null;
+
+            throw new NotImplementedException();
         }
 
         public ECFieldElement Square()
