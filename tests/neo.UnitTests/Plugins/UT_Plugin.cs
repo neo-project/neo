@@ -10,7 +10,7 @@ namespace Neo.UnitTests.Plugins
     {
         private static readonly object locker = new object();
 
-        private class dummyPlugin: IP2PPlugin { }
+        private class dummyPlugin : IP2PPlugin { }
 
         [TestMethod]
         public void TestIP2PPlugin()
