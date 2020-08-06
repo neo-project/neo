@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true).Should().BeTrue();
             NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000);
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
-            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(3000005000000800);
+            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(3000010000000000);
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(0);
 
             // Check unclaim
@@ -69,7 +69,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.State.Should().BeTrue();
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(3000005000000800);
+            supply.Should().Be(3000010000000000);
 
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 5); // Gas
@@ -79,12 +79,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
             NativeContract.GAS.Transfer(snapshot, from, to, 3000005000000800, false).Should().BeFalse(); // Not signed
-            NativeContract.GAS.Transfer(snapshot, from, to, 3000005000000801, true).Should().BeFalse(); // More than balance
-            NativeContract.GAS.Transfer(snapshot, from, to, 3000005000000800, true).Should().BeTrue(); // All balance
+            NativeContract.GAS.Transfer(snapshot, from, to, 3000010000000001, true).Should().BeFalse(); // More than balance
+            NativeContract.GAS.Transfer(snapshot, from, to, 3000010000000000, true).Should().BeTrue(); // All balance
 
             // Balance of
 
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000005000000800);
+            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000010000000000);
             NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(0);
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // All
@@ -99,18 +99,18 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Burn more than expected
 
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000005000000801)));
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000010000000001)));
 
             // Real burn
 
             NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000005000000799);
+            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000009999999999);
 
             keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             // Burn all
 
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000005000000799));
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000009999999999));
 
             (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
 

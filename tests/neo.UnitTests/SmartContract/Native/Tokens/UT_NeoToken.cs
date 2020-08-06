@@ -81,15 +81,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
             ret.Result.Should().BeFalse();
             ret.State.Should().BeTrue();
-            accountState.VoteTo.Should().BeNull();
 
             // normal case
 
             snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
             ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
-            ret.Result.Should().BeTrue();
+            ret.Result.Should().BeFalse();
             ret.State.Should().BeTrue();
-            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             // TODO: More votes tests
         }
