@@ -311,7 +311,7 @@ namespace Neo.Network.P2P
                         node.Tell(Message.Create(MessageCommand.Mempool));
                     }
                     node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
-                    session.ExpireTime = DateTime.UtcNow.AddSeconds(PingCoolingOffPeriod);
+                    session.ExpireTime = DateTime.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
                 }
             }
         }
