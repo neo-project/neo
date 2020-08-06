@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(test.NextId, clone.NextId);
 
             clone = new ContractIdState() { NextId = 2 };
-            ((ICloneable<ContractIdState>)test).FromReplica(test);
+            ((ICloneable<ContractIdState>)clone).FromReplica(test);
 
             Assert.AreEqual(test.NextId, clone.NextId);
         }
