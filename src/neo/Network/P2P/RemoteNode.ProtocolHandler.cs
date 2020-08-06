@@ -324,7 +324,8 @@ namespace Neo.Network.P2P
         private void OnPingMessageReceived(PingPayload payload)
         {
             UpdateLastBlockIndex(payload);
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+            var currentBlock = Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash);
+            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(currentBlock.Index, currentBlock.Hash, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
@@ -381,6 +382,16 @@ namespace Neo.Network.P2P
             {
                 LastBlockIndex = payload.LastBlockIndex;
                 system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+            }
+            else
+            {
+                // We have a different chain
+
+                var header = Blockchain.Singleton.GetHeader(payload.LastBlockIndex);
+                if (header != null && header.Hash != payload.LastBlockHash)
+                {
+                    throw new ProtocolViolationException();
+                }
             }
         }
     }
