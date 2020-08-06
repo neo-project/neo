@@ -15,6 +15,7 @@ namespace Neo.Network.P2P
         public uint LastBlockIndex { get; set; }
         public uint TimeoutTimes = 0;
         public uint InvalidBlockCount = 0;
+        public DateTime ExpireTime = DateTime.MinValue;
 
         public TaskSession(VersionPayload version)
         {

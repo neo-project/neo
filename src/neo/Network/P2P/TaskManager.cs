@@ -301,14 +301,17 @@ namespace Neo.Network.P2P
             {
                 var node = item.Key;
                 var session = item.Value;
-                if (Blockchain.Singleton.Height >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
+
+                if (session.ExpireTime < DateTime.UtcNow ||
+                     (Blockchain.Singleton.Height >= session.LastBlockIndex
+                     && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp))
                 {
                     if (session.InvTasks.Remove(MemPoolTaskHash))
                     {
                         node.Tell(Message.Create(MessageCommand.Mempool));
                     }
                     node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
+                    session.ExpireTime = DateTime.UtcNow.AddSeconds(PingCoolingOffPeriod);
                 }
             }
         }
