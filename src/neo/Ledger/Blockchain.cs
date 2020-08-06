@@ -334,7 +334,7 @@ namespace Neo.Ledger
                 block_cache.TryAdd(block.Hash, block);
                 block_cache_unverified.Remove(block.Index);
                 // We can store the new block in block_cache and tell the new height to other nodes before Persist().
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(block.Header)));
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(block)));
                 Persist(block);
                 SaveHeaderHashList();
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))

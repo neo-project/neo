@@ -310,7 +310,7 @@ namespace Neo.Network.P2P
                     {
                         node.Tell(Message.Create(MessageCommand.Mempool));
                     }
-                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(currentBlock.Header)));
+                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(currentBlock)));
                 }
             }
         }
