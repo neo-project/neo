@@ -14,7 +14,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void Serialize_Deserialize()
         {
-            var payload = PingPayload.Create(uint.MaxValue);
+            var payload = PingPayload.Create(1, UInt256.Zero, uint.MaxValue);
             var msg = Message.Create(MessageCommand.Ping, payload);
             var buffer = msg.ToArray();
             var copy = buffer.AsSerializable<Message>();
@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void Serialize_Deserialize_ByteString()
         {
-            var payload = PingPayload.Create(uint.MaxValue);
+            var payload = PingPayload.Create(1, UInt256.Zero, uint.MaxValue);
             var msg = Message.Create(MessageCommand.Ping, payload);
             var buffer = ByteString.CopyFrom(msg.ToArray());
             var length = Message.TryDeserialize(buffer, out var copy);
