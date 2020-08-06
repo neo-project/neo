@@ -26,7 +26,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// This constant can be used for testing scripts, by default has the same value as max block system fee.
+        /// This constant can be used for testing scripts.
         /// </summary>
         private const long TestModeGas = 20_00000000;
 
