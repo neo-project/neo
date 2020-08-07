@@ -88,8 +88,94 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+        }
 
-            // TODO: More votes tests
+        [TestMethod]
+        public void Check_Vote_Sameaccounts()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
+
+            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
+            accountState.Balance = 100;
+            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            var ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+
+            //two account vote for the same account
+            var stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            stateValidator.Votes.Should().Be(100);
+            var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
+            var secondAccount = snapshot.Storages.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
+            ret = Check_Vote(snapshot, G_Account, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            stateValidator.Votes.Should().Be(300);
+        }
+
+        [TestMethod]
+        public void Check_Vote_ChangeVote()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            //from vote to G
+            byte[] from = Blockchain.StandbyValidators[0].ToArray();
+            var from_Account = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
+            var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            accountState.Balance = 100;
+            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+
+            //from change vote to itself
+            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            G_stateValidator.Votes.Should().Be(100);
+            var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
+            snapshot.Storages.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState()));
+            ret = Check_Vote(snapshot, from_Account, from, true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            G_stateValidator.Votes.Should().Be(0);
+            var from_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, from)).GetInteroperable<CandidateState>();
+            from_stateValidator.Votes.Should().Be(100);
+        }
+
+        [TestMethod]
+        public void Check_Vote_VoteToNull()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
+
+            byte[] from = Blockchain.StandbyValidators[0].ToArray();
+            var from_Account = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
+            var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            accountState.Balance = 100;
+            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+
+            //from vote to null account G votes becomes 0
+            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            G_stateValidator.Votes.Should().Be(100);
+            var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
+            snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
+            snapshot.Storages.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState()));
+            ret = Check_Vote(snapshot, from_Account, null, true);
+            ret.Result.Should().BeTrue();
+            ret.State.Should().BeTrue();
+            G_stateValidator.Votes.Should().Be(0);
+            accountState.VoteTo.Should().Be(null);
         }
 
         [TestMethod]
@@ -403,7 +489,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.PersistingBlock = Blockchain.GenesisBlock;
-            var engine = ApplicationEngine.Create(TriggerType.Application, Blockchain.GenesisBlock, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, Blockchain.GenesisBlock, snapshot);
             ScriptBuilder sb = new ScriptBuilder();
             var tmp = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
             UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot)[0];
@@ -435,7 +521,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, 0, true);
+                new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -465,7 +551,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         internal static (bool State, bool Result) Check_RegisterValidator(StoreView snapshot, byte[] pubkey)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, 0, true);
+                new Nep5NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -489,7 +575,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static ECPoint[] Check_GetValidators(StoreView snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -509,7 +595,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (BigInteger Value, bool State) Check_UnclaimedGas(StoreView snapshot, byte[] address)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 

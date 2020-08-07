@@ -145,7 +145,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -227,7 +227,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -340,7 +340,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -427,7 +427,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -517,7 +517,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -659,7 +659,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -1009,7 +1009,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
