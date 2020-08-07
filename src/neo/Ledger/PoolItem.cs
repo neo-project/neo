@@ -36,8 +36,10 @@ namespace Neo.Ledger
         public int CompareTo(Transaction otherTx)
         {
             if (otherTx == null) return 1;
+            int ret = (Tx.GetAttribute<HighPriorityAttribute>() != null).CompareTo(otherTx.GetAttribute<HighPriorityAttribute>() != null);
+            if (ret != 0) return ret;
             // Fees sorted ascending
-            int ret = Tx.FeePerByte.CompareTo(otherTx.FeePerByte);
+            ret = Tx.FeePerByte.CompareTo(otherTx.FeePerByte);
             if (ret != 0) return ret;
             ret = Tx.NetworkFee.CompareTo(otherTx.NetworkFee);
             if (ret != 0) return ret;

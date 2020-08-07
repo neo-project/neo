@@ -63,16 +63,16 @@ namespace Neo.UnitTests.SmartContract
 
         class TestProvider : IApplicationEngineProvider
         {
-            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
             {
-                return new TestEngine(trigger, container, snapshot, gas, testMode);
+                return new TestEngine(trigger, container, snapshot, gas);
             }
         }
 
         class TestEngine : ApplicationEngine
         {
-            public TestEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
-                : base(trigger, container, snapshot, gas, testMode)
+            public TestEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
+                : base(trigger, container, snapshot, gas)
             {
             }
         }

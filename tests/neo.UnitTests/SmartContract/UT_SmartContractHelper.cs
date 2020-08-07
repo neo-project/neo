@@ -142,6 +142,21 @@ namespace Neo.UnitTests.SmartContract
                 Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
+
+            // Smart contract verification
+
+            var contract = new ContractState()
+            {
+                Script = "11".HexToBytes(), // 17 PUSH1
+                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
+            };
+            snapshot3.Contracts.Add(contract.ScriptHash, contract);
+            var tx = new Extensions.Nep5NativeContractExtensions.ManualWitness(contract.ScriptHash)
+            {
+                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] } }
+            };
+
+            Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, snapshot3, 1000));
         }
     }
 }

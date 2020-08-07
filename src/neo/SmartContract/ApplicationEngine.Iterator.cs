@@ -14,7 +14,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Iterator_Values = Register("System.Iterator.Values", nameof(IteratorValues), 0_00000400, CallFlags.None, false);
         public static readonly InteropDescriptor System_Iterator_Concat = Register("System.Iterator.Concat", nameof(ConcatIterators), 0_00000400, CallFlags.None, false);
 
-        internal IIterator CreateIterator(StackItem item)
+        protected internal IIterator CreateIterator(StackItem item)
         {
             return item switch
             {
@@ -26,22 +26,22 @@ namespace Neo.SmartContract
             };
         }
 
-        internal PrimitiveType IteratorKey(IIterator iterator)
+        protected internal PrimitiveType IteratorKey(IIterator iterator)
         {
             return iterator.Key();
         }
 
-        internal IEnumerator IteratorKeys(IIterator iterator)
+        protected internal IEnumerator IteratorKeys(IIterator iterator)
         {
             return new IteratorKeysWrapper(iterator);
         }
 
-        internal IEnumerator IteratorValues(IIterator iterator)
+        protected internal IEnumerator IteratorValues(IIterator iterator)
         {
             return new IteratorValuesWrapper(iterator);
         }
 
-        internal IIterator ConcatIterators(IIterator first, IIterator second)
+        protected internal IIterator ConcatIterators(IIterator first, IIterator second)
         {
             return new ConcatenatedIterator(first, second);
         }

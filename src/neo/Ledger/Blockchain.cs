@@ -172,7 +172,7 @@ namespace Neo.Ledger
                     new Signer
                     {
                         Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
-                        Scopes = WitnessScope.FeeOnly
+                        Scopes = WitnessScope.None
                     }
                 },
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -402,7 +402,7 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0, true))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot))
                     {
                         engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();

@@ -47,9 +47,9 @@ namespace Neo
         {
             this.Magic = section.GetValue("Magic", 0x4F454Eu);
             this.AddressVersion = section.GetValue("AddressVersion", (byte)0x35);
-            IConfigurationSection section_sv = section.GetSection("StandbyValidators");
-            if (section_sv.Exists())
-                this.StandbyCommittee = section_sv.GetChildren().Select(p => p.Get<string>()).ToArray();
+            IConfigurationSection section_sc = section.GetSection("StandbyCommittee");
+            if (section_sc.Exists())
+                this.StandbyCommittee = section_sc.GetChildren().Select(p => p.Get<string>()).ToArray();
             else
                 this.StandbyCommittee = new[]
                 {

@@ -44,10 +44,11 @@ namespace Neo.Network.P2P.Payloads
 
         Message IInventory.OriginalMessage { get; set; }
 
+        private Dictionary<Type, TransactionAttribute[]> _attributesCache;
         public TransactionAttribute[] Attributes
         {
             get => attributes;
-            set { attributes = value; _hash = null; _size = 0; }
+            set { attributes = value; _attributesCache = null; _hash = null; _size = 0; }
         }
 
         /// <summary>
@@ -93,7 +94,8 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Correspond with the first entry of Signers
+        /// The first signer is the sender of the transaction, regardless of its WitnessScope.
+        /// The sender will pay the fees of the transaction.
         /// </summary>
         public UInt160 Sender => _signers[0].Account;
 
@@ -179,10 +181,7 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
-                if (i > 0 && signer.Scopes == WitnessScope.FeeOnly)
-                    throw new FormatException();
-                if (!hashset.Add(signer.Account))
-                    throw new FormatException();
+                if (!hashset.Add(signer.Account)) throw new FormatException();
                 yield return signer;
             }
         }
@@ -219,6 +218,18 @@ namespace Neo.Network.P2P.Payloads
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             throw new NotSupportedException();
+        }
+
+        public T GetAttribute<T>() where T : TransactionAttribute
+        {
+            return GetAttributes<T>()?.First();
+        }
+
+        public T[] GetAttributes<T>() where T : TransactionAttribute
+        {
+            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => (TransactionAttribute[])p.OfType<T>().ToArray());
+            _attributesCache.TryGetValue(typeof(T), out var result);
+            return (T[])result;
         }
 
         public override int GetHashCode()
@@ -282,6 +293,9 @@ namespace Neo.Network.P2P.Payloads
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
+            foreach (TransactionAttribute attribute in Attributes)
+                if (!attribute.Verify(snapshot, this))
+                    return VerifyResult.Invalid;
             if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -295,9 +309,8 @@ namespace Neo.Network.P2P.Payloads
         {
             VerifyResult result = VerifyForEachBlock(snapshot, context);
             if (result != VerifyResult.Succeed) return result;
-            int size = Size;
-            if (size > MaxTransactionSize) return VerifyResult.Invalid;
-            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
             if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
