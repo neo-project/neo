@@ -178,6 +178,7 @@ namespace Neo.SmartContract
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                    gas -= engine.GasConsumed;
                     verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
                 }
             }
