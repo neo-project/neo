@@ -20,7 +20,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, CallFlags.None, false);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
