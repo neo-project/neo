@@ -32,8 +32,8 @@ namespace Neo.Ledger
         public const uint DecrementInterval = 2000000;
         public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
-        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Take(ProtocolSettings.Default.MaxCommitteeMembersCount).Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
-        public static readonly ECPoint[] StandbyValidators = StandbyCommittee.Take(ProtocolSettings.Default.MaxValidatorsCount).ToArray();
+        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[0..ProtocolSettings.Default.ValidatorsCount];
 
         public static readonly Block GenesisBlock = new Block
         {
@@ -171,8 +171,15 @@ namespace Neo.Ledger
             {
                 Version = 0,
                 Script = script,
-                Sender = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
                 SystemFee = 0,
+                Signers = new[]
+                {
+                    new Signer
+                    {
+                        Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
+                        Scopes = WitnessScope.None
+                    }
+                },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
@@ -288,15 +295,10 @@ namespace Neo.Ledger
             {
                 if (View.ContainsTransaction(tx.Hash))
                     continue;
-                if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
-                    continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
-                // Verify the the transaction
-                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
-                    continue;
                 // Add to the memory pool
-                MemPool.TryAdd(tx.Hash, tx);
+                MemPool.TryAdd(tx, currentSnapshot);
             }
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
@@ -360,11 +362,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
-            if (!MemPool.CanTransactionFitInPool(transaction)) return VerifyResult.OutOfMemory;
-            VerifyResult reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
-            if (reason != VerifyResult.Succeed) return reason;
-            if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
-            return VerifyResult.Succeed;
+            return MemPool.TryAdd(transaction, currentSnapshot);
         }
 
         protected override void OnReceive(object message)
@@ -412,7 +410,7 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot))
                     {
                         engine.LoadScript(onPersistNativeContractScript);
                         if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
@@ -435,7 +433,7 @@ namespace Neo.Ledger
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();

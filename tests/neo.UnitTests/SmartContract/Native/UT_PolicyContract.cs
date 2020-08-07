@@ -20,14 +20,9 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_Initialize()
+        public void Check_Default()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var keyCount = snapshot.Storages.GetChangeSet().Count();
-
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
-
-            (keyCount + 5).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             var ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -62,7 +57,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -110,7 +105,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -156,7 +151,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -191,7 +186,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -228,7 +223,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Block without signature
 
@@ -275,29 +270,6 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(0);
-        }
-
-        [TestMethod]
-        public void TestCheckPolicy()
-        {
-            Transaction tx = Blockchain.GenesisBlock.Transactions[0];
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            StorageKey storageKey = new StorageKey
-            {
-                Id = NativeContract.Policy.Id,
-                Key = new byte[sizeof(byte)]
-            };
-            storageKey.Key[0] = 15;
-            snapshot.Storages.Add(storageKey, new StorageItem
-            {
-                Value = new UInt160[] { tx.Sender }.ToByteArray(),
-            });
-
-            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeFalse();
-
-            snapshot = Blockchain.Singleton.GetSnapshot();
-            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeTrue();
         }
     }
 }

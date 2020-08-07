@@ -21,7 +21,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Execute
 
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 100_000_000, false);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 100_000_000);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Execute
 
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 100_000_000, false);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 100_000_000);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Execute
 
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 100_000_000, false);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, null, 100_000_000);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(engine.Execute(), VMState.HALT);
 
