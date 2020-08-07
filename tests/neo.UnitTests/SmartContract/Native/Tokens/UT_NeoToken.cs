@@ -9,7 +9,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
@@ -88,6 +87,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
             ret.Result.Should().BeFalse();
             ret.State.Should().BeTrue();
+        }
 
         [TestMethod]
         public void Check_Vote_Sameaccounts()
@@ -1098,6 +1098,31 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         internal static StorageKey CreateStorageKey(byte prefix, ISerializable keyLeft, uint keyRight)
         {
             return CreateStorageKey(prefix, keyLeft.ToArray().Concat(BitConverter.GetBytes(keyRight)).ToArray());
+        }
+
+        internal static (bool State, bool Result) Check_UnregisterCandidate(StoreView snapshot, byte[] pubkey)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(pubkey);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("unregisterCandidate");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (true, result.GetBoolean());
         }
     }
 }
