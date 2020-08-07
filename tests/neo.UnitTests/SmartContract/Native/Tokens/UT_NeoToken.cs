@@ -281,8 +281,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 Balance = 100,
                 VoteTo = Blockchain.StandbyCommittee[0]
             }));
-            UInt160 voteeAddr = Contract.CreateSignatureContract(Blockchain.StandbyCommittee[0]).ScriptHash;
-            snapshot.Storages.Add(CreateStorageKey(23, voteeAddr, uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(23, Blockchain.StandbyCommittee[0], uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(100 * 100 + 50 * 100));
             snapshot.Storages.Delete(key);
         }

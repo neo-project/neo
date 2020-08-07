@@ -37,8 +37,7 @@ namespace Neo.SmartContract.Native.Tokens
 
                 if (candidate_state.Votes == 0)
                 {
-                    UInt160 voteeAddr = Contract.CreateSignatureContract(state.VoteTo).ScriptHash;
-                    foreach (var (key, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
+                    foreach (var (key, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(state.VoteTo).ToArray()))
                         engine.Snapshot.Storages.Delete(key);
                 }
             }
