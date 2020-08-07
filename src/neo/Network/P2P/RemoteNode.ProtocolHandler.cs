@@ -111,14 +111,14 @@ namespace Neo.Network.P2P
                 case MessageCommand.Transaction:
                     Transaction tx = (Transaction)msg.Payload;
                     RenewKnownHashes(tx.Hash);
-                    Task.Run(() =>
+                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                     {
-                        if (msg.Payload.Size <= Transaction.MaxTransactionSize)
+                        Task.Run(() =>
                         {
                             if (tx.VerifyStateIndependent() == VerifyResult.Succeed)
                                 OnInventoryReceived(tx);
-                        }
-                    });
+                        });
+                    }
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
