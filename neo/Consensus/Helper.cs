@@ -22,7 +22,7 @@ namespace Neo.Consensus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CountCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int CountFailed(this IConsensusContext context) => context.LastSeenMessage.Count(p => p < (((int)context.BlockIndex) - 1));
+        public static int CountFailed(this IConsensusContext context) => context.LastSeenMessage.Count(p => p.Value < (((int)context.BlockIndex) - 1));
 
         // Consensus States
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
