@@ -794,7 +794,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static bool Check_NativeDeploy(StoreView snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
             engine.LoadScript(script.ToArray());
@@ -806,7 +806,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -835,7 +835,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -859,7 +859,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StoreView snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -882,7 +882,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static (VM.Types.Array Value, bool State) Check_GetEconomicParameter(StoreView snapshot, string method)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -908,7 +908,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
             var engine = ApplicationEngine.Create(TriggerType.System,
-                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot, 0, true);
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
 
