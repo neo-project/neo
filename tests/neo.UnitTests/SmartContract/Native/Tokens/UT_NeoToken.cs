@@ -98,14 +98,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
             var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
-            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            snapshot.Storages.Add(CreateStorageKey(13, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
             var ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             //two account vote for the same account
-            var stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            var stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(13, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
             stateValidator.Votes.Should().Be(100);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
@@ -127,23 +127,23 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.Storages.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
             var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
-            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            snapshot.Storages.Add(CreateStorageKey(13, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
             var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             //from change vote to itself
-            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(13, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
             G_stateValidator.Votes.Should().Be(100);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
-            snapshot.Storages.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState()));
+            snapshot.Storages.Add(CreateStorageKey(13, from), new StorageItem(new CandidateState()));
             ret = Check_Vote(snapshot, from_Account, from, true);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             G_stateValidator.Votes.Should().Be(0);
-            var from_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, from)).GetInteroperable<CandidateState>();
+            var from_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(13, from)).GetInteroperable<CandidateState>();
             from_stateValidator.Votes.Should().Be(100);
         }
 
@@ -158,18 +158,18 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.Storages.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
             var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
-            snapshot.Storages.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
+            snapshot.Storages.Add(CreateStorageKey(13, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
             var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             //from vote to null account G votes becomes 0
-            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
+            var G_stateValidator = snapshot.Storages.GetAndChange(CreateStorageKey(13, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
             G_stateValidator.Votes.Should().Be(100);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             snapshot.Storages.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
-            snapshot.Storages.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState()));
+            snapshot.Storages.Add(CreateStorageKey(13, from), new StorageItem(new CandidateState()));
             ret = Check_Vote(snapshot, from_Account, null, true);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
@@ -240,14 +240,14 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             //register and then unregister
             ret = Check_RegisterValidator(snapshot, point);
-            StorageItem item = snapshot.Storages.GetAndChange(CreateStorageKey(33, point));
+            StorageItem item = snapshot.Storages.GetAndChange(CreateStorageKey(13, point));
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
 
             var members = NativeContract.NEO.GetCandidates(snapshot);
             Assert.AreEqual(1, members.Length);
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1);
-            StorageKey key = CreateStorageKey(33, point);
+            StorageKey key = CreateStorageKey(13, point);
             snapshot.Storages.TryGet(key).Should().NotBeNull();
 
             ret = Check_UnregisterCandidate(snapshot, point);
@@ -732,7 +732,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             storageItem = snapshot.Storages.TryGet(holderRewardKey);
             new BigInteger(storageItem.Value).Should().Be(gasPerBlock / 10 * 3);
 
-            var newValidatorCount = 0;
             committee = NativeContract.NEO.GetCommittee(snapshot);
             for (var i = 0; i < committee.Length; i++)
             {
