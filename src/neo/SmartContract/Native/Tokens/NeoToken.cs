@@ -21,6 +21,9 @@ namespace Neo.SmartContract.Native.Tokens
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
 
+        public const decimal EffectiveVoterTurnout = 0.2M;
+
+        private const byte Prefix_VotersCount = 1;
         private const byte Prefix_Candidate = 33;
         private const byte Prefix_NextValidators = 14;
 
@@ -40,9 +43,8 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
-                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo));
-                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-                state_validator.Votes += amount;
+                engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo)).GetInteroperable<CandidateState>().Votes += amount;
+                engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
             }
         }
 
@@ -87,19 +89,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            BigInteger amount = TotalAmount;
-            for (int i = 0; i < Blockchain.StandbyCommittee.Length; i++)
-            {
-                ECPoint pubkey = Blockchain.StandbyCommittee[i];
-                RegisterCandidateInternal(engine.Snapshot, pubkey);
-                BigInteger balance = TotalAmount / 2 / (Blockchain.StandbyValidators.Length * 2 + (Blockchain.StandbyCommittee.Length - Blockchain.StandbyValidators.Length));
-                if (i < Blockchain.StandbyValidators.Length) balance *= 2;
-                UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-                Mint(engine, account, balance);
-                VoteInternal(engine.Snapshot, account, pubkey);
-                amount -= balance;
-            }
-            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), amount);
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
+            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
         }
 
         protected override void OnPersist(ApplicationEngine engine)
@@ -123,16 +114,11 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
-            RegisterCandidateInternal(engine.Snapshot, pubkey);
-            return true;
-        }
-
-        private void RegisterCandidateInternal(StoreView snapshot, ECPoint pubkey)
-        {
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
-            StorageItem item = snapshot.Storages.GetAndChange(key, () => new StorageItem(new CandidateState()));
+            StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
             state.Registered = true;
+            return true;
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
@@ -155,33 +141,36 @@ namespace Neo.SmartContract.Native.Tokens
         private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
-            return VoteInternal(engine.Snapshot, account, voteTo);
-        }
-
-        private bool VoteInternal(StoreView snapshot, UInt160 account, ECPoint voteTo)
-        {
-            StorageKey key_account = CreateStorageKey(Prefix_Account).Add(account);
-            if (snapshot.Storages.TryGet(key_account) is null) return false;
-            StorageItem storage_account = snapshot.Storages.GetAndChange(key_account);
-            NeoAccountState state_account = storage_account.GetInteroperable<NeoAccountState>();
+            NeoAccountState state_account = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
+            if (state_account is null) return false;
+            CandidateState validator_new = null;
+            if (voteTo != null)
+            {
+                validator_new = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(voteTo))?.GetInteroperable<CandidateState>();
+                if (validator_new is null) return false;
+                if (!validator_new.Registered) return false;
+            }
+            if (state_account.VoteTo is null ^ voteTo is null)
+            {
+                StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount));
+                if (state_account.VoteTo is null)
+                    item.Add(state_account.Balance);
+                else
+                    item.Add(-state_account.Balance);
+            }
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state_account.VoteTo);
-                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes -= state_account.Balance;
                 if (!state_validator.Registered && state_validator.Votes.IsZero)
-                    snapshot.Storages.Delete(key);
+                    engine.Snapshot.Storages.Delete(key);
             }
             state_account.VoteTo = voteTo;
-            if (voteTo != null)
+            if (validator_new != null)
             {
-                StorageKey key = CreateStorageKey(Prefix_Candidate).Add(voteTo);
-                if (snapshot.Storages.TryGet(key) is null) return false;
-                StorageItem storage_validator = snapshot.Storages.GetAndChange(key);
-                CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-                if (!state_validator.Registered) return false;
-                state_validator.Votes += state_account.Balance;
+                validator_new.Votes += state_account.Balance;
             }
             return true;
         }
@@ -189,29 +178,24 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(StoreView snapshot)
         {
-            return GetCandidatesInternal(snapshot).ToArray();
-        }
-
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetCandidatesInternal(StoreView snapshot)
-        {
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(Id, new[] { Prefix_Candidate });
+            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetValidators(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxValidatorsCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxCommitteeMembersCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot).OrderBy(p => p).ToArray();
         }
 
         public UInt160 GetCommitteeAddress(StoreView snapshot)
@@ -220,9 +204,16 @@ namespace Neo.SmartContract.Native.Tokens
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot, int count)
+        private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
-            return GetCandidatesInternal(snapshot).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count);
+            decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
+            decimal VoterTurnout = votersCount / (decimal)TotalAmount;
+            if (VoterTurnout < EffectiveVoterTurnout)
+                return Blockchain.StandbyCommittee;
+            var candidates = GetCandidates(snapshot);
+            if (candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
+                return Blockchain.StandbyCommittee;
+            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
@@ -230,7 +221,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
             if (storage is null) return Blockchain.StandbyValidators;
-            return storage.Value.AsSerializableArray<ECPoint>();
+            return storage.GetSerializableList<ECPoint>().ToArray();
         }
 
         public class NeoAccountState : AccountState

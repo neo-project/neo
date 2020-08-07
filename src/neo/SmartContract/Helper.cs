@@ -150,6 +150,7 @@ namespace Neo.SmartContract
                 if (filter != WitnessFlag.All && !filter.HasFlag(verifiable.Witnesses[i].Flag)) continue;
 
                 int offset;
+                ContractMethodDescriptor init = null;
                 byte[] verification = verifiable.Witnesses[i].VerificationScript;
                 if (verification.Length == 0)
                 {
@@ -159,15 +160,17 @@ namespace Neo.SmartContract
                     if (md is null) return false;
                     verification = cs.Script;
                     offset = md.Offset;
+                    init = cs.Manifest.Abi.GetMethod("_initialize");
                 }
                 else
                 {
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot != null ? snapshot.Clone() : snapshot, gas))
                 {
-                    engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
+                    engine.LoadScript(verification, CallFlags.None).InstructionPointer = offset;
+                    if (init != null) engine.LoadClonedContext(init.Offset);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;

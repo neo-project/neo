@@ -21,7 +21,7 @@ namespace Neo.UnitTests.SmartContract
         {
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
                 ApplicationEngine.System_Runtime_CheckWitness.FixedPrice.Should().Be(0_00030000L);
@@ -29,7 +29,7 @@ namespace Neo.UnitTests.SmartContract
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
             byte[] SyscallSystemStorageGetContextHash = new byte[] { 0x68, 0x9b, 0xf6, 0x67, 0xce };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
                 ApplicationEngine.System_Storage_GetContext.FixedPrice.Should().Be(0_00000400L);
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract
 
             // System.Storage.Get: 925de831 (price is 100)
             byte[] SyscallSystemStorageGetHash = new byte[] { 0x68, 0x92, 0x5d, 0xe8, 0x31 };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
                 ApplicationEngine.System_Storage_Get.FixedPrice.Should().Be(0_01000000L);
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -99,7 +99,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(applicationEngine);
                 applicationEngine.LoadScript(script);
@@ -135,7 +135,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -172,7 +172,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
