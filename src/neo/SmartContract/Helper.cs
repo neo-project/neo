@@ -146,8 +146,12 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (i != 0) gas -= verifiable.Witnesses[i - 1].GasConsumed;
-                if (filter != WitnessFlag.All && !filter.HasFlag(verifiable.Witnesses[i].Flag)) continue;
+                if (filter != WitnessFlag.All && !filter.HasFlag(verifiable.Witnesses[i].Flag))
+                {
+                    gas -= verifiable.Witnesses[i].GasConsumed;
+                    if (gas < 0) return false;
+                    continue;
+                }
 
                 int offset;
                 ContractMethodDescriptor init = null;
