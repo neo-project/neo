@@ -18,11 +18,16 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private class InvocationState
+        private class InvocationStateData
         {
             public Type ReturnType;
             public Delegate Callback;
             public bool NeedCheckReturnValue;
+        }
+
+        private class InvocationState
+        {
+            public InvocationStateData Data;
         }
 
         /// <summary>
@@ -39,7 +44,6 @@ namespace Neo.SmartContract
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
-        private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
@@ -77,17 +81,24 @@ namespace Neo.SmartContract
 
         internal void CallFromNativeContract(Action onComplete, UInt160 hash, string method, params StackItem[] args)
         {
-            InvocationState state = GetInvocationState(CurrentContext);
-            state.ReturnType = typeof(void);
-            state.Callback = onComplete;
+            InvocationState state = CurrentContext.GetState<InvocationState>();
+            state.Data = new InvocationStateData()
+            {
+                ReturnType = typeof(void),
+                Callback = onComplete,
+            };
+
             CallContract(hash, method, new VMArray(args));
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
         {
-            InvocationState state = GetInvocationState(CurrentContext);
-            state.ReturnType = typeof(T);
-            state.Callback = onComplete;
+            InvocationState state = CurrentContext.GetState<InvocationState>();
+            state.Data = new InvocationStateData()
+            {
+                ReturnType = typeof(T),
+                Callback = onComplete,
+            };
             CallContract(hash, method, new VMArray(args));
         }
 
@@ -95,14 +106,16 @@ namespace Neo.SmartContract
         {
             base.ContextUnloaded(context);
             if (!(UncaughtException is null)) return;
-            if (invocationStates.Count == 0) return;
-            if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            if (state.NeedCheckReturnValue)
+            var state = CurrentContext.GetState<InvocationState>();
+            if (state.Data == null) return;
+            var data = state.Data;
+            state.Data = null;
+            if (data.NeedCheckReturnValue)
                 if (context.EvaluationStack.Count == 0)
                     Push(StackItem.Null);
                 else if (context.EvaluationStack.Count > 1)
                     throw new InvalidOperationException();
-            switch (state.Callback)
+            switch (data.Callback)
             {
                 case null:
                     break;
@@ -110,7 +123,7 @@ namespace Neo.SmartContract
                     action();
                     break;
                 default:
-                    state.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(state.ReturnType)));
+                    data.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(data.ReturnType)));
                     break;
             }
         }
@@ -119,16 +132,6 @@ namespace Neo.SmartContract
         {
             return applicationEngineProvider?.Create(trigger, container, snapshot, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, gas);
-        }
-
-        private InvocationState GetInvocationState(ExecutionContext context)
-        {
-            if (!invocationStates.TryGetValue(context, out InvocationState state))
-            {
-                state = new InvocationState();
-                invocationStates.Add(context, state);
-            }
-            return state;
         }
 
         protected override void LoadContext(ExecutionContext context)
@@ -141,7 +144,8 @@ namespace Neo.SmartContract
 
         internal void LoadContext(ExecutionContext context, int initialPosition)
         {
-            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
+            InvocationState state = CurrentContext.GetState<InvocationState>();
+            state.Data = new InvocationStateData() { NeedCheckReturnValue = true };
             context.InstructionPointer = initialPosition;
             LoadContext(context);
         }
