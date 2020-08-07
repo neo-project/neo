@@ -232,7 +232,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var point = Blockchain.StandbyValidators[0].EncodePoint(true);
 
             //without register
-            var ret = Check_UnregisterCandidate(snapshot, point); 
+            var ret = Check_UnregisterCandidate(snapshot, point);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount);
@@ -249,10 +249,10 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             StorageKey key = CreateStorageKey(33, point);
             snapshot.Storages.TryGet(key).Should().NotBeNull();
 
-            ret = Check_UnregisterCandidate(snapshot, point); 
+            ret = Check_UnregisterCandidate(snapshot, point);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount); 
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount);
 
             members = NativeContract.NEO.GetCandidates(snapshot);
             Assert.AreEqual(0, members.Length);
@@ -303,13 +303,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var committeemembers = NativeContract.NEO.GetCommittee(snapshot);
             var defaultCommittee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
             committeemembers.GetType().Should().Be(typeof(ECPoint[]));
-            for(int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 committeemembers[i].Should().Be(defaultCommittee[i]);
             }
 
             //register more candidates,committee member change
-            for(int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount - 1; i++)
+            for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
                 Check_RegisterValidator(snapshot, Blockchain.StandbyCommittee[i].ToArray());
                 var currentCandidates = NativeContract.NEO.GetCandidates(snapshot);
