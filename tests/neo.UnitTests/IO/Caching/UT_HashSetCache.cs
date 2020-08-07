@@ -16,7 +16,8 @@ namespace Neo.UnitTests.IO.Caching
             var bucket = new HashSetCache<int>(10);
             for (int i = 1; i <= 100; i++)
             {
-                bucket.Add(i);
+                Assert.IsTrue(bucket.Add(i));
+                Assert.IsFalse(bucket.Add(i));
             }
             bucket.Count.Should().Be(100);
 
@@ -131,6 +132,8 @@ namespace Neo.UnitTests.IO.Caching
             };
             set.ExceptWith(new UInt256[] { b, c });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a });
+            set.ExceptWith(new UInt256[] { a });
+            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { });
 
             set = new HashSetCache<UInt256>(10)
             {

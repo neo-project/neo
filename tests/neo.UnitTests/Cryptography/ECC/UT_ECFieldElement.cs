@@ -27,6 +27,38 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
 
         [TestMethod]
+        public void FastLucasSequence()
+        {
+            VerifyLucasSequence(1, 2, 3, 4);
+            VerifyLucasSequence(2, 4, 6, 8);
+        }
+
+        private static void VerifyLucasSequence(
+                    BigInteger p,
+                    BigInteger P,
+                    BigInteger Q,
+                    BigInteger k)
+        {
+            BigInteger[] actual = ECFieldElement.FastLucasSequence(p, P, Q, k);
+            BigInteger[] plus1 = ECFieldElement.FastLucasSequence(p, P, Q, k + BigInteger.One);
+            BigInteger[] plus2 = ECFieldElement.FastLucasSequence(p, P, Q, k + 2);
+            BigInteger[] check = StepLucasSequence(p, P, Q, actual, plus1);
+
+            Assert.IsTrue(check[0].Equals(plus2[0]));
+            Assert.IsTrue(check[1].Equals(plus2[1]));
+        }
+
+        private static BigInteger[] StepLucasSequence(
+            BigInteger p,
+            BigInteger P,
+            BigInteger Q,
+            BigInteger[] backTwo,
+            BigInteger[] backOne)
+        {
+            return new BigInteger[] { (P * backOne[0] - Q * backTwo[0]).Mod(p), (P * backOne[1] - Q * backTwo[1]).Mod(p) };
+        }
+
+        [TestMethod]
         public void TestCompareTo()
         {
             ECFieldElement X1 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);

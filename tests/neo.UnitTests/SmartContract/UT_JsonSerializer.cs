@@ -207,6 +207,12 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void Serialize_Null()
+        {
+            Assert.AreEqual(JObject.Null, JsonSerializer.Serialize(StackItem.Null));
+        }
+
+        [TestMethod]
         public void Deserialize_EmptyObject()
         {
             var items = JsonSerializer.Deserialize(JObject.Parse("{}"));
