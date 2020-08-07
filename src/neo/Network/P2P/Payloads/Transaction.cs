@@ -295,7 +295,7 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.NonStandardWitness))
+            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependentWitness))
                 return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
@@ -304,7 +304,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StandardWitness))
+            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependentWitness))
                 return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }

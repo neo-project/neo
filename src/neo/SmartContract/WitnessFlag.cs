@@ -6,10 +6,9 @@ namespace Neo.SmartContract
     public enum WitnessFlag : byte
     {
         None = 0,
+        StateIndependentWitness = 0b00000001,
+        StateDependentWitness = 0b00000010,
 
-        StandardWitness = 0b00000001,
-        NonStandardWitness = 0b00000010,
-
-        All = StandardWitness | NonStandardWitness
+        All = StateIndependentWitness | StateDependentWitness
     }
 }
