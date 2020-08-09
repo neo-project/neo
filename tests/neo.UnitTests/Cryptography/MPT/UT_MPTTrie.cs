@@ -234,6 +234,9 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsTrue(proof.Contains(r.Encode()));
             Assert.IsTrue(proof.Contains(l1.Encode()));
             Assert.IsTrue(proof.Contains(v1.Encode()));
+
+            proof = mpt.GetProof(Array.Empty<byte>());
+            Assert.IsNull(proof);
         }
 
         [TestMethod]

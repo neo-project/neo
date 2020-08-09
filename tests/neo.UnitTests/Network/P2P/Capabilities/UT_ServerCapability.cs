@@ -32,7 +32,24 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
             Assert.AreEqual(test.Port, clone.Port);
             Assert.AreEqual(test.Type, clone.Type);
 
+            clone = new ServerCapability(NodeCapabilityType.WsServer, 123);
+            br.BaseStream.Seek(0, SeekOrigin.Begin);
+            ((ISerializable)clone).Deserialize(br);
+
+            Assert.AreEqual(test.Port, clone.Port);
+            Assert.AreEqual(test.Type, clone.Type);
+
+            clone = new ServerCapability(NodeCapabilityType.TcpServer, 123);
+
+            br.BaseStream.Seek(0, SeekOrigin.Begin);
+            Assert.ThrowsException<FormatException>(() => ((ISerializable)clone).Deserialize(br));
             Assert.ThrowsException<ArgumentException>(() => new ServerCapability(NodeCapabilityType.FullNode));
+
+            // Wrog type
+            br.BaseStream.Seek(0, SeekOrigin.Begin);
+            br.BaseStream.WriteByte(0xFF);
+            br.BaseStream.Seek(0, SeekOrigin.Begin);
+            Assert.ThrowsException<FormatException>(() => ServerCapability.DeserializeFrom(br));
         }
     }
 }
