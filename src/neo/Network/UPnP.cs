@@ -107,7 +107,7 @@ namespace Neo.Network
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = SOAPRequest(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
+            SOAPRequest(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
                 "<NewRemoteHost></NewRemoteHost><NewExternalPort>" + port.ToString() + "</NewExternalPort><NewProtocol>" + protocol.ToString().ToUpper() + "</NewProtocol>" +
                 "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + Dns.GetHostAddresses(Dns.GetHostName()).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
                 "</NewInternalClient><NewEnabled>1</NewEnabled><NewPortMappingDescription>" + description +
@@ -118,7 +118,7 @@ namespace Neo.Network
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = SOAPRequest(_serviceUrl,
+            SOAPRequest(_serviceUrl,
             "<u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "<NewRemoteHost>" +
             "</NewRemoteHost>" +
