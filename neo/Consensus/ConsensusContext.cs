@@ -16,11 +16,11 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
+        private StateRoot PreviousBlockStateRoot;
         /// <summary>
         /// Prefix for saving consensus state.
         /// </summary>
         public const byte CN_Context = 0xf4;
-
         public const uint Version = 0;
         public uint BlockIndex { get; set; }
         public UInt256 PrevHash { get; set; }
@@ -72,6 +72,24 @@ namespace Neo.Consensus
                 Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             }
             return Block;
+        }
+
+        public StateRoot CreateStateRoot()
+        {
+            MakeStateRoot();
+            Contract contract = Contract.CreateMultiSigContract(this.M(), Validators);
+            ContractParametersContext sc = new ContractParametersContext(PreviousBlockStateRoot);
+            for (int i = 0, j = 0; i < Validators.Length && j < this.M(); i++)
+            {
+                if (PreparationPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
+                if (i == PrimaryIndex)
+                    sc.AddSignature(contract, Validators[i], PreparationPayloads[i].GetDeserializedMessage<PrepareRequest>().StateRootSignature);
+                else
+                    sc.AddSignature(contract, Validators[i], PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().StateRootSignature);
+                j++;
+            }
+            PreviousBlockStateRoot.Witness = sc.GetWitnesses()[0];
+            return PreviousBlockStateRoot;
         }
 
         public void Deserialize(BinaryReader reader)
@@ -150,8 +168,17 @@ namespace Neo.Consensus
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = MakeHeader()?.Sign(keyPair)
+                Signature = MakeHeader()?.Sign(keyPair),
             }));
+        }
+
+        public StateRoot MakeStateRoot()
+        {
+            if (PreviousBlockStateRoot is null)
+            {
+                PreviousBlockStateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
+            }
+            return PreviousBlockStateRoot;
         }
 
         private Block _header = null;
@@ -214,7 +241,8 @@ namespace Neo.Consensus
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
+                StateRootSignature = MakeStateRoot().Sign(keyPair)
             });
         }
 
@@ -231,15 +259,7 @@ namespace Neo.Consensus
             PrepareRequest prepareRequestMessage = null;
             if (TransactionHashes != null)
             {
-                prepareRequestMessage = new PrepareRequest
-                {
-                    ViewNumber = ViewNumber,
-                    TransactionHashes = TransactionHashes,
-                    Nonce = Nonce,
-                    NextConsensus = NextConsensus,
-                    MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                    Timestamp = Timestamp
-                };
+                prepareRequestMessage = PreparationPayloads[PrimaryIndex].GetDeserializedMessage<PrepareRequest>();
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
@@ -258,7 +278,8 @@ namespace Neo.Consensus
         {
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareResponse
             {
-                PreparationHash = PreparationPayloads[PrimaryIndex].Hash
+                PreparationHash = PreparationPayloads[PrimaryIndex].Hash,
+                StateRootSignature = MakeStateRoot().Sign(keyPair)
             });
         }
 
@@ -303,6 +324,7 @@ namespace Neo.Consensus
                     keyPair = account.GetKey();
                     break;
                 }
+                PreviousBlockStateRoot = null;
             }
             else
             {

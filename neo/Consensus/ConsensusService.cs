@@ -148,6 +148,11 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
+
+                StateRoot stateRoot = context.CreateStateRoot();
+                Log($"relay stateRoot: height={stateRoot.Index} hash={stateRoot.Root}");
+                localNode.Tell(new LocalNode.Relay { Inventory = stateRoot });
+
                 CheckCommits();
             }
         }
@@ -224,7 +229,8 @@ namespace Neo.Consensus
                 {
                     existingCommitPayload = payload;
                 }
-                else if (Crypto.Default.VerifySignature(hashData, commit.Signature,
+                else if (Crypto.Default.VerifySignature(hashData,
+                    commit.Signature,
                     context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 {
                     existingCommitPayload = payload;
@@ -255,6 +261,12 @@ namespace Neo.Consensus
                 {
                     Log($"chain sync: expected={payload.BlockIndex} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
+                return;
+            }
+            if (ProtocolSettings.Default.StateRootEnableIndex + 1 < payload.BlockIndex && Blockchain.Singleton.StateHeight < payload.BlockIndex - 2)
+            {
+                Log($"root sync: expected={payload.BlockIndex - 2} current={Blockchain.Singleton.StateHeight}");
+                localNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create((uint)Blockchain.Singleton.StateHeight + 1, (uint)(payload.BlockIndex - 2 - Blockchain.Singleton.StateHeight))));
                 return;
             }
             if (payload.ValidatorIndex >= context.Validators.Length) return;
@@ -409,6 +421,15 @@ namespace Neo.Consensus
                 return;
             }
 
+            byte[] stateRootHashData = context.MakeStateRoot().GetHashData();
+            if (!Crypto.Default.VerifySignature(stateRootHashData,
+                    message.StateRootSignature,
+                    context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            {
+                Log($"Invalid request: incorrect state root signature", LogLevel.Warning);
+                return;
+            }
+
             // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
@@ -426,7 +447,9 @@ namespace Neo.Consensus
             byte[] hashData = context.MakeHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    if (!Crypto.Default.VerifySignature(hashData,
+                        context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature,
+                        context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
@@ -469,6 +492,16 @@ namespace Neo.Consensus
             ExtendTimerByFactor(2);
 
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
+            byte[] stateRootHashData = context.MakeStateRoot().GetHashData();
+            if (!Crypto.Default.VerifySignature(stateRootHashData,
+                    message.StateRootSignature,
+                    context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            {
+                Log($"Invalid response: incorrect state root signature", LogLevel.Warning);
+                return;
+            }
+
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             if (context.WatchOnly() || context.CommitSent()) return;
             if (context.RequestSentOrReceived())

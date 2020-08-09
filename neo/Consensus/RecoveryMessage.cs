@@ -121,7 +121,8 @@ namespace Neo.Consensus
                 ConsensusMessage = new PrepareResponse
                 {
                     ViewNumber = ViewNumber,
-                    PreparationHash = preparationHash
+                    PreparationHash = preparationHash,
+                    StateRootSignature = p.StateRootSignature
                 },
                 Witness = new Witness
                 {

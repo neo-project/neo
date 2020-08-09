@@ -77,6 +77,11 @@ namespace Neo.Persistence.LevelDB
             return new DbCache<StorageKey, StorageItem>(db, null, null, Prefixes.ST_Storage);
         }
 
+        public override DataCache<UInt32Wrapper, StateRootState> GetStateRoots()
+        {
+            return new DbCache<UInt32Wrapper, StateRootState>(db, null, null, Prefixes.ST_StateRoot);
+        }
+
         public override DataCache<UInt256, TransactionState> GetTransactions()
         {
             return new DbCache<UInt256, TransactionState>(db, null, null, Prefixes.DATA_Transaction);
@@ -110,6 +115,11 @@ namespace Neo.Persistence.LevelDB
         public override MetaDataCache<HashIndexState> GetHeaderHashIndex()
         {
             return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentHeader);
+        }
+
+        public override MetaDataCache<RootHashIndex> GetStateRootHashIndex()
+        {
+            return new DbMetaDataCache<RootHashIndex>(db, null, null, Prefixes.IX_CurrentStateRoot);
         }
 
         public override void Put(byte prefix, byte[] key, byte[] value)
