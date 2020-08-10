@@ -16,11 +16,11 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
+        private StateRoot PreviousBlockStateRoot;
         /// <summary>
         /// Prefix for saving consensus state.
         /// </summary>
         public const byte CN_Context = 0xf4;
-
         public const uint Version = 0;
         public uint BlockIndex { get; set; }
         public UInt256 PrevHash { get; set; }
@@ -39,7 +39,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] LastChangeViewPayloads { get; set; }
         // LastSeenMessage array stores the height of the last seen message, for each validator.
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
-        public int[] LastSeenMessage { get; set; }
+        public Dictionary<ECPoint, int> LastSeenMessage { get; set; }
         public Block Block { get; set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
@@ -72,6 +72,24 @@ namespace Neo.Consensus
                 Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             }
             return Block;
+        }
+
+        public StateRoot CreateStateRoot()
+        {
+            MakeStateRoot();
+            Contract contract = Contract.CreateMultiSigContract(this.M(), Validators);
+            ContractParametersContext sc = new ContractParametersContext(PreviousBlockStateRoot);
+            for (int i = 0, j = 0; i < Validators.Length && j < this.M(); i++)
+            {
+                if (PreparationPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
+                if (i == PrimaryIndex)
+                    sc.AddSignature(contract, Validators[i], PreparationPayloads[i].GetDeserializedMessage<PrepareRequest>().StateRootSignature);
+                else
+                    sc.AddSignature(contract, Validators[i], PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().StateRootSignature);
+                j++;
+            }
+            PreviousBlockStateRoot.Witness = sc.GetWitnesses()[0];
+            return PreviousBlockStateRoot;
         }
 
         public void Deserialize(BinaryReader reader)
@@ -150,8 +168,17 @@ namespace Neo.Consensus
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = MakeHeader()?.Sign(keyPair)
+                Signature = MakeHeader()?.Sign(keyPair),
             }));
+        }
+
+        public StateRoot MakeStateRoot()
+        {
+            if (PreviousBlockStateRoot is null)
+            {
+                PreviousBlockStateRoot = Blockchain.Singleton.GetStateRoot(Snapshot.Height).StateRoot;
+            }
+            return PreviousBlockStateRoot;
         }
 
         private Block _header = null;
@@ -214,7 +241,8 @@ namespace Neo.Consensus
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
+                StateRootSignature = MakeStateRoot().Sign(keyPair)
             });
         }
 
@@ -231,15 +259,7 @@ namespace Neo.Consensus
             PrepareRequest prepareRequestMessage = null;
             if (TransactionHashes != null)
             {
-                prepareRequestMessage = new PrepareRequest
-                {
-                    ViewNumber = ViewNumber,
-                    TransactionHashes = TransactionHashes,
-                    Nonce = Nonce,
-                    NextConsensus = NextConsensus,
-                    MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                    Timestamp = Timestamp
-                };
+                prepareRequestMessage = PreparationPayloads[PrimaryIndex].GetDeserializedMessage<PrepareRequest>();
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
@@ -258,7 +278,8 @@ namespace Neo.Consensus
         {
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareResponse
             {
-                PreparationHash = PreparationPayloads[PrimaryIndex].Hash
+                PreparationHash = PreparationPayloads[PrimaryIndex].Hash,
+                StateRootSignature = MakeStateRoot().Sign(keyPair)
             });
         }
 
@@ -278,9 +299,21 @@ namespace Neo.Consensus
                 CommitPayloads = new ConsensusPayload[Validators.Length];
                 if (LastSeenMessage == null)
                 {
-                    LastSeenMessage = new int[Validators.Length];
-                    for (int i = 0; i < Validators.Length; i++)
-                        LastSeenMessage[i] = -1;
+                    LastSeenMessage = new Dictionary<ECPoint, int>();
+                    foreach (var validator in Validators)
+                        LastSeenMessage[validator] = -1;
+                }
+                if (0 < Snapshot.Height && Snapshot.GetBlock(Snapshot.Height).NextConsensus != Snapshot.GetBlock(Snapshot.Height - 1)?.NextConsensus)
+                {
+                    var old_last_seen_message = LastSeenMessage;
+                    LastSeenMessage = new Dictionary<ECPoint, int>();
+                    foreach (var validator in Validators)
+                    {
+                        if (old_last_seen_message.TryGetValue(validator, out int value))
+                            LastSeenMessage[validator] = value;
+                        else
+                            LastSeenMessage[validator] = -1;
+                    }
                 }
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
@@ -291,6 +324,7 @@ namespace Neo.Consensus
                     keyPair = account.GetKey();
                     break;
                 }
+                PreviousBlockStateRoot = null;
             }
             else
             {
@@ -305,7 +339,7 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)BlockIndex;
+            if (MyIndex >= 0) LastSeenMessage[Validators[MyIndex]] = (int)BlockIndex;
             _header = null;
         }
 

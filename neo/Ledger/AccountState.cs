@@ -1,7 +1,6 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.VM;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;

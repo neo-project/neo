@@ -23,6 +23,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Trie.MPT;
 using Neo.VM;
 using Neo.Wallets;
 
@@ -304,6 +305,28 @@ namespace Neo.Network.RPC
                     {
                         string address = _params[0].AsString();
                         return ValidateAddress(address);
+                    }
+                case "getstateheight":
+                    {
+                        return GetStateHeight();
+                    }
+                case "getstateroot":
+                    {
+                        JObject param = _params[0];
+                        return GetStateRoot(param);
+                    }
+                case "getproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        UInt160 script_hash = UInt160.Parse(_params[1].AsString());
+                        byte[] store_key = _params[2].AsString().HexToBytes();
+                        return GetStateProof(state_root, script_hash, store_key);
+                    }
+                case "verifyproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        byte[] proof_bytes = _params[1].AsString().HexToBytes();
+                        return VerifyProof(state_root, proof_bytes);
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
@@ -747,6 +770,87 @@ namespace Neo.Network.RPC
             }
             json["address"] = address;
             json["isvalid"] = scriptHash != null;
+            return json;
+        }
+
+        private JObject GetStateHeight()
+        {
+            var json = new JObject();
+            json["blockheight"] = Blockchain.Singleton.Height;
+            json["stateheight"] = Blockchain.Singleton.StateHeight;
+            return json;
+        }
+
+        private JObject GetStateRoot(JObject key)
+        {
+            StateRootState state = null;
+            if (key is JNumber)
+            {
+                state = Blockchain.Singleton.GetStateRoot((uint)key.AsNumber());
+            }
+            else if (key is JString)
+            {
+                var hash = UInt256.Parse(key.AsString());
+                state = Blockchain.Singleton.GetStateRoot(hash);
+            }
+            else
+            {
+                throw new RpcException(-100, "Invalid parameter.");
+            }
+            if (state is null) throw new RpcException(-100, "Unknown state root.");
+            return state.ToJson();
+        }
+
+        private JObject GetStateProof(UInt256 state_root, UInt160 script_hash, byte[] store_key)
+        {
+            JObject json = new JObject();
+            var skey = new StorageKey
+            {
+                ScriptHash = script_hash,
+                Key = store_key,
+            };
+            var result = Blockchain.Singleton.GetStateProof(state_root, skey, out HashSet<byte[]> proof);
+            json["success"] = result;
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                writer.WriteVarBytes(skey.ToArray());
+                writer.WriteVarInt(proof.Count);
+                foreach (var item in proof)
+                {
+                    writer.WriteVarBytes(item);
+                }
+                writer.Flush();
+                json["proof"] = ms.ToArray().ToHexString();
+            }
+
+            return json;
+        }
+
+        private JObject VerifyProof(UInt256 state_root, byte[] proof_bytes)
+        {
+            var json = new JObject();
+            var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+            byte[] key;
+            using (MemoryStream ms = new MemoryStream(proof_bytes, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                key = reader.ReadVarBytes(ExtensionNode.MaxKeyLength);
+                var count = reader.ReadVarInt();
+                for (ulong i = 0; i < count; i++)
+                {
+                    proof.Add(reader.ReadVarBytes());
+                }
+            }
+            var result = Blockchain.Singleton.VerifyProof(state_root, key, proof, out byte[] value);
+            if (!result)
+            {
+                json = "invalid";
+            }
+            else
+            {
+                json["value"] = value.ToHexString();
+            }
             return json;
         }
     }

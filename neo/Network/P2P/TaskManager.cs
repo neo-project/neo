@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
+using Neo.Cryptography;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
@@ -20,6 +21,7 @@ namespace Neo.Network.P2P
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
+        public class StateRootTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
 
@@ -43,19 +45,21 @@ namespace Neo.Network.P2P
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private readonly UInt256 HeaderTaskHash = UInt256.Zero;
+        private readonly UInt256 StateRootTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
+        private bool HasStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
 
         public TaskManager(NeoSystem system)
         {
             this.system = system;
         }
 
-        private void OnHeaderTaskCompleted()
+        private void OnInternalTaskCompleted(UInt256 hash)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            session.Tasks.Remove(HeaderTaskHash);
-            DecrementGlobalTask(HeaderTaskHash);
+            session.Tasks.Remove(hash);
+            DecrementGlobalTask(hash);
             RequestTasks(session);
         }
 
@@ -63,7 +67,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
+            if (payload.Type == InventoryType.TX && (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight || Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1) + 1 < Blockchain.Singleton.Height))
             {
                 RequestTasks(session);
                 return;
@@ -107,7 +111,10 @@ namespace Neo.Network.P2P
                     OnTaskCompleted(completed.Hash);
                     break;
                 case HeaderTaskCompleted _:
-                    OnHeaderTaskCompleted();
+                    OnInternalTaskCompleted(HeaderTaskHash);
+                    break;
+                case StateRootTaskCompleted _:
+                    OnInternalTaskCompleted(StateRootTaskHash);
                     break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
@@ -267,6 +274,23 @@ namespace Neo.Network.P2P
                     }
                 }
                 session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
+            }
+            if (!HasStateRootTask)
+            {
+                var state_height = Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1);
+                var height = Blockchain.Singleton.Height;
+                if (state_height + 1 < height)
+                {
+                    var state = Blockchain.Singleton.GetStateRoot((uint)(state_height + 1));
+                    if (state is null || state.Flag == StateRootVerifyFlag.Unverified)
+                    {
+                        var start_index = (uint)(state_height + 1);
+                        var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
+                        session.Tasks[StateRootTaskHash] = DateTime.UtcNow;
+                        IncrementGlobalTask(StateRootTaskHash);
+                        session.RemoteNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
+                    }
+                }
             }
         }
     }
