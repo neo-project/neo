@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
+using System;
 using System.Linq;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -136,9 +137,18 @@ namespace Neo.UnitTests.SmartContract
             TrimmedBlock block3 = new TrimmedBlock();
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
-            Header header3 = new Header() { PrevHash = index3, Witness = new Witness { VerificationScript = new byte[0] } };
+            Header header3 = new Header()
+            {
+                PrevHash = index3,
+                Witness = new Witness
+                {
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
+                }
+            };
             snapshot3.Contracts.Add(UInt160.Zero, new ContractState()
             {
+                Script = Array.Empty<byte>(),
                 Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));

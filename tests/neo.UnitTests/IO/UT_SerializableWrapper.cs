@@ -15,6 +15,16 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestCast()
+        {
+            SerializableWrapper<uint> tempA = (SerializableWrapper<uint>)123;
+            SerializableWrapper<uint> tempB = tempA.ToArray().AsSerializable<SerializableWrapper<uint>>();
+
+            Assert.IsTrue(tempA.Equals(tempB));
+            Assert.AreEqual((uint)123, (uint)tempA);
+        }
+
+        [TestMethod]
         public void TestEqualsOtherObject()
         {
             MemoryStream stream = new MemoryStream();

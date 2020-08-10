@@ -266,7 +266,7 @@ namespace Neo.Wallets
                             using (ScriptBuilder sb2 = new ScriptBuilder())
                             {
                                 sb2.EmitAppCall(assetId, "balanceOf", account);
-                                using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, testMode: true))
+                                using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot))
                                 {
                                     if (engine.State.HasFlag(VMState.FAULT))
                                         throw new InvalidOperationException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
@@ -346,7 +346,7 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx, testMode: true))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx))
                 {
                     if (engine.State == VMState.FAULT)
                     {
@@ -383,9 +383,9 @@ namespace Neo.Wallets
                     ContractMethodDescriptor verify = contract.Manifest.Abi.GetMethod("verify");
                     if (verify is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
                     ContractMethodDescriptor init = contract.Manifest.Abi.GetMethod("_initialize");
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone(), 0, testMode: true);
-                    engine.LoadScript(contract.Script, CallFlags.None).InstructionPointer = verify.Offset;
-                    if (init != null) engine.LoadClonedContext(init.Offset);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
+                    ExecutionContext context = engine.LoadScript(contract.Script, CallFlags.None, verify.Offset);
+                    if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
                     engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
