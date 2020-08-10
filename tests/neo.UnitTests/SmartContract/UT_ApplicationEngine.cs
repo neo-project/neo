@@ -26,10 +26,16 @@ namespace Neo.UnitTests.SmartContract
             var data = new byte[0];
             CollectionAssert.AreEqual(data, engine.Base64Decode(engine.Base64Encode(data)));
 
+            CollectionAssert.AreEqual(data, engine.Base58Decode(engine.Base58Encode(data)));
+
             data = new byte[] { 1, 2, 3 };
             CollectionAssert.AreEqual(data, engine.Base64Decode(engine.Base64Encode(data)));
 
+            CollectionAssert.AreEqual(data, engine.Base58Decode(engine.Base58Encode(data)));
+
             Assert.AreEqual("AQIDBA==", engine.Base64Encode(new byte[] { 1, 2, 3, 4 }));
+
+            Assert.AreEqual("2VfUX", engine.Base58Encode(new byte[] { 1, 2, 3, 4 }));
         }
 
         [TestMethod]
