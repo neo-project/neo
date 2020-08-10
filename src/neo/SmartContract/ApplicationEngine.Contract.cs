@@ -20,7 +20,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, CallFlags.None, false);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
@@ -143,7 +143,7 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
             if (args.Count != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadScript(contract.Script);
+            ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = flags & callingFlags;
@@ -157,11 +157,10 @@ namespace Neo.SmartContract
             {
                 for (int i = args.Count - 1; i >= 0; i--)
                     context_new.EvaluationStack.Push(args[i]);
-                context_new.InstructionPointer = md.Offset;
             }
 
             md = contract.Manifest.Abi.GetMethod("_initialize");
-            if (md != null) LoadClonedContext(md.Offset);
+            if (md != null) LoadContext(context_new.Clone(md.Offset));
         }
 
         protected internal bool IsStandardContract(UInt160 hash)
