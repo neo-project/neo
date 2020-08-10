@@ -49,9 +49,9 @@ namespace Neo.SmartContract
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
-        public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
-        public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
         protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
@@ -139,16 +139,16 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        internal void LoadContext(ExecutionContext context, int initialPosition)
+        internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
-            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
-            context.InstructionPointer = initialPosition;
+            if (checkReturnValue)
+                GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
             LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags)
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
         {
-            ExecutionContext context = LoadScript(script);
+            ExecutionContext context = LoadScript(script, initialPosition);
             context.GetState<ExecutionContextState>().CallFlags = callFlags;
             return context;
         }
@@ -298,7 +298,7 @@ namespace Neo.SmartContract
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
             if (disposable != null) engine.Disposables.Add(disposable);
-            engine.LoadScript(script).InstructionPointer = offset;
+            engine.LoadScript(script, offset);
             engine.Execute();
             return engine;
         }
