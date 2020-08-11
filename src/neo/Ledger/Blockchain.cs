@@ -409,7 +409,7 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0, true);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
@@ -450,7 +450,7 @@ namespace Neo.Ledger
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
                 if (block.Index > 0)
                 {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0, true);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);

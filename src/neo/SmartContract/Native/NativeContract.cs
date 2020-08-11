@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Native
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitAppCall(Hash, operation, args);
-                return ApplicationEngine.Run(sb.ToArray(), testMode: true);
+                return ApplicationEngine.Run(sb.ToArray());
             }
         }
 

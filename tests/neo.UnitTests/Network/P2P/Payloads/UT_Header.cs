@@ -28,6 +28,31 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void GetHashCodeTest()
+        {
+            UInt256 val256 = UInt256.Zero;
+            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
+            uut.GetHashCode().Should().Be(uut.Hash.GetHashCode());
+        }
+
+        [TestMethod]
+        public void TrimTest()
+        {
+            UInt256 val256 = UInt256.Zero;
+            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
+            var trim = uut.Trim();
+
+            trim.Version.Should().Be(uut.Version);
+            trim.PrevHash.Should().Be(uut.PrevHash);
+            trim.MerkleRoot.Should().Be(uut.MerkleRoot);
+            trim.Timestamp.Should().Be(uut.Timestamp);
+            trim.Index.Should().Be(uut.Index);
+            trim.NextConsensus.Should().Be(uut.NextConsensus);
+            trim.Witness.Should().Be(uut.Witness);
+            trim.Hashes.Length.Should().Be(0);
+        }
+
+        [TestMethod]
         public void Deserialize()
         {
             UInt256 val256 = UInt256.Zero;
