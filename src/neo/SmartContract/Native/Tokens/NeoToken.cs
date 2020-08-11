@@ -122,7 +122,8 @@ namespace Neo.SmartContract.Native.Tokens
             var endRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - end - 1));
             var startRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - start - 1));
             BigInteger startReward = startRewardItem is null ? 0 : new BigInteger(startRewardItem.Value);
-            return value * (new BigInteger(endRewardItem.Value) - startReward) / TotalAmount;
+            BigInteger endReward = endRewardItem is null ? 0 : new BigInteger(endRewardItem.Value);
+            return value * (endReward - startReward) / TotalAmount;
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
