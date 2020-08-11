@@ -138,10 +138,8 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
             foreach (var validator in mockContext.Object.Validators)
             {
-                Console.WriteLine("[test] {0}", validator);
                 mockContext.Object.LastSeenMessage[validator] = 0;
             }
-            Console.WriteLine("[test] {0}", mockContext.Object.MyIndex);
             // Ensuring cast of type ConsensusPayload from the received message from subscriber
             ConsensusPayload initialRecoveryPayload = (ConsensusPayload)askingForInitialRecovery.Inventory;
             // Ensuring casting of type RecoveryRequest
