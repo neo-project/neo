@@ -371,6 +371,10 @@ namespace Neo.Consensus
                         if (ReverifyAndProcessPayload(commitPayload)) validCommits++;
                 }
             }
+            catch (IndexOutOfRangeException e)
+            {
+                Log($"invalid recovery message with illegal validator index. {e}");
+            }
             finally
             {
                 Log($"{nameof(OnRecoveryMessageReceived)}: finished (valid/total) " +
