@@ -399,7 +399,7 @@ namespace Neo.Consensus
                         if (previous_last_seen_message.TryGetValue(validator, out int value))
                             LastSeenMessage[validator] = value;
                         else
-                            LastSeenMessage[validator] = -1;
+                            LastSeenMessage[validator] = (int)Snapshot.Height;
                     }
                 }
                 keyPair = null;
