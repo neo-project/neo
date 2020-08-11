@@ -292,6 +292,7 @@ namespace Neo.Network.P2P
             system.Blockchain.Tell(inventory, ActorRefs.NoSender);
             pendingKnownHashes.Remove(inventory.Hash);
             knownHashes.Add(inventory.Hash);
+            if (inventory is Block b) UpdateLastBlockIndex(b.Index, false);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
@@ -323,13 +324,13 @@ namespace Neo.Network.P2P
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
             EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
         }
 
         private void OnVerackMessageReceived()
@@ -375,12 +376,12 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void UpdateLastBlockIndex(PingPayload payload)
+        private void UpdateLastBlockIndex(uint lastBlockIndex, bool requestTasks)
         {
-            if (payload.LastBlockIndex > LastBlockIndex)
+            if (lastBlockIndex > LastBlockIndex)
             {
-                LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                LastBlockIndex = lastBlockIndex;
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex, RequestTasks = requestTasks });
             }
         }
     }

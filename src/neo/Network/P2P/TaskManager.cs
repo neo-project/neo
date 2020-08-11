@@ -15,7 +15,7 @@ namespace Neo.Network.P2P
     internal class TaskManager : UntypedActor
     {
         public class Register { public VersionPayload Version; }
-        public class Update { public uint LastBlockIndex; }
+        public class Update { public uint LastBlockIndex; public bool RequestTasks; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
@@ -129,7 +129,7 @@ namespace Neo.Network.P2P
                     OnRegister(register.Version);
                     break;
                 case Update update:
-                    OnUpdate(update.LastBlockIndex);
+                    OnUpdate(update);
                     break;
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
@@ -169,12 +169,13 @@ namespace Neo.Network.P2P
             RequestTasks();
         }
 
-        private void OnUpdate(uint lastBlockIndex)
+        private void OnUpdate(Update update)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            session.LastBlockIndex = lastBlockIndex;
-            RequestTasks();
+            session.LastBlockIndex = update.LastBlockIndex;
+            session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
+            if (update.RequestTasks) RequestTasks();
         }
 
         private void OnRestartTasks(InvPayload payload)
