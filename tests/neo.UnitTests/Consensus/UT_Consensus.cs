@@ -272,7 +272,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
-            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(77), new StorageItem()
+            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem()
             {
                 Value = mockContext.Object.Validators.ToByteArray()
             });
@@ -407,7 +407,7 @@ namespace Neo.UnitTests.Consensus
             // Updating context.Snapshot with the one that was committed
             Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
-            mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(77));
+            mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
             mockContext.Object.Snapshot.Commit();
 
             Console.WriteLine("mockContext Reset.");
