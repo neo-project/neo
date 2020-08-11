@@ -6,7 +6,6 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
-using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;

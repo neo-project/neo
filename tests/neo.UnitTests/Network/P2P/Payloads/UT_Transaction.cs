@@ -35,6 +35,25 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void FromStackItem()
+        {
+            Assert.ThrowsException<NotSupportedException>(() => ((IInteroperable)uut).FromStackItem(VM.Types.StackItem.Null));
+        }
+
+        [TestMethod]
+        public void TestEquals()
+        {
+            Assert.IsTrue(uut.Equals(uut));
+            Assert.IsFalse(uut.Equals(null));
+        }
+
+        [TestMethod]
+        public void InventoryType_Get()
+        {
+            ((IInventory)uut).InventoryType.Should().Be(InventoryType.TX);
+        }
+
+        [TestMethod]
         public void Script_Set()
         {
             byte[] val = TestUtils.GetByteArray(32, 0x42);
