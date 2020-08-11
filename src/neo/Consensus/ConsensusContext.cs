@@ -56,6 +56,7 @@ namespace Neo.Consensus
         public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
         public int CountCommitted => CommitPayloads.Count(p => p != null);
         public int CountFailed => LastSeenMessage.Count(p => p.Value < (((int)Block.Index) - 1));
+        public bool ValidatorsChanged => 0 < Snapshot.Height && Blockchain.Singleton.GetBlock(Snapshot.Height - 1).NextConsensus != Blockchain.Singleton.GetBlock(Snapshot.Height).NextConsensus;
 
         #region Consensus States
         public bool RequestSentOrReceived => PreparationPayloads[Block.ConsensusData.PrimaryIndex] != null;
@@ -390,7 +391,7 @@ namespace Neo.Consensus
                     for (int i = 0; i < Validators.Length; i++)
                         LastSeenMessage[Validators[i]] = (int)Snapshot.Height;
                 }
-                if (0 < Snapshot.Height && Blockchain.Singleton.GetBlock(Snapshot.Height - 1).NextConsensus != Blockchain.Singleton.GetBlock(Snapshot.Height).NextConsensus)
+                else if (ValidatorsChanged)
                 {
                     var previous_last_seen_message = LastSeenMessage;
                     LastSeenMessage = new Dictionary<ECPoint, int>();
