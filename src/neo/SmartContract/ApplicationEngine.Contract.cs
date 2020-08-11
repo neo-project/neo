@@ -143,7 +143,7 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
             if (args.Count != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadScript(contract.Script);
+            ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = flags & callingFlags;
@@ -157,11 +157,10 @@ namespace Neo.SmartContract
             {
                 for (int i = args.Count - 1; i >= 0; i--)
                     context_new.EvaluationStack.Push(args[i]);
-                context_new.InstructionPointer = md.Offset;
             }
 
             md = contract.Manifest.Abi.GetMethod("_initialize");
-            if (md != null) LoadClonedContext(md.Offset);
+            if (md != null) LoadContext(context_new.Clone(md.Offset));
         }
 
         protected internal bool IsStandardContract(UInt160 hash)

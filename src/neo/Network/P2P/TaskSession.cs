@@ -20,7 +20,7 @@ namespace Neo.Network.P2P
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
             this.IsFullNode = fullNode != null;
-            this.LastBlockIndex = fullNode.StartHeight;
+            this.LastBlockIndex = fullNode?.StartHeight ?? 0;
         }
     }
 }
