@@ -388,7 +388,7 @@ namespace Neo.Consensus
                 {
                     LastSeenMessage = new Dictionary<ECPoint, int>();
                     for (int i = 0; i < Validators.Length; i++)
-                        LastSeenMessage[Validators[i]] = -1;
+                        LastSeenMessage[Validators[i]] = (int)Snapshot.Height;
                 }
                 if (0 < Snapshot.Height && Blockchain.Singleton.GetBlock(Snapshot.Height - 1).NextConsensus != Blockchain.Singleton.GetBlock(Snapshot.Height).NextConsensus)
                 {
