@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void Stores()
         {
-            var r = new ReadOnlyView(new MemoryStore());
+            var r = new ReadOnlyView(new MemoryStore().GetSnapshot());
 
             Assert.AreEqual(uint.MaxValue, r.BlockHashIndex.Get().Index);
             Assert.AreEqual(UInt256.Zero, r.BlockHashIndex.Get().Hash);
