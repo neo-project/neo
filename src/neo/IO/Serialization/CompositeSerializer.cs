@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Neo.IO.Serialization
 {
-    public class CompositeSerializer<T> : Serializer<T> where T : class, ISerializable
+    public class CompositeSerializer<T> : Serializer<T> where T : Serializable
     {
         private readonly (PropertyInfo, SerializedAttribute, Serializer)[] serializers;
 

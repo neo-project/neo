@@ -2,7 +2,7 @@ using System.IO;
 
 namespace Neo.IO.Serialization
 {
-    public class ArraySerializer<T> : Serializer<T[]> where T : class, ISerializable
+    public class ArraySerializer<T> : Serializer<T[]> where T : Serializable
     {
         private static readonly Serializer<T> elementSerializer = (Serializer<T>)GetDefaultSerializer(typeof(T));
 

@@ -7,7 +7,7 @@ using System.Linq;
 namespace Neo.IO.Serialization
 {
     public partial class PolymorphousArraySerializer<T, TEnum> : ArraySerializer<T>
-        where T : class, ISerializable
+        where T : Serializable
         where TEnum : Enum
     {
         private static readonly Dictionary<Type, ElementSerializer> serializers = ReflectionCache<TEnum>.GetTypes().ToDictionary(p => p, p => new ElementSerializer(p));
