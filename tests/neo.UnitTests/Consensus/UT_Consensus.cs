@@ -46,7 +46,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
 
             var mockContext = new Mock<ConsensusContext>(mockWallet.Object, Blockchain.Singleton.Store);
-            mockContext.Object.LastSeenMessage = new int[] { 0, 0, 0, 0, 0, 0, 0 };
 
             KeyPair[] kp_array = new KeyPair[7]
                 {
@@ -136,6 +135,10 @@ namespace Neo.UnitTests.Consensus
             // As we may expect, as soon as consensus start it sends a RecoveryRequest of this aforementioned type
             var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
+            foreach (var validator in mockContext.Object.Validators)
+            {
+                mockContext.Object.LastSeenMessage[validator] = 0;
+            }
             // Ensuring cast of type ConsensusPayload from the received message from subscriber
             ConsensusPayload initialRecoveryPayload = (ConsensusPayload)askingForInitialRecovery.Inventory;
             // Ensuring casting of type RecoveryRequest
@@ -166,7 +169,11 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.ChangeViewPayloads[mockContext.Object.MyIndex] = null;
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
-            mockContext.Object.LastSeenMessage = new int[] { -1, -1, -1, -1, -1, -1, -1 };
+            mockContext.Object.LastSeenMessage.Clear();
+            foreach (var validator in mockContext.Object.Validators)
+            {
+                mockContext.Object.LastSeenMessage[validator] = -1;
+            }
             mockContext.Object.CountFailed.Should().Be(7);
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
@@ -266,6 +273,12 @@ namespace Neo.UnitTests.Consensus
                     kp_array[6].PublicKey
                 };
             Console.WriteLine($"Generated keypairs PKey:");
+            //refresh LastSeenMessage
+            mockContext.Object.LastSeenMessage.Clear();
+            foreach (var item in mockContext.Object.Validators)
+            {
+                mockContext.Object.LastSeenMessage[item] = -1;
+            }
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
@@ -308,7 +321,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nAsserting CountCommitted is 2...");
             mockContext.Object.CountCommitted.Should().Be(2);
             Console.WriteLine($"\nAsserting CountFailed is 1...");
-            mockContext.Object.CountFailed.Should().Be(1);
+            mockContext.Object.CountFailed.Should().Be(6);
 
             Console.WriteLine("\nCN6 simulation time");
             TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData));
@@ -318,7 +331,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nAsserting CountCommitted is 3...");
             mockContext.Object.CountCommitted.Should().Be(3);
             Console.WriteLine($"\nAsserting CountFailed is 0...");
-            mockContext.Object.CountFailed.Should().Be(0);
+            mockContext.Object.CountFailed.Should().Be(5);
 
             Console.WriteLine("\nCN5 simulation time");
             TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData));
@@ -381,10 +394,14 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\nAsserting CountCommitted is 0...");
             mockContext.Object.CountCommitted.Should().Be(0);
             Console.WriteLine($"\nAsserting CountFailed is 0...");
-            mockContext.Object.CountFailed.Should().Be(0);
+            mockContext.Object.CountFailed.Should().Be(3);
             Console.WriteLine($"\nModifying CountFailed and asserting 7...");
             // This will ensure a non-deterministic behavior after last recovery
-            mockContext.Object.LastSeenMessage = new int[] { -1, -1, -1, -1, -1, -1, -1 };
+            mockContext.Object.LastSeenMessage.Clear();
+            foreach (var validator in mockContext.Object.Validators)
+            {
+                mockContext.Object.LastSeenMessage[validator] = -1;
+            }
             mockContext.Object.CountFailed.Should().Be(7);
 
             TellConsensusPayload(actorConsensus, rmPayload);
