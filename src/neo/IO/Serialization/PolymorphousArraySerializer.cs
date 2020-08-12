@@ -1,7 +1,6 @@
 using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Neo.IO.Serialization
@@ -12,16 +11,15 @@ namespace Neo.IO.Serialization
     {
         private static readonly Dictionary<Type, ElementSerializer> serializers = ReflectionCache<TEnum>.GetTypes().ToDictionary(p => p, p => new ElementSerializer(p));
 
-        protected override T DeserializeElement(BinaryReader reader)
+        protected override T DeserializeElement(MemoryReader reader)
         {
-            TEnum e = (TEnum)Enum.ToObject(typeof(TEnum), reader.ReadByte());
+            TEnum e = (TEnum)Enum.ToObject(typeof(TEnum), reader.Peek());
             Type type = ReflectionCache<TEnum>.GetType(e);
             ElementSerializer serializer = serializers[type];
-            reader.BaseStream.Seek(-1, SeekOrigin.Current);
             return serializer.Deserialize(reader, null);
         }
 
-        protected override void SerializeElement(BinaryWriter writer, T value)
+        protected override void SerializeElement(MemoryWriter writer, T value)
         {
             ElementSerializer serializer = serializers[value.GetType()];
             serializer.Serialize(writer, value);

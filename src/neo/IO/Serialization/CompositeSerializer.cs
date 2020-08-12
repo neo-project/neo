@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -18,7 +17,7 @@ namespace Neo.IO.Serialization
             serializers = GetSerializers().OrderBy(p => p.Item2.Order).ToArray();
         }
 
-        public sealed override T Deserialize(BinaryReader reader, SerializedAttribute _)
+        public sealed override T Deserialize(MemoryReader reader, SerializedAttribute _)
         {
             var constructorInfo = TargetType.GetConstructor(Type.EmptyTypes);
             var newExpr = Expression.New(constructorInfo);
@@ -53,7 +52,7 @@ namespace Neo.IO.Serialization
             }
         }
 
-        public sealed override void Serialize(BinaryWriter writer, T value)
+        public sealed override void Serialize(MemoryWriter writer, T value)
         {
             foreach (var (info, _, serializer) in serializers)
                 serializer.SerializeProperty(writer, value, info);

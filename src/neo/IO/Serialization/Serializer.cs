@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -21,10 +20,11 @@ namespace Neo.IO.Serialization
             [typeof(long)] = new VarIntSerializer<long>(),
             [typeof(ulong)] = new VarIntSerializer<ulong>(),
             [typeof(string)] = new StringSerializer(),
-            [typeof(byte[])] = new ByteArraySerializer()
+            [typeof(byte[])] = new ByteArraySerializer(),
+            [typeof(ReadOnlyMemory<byte>)] = new MemorySerializer()
         };
 
-        public abstract void DeserializeProperty(BinaryReader reader, object obj, PropertyInfo property, SerializedAttribute attribute);
+        public abstract void DeserializeProperty(MemoryReader reader, object obj, PropertyInfo property, SerializedAttribute attribute);
 
         protected static Serializer GetDefaultSerializer(Type type)
         {
@@ -41,16 +41,16 @@ namespace Neo.IO.Serialization
             return serializer;
         }
 
-        public abstract void SerializeProperty(BinaryWriter writer, object obj, PropertyInfo property);
+        public abstract void SerializeProperty(MemoryWriter writer, object obj, PropertyInfo property);
     }
 
     public abstract class Serializer<T> : Serializer
     {
         private static readonly ConcurrentDictionary<PropertyInfo, (Delegate, Delegate)> callbacks = new ConcurrentDictionary<PropertyInfo, (Delegate, Delegate)>();
 
-        public abstract T Deserialize(BinaryReader reader, SerializedAttribute attribute);
+        public abstract T Deserialize(MemoryReader reader, SerializedAttribute attribute);
 
-        public sealed override void DeserializeProperty(BinaryReader reader, object obj, PropertyInfo property, SerializedAttribute attribute)
+        public sealed override void DeserializeProperty(MemoryReader reader, object obj, PropertyInfo property, SerializedAttribute attribute)
         {
             (_, var setter) = GetCallbacks(property);
             Action<object, T> action = (Action<object, T>)setter;
@@ -72,9 +72,9 @@ namespace Neo.IO.Serialization
             });
         }
 
-        public abstract void Serialize(BinaryWriter writer, T value);
+        public abstract void Serialize(MemoryWriter writer, T value);
 
-        public sealed override void SerializeProperty(BinaryWriter writer, object obj, PropertyInfo property)
+        public sealed override void SerializeProperty(MemoryWriter writer, object obj, PropertyInfo property)
         {
             (var getter, _) = GetCallbacks(property);
             Func<object, T> func = (Func<object, T>)getter;
