@@ -13,7 +13,7 @@ namespace Neo.Wallets
 {
     public static class Helper
     {
-        public static long CalculateNetworkFee(StoreView snapshot, Transaction tx, Func<UInt160, byte[]> getAccount)
+        public static long CalculateNetworkFee(StoreView snapshot, Transaction tx, Func<UInt160, byte[]> getAccountWitnessScript)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
@@ -22,7 +22,7 @@ namespace Neo.Wallets
             long networkFee = 0;
             foreach (UInt160 hash in hashes)
             {
-                byte[] witness_script = getAccount(hash);
+                byte[] witness_script = getAccountWitnessScript(hash);
                 if (witness_script is null)
                 {
                     var contract = snapshot.Contracts.TryGet(hash);
