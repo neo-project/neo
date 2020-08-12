@@ -35,7 +35,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] LastChangeViewPayloads;
         // LastSeenMessage array stores the height of the last seen message, for each validator.
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
-        public Dictionary<ECPoint, int> LastSeenMessage { get; set; }
+        public Dictionary<ECPoint, int> LastSeenMessage { get; private set; }
 
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
@@ -55,7 +55,7 @@ namespace Neo.Consensus
         public bool WatchOnly => MyIndex < 0;
         public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
         public int CountCommitted => CommitPayloads.Count(p => p != null);
-        public int CountFailed => LastSeenMessage.Count(p => p.Value < (((int)Block.Index) - 1));
+        public int CountFailed => LastSeenMessage?.Count(p => p.Value < (((int)Block.Index) - 1)) ?? 0;
         public bool ValidatorsChanged => 0 < Snapshot.Height && Blockchain.Singleton.GetBlock(Snapshot.Height - 1).NextConsensus != Blockchain.Singleton.GetBlock(Snapshot.Height).NextConsensus;
 
         #region Consensus States
@@ -385,19 +385,13 @@ namespace Neo.Consensus
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 CommitPayloads = new ConsensusPayload[Validators.Length];
-                if (LastSeenMessage == null)
-                {
-                    LastSeenMessage = new Dictionary<ECPoint, int>();
-                    for (int i = 0; i < Validators.Length; i++)
-                        LastSeenMessage[Validators[i]] = (int)Snapshot.Height;
-                }
-                else if (ValidatorsChanged)
+                if (ValidatorsChanged || LastSeenMessage is null)
                 {
                     var previous_last_seen_message = LastSeenMessage;
                     LastSeenMessage = new Dictionary<ECPoint, int>();
                     foreach (var validator in Validators)
                     {
-                        if (previous_last_seen_message.TryGetValue(validator, out int value))
+                        if (previous_last_seen_message != null && previous_last_seen_message.TryGetValue(validator, out int value))
                             LastSeenMessage[validator] = value;
                         else
                             LastSeenMessage[validator] = (int)Snapshot.Height;
