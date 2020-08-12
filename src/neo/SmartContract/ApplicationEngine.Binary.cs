@@ -33,12 +33,12 @@ namespace Neo.SmartContract
             return FromBase64String(s);
         }
 
-        internal string Base58Encode(byte[] data)
+        protected internal string Base58Encode(byte[] data)
         {
             return Base58.Encode(data);
         }
 
-        internal byte[] Base58Decode(string s)
+        protected internal byte[] Base58Decode(string s)
         {
             return Base58.Decode(s);
         }
