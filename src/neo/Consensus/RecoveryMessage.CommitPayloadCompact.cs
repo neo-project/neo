@@ -16,7 +16,7 @@ namespace Neo.Consensus
             int ISerializable.Size =>
                 sizeof(byte) +                  //ViewNumber
                 sizeof(ushort) +                //ValidatorIndex
-                Signature.Length +              //Signature
+                64 +                            //Signature
                 InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)

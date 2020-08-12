@@ -7,7 +7,7 @@ namespace Neo.Consensus
     {
         public byte[] Signature;
 
-        public override int Size => base.Size + Signature.Length;
+        public override int Size => base.Size + 64;
 
         public Commit() : base(ConsensusMessageType.Commit) { }
 

@@ -17,7 +17,7 @@ namespace Neo.Consensus
             + sizeof(ulong)                     //Timestamp
             + sizeof(ulong)                     //Nonce
             + TransactionHashes.GetVarSize()    //TransactionHashes
-            + StateRootSignature.Length;        //StateRootSignature
+            + 64;                               //StateRootSignature
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
