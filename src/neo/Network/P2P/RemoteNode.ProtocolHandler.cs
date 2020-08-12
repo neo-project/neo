@@ -95,6 +95,7 @@ namespace Neo.Network.P2P
                     Block block = (Block)msg.Payload;
                     system.TaskManager.Tell(block);
                     system.Blockchain.Tell(block, ActorRefs.NoSender);
+                    UpdateLastBlockIndex(block.Index, false);
                     RenewKnownHashes(block.Hash);
                     break;
                 case MessageCommand.Consensus:
@@ -359,13 +360,13 @@ namespace Neo.Network.P2P
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
             EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
         }
 
         private void OnVerackMessageReceived()
@@ -411,12 +412,12 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void UpdateLastBlockIndex(PingPayload payload)
+        private void UpdateLastBlockIndex(uint lastBlockIndex, bool requestTasks)
         {
-            if (payload.LastBlockIndex > LastBlockIndex)
+            if (lastBlockIndex > LastBlockIndex)
             {
-                LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                LastBlockIndex = lastBlockIndex;
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex, RequestTasks = requestTasks });
             }
         }
     }
