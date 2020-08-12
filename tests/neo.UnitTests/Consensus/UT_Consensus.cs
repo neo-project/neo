@@ -46,7 +46,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
 
             var mockContext = new Mock<ConsensusContext>(mockWallet.Object, Blockchain.Singleton.Store);
-            mockContext.Object.LastSeenMessage = new Dictionary<ECPoint, int>();
 
             KeyPair[] kp_array = new KeyPair[7]
                 {
@@ -170,7 +169,7 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.ChangeViewPayloads[mockContext.Object.MyIndex] = null;
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
-            mockContext.Object.LastSeenMessage = new Dictionary<ECPoint, int>();
+            mockContext.Object.LastSeenMessage.Clear();
             foreach (var validator in mockContext.Object.Validators)
             {
                 mockContext.Object.LastSeenMessage[validator] = -1;
@@ -275,7 +274,7 @@ namespace Neo.UnitTests.Consensus
                 };
             Console.WriteLine($"Generated keypairs PKey:");
             //refresh LastSeenMessage
-            mockContext.Object.LastSeenMessage = new Dictionary<ECPoint, int>();
+            mockContext.Object.LastSeenMessage.Clear();
             foreach (var item in mockContext.Object.Validators)
             {
                 mockContext.Object.LastSeenMessage[item] = -1;
@@ -398,7 +397,7 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(3);
             Console.WriteLine($"\nModifying CountFailed and asserting 7...");
             // This will ensure a non-deterministic behavior after last recovery
-            mockContext.Object.LastSeenMessage = new Dictionary<ECPoint, int>();
+            mockContext.Object.LastSeenMessage.Clear();
             foreach (var validator in mockContext.Object.Validators)
             {
                 mockContext.Object.LastSeenMessage[validator] = -1;
