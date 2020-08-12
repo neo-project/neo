@@ -35,7 +35,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] LastChangeViewPayloads;
         // LastSeenMessage array stores the height of the last seen message, for each validator.
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
-        public Dictionary<ECPoint, long> LastSeenMessage { get; private set; }
+        public Dictionary<ECPoint, uint> LastSeenMessage { get; private set; }
 
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
@@ -55,7 +55,14 @@ namespace Neo.Consensus
         public bool WatchOnly => MyIndex < 0;
         public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
         public int CountCommitted => CommitPayloads.Count(p => p != null);
-        public int CountFailed => LastSeenMessage?.Count(p => Block.Index > 0 && p.Value < (Block.Index - 1)) ?? 0;
+        public int CountFailed
+        {
+            get
+            {
+                if (LastSeenMessage == null || Block.Index <= 1) return 0;
+                return Validators.Count(p => !LastSeenMessage.TryGetValue(p, out var value) || value < (Block.Index - 1));
+            }
+        }
         public bool ValidatorsChanged
         {
             get
@@ -397,7 +404,7 @@ namespace Neo.Consensus
                 if (ValidatorsChanged || LastSeenMessage is null)
                 {
                     var previous_last_seen_message = LastSeenMessage;
-                    LastSeenMessage = new Dictionary<ECPoint, long>();
+                    LastSeenMessage = new Dictionary<ECPoint, uint>();
                     foreach (var validator in Validators)
                     {
                         if (previous_last_seen_message != null && previous_last_seen_message.TryGetValue(validator, out var value))

@@ -170,10 +170,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
             mockContext.Object.LastSeenMessage.Clear();
-            foreach (var validator in mockContext.Object.Validators)
-            {
-                mockContext.Object.LastSeenMessage[validator] = -1;
-            }
             mockContext.Object.CountFailed.Should().Be(7);
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
@@ -275,10 +271,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"Generated keypairs PKey:");
             //refresh LastSeenMessage
             mockContext.Object.LastSeenMessage.Clear();
-            foreach (var item in mockContext.Object.Validators)
-            {
-                mockContext.Object.LastSeenMessage[item] = -1;
-            }
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             var updatedContract = Contract.CreateMultiSigContract(mockContext.Object.M, mockContext.Object.Validators);
@@ -398,10 +390,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nModifying CountFailed and asserting 7...");
             // This will ensure a non-deterministic behavior after last recovery
             mockContext.Object.LastSeenMessage.Clear();
-            foreach (var validator in mockContext.Object.Validators)
-            {
-                mockContext.Object.LastSeenMessage[validator] = -1;
-            }
             mockContext.Object.CountFailed.Should().Be(7);
 
             TellConsensusPayload(actorConsensus, rmPayload);
