@@ -4,7 +4,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -355,67 +354,10 @@ namespace Neo.Wallets
                     tx.SystemFee = engine.GasConsumed;
                 }
 
-                tx.NetworkFee = CalculateNetworkFee(snapshot, tx);
+                tx.NetworkFee = CalculateNetworkFee(snapshot, tx, hash => GetAccount(hash)?.Contract?.Script);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
-        }
-
-        public long CalculateNetworkFee(StoreView snapshot, Transaction tx)
-        {
-            UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
-
-            // base size for transaction: includes const_header + signers + attributes + script + hashes
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
-            long networkFee = 0;
-            foreach (UInt160 hash in hashes)
-            {
-                byte[] witness_script = GetAccount(hash)?.Contract?.Script;
-                if (witness_script is null)
-                {
-                    var contract = snapshot.Contracts.TryGet(hash);
-                    if (contract is null) continue;
-
-                    // Empty invocation and verification scripts
-                    size += Array.Empty<byte>().GetVarSize() * 2;
-
-                    // Check verify cost
-                    ContractMethodDescriptor verify = contract.Manifest.Abi.GetMethod("verify");
-                    if (verify is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
-                    ContractMethodDescriptor init = contract.Manifest.Abi.GetMethod("_initialize");
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
-                    ExecutionContext context = engine.LoadScript(contract.Script, CallFlags.None, verify.Offset);
-                    if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
-                    engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
-
-                    networkFee += engine.GasConsumed;
-                }
-                else if (witness_script.IsSignatureContract())
-                {
-                    size += 67 + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice;
-                }
-                else if (witness_script.IsMultiSigContract(out int m, out int n))
-                {
-                    int size_inv = 66 * m;
-                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
-                }
-                else
-                {
-                    //We can support more contract types in the future.
-                }
-            }
-            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            return networkFee;
         }
 
         public bool Sign(ContractParametersContext context)
