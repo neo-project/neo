@@ -1,6 +1,7 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
+using Akka.Routing;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
@@ -36,6 +37,7 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
+            transactionRouter = Context.ActorOf(Akka.Actor.Props.Create(() => new TransactionRouter(system)).WithMailbox("remote-node-mailbox").WithRouter(new SmallestMailboxPool(20)));
         }
 
         /// <summary>

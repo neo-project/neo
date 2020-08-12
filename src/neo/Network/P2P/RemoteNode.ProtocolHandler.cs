@@ -18,6 +18,34 @@ namespace Neo.Network.P2P
 {
     partial class RemoteNode
     {
+        private class TransactionRouter : UntypedActor
+        {
+            private readonly NeoSystem system;
+
+            public TransactionRouter (NeoSystem system)
+            {
+                this.system = system;
+            }
+
+            protected override void OnReceive(object message)
+            {
+                switch (message)
+                {
+                    case Transaction tx:
+                        if (tx.VerifyStateIndependent() == VerifyResult.Succeed)
+                            OnTransactionReceived(tx);
+                        break;
+                }
+            }
+
+            private void OnTransactionReceived(Transaction tx)
+            {
+                system.TaskManager.Tell(tx);
+                system.Consensus?.Tell(tx);
+                system.Blockchain.Tell(tx, ActorRefs.NoSender);
+            }
+        }
+
         private class Timer { }
         private class PendingKnownHashesCollection : KeyedCollection<UInt256, (UInt256, DateTime)>
         {
@@ -32,6 +60,7 @@ namespace Neo.Network.P2P
         private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
         private bool verack = false;
         private BloomFilter bloom_filter;
+        private IActorRef transactionRouter;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
@@ -64,12 +93,14 @@ namespace Neo.Network.P2P
                     break;
                 case MessageCommand.Block:
                     Block block = (Block)msg.Payload;
-                    OnInventoryReceived(block);
+                    system.TaskManager.Tell(block);
+                    system.Blockchain.Tell(block, ActorRefs.NoSender);
                     RenewKnownHashes(block.Hash);
                     break;
                 case MessageCommand.Consensus:
                     ConsensusPayload consensusPayload = (ConsensusPayload)msg.Payload;
-                    OnInventoryReceived(consensusPayload);
+                    system.TaskManager.Tell(consensusPayload);
+                    system.Blockchain.Tell(consensusPayload, ActorRefs.NoSender);
                     RenewKnownHashes(consensusPayload.Hash);
                     break;
                 case MessageCommand.FilterAdd:
@@ -113,11 +144,7 @@ namespace Neo.Network.P2P
                     RenewKnownHashes(tx.Hash);
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                     {
-                        Task.Run(() =>
-                        {
-                            if (tx.VerifyStateIndependent() == VerifyResult.Succeed)
-                                OnInventoryReceived(tx);
-                        });
+                        transactionRouter.Tell(tx);
                     }
                     break;
                 case MessageCommand.Verack:
@@ -295,14 +322,6 @@ namespace Neo.Network.P2P
             }
             if (headers.Count == 0) return;
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
-        }
-
-        private void OnInventoryReceived(IInventory inventory)
-        {
-            system.TaskManager.Tell(inventory);
-            if (inventory is Transaction transaction)
-                system.Consensus?.Tell(transaction);
-            system.Blockchain.Tell(inventory, ActorRefs.NoSender);
         }
 
         private void RenewKnownHashes(UInt256 hash)
