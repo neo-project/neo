@@ -56,7 +56,16 @@ namespace Neo.Consensus
         public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
         public int CountCommitted => CommitPayloads.Count(p => p != null);
         public int CountFailed => LastSeenMessage?.Count(p => p.Value < (((int)Block.Index) - 1)) ?? 0;
-        public bool ValidatorsChanged => 0 < Snapshot.Height && Blockchain.Singleton.GetBlock(Snapshot.Height - 1).NextConsensus != Blockchain.Singleton.GetBlock(Snapshot.Height).NextConsensus;
+        public bool ValidatorsChanged
+        {
+            get
+            {
+                if (Snapshot.Height == 0) return false;
+                TrimmedBlock currentBlock = Snapshot.Blocks[Snapshot.CurrentBlockHash];
+                TrimmedBlock previousBlock = Snapshot.Blocks[currentBlock.PrevHash];
+                return currentBlock.NextConsensus != previousBlock.NextConsensus;
+            }
+        }
 
         #region Consensus States
         public bool RequestSentOrReceived => PreparationPayloads[Block.ConsensusData.PrimaryIndex] != null;
