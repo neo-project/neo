@@ -9,5 +9,11 @@ namespace Neo.IO.Serialization
         public int Size => _memory.IsEmpty ? GetSize() : _memory.Length;
 
         protected abstract int GetSize();
+
+        public ReadOnlyMemory<byte> ToArray()
+        {
+            if (_memory.IsEmpty) Serializer.Serialize(this);
+            return _memory;
+        }
     }
 }

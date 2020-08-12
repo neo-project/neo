@@ -2,7 +2,7 @@ namespace Neo.IO.Serialization
 {
     public class ArraySerializer<T> : Serializer<T[]> where T : Serializable
     {
-        private static readonly Serializer<T> elementSerializer = (Serializer<T>)GetDefaultSerializer(typeof(T));
+        private static readonly Serializer<T> elementSerializer = GetDefaultSerializer<T>();
 
         public sealed override T[] Deserialize(MemoryReader reader, SerializedAttribute attribute)
         {

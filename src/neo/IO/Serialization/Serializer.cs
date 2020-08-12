@@ -23,8 +23,20 @@ namespace Neo.IO.Serialization
             [typeof(byte[])] = new ByteArraySerializer(),
             [typeof(ReadOnlyMemory<byte>)] = new MemorySerializer()
         };
+        private static readonly Dictionary<Type, Action<Serializer, MemoryWriter, Serializable>> serializeActions = new Dictionary<Type, Action<Serializer, MemoryWriter, Serializable>>();
+
+        public static T Deserialize<T>(ReadOnlyMemory<byte> memory) where T : Serializable
+        {
+            Serializer<T> serializer = GetDefaultSerializer<T>();
+            return serializer.Deserialize(memory, null);
+        }
 
         public abstract void DeserializeProperty(MemoryReader reader, Serializable obj, PropertyInfo property, SerializedAttribute attribute);
+
+        protected static Serializer<T> GetDefaultSerializer<T>()
+        {
+            return (Serializer<T>)GetDefaultSerializer(typeof(T));
+        }
 
         protected static Serializer GetDefaultSerializer(Type type)
         {
@@ -39,6 +51,34 @@ namespace Neo.IO.Serialization
                 defaultSerializers.Add(type, serializer);
             }
             return serializer;
+        }
+
+        private static Action<Serializer, MemoryWriter, Serializable> GetSerializeAction(Type type)
+        {
+            if (!serializeActions.TryGetValue(type, out var action))
+            {
+                Type serializerType = typeof(CompositeSerializer<>).MakeGenericType(type);
+                var instExpr = Expression.Parameter(typeof(Serializer));
+                var convertExprInst = Expression.Convert(instExpr, serializerType);
+                var paramExpr1 = Expression.Parameter(typeof(MemoryWriter));
+                var paramExpr2 = Expression.Parameter(typeof(Serializable));
+                var convertExpr2 = Expression.Convert(paramExpr2, type);
+                var callExpr = Expression.Call(convertExprInst, serializerType.GetMethod(nameof(Serialize)), paramExpr1, convertExpr2);
+                var actionExpr = Expression.Lambda<Action<Serializer, MemoryWriter, Serializable>>(callExpr, instExpr, paramExpr1, paramExpr2);
+                action = actionExpr.Compile();
+                serializeActions.Add(type, action);
+            }
+            return action;
+        }
+
+        public static byte[] Serialize(Serializable serializable)
+        {
+            Type type = serializable.GetType();
+            Serializer serializer = GetDefaultSerializer(type);
+            Action<Serializer, MemoryWriter, Serializable> action = GetSerializeAction(type);
+            using MemoryWriter writer = new MemoryWriter();
+            action(serializer, writer, serializable);
+            return writer.ToArray();
         }
 
         public abstract void SerializeProperty(MemoryWriter writer, Serializable obj, PropertyInfo property);
