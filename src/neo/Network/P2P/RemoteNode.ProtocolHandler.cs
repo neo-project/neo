@@ -22,7 +22,7 @@ namespace Neo.Network.P2P
         {
             private readonly NeoSystem system;
 
-            public TransactionRouter (NeoSystem system)
+            public TransactionRouter(NeoSystem system)
             {
                 this.system = system;
             }
