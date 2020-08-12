@@ -66,9 +66,9 @@ namespace Neo.SmartContract.Native.Oracle
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Request).Add(id))?.GetInteroperable<OracleRequest>();
         }
 
-        public IEnumerable<OracleRequest> GetRequests(StoreView snapshot)
+        public IEnumerable<(ulong, OracleRequest)> GetRequests(StoreView snapshot)
         {
-            return snapshot.Storages.Find(new byte[] { Prefix_Request }).Select(p => p.Value.GetInteroperable<OracleRequest>());
+            return snapshot.Storages.Find(new byte[] { Prefix_Request }).Select(p => (BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));
         }
 
         public IEnumerable<OracleRequest> GetRequestsByUrl(StoreView snapshot, string url)
