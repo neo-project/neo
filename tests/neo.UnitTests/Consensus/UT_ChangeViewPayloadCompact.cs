@@ -13,10 +13,10 @@ namespace Neo.UnitTests.Consensus
         public void Size_Get()
         {
             var test = new RecoveryMessage.ChangeViewPayloadCompact() { Timestamp = 1, ValidatorIndex = 1, InvocationScript = new byte[0], OriginalViewNumber = 1 };
-            ((ISerializable)test).Size.Should().Be(12);
+            ((ISerializable)test).Size.Should().Be(11);
 
             test = new RecoveryMessage.ChangeViewPayloadCompact() { Timestamp = 1, ValidatorIndex = 1, InvocationScript = new byte[1024], OriginalViewNumber = 1 };
-            ((ISerializable)test).Size.Should().Be(1038);
+            ((ISerializable)test).Size.Should().Be(1037);
         }
 
         [TestMethod]
