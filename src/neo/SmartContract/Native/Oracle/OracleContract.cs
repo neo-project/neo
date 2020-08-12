@@ -125,18 +125,18 @@ namespace Neo.SmartContract.Native.Oracle
         }
 
         [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]
-        private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForRepsonse)
+        private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
                 || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
                 || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
-                || gasForRepsonse < 0_10000000)
+                || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 
             //Mint gas for the response
-            engine.AddGas(gasForRepsonse);
-            GAS.Mint(engine, Hash, gasForRepsonse);
+            engine.AddGas(gasForResponse);
+            GAS.Mint(engine, Hash, gasForResponse);
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
-                GasForResponse = gasForRepsonse,
+                GasForResponse = gasForResponse,
                 Url = url,
                 Filter = filter,
                 CallbackContract = engine.CallingScriptHash,
