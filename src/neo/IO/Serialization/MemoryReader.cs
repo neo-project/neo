@@ -6,13 +6,18 @@ namespace Neo.IO.Serialization
     public sealed class MemoryReader
     {
         private readonly ReadOnlyMemory<byte> memory;
-        private int index = 0;
 
-        public ReadOnlySpan<byte> Span => memory.Span[index..];
+        public int Position { get; private set; }
+        private ReadOnlySpan<byte> Span => memory.Span[Position..];
 
         public MemoryReader(ReadOnlyMemory<byte> memory)
         {
             this.memory = memory;
+        }
+
+        internal ReadOnlyMemory<byte> GetMemory(Range range)
+        {
+            return memory[range];
         }
 
         public byte Peek()
@@ -28,35 +33,35 @@ namespace Neo.IO.Serialization
         public byte ReadByte()
         {
             byte result = Span[0];
-            index++;
+            Position++;
             return result;
         }
 
         public ReadOnlyMemory<byte> ReadBytes(int size)
         {
-            ReadOnlyMemory<byte> result = memory.Slice(index, size);
-            index += size;
+            ReadOnlyMemory<byte> result = memory.Slice(Position, size);
+            Position += size;
             return result;
         }
 
         public ushort ReadUInt16()
         {
             ushort result = BinaryPrimitives.ReadUInt16LittleEndian(Span);
-            index += sizeof(ushort);
+            Position += sizeof(ushort);
             return result;
         }
 
         public uint ReadUInt32()
         {
             uint result = BinaryPrimitives.ReadUInt32LittleEndian(Span);
-            index += sizeof(uint);
+            Position += sizeof(uint);
             return result;
         }
 
         public ulong ReadUInt64()
         {
             ulong result = BinaryPrimitives.ReadUInt64LittleEndian(Span);
-            index += sizeof(ulong);
+            Position += sizeof(ulong);
             return result;
         }
 

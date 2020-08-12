@@ -24,7 +24,7 @@ namespace Neo.IO.Serialization
             [typeof(ReadOnlyMemory<byte>)] = new MemorySerializer()
         };
 
-        public abstract void DeserializeProperty(MemoryReader reader, object obj, PropertyInfo property, SerializedAttribute attribute);
+        public abstract void DeserializeProperty(MemoryReader reader, Serializable obj, PropertyInfo property, SerializedAttribute attribute);
 
         protected static Serializer GetDefaultSerializer(Type type)
         {
@@ -41,7 +41,7 @@ namespace Neo.IO.Serialization
             return serializer;
         }
 
-        public abstract void SerializeProperty(MemoryWriter writer, object obj, PropertyInfo property);
+        public abstract void SerializeProperty(MemoryWriter writer, Serializable obj, PropertyInfo property);
     }
 
     public abstract class Serializer<T> : Serializer
@@ -50,10 +50,10 @@ namespace Neo.IO.Serialization
 
         public abstract T Deserialize(MemoryReader reader, SerializedAttribute attribute);
 
-        public sealed override void DeserializeProperty(MemoryReader reader, object obj, PropertyInfo property, SerializedAttribute attribute)
+        public sealed override void DeserializeProperty(MemoryReader reader, Serializable obj, PropertyInfo property, SerializedAttribute attribute)
         {
             (_, var setter) = GetCallbacks(property);
-            Action<object, T> action = (Action<object, T>)setter;
+            Action<Serializable, T> action = (Action<Serializable, T>)setter;
             action(obj, Deserialize(reader, attribute));
         }
 
@@ -61,23 +61,23 @@ namespace Neo.IO.Serialization
         {
             return callbacks.GetOrAdd(property, p =>
             {
-                var instExpr = Expression.Parameter(typeof(object));
+                var instExpr = Expression.Parameter(typeof(Serializable));
                 var convertExpr = Expression.Convert(instExpr, p.DeclaringType);
                 var callExpr = Expression.Call(convertExpr, p.GetMethod);
-                var getterExpr = Expression.Lambda<Func<object, T>>(callExpr, instExpr);
+                var getterExpr = Expression.Lambda<Func<Serializable, T>>(callExpr, instExpr);
                 var paramExpr = Expression.Parameter(typeof(T));
                 callExpr = Expression.Call(convertExpr, p.SetMethod, paramExpr);
-                var setterExpr = Expression.Lambda<Action<object, T>>(callExpr, instExpr, paramExpr);
+                var setterExpr = Expression.Lambda<Action<Serializable, T>>(callExpr, instExpr, paramExpr);
                 return (getterExpr.Compile(), setterExpr.Compile());
             });
         }
 
         public abstract void Serialize(MemoryWriter writer, T value);
 
-        public sealed override void SerializeProperty(MemoryWriter writer, object obj, PropertyInfo property)
+        public sealed override void SerializeProperty(MemoryWriter writer, Serializable obj, PropertyInfo property)
         {
             (var getter, _) = GetCallbacks(property);
-            Func<object, T> func = (Func<object, T>)getter;
+            Func<Serializable, T> func = (Func<Serializable, T>)getter;
             Serialize(writer, func(obj));
         }
     }

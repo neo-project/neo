@@ -8,25 +8,44 @@ namespace Neo.IO.Serialization
 {
     public class CompositeSerializer<T> : Serializer<T> where T : Serializable
     {
-        private readonly (PropertyInfo, SerializedAttribute, Serializer)[] serializers;
+        private (PropertyInfo, SerializedAttribute, Serializer)[] serializers;
+        private Func<T> constructor;
+        private Func<Serializable, ReadOnlyMemory<byte>> memoryGetter;
+        private Action<Serializable, ReadOnlyMemory<byte>> memorySetter;
 
         protected virtual Type TargetType { get; } = typeof(T);
 
-        public CompositeSerializer()
-        {
-            serializers = GetSerializers().OrderBy(p => p.Item2.Order).ToArray();
-        }
-
         public sealed override T Deserialize(MemoryReader reader, SerializedAttribute _)
         {
-            var constructorInfo = TargetType.GetConstructor(Type.EmptyTypes);
-            var newExpr = Expression.New(constructorInfo);
-            var constructorExpr = Expression.Lambda<Func<object>>(newExpr);
-            var constructor = constructorExpr.Compile();
-            object obj = constructor();
+            EnsureInitialized();
+            T obj = constructor();
+            int start = reader.Position;
             foreach (var (info, attribute, serializer) in serializers)
                 serializer.DeserializeProperty(reader, obj, info, attribute);
-            return (T)obj;
+            int end = reader.Position;
+            memorySetter(obj, reader.GetMemory(start..end));
+            return obj;
+        }
+
+        private void EnsureInitialized()
+        {
+            if (serializers is null)
+            {
+                serializers = GetSerializers().OrderBy(p => p.Item2.Order).ToArray();
+            }
+            if (constructor is null)
+            {
+                var constructorInfo = TargetType.GetConstructor(Type.EmptyTypes);
+                var newExpr = Expression.New(constructorInfo);
+                var constructorExpr = Expression.Lambda<Func<T>>(newExpr);
+                constructor = constructorExpr.Compile();
+            }
+            if (memoryGetter is null)
+            {
+                PropertyInfo info = typeof(Serializable).GetProperty("_memory", BindingFlags.NonPublic | BindingFlags.Instance);
+                memoryGetter = (Func<Serializable, ReadOnlyMemory<byte>>)info.GetMethod.CreateDelegate(typeof(Func<Serializable, ReadOnlyMemory<byte>>));
+                memorySetter = (Action<Serializable, ReadOnlyMemory<byte>>)info.SetMethod.CreateDelegate(typeof(Action<Serializable, ReadOnlyMemory<byte>>));
+            }
         }
 
         private static Dictionary<string, PropertyInfo> GetProperties(Type type)
@@ -54,8 +73,20 @@ namespace Neo.IO.Serialization
 
         public sealed override void Serialize(MemoryWriter writer, T value)
         {
-            foreach (var (info, _, serializer) in serializers)
-                serializer.SerializeProperty(writer, value, info);
+            EnsureInitialized();
+            ReadOnlyMemory<byte> memory = memoryGetter(value);
+            if (memory.IsEmpty)
+            {
+                int start = writer.Position;
+                foreach (var (info, _, serializer) in serializers)
+                    serializer.SerializeProperty(writer, value, info);
+                int end = writer.Position;
+                memorySetter(value, writer.GetMemory(start..end));
+            }
+            else
+            {
+                writer.Write(memory.Span);
+            }
         }
     }
 }
