@@ -67,9 +67,9 @@ namespace Neo.Ledger
         private void CheckStateRootCache()
         {
             var index = (long)Height - 1;
-            if (0 <= index && state_root_cache.TryGetValue(index, out StateRoot root))
+            if (0 <= index && state_root_cache.TryGetValue((uint)index, out StateRoot root))
             {
-                state_root_cache.Remove(index);
+                state_root_cache.Remove((uint)index);
                 OnNewStateRoot(root);
             }
         }
