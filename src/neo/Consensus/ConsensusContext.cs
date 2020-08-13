@@ -155,10 +155,10 @@ namespace Neo.Consensus
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint GetPrimaryIndex(byte viewNumber)
+        public byte GetPrimaryIndex(byte viewNumber)
         {
             int p = ((int)Block.Index - viewNumber) % Validators.Length;
-            return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
+            return p >= 0 ? (byte)p : (byte)(p + Validators.Length);
         }
 
         public bool Load()
@@ -205,7 +205,7 @@ namespace Neo.Consensus
                 Version = Block.Version,
                 PrevHash = Block.PrevHash,
                 BlockIndex = Block.Index,
-                ValidatorIndex = (ushort)MyIndex,
+                ValidatorIndex = (byte)MyIndex,
                 ConsensusMessage = message
             };
             SignPayload(payload);

@@ -432,7 +432,7 @@ namespace Neo.UnitTests.Consensus
         /// <param name="vI">new ValidatorIndex for the cpToCopy
         /// <param name="kp">KeyPair that will be used for signing the Commit message used for creating blocks
         /// <param name="blockHashToSign">HashCode of the Block that is being produced and current being signed
-        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
+        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, byte vI, KeyPair kp, byte[] blockHashToSign)
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
@@ -451,7 +451,7 @@ namespace Neo.UnitTests.Consensus
         /// </summary>
         /// <param name="cpToCopy">ConsensusPayload that will be modified
         /// <param name="vI">new ValidatorIndex for the cpToCopy
-        public ConsensusPayload GetPayloadAndModifyValidator(ConsensusPayload cpToCopy, ushort vI)
+        public ConsensusPayload GetPayloadAndModifyValidator(ConsensusPayload cpToCopy, byte vI)
         {
             var cpTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpTemp.ValidatorIndex = vI;
@@ -898,7 +898,7 @@ namespace Neo.UnitTests.Consensus
             copiedMsg.CommitMessages.Should().BeEquivalentTo(msg.CommitMessages);
         }
 
-        private static ConsensusPayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, ushort validatorIndex, byte[] witnessInvocationScript)
+        private static ConsensusPayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, byte validatorIndex, byte[] witnessInvocationScript)
         {
             return new ConsensusPayload
             {
