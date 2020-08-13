@@ -214,6 +214,15 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.PreparationPayloads[mockContext.Object.MyIndex] = null;
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
+            var last_seen_message = new int[7];
+            for (int i = 0; i < 7; i++)
+            {
+                if (mockContext.Object.LastSeenMessage.TryGetValue(mockContext.Object.Validators[i], out int value))
+                {
+                    last_seen_message[i] = value;
+                }
+                mockContext.Object.LastSeenMessage.Remove(mockContext.Object.Validators[i]);
+            }
             mockContext.Object.Validators = new ECPoint[7]
                 {
                     kp_array[0].PublicKey,
@@ -224,6 +233,10 @@ namespace Neo.UnitTests.Consensus
                     kp_array[5].PublicKey,
                     kp_array[6].PublicKey
                 };
+            for (int i = 0; i < 7; i++)
+            {
+                mockContext.Object.LastSeenMessage[mockContext.Object.Validators[i]] = last_seen_message[i];
+            }
             mockContext.Object.GetPrimaryIndex(mockContext.Object.ViewNumber).Should().Be(1);
             mockContext.Object.MyIndex.Should().Be(0);
             Console.WriteLine($"\nAsserting tx count is 0...");
