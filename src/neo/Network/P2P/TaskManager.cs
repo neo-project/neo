@@ -53,7 +53,6 @@ namespace Neo.Network.P2P
         {
             if (index <= Blockchain.Singleton.Height || sessions.Values.Any(p => p != filterSession && p.IndexTasks.ContainsKey(index)))
                 return true;
-            var highestBlockIndex = sessions.Values.Max(p => p.LastBlockIndex);
             KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index && p.Value.IndexTasks.Count < p.Value.MaxTaskCountPerNode)
                 .OrderBy(p => p.Value.Weight)
                 .FirstOrDefault();
@@ -247,7 +246,6 @@ namespace Neo.Network.P2P
 
             foreach (UInt256 hash in session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
-            //system.LocalNode.Tell(new Terminated(actor, false, false));
             sessions.Remove(actor);
         }
 
