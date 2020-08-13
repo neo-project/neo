@@ -46,14 +46,16 @@ namespace Neo.Network.P2P
             this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
             this.lastTaskIndex = Blockchain.Singleton.Height;
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         private bool AssignSyncTask(uint index, TaskSession filterSession = null)
         {
             if (index <= Blockchain.Singleton.Height || sessions.Values.Any(p => p != filterSession && p.IndexTasks.ContainsKey(index)))
                 return true;
-            KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index && p.Value.IndexTasks.Count < TaskSession.MaxTaskCountPerNode)
-                .OrderByDescending(p => p.Value.Weight)
+            var highestBlockIndex = sessions.Values.Max(p => p.LastBlockIndex);
+            KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index && p.Value.IndexTasks.Count < p.Value.MaxTaskCountPerNode)
+                .OrderBy(p => p.Value.Weight)
                 .FirstOrDefault();
             if (remoteNode.Value == null)
             {
@@ -82,17 +84,24 @@ namespace Neo.Network.P2P
 
         private void OnInvalidBlock(Block invalidBlock)
         {
-            receivedBlockIndex.TryGetValue(invalidBlock.Index, out TaskSession session);
-            if (session is null) return;
-            if (++session.InvalidBlockCount > 3)
-                OnTerminated(sessions.Where(p => p.Value == session).First().Key);
-            else
-            {
-                session.IndexTasks.Remove(invalidBlock.Index);
-                session.UpdateWeight();
-                AssignSyncTask(invalidBlock.Index, session);
-            }
             receivedBlockIndex.Remove(invalidBlock.Index);
+            if (!receivedBlockIndex.TryGetValue(invalidBlock.Index, out TaskSession session))
+            {
+                AssignSyncTask(invalidBlock.Index);
+                return;
+            }
+            var actor = sessions.Where(p => p.Value == session).FirstOrDefault().Key;
+            if (actor != null)
+            {
+                system.LocalNode.Tell(new LocalNode.BadActor { actor = actor });
+                OnTerminated(actor);
+            }
+        }
+
+        private void OnValidBlock(Block validBlock)
+        {
+            if (receivedBlockIndex.TryGetValue(validBlock.Index, out TaskSession session) && session.MaxTaskCountPerNode < 10)
+                session.MaxTaskCountPerNode++;
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -155,6 +164,8 @@ namespace Neo.Network.P2P
                 case Blockchain.RelayResult rr:
                     if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
                         OnInvalidBlock(invalidBlock);
+                    else if (rr.Inventory is Block validBlock && rr.Result == VerifyResult.Succeed)
+                        OnValidBlock(validBlock);
                     break;
                 case Timer _:
                     OnTimer();
@@ -236,6 +247,7 @@ namespace Neo.Network.P2P
 
             foreach (UInt256 hash in session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
+            //system.LocalNode.Tell(new Terminated(actor, false, false));
             sessions.Remove(actor);
         }
 
@@ -289,7 +301,7 @@ namespace Neo.Network.P2P
 
             while (failedSyncTasks.Count() > 0)
             {
-                var failedTask = failedSyncTasks.First();
+                var failedTask = failedSyncTasks.OrderBy(p => p).First();
                 if (failedTask <= Blockchain.Singleton.Height)
                 {
                     failedSyncTasks.Remove(failedTask);
@@ -302,7 +314,7 @@ namespace Neo.Network.P2P
             var highestBlockIndex = sessions.Values.Max(p => p.LastBlockIndex);
             for (; taskCounts < MaxSyncTasksCount; taskCounts++)
             {
-                if (lastTaskIndex >= highestBlockIndex) break;
+                if (lastTaskIndex >= highestBlockIndex || lastTaskIndex > Blockchain.Singleton.HeaderHeight + 2000) break;
                 if (!AssignSyncTask(++lastTaskIndex)) break;
             }
         }

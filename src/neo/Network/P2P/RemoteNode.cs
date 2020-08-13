@@ -27,7 +27,7 @@ namespace Neo.Network.P2P
         private bool ack = true;
         private int message_count = 0;
         private DateTime start_message_time;
-        private readonly double time_threshold = 1000;
+        private readonly double time_threshold = 10;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public int ListenerTcpPort { get; private set; } = 0;

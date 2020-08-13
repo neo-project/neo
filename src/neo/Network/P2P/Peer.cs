@@ -94,7 +94,6 @@ namespace Neo.Network.P2P
             endPoint = endPoint.Unmap();
             // If the address is the same, the ListenerTcpPort should be different, otherwise, return
             if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
-
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
@@ -120,6 +119,15 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="count">Number of peers that are being requested.</param>
         protected abstract void NeedMorePeers(int count);
+
+        public void RemoveBadActor(IActorRef actor)
+        {
+            if (ConnectedPeers.TryRemove(actor, out IPEndPoint ipEndPoint))
+            {
+                UnconnectedPeers.Remove(ipEndPoint);
+                actor.Tell(Tcp.Abort.Instance);
+            }
+        }
 
         protected override void OnReceive(object message)
         {
@@ -266,11 +274,9 @@ namespace Neo.Network.P2P
         {
             // Check if the number of desired connections is already enough
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
-
             // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers 
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
-
             Random rand = new Random();
             IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));

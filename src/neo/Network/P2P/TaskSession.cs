@@ -13,9 +13,8 @@ namespace Neo.Network.P2P
 
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
-        public const int MaxTaskCountPerNode = 10;
+        public int MaxTaskCountPerNode = 1;
         public uint TimeoutTimes = 0;
-        public uint InvalidBlockCount = 0;
         public double RTT = 100.0;
         public double Weight = 1000.0;
 
@@ -26,7 +25,7 @@ namespace Neo.Network.P2P
 
         public void UpdateWeight()
         {
-            Weight = RTT * (1.0 / Math.Pow(2, TimeoutTimes)) * (1.0 / Math.Pow(2, InvalidBlockCount)) * ((double)(MaxTaskCountPerNode + 1 - IndexTasks.Count) / (MaxTaskCountPerNode + 1));
+            Weight = RTT * (1.0 / Math.Pow(2, TimeoutTimes)) * ((double)(MaxTaskCountPerNode + 1 - IndexTasks.Count) / (MaxTaskCountPerNode + 1));
         }
 
         public TaskSession(VersionPayload version)
