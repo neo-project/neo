@@ -59,7 +59,7 @@ namespace Neo.Consensus
         {
             get
             {
-                if (LastSeenMessage == null || Block.Index <= 1) return 0;
+                if (LastSeenMessage == null) return 0;
                 return Validators.Count(p => !LastSeenMessage.TryGetValue(p, out var value) || value < (Block.Index - 1));
             }
         }
