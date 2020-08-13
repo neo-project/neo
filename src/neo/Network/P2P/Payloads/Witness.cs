@@ -10,7 +10,10 @@ namespace Neo.Network.P2P.Payloads
     {
         public byte[] InvocationScript;
         public byte[] VerificationScript;
-        public long GasConsumed;
+
+        public WitnessFlag Flag => VerificationScript.Length == 0 ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
+
+        internal long GasConsumed { get; set; }
 
         private UInt160 _scriptHash;
         public virtual UInt160 ScriptHash
@@ -48,19 +51,6 @@ namespace Neo.Network.P2P.Payloads
             json["invocation"] = Convert.ToBase64String(InvocationScript);
             json["verification"] = Convert.ToBase64String(VerificationScript);
             return json;
-        }
-
-        private WitnessFlag _flag = WitnessFlag.None;
-        public WitnessFlag Flag
-        {
-            get
-            {
-                if (_flag == WitnessFlag.None)
-                {
-                    _flag = VerificationScript.Length == 0 ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
-                }
-                return _flag;
-            }
         }
     }
 }
