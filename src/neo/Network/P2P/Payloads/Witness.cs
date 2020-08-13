@@ -57,7 +57,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_flag == WitnessFlag.None)
                 {
-                    _flag = VerificationScript.Length == 0 ? WitnessFlag.StateDependentWitness : WitnessFlag.StateIndependentWitness;
+                    _flag = VerificationScript.Length == 0 ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
                 }
                 return _flag;
             }
