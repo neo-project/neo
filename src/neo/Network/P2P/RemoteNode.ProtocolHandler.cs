@@ -62,17 +62,10 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    Block block = (Block)msg.Payload;
-                    system.TaskManager.Tell(block);
-                    system.Blockchain.Tell(block, ActorRefs.NoSender);
-                    UpdateLastBlockIndex(block.Index, false);
-                    RenewKnownHashes(block.Hash);
+                    OnInventoryReceived((Block)msg.Payload);
                     break;
                 case MessageCommand.Consensus:
-                    ConsensusPayload consensusPayload = (ConsensusPayload)msg.Payload;
-                    system.TaskManager.Tell(consensusPayload);
-                    system.Blockchain.Tell(consensusPayload, ActorRefs.NoSender);
-                    RenewKnownHashes(consensusPayload.Hash);
+                    OnInventoryReceived((ConsensusPayload)msg.Payload);
                     break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
@@ -111,12 +104,8 @@ namespace Neo.Network.P2P
                     OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
-                    Transaction tx = (Transaction)msg.Payload;
-                    RenewKnownHashes(tx.Hash);
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                    {
-                        system.TransactionRouter.Tell(tx);
-                    }
+                        OnInventoryReceived((Transaction)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
@@ -295,10 +284,21 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
-        private void RenewKnownHashes(UInt256 hash)
+        private void OnInventoryReceived(IInventory inventory)
         {
-            pendingKnownHashes.Remove(hash);
-            knownHashes.Add(hash);
+            pendingKnownHashes.Remove(inventory.Hash);
+            knownHashes.Add(inventory.Hash);
+            system.TaskManager.Tell(inventory);
+            system.Blockchain.Tell(inventory, ActorRefs.NoSender);
+            switch (inventory)
+            {
+                case Transaction transaction:
+                    system.Consensus?.Tell(transaction);
+                    break;
+                case Block block:
+                    UpdateLastBlockIndex(block.Index, false);
+                    break;
+            }
         }
 
         private void OnInvMessageReceived(InvPayload payload)
