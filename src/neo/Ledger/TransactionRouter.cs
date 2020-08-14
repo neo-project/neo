@@ -1,10 +1,9 @@
 using Akka.Actor;
 using Akka.Routing;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 
-namespace Neo.Network.P2P
+namespace Neo.Ledger
 {
     internal class TransactionRouter : UntypedActor
     {
