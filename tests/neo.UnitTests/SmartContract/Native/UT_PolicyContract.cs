@@ -250,6 +250,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.Policy.IsAnyAccountBlocked(snapshot).Should().BeFalse();
             NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Zero).Should().BeFalse();
             NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")).Should().BeTrue();
+            NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt160.Zero).Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();

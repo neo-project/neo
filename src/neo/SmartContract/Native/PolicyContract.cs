@@ -79,15 +79,11 @@ namespace Neo.SmartContract.Native
                 ?.GetSerializableList<UInt160>().ToArray()
                 ?? Array.Empty<UInt160>();
 
-            if (blockedList.Length == 0) return false;
-
-            foreach (var acc in hashes)
+            if (blockedList.Length > 0)
             {
-                foreach (var blockAccount in blockedList)
+                foreach (var acc in hashes)
                 {
-                    var comp = blockAccount.CompareTo(acc);
-                    if (comp == 0) return true;
-                    if (comp > 0) break; // It's already sorted
+                    if (Array.BinarySearch(blockedList, acc) == 0) return true;
                 }
             }
 
