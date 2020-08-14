@@ -3,7 +3,7 @@ using System;
 namespace Neo.SmartContract
 {
     [Flags]
-    public enum WitnessFlag : byte
+    internal enum WitnessFlag : byte
     {
         None = 0,
 

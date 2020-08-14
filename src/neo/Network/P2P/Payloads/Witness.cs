@@ -11,8 +11,6 @@ namespace Neo.Network.P2P.Payloads
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
-        public WitnessFlag Flag => VerificationScript.Length == 0 ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
-
         internal long GasConsumed { get; set; }
 
         private UInt160 _scriptHash;
@@ -27,6 +25,8 @@ namespace Neo.Network.P2P.Payloads
                 return _scriptHash;
             }
         }
+
+        public bool StateDependent => VerificationScript.Length == 0;
 
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 

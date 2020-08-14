@@ -146,7 +146,8 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (filter != WitnessFlag.All && !filter.HasFlag(verifiable.Witnesses[i].Flag))
+                WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
+                if (!filter.HasFlag(flag))
                 {
                     gas -= verifiable.Witnesses[i].GasConsumed;
                     if (gas < 0) return false;
