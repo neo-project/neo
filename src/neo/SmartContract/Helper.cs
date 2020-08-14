@@ -172,7 +172,7 @@ namespace Neo.SmartContract
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot != null ? snapshot.Clone() : snapshot, gas))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
                 {
                     ExecutionContext context = engine.LoadScript(verification, CallFlags.None, offset);
                     if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
