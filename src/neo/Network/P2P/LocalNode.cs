@@ -17,7 +17,7 @@ namespace Neo.Network.P2P
     {
         internal class RelayDirectly { public IInventory Inventory; }
         internal class SendDirectly { public IInventory Inventory; }
-        internal class BadActor { public IActorRef actor; }
+        internal class MaliciousNode { public IActorRef actor; }
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
@@ -197,8 +197,8 @@ namespace Neo.Network.P2P
                 case SendDirectly send:
                     OnSendDirectly(send.Inventory);
                     break;
-                case BadActor actor:
-                    RemoveBadActor(actor.actor);
+                case MaliciousNode actor:
+                    RemoveMaliciousNode(actor.actor);
                     break;
             }
         }

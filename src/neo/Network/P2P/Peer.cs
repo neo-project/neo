@@ -121,7 +121,7 @@ namespace Neo.Network.P2P
         /// <param name="count">Number of peers that are being requested.</param>
         protected abstract void NeedMorePeers(int count);
 
-        public void RemoveBadActor(IActorRef actor)
+        public void RemoveMaliciousNode(IActorRef actor)
         {
             if (ConnectedPeers.TryRemove(actor, out IPEndPoint ipEndPoint))
             {

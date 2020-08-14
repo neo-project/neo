@@ -92,7 +92,7 @@ namespace Neo.Network.P2P
             var actor = sessions.Where(p => p.Value == session).FirstOrDefault().Key;
             if (actor != null)
             {
-                system.LocalNode.Tell(new LocalNode.BadActor { actor = actor });
+                system.LocalNode.Tell(new LocalNode.MaliciousNode { actor = actor });
                 OnTerminated(actor);
             }
         }
