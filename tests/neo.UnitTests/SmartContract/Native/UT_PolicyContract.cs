@@ -264,8 +264,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
             ret.Should().BeOfType<VM.Types.Array>();
-            (ret as VM.Types.Array).Count.Should().Be(1);
+            (ret as VM.Types.Array).Count.Should().Be(2);
             (ret as VM.Types.Array)[0].GetSpan().ToHexString().Should().Be("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
+            (ret as VM.Types.Array)[1].GetSpan().ToHexString().Should().Be("01ff00ff00ff00ff00ff00ff00ff00ff00ff00b4");
         }
 
         [TestMethod]
