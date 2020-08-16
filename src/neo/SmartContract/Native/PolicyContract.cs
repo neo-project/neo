@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Native
             {
                 foreach (var acc in hashes)
                 {
-                    if (Array.BinarySearch(blockedList, acc) != -1) return true;
+                    if (Array.BinarySearch(blockedList, acc) >= 0) return true;
                 }
             }
 
