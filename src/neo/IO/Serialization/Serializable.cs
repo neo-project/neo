@@ -1,3 +1,4 @@
+using Neo.IO.Json;
 using System;
 
 namespace Neo.IO.Serialization
@@ -14,6 +15,11 @@ namespace Neo.IO.Serialization
         {
             if (_memory.IsEmpty) Serializer.Serialize(this);
             return _memory;
+        }
+
+        public JObject ToJson()
+        {
+            return Serializer.ToJson(this);
         }
     }
 }

@@ -25,6 +25,7 @@ namespace Neo.IO.Serialization
             [typeof(ReadOnlyMemory<byte>)] = new MemorySerializer()
         };
         private static readonly Dictionary<Type, Action<Serializer, MemoryWriter, Serializable>> serializeActions = new Dictionary<Type, Action<Serializer, MemoryWriter, Serializable>>();
+        private static readonly Dictionary<Type, Func<Serializer, Serializable, JObject>> toJsonFunctions = new Dictionary<Type, Func<Serializer, Serializable, JObject>>();
 
         public static T Deserialize<T>(ReadOnlyMemory<byte> memory) where T : Serializable
         {
@@ -33,6 +34,12 @@ namespace Neo.IO.Serialization
         }
 
         public abstract void DeserializeProperty(MemoryReader reader, Serializable obj, PropertyInfo property, SerializedAttribute attribute);
+
+        public static T FromJson<T>(JObject json) where T : Serializable
+        {
+            Serializer<T> serializer = GetDefaultSerializer<T>();
+            return serializer.FromJson(json, null);
+        }
 
         protected static Serializer<T> GetDefaultSerializer<T>()
         {
@@ -72,6 +79,23 @@ namespace Neo.IO.Serialization
             return action;
         }
 
+        private static Func<Serializer, Serializable, JObject> GetToJsonFunc(Type type)
+        {
+            if (!toJsonFunctions.TryGetValue(type, out var func))
+            {
+                Type serializerType = typeof(CompositeSerializer<>).MakeGenericType(type);
+                var instExpr = Expression.Parameter(typeof(Serializer));
+                var convertExprInst = Expression.Convert(instExpr, serializerType);
+                var paramExpr = Expression.Parameter(typeof(Serializable));
+                var convertExpr = Expression.Convert(paramExpr, type);
+                var callExpr = Expression.Call(convertExprInst, serializerType.GetMethod(nameof(ToJson)), convertExpr);
+                var funcExpr = Expression.Lambda<Func<Serializer, Serializable, JObject>>(callExpr, instExpr, paramExpr);
+                func = funcExpr.Compile();
+                toJsonFunctions.Add(type, func);
+            }
+            return func;
+        }
+
         public abstract void PropertyFromJson(JObject json, Serializable obj, PropertyInfo property, SerializedAttribute attribute);
 
         public abstract JObject PropertyToJson(Serializable obj, PropertyInfo property);
@@ -87,6 +111,14 @@ namespace Neo.IO.Serialization
         }
 
         public abstract void SerializeProperty(MemoryWriter writer, Serializable obj, PropertyInfo property);
+
+        public static JObject ToJson(Serializable serializable)
+        {
+            Type type = serializable.GetType();
+            Serializer serializer = GetDefaultSerializer(type);
+            Func<Serializer, Serializable, JObject> func = GetToJsonFunc(type);
+            return func(serializer, serializable);
+        }
     }
 
     public abstract class Serializer<T> : Serializer
