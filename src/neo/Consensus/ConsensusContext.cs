@@ -35,7 +35,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] LastChangeViewPayloads;
         // LastSeenMessage array stores the height of the last seen message, for each validator.
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
-        public int[] LastSeenMessage;
+        public Dictionary<ECPoint, uint> LastSeenMessage { get; private set; }
 
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
@@ -55,7 +55,24 @@ namespace Neo.Consensus
         public bool WatchOnly => MyIndex < 0;
         public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
         public int CountCommitted => CommitPayloads.Count(p => p != null);
-        public int CountFailed => LastSeenMessage.Count(p => p < (((int)Block.Index) - 1));
+        public int CountFailed
+        {
+            get
+            {
+                if (LastSeenMessage == null) return 0;
+                return Validators.Count(p => !LastSeenMessage.TryGetValue(p, out var value) || value < (Block.Index - 1));
+            }
+        }
+        public bool ValidatorsChanged
+        {
+            get
+            {
+                if (Snapshot.Height == 0) return false;
+                TrimmedBlock currentBlock = Snapshot.Blocks[Snapshot.CurrentBlockHash];
+                TrimmedBlock previousBlock = Snapshot.Blocks[currentBlock.PrevHash];
+                return currentBlock.NextConsensus != previousBlock.NextConsensus;
+            }
+        }
 
         #region Consensus States
         public bool RequestSentOrReceived => PreparationPayloads[Block.ConsensusData.PrimaryIndex] != null;
@@ -138,10 +155,10 @@ namespace Neo.Consensus
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint GetPrimaryIndex(byte viewNumber)
+        public byte GetPrimaryIndex(byte viewNumber)
         {
             int p = ((int)Block.Index - viewNumber) % Validators.Length;
-            return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
+            return p >= 0 ? (byte)p : (byte)(p + Validators.Length);
         }
 
         public bool Load()
@@ -188,7 +205,7 @@ namespace Neo.Consensus
                 Version = Block.Version,
                 PrevHash = Block.PrevHash,
                 BlockIndex = Block.Index,
-                ValidatorIndex = (ushort)MyIndex,
+                ValidatorIndex = (byte)MyIndex,
                 ConsensusMessage = message
             };
             SignPayload(payload);
@@ -384,11 +401,17 @@ namespace Neo.Consensus
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 CommitPayloads = new ConsensusPayload[Validators.Length];
-                if (LastSeenMessage == null)
+                if (ValidatorsChanged || LastSeenMessage is null)
                 {
-                    LastSeenMessage = new int[Validators.Length];
-                    for (int i = 0; i < Validators.Length; i++)
-                        LastSeenMessage[i] = -1;
+                    var previous_last_seen_message = LastSeenMessage;
+                    LastSeenMessage = new Dictionary<ECPoint, uint>();
+                    foreach (var validator in Validators)
+                    {
+                        if (previous_last_seen_message != null && previous_last_seen_message.TryGetValue(validator, out var value))
+                            LastSeenMessage[validator] = value;
+                        else
+                            LastSeenMessage[validator] = Snapshot.Height;
+                    }
                 }
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
@@ -418,7 +441,7 @@ namespace Neo.Consensus
             Block.Transactions = null;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)Block.Index;
+            if (MyIndex >= 0) LastSeenMessage[Validators[MyIndex]] = Block.Index;
         }
 
         public void Save()

@@ -18,10 +18,31 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestBinary()
+        {
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+
+            var data = new byte[0];
+            CollectionAssert.AreEqual(data, engine.Base64Decode(engine.Base64Encode(data)));
+
+            CollectionAssert.AreEqual(data, engine.Base58Decode(engine.Base58Encode(data)));
+
+            data = new byte[] { 1, 2, 3 };
+            CollectionAssert.AreEqual(data, engine.Base64Decode(engine.Base64Encode(data)));
+
+            CollectionAssert.AreEqual(data, engine.Base58Decode(engine.Base58Encode(data)));
+
+            Assert.AreEqual("AQIDBA==", engine.Base64Encode(new byte[] { 1, 2, 3, 4 }));
+
+            Assert.AreEqual("2VfUX", engine.Base58Encode(new byte[] { 1, 2, 3, 4 }));
+        }
+
+        [TestMethod]
         public void TestNotify()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 

@@ -14,7 +14,7 @@ namespace Neo.UnitTests.Cryptography.ECC
     [TestClass]
     public class UT_ECPoint
     {
-        public static byte[] generatePrivateKey(int privateKeyLength)
+        public static byte[] GeneratePrivateKey(int privateKeyLength)
         {
             byte[] privateKey = new byte[privateKeyLength];
             for (int i = 0; i < privateKeyLength; i++)
@@ -184,17 +184,17 @@ namespace Neo.UnitTests.Cryptography.ECC
             ECPoint.FromBytes(input3, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
             ECPoint.FromBytes(input2.Skip(1).ToArray(), ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
 
-            byte[] input4 = generatePrivateKey(72);
+            byte[] input4 = GeneratePrivateKey(72);
             ECPoint.FromBytes(input4, ECCurve.Secp256k1).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("3634473727541135791764834762056624681715094789735830699031648" +
                 "273128038409767"), ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("18165245710263168158644330920009617039772504630129940696140050972160274286151"),
                 ECCurve.Secp256k1), ECCurve.Secp256k1));
 
-            byte[] input5 = generatePrivateKey(96);
+            byte[] input5 = GeneratePrivateKey(96);
             ECPoint.FromBytes(input5, ECCurve.Secp256k1).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("1780731860627700044960722568376592200742329637303199754547598" +
                 "369979440671"), ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("14532552714582660066924456880521368950258152170031413196862950297402215317055"),
                 ECCurve.Secp256k1), ECCurve.Secp256k1));
 
-            byte[] input6 = generatePrivateKey(104);
+            byte[] input6 = GeneratePrivateKey(104);
             ECPoint.FromBytes(input6, ECCurve.Secp256k1).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("3634473727541135791764834762056624681715094789735830699031648" +
                 "273128038409767"), ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("18165245710263168158644330920009617039772504630129940696140050972160274286151"),
                 ECCurve.Secp256k1), ECCurve.Secp256k1));
@@ -231,17 +231,17 @@ namespace Neo.UnitTests.Cryptography.ECC
                 ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("16721517996619732311261078486295444964227498319433363271180755596201863690708"), ECCurve.Secp256k1),
                 ECCurve.Secp256k1));
 
-            k = new BigInteger(generatePrivateKey(100));
+            k = new BigInteger(GeneratePrivateKey(100));
             ECPoint.Multiply(p, k).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("19222995016448259376216431079553428738726180595337971417371897285865264889977"),
                 ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("6637081904924493791520919212064582313497884724460823966446023080706723904419"), ECCurve.Secp256k1),
                 ECCurve.Secp256k1));
 
-            k = new BigInteger(generatePrivateKey(120));
+            k = new BigInteger(GeneratePrivateKey(120));
             ECPoint.Multiply(p, k).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("79652345192111851576650978679091010173409410384772942769927955775006682639778"),
                 ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("6460429961979335115790346961011058418773289452368186110818621539624566803831"), ECCurve.Secp256k1),
                 ECCurve.Secp256k1));
 
-            k = new BigInteger(generatePrivateKey(300));
+            k = new BigInteger(GeneratePrivateKey(300));
             ECPoint.Multiply(p, k).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("105331914562708556186724786757483927866790351460145374033180496740107603569412"),
                 ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("60523670886755698512704385951571322569877668383890769288780681319304421873758"), ECCurve.Secp256k1),
                 ECCurve.Secp256k1));
