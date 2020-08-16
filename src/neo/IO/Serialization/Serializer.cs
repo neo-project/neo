@@ -1,3 +1,4 @@
+using Neo.IO.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace Neo.IO.Serialization
     {
         private static readonly Dictionary<Type, Serializer> defaultSerializers = new Dictionary<Type, Serializer>
         {
-            [typeof(bool)] = new UnmanagedSerializer<bool>(),
+            [typeof(bool)] = new BooleanSerializer(),
             [typeof(sbyte)] = new VarIntSerializer<sbyte>(),
             [typeof(byte)] = new VarIntSerializer<byte>(),
             [typeof(short)] = new VarIntSerializer<short>(),
@@ -71,6 +72,10 @@ namespace Neo.IO.Serialization
             return action;
         }
 
+        public abstract void PropertyFromJson(JObject json, Serializable obj, PropertyInfo property, SerializedAttribute attribute);
+
+        public abstract JObject PropertyToJson(Serializable obj, PropertyInfo property);
+
         public static byte[] Serialize(Serializable serializable)
         {
             Type type = serializable.GetType();
@@ -97,6 +102,8 @@ namespace Neo.IO.Serialization
             action(obj, Deserialize(reader, attribute));
         }
 
+        public abstract T FromJson(JObject json, SerializedAttribute attribute);
+
         private static (Delegate, Delegate) GetCallbacks(PropertyInfo property)
         {
             return callbacks.GetOrAdd(property, p =>
@@ -112,6 +119,20 @@ namespace Neo.IO.Serialization
             });
         }
 
+        public sealed override void PropertyFromJson(JObject json, Serializable obj, PropertyInfo property, SerializedAttribute attribute)
+        {
+            (_, var setter) = GetCallbacks(property);
+            Action<Serializable, T> action = (Action<Serializable, T>)setter;
+            action(obj, FromJson(json, attribute));
+        }
+
+        public sealed override JObject PropertyToJson(Serializable obj, PropertyInfo property)
+        {
+            (var getter, _) = GetCallbacks(property);
+            Func<Serializable, T> func = (Func<Serializable, T>)getter;
+            return ToJson(func(obj));
+        }
+
         public abstract void Serialize(MemoryWriter writer, T value);
 
         public sealed override void SerializeProperty(MemoryWriter writer, Serializable obj, PropertyInfo property)
@@ -120,5 +141,7 @@ namespace Neo.IO.Serialization
             Func<Serializable, T> func = (Func<Serializable, T>)getter;
             Serialize(writer, func(obj));
         }
+
+        public abstract JObject ToJson(T value);
     }
 }

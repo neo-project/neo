@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 
 namespace Neo.IO.Serialization
 {
-    public class VarIntSerializer<T> : Serializer<T> where T : unmanaged
+    public class VarIntSerializer<T> : UnmanagedSerializer<T> where T : unmanaged
     {
         public unsafe override T Deserialize(MemoryReader reader, SerializedAttribute attribute)
         {

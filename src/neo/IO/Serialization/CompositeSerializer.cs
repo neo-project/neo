@@ -1,3 +1,4 @@
+using Neo.IO.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,6 +49,15 @@ namespace Neo.IO.Serialization
             }
         }
 
+        public sealed override T FromJson(JObject json, SerializedAttribute _)
+        {
+            EnsureInitialized();
+            T obj = constructor();
+            foreach (var (info, attribute, serializer) in serializers)
+                serializer.PropertyFromJson(json[info.Name.ToLower()], obj, info, attribute);
+            return obj;
+        }
+
         private static Dictionary<string, PropertyInfo> GetProperties(Type type)
         {
             if (type.BaseType is null) return new Dictionary<string, PropertyInfo>();
@@ -87,6 +97,15 @@ namespace Neo.IO.Serialization
             {
                 writer.Write(memory.Span);
             }
+        }
+
+        public sealed override JObject ToJson(T value)
+        {
+            EnsureInitialized();
+            JObject json = new JObject();
+            foreach (var (info, _, serializer) in serializers)
+                json[info.Name.ToLower()] = serializer.PropertyToJson(value, info);
+            return json;
         }
     }
 }
