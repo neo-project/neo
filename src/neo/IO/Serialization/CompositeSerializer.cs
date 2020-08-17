@@ -1,9 +1,12 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.IO.Serialization
 {
@@ -58,6 +61,19 @@ namespace Neo.IO.Serialization
             return obj;
         }
 
+        public sealed override T FromStackItem(StackItem item, SerializedAttribute _)
+        {
+            EnsureInitialized();
+            T obj = constructor();
+            Array array = (Array)item;
+            for (int i = 0; i < serializers.Length; i++)
+            {
+                var (info, attribute, serializer) = serializers[i];
+                serializer.PropertyFromStackItem(array[i], obj, info, attribute);
+            }
+            return obj;
+        }
+
         private static Dictionary<string, PropertyInfo> GetProperties(Type type)
         {
             if (type.BaseType is null) return new Dictionary<string, PropertyInfo>();
@@ -106,6 +122,15 @@ namespace Neo.IO.Serialization
             foreach (var (info, _, serializer) in serializers)
                 json[info.Name.ToLower()] = serializer.PropertyToJson(value, info);
             return json;
+        }
+
+        public sealed override StackItem ToStackItem(T value, ReferenceCounter referenceCounter)
+        {
+            EnsureInitialized();
+            Array array = new Array(referenceCounter);
+            foreach (var (info, _, serializer) in serializers)
+                array.Add(serializer.PropertyToStackItem(value, info, referenceCounter));
+            return array;
         }
     }
 }

@@ -1,9 +1,11 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 
 namespace Neo.IO.Serialization
 {
-    public class ByteArraySerializer : Serializer<byte[]>
+    public sealed class ByteArraySerializer : Serializer<byte[]>
     {
         public override byte[] Deserialize(MemoryReader reader, SerializedAttribute attribute)
         {
@@ -19,6 +21,14 @@ namespace Neo.IO.Serialization
             return result;
         }
 
+        public override byte[] FromStackItem(StackItem item, SerializedAttribute attribute)
+        {
+            int max = attribute?.Max >= 0 ? attribute.Max : 0x1000000;
+            ReadOnlySpan<byte> result = item.GetSpan();
+            if (result.Length > max) throw new FormatException();
+            return result.ToArray();
+        }
+
         public override void Serialize(MemoryWriter writer, byte[] value)
         {
             writer.WriteVarBytes(value);
@@ -27,6 +37,11 @@ namespace Neo.IO.Serialization
         public override JObject ToJson(byte[] value)
         {
             return Convert.ToBase64String(value);
+        }
+
+        public override StackItem ToStackItem(byte[] value, ReferenceCounter referenceCounter)
+        {
+            return value;
         }
     }
 }

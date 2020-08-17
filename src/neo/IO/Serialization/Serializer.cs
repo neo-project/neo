@@ -1,4 +1,6 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,6 +28,7 @@ namespace Neo.IO.Serialization
         };
         private static readonly Dictionary<Type, Action<Serializer, MemoryWriter, Serializable>> serializeActions = new Dictionary<Type, Action<Serializer, MemoryWriter, Serializable>>();
         private static readonly Dictionary<Type, Func<Serializer, Serializable, JObject>> toJsonFunctions = new Dictionary<Type, Func<Serializer, Serializable, JObject>>();
+        private static readonly Dictionary<Type, Func<Serializer, Serializable, ReferenceCounter, StackItem>> toStackItemFunctions = new Dictionary<Type, Func<Serializer, Serializable, ReferenceCounter, StackItem>>();
 
         public static T Deserialize<T>(ReadOnlyMemory<byte> memory) where T : Serializable
         {
@@ -39,6 +42,12 @@ namespace Neo.IO.Serialization
         {
             Serializer<T> serializer = GetDefaultSerializer<T>();
             return serializer.FromJson(json, null);
+        }
+
+        public static T FromStackItem<T>(StackItem item) where T : Serializable
+        {
+            Serializer<T> serializer = GetDefaultSerializer<T>();
+            return serializer.FromStackItem(item, null);
         }
 
         protected static Serializer<T> GetDefaultSerializer<T>()
@@ -96,9 +105,31 @@ namespace Neo.IO.Serialization
             return func;
         }
 
+        private static Func<Serializer, Serializable, ReferenceCounter, StackItem> GetToStackItemFunc(Type type)
+        {
+            if (!toStackItemFunctions.TryGetValue(type, out var func))
+            {
+                Type serializerType = typeof(CompositeSerializer<>).MakeGenericType(type);
+                var instExpr = Expression.Parameter(typeof(Serializer));
+                var convertExprInst = Expression.Convert(instExpr, serializerType);
+                var paramExpr1 = Expression.Parameter(typeof(Serializable));
+                var convertExpr = Expression.Convert(paramExpr1, type);
+                var paramExpr2 = Expression.Parameter(typeof(ReferenceCounter));
+                var callExpr = Expression.Call(convertExprInst, serializerType.GetMethod(nameof(ToStackItem)), convertExpr, paramExpr2);
+                var funcExpr = Expression.Lambda<Func<Serializer, Serializable, ReferenceCounter, StackItem>>(callExpr, instExpr, paramExpr1, paramExpr2);
+                func = funcExpr.Compile();
+                toStackItemFunctions.Add(type, func);
+            }
+            return func;
+        }
+
         public abstract void PropertyFromJson(JObject json, Serializable obj, PropertyInfo property, SerializedAttribute attribute);
 
+        public abstract void PropertyFromStackItem(StackItem item, Serializable obj, PropertyInfo property, SerializedAttribute attribute);
+
         public abstract JObject PropertyToJson(Serializable obj, PropertyInfo property);
+
+        public abstract StackItem PropertyToStackItem(Serializable obj, PropertyInfo property, ReferenceCounter referenceCounter);
 
         public static byte[] Serialize(Serializable serializable)
         {
@@ -119,6 +150,14 @@ namespace Neo.IO.Serialization
             Func<Serializer, Serializable, JObject> func = GetToJsonFunc(type);
             return func(serializer, serializable);
         }
+
+        public static StackItem ToStackItem(Serializable serializable, ReferenceCounter referenceCounter = null)
+        {
+            Type type = serializable.GetType();
+            Serializer serializer = GetDefaultSerializer(type);
+            Func<Serializer, Serializable, ReferenceCounter, StackItem> func = GetToStackItemFunc(type);
+            return func(serializer, serializable, referenceCounter);
+        }
     }
 
     public abstract class Serializer<T> : Serializer
@@ -135,6 +174,8 @@ namespace Neo.IO.Serialization
         }
 
         public abstract T FromJson(JObject json, SerializedAttribute attribute);
+
+        public abstract T FromStackItem(StackItem item, SerializedAttribute attribute);
 
         private static (Delegate, Delegate) GetCallbacks(PropertyInfo property)
         {
@@ -158,11 +199,25 @@ namespace Neo.IO.Serialization
             action(obj, FromJson(json, attribute));
         }
 
+        public sealed override void PropertyFromStackItem(StackItem item, Serializable obj, PropertyInfo property, SerializedAttribute attribute)
+        {
+            (_, var setter) = GetCallbacks(property);
+            Action<Serializable, T> action = (Action<Serializable, T>)setter;
+            action(obj, FromStackItem(item, attribute));
+        }
+
         public sealed override JObject PropertyToJson(Serializable obj, PropertyInfo property)
         {
             (var getter, _) = GetCallbacks(property);
             Func<Serializable, T> func = (Func<Serializable, T>)getter;
             return ToJson(func(obj));
+        }
+
+        public sealed override StackItem PropertyToStackItem(Serializable obj, PropertyInfo property, ReferenceCounter referenceCounter)
+        {
+            (var getter, _) = GetCallbacks(property);
+            Func<Serializable, T> func = (Func<Serializable, T>)getter;
+            return ToStackItem(func(obj), referenceCounter);
         }
 
         public abstract void Serialize(MemoryWriter writer, T value);
@@ -175,5 +230,7 @@ namespace Neo.IO.Serialization
         }
 
         public abstract JObject ToJson(T value);
+
+        public abstract StackItem ToStackItem(T value, ReferenceCounter referenceCounter);
     }
 }

@@ -1,6 +1,6 @@
 namespace Neo.IO.Serialization
 {
-    public class NullableArraySerializer<T> : ArraySerializer<T> where T : Serializable
+    public sealed class NullableArraySerializer<T> : ArraySerializer<T> where T : Serializable
     {
         protected override T DeserializeElement(MemoryReader reader)
         {

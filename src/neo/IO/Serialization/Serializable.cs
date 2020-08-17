@@ -1,4 +1,6 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 
 namespace Neo.IO.Serialization
@@ -20,6 +22,11 @@ namespace Neo.IO.Serialization
         public JObject ToJson()
         {
             return Serializer.ToJson(this);
+        }
+
+        public StackItem ToStackItem(ReferenceCounter referenceCounter = null)
+        {
+            return Serializer.ToStackItem(this, referenceCounter);
         }
     }
 }

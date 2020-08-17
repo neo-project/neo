@@ -1,6 +1,9 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.IO.Serialization
 {
@@ -27,9 +30,19 @@ namespace Neo.IO.Serialization
             return elementSerializer.FromJson(json, null);
         }
 
+        protected virtual T ElementFromStackItem(StackItem item)
+        {
+            return elementSerializer.FromStackItem(item, null);
+        }
+
         protected virtual JObject ElementToJson(T value)
         {
             return elementSerializer.ToJson(value);
+        }
+
+        protected virtual StackItem ElementToStackItem(T value, ReferenceCounter referenceCounter)
+        {
+            return elementSerializer.ToStackItem(value, referenceCounter);
         }
 
         public sealed override T[] FromJson(JObject json, SerializedAttribute attribute)
@@ -38,6 +51,14 @@ namespace Neo.IO.Serialization
             JArray array = (JArray)json;
             if (array.Count > max) throw new FormatException();
             return array.Select(p => p is null ? null : ElementFromJson(p)).ToArray();
+        }
+
+        public sealed override T[] FromStackItem(StackItem item, SerializedAttribute attribute)
+        {
+            int max = attribute?.Max >= 0 ? attribute.Max : 0x1000000;
+            Array array = (Array)item;
+            if (array.Count > max) throw new FormatException();
+            return array.Select(p => p.IsNull ? null : ElementFromStackItem(p)).ToArray();
         }
 
         public sealed override void Serialize(MemoryWriter writer, T[] value)
@@ -55,6 +76,11 @@ namespace Neo.IO.Serialization
         public sealed override JObject ToJson(T[] value)
         {
             return new JArray(value.Select(p => p is null ? null : ElementToJson(p)));
+        }
+
+        public sealed override StackItem ToStackItem(T[] value, ReferenceCounter referenceCounter)
+        {
+            return new Array(referenceCounter, value.Select(p => p is null ? null : ElementToStackItem(p, referenceCounter)));
         }
     }
 }
