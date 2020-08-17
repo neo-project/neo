@@ -70,10 +70,9 @@ namespace Neo.SmartContract.Native.Tokens
             return value * (endReward - startReward) / TotalAmount;
         }
 
-        private void DistributeGasForCommittee(ApplicationEngine engine)
+        private void RecordCumulativeGasByBlock(ApplicationEngine engine)
         {
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            (ECPoint, BigInteger)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
             RewardRatio rewardRatio = GetRewardRatio(engine.Snapshot);
             BigInteger holderRewardPerBlock = gasPerBlock * rewardRatio.NeoHolder / 100; // The final calculation should be divided by the total number of NEO
 
@@ -87,15 +86,6 @@ namespace Neo.SmartContract.Native.Tokens
             if (enumerator.MoveNext())
                 holderRewards += new BigInteger(enumerator.Current.Value.Value);
             engine.Snapshot.Storages.Add(holderRewardKey, new StorageItem() { Value = holderRewards.ToByteArray() });
-
-
-            for (var i = 0; i < committeeVotes.Length; i++)
-            {
-                // Mint the reward for committee by each block
-
-                UInt160 committeeAddr = Contract.CreateSignatureContract(committeeVotes[i].Item1).ScriptHash;
-                GAS.Mint(engine, committeeAddr, holderRewardPerBlock);
-            }
         }
 
         internal override void Initialize(ApplicationEngine engine)
@@ -122,7 +112,7 @@ namespace Neo.SmartContract.Native.Tokens
             base.OnPersist(engine);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
             storage.Value = GetValidators(engine.Snapshot).ToByteArray();
-            DistributeGasForCommittee(engine);
+            RecordCumulativeGasByBlock(engine);
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
