@@ -48,8 +48,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Check unclaim
 
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 1000 - 1), new StorageItem() { Value = new BigInteger(1000 * 100000000L).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
+
             var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(600000000000));
+            unclaim.Value.Should().Be(new BigInteger(1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
             // Transfer
@@ -58,7 +61,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000);
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
 
-            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(30006000_00000000);
+            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(30001000_00000000);
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(0);
 
             // Check unclaim
@@ -68,21 +71,21 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.State.Should().BeTrue();
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(30006000_00000000);
+            supply.Should().Be(30001000_00000000);
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 5); // Gas
 
             // Transfer
 
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
-            NativeContract.GAS.Transfer(snapshot, from, to, 30006000_00000000, false).Should().BeFalse(); // Not signed
-            NativeContract.GAS.Transfer(snapshot, from, to, 30006000_00000001, true).Should().BeFalse(); // More than balance
-            NativeContract.GAS.Transfer(snapshot, from, to, 30006000_00000000, true).Should().BeTrue(); // All balance
+            NativeContract.GAS.Transfer(snapshot, from, to, 30001000_00000000, false).Should().BeFalse(); // Not signed
+            NativeContract.GAS.Transfer(snapshot, from, to, 30001000_00000001, true).Should().BeFalse(); // More than balance
+            NativeContract.GAS.Transfer(snapshot, from, to, 30001000_00000000, true).Should().BeTrue(); // All balance
 
             // Balance of
 
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(30006000_00000000);
+            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(30001000_00000000);
             NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(0);
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // All
@@ -104,13 +107,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(30005999_99999999);
+            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000099999999999);
 
             keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             // Burn all
 
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(30005999_99999999));
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000099999999999));
 
             (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
@@ -131,6 +134,23 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             engine.LoadScript(script.ToArray());
 
             Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Invoke(engine));
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, uint key)
+        {
+            return CreateStorageKey(prefix, BitConverter.GetBytes(key));
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        {
+            StorageKey storageKey = new StorageKey
+            {
+                Id = NativeContract.NEO.Id,
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+            };
+            storageKey.Key[0] = prefix;
+            key?.CopyTo(storageKey.Key.AsSpan(1));
+            return storageKey;
         }
     }
 }

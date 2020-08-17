@@ -186,8 +186,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 1000 - 1), new StorageItem() { Value = new BigInteger(1000 * 100000000L).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
+
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(600000000000));
+            unclaim.Value.Should().Be(new BigInteger(1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
             unclaim = Check_UnclaimedGas(snapshot, new byte[19]);
@@ -338,8 +341,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Check unclaim
 
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 1000 - 1), new StorageItem() { Value = new BigInteger(1000 * 100000000L).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
+
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(600000000000));
+            unclaim.Value.Should().Be(new BigInteger(1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
             // Transfer
@@ -355,7 +361,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 4); // Gas + new balance
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 6); // Gas + new balance
 
             // Return balance
 
@@ -416,6 +422,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
+
+            // Fault: balance < 0
+
             snapshot.Storages.Add(key, new StorageItem(new NeoAccountState
             {
                 Balance = -100
@@ -423,11 +432,27 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             action.Should().Throw<ArgumentOutOfRangeException>();
             snapshot.Storages.Delete(key);
+
+            // Fault range: start >= end
+
+            snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
+            {
+                Balance = 100,
+                BalanceHeight = 100
+            }));
+            action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            snapshot.Storages.Delete(key);
+
+            // Normal 1) votee is non exist
+
             snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
             {
                 Balance = 100
             }));
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 30 * Blockchain.DecrementInterval).Should().Be(new BigInteger(7000000000));
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100 * 100000000L).ToByteArray() });
+            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(100 * 100));
+            snapshot.Storages.Delete(key);
         }
 
         [TestMethod]
@@ -778,6 +803,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
             return (true, result.GetBoolean());
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, uint key)
+        {
+            return CreateStorageKey(prefix, BitConverter.GetBytes(key));
+        }
+
+        internal static StorageKey CreateStorageKey(byte prefix, ISerializable keyLeft, uint keyRight)
+        {
+            return CreateStorageKey(prefix, keyLeft.ToArray().Concat(BitConverter.GetBytes(keyRight)).ToArray());
         }
     }
 }
