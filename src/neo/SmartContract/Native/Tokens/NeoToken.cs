@@ -29,7 +29,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_RewardRatio = 15;
-        private const byte Prefix_HolderRewardPerBlock = 27;
+
+        private readonly BigInteger GasPerBlock = 5 * GAS.Factor;
+
+        private const byte NeoHolderRewardRatio = 10;
+        private const byte CommitteeRewardRatio = 5;
+        private const byte VoterRewardRatio = 85;
 
         internal NeoToken()
         {
@@ -63,27 +68,9 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            var endRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - end - 1));
-            var startRewardItem = snapshot.Storages.TryGet(CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - start - 1));
-            BigInteger startReward = startRewardItem is null ? 0 : new BigInteger(startRewardItem.Value);
-            BigInteger endReward = endRewardItem is null ? 0 : new BigInteger(endRewardItem.Value);
-            return value * (endReward - startReward) / TotalAmount;
-        }
-
-        private void RecordCumulativeGasByBlock(ApplicationEngine engine)
-        {
-            var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            RewardRatio rewardRatio = GetRewardRatio(engine.Snapshot);
-            var holderRewards = gasPerBlock * rewardRatio.NeoHolder / 100; // The final calculation should be divided by the total number of NEO
-
-            // Keep track of incremental gains of neo holders
-
-            var holderKeyLeft = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
-            var holderKeyRight = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue);
-            var enumerator = engine.Snapshot.Storages.FindRange(holderKeyLeft, holderKeyRight).GetEnumerator();
-            if (enumerator.MoveNext())
-                holderRewards += new BigInteger(enumerator.Current.Value.Value);
-            engine.Snapshot.Storages.Add(holderKeyLeft, new StorageItem() { Value = holderRewards.ToByteArray() });
+            var gasPerBlock = GetGasPerBlock(snapshot);
+            var NeoHolderRewardRatio = GetRewardRatio(snapshot).NeoHolder;
+            return value * gasPerBlock * (end - start) * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
         internal override void Initialize(ApplicationEngine engine)
@@ -92,13 +79,13 @@ namespace Neo.SmartContract.Native.Tokens
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock), new StorageItem
             {
-                Value = (5 * GAS.Factor).ToByteArray()
+                Value = GasPerBlock.ToByteArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RewardRatio), new StorageItem(new RewardRatio
             {
-                NeoHolder = 10,
-                Committee = 5,
-                Voter = 85
+                NeoHolder = NeoHolderRewardRatio,
+                Committee = CommitteeRewardRatio,
+                Voter = VoterRewardRatio
             }));
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
@@ -110,29 +97,6 @@ namespace Neo.SmartContract.Native.Tokens
             base.OnPersist(engine);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
             storage.Value = GetValidators(engine.Snapshot).ToByteArray();
-            RecordCumulativeGasByBlock(engine);
-        }
-
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private bool SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
-        {
-            if (gasPerBlock < 0 || gasPerBlock > 8 * GAS.Factor) return false;
-            if (!CheckCommittees(engine)) return false;
-            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock));
-            item.Value = gasPerBlock.ToByteArray();
-            return true;
-        }
-
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private bool SetRewardRatio(ApplicationEngine engine, byte neoHoldersRewardRatio, byte committeesRewardRatio, byte votersRewardRatio)
-        {
-            if (checked(neoHoldersRewardRatio + committeesRewardRatio + votersRewardRatio) != 100) return false;
-            if (!CheckCommittees(engine)) return false;
-            RewardRatio rewardRatio = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RewardRatio), () => new StorageItem(new RewardRatio())).GetInteroperable<RewardRatio>();
-            rewardRatio.NeoHolder = neoHoldersRewardRatio;
-            rewardRatio.Committee = committeesRewardRatio;
-            rewardRatio.Voter = votersRewardRatio;
-            return true;
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]

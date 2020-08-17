@@ -186,11 +186,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 
-            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 1000 - 1), new StorageItem() { Value = new BigInteger(1000 * 100000000L).ToByteArray() });
-            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
-
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(1000 * 100000000L));
+            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
             unclaim = Check_UnclaimedGas(snapshot, new byte[19]);
@@ -341,11 +338,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             // Check unclaim
 
-            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 1000 - 1), new StorageItem() { Value = new BigInteger(1000 * 100000000L).ToByteArray() });
-            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
-
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(1000 * 100000000L));
+            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
             // Transfer
@@ -361,7 +355,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 6); // Gas + new balance
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 4); // Gas + new balance
 
             // Return balance
 
@@ -449,9 +443,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             {
                 Balance = 100
             }));
-            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 100 - 1), new StorageItem() { Value = new BigInteger(100 * 100000000L).ToByteArray() });
-            snapshot.Storages.Add(CreateStorageKey(27, uint.MaxValue - 0 - 1), new StorageItem() { Value = new BigInteger(0).ToByteArray() });
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(100 * 100));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
             snapshot.Storages.Delete(key);
         }
 
@@ -575,23 +567,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestEconomicParameter()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            (bool, bool) ret1 = Check_SetGasPerByte(snapshot, 2 * NativeContract.GAS.Factor);
-            ret1.Item2.Should().BeTrue();
-            ret1.Item1.Should().BeTrue();
 
             (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
             result.Item2.Should().BeTrue();
-            result.Item1.Should().Be(2 * NativeContract.GAS.Factor);
-
-            ret1 = Check_SetRewardRatio(snapshot, 10, 10, 80);
-            ret1.Item2.Should().BeTrue();
-            ret1.Item1.Should().BeTrue();
+            result.Item1.Should().Be(5 * NativeContract.GAS.Factor);
 
             (VM.Types.Array, bool) result2 = Check_GetEconomicParameter(snapshot, "getRewardRatio");
             result2.Item2.Should().BeTrue();
             result2.Item1[0].GetInteger().Should().Be(10);
-            result2.Item1[1].GetInteger().Should().Be(10);
-            result2.Item1[2].GetInteger().Should().Be(80);
+            result2.Item1[1].GetInteger().Should().Be(5);
+            result2.Item1[2].GetInteger().Should().Be(85);
         }
 
         [TestMethod]
