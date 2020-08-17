@@ -6,10 +6,10 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor Neo_Native_Deploy = Register("Neo.Native.Deploy", nameof(DeployNativeContracts), 0, TriggerType.Application, CallFlags.AllowModifyStates);
-        public static readonly InteropDescriptor Neo_Native_Call = Register("Neo.Native.Call", nameof(CallNativeContract), 0, TriggerType.System | TriggerType.Application, CallFlags.None);
+        public static readonly InteropDescriptor Neo_Native_Deploy = Register("Neo.Native.Deploy", nameof(DeployNativeContracts), 0, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor Neo_Native_Call = Register("Neo.Native.Call", nameof(CallNativeContract), 0, CallFlags.None, false);
 
-        internal void DeployNativeContracts()
+        protected internal void DeployNativeContracts()
         {
             if (Snapshot.PersistingBlock.Index != 0)
                 throw new InvalidOperationException();
@@ -25,10 +25,9 @@ namespace Neo.SmartContract
             }
         }
 
-        internal void CallNativeContract(string name)
+        protected internal void CallNativeContract(string name)
         {
-            if (!NativeContract.GetContract(name).Invoke(this))
-                throw new InvalidOperationException();
+            NativeContract.GetContract(name).Invoke(this);
         }
     }
 }

@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Iterators;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -28,10 +27,10 @@ namespace Neo.UnitTests.SmartContract.Iterators
             Action action2 = () => arrayWrapper.Value();
             action2.Should().Throw<InvalidOperationException>();
             arrayWrapper.Next();
-            Assert.AreEqual(0x00, arrayWrapper.Key().GetBigInteger());
+            Assert.AreEqual(0x00, arrayWrapper.Key().GetInteger());
             Assert.AreEqual(0x01, arrayWrapper.Value());
             arrayWrapper.Next();
-            Assert.AreEqual(0x01, arrayWrapper.Key().GetBigInteger());
+            Assert.AreEqual(0x01, arrayWrapper.Key().GetInteger());
             Assert.AreEqual(0x02, arrayWrapper.Value());
         }
 

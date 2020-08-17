@@ -58,7 +58,7 @@ namespace Neo.UnitTests.Consensus
             // Only one tx, is included
 
             var tx1 = CreateTransactionWithSize(200);
-            _context.EnsureMaxBlockSize(new Transaction[] { tx1 });
+            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1 });
             EnsureContext(_context, tx1);
 
             // All txs included
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Consensus
 
             for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
 
-            _context.EnsureMaxBlockSize(txs);
+            _context.EnsureMaxBlockLimitation(txs);
             EnsureContext(_context, txs);
         }
 
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Consensus
 
             var tx1 = CreateTransactionWithSize(200);
             var tx2 = CreateTransactionWithSize(256 * 1024);
-            _context.EnsureMaxBlockSize(new Transaction[] { tx1, tx2 });
+            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2 });
             EnsureContext(_context, tx1);
 
             // Exceed txs number, just MaxTransactionsPerBlock included
@@ -89,8 +89,33 @@ namespace Neo.UnitTests.Consensus
 
             for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
 
-            _context.EnsureMaxBlockSize(txs);
+            _context.EnsureMaxBlockLimitation(txs);
             EnsureContext(_context, txs.Take(max).ToArray());
+        }
+
+        [TestMethod]
+        public void TestMaxBlockSytemFee()
+        {
+            var tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2);
+
+            // Less than MaxBlockSystemFee
+            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1 });
+            EnsureContext(_context, new Transaction[] { tx1 });
+
+            // Equal MaxBlockSystemFee
+            tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 + 1);
+            var tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 1);
+
+            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2 });
+            EnsureContext(_context, new Transaction[] { tx1, tx2 });
+
+            // Exceed MaxBlockSystemFee
+            tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 + 3);
+            tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 3);
+            var tx3 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 4);
+
+            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2, tx3 });
+            EnsureContext(_context, new Transaction[] { tx1, tx2 });
         }
 
         private Transaction CreateTransactionWithSize(int v)
@@ -98,11 +123,11 @@ namespace Neo.UnitTests.Consensus
             var r = new Random();
             var tx = new Transaction()
             {
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = System.Array.Empty<TransactionAttribute>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],
-                Sender = UInt160.Zero,
                 SystemFee = 0,
                 ValidUntilBlock = (uint)r.Next(),
                 Version = 0,
@@ -111,6 +136,23 @@ namespace Neo.UnitTests.Consensus
 
             // Could be higher (few bytes) if varSize grows
             tx.Script = new byte[v - tx.Size];
+            return tx;
+        }
+
+        private Transaction CreateTransactionWithSytemFee(long fee)
+        {
+            var tx = new Transaction()
+            {
+                Attributes = System.Array.Empty<TransactionAttribute>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[0],
+                SystemFee = fee,
+                ValidUntilBlock = int.MaxValue,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
             return tx;
         }
 

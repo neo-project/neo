@@ -134,6 +134,15 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
+        public void TestRIPEMD160()
+        {
+            ReadOnlySpan<byte> value = Encoding.ASCII.GetBytes("hello world");
+            byte[] result = value.RIPEMD160();
+            string resultStr = result.ToHexString();
+            resultStr.Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+        }
+
+        [TestMethod]
         public void TestTest()
         {
             int m = 7, n = 10;
@@ -143,8 +152,8 @@ namespace Neo.UnitTests.Cryptography
             Transaction tx = new Transaction
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
-                Sender = UInt160.Zero,
                 SystemFee = 4200000000,
+                Signers = Array.Empty<Signer>(),
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
