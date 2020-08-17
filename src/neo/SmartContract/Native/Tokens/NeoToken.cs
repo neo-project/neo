@@ -31,7 +31,6 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_RewardRatio = 15;
         private const byte Prefix_HolderRewardPerBlock = 27;
 
-
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
