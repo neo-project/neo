@@ -38,6 +38,11 @@ namespace Neo.Consensus
         public Dictionary<ECPoint, uint> LastSeenMessage { get; private set; }
 
         /// <summary>
+        /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
+        /// </summary>
+        public TransactionVerificationContext VerificationContext = new TransactionVerificationContext();
+        
+        /// <summary>
         /// Future payloads used when CN are probably lagged
         /// Verified ConsensusPayloads are cached and the lastest height are stored
         /// They are possibly used when the nodes syncs to the last height
@@ -47,10 +52,6 @@ namespace Neo.Consensus
         public ConsensusPayload[] FutureChangeViewPayloads;
         public ConsensusPayload[] FutureRecoveryPayloads;
         public uint CountFuturePayloads = 0;
-        /// <summary>
-        /// Store all verified unsorted transactions' senders' fee currently in the consensus context.
-        /// </summary>
-        public TransactionVerificationContext VerificationContext = new TransactionVerificationContext();
 
         public SnapshotView Snapshot { get; private set; }
         private KeyPair keyPair;
