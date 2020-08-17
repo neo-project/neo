@@ -572,6 +572,29 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
+        public void TestEconomicParameter()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            (bool, bool) ret1 = Check_SetGasPerByte(snapshot, 2 * NativeContract.GAS.Factor);
+            ret1.Item2.Should().BeTrue();
+            ret1.Item1.Should().BeTrue();
+
+            (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(2 * NativeContract.GAS.Factor);
+
+            ret1 = Check_SetRewardRatio(snapshot, 10, 10, 80);
+            ret1.Item2.Should().BeTrue();
+            ret1.Item1.Should().BeTrue();
+
+            (VM.Types.Array, bool) result2 = Check_GetEconomicParameter(snapshot, "getRewardRatio");
+            result2.Item2.Should().BeTrue();
+            result2.Item1[0].GetInteger().Should().Be(10);
+            result2.Item1[1].GetInteger().Should().Be(10);
+            result2.Item1[2].GetInteger().Should().Be(80);
+        }
+
+        [TestMethod]
         public void TestUnclaimedGas()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -642,6 +665,108 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var result = engine.ResultStack.Peek();
             result.GetType().Should().Be(typeof(VM.Types.Boolean));
             return (true, result.GetBoolean());
+        }
+
+        internal static (bool Value, bool State) Check_SetRewardRatio(StoreView snapshot, BigInteger holder, BigInteger committee, BigInteger voters)
+        {
+            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
+            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+            var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(voters);
+            script.EmitPush(committee);
+            script.EmitPush(holder);
+            script.EmitPush(3);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("setRewardRatio");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (result.GetBoolean(), true);
+        }
+
+        internal static (bool Value, bool State) Check_SetGasPerByte(StoreView snapshot, BigInteger value)
+        {
+            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
+            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+            var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(value);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("setGasPerBlock");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (result.GetBoolean(), true);
+        }
+
+        internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StoreView snapshot)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("getGasPerBlock");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (BigInteger.Zero, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return (((VM.Types.Integer)result).GetInteger(), true);
+        }
+
+        internal static (VM.Types.Array Value, bool State) Check_GetEconomicParameter(StoreView snapshot, string method)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(method);
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (null, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Array));
+
+            return ((VM.Types.Array)result, true);
         }
 
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)
