@@ -215,28 +215,6 @@ namespace Neo.SmartContract.Native.Tokens
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        public bool CheckCommittees(ApplicationEngine engine)
-        {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
-            return engine.CheckWitnessInternal(committeeMultiSigAddr);
-        }
-
-        private (ECPoint PublicKey, BigInteger Votes)[] GetCommitteeVotes(StoreView snapshot)
-        {
-            (ECPoint PublicKey, BigInteger Votes)[] committeeVotes = new (ECPoint PublicKey, BigInteger Votes)[ProtocolSettings.Default.CommitteeMembersCount];
-            var i = 0;
-            foreach (var commiteePubKey in GetCommitteeMembers(snapshot))
-            {
-                var item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(commiteePubKey));
-                if (item is null)
-                    committeeVotes[i] = (commiteePubKey, BigInteger.Zero);
-                else
-                    committeeVotes[i] = (commiteePubKey, item.GetInteroperable<CandidateState>().Votes);
-                i++;
-            }
-            return committeeVotes;
-        }
-
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
