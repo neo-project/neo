@@ -74,18 +74,16 @@ namespace Neo.SmartContract.Native.Tokens
         {
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             RewardRatio rewardRatio = GetRewardRatio(engine.Snapshot);
-            BigInteger holderRewardPerBlock = gasPerBlock * rewardRatio.NeoHolder / 100; // The final calculation should be divided by the total number of NEO
+            var holderRewards = gasPerBlock * rewardRatio.NeoHolder / 100; // The final calculation should be divided by the total number of NEO
 
             // Keep track of incremental gains of neo holders
 
-            var index = engine.Snapshot.PersistingBlock.Index;
-            var holderRewards = holderRewardPerBlock;
-            var holderRewardKey = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - index - 1);
-            var holderBorderKey = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue);
-            var enumerator = engine.Snapshot.Storages.FindRange(holderRewardKey, holderBorderKey).GetEnumerator();
+            var holderKeyLeft = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+            var holderKeyRight = CreateStorageKey(Prefix_HolderRewardPerBlock).Add(uint.MaxValue);
+            var enumerator = engine.Snapshot.Storages.FindRange(holderKeyLeft, holderKeyRight).GetEnumerator();
             if (enumerator.MoveNext())
                 holderRewards += new BigInteger(enumerator.Current.Value.Value);
-            engine.Snapshot.Storages.Add(holderRewardKey, new StorageItem() { Value = holderRewards.ToByteArray() });
+            engine.Snapshot.Storages.Add(holderKeyLeft, new StorageItem() { Value = holderRewards.ToByteArray() });
         }
 
         internal override void Initialize(ApplicationEngine engine)
