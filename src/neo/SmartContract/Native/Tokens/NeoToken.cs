@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_RewardRatio = 15;
 
-        private readonly BigInteger GasPerBlock = 5 * GAS.Factor;
+        private readonly BigInteger GasPerBlock = 5;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 5;
@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock), new StorageItem
             {
-                Value = GasPerBlock.ToByteArray()
+                Value = (GasPerBlock * GAS.Factor).ToByteArray()
             });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RewardRatio), new StorageItem(new RewardRatio
             {
