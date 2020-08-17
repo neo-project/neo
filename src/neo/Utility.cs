@@ -5,6 +5,7 @@ using Neo.Plugins;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace Neo
 {
@@ -17,6 +18,15 @@ namespace Neo
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
                 Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
             }
+        }
+
+        public static Encoding StrictUTF8 { get; }
+
+        static Utility()
+        {
+            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
+            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
+            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
         /// <summary>
@@ -34,11 +44,11 @@ namespace Neo
             if (!File.Exists(file))
             {
                 // EntryPoint folder
-                file = Path.Combine(Assembly.GetEntryAssembly().Location, configFile);
+                file = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), configFile);
                 if (!File.Exists(file))
                 {
                     // neo.dll folder
-                    file = Path.Combine(Assembly.GetExecutingAssembly().Location, configFile);
+                    file = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), configFile);
                     if (!File.Exists(file))
                     {
                         // default config

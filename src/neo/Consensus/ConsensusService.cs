@@ -26,6 +26,7 @@ namespace Neo.Consensus
         private readonly ConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
+        private readonly IActorRef blockchain;
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
@@ -46,15 +47,16 @@ namespace Neo.Consensus
         /// </summary>
         private bool isRecovering = false;
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, IStore store, Wallet wallet)
-            : this(localNode, taskManager, new ConsensusContext(wallet, store))
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, IActorRef blockchain, IStore store, Wallet wallet)
+            : this(localNode, taskManager, blockchain, new ConsensusContext(wallet, store))
         {
         }
 
-        internal ConsensusService(IActorRef localNode, IActorRef taskManager, ConsensusContext context)
+        internal ConsensusService(IActorRef localNode, IActorRef taskManager, IActorRef blockchain, ConsensusContext context)
         {
             this.localNode = localNode;
             this.taskManager = taskManager;
+            this.blockchain = blockchain;
             this.context = context;
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
@@ -62,20 +64,24 @@ namespace Neo.Consensus
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (verify && tx.Verify(context.Snapshot, context.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
+            if (verify)
             {
-                Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView(ChangeViewReason.TxInvalid);
-                return false;
-            }
-            if (!NativeContract.Policy.CheckPolicy(tx, context.Snapshot))
-            {
-                Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
-                return false;
+                VerifyResult result = tx.Verify(context.Snapshot, context.VerificationContext);
+                if (result == VerifyResult.PolicyFail)
+                {
+                    Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                    RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
+                    return false;
+                }
+                else if (result != VerifyResult.Succeed)
+                {
+                    Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                    RequestChangeView(ChangeViewReason.TxInvalid);
+                    return false;
+                }
             }
             context.Transactions[tx.Hash] = tx;
-            context.SendersFeeMonitor.AddSenderFee(tx);
+            context.VerificationContext.AddTransaction(tx);
             return CheckPrepareResponse();
         }
 
@@ -90,7 +96,14 @@ namespace Neo.Consensus
                 // Check maximum block size via Native Contract policy
                 if (context.GetExpectedBlockSize() > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
                 {
-                    Log($"rejected block: {context.Block.Index}{Environment.NewLine} The size exceed the policy", LogLevel.Warning);
+                    Log($"rejected block: {context.Block.Index} The size exceed the policy", LogLevel.Warning);
+                    RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
+                    return false;
+                }
+                // Check maximum block system fee via Native Contract policy
+                if (context.GetExpectedBlockSystemFee() > NativeContract.Policy.GetMaxBlockSystemFee(context.Snapshot))
+                {
+                    Log($"rejected block: {context.Block.Index} The system fee exceed the policy", LogLevel.Warning);
                     RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
                     return false;
                 }
@@ -124,7 +137,7 @@ namespace Neo.Consensus
             {
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
-                localNode.Tell(new LocalNode.Relay { Inventory = block });
+                blockchain.Tell(block);
             }
         }
 
@@ -278,7 +291,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            context.LastSeenMessage[payload.ValidatorIndex] = (int)payload.BlockIndex;
+            context.LastSeenMessage[context.Validators[payload.ValidatorIndex]] = payload.BlockIndex;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;
@@ -422,7 +435,7 @@ namespace Neo.Consensus
             context.Block.ConsensusData.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-            context.SendersFeeMonitor = new SendersFeeMonitor();
+            context.VerificationContext = new TransactionVerificationContext();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
                     if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
@@ -600,9 +613,9 @@ namespace Neo.Consensus
             base.PostStop();
         }
 
-        public static Props Props(IActorRef localNode, IActorRef taskManager, IStore store, Wallet wallet)
+        public static Props Props(IActorRef localNode, IActorRef taskManager, IActorRef blockchain, IStore store, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
+            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, blockchain, store, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
         private void RequestChangeView(ChangeViewReason reason)

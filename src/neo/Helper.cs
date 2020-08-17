@@ -50,6 +50,14 @@ namespace Neo
             return dst;
         }
 
+        public static byte[] Concat(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
+        {
+            byte[] buffer = new byte[a.Length + b.Length];
+            a.CopyTo(buffer);
+            b.CopyTo(buffer.AsSpan(a.Length));
+            return buffer;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetBitLength(this BigInteger i)
         {

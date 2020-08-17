@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -198,7 +197,7 @@ namespace Neo.SmartContract
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["hex"].AsString()), false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 verifiable.DeserializeUnsigned(reader);
             }
@@ -262,7 +261,7 @@ namespace Neo.SmartContract
             JObject json = new JObject();
             json["type"] = Verifiable.GetType().FullName;
             using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            using (BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8))
             {
                 Verifiable.SerializeUnsigned(writer);
                 writer.Flush();
