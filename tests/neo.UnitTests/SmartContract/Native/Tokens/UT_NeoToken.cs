@@ -652,62 +652,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             return (true, result.GetBoolean());
         }
 
-        internal static (bool Value, bool State) Check_SetRewardRatio(StoreView snapshot, BigInteger holder, BigInteger committee, BigInteger voters)
-        {
-            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
-            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(voters);
-            script.EmitPush(committee);
-            script.EmitPush(holder);
-            script.EmitPush(3);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("setRewardRatio");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (result.GetBoolean(), true);
-        }
-
-        internal static (bool Value, bool State) Check_SetGasPerByte(StoreView snapshot, BigInteger value)
-        {
-            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
-            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(value);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("setGasPerBlock");
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (false, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (result.GetBoolean(), true);
-        }
-
         internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StoreView snapshot)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
@@ -913,16 +857,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
             return (true, result.GetBoolean());
-        }
-
-        internal static StorageKey CreateStorageKey(byte prefix, uint key)
-        {
-            return CreateStorageKey(prefix, BitConverter.GetBytes(key));
-        }
-
-        internal static StorageKey CreateStorageKey(byte prefix, ISerializable keyLeft, uint keyRight)
-        {
-            return CreateStorageKey(prefix, keyLeft.ToArray().Concat(BitConverter.GetBytes(keyRight)).ToArray());
         }
     }
 }
