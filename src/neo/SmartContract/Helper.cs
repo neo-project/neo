@@ -5,7 +5,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -14,6 +13,13 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
+        private const long MaxVerificationGas = 0_50000000;
+
+        public static UInt160 GetScriptHash(this ExecutionContext context)
+        {
+            return context.GetState<ExecutionContextState>().ScriptHash;
+        }
+
         public static bool IsMultiSigContract(this byte[] script)
         {
             return IsMultiSigContract(script, out _, out _, null);
@@ -126,6 +132,7 @@ namespace Neo.SmartContract
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
+            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -140,6 +147,7 @@ namespace Neo.SmartContract
             for (int i = 0; i < hashes.Length; i++)
             {
                 int offset;
+                ContractMethodDescriptor init = null;
                 byte[] verification = verifiable.Witnesses[i].VerificationScript;
                 if (verification.Length == 0)
                 {
@@ -149,18 +157,20 @@ namespace Neo.SmartContract
                     if (md is null) return false;
                     verification = cs.Script;
                     offset = md.Offset;
+                    init = cs.Manifest.Abi.GetMethod("_initialize");
                 }
                 else
                 {
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot.Clone(), gas))
                 {
-                    engine.LoadScript(verification, CallFlags.ReadOnly).InstructionPointer = offset;
+                    ExecutionContext context = engine.LoadScript(verification, CallFlags.None, offset);
+                    if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
-                    if (!engine.ResultStack.TryPop(out StackItem result) || !result.ToBoolean()) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                     gas -= engine.GasConsumed;
                 }
             }

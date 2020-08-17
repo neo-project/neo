@@ -106,7 +106,7 @@ namespace Neo.Ledger
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["consensus_data"] = ConsensusData?.ToJson();
+            json["consensusdata"] = ConsensusData?.ToJson();
             json["hashes"] = Hashes.Select(p => (JObject)p.ToString()).ToArray();
             return json;
         }

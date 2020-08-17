@@ -122,7 +122,7 @@ namespace Neo.UnitTests
             byte[] script = Neo.SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey);
             byte[] result = new byte[64];
             result[20] = 0x01;
-            result[21] = 0x00;
+            result[21] = (byte)ContractParameterType.Signature;
             result[22] = 0x29;
             Array.Copy(script, 0, result, 23, 41);
             CollectionAssert.AreEqual(result, byteArray);

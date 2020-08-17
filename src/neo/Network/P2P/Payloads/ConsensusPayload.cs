@@ -15,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Version;
         public UInt256 PrevHash;
         public uint BlockIndex;
-        public ushort ValidatorIndex;
+        public byte ValidatorIndex;
         public byte[] Data;
         public Witness Witness;
 
@@ -57,7 +57,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +      //Version
             PrevHash.Size +     //PrevHash
             sizeof(uint) +      //BlockIndex
-            sizeof(ushort) +    //ValidatorIndex
+            sizeof(byte) +      //ValidatorIndex
             Data.GetVarSize() + //Data
             1 + Witness.Size;   //Witness
 
@@ -91,7 +91,9 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
-            ValidatorIndex = reader.ReadUInt16();
+            ValidatorIndex = reader.ReadByte();
+            if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
+                throw new FormatException();
             Data = reader.ReadVarBytes();
         }
 
