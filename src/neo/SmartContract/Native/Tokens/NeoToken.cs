@@ -99,13 +99,13 @@ namespace Neo.SmartContract.Native.Tokens
             storage.Value = GetValidators(engine.Snapshot).ToByteArray();
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
             return new BigInteger(snapshot.Storages.TryGet(CreateStorageKey(Prefix_GasPerBlock)).Value);
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         internal RewardRatio GetRewardRatio(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_RewardRatio)).GetInteroperable<RewardRatio>();
