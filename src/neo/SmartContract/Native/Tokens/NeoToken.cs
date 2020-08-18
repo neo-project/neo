@@ -27,6 +27,8 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_Candidate = 33;
         private const byte Prefix_NextValidators = 14;
 
+        private const byte Prefix_VoterRewardPerCommittee = 23;
+
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
