@@ -26,9 +26,7 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_VotersCount = 1;
         private const byte Prefix_Candidate = 33;
         private const byte Prefix_NextValidators = 14;
-
         private const byte Prefix_GasPerBlock = 29;
-        private const byte Prefix_RewardRatio = 15;
 
         private readonly BigInteger GasPerBlock = 5;
 
@@ -69,7 +67,6 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
             var gasPerBlock = GetGasPerBlock(snapshot);
-            var NeoHolderRewardRatio = GetRewardRatio(snapshot).NeoHolder;
             return value * gasPerBlock * (end - start) * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
@@ -81,12 +78,6 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 Value = (GasPerBlock * GAS.Factor).ToByteArray()
             });
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RewardRatio), new StorageItem(new RewardRatio
-            {
-                NeoHolder = NeoHolderRewardRatio,
-                Committee = CommitteeRewardRatio,
-                Voter = VoterRewardRatio
-            }));
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
@@ -103,12 +94,6 @@ namespace Neo.SmartContract.Native.Tokens
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
             return new BigInteger(snapshot.Storages.TryGet(CreateStorageKey(Prefix_GasPerBlock)).Value);
-        }
-
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        internal RewardRatio GetRewardRatio(StoreView snapshot)
-        {
-            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_RewardRatio)).GetInteroperable<RewardRatio>();
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
@@ -272,26 +257,6 @@ namespace Neo.SmartContract.Native.Tokens
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
                 return new Struct(referenceCounter) { Registered, Votes };
-            }
-        }
-
-        internal class RewardRatio : IInteroperable
-        {
-            public int NeoHolder;
-            public int Committee;
-            public int Voter;
-
-            public void FromStackItem(StackItem stackItem)
-            {
-                VM.Types.Array array = (VM.Types.Array)stackItem;
-                NeoHolder = (int)array[0].GetInteger();
-                Committee = (int)array[1].GetInteger();
-                Voter = (int)array[2].GetInteger();
-            }
-
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
-            {
-                return new VM.Types.Array() { new Integer(NeoHolder), new Integer(Committee), new Integer(Voter) };
             }
         }
     }

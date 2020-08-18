@@ -571,12 +571,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
             result.Item2.Should().BeTrue();
             result.Item1.Should().Be(5 * NativeContract.GAS.Factor);
-
-            (VM.Types.Array, bool) result2 = Check_GetEconomicParameter(snapshot, "getRewardRatio");
-            result2.Item2.Should().BeTrue();
-            result2.Item1[0].GetInteger().Should().Be(10);
-            result2.Item1[1].GetInteger().Should().Be(5);
-            result2.Item1[2].GetInteger().Should().Be(85);
         }
 
         [TestMethod]
@@ -673,29 +667,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
             return (((VM.Types.Integer)result).GetInteger(), true);
-        }
-
-        internal static (VM.Types.Array Value, bool State) Check_GetEconomicParameter(StoreView snapshot, string method)
-        {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush(method);
-            engine.LoadScript(script.ToArray());
-
-            if (engine.Execute() == VMState.FAULT)
-            {
-                return (null, false);
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
-
-            return ((VM.Types.Array)result, true);
         }
 
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)
