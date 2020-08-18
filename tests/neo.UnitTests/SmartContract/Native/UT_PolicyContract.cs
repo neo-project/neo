@@ -212,6 +212,64 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_BlockAccount()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Fake blockchain
+
+            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
+
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
+
+            // Without signature
+
+            var ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
+            ret.Should().BeOfType<VM.Types.Array>();
+            (ret as VM.Types.Array).Count.Should().Be(0);
+
+            // With signature
+
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "blockAccount",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            // Same account
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "blockAccount",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            // Account B
+
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "blockAccount",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xb400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            // Check
+
+            NativeContract.Policy.IsAnyAccountBlocked(snapshot).Should().BeFalse();
+            NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Zero).Should().BeFalse();
+            NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")).Should().BeTrue();
+            NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt160.Zero).Should().BeTrue();
+            NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Zero, UInt160.Parse("0xb400ff00ff00ff00ff00ff00ff00ff00ff00ff01")).Should().BeTrue();
+            NativeContract.Policy.IsAnyAccountBlocked(snapshot, UInt160.Parse("0xb400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), UInt160.Zero).Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
+            ret.Should().BeOfType<VM.Types.Array>();
+            (ret as VM.Types.Array).Count.Should().Be(2);
+            (ret as VM.Types.Array)[0].GetSpan().ToHexString().Should().Be("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
+            (ret as VM.Types.Array)[1].GetSpan().ToHexString().Should().Be("01ff00ff00ff00ff00ff00ff00ff00ff00ff00b4");
+        }
+
+        [TestMethod]
         public void Check_Block_UnblockAccount()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
