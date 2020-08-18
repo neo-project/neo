@@ -415,6 +415,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestCalculateBonus()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block { Index = 0 };
+
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
 
             // Fault: balance < 0
@@ -567,10 +569,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestEconomicParameter()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block { Index = 0 };
 
             (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
             result.Item2.Should().BeTrue();
             result.Item1.Should().Be(5 * NativeContract.GAS.Factor);
+
+            snapshot.PersistingBlock = new Block { Index = 10 };
+            (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(snapshot, 10 * NativeContract.GAS.Factor);
+            result1.Item2.Should().BeTrue();
+            result1.Item1.GetBoolean().Should().BeTrue();
         }
 
         [TestMethod]
@@ -667,6 +675,31 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
             return (((VM.Types.Integer)result).GetInteger(), true);
+        }
+
+        internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(StoreView snapshot, BigInteger gasPerBlock)
+        {
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(gasPerBlock);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("setGasPerBlock");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (((VM.Types.Boolean)result).GetBoolean(), true);
         }
 
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)

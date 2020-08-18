@@ -134,6 +134,12 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException();
         }
 
+        protected bool CheckCommittees(ApplicationEngine engine)
+        {
+            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
+            return engine.CheckWitnessInternal(committeeMultiSigAddr);
+        }
+
         public ApplicationEngine TestCall(string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())

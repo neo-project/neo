@@ -25,12 +25,6 @@ namespace Neo.SmartContract.Native
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        private bool CheckCommittees(ApplicationEngine engine)
-        {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
-            return engine.CheckWitnessInternal(committeeMultiSigAddr);
-        }
-
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
