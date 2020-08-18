@@ -98,6 +98,9 @@ namespace Neo.SmartContract.Native.Tokens
             base.OnPersist(engine);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
             storage.Value = GetValidators(engine.Snapshot).ToByteArray();
+
+            // Distribute GAS for committee
+            var committee = GetCommittee(engine.Snapshot);
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
