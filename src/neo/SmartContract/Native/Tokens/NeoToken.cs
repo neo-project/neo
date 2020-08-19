@@ -65,15 +65,15 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
-            StorageKey keyLeft = CreateStorageKey(Prefix_GasPerBlock).Add(uint.MaxValue - end);
-            StorageKey keyRight = CreateStorageKey(Prefix_GasPerBlock).Add(uint.MaxValue);
+            StorageKey keyLeft = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(uint.MaxValue - end);
+            StorageKey keyRight = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(uint.MaxValue);
             var enumerator = snapshot.Storages.FindRange(keyLeft, keyRight).GetEnumerator();
             BigInteger sum = 0;
             uint right = end;
             while (enumerator.MoveNext())
             {
                 var gasPerBlock = new BigInteger(enumerator.Current.Value.Value);
-                var index = uint.MaxValue - BitConverter.ToUInt32(enumerator.Current.Key.Key.Skip(1).ToArray()) - 1;
+                var index = uint.MaxValue - BitConverter.ToUInt32(enumerator.Current.Key.Key.Skip(1).Reverse().ToArray()) - 1;
                 if (index <= start)
                 {
                     sum += gasPerBlock * (right - start);
@@ -92,7 +92,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             // Initialize economic parameters
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock).Add(uint.MaxValue - 1), new StorageItem
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(uint.MaxValue - 1), new StorageItem
             {
                 Value = (5 * GAS.Factor).ToByteArray()
             });
@@ -113,7 +113,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor) return false;
             if (!CheckCommittee(engine)) return false;
-            StorageKey key = CreateStorageKey(Prefix_GasPerBlock).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+            StorageKey key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem { Value = BigInteger.Zero.ToByteArray() });
             item.Value = gasPerBlock.ToByteArray();
             return true;
@@ -122,8 +122,8 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
-            StorageKey keyLeft = CreateStorageKey(Prefix_GasPerBlock).Add(uint.MaxValue - snapshot.PersistingBlock.Index - 1);
-            StorageKey keyRight = CreateStorageKey(Prefix_GasPerBlock).Add(uint.MaxValue);
+            StorageKey keyLeft = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(uint.MaxValue - snapshot.PersistingBlock.Index - 1);
+            StorageKey keyRight = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(uint.MaxValue);
             var enumerator = snapshot.Storages.FindRange(keyLeft, keyRight).GetEnumerator();
             enumerator.MoveNext();
             return new BigInteger(enumerator.Current.Value.Value);
