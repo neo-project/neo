@@ -57,14 +57,11 @@ namespace Neo.Network.P2P
 
         private void OnInternalTaskCompleted(UInt256 hash)
         {
-            if (hash != StateRootTaskHash)
-            {
-                if (!sessions.TryGetValue(Sender, out TaskSession session))
-                    return;
-                session.Tasks.Remove(hash);
-                RequestTasks(session);
-            }
+            if (!sessions.TryGetValue(Sender, out TaskSession session))
+                return;
+            if (hash != StateRootTaskHash) session.Tasks.Remove(hash);
             DecrementGlobalTask(hash);
+            RequestTasks(session);
         }
 
         private void OnNewTasks(InvPayload payload)
