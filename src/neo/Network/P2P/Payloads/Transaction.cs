@@ -281,12 +281,12 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, null) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyForEachBlock(StoreView snapshot, TransactionVerificationContext context)
+        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, TransactionVerificationContext context)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(hashes).Any())
+            if (NativeContract.Policy.IsAnyAccountBlocked(snapshot, hashes))
                 return VerifyResult.PolicyFail;
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
@@ -294,24 +294,27 @@ namespace Neo.Network.P2P.Payloads
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
-            if (hashes.Length != Witnesses.Length) return VerifyResult.Invalid;
-            for (int i = 0; i < hashes.Length; i++)
-            {
-                if (Witnesses[i].VerificationScript.Length > 0) continue;
-                if (snapshot.Contracts.TryGet(hashes[i]) is null) return VerifyResult.Invalid;
-            }
+            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent))
+                return VerifyResult.Invalid;
+            return VerifyResult.Succeed;
+        }
+
+        public virtual VerifyResult VerifyStateIndependent()
+        {
+            if (Size > MaxTransactionSize)
+                return VerifyResult.Invalid;
+            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent))
+                return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
         public virtual VerifyResult Verify(StoreView snapshot, TransactionVerificationContext context)
         {
-            VerifyResult result = VerifyForEachBlock(snapshot, context);
+            VerifyResult result = VerifyStateIndependent();
             if (result != VerifyResult.Succeed) return result;
-            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
-            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (net_fee < 0) return VerifyResult.InsufficientFunds;
-            if (!this.VerifyWitnesses(snapshot, net_fee)) return VerifyResult.Invalid;
-            return VerifyResult.Succeed;
+            result = VerifyStateDependent(snapshot, context);
+            return result;
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)

@@ -65,6 +65,25 @@ namespace Neo.SmartContract.Native
                 ?? Array.Empty<UInt160>();
         }
 
+        public bool IsAnyAccountBlocked(StoreView snapshot, params UInt160[] hashes)
+        {
+            if (hashes.Length == 0) return false;
+
+            var blockedList = snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
+                ?.GetSerializableList<UInt160>().ToArray()
+                ?? Array.Empty<UInt160>();
+
+            if (blockedList.Length > 0)
+            {
+                foreach (var acc in hashes)
+                {
+                    if (Array.BinarySearch(blockedList, acc) >= 0) return true;
+                }
+            }
+
+            return false;
+        }
+
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
@@ -113,6 +132,7 @@ namespace Neo.SmartContract.Native
             if (accounts.Contains(account)) return false;
             engine.Snapshot.Storages.GetAndChange(key);
             accounts.Add(account);
+            accounts.Sort();
             return true;
         }
 

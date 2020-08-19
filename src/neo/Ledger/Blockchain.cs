@@ -26,6 +26,7 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
+        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
@@ -58,6 +59,7 @@ namespace Neo.Ledger
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
+        private readonly IActorRef txrouter;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
@@ -110,6 +112,7 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system, IStore store)
         {
             this.system = system;
+            this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
             this.View = new ReadOnlyView(store);
@@ -309,20 +312,15 @@ namespace Neo.Ledger
 
         private void OnInventory(IInventory inventory, bool relay = true)
         {
-            RelayResult rr = new RelayResult
+            VerifyResult result = inventory switch
             {
-                Inventory = inventory,
-                Result = inventory switch
-                {
-                    Block block => OnNewBlock(block),
-                    Transaction transaction => OnNewTransaction(transaction),
-                    _ => OnNewInventory(inventory)
-                }
+                Block block => OnNewBlock(block),
+                Transaction transaction => OnNewTransaction(transaction),
+                _ => OnNewInventory(inventory)
             };
-            if (relay && rr.Result == VerifyResult.Succeed)
+            if (relay && result == VerifyResult.Succeed)
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
-            Sender.Tell(rr);
-            Context.System.EventStream.Publish(rr);
+            SendRelayResult(inventory, result);
         }
 
         private VerifyResult OnNewBlock(Block block)
@@ -367,6 +365,14 @@ namespace Neo.Ledger
             return MemPool.TryAdd(transaction, currentSnapshot);
         }
 
+        private void OnPreverifyCompleted(PreverifyCompleted task)
+        {
+            if (task.Result == VerifyResult.Succeed)
+                OnInventory(task.Transaction, task.Relay);
+            else
+                SendRelayResult(task.Transaction, task.Result);
+        }
+
         protected override void OnReceive(object message)
         {
             switch (message)
@@ -380,20 +386,32 @@ namespace Neo.Ledger
                 case Block block:
                     OnInventory(block, false);
                     break;
+                case Transaction tx:
+                    OnTransaction(tx, true);
+                    break;
                 case Transaction[] transactions:
-                    {
-                        // This message comes from a mempool's revalidation, already relayed
-                        foreach (var tx in transactions) OnInventory(tx, false);
-                        break;
-                    }
+                    // This message comes from a mempool's revalidation, already relayed
+                    foreach (var tx in transactions) OnTransaction(tx, false);
+                    break;
                 case IInventory inventory:
                     OnInventory(inventory);
+                    break;
+                case PreverifyCompleted task:
+                    OnPreverifyCompleted(task);
                     break;
                 case Idle _:
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
             }
+        }
+
+        private void OnTransaction(Transaction tx, bool relay)
+        {
+            if (ContainsTransaction(tx.Hash))
+                SendRelayResult(tx, VerifyResult.AlreadyExists);
+            else
+                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
         }
 
         private void Persist(Block block)
@@ -519,6 +537,17 @@ namespace Neo.Ledger
             {
                 if (snapshot_created) snapshot.Dispose();
             }
+        }
+
+        private void SendRelayResult(IInventory inventory, VerifyResult result)
+        {
+            RelayResult rr = new RelayResult
+            {
+                Inventory = inventory,
+                Result = result
+            };
+            Sender.Tell(rr);
+            Context.System.EventStream.Publish(rr);
         }
 
         private void UpdateCurrentSnapshot()
