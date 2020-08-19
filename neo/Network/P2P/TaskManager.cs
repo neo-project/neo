@@ -289,15 +289,11 @@ namespace Neo.Network.P2P
                 var height = Blockchain.Singleton.Height;
                 if (state_height + 1 < height)
                 {
-                    var state = Blockchain.Singleton.GetStateRoot((uint)(state_height + 1));
-                    if (state is null || state.Flag == StateRootVerifyFlag.Unverified)
-                    {
-                        var start_index = (uint)(state_height + 1);
-                        var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
-                        StateRootSyncTime = DateTime.UtcNow;
-                        IncrementGlobalTask(StateRootTaskHash);
-                        system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
-                    }
+                    var start_index = (uint)(state_height + 1);
+                    var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
+                    StateRootSyncTime = DateTime.UtcNow;
+                    IncrementGlobalTask(StateRootTaskHash);
+                    system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
                 }
             }
         }
