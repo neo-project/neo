@@ -48,6 +48,7 @@ namespace Neo.Network.P2P
         private readonly UInt256 StateRootTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
         private bool HasStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
+        private DateTime StateRootSyncTime;
 
         public TaskManager(NeoSystem system)
         {
@@ -56,11 +57,14 @@ namespace Neo.Network.P2P
 
         private void OnInternalTaskCompleted(UInt256 hash)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
-            session.Tasks.Remove(hash);
+            if (hash != StateRootTaskHash)
+            {
+                if (!sessions.TryGetValue(Sender, out TaskSession session))
+                    return;
+                session.Tasks.Remove(hash);
+                RequestTasks(session);
+            }
             DecrementGlobalTask(hash);
-            RequestTasks(session);
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -212,6 +216,10 @@ namespace Neo.Network.P2P
                         if (session.Tasks.Remove(task.Key))
                             DecrementGlobalTask(task.Key);
                     }
+
+            if (HasStateRootTask && DateTime.UtcNow - StateRootSyncTime > TaskTimeout)
+                DecrementGlobalTask(StateRootTaskHash);
+
             foreach (TaskSession session in sessions.Values)
                 RequestTasks(session);
         }
@@ -286,9 +294,9 @@ namespace Neo.Network.P2P
                     {
                         var start_index = (uint)(state_height + 1);
                         var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
-                        session.Tasks[StateRootTaskHash] = DateTime.UtcNow;
+                        StateRootSyncTime = DateTime.UtcNow;
                         IncrementGlobalTask(StateRootTaskHash);
-                        session.RemoteNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
+                        system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
                     }
                 }
             }
