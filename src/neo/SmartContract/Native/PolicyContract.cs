@@ -87,7 +87,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
-            if (!CheckCommittees(engine)) return false;
+            if (!CheckCommittee(engine)) return false;
             if (Network.P2P.Message.PayloadMaxSize <= value) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
             storage.Set(value);
@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
-            if (!CheckCommittees(engine)) return false;
+            if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -106,7 +106,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetMaxBlockSystemFee(ApplicationEngine engine, long value)
         {
-            if (!CheckCommittees(engine)) return false;
+            if (!CheckCommittee(engine)) return false;
             if (value <= 4007600) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
             storage.Set(value);
@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
-            if (!CheckCommittees(engine)) return false;
+            if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -125,7 +125,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittees(engine)) return false;
+            if (!CheckCommittee(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
             List<UInt160> accounts = storage.GetSerializableList<UInt160>();
@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittees(engine)) return false;
+            if (!CheckCommittee(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage is null) return false;

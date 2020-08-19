@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native.Tokens
         private bool SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor) return false;
-            if (!CheckCommittees(engine)) return false;
+            if (!CheckCommittee(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_GasPerBlock).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key, () => new StorageItem { Value = BigInteger.Zero.ToByteArray() });
             item.Value = gasPerBlock.ToByteArray();
