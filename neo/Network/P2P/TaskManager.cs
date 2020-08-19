@@ -234,6 +234,22 @@ namespace Neo.Network.P2P
                 session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
                 _expiredTimes[session.RemoteNode.Path] = DateTime.UtcNow.AddSeconds(PingCoolingOffPeriod);
             }
+            if (!HasStateRootTask)
+            {
+                var state_height = Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1);
+                var height = Blockchain.Singleton.Height;
+                if (state_height + 1 < height)
+                {
+                    var state = Blockchain.Singleton.GetStateRoot((uint)(state_height + 1));
+                    if (state is null || state.Flag == StateRootVerifyFlag.Unverified)
+                    {
+                        var start_index = (uint)(state_height + 1);
+                        var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
+                        IncrementGlobalTask(StateRootTaskHash);
+                        system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
+                    }
+                }
+            }
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
             {
@@ -274,23 +290,6 @@ namespace Neo.Network.P2P
                     }
                 }
                 session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
-            }
-            if (!HasStateRootTask)
-            {
-                var state_height = Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1);
-                var height = Blockchain.Singleton.Height;
-                if (state_height + 1 < height)
-                {
-                    var state = Blockchain.Singleton.GetStateRoot((uint)(state_height + 1));
-                    if (state is null || state.Flag == StateRootVerifyFlag.Unverified)
-                    {
-                        var start_index = (uint)(state_height + 1);
-                        var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
-                        session.Tasks[StateRootTaskHash] = DateTime.UtcNow;
-                        IncrementGlobalTask(StateRootTaskHash);
-                        session.RemoteNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
-                    }
-                }
             }
         }
     }
