@@ -1,9 +1,7 @@
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
@@ -41,7 +39,10 @@ namespace Neo.SmartContract.Native
 
         unsafe public KeyBuilder AddBigEndian<T>(T key) where T : unmanaged
         {
-            return Add(new ReadOnlySpan<byte>(&key, sizeof(T)).ToArray().Reverse().ToArray());
+            ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(&key, sizeof(T));
+            for (int i = buffer.Length - 1; i >= 0; i--)
+                stream.WriteByte(buffer[i]);
+            return this;
         }
 
         public byte[] ToArray()
