@@ -355,7 +355,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 5); // Gas + new balance
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 4); // Gas + new balance
 
             // Return balance
 

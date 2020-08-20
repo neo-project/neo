@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -65,7 +66,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
-            GasRecord gasRecord = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
+            GasRecord gasRecord = snapshot.Storages[CreateStorageKey(Prefix_GasPerBlock)].GetInteroperable<GasRecord>();
             BigInteger sum = 0;
             uint right = end;
             for (var i = gasRecord.Count - 1; i >= 0; i--)
@@ -92,12 +93,10 @@ namespace Neo.SmartContract.Native.Tokens
         {
             // Initialize economic parameters
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock), new StorageItem(
-                new GasRecord()
-                {
-                    (0, 5 * GAS.Factor)
-                }
-            ));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock), new StorageItem(new GasRecord
+            {
+                (0, 5 * GAS.Factor)
+            }));
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
@@ -116,9 +115,9 @@ namespace Neo.SmartContract.Native.Tokens
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor) return false;
             if (!CheckCommittee(engine)) return false;
             GasRecord gasRecord = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
-            if (gasRecord[gasRecord.Count - 1].Index == engine.Snapshot.PersistingBlock.Index)
+            if (gasRecord[^1].Index == engine.Snapshot.PersistingBlock.Index)
             {
-                gasRecord[gasRecord.Count - 1] = (engine.Snapshot.PersistingBlock.Index, gasPerBlock);
+                gasRecord[^1] = (engine.Snapshot.PersistingBlock.Index, gasPerBlock);
             }
             else
             {
@@ -308,20 +307,16 @@ namespace Neo.SmartContract.Native.Tokens
         {
             public void FromStackItem(StackItem stackItem)
             {
-                VM.Types.Array array = (VM.Types.Array)stackItem;
-                for (var i = 0; i < array.Count; i += 2)
-                    Add(((uint)array[i].GetInteger(), array[i + 1].GetInteger()));
+                foreach (StackItem item in (Array)stackItem)
+                {
+                    Struct @struct = (Struct)item;
+                    Add(((uint)@struct[0].GetInteger(), @struct[1].GetInteger()));
+                }
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                VM.Types.Array array = new VM.Types.Array();
-                foreach (var item in this)
-                {
-                    array.Add(item.Index);
-                    array.Add(item.GasPerBlock);
-                }
-                return array;
+                return new Array(referenceCounter, this.Select(p => new Struct(referenceCounter, new StackItem[] { p.Index, p.GasPerBlock })));
             }
         }
     }

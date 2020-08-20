@@ -70,7 +70,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(3000050000000000);
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 4); // Gas
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 
             // Transfer
 
