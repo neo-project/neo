@@ -109,7 +109,8 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
         private bool SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
-            if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor) return false;
+            if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
+                throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
             if (!CheckCommittee(engine)) return false;
             GasRecord gasRecord = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
             if (gasRecord[^1].Index == engine.Snapshot.PersistingBlock.Index)
