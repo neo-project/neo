@@ -71,18 +71,16 @@ namespace Neo.SmartContract.Native.Tokens
             for (var i = gasRecord.Count - 1; i >= 0; i--)
             {
                 var currentIndex = gasRecord[i].Index;
-                if (currentIndex <= end)
+                if (currentIndex >= end) continue;
+                if (currentIndex > start)
                 {
-                    if (currentIndex > start)
-                    {
-                        sum += gasRecord[i].GasPerBlock * (end - currentIndex);
-                        end = currentIndex;
-                    }
-                    else
-                    {
-                        sum += gasRecord[i].GasPerBlock * (end - start);
-                        break;
-                    }
+                    sum += gasRecord[i].GasPerBlock * (end - currentIndex);
+                    end = currentIndex;
+                }
+                else
+                {
+                    sum += gasRecord[i].GasPerBlock * (end - start);
+                    break;
                 }
             }
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
