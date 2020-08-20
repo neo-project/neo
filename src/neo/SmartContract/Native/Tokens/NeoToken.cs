@@ -125,13 +125,13 @@ namespace Neo.SmartContract.Native.Tokens
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
             var index = snapshot.PersistingBlock.Index;
-            GasRecord gasRecord = snapshot.Storages.TryGet(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
+            GasRecord gasRecord = snapshot.Storages[CreateStorageKey(Prefix_GasPerBlock)].GetInteroperable<GasRecord>();
             for (var i = gasRecord.Count - 1; i >= 0; i--)
             {
                 if (gasRecord[i].Index <= index)
                     return gasRecord[i].GasPerBlock;
             }
-            return 5 * GAS.Factor;
+            throw new InvalidOperationException();
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
