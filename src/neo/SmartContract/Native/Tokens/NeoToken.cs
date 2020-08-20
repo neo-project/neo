@@ -298,7 +298,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        internal class GasRecord : List<(uint Index, BigInteger GasPerBlock)>, IInteroperable
+        private sealed class GasRecord : List<(uint Index, BigInteger GasPerBlock)>, IInteroperable
         {
             public void FromStackItem(StackItem stackItem)
             {
