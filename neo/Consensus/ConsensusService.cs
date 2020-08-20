@@ -263,10 +263,10 @@ namespace Neo.Consensus
                 }
                 return;
             }
-            if (ProtocolSettings.Default.StateRootEnableIndex + 1 < payload.BlockIndex && Blockchain.Singleton.StateHeight < payload.BlockIndex - 2)
+            if (Blockchain.Singleton.ExpectStateRootIndex < payload.BlockIndex - 1)
             {
                 Log($"root sync: expected={payload.BlockIndex - 2} current={Blockchain.Singleton.StateHeight}");
-                localNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create((uint)Blockchain.Singleton.StateHeight + 1, (uint)(payload.BlockIndex - 2 - Blockchain.Singleton.StateHeight))));
+                localNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(Blockchain.Singleton.ExpectStateRootIndex, payload.BlockIndex - Blockchain.Singleton.ExpectStateRootIndex - 1)));
                 return;
             }
             if (payload.ValidatorIndex >= context.Validators.Length) return;
