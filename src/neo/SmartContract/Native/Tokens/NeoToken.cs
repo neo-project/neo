@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native.Tokens
             GasRecord gasRecord = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
             BigInteger sum = 0;
             uint right = end;
-            for(var i = gasRecord.Count - 1; i >= 0; i--)
+            for (var i = gasRecord.Count - 1; i >= 0; i--)
             {
                 var currentIndex = gasRecord[i].Index;
                 if (currentIndex <= right)
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             var index = snapshot.PersistingBlock.Index;
             GasRecord gasRecord = snapshot.Storages.TryGet(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
-            for(var i = gasRecord.Count - 1; i >= 0; i--)
+            for (var i = gasRecord.Count - 1; i >= 0; i--)
             {
                 if (gasRecord[i].Index <= index)
                     return gasRecord[i].GasPerBlock;
@@ -309,14 +309,14 @@ namespace Neo.SmartContract.Native.Tokens
             public void FromStackItem(StackItem stackItem)
             {
                 VM.Types.Array array = (VM.Types.Array)stackItem;
-                for(var i = 0; i < array.Count; i += 2)
+                for (var i = 0; i < array.Count; i += 2)
                     Add(((uint)array[i].GetInteger(), array[i + 1].GetInteger()));
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
                 VM.Types.Array array = new VM.Types.Array();
-                foreach(var item in this)
+                foreach (var item in this)
                 {
                     array.Add(item.Index);
                     array.Add(item.GasPerBlock);
