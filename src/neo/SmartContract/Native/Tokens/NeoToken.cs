@@ -112,15 +112,12 @@ namespace Neo.SmartContract.Native.Tokens
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
             if (!CheckCommittee(engine)) return false;
+            uint index = engine.Snapshot.PersistingBlock.Index + 1;
             GasRecord gasRecord = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
-            if (gasRecord[^1].Index == engine.Snapshot.PersistingBlock.Index)
-            {
-                gasRecord[^1] = (engine.Snapshot.PersistingBlock.Index, gasPerBlock);
-            }
+            if (gasRecord[^1].Index == index)
+                gasRecord[^1] = (index, gasPerBlock);
             else
-            {
-                gasRecord.Add((engine.Snapshot.PersistingBlock.Index, gasPerBlock));
-            }
+                gasRecord.Add((index, gasPerBlock));
             return true;
         }
 
