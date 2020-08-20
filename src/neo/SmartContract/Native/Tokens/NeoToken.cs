@@ -68,20 +68,19 @@ namespace Neo.SmartContract.Native.Tokens
 
             GasRecord gasRecord = snapshot.Storages[CreateStorageKey(Prefix_GasPerBlock)].GetInteroperable<GasRecord>();
             BigInteger sum = 0;
-            uint right = end;
             for (var i = gasRecord.Count - 1; i >= 0; i--)
             {
                 var currentIndex = gasRecord[i].Index;
-                if (currentIndex <= right)
+                if (currentIndex <= end)
                 {
                     if (currentIndex > start)
                     {
-                        sum += gasRecord[i].GasPerBlock * (right - currentIndex);
-                        right = currentIndex;
+                        sum += gasRecord[i].GasPerBlock * (end - currentIndex);
+                        end = currentIndex;
                     }
                     else
                     {
-                        sum += gasRecord[i].GasPerBlock * (right - start);
+                        sum += gasRecord[i].GasPerBlock * (end - start);
                         break;
                     }
                 }
