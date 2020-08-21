@@ -255,7 +255,7 @@ namespace Neo.SmartContract
                     && Peek(0) is ByteString item0
                     && Peek(1) is ByteString item1)
                 {
-                    int times = (int)Math.Ceiling(Math.Min(item0.GetSpan().Length, item1.GetSpan().Length) / 5000.0);
+                    int times = (int)Math.Ceiling((Math.Min(item0.GetSpan().Length, item1.GetSpan().Length) + 1) / 5000.0);
                     AddGas(OpCodePrices[OpCode.EQUAL] * times);
                 }
                 else
