@@ -129,7 +129,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -146,6 +146,14 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
+                WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
+                if (!filter.HasFlag(flag))
+                {
+                    gas -= verifiable.Witnesses[i].GasConsumed;
+                    if (gas < 0) return false;
+                    continue;
+                }
+
                 int offset;
                 ContractMethodDescriptor init = null;
                 byte[] verification = verifiable.Witnesses[i].VerificationScript;
@@ -164,14 +172,16 @@ namespace Neo.SmartContract
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot.Clone(), gas))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
                 {
-                    ExecutionContext context = engine.LoadScript(verification, CallFlags.None, offset);
+                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
+                    ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
                     if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                     gas -= engine.GasConsumed;
+                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
                 }
             }
             return true;
