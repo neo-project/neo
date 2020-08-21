@@ -117,7 +117,7 @@ namespace Neo.SmartContract.Native.Tokens
             // Set next validators
 
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
-            storage.Value = committee.Take(ProtocolSettings.Default.ValidatorsCount).ToArray().ToByteArray();
+            storage.Value = committee[..ProtocolSettings.Default.ValidatorsCount].ToByteArray();
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
