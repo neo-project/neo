@@ -106,11 +106,9 @@ namespace Neo.SmartContract.Native.Tokens
             // Distribute GAS for committee
 
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            var index = engine.Snapshot.PersistingBlock.Index;
             var committee = GetCommittee(engine.Snapshot);
-            var member = committee[index % ProtocolSettings.Default.CommitteeMembersCount];
-            var account = Contract.CreateSignatureContract(member).ScriptHash;
-            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
+            var member = committee[engine.Snapshot.PersistingBlock.Index % ProtocolSettings.Default.CommitteeMembersCount];
+            GAS.Mint(engine, Contract.CreateSignatureContract(member).ScriptHash, gasPerBlock * CommitteeRewardRatio / 100);
 
             // Set next validators
 
