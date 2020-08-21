@@ -106,7 +106,15 @@ namespace Neo.SmartContract.Native.Tokens
             storage.Value = GetValidators(engine.Snapshot).ToByteArray();
 
             // Distribute GAS for committee
+
             var committee = GetCommittee(engine.Snapshot);
+            var gasPerBlock = GetGasPerBlock(engine.Snapshot);
+            var amount = gasPerBlock * CommitteeRewardRatio / 100 / committee.Length;
+            foreach (var member in committee)
+            {
+                var account = Contract.CreateSignatureContract(member).ScriptHash;
+                GAS.Mint(engine, account, amount);
+            }
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
