@@ -113,7 +113,7 @@ namespace Neo.SmartContract.Native.Tokens
                 var account = Contract.CreateSignatureContract(member).ScriptHash;
                 GAS.Mint(engine, account, amount);
             }
-            
+
             // Set next validators
 
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
