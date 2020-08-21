@@ -107,8 +107,9 @@ namespace Neo.SmartContract.Native.Tokens
 
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             var committee = GetCommittee(engine.Snapshot);
-            var member = committee[engine.Snapshot.PersistingBlock.Index % ProtocolSettings.Default.CommitteeMembersCount];
-            GAS.Mint(engine, Contract.CreateSignatureContract(member).ScriptHash, gasPerBlock * CommitteeRewardRatio / 100);
+            var pubkey = committee[engine.Snapshot.PersistingBlock.Index % ProtocolSettings.Default.CommitteeMembersCount];
+            var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
             // Set next validators
 
