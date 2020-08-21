@@ -405,11 +405,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 engine.State.Should().Be(VM.VMState.HALT);
 
                 var committee = NativeContract.NEO.GetCommittee(snapshot);
-                foreach (var member in committee)
-                {
-                    var account = Contract.CreateSignatureContract(member).ScriptHash;
-                    NativeContract.GAS.BalanceOf(snapshot, account.ToArray()).Should().Be(1190476);
-                }
+                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(25000000);
+                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(0);
             }
         }
 
