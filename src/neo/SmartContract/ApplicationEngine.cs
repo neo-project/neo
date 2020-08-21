@@ -248,7 +248,21 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+            {
+                OpCode opcode = CurrentContext.CurrentInstruction.OpCode;
+                if ((opcode is OpCode.EQUAL || opcode is OpCode.NOTEQUAL)
+                    && CurrentContext.EvaluationStack.Count >= 2
+                    && Peek(0) is ByteString item0
+                    && Peek(1) is ByteString item1)
+                {
+                    int times = (int)Math.Ceiling(Math.Min(item0.GetSpan().Length, item1.GetSpan().Length) / 5000.0);
+                    AddGas(OpCodePrices[OpCode.EQUAL] * times);
+                }
+                else
+                {
+                    AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+                }
+            }
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)
