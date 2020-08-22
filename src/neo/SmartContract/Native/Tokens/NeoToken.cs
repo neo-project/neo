@@ -58,16 +58,35 @@ namespace Neo.SmartContract.Native.Tokens
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
-            BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
+            BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);
         }
 
-        private BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
+        private BigInteger CalculateBonus(StoreView snapshot, ECPoint vote, BigInteger value, uint start, uint end)
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
+            BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
+            if (vote is null) return neoHolderReward;
+
+            var keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).Add(uint.MaxValue - end - 1);
+            var keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).Add(uint.MaxValue - start - 1);
+            var enumerator = snapshot.Storages.FindRange(keyStart, keyEnd).GetEnumerator();
+            if (!enumerator.MoveNext()) return neoHolderReward;
+            var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
+            var startRewardPerNeo = BigInteger.Zero;
+            var keyMax = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).Add(uint.MaxValue);
+            enumerator = snapshot.Storages.FindRange(keyEnd, keyMax).GetEnumerator();
+            if (enumerator.MoveNext())
+                startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
+
+            return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 10000L;
+        }
+
+        private BigInteger CalculateNeoHolderReward(StoreView snapshot, BigInteger value, uint start, uint end)
+        {
             GasRecord gasRecord = snapshot.Storages[CreateStorageKey(Prefix_GasPerBlock)].GetInteroperable<GasRecord>();
             BigInteger sum = 0;
             for (var i = gasRecord.Count - 1; i >= 0; i--)
@@ -108,15 +127,32 @@ namespace Neo.SmartContract.Native.Tokens
             // Distribute GAS for committee
 
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            var committee = GetCommitteeMembers(engine.Snapshot).ToArray();
+            var committee = GetCommittee(engine.Snapshot);
             var pubkey = committee[engine.Snapshot.PersistingBlock.Index % ProtocolSettings.Default.CommitteeMembersCount];
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
+            // Record the cumulative GAS of the voters
+
+            var voterRewardPerCommittee = gasPerBlock * VoterRewardRatio / 100 / (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount);
+            (ECPoint, BigInteger)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
+            for (var i = 0; i < committeeVotes.Length; i++)
+            {
+                if (committeeVotes[i].Item2 > 0)
+                {
+                    BigInteger voterRewardPerNEO = (i < ProtocolSettings.Default.ValidatorsCount ? 2 : 1) * voterRewardPerCommittee * 10000L / committeeVotes[i].Item2; // Zoom in 10000 times, and the final calculation should be divided 10000L
+                    var enumerator = engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].Item1).ToArray()).GetEnumerator();
+                    if (enumerator.MoveNext())
+                        voterRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
+                    var storageKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].Item1).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                    engine.Snapshot.Storages.Add(storageKey, new StorageItem() { Value = voterRewardPerNEO.ToByteArray() });
+                }
+            }
+
             // Set next validators
 
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
-            storage.Value = committee[..ProtocolSettings.Default.ValidatorsCount].ToByteArray();
+            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
@@ -153,7 +189,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
+            return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
@@ -249,6 +285,22 @@ namespace Neo.SmartContract.Native.Tokens
         {
             ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+        }
+
+        private (ECPoint PublicKey, BigInteger Votes)[] GetCommitteeVotes(StoreView snapshot)
+        {
+            (ECPoint PublicKey, BigInteger Votes)[] committeeVotes = new (ECPoint PublicKey, BigInteger Votes)[ProtocolSettings.Default.CommitteeMembersCount];
+            var i = 0;
+            foreach (var commiteePubKey in GetCommitteeMembers(snapshot))
+            {
+                var item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(commiteePubKey));
+                if (item is null)
+                    committeeVotes[i] = (commiteePubKey, BigInteger.Zero);
+                else
+                    committeeVotes[i] = (commiteePubKey, item.GetInteroperable<CandidateState>().Votes);
+                i++;
+            }
+            return committeeVotes;
         }
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
