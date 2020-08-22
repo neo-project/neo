@@ -104,8 +104,19 @@ namespace Neo.SmartContract.Native.Tokens
         protected override void OnPersist(ApplicationEngine engine)
         {
             base.OnPersist(engine);
+
+            // Distribute GAS for committee
+
+            var gasPerBlock = GetGasPerBlock(engine.Snapshot);
+            var committee = GetCommitteeMembers(engine.Snapshot).ToArray();
+            var pubkey = committee[engine.Snapshot.PersistingBlock.Index % ProtocolSettings.Default.CommitteeMembersCount];
+            var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
+
+            // Set next validators
+
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
-            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
+            storage.Value = committee[..ProtocolSettings.Default.ValidatorsCount].ToByteArray();
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
