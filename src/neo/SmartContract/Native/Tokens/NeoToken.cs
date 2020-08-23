@@ -78,13 +78,13 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
 
-            var keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).Add(uint.MaxValue - end - 1);
-            var keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).Add(uint.MaxValue - start - 1);
+            var keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - end);
+            var keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - start); 
             var enumerator = snapshot.Storages.FindRange(keyStart, keyEnd).GetEnumerator();
             if (!enumerator.MoveNext()) return neoHolderReward;
             var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
             var startRewardPerNeo = BigInteger.Zero;
-            var keyMax = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).Add(uint.MaxValue);
+            var keyMax = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue);
             enumerator = snapshot.Storages.FindRange(keyEnd, keyMax).GetEnumerator();
             if (enumerator.MoveNext())
                 startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
@@ -152,7 +152,7 @@ namespace Neo.SmartContract.Native.Tokens
                     var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
                     if (enumerator.MoveNext())
                         voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                    var voterRewardKey = voterRewardKeyPrefix.Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                    var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
                     engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
                 }
             }

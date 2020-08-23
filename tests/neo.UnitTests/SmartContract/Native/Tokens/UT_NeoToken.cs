@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Consensus;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -11,6 +12,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -460,6 +462,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             snapshot.Storages.Delete(key);
 
+            // Fault range: start >= end
+
+            snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
+            {
+                Balance = 100,
+                BalanceHeight = 100
+            }));
+            action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            snapshot.Storages.Delete(key);
+
             // Normal 1) votee is non exist
 
             snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
@@ -467,6 +479,27 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 Balance = 100
             }));
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
+            snapshot.Storages.Delete(key);
+
+            // Normal 2) votee is not committee
+
+            snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
+            {
+                Balance = 100,
+                VoteTo = ECCurve.Secp256r1.G
+            }));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
+            snapshot.Storages.Delete(key);
+
+            // Normal 3) votee is committee
+
+            snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
+            {
+                Balance = 100,
+                VoteTo = Blockchain.StandbyCommittee[0]
+            }));
+            snapshot.Storages.Add(new KeyBuilder(-1, 23).Add(Blockchain.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(100 * 100));
             snapshot.Storages.Delete(key);
         }
 
@@ -603,6 +636,82 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
+        public void TestClaimGas()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Initialize block
+
+            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            {
+                ECPoint member = Blockchain.StandbyCommittee[i];
+                var moreVotes = 0;
+                if (i < ProtocolSettings.Default.ValidatorsCount)
+                    moreVotes += 10;
+                snapshot.Storages.Add(new KeyBuilder(-1, 33).Add(member), new StorageItem(new CandidateState()
+                {
+                    Registered = true,
+                    Votes = 100 * 10000 + moreVotes
+                }));
+            }
+            var item = snapshot.Storages.GetAndChange(new KeyBuilder(-1, 1), () => new StorageItem());
+            item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
+
+            snapshot.PersistingBlock = new Block { Index = 0 };
+            Check_OnPersist(snapshot).Should().BeTrue();
+
+            for(var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            {
+                ECPoint member = Blockchain.StandbyCommittee[i];
+                StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(member).AddBigEndian(uint.MaxValue - 1));
+                if (i < ProtocolSettings.Default.ValidatorsCount)
+                    new BigInteger(storageItem.Value).Should().Be(303568);
+                else
+                    new BigInteger(storageItem.Value).Should().Be(151785);
+            }
+
+            // Next block
+
+            snapshot.PersistingBlock = new Block { Index = 1 };
+            Check_OnPersist(snapshot).Should().BeTrue();
+            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            {
+                ECPoint member = Blockchain.StandbyCommittee[i];
+                StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(member).AddBigEndian(uint.MaxValue - 1 - 1));
+                if (i < ProtocolSettings.Default.ValidatorsCount)
+                    new BigInteger(storageItem.Value).Should().Be(303568 * 2);
+                else
+                    new BigInteger(storageItem.Value).Should().Be(151785 * 2);
+            }
+
+            // Next block
+
+            snapshot.PersistingBlock = new Block { Index = 2 };
+            Check_OnPersist(snapshot).Should().BeTrue();
+            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            {
+                ECPoint member = Blockchain.StandbyCommittee[i];
+                StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(member).AddBigEndian(uint.MaxValue - 1 - 2));
+                if (i < ProtocolSettings.Default.ValidatorsCount)
+                    new BigInteger(storageItem.Value).Should().Be(303568 * 3);
+                else
+                    new BigInteger(storageItem.Value).Should().Be(151785 * 3);
+            }
+
+            // Claim GAS
+
+            var account = Contract.CreateSignatureContract(Blockchain.StandbyCommittee[0]).ScriptHash;
+            snapshot.Storages.Add(new KeyBuilder(-1, 20).Add(account), new StorageItem(new NeoAccountState
+            {
+                BalanceHeight = 1,
+                Balance = 100,
+                VoteTo = Blockchain.StandbyCommittee[0]
+            }));
+            BigInteger value = NativeContract.NEO.UnclaimedGas(snapshot, account, 2);
+            value.Should().Be(3085);
+        }
+
+        [TestMethod]
         public void TestUnclaimedGas()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -673,6 +782,24 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var result = engine.ResultStack.Peek();
             result.GetType().Should().Be(typeof(VM.Types.Boolean));
             return (true, result.GetBoolean());
+        }
+
+        internal static bool Check_OnPersist(StoreView snapshot)
+        {
+            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
+            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+            var engine = ApplicationEngine.Create(TriggerType.System,
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("onPersist");
+            engine.LoadScript(script.ToArray());
+
+            return engine.Execute() == VMState.HALT;
         }
 
         internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StoreView snapshot)
