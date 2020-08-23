@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native.Tokens
             (ECPoint PublickKey, BigInteger Votes)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
             for (var i = 0; i < committeeVotes.Length; i++)
             {
-                if (committeeVotes[i].Item2 > 0)
+                if (committeeVotes[i].Votes > 0)
                 {
                     BigInteger voterSumRewardPerNEO = (i < ProtocolSettings.Default.ValidatorsCount ? 2 : 1) * voterRewardPerCommittee * 10000L / committeeVotes[i].Votes; // Zoom in 10000 times, and the final calculation should be divided 10000L
                     var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey);
