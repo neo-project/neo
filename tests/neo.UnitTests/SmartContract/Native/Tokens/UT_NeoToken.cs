@@ -660,7 +660,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.PersistingBlock = new Block { Index = 0 };
             Check_OnPersist(snapshot).Should().BeTrue();
 
-            for(var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 ECPoint member = Blockchain.StandbyCommittee[i];
                 StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(member).AddBigEndian(uint.MaxValue - 1));

@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (vote is null) return neoHolderReward;
 
             var keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - end);
-            var keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - start); 
+            var keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - start);
             var enumerator = snapshot.Storages.FindRange(keyStart, keyEnd).GetEnumerator();
             if (!enumerator.MoveNext()) return neoHolderReward;
             var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
