@@ -139,20 +139,21 @@ namespace Neo.SmartContract.Native.Tokens
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
-            // Record the cumulative GAS of the voters
+            // Record the cumulative reward of the voters of each committee
 
             var voterRewardPerCommittee = gasPerBlock * VoterRewardRatio / 100 / (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount);
-            (ECPoint, BigInteger)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
+            (ECPoint PublickKey, BigInteger Votes)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
             for (var i = 0; i < committeeVotes.Length; i++)
             {
                 if (committeeVotes[i].Item2 > 0)
                 {
-                    BigInteger voterRewardPerNEO = (i < ProtocolSettings.Default.ValidatorsCount ? 2 : 1) * voterRewardPerCommittee * 10000L / committeeVotes[i].Item2; // Zoom in 10000 times, and the final calculation should be divided 10000L
-                    var enumerator = engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].Item1).ToArray()).GetEnumerator();
+                    BigInteger voterSumRewardPerNEO = (i < ProtocolSettings.Default.ValidatorsCount ? 2 : 1) * voterRewardPerCommittee * 10000L / committeeVotes[i].Votes; // Zoom in 10000 times, and the final calculation should be divided 10000L
+                    byte[] voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey).ToArray();
+                    var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix).GetEnumerator();
                     if (enumerator.MoveNext())
-                        voterRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                    var storageKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].Item1).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
-                    engine.Snapshot.Storages.Add(storageKey, new StorageItem() { Value = voterRewardPerNEO.ToByteArray() });
+                        voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
+                    var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                    engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
                 }
             }
 
