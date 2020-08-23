@@ -148,11 +148,11 @@ namespace Neo.SmartContract.Native.Tokens
                 if (committeeVotes[i].Item2 > 0)
                 {
                     BigInteger voterSumRewardPerNEO = (i < ProtocolSettings.Default.ValidatorsCount ? 2 : 1) * voterRewardPerCommittee * 10000L / committeeVotes[i].Votes; // Zoom in 10000 times, and the final calculation should be divided 10000L
-                    byte[] voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey).ToArray();
-                    var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix).GetEnumerator();
+                    var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey);
+                    var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
                     if (enumerator.MoveNext())
                         voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                    var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey).Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                    var voterRewardKey = voterRewardKeyPrefix.Add(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
                     engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
                 }
             }
