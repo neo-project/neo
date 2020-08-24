@@ -172,6 +172,16 @@ namespace Neo.IO.Caching
                         changeSet.Add(key);
                         return true;
                     }
+                    else
+                    {
+                        dictionary[key] = new Trackable
+                        {
+                            Key = key,
+                            Item = data,
+                            State = TrackState.None
+                        };
+                        changeSet.Add(key);
+                    }
                 }
             }
 
