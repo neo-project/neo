@@ -28,7 +28,9 @@ namespace Neo.Ledger
         public class FillCompleted { }
         internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
+        private class UnverifiedBlocks { public LinkedList<Block> Blocks = new LinkedList<Block>(); public int Size; }
 
+        private const int MaxUnverifiedBlockSize = 100 * 1024 * 1024;
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
         public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
@@ -61,7 +63,8 @@ namespace Neo.Ledger
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
-        private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
+        private readonly Dictionary<uint, UnverifiedBlocks> block_cache_unverified = new Dictionary<uint, UnverifiedBlocks>();
+        private int block_cache_unverified_size = 0;
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
@@ -263,22 +266,49 @@ namespace Neo.Ledger
             Sender.Tell(new ImportCompleted());
         }
 
+        private void RemoveUnverifiedBlockToCache(uint index)
+        {
+            if (block_cache_unverified.Remove(index, out var entry))
+            {
+                block_cache_unverified_size -= entry.Size;
+            }
+        }
+
         private void AddUnverifiedBlockToCache(Block block)
         {
+            if (block_cache_unverified_size > MaxUnverifiedBlockSize && block.Index > Height + 10)
+            {
+                // Drop last entry if it's higher
+
+                if (block_cache_unverified.Count > 0)
+                {
+                    var max = block_cache_unverified.Keys.Max();
+                    if (max > Height + 10)
+                    {
+                        RemoveUnverifiedBlockToCache(max);
+                    }
+                }
+
+                // Drop block, we can't save it safely in memory
+                return;
+            }
+
             // Check if any block proposal for height `block.Index` exists
-            if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
+            if (!block_cache_unverified.TryGetValue(block.Index, out var blocks))
             {
                 // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
-                blocks = new LinkedList<Block>();
+                blocks = new UnverifiedBlocks();
                 block_cache_unverified.Add(block.Index, blocks);
             }
             // Check if any block with the hash being added already exists on possible candidates to be processed
-            foreach (var unverifiedBlock in blocks)
+            foreach (var unverifiedBlock in blocks.Blocks)
             {
                 if (block.Hash == unverifiedBlock.Hash)
                     return;
             }
-            blocks.AddLast(block);
+            blocks.Blocks.AddLast(block);
+            blocks.Size += block.Size;
+            block_cache_unverified_size += block.Size;
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -328,16 +358,16 @@ namespace Neo.Ledger
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
                 block_cache.TryAdd(block.Hash, block);
-                block_cache_unverified.Remove(block.Index);
+                RemoveUnverifiedBlockToCache(block.Index);
                 // We can store the new block in block_cache and tell the new height to other nodes before Persist().
                 system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height + 1)));
                 Persist(block);
                 SaveHeaderHashList();
-                if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
+                if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
                 {
-                    foreach (var unverifiedBlock in unverifiedBlocks)
+                    foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    block_cache_unverified.Remove(Height + 1);
+                    RemoveUnverifiedBlockToCache(Height + 1);
                 }
             }
             return VerifyResult.Succeed;
