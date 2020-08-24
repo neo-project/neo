@@ -142,6 +142,42 @@ namespace Neo.IO.Caching
             }
         }
 
+        public bool UpdateIfChanged(TKey key, TValue value)
+        {
+            lock (dictionary)
+            {
+                var data = TryGetInternal(key);
+
+                if (data == null)
+                {
+                    dictionary[key] = new Trackable
+                    {
+                        Key = key,
+                        Item = data,
+                        State = TrackState.Added
+                    };
+                    changeSet.Add(key);
+                    return true;
+                }
+                else
+                {
+                    if (!data.Equals(value))
+                    {
+                        dictionary[key] = new Trackable
+                        {
+                            Key = key,
+                            Item = data,
+                            State = TrackState.Changed
+                        };
+                        changeSet.Add(key);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         protected abstract void DeleteInternal(TKey key);
 
         /// <summary>

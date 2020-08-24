@@ -7,7 +7,7 @@ using System.Numerics;
 
 namespace Neo.Ledger
 {
-    public class StorageItem : ICloneable<StorageItem>, ISerializable
+    public class StorageItem : ICloneable<StorageItem>, ISerializable, IEquatable<StorageItem>
     {
         private byte[] value;
         private object cache;
@@ -110,6 +110,15 @@ namespace Neo.Ledger
         {
             cache = integer;
             value = null;
+        }
+
+        public bool Equals(StorageItem other)
+        {
+            if (other == null) return false;
+
+            return
+                IsConstant == other.IsConstant &&
+                ByteArrayEqualityComparer.Default.Equals(Value, other.Value);
         }
 
         public static implicit operator BigInteger(StorageItem item)
