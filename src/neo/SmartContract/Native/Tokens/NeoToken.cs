@@ -142,17 +142,17 @@ namespace Neo.SmartContract.Native.Tokens
             // Record the cumulative reward of the voters of each committee
 
             var voterRewardPerCommittee = gasPerBlock * VoterRewardRatio / 100 / (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount);
-            (ECPoint PublickKey, BigInteger Votes)[] committeeVotes = GetCommitteeVotes(engine.Snapshot);
+            var committeeVotes = GetCommitteeVotes(engine.Snapshot).ToArray();
             for (var i = 0; i < committeeVotes.Length; i++)
             {
                 if (committeeVotes[i].Votes > 0)
                 {
                     BigInteger voterSumRewardPerNEO = (i < ProtocolSettings.Default.ValidatorsCount ? 2 : 1) * voterRewardPerCommittee * 10000L / committeeVotes[i].Votes; // Zoom in 10000 times, and the final calculation should be divided 10000L
-                    var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey);
+                    var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublicKey);
                     var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
                     if (enumerator.MoveNext())
                         voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                    var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublickKey).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                    var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublicKey).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
                     engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
                 }
             }
@@ -273,15 +273,29 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
+        private CandidateState GetCandidate(StoreView snapshot, ECPoint pubkey)
+        {
+            StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
+            return snapshot.Storages.TryGet(key)?.GetInteroperable<CandidateState>();
+        }
+
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(StoreView snapshot)
+        {
+            return GetCandidatesInternal(snapshot)
+                .Where(p => p.State.Registered)
+                .Select(p => (p.PublicKey, p.State.Votes))
+                .ToArray();
+        }
+
+        private (ECPoint PublicKey, CandidateState State)[] GetCandidatesInternal(StoreView snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
+            )).ToArray();
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
@@ -302,22 +316,6 @@ namespace Neo.SmartContract.Native.Tokens
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private (ECPoint PublicKey, BigInteger Votes)[] GetCommitteeVotes(StoreView snapshot)
-        {
-            (ECPoint PublicKey, BigInteger Votes)[] committeeVotes = new (ECPoint PublicKey, BigInteger Votes)[ProtocolSettings.Default.CommitteeMembersCount];
-            var i = 0;
-            foreach (var commiteePubKey in GetCommitteeMembers(snapshot))
-            {
-                var item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(commiteePubKey));
-                if (item is null)
-                    committeeVotes[i] = (commiteePubKey, BigInteger.Zero);
-                else
-                    committeeVotes[i] = (commiteePubKey, item.GetInteroperable<CandidateState>().Votes);
-                i++;
-            }
-            return committeeVotes;
-        }
-
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
@@ -328,6 +326,24 @@ namespace Neo.SmartContract.Native.Tokens
             if (candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
                 return Blockchain.StandbyCommittee;
             return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
+        }
+
+        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetCommitteeVotes(StoreView snapshot)
+        {
+            decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
+            decimal VoterTurnout = votersCount / (decimal)TotalAmount;
+            if (VoterTurnout < EffectiveVoterTurnout)
+                return Blockchain.StandbyCommittee.Select(p => (p, GetCandidate(snapshot, p)?.Votes ?? BigInteger.Zero));
+            var candidates = GetCandidatesInternal(snapshot).ToDictionary(p => p.PublicKey, p => p.State);
+            if (candidates.Count(p => p.Value.Registered) < ProtocolSettings.Default.CommitteeMembersCount)
+                return Blockchain.StandbyCommittee.Select(p =>
+                {
+                    if (candidates.TryGetValue(p, out CandidateState candidate))
+                        return (p, candidate.Votes);
+                    else
+                        return (p, BigInteger.Zero);
+                });
+            return candidates.OrderByDescending(p => p.Value.Votes).ThenBy(p => p.Key).Select(p => (p.Key, p.Value.Votes)).Take(ProtocolSettings.Default.CommitteeMembersCount);
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
