@@ -28,12 +28,11 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_Candidate = 33;
         private const byte Prefix_NextValidators = 14;
         private const byte Prefix_GasPerBlock = 29;
+        private const byte Prefix_VoterRewardPerCommittee = 23;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 5;
         private const byte VoterRewardRatio = 85;
-
-        private const byte Prefix_VoterRewardPerCommittee = 23;
 
         internal NeoToken()
         {
