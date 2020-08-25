@@ -196,6 +196,9 @@ namespace Neo.Network.P2P
                 case SendDirectly send:
                     OnSendDirectly(send.Inventory);
                     break;
+                case TaskManager.RemoveKnownHashes remove:
+                    OnRemoveKnownHashes(remove);
+                    break;
             }
         }
 
@@ -216,6 +219,7 @@ namespace Neo.Network.P2P
                 SendToRemoteNodes(message);
         }
 
+        private void OnRemoveKnownHashes(TaskManager.RemoveKnownHashes remove) => SendToRemoteNodes(remove);
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
         protected override void OnTcpConnected(IActorRef connection)

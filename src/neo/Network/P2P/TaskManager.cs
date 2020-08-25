@@ -19,6 +19,7 @@ namespace Neo.Network.P2P
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
+        internal class RemoveKnownHashes { public UInt256[] Hashes; }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
@@ -121,10 +122,18 @@ namespace Neo.Network.P2P
             receivedBlockIndex.Remove(block.Index);
         }
 
+        private void OnRemoveKnownHashes(UInt256[] hashes)
+        {
+            knownHashes.ExceptWith(hashes);
+        }
+
         protected override void OnReceive(object message)
         {
             switch (message)
             {
+                case RemoveKnownHashes remove:
+                    OnRemoveKnownHashes(remove.Hashes);
+                    break;
                 case Register register:
                     OnRegister(register.Version);
                     break;

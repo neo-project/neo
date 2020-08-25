@@ -266,11 +266,19 @@ namespace Neo.Ledger
             Sender.Tell(new ImportCompleted());
         }
 
-        private void RemoveUnverifiedBlockToCache(uint index)
+        private void RemoveUnverifiedBlockToCache(uint index, bool removeKnownHashes)
         {
             if (block_cache_unverified.Remove(index, out var entry))
             {
                 block_cache_unverified_size -= entry.Size;
+
+                if (removeKnownHashes)
+                {
+                    var hashes = entry.Blocks.Select(u => u.Hash).ToArray();
+
+                    system.LocalNode.Tell(new TaskManager.RemoveKnownHashes { Hashes = hashes });
+                    system.TaskManager.Tell(new TaskManager.RemoveKnownHashes { Hashes = hashes });
+                }
             }
         }
 
@@ -285,7 +293,7 @@ namespace Neo.Ledger
                     var max = block_cache_unverified.Keys.Max();
                     if (max > Height + 10)
                     {
-                        RemoveUnverifiedBlockToCache(max);
+                        RemoveUnverifiedBlockToCache(max, true);
                     }
                 }
 
@@ -358,7 +366,7 @@ namespace Neo.Ledger
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
                 block_cache.TryAdd(block.Hash, block);
-                RemoveUnverifiedBlockToCache(block.Index);
+                RemoveUnverifiedBlockToCache(block.Index, false);
                 // We can store the new block in block_cache and tell the new height to other nodes before Persist().
                 system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height + 1)));
                 Persist(block);
@@ -367,7 +375,7 @@ namespace Neo.Ledger
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    RemoveUnverifiedBlockToCache(Height + 1);
+                    RemoveUnverifiedBlockToCache(Height + 1, false);
                 }
             }
             return VerifyResult.Succeed;

@@ -37,6 +37,11 @@ namespace Neo.Network.P2P
 
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
+        private void OnRemoveKnownHashes(UInt256[] hashes)
+        {
+            knownHashes.ExceptWith(hashes);
+        }
+
         private void OnMessage(Message msg)
         {
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
