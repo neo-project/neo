@@ -7,6 +7,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -40,6 +41,7 @@ namespace Neo.Network.P2P
 
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
+        private readonly ConcurrentDictionary<ActorPath, DateTime> _expiredTimes = new ConcurrentDictionary<ActorPath, DateTime>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private readonly UInt256 HeaderTaskHash = UInt256.Zero;
@@ -196,6 +198,7 @@ namespace Neo.Network.P2P
             if (!sessions.TryGetValue(actor, out TaskSession session))
                 return;
             sessions.Remove(actor);
+            _expiredTimes.TryRemove(session.RemoteNode.Path, out _);
             foreach (UInt256 hash in session.Tasks.Keys)
                 DecrementGlobalTask(hash);
         }
@@ -226,6 +229,11 @@ namespace Neo.Network.P2P
 
         private void RequestTasks(TaskSession session)
         {
+            if (!_expiredTimes.TryGetValue(session.RemoteNode.Path, out var expireTime) || expireTime < DateTime.UtcNow)
+            {
+                session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
+                _expiredTimes[session.RemoteNode.Path] = DateTime.UtcNow.AddSeconds(PingCoolingOffPeriod);
+            }
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
             {
@@ -267,10 +275,22 @@ namespace Neo.Network.P2P
                 }
                 session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
             }
-            else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestamp() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
+            if (!HasStateRootTask)
             {
-                session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
+                var state_height = Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1);
+                var height = Blockchain.Singleton.Height;
+                if (state_height + 1 < height)
+                {
+                    var state = Blockchain.Singleton.GetStateRoot((uint)(state_height + 1));
+                    if (state is null || state.Flag == StateRootVerifyFlag.Unverified)
+                    {
+                        var start_index = (uint)(state_height + 1);
+                        var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
+                        session.Tasks[StateRootTaskHash] = DateTime.UtcNow;
+                        IncrementGlobalTask(StateRootTaskHash);
+                        session.RemoteNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
+                    }
+                }
             }
             if (!HasStateRootTask)
             {
