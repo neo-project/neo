@@ -4,6 +4,7 @@ using Neo.IO.Data.LevelDB;
 using Neo.Trie.MPT;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.Persistence.LevelDB
 {
@@ -11,59 +12,53 @@ namespace Neo.Persistence.LevelDB
         where TKey : IEquatable<TKey>, ISerializable, new()
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
-        private readonly DB db;
-        private readonly ReadOptions options;
-        private readonly WriteBatch batch;
         private readonly byte prefix;
         private MPTTrie mptTrie;
         private DbTrieStore trieDb;
 
         public DbCacheWithTrie(DB db, ReadOptions options, WriteBatch batch, byte prefix)
         {
-            this.db = db;
-            this.options = options ?? ReadOptions.Default;
-            this.batch = batch;
             this.prefix = prefix;
-            this.trieDb = new DbTrieStore(db, options, batch, Prefixes.DATA_MPT);
-            this.mptTrie = new MPTTrie(trieDb.GetRoot(), trieDb);
+            this.trieDb = new DbTrieStore(db, options, batch, prefix);
+            this.mptTrie = new MPTTrie(trieDb.GetRoot(), trieDb, !ProtocolSettings.Default.FullState);
         }
 
         protected override void AddInternal(TKey key, TValue value)
         {
-            batch?.Put(prefix, key, value);
-            mptTrie.Put(key.ToArray(), value.ToArray());
+            mptTrie?.Put(key.ToArray(), value.ToArray());
         }
 
         public override void DeleteInternal(TKey key)
         {
-            batch?.Delete(prefix, key);
-            mptTrie.TryDelete(key.ToArray());
+            mptTrie?.TryDelete(key.ToArray());
         }
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
         {
-            return db.Find(options, SliceBuilder.Begin(prefix).Add(key_prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(1), v.ToArray().AsSerializable<TValue>()));
+            return mptTrie.Find(key_prefix).Select(p => new KeyValuePair<TKey, TValue>(p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
         }
 
         protected override TValue GetInternal(TKey key)
         {
-            return db.Get<TValue>(options, prefix, key);
+            var exist = mptTrie.TryGet(key.ToArray(), out byte[] value);
+            if (exist) return value.AsSerializable<TValue>();
+            return null;
         }
 
         protected override TValue TryGetInternal(TKey key)
         {
-            return db.TryGet<TValue>(options, prefix, key);
+            return GetInternal(key);
         }
 
         protected override void UpdateInternal(TKey key, TValue value)
         {
-            batch?.Put(prefix, key, value);
-            mptTrie.Put(key.ToArray(), value.ToArray());
+            mptTrie?.Put(key.ToArray(), value.ToArray());
         }
 
         public override void Commit()
         {
             base.Commit();
+            mptTrie.Commit();
             trieDb.PutRoot(mptTrie.GetRoot());
         }
     }

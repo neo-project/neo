@@ -1,6 +1,6 @@
 using Neo.IO.Data.LevelDB;
 using Neo.Trie;
-using Neo.Trie.MPT;
+using static Neo.Helper;
 
 namespace Neo.Persistence.LevelDB
 {
@@ -23,7 +23,7 @@ namespace Neo.Persistence.LevelDB
 
         private byte[] StoreKey(byte[] key)
         {
-            return new byte[] { prefix }.Concat(key);
+            return Concat(new byte[] { prefix }, key);
         }
 
         public byte[] Get(byte[] key)
@@ -35,6 +35,11 @@ namespace Neo.Persistence.LevelDB
         public void Put(byte[] key, byte[] value)
         {
             batch.Put(StoreKey(key), value);
+        }
+
+        public void Delete(byte[] key)
+        {
+            batch.Delete(StoreKey(key));
         }
 
         public UInt256 GetRoot()

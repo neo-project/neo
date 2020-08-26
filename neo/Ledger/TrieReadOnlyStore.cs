@@ -4,7 +4,7 @@ using Neo.Trie;
 
 namespace Neo.Ledger
 {
-    public class TrieReadOnlyStore : IKVReadOnlyStore
+    public class TrieReadOnlyStore : IKVStore
     {
         private readonly Store store;
         private readonly byte prefix;
@@ -27,5 +27,9 @@ namespace Neo.Ledger
             var result = Get(ROOT_KEY);
             return result is null ? UInt256.Zero : new UInt256(result);
         }
+
+        public void Put(byte[] key, byte[] value) { }
+
+        public void Delete(byte[] key) { }
     }
 }

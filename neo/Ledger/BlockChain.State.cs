@@ -31,8 +31,14 @@ namespace Neo.Ledger
 
         public bool GetStateProof(UInt256 root, StorageKey skey, out HashSet<byte[]> proof)
         {
-            var trieReadOnlyDb = new TrieReadOnlyStore(Store, Prefixes.DATA_MPT);
-            var readOnlyTrie = new MPTReadOnlyTrie(root, trieReadOnlyDb);
+            if (!ProtocolSettings.Default.FullState)
+            {
+                if (StateHeight != Height) throw new System.InvalidOperationException("Current state root unverified");
+                var root_state = GetStateRoot(Height);
+                if (root_state.StateRoot.Root != root) throw new System.InvalidOperationException("Not current state root");
+            }
+            var trieReadOnlyDb = new TrieReadOnlyStore(Store, Prefixes.ST_Storage);
+            var readOnlyTrie = new MPTTrie(root, trieReadOnlyDb);
             return readOnlyTrie.GetProof(skey.ToArray(), out proof);
         }
 
@@ -125,7 +131,7 @@ namespace Neo.Ledger
         {
             using (Snapshot snapshot = GetSnapshot())
             {
-                var trieDb = new TrieReadOnlyStore(Store, Prefixes.DATA_MPT);
+                var trieDb = new TrieReadOnlyStore(Store, Prefixes.ST_Storage);
                 var currentRoot = trieDb.GetRoot();
                 var currentIndex = snapshot.Height;
                 var preHash = UInt256.Zero;

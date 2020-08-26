@@ -6,7 +6,6 @@ namespace Neo.Persistence.LevelDB
     {
         public const byte DATA_Block = 0x01;
         public const byte DATA_Transaction = 0x02;
-        public const byte DATA_MPT = 0x03;
 
         public const byte ST_Account = 0x40;
         public const byte ST_Coin = 0x44;

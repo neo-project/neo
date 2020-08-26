@@ -1,10 +1,11 @@
 using Neo.IO;
 using Neo.Cryptography;
 using System.Collections.Generic;
+using static Neo.Helper;
 
 namespace Neo.Trie.MPT
 {
-    public class MPTProofStore : IKVReadOnlyStore
+    public class MPTProofStore : IKVStore
     {
         private Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
 
@@ -12,7 +13,8 @@ namespace Neo.Trie.MPT
         {
             foreach (byte[] data in proof)
             {
-                store.Add(Crypto.Default.Hash256(data), data);
+                var raw = Concat(data, new byte[] { 0 });//Add "Reference=0".
+                store.Add(Crypto.Default.Hash256(data), raw);
             }
         }
 
@@ -21,5 +23,9 @@ namespace Neo.Trie.MPT
             var result = store.TryGetValue(hash, out byte[] value);
             return result ? value : null;
         }
+
+        public void Put(byte[] key, byte[] value) { }
+
+        public void Delete(byte[] key) { }
     }
 }

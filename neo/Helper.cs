@@ -53,6 +53,14 @@ namespace Neo
             throw new Exception();
         }
 
+        public static byte[] Concat(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
+        {
+            byte[] buffer = new byte[a.Length + b.Length];
+            a.CopyTo(buffer);
+            b.CopyTo(buffer.AsSpan(a.Length));
+            return buffer;
+        }
+
         internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
         {
             if (set.Count > other.Count)

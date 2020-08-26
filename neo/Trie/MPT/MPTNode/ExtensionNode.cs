@@ -11,24 +11,28 @@ namespace Neo.Trie.MPT
         public byte[] Key;
         public MPTNode Next;
 
+        protected override NodeType Type => NodeType.ExtensionNode;
+        public override int Size => base.Size + Key.GetVarSize() + (Next.IsEmptyNode ? 1 : 33);
+
         public ExtensionNode()
         {
-            nType = NodeType.ExtensionNode;
+
         }
 
-        public override void EncodeSpecific(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
+            base.Serialize(writer);
             writer.WriteVarBytes(Key);
-            var hashNode = new HashNode(Next.GetHash());
-            hashNode.EncodeSpecific(writer);
+            Next.SerializeAsChild(writer);
         }
 
-        public override void DecodeSpecific(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
             Key = reader.ReadVarBytes(MaxKeyLength);
-            var hashNode = new HashNode();
-            hashNode.DecodeSpecific(reader);
-            Next = hashNode;
+            var hn = new HashNode();
+            hn.Deserialize(reader);
+            Next = hn;
+            References = (uint)reader.ReadVarInt();
         }
 
         public override JObject ToJson()

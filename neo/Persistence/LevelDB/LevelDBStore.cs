@@ -74,7 +74,7 @@ namespace Neo.Persistence.LevelDB
 
         public override DataCache<StorageKey, StorageItem> GetStorages()
         {
-            return new DbCache<StorageKey, StorageItem>(db, null, null, Prefixes.ST_Storage);
+            return new DbCacheWithTrie<StorageKey, StorageItem>(db, null, null, Prefixes.ST_Storage);
         }
 
         public override DataCache<UInt32Wrapper, StateRootState> GetStateRoots()
