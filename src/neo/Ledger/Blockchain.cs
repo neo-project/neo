@@ -284,21 +284,11 @@ namespace Neo.Ledger
 
         private void AddUnverifiedBlockToCache(Block block)
         {
-            if (block_cache_unverified_size > MaxUnverifiedBlockSize && block.Index > Height + 10)
+            while (block_cache_unverified_size > MaxUnverifiedBlockSize && block_cache_unverified.Count > 0)
             {
-                // Drop last entry if it's higher
-
-                if (block_cache_unverified.Count > 0)
-                {
-                    var max = block_cache_unverified.Keys.Max();
-                    if (max > Height + 10)
-                    {
-                        RemoveUnverifiedBlockToCache(max, true);
-                    }
-                }
-
-                // Drop block, we can't save it safely in memory
-                return;
+                // Drop last entry
+                var max = block_cache_unverified.Keys.Max();
+                RemoveUnverifiedBlockToCache(max, true);
             }
 
             // Check if any block proposal for height `block.Index` exists
