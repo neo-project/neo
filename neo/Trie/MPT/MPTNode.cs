@@ -80,13 +80,14 @@ namespace Neo.Trie.MPT
 
             fixed (byte* pointer = data)
             {
-                using UnmanagedMemoryStream stream = new UnmanagedMemoryStream(pointer, data.Length);
-                using BinaryReader reader = new BinaryReader(stream);
-
-                MPTNode n = (MPTNode)reflectionCache.CreateInstance(reader.ReadByte());
-                if (n is null) throw new InvalidOperationException("Invalid mpt node type");
-                n.Deserialize(reader);
-                return n;
+                using (UnmanagedMemoryStream stream = new UnmanagedMemoryStream(pointer, data.Length))
+                using (BinaryReader reader = new BinaryReader(stream))
+                {
+                    MPTNode n = (MPTNode)reflectionCache.CreateInstance(reader.ReadByte());
+                    if (n is null) throw new InvalidOperationException("Invalid mpt node type");
+                    n.Deserialize(reader);
+                    return n;
+                }
             }
         }
 
