@@ -31,7 +31,7 @@ namespace Neo.Trie.MPT
                     {
                         if (hashNode.IsEmptyNode) break;
                         var new_node = Resolve(hashNode);
-                        if (new_node is null) break;
+                        if (new_node is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt getproof"); ;
                         node = new_node;
                         return GetProof(ref node, path, proof);
                     }
