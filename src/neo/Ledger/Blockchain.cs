@@ -266,7 +266,7 @@ namespace Neo.Ledger
             Sender.Tell(new ImportCompleted());
         }
 
-        private void RemoveUnverifiedBlockToCache(uint index, bool removeKnownHashes)
+        private void RemoveUnverifiedBlockFromCache(uint index, bool removeKnownHashes)
         {
             if (block_cache_unverified.Remove(index, out var entry))
             {
@@ -308,7 +308,7 @@ namespace Neo.Ledger
             while (block_cache_unverified_size > MaxUnverifiedBlockSize)
             {
                 // Drop last entry
-                RemoveUnverifiedBlockToCache(block_cache_unverified.Keys.Max(), true);
+                RemoveUnverifiedBlockFromCache(block_cache_unverified.Keys.Max(), true);
             }
         }
 
@@ -359,7 +359,7 @@ namespace Neo.Ledger
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
                 block_cache.TryAdd(block.Hash, block);
-                RemoveUnverifiedBlockToCache(block.Index, false);
+                RemoveUnverifiedBlockFromCache(block.Index, false);
                 // We can store the new block in block_cache and tell the new height to other nodes before Persist().
                 system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height + 1)));
                 Persist(block);
@@ -368,7 +368,7 @@ namespace Neo.Ledger
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    RemoveUnverifiedBlockToCache(Height + 1, false);
+                    RemoveUnverifiedBlockFromCache(Height + 1, false);
                 }
             }
             return VerifyResult.Succeed;
