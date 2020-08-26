@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Akka.Configuration;
+using Akka.IO;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Actors;
@@ -28,7 +29,7 @@ namespace Neo.Ledger
         public class FillCompleted { }
         internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
-        private class UnverifiedBlocks { public LinkedList<Block> Blocks = new LinkedList<Block>(); public int Size; }
+        private class UnverifiedBlocks { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); public int Size; }
 
         private const int MaxUnverifiedBlockSize = 100 * 1024 * 1024;
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
@@ -298,6 +299,13 @@ namespace Neo.Ledger
                 {
                     if (block.Hash == unverifiedBlock.Hash)
                         return;
+                }
+
+                if (!blocks.Nodes.Add(Sender))
+                {
+                    // Same index with different hash
+                    Sender.Tell(Tcp.Abort.Instance);
+                    return;
                 }
             }
 
