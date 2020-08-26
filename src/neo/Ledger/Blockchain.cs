@@ -284,13 +284,6 @@ namespace Neo.Ledger
 
         private void AddUnverifiedBlockToCache(Block block)
         {
-            while (block_cache_unverified_size > MaxUnverifiedBlockSize && block_cache_unverified.Count > 0)
-            {
-                // Drop last entry
-                var max = block_cache_unverified.Keys.Max();
-                RemoveUnverifiedBlockToCache(max, true);
-            }
-
             // Check if any block proposal for height `block.Index` exists
             if (!block_cache_unverified.TryGetValue(block.Index, out var blocks))
             {
@@ -298,15 +291,26 @@ namespace Neo.Ledger
                 blocks = new UnverifiedBlocks();
                 block_cache_unverified.Add(block.Index, blocks);
             }
-            // Check if any block with the hash being added already exists on possible candidates to be processed
-            foreach (var unverifiedBlock in blocks.Blocks)
+            else
             {
-                if (block.Hash == unverifiedBlock.Hash)
-                    return;
+                // Check if any block with the hash being added already exists on possible candidates to be processed
+                foreach (var unverifiedBlock in blocks.Blocks)
+                {
+                    if (block.Hash == unverifiedBlock.Hash)
+                        return;
+                }
             }
+
             blocks.Blocks.AddLast(block);
             blocks.Size += block.Size;
             block_cache_unverified_size += block.Size;
+
+            while (block_cache_unverified_size > MaxUnverifiedBlockSize && block_cache_unverified.Count > 0)
+            {
+                // Drop last entry
+                var max = block_cache_unverified.Keys.Max();
+                RemoveUnverifiedBlockToCache(max, true);
+            }
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
