@@ -7,14 +7,16 @@ namespace Neo.Trie.MPT
 {
     public class HashNode : MPTNode
     {
+        protected override NodeType Type => NodeType.HashNode;
         public UInt256 Hash;
+        public override int Size => base.Size + (this.IsEmptyNode ? 1 : 33);
+
 
         public HashNode()
         {
-            nType = NodeType.HashNode;
         }
 
-        public HashNode(UInt256 hash) : this()
+        public HashNode(UInt256 hash)
         {
             Hash = hash;
         }
@@ -24,16 +26,9 @@ namespace Neo.Trie.MPT
             return Hash;
         }
 
-        public static HashNode EmptyNode()
+        private void SerializeHash(BinaryWriter writer)
         {
-            return new HashNode(null);
-        }
-
-        public bool IsEmptyNode => Hash is null;
-
-        public override void EncodeSpecific(BinaryWriter writer)
-        {
-            if (this.IsEmptyNode)
+            if (IsEmptyNode)
             {
                 writer.WriteVarBytes(Array.Empty<byte>());
                 return;
@@ -41,7 +36,18 @@ namespace Neo.Trie.MPT
             writer.WriteVarBytes(Hash.ToArray());
         }
 
-        public override void DecodeSpecific(BinaryReader reader)
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
+            SerializeHash(writer);
+        }
+
+        public override void SerializeAsChild(BinaryWriter writer)
+        {
+            SerializeHash(writer);
+        }
+
+        public override void Deserialize(BinaryReader reader)
         {
             var len = reader.ReadVarInt();
             if (len == 0)
@@ -56,7 +62,7 @@ namespace Neo.Trie.MPT
         public override JObject ToJson()
         {
             var json = new JObject();
-            if (!this.IsEmptyNode)
+            if (!IsEmptyNode)
             {
                 json["hash"] = Hash.ToString();
             }

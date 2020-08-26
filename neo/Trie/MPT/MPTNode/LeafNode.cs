@@ -6,26 +6,28 @@ namespace Neo.Trie.MPT
 {
     public class LeafNode : MPTNode
     {
-        public const int MaxValueLength = 1024 * 1024;
+        protected override NodeType Type => NodeType.LeafNode;
+        public static readonly int MaxValueLength = 1024 * 1024;
         public byte[] Value;
+        public override int Size => base.Size + Value.GetVarSize();
 
         public LeafNode()
         {
-            nType = NodeType.LeafNode;
+
         }
 
         public LeafNode(byte[] val)
         {
-            nType = NodeType.LeafNode;
             Value = (byte[])val.Clone();
         }
 
-        public override void EncodeSpecific(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
+            base.Serialize(writer);
             writer.WriteVarBytes(Value);
         }
 
-        public override void DecodeSpecific(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
             Value = reader.ReadVarBytes(MaxValueLength);
         }

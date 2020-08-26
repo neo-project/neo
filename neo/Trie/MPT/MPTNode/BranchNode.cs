@@ -1,38 +1,41 @@
+using Neo.IO;
 using Neo.IO.Json;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Trie.MPT
 {
     public class BranchNode : MPTNode
     {
+        protected override NodeType Type => NodeType.BranchNode;
         public const int ChildCount = 17;
         public MPTNode[] Children = new MPTNode[ChildCount];
+        public override int Size => base.Size + Children.Sum(n => n.IsEmptyNode ? 1 : 33);
 
         public BranchNode()
         {
-            nType = NodeType.BranchNode;
             for (int i = 0; i < ChildCount; i++)
             {
-                Children[i] = HashNode.EmptyNode();
+                Children[i] = MPTNode.EmptyNode;
             }
         }
 
-        public override void EncodeSpecific(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
-            for (int i = 0; i < ChildCount; i++)
+            base.Serialize(writer);
+            foreach (var child in Children)
             {
-                var hashNode = new HashNode(Children[i].GetHash());
-                hashNode.EncodeSpecific(writer);
+                child.SerializeAsChild(writer);
             }
         }
 
-        public override void DecodeSpecific(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
             for (int i = 0; i < ChildCount; i++)
             {
-                var hashNode = new HashNode();
-                hashNode.DecodeSpecific(reader);
-                Children[i] = hashNode;
+                var hn = new HashNode();
+                hn.Deserialize(reader);
+                Children[i] = hn;
             }
         }
 

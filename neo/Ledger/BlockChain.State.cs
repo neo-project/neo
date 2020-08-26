@@ -32,7 +32,7 @@ namespace Neo.Ledger
         public bool GetStateProof(UInt256 root, StorageKey skey, out HashSet<byte[]> proof)
         {
             var trieReadOnlyDb = new TrieReadOnlyStore(Store, Prefixes.DATA_MPT);
-            var readOnlyTrie = new MPTReadOnlyTrie(root, trieReadOnlyDb);
+            var readOnlyTrie = new MPTTrie(root, trieReadOnlyDb);
             return readOnlyTrie.GetProof(skey.ToArray(), out proof);
         }
 

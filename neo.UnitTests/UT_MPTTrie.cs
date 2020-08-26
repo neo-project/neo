@@ -11,7 +11,7 @@ namespace Neo.UnitTests.Trie.MPT
 {
     class MemoryStore : IKVStore
     {
-        private Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+        public Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
 
         public void Put(byte[] key, byte[] value)
         {
@@ -29,6 +29,8 @@ namespace Neo.UnitTests.Trie.MPT
             if (result) return value;
             return Array.Empty<byte>();
         }
+
+        public int Size => store.Count;
     }
 
     [TestClass]
@@ -199,16 +201,11 @@ namespace Neo.UnitTests.Trie.MPT
         {
             var store = new MemoryStore();
             var mpt = new MPTTrie(null, store);
-            var result = mpt.Put("ac11".HexToBytes(), "ac11".HexToBytes());
-            Assert.IsTrue(result);
-            result = mpt.Put("ac22".HexToBytes(), "ac22".HexToBytes());
-            Assert.IsTrue(result);
-            result = mpt.Put("ac".HexToBytes(), "ac".HexToBytes());
-            Assert.IsTrue(result);
-            result = mpt.TryDelete("ac11".HexToBytes());
-            Assert.IsTrue(result);
-            result = mpt.TryDelete("ac22".HexToBytes());
-            Assert.IsTrue(result);
+            Assert.IsTrue(mpt.Put("ac11".HexToBytes(), "ac11".HexToBytes()));
+            Assert.IsTrue(mpt.Put("ac22".HexToBytes(), "ac22".HexToBytes()));
+            Assert.IsTrue(mpt.Put("ac".HexToBytes(), "ac".HexToBytes()));
+            Assert.IsTrue(mpt.TryDelete("ac11".HexToBytes()));
+            Assert.IsTrue(mpt.TryDelete("ac22".HexToBytes()));
             Assert.AreEqual("{\"key\":\"0a0c\",\"next\":{\"value\":\"ac\"}}", mpt.ToJson().ToString());
         }
 
@@ -247,10 +244,10 @@ namespace Neo.UnitTests.Trie.MPT
             var result = mpt.GetProof("ac01".HexToBytes(), out HashSet<byte[]> proof);
             Assert.IsTrue(result);
             Assert.AreEqual(4, proof.Count);
-            Assert.IsTrue(proof.Contains(b.Encode()));
-            Assert.IsTrue(proof.Contains(r.Encode()));
-            Assert.IsTrue(proof.Contains(l1.Encode()));
-            Assert.IsTrue(proof.Contains(v1.Encode()));
+            Assert.IsTrue(proof.Contains(b.ToArray()));
+            Assert.IsTrue(proof.Contains(r.ToArray()));
+            Assert.IsTrue(proof.Contains(l1.ToArray()));
+            Assert.IsTrue(proof.Contains(v1.ToArray()));
         }
 
         [TestMethod]
@@ -277,18 +274,71 @@ namespace Neo.UnitTests.Trie.MPT
         [TestMethod]
         public void TestSplitKey()
         {
-            var store = new MemoryStore();
-            var mpt1 = new MPTTrie(null, store);
+            var store1 = new MemoryStore();
+            var mpt1 = new MPTTrie(null, store1);
             Assert.IsTrue(mpt1.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt1.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
             Assert.IsTrue(mpt1.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set1));
             Assert.AreEqual(4, set1.Count);
-            var mpt2 = new MPTTrie(null, store);
+            var mpt2 = new MPTTrie(null, store1);
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x02 }));
             Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
             Assert.IsTrue(mpt2.GetProof(new byte[] { 0xab, 0xcd }, out HashSet<byte[]> set2));
             Assert.AreEqual(4, set2.Count);
             Assert.AreEqual(mpt1.GetRoot(), mpt2.GetRoot());
+
+            var store2 = new MemoryStore();
+            var mpt3 = new MPTTrie(null, store2);
+            Assert.IsTrue(mpt3.Put(new byte[] { 0xab, 0xcd }, new byte[] { 0x01 }));
+            Assert.IsTrue(mpt3.Put(new byte[] { 0xab, 0xef }, new byte[] { 0x02 }));
+            Assert.IsTrue(mpt3.TryGet(new byte[] { 0xab, 0xcd }, out byte[] value));
+            Assert.IsTrue(mpt3.TryGet(new byte[] { 0xab, 0xef }, out value));
+
+            var store3 = new MemoryStore();
+            var mpt4 = new MPTTrie(null, store3);
+            Assert.IsTrue(mpt4.Put(new byte[] { 0xcd, 0xcd }, new byte[] { 0x01 }));
+            Assert.IsTrue(mpt4.Put(new byte[] { 0xab, 0xef }, new byte[] { 0x02 }));
+            Assert.IsTrue(mpt4.TryGet(new byte[] { 0xcd, 0xcd }, out value));
+            Assert.IsTrue(mpt4.TryGet(new byte[] { 0xab, 0xef }, out value));
+        }
+
+        [TestMethod]
+        public void TestFind()
+        {
+            var store = new MemoryStore();
+            var mpt1 = new MPTTrie(null, store);
+            var results = mpt1.Find(new byte[] { }).ToArray();
+            Assert.AreEqual(0, results.Count());
+            var mpt2 = new MPTTrie(null, store);
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xef }, new byte[] { 0x01 }));
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab, 0xcd, 0xe1 }, new byte[] { 0x02 }));
+            Assert.IsTrue(mpt2.Put(new byte[] { 0xab }, new byte[] { 0x03 }));
+            results = mpt2.Find(new byte[] { }).ToArray();
+            Assert.AreEqual(3, results.Count());
+            results = mpt2.Find(new byte[] { 0xab }).ToArray();
+            Assert.AreEqual(3, results.Count());
+            results = mpt2.Find(new byte[] { 0xab, 0xcd }).ToArray();
+            Assert.AreEqual(2, results.Count());
+            results = mpt2.Find(new byte[] { 0xac }).ToArray();
+            Assert.AreEqual(0, results.Count());
+            var root = mpt2.GetRoot();
+
+            var mpt3 = new MPTTrie(root, store);
+            results = mpt3.Find(new byte[] { }).ToArray();
+            Assert.AreEqual(3, results.Count());
+        }
+
+        [TestMethod]
+        public void TestFindLeadNode()
+        {
+            var mpt = new MPTTrie(rootHash, mptdb);
+            var prefix = new byte[] { 0xac }; // =  FromNibbles(path = { 0x0a, 0x0c, 0x00, 0x01 });
+            var results = mpt.Find(prefix).ToArray();
+            Assert.AreEqual(3, results.Count());
+
+            prefix = new byte[] { 0xac }; // =  FromNibbles(path = { 0x0a, 0x0c });
+            results = mpt.Find(prefix).ToArray();
+            Assert.AreEqual(3, results.Count());
         }
     }
 }

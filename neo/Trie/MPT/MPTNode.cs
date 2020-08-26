@@ -1,19 +1,26 @@
 using Neo.Cryptography;
+using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
+using System;
 using System.IO;
 using System.Text;
 
 namespace Neo.Trie.MPT
 {
-    public abstract class MPTNode
+    public abstract class MPTNode : ISerializable
     {
-        private UInt256 hash;
+        private static ReflectionCache<byte> reflectionCache = ReflectionCache<byte>.CreateFromEnum<NodeType>();
+        public static HashNode EmptyNode { get; } = new HashNode(null);
         public bool Dirty { get; private set; }
-        protected NodeType nType;
+        protected abstract NodeType Type { get; }
+        private UInt256 hash;
+        public virtual int Size => sizeof(NodeType);
+        public bool IsEmptyNode => this is HashNode hn && hn.Hash is null;
 
         protected virtual UInt256 GenHash()
         {
-            return new UInt256(Crypto.Default.Hash256(this.Encode()));
+            return new UInt256(Crypto.Default.Hash256(this.ToArray()));
         }
 
         public virtual UInt256 GetHash()
@@ -34,55 +41,35 @@ namespace Neo.Trie.MPT
             Dirty = true;
         }
 
-        public byte[] Encode()
+        public virtual void Serialize(BinaryWriter writer)
         {
-            using (BinaryWriter writer = new BinaryWriter(new MemoryStream(), Encoding.UTF8, false))
-            {
-                writer.Write((byte)nType);
-                EncodeSpecific(writer);
-                writer.Flush();
-                return ((MemoryStream)writer.BaseStream).ToArray();
-            }
+            writer.Write((byte)Type);
         }
 
-        public abstract void EncodeSpecific(BinaryWriter writer);
-
-        public static MPTNode Decode(byte[] data)
+        public virtual void SerializeAsChild(BinaryWriter writer)
         {
-            if (data is null || data.Length == 0)
-                return null;
+            var hn = new HashNode(GetHash());
+            hn.SerializeAsChild(writer);
+        }
 
-            MPTNode node;
-            using (BinaryReader reader = new BinaryReader(new MemoryStream(data, false), Encoding.UTF8))
+        public abstract void Deserialize(BinaryReader reader);
+
+        public static unsafe MPTNode DeserializeFromByteArray(byte[] data)
+        {
+            if (data is null || data.Length < 1) return null;
+
+            fixed (byte* pointer = data)
             {
-                var nodeType = (NodeType)reader.ReadByte();
-                switch (nodeType)
+                using (UnmanagedMemoryStream stream = new UnmanagedMemoryStream(pointer, data.Length))
+                using (BinaryReader reader = new BinaryReader(stream))
                 {
-                    case NodeType.BranchNode:
-                        {
-                            node = new BranchNode();
-                            break;
-                        }
-                    case NodeType.ExtensionNode:
-                        {
-                            node = new ExtensionNode();
-                            break;
-                        }
-                    case NodeType.LeafNode:
-                        {
-                            node = new LeafNode();
-                            break;
-                        }
-                    default:
-                        throw new System.InvalidOperationException();
+                    MPTNode n = (MPTNode)reflectionCache.CreateInstance(reader.ReadByte());
+                    if (n is null) throw new InvalidOperationException("Invalid mpt node type");
+                    n.Deserialize(reader);
+                    return n;
                 }
-
-                node.DecodeSpecific(reader);
             }
-            return node;
         }
-
-        public abstract void DecodeSpecific(BinaryReader reader);
 
         public abstract JObject ToJson();
     }
