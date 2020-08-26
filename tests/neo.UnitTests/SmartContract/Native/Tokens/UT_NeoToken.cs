@@ -404,7 +404,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 engine.Execute();
                 engine.State.Should().Be(VM.VMState.HALT);
 
-                var committee = Blockchain.StandbyCommittee;
+                var committee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
                 NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(25000000);
                 NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(0);
             }
