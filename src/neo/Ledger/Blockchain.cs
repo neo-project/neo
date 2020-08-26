@@ -305,11 +305,10 @@ namespace Neo.Ledger
             blocks.Size += block.Size;
             block_cache_unverified_size += block.Size;
 
-            while (block_cache_unverified_size > MaxUnverifiedBlockSize && block_cache_unverified.Count > 0)
+            while (block_cache_unverified_size > MaxUnverifiedBlockSize)
             {
                 // Drop last entry
-                var max = block_cache_unverified.Keys.Max();
-                RemoveUnverifiedBlockToCache(max, true);
+                RemoveUnverifiedBlockToCache(block_cache_unverified.Keys.Max(), true);
             }
         }
 
