@@ -77,13 +77,13 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
 
-            var keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - end);
-            var keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - start);
-            var enumerator = snapshot.Storages.FindRange(keyStart, keyEnd).GetEnumerator();
+            StorageKey keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - end);
+            StorageKey keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - start);
+            IEnumerator<(StorageKey Key, StorageItem Value)> enumerator = snapshot.Storages.FindRange(keyStart, keyEnd).GetEnumerator();
             if (!enumerator.MoveNext()) return neoHolderReward;
             var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
             var startRewardPerNeo = BigInteger.Zero;
-            var keyMax = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue);
+            StorageKey keyMax = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue);
             enumerator = snapshot.Storages.FindRange(keyEnd, keyMax).GetEnumerator();
             if (enumerator.MoveNext())
                 startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
