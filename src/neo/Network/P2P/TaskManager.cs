@@ -163,10 +163,13 @@ namespace Neo.Network.P2P
                     OnPersistCompleted(pc.Block);
                     break;
                 case Blockchain.RelayResult rr:
-                    if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
-                        OnInvalidBlock(invalidBlock);
-                    else if (rr.Inventory is Block validBlock && rr.Result == VerifyResult.Succeed)
-                        OnValidBlock(validBlock);
+                    if (rr.Inventory is Block b)
+                    {
+                        if (rr.Result == VerifyResult.Invalid)
+                            OnInvalidBlock(b);
+                        else if (rr.Result == VerifyResult.Succeed)
+                            OnValidBlock(b);
+                    }
                     break;
                 case Timer _:
                     OnTimer();
