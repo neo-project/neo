@@ -98,12 +98,6 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnValidBlock(Block validBlock)
-        {
-            if (receivedBlockIndex.TryGetValue(validBlock.Index, out TaskSession session) && session.MaxTaskCountPerNode < 50)
-                session.MaxTaskCountPerNode++;
-        }
-
         private void OnNewTasks(InvPayload payload)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
@@ -161,8 +155,6 @@ namespace Neo.Network.P2P
                 case Blockchain.RelayResult rr:
                     if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
                         OnInvalidBlock(invalidBlock);
-                    else if (rr.Inventory is Block validBlock && rr.Result == VerifyResult.Succeed)
-                        OnValidBlock(validBlock);
                     break;
                 case Timer _:
                     OnTimer();

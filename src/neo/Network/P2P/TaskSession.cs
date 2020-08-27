@@ -13,7 +13,6 @@ namespace Neo.Network.P2P
 
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
-        public int MaxTaskCountPerNode = 1;
         public uint TimeoutTimes = 0;
         public DateTime ExpireTime = DateTime.MinValue;
         public double RTT = 100.0;
