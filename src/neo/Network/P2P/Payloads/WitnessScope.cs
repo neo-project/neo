@@ -6,9 +6,9 @@ namespace Neo.Network.P2P.Payloads
     public enum WitnessScope : byte
     {
         /// <summary>
-        /// It's only valid for be a sender, it can't be used during the execution
+        /// No contract was witnessed. Only sign the transaction.
         /// </summary>
-        FeeOnly = 0,
+        None = 0,
 
         /// <summary>
         /// CalledByEntry means that this condition must hold: EntryScriptHash == CallingScriptHash

@@ -58,13 +58,27 @@ namespace Neo.UnitTests.Ledger
             int sizeFixed = 51;
             int netFeeSatoshiFixed = 1;
 
+            var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
+            var tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
+
+            tx1.Attributes = new TransactionAttribute[] { new HighPriorityAttribute() };
+
+            PoolItem pitem1 = new PoolItem(tx1);
+            PoolItem pitem2 = new PoolItem(tx2);
+
+            // Different priority
+            pitem2.CompareTo(pitem1).Should().Be(-1);
+
+            // Bulk test
             for (int testRuns = 0; testRuns < 30; testRuns++)
             {
-                var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
-                var tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
+                tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
+                tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
 
-                PoolItem pitem1 = new PoolItem(tx1);
-                PoolItem pitem2 = new PoolItem(tx2);
+                pitem1 = new PoolItem(tx1);
+                pitem2 = new PoolItem(tx2);
+
+                pitem2.CompareTo((Transaction)null).Should().Be(1);
 
                 // pitem2.tx.Hash < pitem1.tx.Hash => 1 descending order
                 pitem2.CompareTo(pitem1).Should().Be(1);
@@ -87,6 +101,7 @@ namespace Neo.UnitTests.Ledger
             // pitem1 == pitem2 (fee) => 0
             pitem1.CompareTo(pitem2).Should().Be(0);
             pitem2.CompareTo(pitem1).Should().Be(0);
+            pitem2.CompareTo((PoolItem)null).Should().Be(1);
         }
 
         public Transaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, long networkFee, int size)

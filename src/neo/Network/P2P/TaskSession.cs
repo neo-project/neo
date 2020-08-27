@@ -15,6 +15,7 @@ namespace Neo.Network.P2P
         public uint LastBlockIndex { get; set; }
         public int MaxTaskCountPerNode = 1;
         public uint TimeoutTimes = 0;
+        public DateTime ExpireTime = DateTime.MinValue;
         public double RTT = 100.0;
         public double Weight = 1000.0;
 
@@ -31,8 +32,8 @@ namespace Neo.Network.P2P
         public TaskSession(VersionPayload version)
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
-            IsFullNode = fullNode != null;
-            LastBlockIndex = fullNode.StartHeight;
+            this.IsFullNode = fullNode != null;
+            this.LastBlockIndex = fullNode?.StartHeight ?? 0;
         }
     }
 }

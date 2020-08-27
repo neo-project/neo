@@ -21,7 +21,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", nameof(CurrentScriptHash), 0_00000400, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", nameof(CallingScriptHash), 0_00000400, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", nameof(EntryScriptHash), 0_00000400, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 0_00030000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 0_00030000, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", nameof(GetInvocationCounter), 0_00000400, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 0_01000000, CallFlags.AllowNotify, false);
         public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 0_01000000, CallFlags.AllowNotify, false);
@@ -74,22 +74,22 @@ namespace Neo.SmartContract
             }
         }
 
-        internal string GetPlatform()
+        protected internal string GetPlatform()
         {
             return "NEO";
         }
 
-        internal ulong GetTime()
+        protected internal ulong GetTime()
         {
             return Snapshot.PersistingBlock.Timestamp;
         }
 
-        internal IInteroperable GetScriptContainer()
+        protected internal IInteroperable GetScriptContainer()
         {
             return ScriptContainer as IInteroperable;
         }
 
-        internal bool CheckWitness(byte[] hashOrPubkey)
+        protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
             UInt160 hash = hashOrPubkey.Length switch
             {
@@ -100,7 +100,7 @@ namespace Neo.SmartContract
             return CheckWitnessInternal(hash);
         }
 
-        internal bool CheckWitnessInternal(UInt160 hash)
+        protected internal bool CheckWitnessInternal(UInt160 hash)
         {
             if (ScriptContainer is Transaction tx)
             {
@@ -109,7 +109,7 @@ namespace Neo.SmartContract
                 if (signer.Scopes == WitnessScope.Global) return true;
                 if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
                 {
-                    if (CallingScriptHash == EntryScriptHash)
+                    if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash)
                         return true;
                 }
                 if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
@@ -119,6 +119,11 @@ namespace Neo.SmartContract
                 }
                 if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
+                    // Check allow state callflag
+
+                    if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.AllowStates))
+                        throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
+
                     var contract = Snapshot.Contracts[CallingScriptHash];
                     // check if current group is the required one
                     if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
@@ -127,34 +132,39 @@ namespace Neo.SmartContract
                 return false;
             }
 
+            // Check allow state callflag
+
+            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.AllowStates))
+                throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
+
             // only for non-Transaction types (Block, etc)
 
             var hashes_for_verifying = ScriptContainer.GetScriptHashesForVerifying(Snapshot);
             return hashes_for_verifying.Contains(hash);
         }
 
-        internal int GetInvocationCounter()
+        protected internal int GetInvocationCounter()
         {
             if (!invocationCounter.TryGetValue(CurrentScriptHash, out var counter))
                 throw new InvalidOperationException();
             return counter;
         }
 
-        internal void RuntimeLog(byte[] state)
+        protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize) throw new ArgumentException();
             string message = Utility.StrictUTF8.GetString(state);
             Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
         }
 
-        internal void RuntimeNotify(byte[] eventName, Array state)
+        protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException();
             if (!CheckItemForNotification(state)) throw new ArgumentException();
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
-        internal void SendNotification(UInt160 hash, string eventName, Array state)
+        protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
             Notify?.Invoke(this, notification);
@@ -162,7 +172,7 @@ namespace Neo.SmartContract
             notifications.Add(notification);
         }
 
-        internal NotifyEventArgs[] GetNotifications(UInt160 hash)
+        protected internal NotifyEventArgs[] GetNotifications(UInt160 hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
