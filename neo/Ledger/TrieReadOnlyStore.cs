@@ -28,8 +28,14 @@ namespace Neo.Ledger
             return result is null ? UInt256.Zero : new UInt256(result);
         }
 
-        public void Put(byte[] key, byte[] value) { }
+        public void Put(byte[] key, byte[] value)
+        {
+            throw new System.NotImplementedException(nameof(TrieReadOnlyStore));
+        }
 
-        public void Delete(byte[] key) { }
+        public void Delete(byte[] key)
+        {
+            throw new System.NotImplementedException(nameof(TrieReadOnlyStore));
+        }
     }
 }

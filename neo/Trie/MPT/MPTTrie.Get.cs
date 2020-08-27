@@ -19,7 +19,7 @@ namespace Neo.Trie.MPT
                     {
                         if (path.IsEmpty)
                         {
-                            value = (byte[])leafNode.Value.Clone();
+                            value = leafNode.Value;
                             return true;
                         }
                         break;

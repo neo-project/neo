@@ -55,6 +55,8 @@ namespace Neo
 
         public static byte[] Concat(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
+            if (a.Length == 0) return b.ToArray();
+            if (b.Length == 0) return a.ToArray();
             byte[] buffer = new byte[a.Length + b.Length];
             a.CopyTo(buffer);
             b.CopyTo(buffer.AsSpan(a.Length));

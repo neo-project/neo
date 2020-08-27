@@ -1,7 +1,6 @@
 using Neo.IO;
 using Neo.Cryptography;
 using System.Collections.Generic;
-using static Neo.Helper;
 
 namespace Neo.Trie.MPT
 {
@@ -23,8 +22,14 @@ namespace Neo.Trie.MPT
             return result ? value : null;
         }
 
-        public void Put(byte[] key, byte[] value) { }
+        public void Put(byte[] key, byte[] value)
+        {
+            throw new System.NotImplementedException(nameof(MPTProofStore));
+        }
 
-        public void Delete(byte[] key) { }
+        public void Delete(byte[] key)
+        {
+            throw new System.NotImplementedException(nameof(MPTProofStore));
+        }
     }
 }
