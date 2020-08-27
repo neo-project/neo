@@ -94,9 +94,9 @@ namespace Neo.Network.P2P
         private void AddToBlacklist(IPEndPoint endPoint)
         {
             if (IPAddressBlacklist.ContainsKey(endPoint))
-                IPAddressBlacklist[endPoint] = DateTime.Now;
+                IPAddressBlacklist[endPoint] = TimeProvider.Current.UtcNow;
             else
-                IPAddressBlacklist.TryAdd(endPoint, DateTime.Now);
+                IPAddressBlacklist.TryAdd(endPoint, TimeProvider.Current.UtcNow);
         }
 
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
