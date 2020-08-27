@@ -146,8 +146,12 @@ namespace Neo.Network.P2P
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
                     break;
+                case Block block:
+                    OnBlock(block);
+                    OnTaskCompleted(block.Hash);
+                    break;
                 case IInventory inventory:
-                    OnTaskCompleted(inventory);
+                    OnTaskCompleted(inventory.Hash);
                     break;
                 case Blockchain.PersistCompleted pc:
                     OnPersistCompleted(pc.Block);
@@ -193,11 +197,8 @@ namespace Neo.Network.P2P
                 system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
         }
 
-        private void OnTaskCompleted(IInventory inventory)
+        private void OnTaskCompleted(UInt256 hash)
         {
-            if (inventory is Block block)
-                OnBlock(block);
-            var hash = inventory.Hash;
             knownHashes.Add(hash);
             globalTasks.Remove(hash);
             if (sessions.TryGetValue(Sender, out TaskSession session))
