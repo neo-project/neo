@@ -29,6 +29,7 @@ namespace Neo.Network.P2P
         private readonly PendingKnownHashesCollection pendingKnownHashes = new PendingKnownHashesCollection();
         private readonly HashSetCache<UInt256> knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
         private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+        private readonly HashSet<uint> receivedBlcokIndex = new HashSet<uint>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
         private bool verack = false;
         private BloomFilter bloom_filter;
 
@@ -270,7 +271,7 @@ namespace Neo.Network.P2P
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
             uint index = payload.IndexStart;
-            uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
+            uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : Math.Min((uint)payload.Count, HeadersPayload.MaxHeadersCount);
             if (index > Blockchain.Singleton.HeaderHeight)
                 return;
             List<Header> headers = new List<Header>();
@@ -286,6 +287,12 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
+            if (inventory is Block block)
+            {
+                if (receivedBlcokIndex.Contains(block.Index)) return;
+                receivedBlcokIndex.Add(block.Index);
+            }
+
             system.TaskManager.Tell(inventory);
             if (inventory is Transaction transaction)
                 system.Consensus?.Tell(transaction);
@@ -372,6 +379,13 @@ namespace Neo.Network.P2P
                 if (DateTime.UtcNow - time <= PendingTimeout)
                     break;
                 pendingKnownHashes.RemoveAt(0);
+            }
+
+            var height = Blockchain.Singleton.Height;
+            foreach (var item in receivedBlcokIndex.ToArray())
+            {
+                if (item <= height)
+                    receivedBlcokIndex.Remove(item);
             }
         }
 

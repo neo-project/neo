@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
 
         public void UpdateWeight()
         {
-            Weight = RTT * (1.0 / Math.Pow(2, TimeoutTimes)) * ((double)(MaxTaskCountPerNode + 1 - IndexTasks.Count) / (MaxTaskCountPerNode + 1));
+            Weight = RTT * (1.0 / Math.Pow(2, TimeoutTimes)) * (IndexTasks.Count);
         }
 
         public TaskSession(VersionPayload version)

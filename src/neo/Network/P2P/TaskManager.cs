@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
         private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private const int MaxConncurrentTasks = 3;
-        private const int MaxSyncTasksCount = 50;
+        private const int MaxSyncTasksCount = 500;
         private const int PingCoolingOffPeriod = 60_000; // in ms.
 
         private readonly NeoSystem system;
@@ -53,7 +53,7 @@ namespace Neo.Network.P2P
         {
             if (index <= Blockchain.Singleton.Height || sessions.Values.Any(p => p != filterSession && p.IndexTasks.ContainsKey(index)))
                 return true;
-            KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index && p.Value.IndexTasks.Count < p.Value.MaxTaskCountPerNode)
+            KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index)
                 .OrderBy(p => p.Value.Weight)
                 .FirstOrDefault();
             if (remoteNode.Value == null)
@@ -83,23 +83,24 @@ namespace Neo.Network.P2P
 
         private void OnInvalidBlock(Block invalidBlock)
         {
-            receivedBlockIndex.Remove(invalidBlock.Index);
             if (!receivedBlockIndex.TryGetValue(invalidBlock.Index, out TaskSession session))
             {
                 AssignSyncTask(invalidBlock.Index);
                 return;
             }
+            receivedBlockIndex.Remove(invalidBlock.Index);
             var actor = sessions.Where(p => p.Value == session).FirstOrDefault().Key;
             if (actor != null)
             {
-                system.LocalNode.Tell(new LocalNode.MaliciousNode { actor = actor });
                 OnTerminated(actor);
+                system.LocalNode.Tell(new LocalNode.MaliciousNode { actor = actor });
+                AssignSyncTask(invalidBlock.Index);
             }
         }
 
         private void OnValidBlock(Block validBlock)
         {
-            if (receivedBlockIndex.TryGetValue(validBlock.Index, out TaskSession session) && session.MaxTaskCountPerNode < 10)
+            if (receivedBlockIndex.TryGetValue(validBlock.Index, out TaskSession session) && session.MaxTaskCountPerNode < 50)
                 session.MaxTaskCountPerNode++;
         }
 
@@ -151,11 +152,8 @@ namespace Neo.Network.P2P
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
                     break;
-                case Block block:
-                    OnBlock(block);
-                    break;
                 case IInventory inventory:
-                    OnTaskCompleted(inventory.Hash);
+                    OnTaskCompleted(inventory);
                     break;
                 case Blockchain.PersistCompleted pc:
                     OnPersistCompleted(pc.Block);
@@ -202,8 +200,11 @@ namespace Neo.Network.P2P
                 system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
         }
 
-        private void OnTaskCompleted(UInt256 hash)
+        private void OnTaskCompleted(IInventory inventory)
         {
+            if (inventory is Block block)
+                OnBlock(block);
+            var hash = inventory.Hash;
             knownHashes.Add(hash);
             globalTasks.Remove(hash);
             if (sessions.TryGetValue(Sender, out TaskSession session))
@@ -297,18 +298,23 @@ namespace Neo.Network.P2P
 
             SendPingMessage();
 
+            int taskCounts = sessions.Values.Sum(p => p.IndexTasks.Count);
+
             while (failedSyncTasks.Count() > 0)
             {
+                if (taskCounts >= MaxSyncTasksCount) return;
                 var failedTask = failedSyncTasks.OrderBy(p => p).First();
                 if (failedTask <= Blockchain.Singleton.Height)
                 {
                     failedSyncTasks.Remove(failedTask);
                     continue;
                 }
-                if (!AssignSyncTask(failedTask)) return;
+                if (AssignSyncTask(failedTask))
+                    taskCounts++;
+                else
+                    return;
             }
 
-            int taskCounts = sessions.Values.Sum(p => p.IndexTasks.Count);
             var highestBlockIndex = sessions.Values.Max(p => p.LastBlockIndex);
             for (; taskCounts < MaxSyncTasksCount; taskCounts++)
             {

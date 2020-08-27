@@ -34,8 +34,10 @@ namespace Neo.Network.P2P
         private ICancelable timer;
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
 
+        private static readonly TimeSpan BlacklistTime = TimeSpan.FromMinutes(10);
         private static readonly HashSet<IPAddress> localAddresses = new HashSet<IPAddress>();
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
+        private readonly Dictionary<IPEndPoint, DateTime> IPAddressBlacklist = new Dictionary<IPEndPoint, DateTime>();
         /// <summary>
         /// A dictionary that stores the connected nodes.
         /// </summary>
@@ -89,12 +91,21 @@ namespace Neo.Network.P2P
             }
         }
 
+        private void AddToBlacklist(IPEndPoint endPoint)
+        {
+            if (IPAddressBlacklist.ContainsKey(endPoint))
+                IPAddressBlacklist[endPoint] = DateTime.Now;
+            else
+                IPAddressBlacklist.TryAdd(endPoint, DateTime.Now);
+        }
+
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
             endPoint = endPoint.Unmap();
             // If the address is the same, the ListenerTcpPort should be different, otherwise, return
             if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
-
+            // If the address is in blacklist, return
+            if (IPAddressBlacklist.ContainsKey(endPoint)) return;
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
@@ -125,6 +136,7 @@ namespace Neo.Network.P2P
         {
             if (ConnectedPeers.TryRemove(actor, out IPEndPoint ipEndPoint))
             {
+                AddToBlacklist(ipEndPoint);
                 UnconnectedPeers.Remove(ipEndPoint);
                 actor.Tell(Tcp.Abort.Instance);
             }
@@ -273,6 +285,13 @@ namespace Neo.Network.P2P
 
         private void OnTimer()
         {
+            var now = DateTime.Now;
+            foreach (var item in IPAddressBlacklist.ToList())
+            {
+                if (now - item.Value > BlacklistTime)
+                    IPAddressBlacklist.Remove(item.Key);
+            }
+
             // Check if the number of desired connections is already enough
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
 
