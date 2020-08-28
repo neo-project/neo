@@ -288,14 +288,14 @@ namespace Neo.SmartContract.Native.Tokens
                 .ToArray();
         }
 
-        private (ECPoint PublicKey, CandidateState State)[] GetCandidatesInternal(StoreView snapshot)
+        private IEnumerable<(ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(StoreView snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).ToArray();
+            ));
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
