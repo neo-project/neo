@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native.Oracle
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
-            (UInt160 Account, BigInteger GAS)[] nodes = GetOracleNodes(engine.Snapshot).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+            (UInt160 Account, BigInteger GAS)[] nodes = null;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
                 //Filter the response transactions
@@ -112,15 +112,19 @@ namespace Neo.SmartContract.Native.Oracle
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
+                if (nodes == null) nodes = GetOracleNodes(engine.Snapshot).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
                     nodes[index].GAS += OracleRequestPrice;
                 }
             }
-            foreach (var (account, gas) in nodes)
+            if (nodes != null)
             {
-                if (gas.Sign > 0) GAS.Mint(engine, account, gas);
+                foreach (var (account, gas) in nodes)
+                {
+                    if (gas.Sign > 0) GAS.Mint(engine, account, gas);
+                }
             }
         }
 
