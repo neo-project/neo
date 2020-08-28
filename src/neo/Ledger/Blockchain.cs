@@ -72,6 +72,8 @@ namespace Neo.Ledger
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
+        private static readonly int cachedHeight = 10;
+        private HashCache<UInt256> recentOnchainTxCache = new HashCache<UInt256>(cachedHeight);
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -149,10 +151,18 @@ namespace Neo.Ledger
             return View.ContainsBlock(hash);
         }
 
-        public bool ContainsTransaction(UInt256 hash)
+        public bool ContainsTransaction(UInt256 hash, uint validUntilBlock)
         {
             if (MemPool.ContainsKey(hash)) return true;
-            return View.ContainsTransaction(hash);
+            return TransactionExist(hash, validUntilBlock);
+        }
+
+        public bool TransactionExist(UInt256 hash, uint validUntilBlock)
+        {
+            if (recentOnchainTxCache.Contains(hash)) return true;
+            if (validUntilBlock - Transaction.MaxValidUntilBlockIncrement < currentSnapshot.Height - Math.Min(cachedHeight, recentOnchainTxCache.Depth))
+                return View.ContainsTransaction(hash);
+            else return false;
         }
 
         private static Transaction DeployNativeContracts()
@@ -352,7 +362,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
+            if (ContainsTransaction(transaction.Hash, transaction.ValidUntilBlock)) return VerifyResult.AlreadyExists;
             return MemPool.TryAdd(transaction, currentSnapshot);
         }
 
@@ -399,7 +409,7 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx, bool relay)
         {
-            if (ContainsTransaction(tx.Hash))
+            if (ContainsTransaction(tx.Hash, tx.ValidUntilBlock))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
             else
                 txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
@@ -440,6 +450,7 @@ namespace Neo.Ledger
 
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
+                    recentOnchainTxCache.Add(tx.Hash);
 
                     using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
@@ -484,6 +495,7 @@ namespace Neo.Ledger
             }
             UpdateCurrentSnapshot();
             block_cache.Remove(block.PrevHash);
+            recentOnchainTxCache.Refresh();
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }

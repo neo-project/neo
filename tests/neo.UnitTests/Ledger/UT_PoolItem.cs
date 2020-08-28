@@ -35,10 +35,10 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PoolItem_CompareTo_Fee()
         {
-            int size1 = 51;
+            int size1 = 83;
             int netFeeSatoshi1 = 1;
             var tx1 = GenerateTx(netFeeSatoshi1, size1);
-            int size2 = 51;
+            int size2 = 83;
             int netFeeSatoshi2 = 2;
             var tx2 = GenerateTx(netFeeSatoshi2, size2);
 
@@ -55,7 +55,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PoolItem_CompareTo_Hash()
         {
-            int sizeFixed = 51;
+            int sizeFixed = 83;
             int netFeeSatoshiFixed = 1;
 
             var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);

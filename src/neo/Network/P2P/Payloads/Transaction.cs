@@ -30,6 +30,7 @@ namespace Neo.Network.P2P.Payloads
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
+        private UInt256 lastBlockHash = UInt256.Zero;
         private Signer[] _signers;
         private TransactionAttribute[] attributes;
         private byte[] script;
@@ -40,7 +41,8 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +  //Nonce
             sizeof(long) +  //SystemFee
             sizeof(long) +  //NetworkFee
-            sizeof(uint);   //ValidUntilBlock
+            sizeof(uint) +  //ValidUntilBlock
+            UInt256.Length; //LastBlockHash
 
         private Dictionary<Type, TransactionAttribute[]> _attributesCache;
         public TransactionAttribute[] Attributes
@@ -135,6 +137,12 @@ namespace Neo.Network.P2P.Payloads
             set { validUntilBlock = value; _hash = null; }
         }
 
+        public UInt256 LastBlockHash
+        {
+            get => lastBlockHash;
+            set { lastBlockHash = value; _hash = null; }
+        }
+
         public byte Version
         {
             get => version;
@@ -195,6 +203,7 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
+            LastBlockHash = reader.ReadSerializable<UInt256>();
             Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
             Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
@@ -253,6 +262,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
+            writer.Write(LastBlockHash);
             writer.Write(Signers);
             writer.Write(Attributes);
             writer.WriteVarBytes(Script);
@@ -269,6 +279,7 @@ namespace Neo.Network.P2P.Payloads
             json["sysfee"] = SystemFee.ToString();
             json["netfee"] = NetworkFee.ToString();
             json["validuntilblock"] = ValidUntilBlock;
+            json["lastblockhash"] = LastBlockHash.ToString();
             json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["script"] = Convert.ToBase64String(Script);
@@ -285,6 +296,8 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
+            if (snapshot.GetBlock(LastBlockHash)?.Index != ValidUntilBlock - MaxValidUntilBlockIncrement)
+                return VerifyResult.Invalid;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (NativeContract.Policy.IsAnyAccountBlocked(snapshot, hashes))
                 return VerifyResult.PolicyFail;
