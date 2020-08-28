@@ -170,6 +170,7 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void SetOracleNodes(ApplicationEngine engine, ECPoint[] nodes)
         {
+            if (nodes.Length == 0) throw new ArgumentException();
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NodeList)).GetInteroperable<NodeList>();
             list.Clear();
