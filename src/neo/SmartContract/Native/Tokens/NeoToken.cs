@@ -111,6 +111,14 @@ namespace Neo.SmartContract.Native.Tokens
             var pubkey = committee.OrderBy(p => p).ElementAt(index);
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
+            if (engine.Snapshot.PersistingBlock.Index == 1)
+            {
+                // Genesis block reward
+
+                pubkey = committee.OrderBy(p => p).ElementAt(0);
+                account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+                GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
+            }
 
             // Set next validators
 
