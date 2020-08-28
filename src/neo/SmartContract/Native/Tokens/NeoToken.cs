@@ -56,6 +56,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
+            // PersistingBlock is null when running under the debugger
+            if (engine.Snapshot.PersistingBlock == null) return;
+
             BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);
