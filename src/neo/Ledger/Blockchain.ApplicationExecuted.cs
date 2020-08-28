@@ -14,7 +14,7 @@ namespace Neo.Ledger
             public Transaction Transaction;
             public TriggerType Trigger { get; internal set; }
             public VMState VMState { get; internal set; }
-            public Exception FaultException { get; internal set; }
+            public Exception Exception { get; internal set; }
             public long GasConsumed { get; internal set; }
             public StackItem[] Stack { get; internal set; }
             public NotifyEventArgs[] Notifications { get; internal set; }
@@ -25,7 +25,7 @@ namespace Neo.Ledger
                 Trigger = engine.Trigger;
                 VMState = engine.State;
                 GasConsumed = engine.GasConsumed;
-                FaultException = engine.FaultException;
+                Exception = engine.FaultException;
                 Stack = engine.ResultStack.ToArray();
                 Notifications = engine.Notifications.ToArray();
             }
