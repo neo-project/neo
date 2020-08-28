@@ -93,6 +93,8 @@ namespace Neo.SmartContract.Native.Oracle
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
+            // PersistingBlock is null when running under the debugger
+            if (engine.Snapshot.PersistingBlock == null) return;
             (UInt160 Account, BigInteger GAS)[] nodes = null;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
