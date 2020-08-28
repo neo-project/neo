@@ -2,6 +2,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Linq;
 
 namespace Neo.Ledger
@@ -13,6 +14,7 @@ namespace Neo.Ledger
             public Transaction Transaction;
             public TriggerType Trigger { get; internal set; }
             public VMState VMState { get; internal set; }
+            public Exception FaultException { get; internal set; }
             public long GasConsumed { get; internal set; }
             public StackItem[] Stack { get; internal set; }
             public NotifyEventArgs[] Notifications { get; internal set; }
@@ -23,6 +25,7 @@ namespace Neo.Ledger
                 Trigger = engine.Trigger;
                 VMState = engine.State;
                 GasConsumed = engine.GasConsumed;
+                FaultException = engine.FaultException;
                 Stack = engine.ResultStack.ToArray();
                 Notifications = engine.Notifications.ToArray();
             }
