@@ -40,7 +40,7 @@ namespace Neo.IO.Caching
             return false;
         }
 
-        public void Refresh ()
+        public void Refresh()
         {
             var newSet = new HashSet<T>();
             sets.AddFirst(newSet);
