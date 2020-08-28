@@ -54,7 +54,7 @@ namespace Neo.Trie.MPT
 
         public abstract void Deserialize(BinaryReader reader);
 
-        public static unsafe MPTNode DeserializeFromByteArray(byte[] data)
+        public static MPTNode DeserializeFromByteArray(byte[] data)
         {
             if (data is null || data.Length < 1) return null;
 
