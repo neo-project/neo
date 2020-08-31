@@ -27,7 +27,6 @@ namespace Neo.IO.Caching
 
         public bool Add(T item)
         {
-            //if (Contains(item)) return false;
             return sets.First.Value.Add(item);
         }
 
