@@ -74,18 +74,17 @@ namespace Neo.Network.RPC
         }
 
         public Wallet Wallet { get; set; }
-        public Fixed8 MaxGasInvoke { get; }
+        public Fixed8 ExtraGasInvoke { get; }
         public int MaxConcurrentConnections { get; }
 
         private IWebHost host;
         private readonly NeoSystem system;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8), int maxConcurrentConnections = Peer.DefaultMaxConnections)
+        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 extraGasInvoke = default)
         {
             this.system = system;
             this.Wallet = wallet;
-            this.MaxGasInvoke = maxGasInvoke;
-            this.MaxConcurrentConnections = maxConcurrentConnections;
+            this.ExtraGasInvoke = extraGasInvoke;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -118,7 +117,7 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            using (ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: MaxGasInvoke))
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: ExtraGasInvoke))
             {
                 JObject json = new JObject();
                 json["script"] = script.ToHexString();
@@ -443,12 +442,19 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null)
+        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null, int maxConcurrentConnections = 40)
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
                 // Default value is unlimited
-                options.Limits.MaxConcurrentConnections = MaxConcurrentConnections;
+                if (maxConcurrentConnections == 0)
+                {
+                    options.Limits.MaxConcurrentConnections = 40;
+                }
+                else
+                {
+                    options.Limits.MaxConcurrentConnections = maxConcurrentConnections;
+                }
                 // Default value is 2 minutes
                 options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(1);
                 // Default value is 30 seconds

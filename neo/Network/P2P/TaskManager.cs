@@ -68,7 +68,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            if (payload.Type == InventoryType.TX && (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight || Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1) + 1 < Blockchain.Singleton.Height))
+            if (payload.Type == InventoryType.TX && (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight || Blockchain.Singleton.ExpectStateRootIndex < Blockchain.Singleton.Height))
             {
                 RequestTasks(session);
                 return;
@@ -282,15 +282,13 @@ namespace Neo.Network.P2P
             }
             if (!HasStateRootTask)
             {
-                var state_height = Math.Max(Blockchain.Singleton.StateHeight, (long)ProtocolSettings.Default.StateRootEnableIndex - 1);
-                var height = Blockchain.Singleton.Height;
-                if (state_height + 1 < height)
+                if (Blockchain.Singleton.ExpectStateRootIndex < Blockchain.Singleton.Height)
                 {
-                    var start_index = (uint)(state_height + 1);
-                    var count = Math.Min(height - start_index, StateRootsPayload.MaxStateRootsCount);
-                    StateRootSyncTime = DateTime.UtcNow;
-                    IncrementGlobalTask(StateRootTaskHash);
-                    system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
+                      var start_index = Blockchain.Singleton.ExpectStateRootIndex;
+                      var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
+                      StateRootSyncTime = DateTime.UtcNow;
+                      IncrementGlobalTask(StateRootTaskHash);
+                      system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
                 }
             }
         }

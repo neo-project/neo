@@ -93,10 +93,10 @@ namespace Neo
         }
 
         public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
-            string[] trustedAuthorities = null, Fixed8 maxGasInvoke = default(Fixed8))
+            string[] trustedAuthorities = null, Fixed8 extraGasInvoke = default, int maxConcurrentConnections = 40)
         {
-            RpcServer = new RpcServer(this, wallet, maxGasInvoke);
-            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
+            RpcServer = new RpcServer(this, wallet, extraGasInvoke);
+            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities, maxConcurrentConnections);
         }
 
         internal void SuspendNodeStartup()
