@@ -175,7 +175,7 @@ namespace Neo.SmartContract.Native.Oracle
             list.AddRange(nodes);
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.None)]
         private bool Verify(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
