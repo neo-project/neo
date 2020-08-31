@@ -657,6 +657,7 @@ namespace Neo.Consensus
 
             if (context.TransactionHashes.Length > 0)
             {
+                taskManager.Tell(new TaskManager.InvHashes { Hashes = context.TransactionHashes });
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }

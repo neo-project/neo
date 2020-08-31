@@ -209,13 +209,24 @@ namespace Neo.Network.P2P
             }
         }
 
+        private void OnGetDataMessageReceived(InvPayload payload)
+        {
+            if (payload.Type is InventoryType.TX)
+            {
+                system.TaskManager.Tell(new TaskManager.GetDataHashes { Hashes = payload.Hashes });
+                return;
+            }
+            else
+                OnGetData(payload);
+        }
+
         /// <summary>
         /// Will be triggered when a MessageCommand.GetData message is received.
         /// The payload includes an array of hash values.
         /// For different payload.Type (Tx, Block, Consensus), get the corresponding (Txs, Blocks, Consensus) and tell them to RemoteNode actor.
         /// </summary>
         /// <param name="payload">The payload containing the requested information.</param>
-        private void OnGetDataMessageReceived(InvPayload payload)
+        private void OnGetData(InvPayload payload)
         {
             var notFound = new List<UInt256>();
             foreach (UInt256 hash in payload.Hashes.Where(p => sentHashes.Add(p)))
@@ -370,7 +381,7 @@ namespace Neo.Network.P2P
             SendMessage(Message.Create(MessageCommand.Verack));
         }
 
-        private void RefreshPendingKnownHashes()
+        private void OnTimer()
         {
             while (pendingKnownHashes.Count > 0)
             {

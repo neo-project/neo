@@ -18,10 +18,14 @@ namespace Neo.Network.P2P
         public class Update { public uint LastBlockIndex; public bool RequestTasks; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
+        public class InvHashes { public UInt256[] Hashes; }
+        public class GetDataHashes { public UInt256[] Hashes; }
         private class Timer { }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan InvHashTimeout = TimeSpan.FromMinutes(30);
+        private static readonly TimeSpan ReduceTimeoutRecord = TimeSpan.FromDays(1);
         private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private const int MaxConncurrentTasks = 3;
@@ -33,6 +37,7 @@ namespace Neo.Network.P2P
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
+        private readonly Dictionary<UInt256, DateTime> sentInvHashes = new Dictionary<UInt256, DateTime>();
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
         private readonly HashSet<uint> failedSyncTasks = new HashSet<uint>();
@@ -160,6 +165,12 @@ namespace Neo.Network.P2P
                     if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
                         OnInvalidBlock(invalidBlock);
                     break;
+                case InvHashes invHashes:
+                    OnInvHashes(invHashes.Hashes);
+                    break;
+                case GetDataHashes getDataHashes:
+                    OnGetDataHashes(getDataHashes.Hashes);
+                    break;
                 case Timer _:
                     OnTimer();
                     break;
@@ -203,6 +214,33 @@ namespace Neo.Network.P2P
             globalTasks.Remove(hash);
             if (sessions.TryGetValue(Sender, out TaskSession session))
                 session.InvTasks.Remove(hash);
+        }
+
+        private void OnInvHashes(UInt256[] hashes)
+        {
+            foreach (var hash in hashes)
+            {
+                if (sentInvHashes.ContainsKey(hash))
+                    sentInvHashes[hash] = TimeProvider.Current.UtcNow;
+                else
+                    sentInvHashes.TryAdd(hash, TimeProvider.Current.UtcNow);
+            }
+        }
+
+        private void OnGetDataHashes(UInt256[] hashes)
+        {
+            var invalidHashesCount = 0;
+
+            foreach (var hash in hashes)
+            {
+                if (!sentInvHashes.ContainsKey(hash))
+                    invalidHashesCount++;
+            }
+
+            if (invalidHashesCount < 3)
+                Sender.Tell(InvPayload.Create(InventoryType.TX, hashes));
+            else
+                system.LocalNode.Tell(new LocalNode.MaliciousNode { actor = Sender });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -253,7 +291,8 @@ namespace Neo.Network.P2P
                     if (TimeProvider.Current.UtcNow - kvp.Value > TaskTimeout)
                     {
                         session.IndexTasks.Remove(kvp.Key);
-                        if (++session.TimeoutTimes > 3)
+                        session.TimeoutRecord.Add(TimeProvider.Current.UtcNow);
+                        if (session.TimeoutRecord.Count > 3)
                             OnTerminated(sessions.Where(p => p.Value == session).First().Key);
                         else
                         {
@@ -265,13 +304,26 @@ namespace Neo.Network.P2P
 
                 foreach (var task in session.InvTasks.ToArray())
                 {
-                    if (DateTime.UtcNow - task.Value > TaskTimeout)
+                    if (TimeProvider.Current.UtcNow - task.Value > TaskTimeout)
                     {
                         if (session.InvTasks.Remove(task.Key))
                             DecrementGlobalTask(task.Key);
                     }
                 }
+
+                for (var i = session.TimeoutRecord.Count; i > 0; i--)
+                {
+                    if (TimeProvider.Current.UtcNow - session.TimeoutRecord[i] > ReduceTimeoutRecord)
+                        session.TimeoutRecord.RemoveAt(i);
+                }
             }
+
+            foreach (var hash in sentInvHashes)
+            {
+                if (TimeProvider.Current.UtcNow - hash.Value > InvHashTimeout)
+                    sentInvHashes.Remove(hash.Key);
+            }
+
             RequestTasks();
         }
 

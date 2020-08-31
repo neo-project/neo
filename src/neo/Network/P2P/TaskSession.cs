@@ -10,10 +10,10 @@ namespace Neo.Network.P2P
     {
         public readonly Dictionary<UInt256, DateTime> InvTasks = new Dictionary<UInt256, DateTime>();
         public readonly Dictionary<uint, DateTime> IndexTasks = new Dictionary<uint, DateTime>();
+        public List<DateTime> TimeoutRecord = new List<DateTime>();
 
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
-        public uint TimeoutTimes = 0;
         public DateTime ExpireTime = DateTime.MinValue;
         public double RTT = 100.0;
         public double Weight = 1000.0;
@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
 
         public void UpdateWeight()
         {
-            Weight = RTT * (1.0 / Math.Pow(2, TimeoutTimes)) * (IndexTasks.Count);
+            Weight = RTT * (1.0 / Math.Pow(2, TimeoutRecord.Count)) * (IndexTasks.Count);
         }
 
         public TaskSession(VersionPayload version)

@@ -27,7 +27,7 @@ namespace Neo.Network.P2P
         private bool ack = true;
         private int message_count = 0;
         private DateTime start_message_time;
-        private readonly double time_threshold = 10;
+        private readonly double time_threshold = 100;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public int ListenerTcpPort { get; private set; } = 0;
@@ -139,7 +139,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Timer _:
-                    RefreshPendingKnownHashes();
+                    OnTimer();
                     break;
                 case Message msg:
                     EnqueueMessage(msg);
@@ -152,6 +152,9 @@ namespace Neo.Network.P2P
                     break;
                 case StartProtocol _:
                     OnStartProtocol();
+                    break;
+                case InvPayload payload:
+                    OnGetData(payload);
                     break;
             }
         }
