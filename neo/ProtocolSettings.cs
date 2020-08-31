@@ -16,6 +16,7 @@ namespace Neo
         public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; }
         public Fixed8 LowPriorityThreshold { get; }
         public uint SecondsPerBlock { get; }
+        public uint FreeGasChangeHeight { get; }
 
         public uint StateRootEnableIndex { get; }
         static ProtocolSettings _default;
@@ -91,6 +92,7 @@ namespace Neo
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
             this.StateRootEnableIndex = section.GetValue("StateRootEnableIndex", 0u);
             this.LowPriorityThreshold = Fixed8.Parse(section.GetValue("LowPriorityThreshold", "0.001"));
+            this.FreeGasChangeHeight = section.GetValue("FreeGasChangeHeight", 6200000u);
         }
     }
 }
