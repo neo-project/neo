@@ -59,7 +59,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            if (hash != StateRootTaskHash) session.Tasks.Remove(hash);
+            session.Tasks.Remove(hash);
             DecrementGlobalTask(hash);
             RequestTasks(session);
         }
