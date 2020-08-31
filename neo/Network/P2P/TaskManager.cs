@@ -284,11 +284,11 @@ namespace Neo.Network.P2P
             {
                 if (Blockchain.Singleton.ExpectStateRootIndex < Blockchain.Singleton.Height)
                 {
-                      var start_index = Blockchain.Singleton.ExpectStateRootIndex;
-                      var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
-                      StateRootSyncTime = DateTime.UtcNow;
-                      IncrementGlobalTask(StateRootTaskHash);
-                      system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
+                    var start_index = Blockchain.Singleton.ExpectStateRootIndex;
+                    var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
+                    StateRootSyncTime = DateTime.UtcNow;
+                    IncrementGlobalTask(StateRootTaskHash);
+                    system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
                 }
             }
         }
