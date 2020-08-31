@@ -18,16 +18,16 @@ namespace Neo.Network.P2P.Payloads
         public static readonly byte[] FixedScript;
 
         public ulong Id;
-        public bool Success;
+        public OracleResponseCode Code;
         public byte[] Result;
 
         public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
         public override bool AllowMultiple => false;
 
         public override int Size => base.Size +
-            sizeof(ulong) +         //Id
-            sizeof(bool) +          //Success
-            Result.GetVarSize();    //Result
+            sizeof(ulong) +                 //Id
+            sizeof(OracleResponseCode) +    //ResponseCode
+            Result.GetVarSize();            //Result
 
         static OracleResponse()
         {
@@ -39,15 +39,18 @@ namespace Neo.Network.P2P.Payloads
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
             Id = reader.ReadUInt64();
-            Success = reader.ReadBoolean();
+            Code = (OracleResponseCode)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(OracleResponseCode), Code))
+                throw new FormatException();
             Result = reader.ReadVarBytes(MaxResultSize);
-            if (!Success && Result.Length > 0) throw new FormatException();
+            if (Code != OracleResponseCode.Success && Result.Length > 0)
+                throw new FormatException();
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
             writer.Write(Id);
-            writer.Write(Success);
+            writer.Write((byte)Code);
             writer.WriteVarBytes(Result);
         }
 
@@ -55,7 +58,7 @@ namespace Neo.Network.P2P.Payloads
         {
             JObject json = base.ToJson();
             json["id"] = Id;
-            json["success"] = Success;
+            json["code"] = Code;
             json["result"] = Convert.ToBase64String(Result);
             return json;
         }

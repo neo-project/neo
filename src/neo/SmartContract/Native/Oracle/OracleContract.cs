@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Native.Oracle
             OracleResponse response = tx.GetAttribute<OracleResponse>();
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
-            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, response.Success, response.Result);
+            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
