@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract
                 29, 173, 212, 53, 25, 230, 150, 14, 10, 133, 180, 26, 105, 160, 92, 50, 129, 3, 170, 43, 206, 21, 148,
                 202, 22, 18
             };
-            case2.IsMultiSigContract();
+            Assert.IsFalse(case2.IsMultiSigContract());
         }
     }
 }
