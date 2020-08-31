@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Network.P2P
             Assert.AreEqual((uint)123, ses.LastBlockIndex);
             Assert.AreEqual(0, ses.IndexTasks.Count);
             Assert.AreEqual(0, ses.InvTasks.Count);
-            Assert.AreEqual((uint)0, ses.TimeoutTimes);
+            Assert.AreEqual((int)0, ses.TimeoutRecord.Count);
 
             ses = new TaskSession(new VersionPayload() { Capabilities = new NodeCapability[0] });
 
@@ -29,7 +29,7 @@ namespace Neo.UnitTests.Network.P2P
             Assert.AreEqual((uint)0, ses.LastBlockIndex);
             Assert.AreEqual(0, ses.IndexTasks.Count);
             Assert.AreEqual(0, ses.InvTasks.Count);
-            Assert.AreEqual((uint)0, ses.TimeoutTimes);
+            Assert.AreEqual((int)0, ses.TimeoutRecord.Count);
         }
     }
 }
