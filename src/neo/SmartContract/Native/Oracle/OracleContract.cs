@@ -173,6 +173,7 @@ namespace Neo.SmartContract.Native.Oracle
             NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NodeList)).GetInteroperable<NodeList>();
             list.Clear();
             list.AddRange(nodes);
+            list.Sort();
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]
