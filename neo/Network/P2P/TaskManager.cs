@@ -48,6 +48,7 @@ namespace Neo.Network.P2P
         private readonly UInt256 StateRootTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
         private bool HasStateRootTask => globalTasks.ContainsKey(StateRootTaskHash);
+        private DateTime StateRootSyncTime;
 
         public TaskManager(NeoSystem system)
         {
@@ -212,6 +213,10 @@ namespace Neo.Network.P2P
                         if (session.Tasks.Remove(task.Key))
                             DecrementGlobalTask(task.Key);
                     }
+
+            if (HasStateRootTask && DateTime.UtcNow - StateRootSyncTime > TaskTimeout)
+                DecrementGlobalTask(StateRootTaskHash);
+
             foreach (TaskSession session in sessions.Values)
                 RequestTasks(session);
         }
@@ -279,15 +284,11 @@ namespace Neo.Network.P2P
             {
                 if (Blockchain.Singleton.ExpectStateRootIndex < Blockchain.Singleton.Height)
                 {
-                    var state = Blockchain.Singleton.GetStateRoot(Blockchain.Singleton.ExpectStateRootIndex);
-                    if (state is null || state.Flag == StateRootVerifyFlag.Unverified)
-                    {
-                        var start_index = Blockchain.Singleton.ExpectStateRootIndex;
-                        var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
-                        session.Tasks[StateRootTaskHash] = DateTime.UtcNow;
-                        IncrementGlobalTask(StateRootTaskHash);
-                        session.RemoteNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
-                    }
+                    var start_index = Blockchain.Singleton.ExpectStateRootIndex;
+                    var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
+                    StateRootSyncTime = DateTime.UtcNow;
+                    IncrementGlobalTask(StateRootTaskHash);
+                    system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
                 }
             }
         }
