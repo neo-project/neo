@@ -123,9 +123,6 @@ namespace Neo.Network.P2P
                 case Timer _:
                     RefreshPendingKnownHashes();
                     break;
-                case TaskManager.RemoveKnownHashes remove:
-                    OnRemoveKnownHashes(remove.Hashes);
-                    break;
                 case Message msg:
                     EnqueueMessage(msg);
                     break;
