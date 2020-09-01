@@ -20,6 +20,6 @@ namespace Neo.IO.Actors
 
         internal protected virtual bool IsHighPriority(object message) => false;
         internal protected virtual bool ShallDrop(object message, IEnumerable queue) => false;
-        internal protected virtual void AfterDequeue(object message) { return; }
+        internal protected virtual void AfterDequeue(object message) { }
     }
 }
