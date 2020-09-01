@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
             for (int i = 1; i < values.Length; i++)
             {
                 var array = values[i].ToArray();
-                for (int j = 0; j < result.Length; j++)
+                for (int j = 0; j < UInt256.Length; j++)
                 {
                     result[j] ^= array[j];
                 }
