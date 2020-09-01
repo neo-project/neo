@@ -80,7 +80,7 @@ namespace Neo.SmartContract
             switch (script[i])
             {
                 case (byte)OpCode.PUSHINT8:
-                    if (n != script[++i]) return false;
+                    if (script.Length <= i + 1 || n != script[++i]) return false;
                     ++i;
                     break;
                 case (byte)OpCode.PUSHINT16:
@@ -94,9 +94,9 @@ namespace Neo.SmartContract
                 default:
                     return false;
             }
+            if (script.Length != i + 6) return false;
             if (script[i++] != (byte)OpCode.PUSHNULL) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
-            if (script.Length != i + 4) return false;
             if (BitConverter.ToUInt32(script, i) != ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1)
                 return false;
             return true;
