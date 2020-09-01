@@ -83,7 +83,7 @@ namespace Neo.SmartContract
             writer.Write(scriptHash);
         }
 
-        public static (string compiler, Version version, UInt160 scriptHash) DeserializeHeader(BinaryReader reader)
+        public static (string compiler, Version version, UInt160 scriptHash, uint checksum) DeserializeHeader(BinaryReader reader)
         {
             if (reader.ReadUInt32() != Magic)
             {
@@ -93,19 +93,19 @@ namespace Neo.SmartContract
             var compiler = reader.ReadFixedString(32);
             var version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             var scriptHash = reader.ReadSerializable<UInt160>();
-            var checkSum = reader.ReadUInt32();
+            var checksum = reader.ReadUInt32();
 
-            if (checkSum != ComputeChecksum(compiler, version, scriptHash))
+            if (checksum != ComputeChecksum(compiler, version, scriptHash))
             {
                 throw new FormatException("CRC verification fail");
             }
 
-            return (compiler, version, scriptHash);
+            return (compiler, version, scriptHash, checksum);
         }
 
         public void Deserialize(BinaryReader reader)
         {
-            (Compiler, Version, ScriptHash) = DeserializeHeader(reader);
+            (Compiler, Version, ScriptHash, CheckSum) = DeserializeHeader(reader);
             Script = reader.ReadVarBytes(1024 * 1024);
 
             if (Script.ToScriptHash() != ScriptHash)
