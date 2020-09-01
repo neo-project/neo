@@ -299,14 +299,16 @@ namespace Neo.Network.P2P
 
         private void SendPingMessage()
         {
+            Header header = null;
+
             foreach (KeyValuePair<IActorRef, TaskSession> item in sessions)
             {
                 var node = item.Key;
                 var session = item.Value;
 
                 if (session.ExpireTime < TimeProvider.Current.UtcNow ||
-                     (Blockchain.Singleton.Height >= session.LastBlockIndex
-                     && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp))
+                     (Blockchain.Singleton.Height >= session.LastBlockIndex &&
+                     TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= (header ??= Blockchain.Singleton.GetHeader(Blockchain.Singleton.CurrentBlockHash))?.Timestamp))
                 {
                     if (session.InvTasks.Remove(MemPoolTaskHash))
                     {
