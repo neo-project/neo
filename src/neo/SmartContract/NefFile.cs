@@ -124,7 +124,7 @@ namespace Neo.SmartContract
             return ComputeChecksum(file.Compiler, file.Version, file.ScriptHash);
         }
 
-        unsafe private static uint ComputeChecksum(string compiler, Version version, UInt160 scriptHash) 
+        unsafe private static uint ComputeChecksum(string compiler, Version version, UInt160 scriptHash)
         {
             Span<byte> header = stackalloc byte[HeaderSize];
             fixed (byte* p = header)
