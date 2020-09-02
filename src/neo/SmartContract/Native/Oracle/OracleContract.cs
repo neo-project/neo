@@ -180,7 +180,7 @@ namespace Neo.SmartContract.Native.Oracle
         private bool Verify(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
-            return tx.GetAttribute<OracleResponse>() != null;
+            return tx?.GetAttribute<OracleResponse>() != null;
         }
     }
 }
