@@ -314,7 +314,7 @@ namespace Neo.Network.P2P
                 var session = item.Value;
 
                 if (session.ExpireTime < TimeProvider.Current.UtcNow ||
-                     (Blockchain.Singleton.Height >= session.LastBlockIndex &&
+                     (block.Index >= session.LastBlockIndex &&
                      TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= block.Timestamp))
                 {
                     if (session.InvTasks.Remove(MemPoolTaskHash))
