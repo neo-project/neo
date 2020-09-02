@@ -4,6 +4,7 @@ using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -299,7 +300,13 @@ namespace Neo.Network.P2P
 
         private void SendPingMessage()
         {
-            Header header = null;
+            if (sessions.Count == 0) return;
+
+            TrimmedBlock block;
+            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                block = snapshot.Blocks[snapshot.CurrentBlockHash];
+            }
 
             foreach (KeyValuePair<IActorRef, TaskSession> item in sessions)
             {
@@ -308,7 +315,7 @@ namespace Neo.Network.P2P
 
                 if (session.ExpireTime < TimeProvider.Current.UtcNow ||
                      (Blockchain.Singleton.Height >= session.LastBlockIndex &&
-                     TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= (header ??= Blockchain.Singleton.GetHeader(Blockchain.Singleton.CurrentBlockHash))?.Timestamp))
+                     TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= block.Timestamp))
                 {
                     if (session.InvTasks.Remove(MemPoolTaskHash))
                     {
