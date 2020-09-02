@@ -43,6 +43,7 @@ namespace Neo.SmartContract.Native.Oracle
             OracleResponse response = tx.GetAttribute<OracleResponse>();
             if (response == null) throw new ArgumentException("Oracle response was not found");
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
+            if (request  == null) throw new ArgumentException("Oracle request was not found");
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
