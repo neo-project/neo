@@ -51,8 +51,7 @@ namespace Neo.Persistence
 
         public bool ContainsTransaction(UInt256 hash)
         {
-            TransactionState state = Transactions.TryGet(hash);
-            return state != null;
+            return Transactions.Contains(hash);
         }
 
         public Block GetBlock(UInt256 hash)
