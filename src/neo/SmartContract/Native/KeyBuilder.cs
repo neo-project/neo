@@ -37,6 +37,14 @@ namespace Neo.SmartContract.Native
             return Add(new ReadOnlySpan<byte>(&key, sizeof(T)));
         }
 
+        unsafe public KeyBuilder AddBigEndian<T>(T key) where T : unmanaged
+        {
+            ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(&key, sizeof(T));
+            for (int i = buffer.Length - 1; i >= 0; i--)
+                stream.WriteByte(buffer[i]);
+            return this;
+        }
+
         public byte[] ToArray()
         {
             using (stream)

@@ -30,6 +30,10 @@ namespace Neo.UnitTests.SmartContract.Native
             key = new KeyBuilder(1, 2);
             key = key.Add(new a() { x = 123 });
             Assert.AreEqual("01000000027b000000", key.ToArray().ToHexString());
+
+            key = new KeyBuilder(1, 0);
+            key = key.AddBigEndian(new a() { x = 1 });
+            Assert.AreEqual("010000000000000001", key.ToArray().ToHexString());
         }
     }
 }

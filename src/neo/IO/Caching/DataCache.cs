@@ -173,6 +173,21 @@ namespace Neo.IO.Caching
             }
         }
 
+        public bool Contains(TKey key)
+        {
+            lock (dictionary)
+            {
+                if (dictionary.TryGetValue(key, out Trackable trackable))
+                {
+                    if (trackable.State == TrackState.Deleted) return false;
+                    return true;
+                }
+                return ContainsInternal(key);
+            }
+        }
+
+        protected abstract bool ContainsInternal(TKey key);
+
         protected abstract TValue GetInternal(TKey key);
 
         /// <summary>

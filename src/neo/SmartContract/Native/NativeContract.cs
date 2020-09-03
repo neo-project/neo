@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
@@ -23,6 +24,7 @@ namespace Neo.SmartContract.Native
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
+        public static OracleContract Oracle { get; } = new OracleContract();
 
         [ContractMethod(0, CallFlags.None)]
         public abstract string Name { get; }
@@ -77,6 +79,12 @@ namespace Neo.SmartContract.Native
             contractsHashDictionary.Add(Hash, this);
         }
 
+        protected bool CheckCommittee(ApplicationEngine engine)
+        {
+            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
+            return engine.CheckWitnessInternal(committeeMultiSigAddr);
+        }
+
         private protected KeyBuilder CreateStorageKey(byte prefix)
         {
             return new KeyBuilder(Id, prefix);
@@ -129,6 +137,13 @@ namespace Neo.SmartContract.Native
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         protected virtual void OnPersist(ApplicationEngine engine)
+        {
+            if (engine.Trigger != TriggerType.System)
+                throw new InvalidOperationException();
+        }
+
+        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        protected virtual void PostPersist(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.System)
                 throw new InvalidOperationException();

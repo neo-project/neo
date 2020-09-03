@@ -30,8 +30,6 @@ namespace Neo.Ledger
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
-        public const uint DecrementInterval = 2000000;
-        public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
         public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
         public static readonly ECPoint[] StandbyValidators = StandbyCommittee[0..ProtocolSettings.Default.ValidatorsCount];
@@ -55,7 +53,7 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private readonly static Script onPersistNativeContractScript;
+        private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -89,16 +87,23 @@ namespace Neo.Ledger
         {
             GenesisBlock.RebuildMerkleRoot();
 
-            NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (NativeContract contract in contracts)
+                foreach (NativeContract contract in new NativeContract[] { NativeContract.GAS, NativeContract.NEO })
                 {
                     sb.EmitAppCall(contract.Hash, "onPersist");
                     sb.Emit(OpCode.DROP);
                 }
-
-                onPersistNativeContractScript = sb.ToArray();
+                onPersistScript = sb.ToArray();
+            }
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                foreach (NativeContract contract in new NativeContract[] { NativeContract.Oracle })
+                {
+                    sb.EmitAppCall(contract.Hash, "postPersist");
+                    sb.Emit(OpCode.DROP);
+                }
+                postPersistScript = sb.ToArray();
             }
         }
 
@@ -420,14 +425,12 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot))
-                    {
-                        engine.LoadScript(onPersistNativeContractScript);
-                        if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                        ApplicationExecuted application_executed = new ApplicationExecuted(engine);
-                        Context.System.EventStream.Publish(application_executed);
-                        all_application_executed.Add(application_executed);
-                    }
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
+                    engine.LoadScript(onPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
@@ -461,6 +464,15 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
+                if (block.Index > 0)
+                {
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
+                    engine.LoadScript(postPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
+                }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
