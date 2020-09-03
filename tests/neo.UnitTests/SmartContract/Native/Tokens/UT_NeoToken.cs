@@ -397,7 +397,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(NativeContract.NEO.Hash, "onPersist");
+                sb.EmitAppCall(NativeContract.NEO.Hash, "postPersist");
                 sb.Emit(OpCode.RET);
                 ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, (long)(20 * NativeContract.GAS.Factor));
                 engine.LoadScript(sb.ToArray());
