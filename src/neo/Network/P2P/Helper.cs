@@ -1,3 +1,4 @@
+using Neo.Cryptography;
 using Neo.Network.P2P.Payloads;
 using System.IO;
 
@@ -20,6 +21,16 @@ namespace Neo.Network.P2P
                 writer.Flush();
                 return ms.ToArray();
             }
+        }
+
+        public static UInt256 CalculateHash(this IVerifiable verifiable)
+        {
+            return CalculateHash(verifiable, ProtocolSettings.Default.Magic);
+        }
+
+        public static UInt256 CalculateHash(this IVerifiable verifiable, uint magic)
+        {
+            return new UInt256(Crypto.Hash256(verifiable.GetHashData(magic)));
         }
     }
 }
