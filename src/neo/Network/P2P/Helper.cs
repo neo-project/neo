@@ -25,7 +25,7 @@ namespace Neo.Network.P2P
 
         public static UInt256 CalculateHash(this IVerifiable verifiable)
         {
-            return CalculateHash(verifiable, ProtocolSettings.Default.Magic);
+            return new UInt256(Crypto.Hash256(verifiable.GetHashData(ProtocolSettings.Default.Magic)));
         }
 
         public static UInt256 CalculateHash(this IVerifiable verifiable, uint magic)
