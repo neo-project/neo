@@ -290,15 +290,14 @@ namespace Neo.Network.P2P
             switch (inventory)
             {
                 case Transaction transaction:
-                    knownHashes.Add(inventory.Hash);
                     system.Consensus?.Tell(transaction);
                     break;
                 case Block block:
                     if (block.Index > Blockchain.Singleton.Height + 500) return;
-                    knownHashes.Add(inventory.Hash);
                     UpdateLastBlockIndex(block.Index, false);
                     break;
             }
+            knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
             system.Blockchain.Tell(inventory, ActorRefs.NoSender);
         }
