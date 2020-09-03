@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal class ConsensusContext : IConsensusContext
+    public class ConsensusContext : IConsensusContext
     {
         private StateRoot PreviousBlockStateRoot;
         /// <summary>
