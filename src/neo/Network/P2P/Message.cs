@@ -26,7 +26,7 @@ namespace Neo.Network.P2P
 
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
 
-        public static Message Create(MessageCommand command, ISerializable payload = null)
+        public static Message Create(MessageCommand command, ISerializable payload = null, bool tryCompression = false)
         {
             Message message = new Message
             {
@@ -37,7 +37,7 @@ namespace Neo.Network.P2P
             };
 
             // Try compression
-            if (message._payload_compressed.Length > CompressionMinSize)
+            if (tryCompression && message._payload_compressed.Length > CompressionMinSize)
             {
                 var compressed = message._payload_compressed.CompressLz4();
                 if (compressed.Length < message._payload_compressed.Length - CompressionThreshold)
