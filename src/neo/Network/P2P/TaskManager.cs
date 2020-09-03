@@ -74,11 +74,13 @@ namespace Neo.Network.P2P
         private void OnBlock(Block block)
         {
             var session = sessions.Values.FirstOrDefault(p => p.IndexTasks.ContainsKey(block.Index));
-            if (session != null)
+            if (session is null)
             {
-                session.IndexTasks.Remove(block.Index);
-                receivedBlockIndex.TryAdd(block.Index, session);
+                SendPingMessage();
+                return;
             }
+            session.IndexTasks.Remove(block.Index);
+            receivedBlockIndex.TryAdd(block.Index, session);
             RequestTasks();
         }
 
