@@ -464,8 +464,8 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot))
                 {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
