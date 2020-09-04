@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Consensus
                     UT_Crypto.generateKey(32),
                     UT_Crypto.generateKey(32),
                     UT_Crypto.generateKey(32)
-                };
+                }.OrderBy(p => p.PublicKey).ToArray();
 
             var timeValues = new[] {
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
