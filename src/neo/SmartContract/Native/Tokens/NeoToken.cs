@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native.Tokens
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
-        private bool shouldRefreshCommittee(StoreView snapshot) => snapshot.Height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
+        private bool shouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {
@@ -118,7 +118,7 @@ namespace Neo.SmartContract.Native.Tokens
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
             // Set next committee
-            if (shouldRefreshCommittee(engine.Snapshot))
+            if (shouldRefreshCommittee(engine.Snapshot.Height))
             {
                 StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextCommittee), () => new StorageItem());
                 storage.Value = committee.ToArray().ToByteArray();
@@ -259,7 +259,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
         {
-            if (!shouldRefreshCommittee(snapshot))
+            if (!shouldRefreshCommittee(snapshot.Height))
             {
                 StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextCommittee));
                 if (storage != null) return storage.GetSerializableList<ECPoint>().ToArray();
