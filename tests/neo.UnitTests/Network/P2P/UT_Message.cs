@@ -140,8 +140,13 @@ namespace Neo.UnitTests.Network.P2P
                 }
             };
 
-            var msg = Message.Create(MessageCommand.Version, payload);
+            var msg = Message.Create(MessageCommand.Version, payload, false);
             var buffer = msg.ToArray();
+
+            buffer.Length.Should().BeGreaterThan(80);
+
+            msg = Message.Create(MessageCommand.Version, payload, true);
+            buffer = msg.ToArray();
 
             buffer.Length.Should().BeLessThan(80);
 

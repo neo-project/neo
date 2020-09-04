@@ -75,7 +75,7 @@ namespace Neo.Network.P2P
         /// <param name="payload">Optional payload to be Serialized along the message.</param>
         private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
         {
-            BroadcastMessage(Message.Create(command, payload, true));
+            BroadcastMessage(Message.Create(command, payload));
         }
 
         /// <summary>
