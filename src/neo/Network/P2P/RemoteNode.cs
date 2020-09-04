@@ -58,7 +58,7 @@ namespace Neo.Network.P2P
 
         private void EnqueueMessage(MessageCommand command, ISerializable payload = null)
         {
-            EnqueueMessage(Message.Create(command, payload));
+            EnqueueMessage(Message.Create(command, payload, true));
         }
 
         /// <summary>

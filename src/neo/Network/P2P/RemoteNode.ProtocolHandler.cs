@@ -198,7 +198,7 @@ namespace Neo.Network.P2P
 
                 if (bloom_filter == null)
                 {
-                    EnqueueMessage(Message.Create(MessageCommand.Block, block));
+                    EnqueueMessage(Message.Create(MessageCommand.Block, block, true));
                 }
                 else
                 {
@@ -224,7 +224,7 @@ namespace Neo.Network.P2P
                     case InventoryType.TX:
                         Transaction tx = Blockchain.Singleton.GetTransaction(hash);
                         if (tx != null)
-                            EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
+                            EnqueueMessage(Message.Create(MessageCommand.Transaction, tx, true));
                         else
                             notFound.Add(hash);
                         break;
@@ -234,7 +234,7 @@ namespace Neo.Network.P2P
                         {
                             if (bloom_filter == null)
                             {
-                                EnqueueMessage(Message.Create(MessageCommand.Block, block));
+                                EnqueueMessage(Message.Create(MessageCommand.Block, block, true));
                             }
                             else
                             {
@@ -249,7 +249,7 @@ namespace Neo.Network.P2P
                         break;
                     default:
                         if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory))
-                            EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
+                            EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory, true));
                         break;
                 }
             }
