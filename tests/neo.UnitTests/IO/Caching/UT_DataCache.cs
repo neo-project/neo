@@ -139,6 +139,11 @@ namespace Neo.UnitTests.IO.Caching
             return null;
         }
 
+        protected override bool ContainsInternal(TKey key)
+        {
+            return InnerDict.ContainsKey(key);
+        }
+
         protected override void UpdateInternal(TKey key, TValue value)
         {
             InnerDict[key] = value;
