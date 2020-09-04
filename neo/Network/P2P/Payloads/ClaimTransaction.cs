@@ -13,6 +13,8 @@ namespace Neo.Network.P2P.Payloads
     {
         public CoinReference[] Claims;
 
+        public override Fixed8 NetworkFee => Fixed8.Zero;
+
         public override int Size => base.Size + Claims.GetVarSize();
 
         public ClaimTransaction()

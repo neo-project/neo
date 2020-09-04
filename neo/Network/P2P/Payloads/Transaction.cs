@@ -29,9 +29,9 @@ namespace Neo.Network.P2P.Payloads
 
         public readonly TransactionType Type;
         public byte Version;
-        public TransactionAttribute[] Attributes = new TransactionAttribute[0];
-        public CoinReference[] Inputs = new CoinReference[0];
-        public TransactionOutput[] Outputs = new TransactionOutput[0];
+        public TransactionAttribute[] Attributes = Array.Empty<TransactionAttribute>();
+        public CoinReference[] Inputs = Array.Empty<CoinReference>();
+        public TransactionOutput[] Outputs = Array.Empty<TransactionOutput>();
         public Witness[] Witnesses { get; set; }
 
         private Fixed8 _feePerByte = -Fixed8.Satoshi;
@@ -270,7 +270,6 @@ namespace Neo.Network.P2P.Payloads
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
-            if (NetworkFee < ProtocolSettings.Default.MinimumNetworkFee) return false;
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
                     if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
