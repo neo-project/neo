@@ -29,7 +29,7 @@ namespace Neo.Ledger
         public class FillCompleted { }
         internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
-        private class UnverifiedBlocks { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
+        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
@@ -63,7 +63,7 @@ namespace Neo.Ledger
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
-        private readonly Dictionary<uint, UnverifiedBlocks> block_cache_unverified = new Dictionary<uint, UnverifiedBlocks>();
+        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
@@ -278,7 +278,7 @@ namespace Neo.Ledger
             if (!block_cache_unverified.TryGetValue(block.Index, out var blocks))
             {
                 // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
-                blocks = new UnverifiedBlocks();
+                blocks = new UnverifiedBlocksList();
                 block_cache_unverified.Add(block.Index, blocks);
             }
             else
