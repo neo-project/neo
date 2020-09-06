@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt256(Crypto.Hash256(this.GetHashData()));
+                    _hash = this.CalculateHash();
                 }
                 return _hash;
             }
