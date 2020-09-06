@@ -287,18 +287,19 @@ namespace Neo.Network.P2P
         private void OnInventoryReceived(IInventory inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
-            knownHashes.Add(inventory.Hash);
-            system.TaskManager.Tell(inventory);
-            system.Blockchain.Tell(inventory, ActorRefs.NoSender);
             switch (inventory)
             {
                 case Transaction transaction:
                     system.Consensus?.Tell(transaction);
                     break;
                 case Block block:
+                    if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
                     UpdateLastBlockIndex(block.Index, false);
                     break;
             }
+            knownHashes.Add(inventory.Hash);
+            system.TaskManager.Tell(inventory);
+            system.Blockchain.Tell(inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
