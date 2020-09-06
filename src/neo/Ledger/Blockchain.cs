@@ -275,22 +275,22 @@ namespace Neo.Ledger
         private void AddUnverifiedBlockToCache(Block block)
         {
             // Check if any block proposal for height `block.Index` exists
-            if (!block_cache_unverified.TryGetValue(block.Index, out var blocks))
+            if (!block_cache_unverified.TryGetValue(block.Index, out var list))
             {
-                // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
-                blocks = new UnverifiedBlocksList();
-                block_cache_unverified.Add(block.Index, blocks);
+                // There are no blocks, a new UnverifiedBlocksList is created and, consequently, the current block is added to the list
+                list = new UnverifiedBlocksList();
+                block_cache_unverified.Add(block.Index, list);
             }
             else
             {
                 // Check if any block with the hash being added already exists on possible candidates to be processed
-                foreach (var unverifiedBlock in blocks.Blocks)
+                foreach (var unverifiedBlock in list.Blocks)
                 {
                     if (block.Hash == unverifiedBlock.Hash)
                         return;
                 }
 
-                if (!blocks.Nodes.Add(Sender))
+                if (!list.Nodes.Add(Sender))
                 {
                     // Same index with different hash
                     Sender.Tell(Tcp.Abort.Instance);
@@ -298,7 +298,7 @@ namespace Neo.Ledger
                 }
             }
 
-            blocks.Blocks.AddLast(block);
+            list.Blocks.AddLast(block);
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
