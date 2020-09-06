@@ -299,7 +299,7 @@ namespace Neo.Network.P2P
             }
             knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
-            system.Blockchain.Tell(inventory, ActorRefs.NoSender);
+            system.Blockchain.Tell(inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
