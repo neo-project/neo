@@ -293,7 +293,7 @@ namespace Neo.Network.P2P
                     system.Consensus?.Tell(transaction);
                     break;
                 case Block block:
-                    if (block.Index > Blockchain.Singleton.Height + 500) return;
+                    if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
                     UpdateLastBlockIndex(block.Index, false);
                     break;
             }
