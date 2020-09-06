@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Consensus
 {
-    internal class ConsensusContext : IDisposable, ISerializable
+    public class ConsensusContext : IDisposable, ISerializable
     {
         /// <summary>
         /// Key for saving consensus state.
