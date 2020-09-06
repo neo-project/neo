@@ -13,6 +13,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 
@@ -28,6 +29,7 @@ namespace Neo.Ledger
         public class FillCompleted { }
         internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
+        private class TransactionCache : KeyedCollection<UInt256, Transaction> { protected override UInt256 GetKeyForItem(Transaction item) => item.Hash; }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
@@ -55,6 +57,7 @@ namespace Neo.Ledger
 
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
+        private const int TransactionCacheSize = 1024;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         private readonly IActorRef txrouter;
@@ -62,6 +65,7 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
+        private readonly TransactionCache transaction_cache = new TransactionCache();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
@@ -159,6 +163,7 @@ namespace Neo.Ledger
         public bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;
+            if (transaction_cache.Contains(hash)) return true;
             return View.ContainsTransaction(hash);
         }
 
@@ -251,6 +256,8 @@ namespace Neo.Ledger
         public Transaction GetTransaction(UInt256 hash)
         {
             if (MemPool.TryGetValue(hash, out Transaction transaction))
+                return transaction;
+            if (transaction_cache.TryGetValue(hash, out transaction))
                 return transaction;
             return View.GetTransaction(hash);
         }
@@ -462,6 +469,8 @@ namespace Neo.Ledger
                         Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
+
+                    transaction_cache.Add(tx);
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
                 if (block.Index > 0)
@@ -499,6 +508,8 @@ namespace Neo.Ledger
             UpdateCurrentSnapshot();
             block_cache.Remove(block.PrevHash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
+            while (transaction_cache.Count > TransactionCacheSize)
+                transaction_cache.RemoveAt(0);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
