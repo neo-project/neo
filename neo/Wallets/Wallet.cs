@@ -383,11 +383,16 @@ namespace Neo.Wallets
                 using (ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx))
                 {
                     if (engine.State.HasFlag(VMState.FAULT)) return null;
+                    Fixed8 freeGas;
+                    if (WalletHeight < Blockchain.FreeGasChangeHeight)
+                        freeGas = Fixed8.FromDecimal(10);
+                    else
+                        freeGas = Fixed8.FromDecimal(50);
                     tx = new InvocationTransaction
                     {
                         Version = itx.Version,
                         Script = itx.Script,
-                        Gas = InvocationTransaction.GetGas(engine.GasConsumed),
+                        Gas = InvocationTransaction.GetGas(engine.GasConsumed, freeGas),
                         Attributes = itx.Attributes,
                         Inputs = itx.Inputs,
                         Outputs = itx.Outputs

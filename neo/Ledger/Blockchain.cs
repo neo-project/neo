@@ -33,6 +33,7 @@ namespace Neo.Ledger
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly uint FreeGasChangeHeight = ProtocolSettings.Default.FreeGasChangeHeight;
 
 #pragma warning disable CS0612
         public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
