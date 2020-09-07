@@ -14,6 +14,7 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using static Neo.SmartContract.Native.Tokens.NeoToken;
@@ -500,7 +501,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 VoteTo = Blockchain.StandbyCommittee[0]
             }));
             snapshot.Storages.Add(new KeyBuilder(-1, 23).Add(Blockchain.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(100 * 100));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(50 * 100));
             snapshot.Storages.Delete(key);
         }
 
@@ -642,74 +643,75 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Initialize block
+            snapshot.Storages.Add(CreateStorageKey(1), new StorageItem(new BigInteger(30000000)));
 
             for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 ECPoint member = Blockchain.StandbyCommittee[i];
-                var moreVotes = 0;
-                if (i < ProtocolSettings.Default.ValidatorsCount)
-                    moreVotes += 10;
                 snapshot.Storages.Add(new KeyBuilder(-1, 33).Add(member), new StorageItem(new CandidateState()
                 {
                     Registered = true,
-                    Votes = 100 * 10000 + moreVotes
+                    Votes = 200 * 10000 - i * 100
                 }));
             }
             var item = snapshot.Storages.GetAndChange(new KeyBuilder(-1, 1), () => new StorageItem());
             item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
 
             snapshot.PersistingBlock = new Block { Index = 0 };
-            Check_OnPersist(snapshot).Should().BeTrue();
+            Check_PostPersist(snapshot).Should().BeTrue();
 
-            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
-            {
-                ECPoint member = Blockchain.StandbyCommittee[i];
-                StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(member).AddBigEndian(uint.MaxValue - 1));
-                if (i < ProtocolSettings.Default.ValidatorsCount)
-                    new BigInteger(storageItem.Value).Should().Be(303568);
-                else
-                    new BigInteger(storageItem.Value).Should().Be(151785);
-            }
+            var committeeA = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray()[0];
+            NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committeeA).ScriptHash).Should().Be(0);
+
+            var committeeB = Blockchain.StandbyCommittee[0];
+            StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committeeB).AddBigEndian(uint.MaxValue - 1));
+            new BigInteger(storageItem.Value).Should().Be(25000000000);
 
             // Next block
 
             snapshot.PersistingBlock = new Block { Index = 1 };
-            Check_OnPersist(snapshot).Should().BeTrue();
-            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
-            {
-                ECPoint member = Blockchain.StandbyCommittee[i];
-                StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(member).AddBigEndian(uint.MaxValue - 1 - 1));
-                if (i < ProtocolSettings.Default.ValidatorsCount)
-                    new BigInteger(storageItem.Value).Should().Be(303568 * 2);
-                else
-                    new BigInteger(storageItem.Value).Should().Be(151785 * 2);
-            }
+            Check_PostPersist(snapshot).Should().BeTrue();
+
+            committeeA = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray()[1];
+            NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committeeA).ScriptHash).Should().Be(0);
+
+            committeeB = Blockchain.StandbyCommittee[1];
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committeeB).AddBigEndian(uint.MaxValue - 1 - 1));
+            new BigInteger(storageItem.Value).Should().Be(25001250062);
 
             // Next block
 
             snapshot.PersistingBlock = new Block { Index = 2 };
-            Check_OnPersist(snapshot).Should().BeTrue();
-            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
-            {
-                ECPoint member = Blockchain.StandbyCommittee[i];
-                StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(member).AddBigEndian(uint.MaxValue - 1 - 2));
-                if (i < ProtocolSettings.Default.ValidatorsCount)
-                    new BigInteger(storageItem.Value).Should().Be(303568 * 3);
-                else
-                    new BigInteger(storageItem.Value).Should().Be(151785 * 3);
-            }
+            Check_PostPersist(snapshot).Should().BeTrue();
+
+            committeeA = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray()[2];
+            NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committeeA).ScriptHash).Should().Be(0);
+
+            committeeB = Blockchain.StandbyCommittee[2];
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committeeB).AddBigEndian(uint.MaxValue - 1 - 2));
+            new BigInteger(storageItem.Value).Should().Be(25002500250);
+
 
             // Claim GAS
 
-            var account = Contract.CreateSignatureContract(Blockchain.StandbyCommittee[0]).ScriptHash;
+            snapshot.PersistingBlock = new Block { Index = 2 + 28 };
+
+            Check_PostPersist(snapshot).Should().BeTrue();
+
+            NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committeeA).ScriptHash).Should().Be(0);
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committeeB).AddBigEndian(uint.MaxValue - 1 - 2 - 28));
+            new BigInteger(storageItem.Value).Should().Be(25002500250 * 2);
+
+            var account = Contract.CreateSignatureContract(committeeB).ScriptHash;
             snapshot.Storages.Add(new KeyBuilder(-1, 20).Add(account), new StorageItem(new NeoAccountState
             {
                 BalanceHeight = 1,
-                Balance = 100,
-                VoteTo = Blockchain.StandbyCommittee[0]
+                Balance = 200 * 10000 - 2 * 100,
+                VoteTo = committeeB
             }));
-            BigInteger value = NativeContract.NEO.UnclaimedGas(snapshot, account, 2);
-            value.Should().Be(3085);
+            NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(1999800);
+            BigInteger value = NativeContract.NEO.UnclaimedGas(snapshot, account, 2 + 28 + 1);
+            value.Should().Be(1999800 * 25002500250 / 100000000L + (1999800L * 10 * 5 * 30 / 100));
         }
 
         [TestMethod]
@@ -798,6 +800,24 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             script.EmitPush(0);
             script.Emit(OpCode.PACK);
             script.EmitPush("onPersist");
+            engine.LoadScript(script.ToArray());
+
+            return engine.Execute() == VMState.HALT;
+        }
+
+        internal static bool Check_PostPersist(StoreView snapshot)
+        {
+            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
+            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+            var engine = ApplicationEngine.Create(TriggerType.System,
+                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("postPersist");
             engine.LoadScript(script.ToArray());
 
             return engine.Execute() == VMState.HALT;

@@ -46,7 +46,11 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            DistributeGas(engine, account, state);
+            var m = ProtocolSettings.Default.CommitteeMembersCount - ProtocolSettings.Default.ValidatorsCount;
+            if (state.BalanceHeight < engine.Snapshot.PersistingBlock.Index - 2 * m)
+            {
+                DistributeGas(engine, account, state);
+            }
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
@@ -86,8 +90,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (!enumerator.MoveNext()) return neoHolderReward;
             var endRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
             var startRewardPerNeo = BigInteger.Zero;
-            StorageKey keyMax = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue);
-            enumerator = snapshot.Storages.FindRange(keyEnd, keyMax).GetEnumerator();
+            enumerator = snapshot.Storages.Seek(keyEnd.ToArray(), IO.Caching.SeekDirection.Backward).GetEnumerator();
             if (enumerator.MoveNext())
                 startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
 
@@ -113,6 +116,7 @@ namespace Neo.SmartContract.Native.Tokens
                     break;
                 }
             }
+            Console.WriteLine("value: " + value + " sum: " + sum);
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
@@ -167,11 +171,6 @@ namespace Neo.SmartContract.Native.Tokens
                 var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[cindex].PublicKey).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
                 engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
             }
-
-            // Set next validators
-
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
-            storage.Value = committee.Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray().ToByteArray();
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
