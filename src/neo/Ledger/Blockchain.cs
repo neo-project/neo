@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Akka.Configuration;
+using Akka.IO;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Actors;
@@ -28,6 +29,7 @@ namespace Neo.Ledger
         public class FillCompleted { }
         internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
+        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
@@ -61,7 +63,7 @@ namespace Neo.Ledger
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
-        private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
+        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
@@ -98,7 +100,7 @@ namespace Neo.Ledger
             }
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (NativeContract contract in new NativeContract[] { NativeContract.Oracle })
+                foreach (NativeContract contract in new NativeContract[] { NativeContract.NEO, NativeContract.Oracle })
                 {
                     sb.EmitAppCall(contract.Hash, "postPersist");
                     sb.Emit(OpCode.DROP);
@@ -273,19 +275,30 @@ namespace Neo.Ledger
         private void AddUnverifiedBlockToCache(Block block)
         {
             // Check if any block proposal for height `block.Index` exists
-            if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
+            if (!block_cache_unverified.TryGetValue(block.Index, out var list))
             {
-                // There are no blocks, a new LinkedList is created and, consequently, the current block is added to the list
-                blocks = new LinkedList<Block>();
-                block_cache_unverified.Add(block.Index, blocks);
+                // There are no blocks, a new UnverifiedBlocksList is created and, consequently, the current block is added to the list
+                list = new UnverifiedBlocksList();
+                block_cache_unverified.Add(block.Index, list);
             }
-            // Check if any block with the hash being added already exists on possible candidates to be processed
-            foreach (var unverifiedBlock in blocks)
+            else
             {
-                if (block.Hash == unverifiedBlock.Hash)
+                // Check if any block with the hash being added already exists on possible candidates to be processed
+                foreach (var unverifiedBlock in list.Blocks)
+                {
+                    if (block.Hash == unverifiedBlock.Hash)
+                        return;
+                }
+
+                if (!list.Nodes.Add(Sender))
+                {
+                    // Same index with different hash
+                    Sender.Tell(Tcp.Abort.Instance);
                     return;
+                }
             }
-            blocks.AddLast(block);
+
+            list.Blocks.AddLast(block);
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -338,9 +351,9 @@ namespace Neo.Ledger
                 block_cache_unverified.Remove(block.Index);
                 Persist(block);
                 SaveHeaderHashList();
-                if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
+                if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
                 {
-                    foreach (var unverifiedBlock in unverifiedBlocks)
+                    foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
                 }
@@ -462,9 +475,8 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
-                if (block.Index > 0)
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot))
                 {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);

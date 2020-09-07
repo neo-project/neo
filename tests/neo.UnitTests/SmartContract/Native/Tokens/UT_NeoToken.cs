@@ -393,11 +393,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_CommitteeBonus()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block { Index = 0 };
+            snapshot.PersistingBlock = new Block { Index = 1 };
 
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(NativeContract.NEO.Hash, "onPersist");
+                sb.EmitAppCall(NativeContract.NEO.Hash, "postPersist");
                 sb.Emit(OpCode.RET);
                 ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, (long)(20 * NativeContract.GAS.Factor));
                 engine.LoadScript(sb.ToArray());
@@ -406,7 +406,8 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
                 var committee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
                 NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(25000000);
-                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(0);
+                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(25000000);
+                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash.ToArray()).Should().Be(0);
             }
         }
 
