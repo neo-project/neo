@@ -16,6 +16,7 @@ namespace Neo
         public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; }
         public Fixed8 LowPriorityThreshold { get; }
         public uint SecondsPerBlock { get; }
+        public uint FreeGasChangeHeight { get; }
 
         public uint StateRootEnableIndex { get; }
         public Fixed8 MinimumNetworkFee { get; }
@@ -93,6 +94,7 @@ namespace Neo
             this.StateRootEnableIndex = section.GetValue("StateRootEnableIndex", 0u);
             this.LowPriorityThreshold = Fixed8.Parse(section.GetValue("LowPriorityThreshold", "0.001"));
             this.MinimumNetworkFee = Fixed8.Parse(section.GetValue("MinimumNetworkFee", "0"));
+            this.FreeGasChangeHeight = section.GetValue("FreeGasChangeHeight", 100000000u);
         }
     }
 }

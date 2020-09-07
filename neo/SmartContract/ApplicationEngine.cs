@@ -9,7 +9,8 @@ namespace Neo.SmartContract
     public class ApplicationEngine : ExecutionEngine
     {
         private const long ratio = 100000;
-        private const long gas_free = 10 * 100000000;
+        private const long gas_free = 1000000000;
+        private const long gas_free_new = 5000000000;
         private readonly long gas_amount;
         private long gas_consumed = 0;
         private readonly bool testMode;
@@ -21,7 +22,10 @@ namespace Neo.SmartContract
         public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, snapshot, new NeoService(trigger, snapshot))
         {
-            this.gas_amount = gas_free + gas.GetData();
+            if (snapshot.Height < Blockchain.FreeGasChangeHeight)
+                this.gas_amount = gas_free + gas.GetData();
+            else
+                this.gas_amount = gas_free_new + gas.GetData();
             this.testMode = testMode;
             this.snapshot = snapshot;
         }
