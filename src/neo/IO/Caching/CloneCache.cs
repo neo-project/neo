@@ -24,6 +24,11 @@ namespace Neo.IO.Caching
             innerCache.Delete(key);
         }
 
+        protected override bool ContainsInternal(TKey key)
+        {
+            return innerCache.Contains(key);
+        }
+
         protected override TValue GetInternal(TKey key)
         {
             return innerCache[key].Clone();

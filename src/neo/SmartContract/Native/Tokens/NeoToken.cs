@@ -64,6 +64,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
+            // PersistingBlock is null when running under the debugger
+            if (engine.Snapshot.PersistingBlock == null) return;
+
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);
@@ -88,7 +91,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (enumerator.MoveNext())
                 startRewardPerNeo = new BigInteger(enumerator.Current.Value.Value);
 
-            return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 10000L;
+            return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 100000000L;
         }
 
         private BigInteger CalculateNeoHolderReward(StoreView snapshot, BigInteger value, uint start, uint end)
@@ -130,31 +133,39 @@ namespace Neo.SmartContract.Native.Tokens
         {
             base.OnPersist(engine);
 
+            // Set next validators
+
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
+            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
+        }
+
+        protected override void PostPersist(ApplicationEngine engine)
+        {
+            base.PostPersist(engine);
+
             // Distribute GAS for committee
 
             int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)ProtocolSettings.Default.CommitteeMembersCount);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            var committee = GetCommitteeMembers(engine.Snapshot).ToArray();
-            var pubkey = committee.OrderBy(p => p).ElementAt(index);
+            var committee = GetCommittee(engine.Snapshot);
+            var pubkey = committee[index];
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
-            // Record the cumulative reward of the voters of each committee
+            // Record the cumulative reward of the voters of committee
 
-            var voterRewardPerCommittee = gasPerBlock * VoterRewardRatio / 100 / (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount);
+            var m = ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount;
+            var cindex = engine.Snapshot.PersistingBlock.Index % m % ProtocolSettings.Default.CommitteeMembersCount;
             var committeeVotes = GetCommitteeVotes(engine.Snapshot).ToArray();
-            for (var i = 0; i < committeeVotes.Length; i++)
+            if (committeeVotes[cindex].Votes > 0)
             {
-                if (committeeVotes[i].Votes > 0)
-                {
-                    BigInteger voterSumRewardPerNEO = (i < ProtocolSettings.Default.ValidatorsCount ? 2 : 1) * voterRewardPerCommittee * 10000L / committeeVotes[i].Votes; // Zoom in 10000 times, and the final calculation should be divided 10000L
-                    var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublicKey);
-                    var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
-                    if (enumerator.MoveNext())
-                        voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                    var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[i].PublicKey).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
-                    engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
-                }
+                BigInteger voterSumRewardPerNEO = gasPerBlock * 100000000L / committeeVotes[cindex].Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[cindex].PublicKey);
+                var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
+                if (enumerator.MoveNext())
+                    voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
+                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[cindex].PublicKey).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
             }
 
             // Set next validators
