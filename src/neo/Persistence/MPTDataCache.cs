@@ -37,6 +37,11 @@ namespace Neo.Persistence
             return mptTrie.Find(keyOrPrefix).OrderBy(p => p.Key.ToArray(), comparer);
         }
 
+        protected override bool ContainsInternal(TKey key)
+        {
+            return mptTrie[key] is null ? false : true;
+        }
+
         protected override TValue GetInternal(TKey key)
         {
             return mptTrie[key];
