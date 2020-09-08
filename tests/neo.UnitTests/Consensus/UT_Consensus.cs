@@ -210,10 +210,10 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.PreparationPayloads[mockContext.Object.MyIndex] = null;
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
-            var last_seen_message = new int[7];
+            var last_seen_message = new uint[7];
             for (int i = 0; i < 7; i++)
             {
-                if (mockContext.Object.LastSeenMessage.TryGetValue(mockContext.Object.Validators[i], out int value))
+                if (mockContext.Object.LastSeenMessage.TryGetValue(mockContext.Object.Validators[i], out uint value))
                 {
                     last_seen_message[i] = value;
                 }
@@ -498,7 +498,7 @@ namespace Neo.UnitTests.Consensus
         public ConsensusPayload GetPrepareRequestAndSignStateRoot(ConsensusPayload req, ushort vI, KeyPair kp, byte[] stateRootData)
         {
             var tmp = req.ToArray().AsSerializable<ConsensusPayload>();
-            tmp.ValidatorIndex = vI;
+            tmp.ValidatorIndex = (byte)vI;
             var message = tmp.GetDeserializedMessage<PrepareRequest>();
             message.StateRootSignature = Crypto.Sign(stateRootData, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
             tmp.ConsensusMessage = message;
@@ -507,7 +507,7 @@ namespace Neo.UnitTests.Consensus
         public ConsensusPayload GetPrepareResponsePayloadAndSignStateRoot(ConsensusPayload resp, ushort vI, KeyPair kp, byte[] stateRootData)
         {
             var tmp = resp.ToArray().AsSerializable<ConsensusPayload>();
-            tmp.ValidatorIndex = vI;
+            tmp.ValidatorIndex = (byte)vI;
             var message = tmp.GetDeserializedMessage<PrepareResponse>();
             message.StateRootSignature = Crypto.Sign(stateRootData, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray());
             tmp.ConsensusMessage = message;
