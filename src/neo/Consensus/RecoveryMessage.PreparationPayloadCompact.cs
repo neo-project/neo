@@ -9,18 +9,20 @@ namespace Neo.Consensus
     {
         public class PreparationPayloadCompact : ISerializable
         {
-            public ushort ValidatorIndex;
+            public byte ValidatorIndex;
             public byte[] InvocationScript;
             public byte[] StateRootSignature;
 
             int ISerializable.Size =>
-                sizeof(ushort) +                    //ValidatorIndex
+                sizeof(byte) +                      //ValidatorIndex
                 InvocationScript.GetVarSize() +     //InvocationScript
                 64;                                 //StateRootSignature
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
-                ValidatorIndex = reader.ReadUInt16();
+                ValidatorIndex = reader.ReadByte();
+                if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
+                    throw new FormatException();
                 InvocationScript = reader.ReadVarBytes(1024);
                 StateRootSignature = reader.ReadFixedBytes(64);
             }

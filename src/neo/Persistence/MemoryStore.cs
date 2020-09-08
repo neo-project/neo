@@ -53,5 +53,10 @@ namespace Neo.Persistence
             innerData[table].TryGetValue(key.EnsureNotNull(), out byte[] value);
             return value;
         }
+
+        public bool Contains(byte table, byte[] key)
+        {
+            return innerData[table].ContainsKey(key.EnsureNotNull());
+        }
     }
 }

@@ -1,6 +1,8 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -104,7 +106,18 @@ namespace Neo.SmartContract
         {
             if (ScriptContainer is Transaction tx)
             {
-                Signer signer = tx.Signers.FirstOrDefault(p => p.Account.Equals(hash));
+                Signer[] signers;
+                OracleResponse response = tx.GetAttribute<OracleResponse>();
+                if (response is null)
+                {
+                    signers = tx.Signers;
+                }
+                else
+                {
+                    OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
+                    signers = Snapshot.GetTransaction(request.OriginalTxid).Signers;
+                }
+                Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
                 if (signer.Scopes == WitnessScope.Global) return true;
                 if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))

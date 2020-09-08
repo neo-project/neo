@@ -31,6 +31,11 @@ namespace Neo.Persistence
             snapshot?.Delete(prefix, key.ToArray());
         }
 
+        protected override bool ContainsInternal(TKey key)
+        {
+            return store.Contains(prefix, key.ToArray());
+        }
+
         protected override TValue GetInternal(TKey key)
         {
             return store.TryGet(prefix, key.ToArray()).AsSerializable<TValue>();

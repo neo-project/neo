@@ -171,10 +171,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("Forcing Failed nodes for recovery request... ");
             mockContext.Object.CountFailed.Should().Be(0);
             mockContext.Object.LastSeenMessage.Clear();
-            foreach (var validator in mockContext.Object.Validators)
-            {
-                mockContext.Object.LastSeenMessage[validator] = -1;
-            }
             mockContext.Object.CountFailed.Should().Be(7);
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
@@ -310,10 +306,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"Generated keypairs PKey:");
             //refresh LastSeenMessage
             mockContext.Object.LastSeenMessage.Clear();
-            foreach (var item in mockContext.Object.Validators)
-            {
-                mockContext.Object.LastSeenMessage[item] = -1;
-            }
             for (int i = 0; i < mockContext.Object.Validators.Length; i++)
                 Console.WriteLine($"{mockContext.Object.Validators[i]}/{Contract.CreateSignatureContract(mockContext.Object.Validators[i]).ScriptHash}");
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
@@ -434,10 +426,6 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nModifying CountFailed and asserting 7...");
             // This will ensure a non-deterministic behavior after last recovery
             mockContext.Object.LastSeenMessage.Clear();
-            foreach (var validator in mockContext.Object.Validators)
-            {
-                mockContext.Object.LastSeenMessage[validator] = -1;
-            }
             mockContext.Object.CountFailed.Should().Be(7);
 
             TellConsensusPayload(actorConsensus, rmPayload);
@@ -481,7 +469,7 @@ namespace Neo.UnitTests.Consensus
         /// <param name="vI">new ValidatorIndex for the cpToCopy
         /// <param name="kp">KeyPair that will be used for signing the Commit message used for creating blocks
         /// <param name="blockHashToSign">HashCode of the Block that is being produced and current being signed
-        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, ushort vI, KeyPair kp, byte[] blockHashToSign)
+        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, byte vI, KeyPair kp, byte[] blockHashToSign)
         {
             var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpCommitTemp.ValidatorIndex = vI;
@@ -500,7 +488,7 @@ namespace Neo.UnitTests.Consensus
         /// </summary>
         /// <param name="cpToCopy">ConsensusPayload that will be modified
         /// <param name="vI">new ValidatorIndex for the cpToCopy
-        public ConsensusPayload GetPayloadAndModifyValidator(ConsensusPayload cpToCopy, ushort vI)
+        public ConsensusPayload GetPayloadAndModifyValidator(ConsensusPayload cpToCopy, byte vI)
         {
             var cpTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
             cpTemp.ValidatorIndex = vI;
@@ -984,7 +972,7 @@ namespace Neo.UnitTests.Consensus
             copiedMsg.CommitMessages.Should().BeEquivalentTo(msg.CommitMessages);
         }
 
-        private static ConsensusPayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, ushort validatorIndex, byte[] witnessInvocationScript)
+        private static ConsensusPayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, byte validatorIndex, byte[] witnessInvocationScript)
         {
             return new ConsensusPayload
             {
