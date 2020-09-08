@@ -839,9 +839,7 @@ namespace Neo.Network.RPC
 
         private JObject GetMinimumNetworkFee()
         {
-            var json = new JObject();
-            json["minimumnetworkfee"] = ProtocolSettings.Default.MinimumNetworkFee.ToString();
-            return json;
+            return ProtocolSettings.Default.MinimumNetworkFee.ToString();
         }
 
         private JObject VerifyProof(UInt256 state_root, byte[] proof_bytes)
