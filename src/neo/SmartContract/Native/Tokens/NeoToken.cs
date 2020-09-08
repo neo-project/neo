@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (shouldRefreshCommittee(engine.Snapshot.Height))
             {
                 StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextCommittee), () => new StorageItem());
-                storage.Value = GetCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
+                storage.Value = GetNextCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
             }
         }
 
@@ -246,13 +246,13 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetValidators(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+            return GetCurrentCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot).OrderBy(p => p).ToArray();
+            return GetCurrentCommitteeMembers(snapshot).OrderBy(p => p).ToArray();
         }
 
         public UInt160 GetCommitteeAddress(StoreView snapshot)
@@ -261,13 +261,15 @@ namespace Neo.SmartContract.Native.Tokens
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
+        private IEnumerable<ECPoint> GetCurrentCommitteeMembers(StoreView snapshot)
         {
-            if (!shouldRefreshCommittee(snapshot.Height))
-            {
-                StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextCommittee));
-                if (storage != null) return storage.GetSerializableList<ECPoint>().ToArray();
-            }
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextCommittee));
+            if (storage != null) return storage.GetSerializableList<ECPoint>().ToArray();
+            else return GetNextCommitteeMembers(snapshot);
+        }
+
+        private IEnumerable<ECPoint> GetNextCommitteeMembers(StoreView snapshot)
+        {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
             decimal VoterTurnout = votersCount / (decimal)TotalAmount;
             if (VoterTurnout < EffectiveVoterTurnout)
