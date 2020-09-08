@@ -48,9 +48,8 @@ namespace Neo.SmartContract.Native.Tokens
         {
             var m = ProtocolSettings.Default.CommitteeMembersCount - ProtocolSettings.Default.ValidatorsCount;
             if (state.BalanceHeight < engine.Snapshot.PersistingBlock.Index - 2 * m)
-            {
                 DistributeGas(engine, account, state);
-            }
+
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
@@ -116,7 +115,6 @@ namespace Neo.SmartContract.Native.Tokens
                     break;
                 }
             }
-            Console.WriteLine("value: " + value + " sum: " + sum);
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
