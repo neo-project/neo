@@ -217,6 +217,10 @@ namespace Neo.UnitTests.Consensus
                 {
                     last_seen_message[i] = value;
                 }
+                else
+                {
+                    last_seen_message[i] = uint.MaxValue;
+                }
                 mockContext.Object.LastSeenMessage.Remove(mockContext.Object.Validators[i]);
             }
             mockContext.Object.Validators = new ECPoint[7]
@@ -231,7 +235,8 @@ namespace Neo.UnitTests.Consensus
                 };
             for (int i = 0; i < 7; i++)
             {
-                mockContext.Object.LastSeenMessage[mockContext.Object.Validators[i]] = last_seen_message[i];
+                if (last_seen_message[i] != uint.MaxValue)
+                    mockContext.Object.LastSeenMessage[mockContext.Object.Validators[i]] = last_seen_message[i];
             }
             mockContext.Object.GetPrimaryIndex(mockContext.Object.ViewNumber).Should().Be(1);
             mockContext.Object.MyIndex.Should().Be(0);
