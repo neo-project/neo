@@ -19,6 +19,7 @@ namespace Neo
         public uint FreeGasChangeHeight { get; }
 
         public uint StateRootEnableIndex { get; }
+        public Fixed8 MinimumNetworkFee { get; }
         static ProtocolSettings _default;
 
         static bool UpdateDefault(IConfiguration configuration)
@@ -92,6 +93,7 @@ namespace Neo
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
             this.StateRootEnableIndex = section.GetValue("StateRootEnableIndex", 0u);
             this.LowPriorityThreshold = Fixed8.Parse(section.GetValue("LowPriorityThreshold", "0.001"));
+            this.MinimumNetworkFee = Fixed8.Parse(section.GetValue("MinimumNetworkFee", "0"));
             this.FreeGasChangeHeight = section.GetValue("FreeGasChangeHeight", 100000000u);
         }
     }

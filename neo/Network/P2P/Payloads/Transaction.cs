@@ -29,9 +29,9 @@ namespace Neo.Network.P2P.Payloads
 
         public readonly TransactionType Type;
         public byte Version;
-        public TransactionAttribute[] Attributes;
-        public CoinReference[] Inputs;
-        public TransactionOutput[] Outputs;
+        public TransactionAttribute[] Attributes = Array.Empty<TransactionAttribute>();
+        public CoinReference[] Inputs = Array.Empty<CoinReference>();
+        public TransactionOutput[] Outputs = Array.Empty<TransactionOutput>();
         public Witness[] Witnesses { get; set; }
 
         private Fixed8 _feePerByte = -Fixed8.Satoshi;

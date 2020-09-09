@@ -327,6 +327,10 @@ namespace Neo.Network.RPC
                         byte[] proof_bytes = _params[1].AsString().HexToBytes();
                         return VerifyProof(state_root, proof_bytes);
                     }
+                case "getminimumnetworkfee":
+                    {
+                        return GetMinimumNetworkFee();
+                    }
                 default:
                     throw new RpcException(-32601, "Method not found");
             }
@@ -831,6 +835,11 @@ namespace Neo.Network.RPC
             }
 
             return json;
+        }
+
+        private JObject GetMinimumNetworkFee()
+        {
+            return ProtocolSettings.Default.MinimumNetworkFee.ToString();
         }
 
         private JObject VerifyProof(UInt256 state_root, byte[] proof_bytes)
