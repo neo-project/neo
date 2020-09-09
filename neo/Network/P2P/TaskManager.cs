@@ -239,6 +239,17 @@ namespace Neo.Network.P2P
                 session.RemoteNode.Tell(Message.Create("ping", PingPayload.Create(Blockchain.Singleton.Height)));
                 _expiredTimes[session.RemoteNode.Path] = DateTime.UtcNow.AddSeconds(PingCoolingOffPeriod);
             }
+            if (!HasStateRootTask)
+            {
+                if (Blockchain.Singleton.ExpectStateRootIndex < Blockchain.Singleton.Height)
+                {
+                    var start_index = Blockchain.Singleton.ExpectStateRootIndex;
+                    var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
+                    StateRootSyncTime = DateTime.UtcNow;
+                    IncrementGlobalTask(StateRootTaskHash);
+                    system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
+                }
+            }
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
             {
@@ -279,17 +290,6 @@ namespace Neo.Network.P2P
                     }
                 }
                 session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
-            }
-            if (!HasStateRootTask)
-            {
-                if (Blockchain.Singleton.ExpectStateRootIndex < Blockchain.Singleton.Height)
-                {
-                    var start_index = Blockchain.Singleton.ExpectStateRootIndex;
-                    var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
-                    StateRootSyncTime = DateTime.UtcNow;
-                    IncrementGlobalTask(StateRootTaskHash);
-                    system.LocalNode.Tell(Message.Create("getroots", GetStateRootsPayload.Create(start_index, count)));
-                }
             }
         }
     }
