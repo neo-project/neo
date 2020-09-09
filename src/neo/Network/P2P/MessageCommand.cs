@@ -27,6 +27,8 @@ namespace Neo.Network.P2P
         [ReflectionCache(typeof(GetBlocksPayload))]
         GetBlocks = 0x24,
         Mempool = 0x25,
+        [ReflectionCache(typeof(GetStateRootPayload))]
+        GetStateRoot = 0x26,
         [ReflectionCache(typeof(InvPayload))]
         Inv = 0x27,
         [ReflectionCache(typeof(InvPayload))]
@@ -42,8 +44,7 @@ namespace Neo.Network.P2P
         Consensus = 0x2d,
         [ReflectionCache(typeof(StateRoot))]
         StateRoot = 0x2e,
-        [ReflectionCache(typeof(GetStateRootPayload))]
-        GetStateRoot = 0x2f,
+        Reject = 0x2f,
 
         //SPV protocol
         [ReflectionCache(typeof(FilterLoadPayload))]
@@ -56,6 +57,5 @@ namespace Neo.Network.P2P
 
         //others
         Alert = 0x40,
-        Reject = 0x41,
     }
 }
