@@ -11,12 +11,10 @@ namespace Neo.Consensus
         {
             public byte ValidatorIndex;
             public byte[] InvocationScript;
-            public byte[] StateRootSignature;
 
             int ISerializable.Size =>
-                sizeof(byte) +                      //ValidatorIndex
-                InvocationScript.GetVarSize() +     //InvocationScript
-                64;                                 //StateRootSignature
+                sizeof(byte) +                  //ValidatorIndex
+                InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
@@ -24,21 +22,14 @@ namespace Neo.Consensus
                 if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
                     throw new FormatException();
                 InvocationScript = reader.ReadVarBytes(1024);
-                StateRootSignature = reader.ReadFixedBytes(64);
             }
 
             public static PreparationPayloadCompact FromPayload(ConsensusPayload payload)
             {
-                byte[] state_root_sig = Array.Empty<byte>();
-                if (payload.ConsensusMessage is PrepareResponse req)
-                    state_root_sig = req.StateRootSignature;
-                else if (payload.ConsensusMessage is PrepareResponse resp)
-                    state_root_sig = resp.StateRootSignature;
                 return new PreparationPayloadCompact
                 {
                     ValidatorIndex = payload.ValidatorIndex,
-                    InvocationScript = payload.Witness.InvocationScript,
-                    StateRootSignature = state_root_sig
+                    InvocationScript = payload.Witness.InvocationScript
                 };
             }
 
@@ -46,7 +37,6 @@ namespace Neo.Consensus
             {
                 writer.Write(ValidatorIndex);
                 writer.WriteVarBytes(InvocationScript);
-                writer.Write(StateRootSignature);
             }
         }
     }

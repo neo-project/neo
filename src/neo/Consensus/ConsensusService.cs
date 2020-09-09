@@ -169,10 +169,6 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MillisecondsPerBlock));
-
-                StateRoot stateRoot = context.CreateStateRoot();
-                Log($"relay state root, index={stateRoot.Index}, root_hash={stateRoot.RootHash}");
-                blockchain.Tell(stateRoot);
                 CheckCommits();
             }
         }
@@ -432,12 +428,6 @@ namespace Neo.Consensus
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
                 return;
             }
-            var stateRootHashData = context.EnsureStateRoot().GetHashData();
-            if (!Crypto.VerifySignature(stateRootHashData, message.StateRootSignature, context.Validators[payload.ValidatorIndex]))
-            {
-                Log($"Invalid request: invalid state root signature", LogLevel.Warning);
-                return;
-            }
 
             // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
@@ -500,12 +490,6 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging) return;
             if (context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex].Hash))
                 return;
-            byte[] stateRootHashData = context.EnsureStateRoot().GetHashData();
-            if (!Crypto.VerifySignature(stateRootHashData, message.StateRootSignature, context.Validators[payload.ValidatorIndex]))
-            {
-                Log($"Invalid response: invalid state root signature, height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}", LogLevel.Warning);
-                return;
-            }
 
             // Timeout extension: prepare response has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
