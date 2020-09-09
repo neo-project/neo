@@ -109,7 +109,7 @@ namespace Neo.SmartContract.Native.Tokens
             base.OnPersist(engine);
 
             // Set next validators
-            engine.Snapshot.Storages[CreateStorageKey(Prefix_Committee)].Value = GetCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
+            engine.Snapshot.Storages[CreateStorageKey(Prefix_Committee)].Value = ComputeCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
         }
 
         protected override void PostPersist(ApplicationEngine engine)
@@ -240,12 +240,6 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
-        public ECPoint[] GetValidators(StoreView snapshot)
-        {
-            return GetCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
-        }
-
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
             return GetCommitteeFromCache(snapshot).OrderBy(p => p).ToArray();
@@ -262,7 +256,12 @@ namespace Neo.SmartContract.Native.Tokens
             return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetSerializableList<ECPoint>();
         }
 
-        private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot)
+        internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
+        {
+            return ComputeCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+        }
+
+        private IEnumerable<ECPoint> ComputeCommitteeMembers(StoreView snapshot)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
             decimal VoterTurnout = votersCount / (decimal)TotalAmount;

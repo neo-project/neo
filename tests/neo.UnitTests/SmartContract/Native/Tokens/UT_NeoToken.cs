@@ -546,7 +546,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestGetValidators2()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var result = NativeContract.NEO.GetValidators(snapshot);
+            var result = NativeContract.NEO.ComputeNextBlockValidators(snapshot);
             result[0].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
             result[1].ToArray().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
             result[2].ToArray().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
