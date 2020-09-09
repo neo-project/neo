@@ -91,6 +91,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal override void Initialize(ApplicationEngine engine)
         {
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_NextValidators), new StorageItem(Blockchain.StandbyValidators.OrderBy(p => p).ToArray().ToByteArray()));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
+
             // Initialize economic parameters
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock), new StorageItem(new GasRecord
@@ -98,7 +101,6 @@ namespace Neo.SmartContract.Native.Tokens
                 (0, 5 * GAS.Factor)
             }));
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
         }
 
@@ -107,9 +109,7 @@ namespace Neo.SmartContract.Native.Tokens
             base.OnPersist(engine);
 
             // Set next validators
-
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
-            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
+            engine.Snapshot.Storages[CreateStorageKey(Prefix_NextValidators)].Value = GetValidators(engine.Snapshot).ToByteArray();
         }
 
         protected override void PostPersist(ApplicationEngine engine)
@@ -272,9 +272,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetNextBlockValidators(StoreView snapshot)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
-            if (storage is null) return Blockchain.StandbyValidators;
-            return storage.GetSerializableList<ECPoint>().ToArray();
+            return snapshot.Storages[CreateStorageKey(Prefix_NextValidators)].GetSerializableList<ECPoint>().ToArray();
         }
 
         public class NeoAccountState : AccountState
