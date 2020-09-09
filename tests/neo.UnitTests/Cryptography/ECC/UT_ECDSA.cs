@@ -24,6 +24,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             Assert.IsFalse(ecdsa.VerifySignature(new byte[] { 2 }, sig[0], sig[1]));
             Assert.IsFalse(ecdsa.VerifySignature(new byte[] { 1 }, sig[0] + 1, sig[1]));
             Assert.IsFalse(ecdsa.VerifySignature(new byte[] { 1 }, sig[0], sig[1] + 1));
+            Assert.IsFalse(ecdsa.VerifySignature(new byte[33], sig[0], sig[1]));
         }
     }
 }

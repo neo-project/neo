@@ -187,7 +187,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(600000000000));
+            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
             unclaim = Check_UnclaimedGas(snapshot, new byte[19]);
@@ -339,7 +339,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             // Check unclaim
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(600000000000));
+            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
             // Transfer
@@ -390,6 +390,28 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
+        public void Check_CommitteeBonus()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block { Index = 1 };
+
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitAppCall(NativeContract.NEO.Hash, "postPersist");
+                sb.Emit(OpCode.RET);
+                ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, (long)(20 * NativeContract.GAS.Factor));
+                engine.LoadScript(sb.ToArray());
+                engine.Execute();
+                engine.State.Should().Be(VM.VMState.HALT);
+
+                var committee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
+                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(25000000);
+                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(25000000);
+                NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash.ToArray()).Should().Be(0);
+            }
+        }
+
+        [TestMethod]
         public void Check_Initialize()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -415,7 +437,12 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestCalculateBonus()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block { Index = 0 };
+
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
+
+            // Fault: balance < 0
+
             snapshot.Storages.Add(key, new StorageItem(new NeoAccountState
             {
                 Balance = -100
@@ -423,11 +450,25 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             action.Should().Throw<ArgumentOutOfRangeException>();
             snapshot.Storages.Delete(key);
+
+            // Fault range: start >= end
+
+            snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
+            {
+                Balance = 100,
+                BalanceHeight = 100
+            }));
+            action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            snapshot.Storages.Delete(key);
+
+            // Normal 1) votee is non exist
+
             snapshot.Storages.GetAndChange(key, () => new StorageItem(new NeoAccountState
             {
                 Balance = 100
             }));
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 30 * Blockchain.DecrementInterval).Should().Be(new BigInteger(7000000000));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
+            snapshot.Storages.Delete(key);
         }
 
         [TestMethod]
@@ -547,6 +588,22 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
+        public void TestEconomicParameter()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            snapshot.PersistingBlock = new Block { Index = 0 };
+
+            (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(5 * NativeContract.GAS.Factor);
+
+            snapshot.PersistingBlock = new Block { Index = 10 };
+            (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(snapshot, 10 * NativeContract.GAS.Factor);
+            result1.Item2.Should().BeTrue();
+            result1.Item1.GetBoolean().Should().BeTrue();
+        }
+
+        [TestMethod]
         public void TestUnclaimedGas()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -617,6 +674,54 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var result = engine.ResultStack.Peek();
             result.GetType().Should().Be(typeof(VM.Types.Boolean));
             return (true, result.GetBoolean());
+        }
+
+        internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StoreView snapshot)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("getGasPerBlock");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (BigInteger.Zero, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return (((VM.Types.Integer)result).GetInteger(), true);
+        }
+
+        internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(StoreView snapshot, BigInteger gasPerBlock)
+        {
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(gasPerBlock);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("setGasPerBlock");
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (((VM.Types.Boolean)result).GetBoolean(), true);
         }
 
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)

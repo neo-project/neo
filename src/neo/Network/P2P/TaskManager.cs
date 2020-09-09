@@ -4,6 +4,7 @@ using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Neo.Network.P2P
     internal class TaskManager : UntypedActor
     {
         public class Register { public VersionPayload Version; }
-        public class Update { public uint LastBlockIndex; }
+        public class Update { public uint LastBlockIndex; public bool RequestTasks; }
         public class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
@@ -129,7 +130,7 @@ namespace Neo.Network.P2P
                     OnRegister(register.Version);
                     break;
                 case Update update:
-                    OnUpdate(update.LastBlockIndex);
+                    OnUpdate(update);
                     break;
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
@@ -169,12 +170,13 @@ namespace Neo.Network.P2P
             RequestTasks();
         }
 
-        private void OnUpdate(uint lastBlockIndex)
+        private void OnUpdate(Update update)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            session.LastBlockIndex = lastBlockIndex;
-            RequestTasks();
+            session.LastBlockIndex = update.LastBlockIndex;
+            session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
+            if (update.RequestTasks) RequestTasks();
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -298,18 +300,29 @@ namespace Neo.Network.P2P
 
         private void SendPingMessage()
         {
+            if (sessions.Count == 0) return;
+
+            TrimmedBlock block;
+            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                block = snapshot.Blocks[snapshot.CurrentBlockHash];
+            }
+
             foreach (KeyValuePair<IActorRef, TaskSession> item in sessions)
             {
                 var node = item.Key;
                 var session = item.Value;
-                if (Blockchain.Singleton.Height >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentBlockHash)?.Timestamp)
+
+                if (session.ExpireTime < TimeProvider.Current.UtcNow ||
+                     (block.Index >= session.LastBlockIndex &&
+                     TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= block.Timestamp))
                 {
                     if (session.InvTasks.Remove(MemPoolTaskHash))
                     {
                         node.Tell(Message.Create(MessageCommand.Mempool));
                     }
                     node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
+                    session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
                 }
             }
         }

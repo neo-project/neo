@@ -286,12 +286,20 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            system.TaskManager.Tell(inventory);
-            if (inventory is Transaction transaction)
-                system.Consensus?.Tell(transaction);
-            system.Blockchain.Tell(inventory, ActorRefs.NoSender);
             pendingKnownHashes.Remove(inventory.Hash);
+            switch (inventory)
+            {
+                case Transaction transaction:
+                    system.Consensus?.Tell(transaction);
+                    break;
+                case Block block:
+                    if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
+                    UpdateLastBlockIndex(block.Index, false);
+                    break;
+            }
             knownHashes.Add(inventory.Hash);
+            system.TaskManager.Tell(inventory);
+            system.Blockchain.Tell(inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
@@ -323,13 +331,13 @@ namespace Neo.Network.P2P
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
             EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload);
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
         }
 
         private void OnVerackMessageReceived()
@@ -375,12 +383,12 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void UpdateLastBlockIndex(PingPayload payload)
+        private void UpdateLastBlockIndex(uint lastBlockIndex, bool requestTasks)
         {
-            if (payload.LastBlockIndex > LastBlockIndex)
+            if (lastBlockIndex > LastBlockIndex)
             {
-                LastBlockIndex = payload.LastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
+                LastBlockIndex = lastBlockIndex;
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex, RequestTasks = requestTasks });
             }
         }
     }
