@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Consensus
                     UT_Crypto.generateKey(32),
                     UT_Crypto.generateKey(32),
                     UT_Crypto.generateKey(32)
-                };
+                }.OrderBy(p => p.PublicKey).ToArray();
 
             var timeValues = new[] {
               new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
@@ -414,7 +414,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
-            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem(Blockchain.StandbyValidators.OrderBy(p => p).ToArray().ToByteArray()));
+            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem(Blockchain.StandbyCommittee.ToByteArray()));
             mockContext.Object.Snapshot.Commit();
 
             Console.WriteLine("mockContext Reset.");
