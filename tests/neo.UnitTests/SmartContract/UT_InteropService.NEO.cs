@@ -204,9 +204,9 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(false, true);
             Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(null, new byte[] { 0x01 }));
-            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(new byte[] { 0x01}, null));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(new byte[] { 0x01 }, null));
             Assert.ThrowsException<ArgumentException>(() => engine.UpdateContract(null, null));
-            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(new byte[0], new byte[] { 0x01}));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(new byte[0], new byte[] { 0x01 }));
             Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(new byte[0], new byte[0]));
         }
 
