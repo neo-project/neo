@@ -109,7 +109,7 @@ namespace Neo.SmartContract.Native.Tokens
         protected override void OnPersist(ApplicationEngine engine)
         {
             base.OnPersist(engine);
-            
+
             // Set next committee
             if (ShouldRefreshCommittee(engine.Snapshot.Height))
             {
@@ -255,7 +255,7 @@ namespace Neo.SmartContract.Native.Tokens
             ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
-        
+
         private IEnumerable<ECPoint> GetCommitteeFromCache(StoreView snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetSerializableList<ECPoint>();
