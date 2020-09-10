@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         private const byte Prefix_VotersCount = 1;
         private const byte Prefix_Candidate = 33;
-        private const byte Prefix_NextCommittee = 14;
+        private const byte Prefix_Committee = 14;
         private const byte Prefix_GasPerBlock = 29;
 
         private const byte NeoHolderRewardRatio = 10;
@@ -93,6 +93,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal override void Initialize(ApplicationEngine engine)
         {
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Committee), new StorageItem(Blockchain.StandbyCommittee.ToByteArray()));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
+
             // Initialize economic parameters
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock), new StorageItem(new GasRecord
@@ -100,19 +103,17 @@ namespace Neo.SmartContract.Native.Tokens
                 (0, 5 * GAS.Factor)
             }));
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
         }
 
         protected override void OnPersist(ApplicationEngine engine)
         {
             base.OnPersist(engine);
-
+            
             // Set next committee
             if (ShouldRefreshCommittee(engine.Snapshot.Height))
             {
-                StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextCommittee), () => new StorageItem());
-                storage.Value = GetNextCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
+                engine.Snapshot.Storages[CreateStorageKey(Prefix_Committee)].Value = ComputeCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
             }
         }
 
@@ -244,15 +245,9 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
-        public ECPoint[] GetValidators(StoreView snapshot)
-        {
-            return GetCurrentCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
-        }
-
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCurrentCommitteeMembers(snapshot).OrderBy(p => p).ToArray();
+            return GetCommitteeFromCache(snapshot).OrderBy(p => p).ToArray();
         }
 
         public UInt160 GetCommitteeAddress(StoreView snapshot)
@@ -260,15 +255,18 @@ namespace Neo.SmartContract.Native.Tokens
             ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
-
-        private IEnumerable<ECPoint> GetCurrentCommitteeMembers(StoreView snapshot)
+        
+        private IEnumerable<ECPoint> GetCommitteeFromCache(StoreView snapshot)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextCommittee));
-            if (storage != null) return storage.GetSerializableList<ECPoint>().ToArray();
-            else return GetNextCommitteeMembers(snapshot);
+            return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetSerializableList<ECPoint>();
         }
 
-        private IEnumerable<ECPoint> GetNextCommitteeMembers(StoreView snapshot)
+        internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
+        {
+            return ComputeCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+        }
+
+        private IEnumerable<ECPoint> ComputeCommitteeMembers(StoreView snapshot)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
             decimal VoterTurnout = votersCount / (decimal)TotalAmount;
@@ -283,9 +281,10 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetNextBlockValidators(StoreView snapshot)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextCommittee));
-            if (storage is null) return Blockchain.StandbyValidators;
-            return storage.GetSerializableList<ECPoint>().Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+            return GetCommitteeFromCache(snapshot)
+                .Take(ProtocolSettings.Default.ValidatorsCount)
+                .OrderBy(p => p)
+                .ToArray();
         }
 
         public class NeoAccountState : AccountState
