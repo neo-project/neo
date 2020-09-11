@@ -89,6 +89,8 @@ namespace Neo.SmartContract.Native.Tokens
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
+        private bool ShouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
+
         internal override void Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Committee), new StorageItem(Blockchain.StandbyCommittee.ToByteArray()));
@@ -108,8 +110,11 @@ namespace Neo.SmartContract.Native.Tokens
         {
             base.OnPersist(engine);
 
-            // Set next validators
-            engine.Snapshot.Storages[CreateStorageKey(Prefix_Committee)].Value = ComputeCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
+            // Set next committee
+            if (ShouldRefreshCommittee(engine.Snapshot.Height))
+            {
+                engine.Snapshot.Storages[CreateStorageKey(Prefix_Committee)].Value = ComputeCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
+            }
         }
 
         protected override void PostPersist(ApplicationEngine engine)
