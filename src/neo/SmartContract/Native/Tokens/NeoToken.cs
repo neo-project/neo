@@ -47,8 +47,7 @@ namespace Neo.SmartContract.Native.Tokens
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
             var m = ProtocolSettings.Default.CommitteeMembersCount - ProtocolSettings.Default.ValidatorsCount;
-            if (state.BalanceHeight < engine.Snapshot.PersistingBlock.Index - 2 * m)
-                DistributeGas(engine, account, state);
+            DistributeGas(engine, account, state);
 
             if (amount.IsZero) return;
             if (state.VoteTo != null)
@@ -164,11 +163,10 @@ namespace Neo.SmartContract.Native.Tokens
             var m = ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount;
             var cindex = engine.Snapshot.PersistingBlock.Index % m % ProtocolSettings.Default.CommitteeMembersCount;
             var votee = committee[cindex];
-            StorageItem storage_validator = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(votee));
-            CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
-            if (state_validator.Votes > 0)
+            CandidateState candidate = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(votee))?.GetInteroperable<CandidateState>();
+            if (candidate?.Votes > 0)
             {
-                BigInteger voterSumRewardPerNEO = gasPerBlock * 100000000L / state_validator.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                BigInteger voterSumRewardPerNEO = gasPerBlock * 100000000L / candidate.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(votee);
                 var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
                 if (enumerator.MoveNext())
