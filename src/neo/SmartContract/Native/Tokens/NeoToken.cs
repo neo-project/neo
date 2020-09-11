@@ -46,9 +46,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            var m = ProtocolSettings.Default.CommitteeMembersCount - ProtocolSettings.Default.ValidatorsCount;
             DistributeGas(engine, account, state);
-
             if (amount.IsZero) return;
             if (state.VoteTo != null)
             {
