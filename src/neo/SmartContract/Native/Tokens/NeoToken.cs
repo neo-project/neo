@@ -163,15 +163,17 @@ namespace Neo.SmartContract.Native.Tokens
 
             var m = ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount;
             var cindex = engine.Snapshot.PersistingBlock.Index % m % ProtocolSettings.Default.CommitteeMembersCount;
-            var committeeVotes = GetCommitteeVotes(engine.Snapshot).ToArray();
-            if (committeeVotes[cindex].Votes > 0)
+            var votee = committee[cindex];
+            StorageItem storage_validator = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(votee));
+            CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
+            if (state_validator.Votes > 0)
             {
-                BigInteger voterSumRewardPerNEO = gasPerBlock * 100000000L / committeeVotes[cindex].Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
-                var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[cindex].PublicKey);
+                BigInteger voterSumRewardPerNEO = gasPerBlock * 100000000L / state_validator.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(votee);
                 var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
                 if (enumerator.MoveNext())
                     voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(committeeVotes[cindex].PublicKey).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(votee).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
                 engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
             }
         }
@@ -343,24 +345,6 @@ namespace Neo.SmartContract.Native.Tokens
             if (candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
                 return Blockchain.StandbyCommittee;
             return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
-        }
-
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetCommitteeVotes(StoreView snapshot)
-        {
-            decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
-            decimal VoterTurnout = votersCount / (decimal)TotalAmount;
-            if (VoterTurnout < EffectiveVoterTurnout)
-                return Blockchain.StandbyCommittee.Select(p => (p, GetCandidate(snapshot, p)?.Votes ?? BigInteger.Zero));
-            var candidates = GetCandidatesInternal(snapshot).ToDictionary(p => p.PublicKey, p => p.State);
-            if (candidates.Count(p => p.Value.Registered) < ProtocolSettings.Default.CommitteeMembersCount)
-                return Blockchain.StandbyCommittee.Select(p =>
-                {
-                    if (candidates.TryGetValue(p, out CandidateState candidate))
-                        return (p, candidate.Votes);
-                    else
-                        return (p, BigInteger.Zero);
-                });
-            return candidates.OrderByDescending(p => p.Value.Votes).ThenBy(p => p.Key).Select(p => (p.Key, p.Value.Votes)).Take(ProtocolSettings.Default.CommitteeMembersCount);
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
