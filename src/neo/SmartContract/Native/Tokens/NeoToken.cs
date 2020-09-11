@@ -286,29 +286,15 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        private CandidateState GetCandidate(StoreView snapshot, ECPoint pubkey)
-        {
-            StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
-            return snapshot.Storages.TryGet(key)?.GetInteroperable<CandidateState>();
-        }
-
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(StoreView snapshot)
-        {
-            return GetCandidatesInternal(snapshot)
-                .Where(p => p.State.Registered)
-                .Select(p => (p.PublicKey, p.State.Votes))
-                .ToArray();
-        }
-
-        private IEnumerable<(ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(StoreView snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Storages.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            ));
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
