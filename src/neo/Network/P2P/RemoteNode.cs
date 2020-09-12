@@ -29,6 +29,7 @@ namespace Neo.Network.P2P
         public int ListenerTcpPort { get; private set; } = 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; } = 0;
+        public uint LastHeightSent { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
@@ -125,6 +126,13 @@ namespace Neo.Network.P2P
                     break;
                 case Message msg:
                     EnqueueMessage(msg);
+                    break;
+                case PingPayload ping:
+                    if (LastBlockIndex < ping.LastBlockIndex)
+                    {
+                        LastBlockIndex = ping.LastBlockIndex;
+                        EnqueueMessage(Message.Create(MessageCommand.Ping, ping));
+                    }
                     break;
                 case IInventory inventory:
                     OnSend(inventory);

@@ -74,11 +74,7 @@ namespace Neo.Network.P2P
         private void OnBlock(Block block)
         {
             var session = sessions.Values.FirstOrDefault(p => p.IndexTasks.ContainsKey(block.Index));
-            if (session is null)
-            {
-                SendPingMessage();
-                return;
-            }
+            if (session is null) return;
             session.IndexTasks.Remove(block.Index);
             receivedBlockIndex.TryAdd(block.Index, session);
             RequestTasks();
@@ -325,7 +321,7 @@ namespace Neo.Network.P2P
                     {
                         node.Tell(Message.Create(MessageCommand.Mempool));
                     }
-                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
+                    node.Tell(PingPayload.Create(Blockchain.Singleton.Height));
                     session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
                 }
             }

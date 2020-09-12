@@ -357,6 +357,8 @@ namespace Neo.Ledger
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
                 }
+                // We can store the new block in block_cache and tell the new height to other nodes after Persist().
+                system.LocalNode.Tell(PingPayload.Create(Singleton.Height));
             }
             return VerifyResult.Succeed;
         }
