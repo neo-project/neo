@@ -127,44 +127,34 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void Compression()
         {
-            var payload = new VersionPayload()
+            var payload = new Transaction()
             {
-                UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
-                Magic = 2,
-                Timestamp = 5,
-                Version = 6,
-                Capabilities = new NodeCapability[]
-                {
-                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                }
+                Version = 0,
+                Attributes = new TransactionAttribute[0],
+                Script = new byte[75],
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
+                Witnesses = new Witness[0],
             };
 
-            var msg = Message.Create(MessageCommand.Version, payload, false);
+            var msg = Message.Create(MessageCommand.Transaction, payload);
             var buffer = msg.ToArray();
 
-            buffer.Length.Should().BeGreaterThan(80);
+            buffer.Length.Should().Be(128);
 
-            msg = Message.Create(MessageCommand.Version, payload, true);
+            payload.Script = new byte[payload.Script.Length + 10];
+            msg = Message.Create(MessageCommand.Transaction, payload);
             buffer = msg.ToArray();
 
-            buffer.Length.Should().BeLessThan(80);
+            buffer.Length.Should().Be(33);
 
             var copy = buffer.AsSerializable<Message>();
-            var payloadCopy = (VersionPayload)copy.Payload;
+            var payloadCopy = (Transaction)copy.Payload;
 
             copy.Command.Should().Be(msg.Command);
             copy.Flags.Should().HaveFlag(MessageFlags.Compressed);
 
-            payloadCopy.UserAgent.Should().Be(payload.UserAgent);
-            payloadCopy.Nonce.Should().Be(payload.Nonce);
-            payloadCopy.Magic.Should().Be(payload.Magic);
-            payloadCopy.Timestamp.Should().Be(payload.Timestamp);
-            payloadCopy.Version.Should().Be(payload.Version);
-
-            payloadCopy.Capabilities.Length.Should().Be(1);
-            ((ServerCapability)payloadCopy.Capabilities[0]).Type.Should().Be(NodeCapabilityType.TcpServer);
-            ((ServerCapability)payloadCopy.Capabilities[0]).Port.Should().Be(25);
+            payloadCopy.ToArray().ToHexString().Should().Be(payload.ToArray().ToHexString());
         }
     }
 }
