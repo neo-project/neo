@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Consensus
 {
-    internal class ConsensusContext : IDisposable, ISerializable
+    public class ConsensusContext : IDisposable, ISerializable
     {
         /// <summary>
         /// Key for saving consensus state.
@@ -377,7 +377,7 @@ namespace Neo.Consensus
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,
-                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot))
+                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.ComputeNextBlockValidators(Snapshot))
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);

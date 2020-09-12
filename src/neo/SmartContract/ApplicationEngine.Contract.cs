@@ -55,6 +55,8 @@ namespace Neo.SmartContract
 
         protected internal void UpdateContract(byte[] script, byte[] manifest)
         {
+            if (script is null && manifest is null) throw new ArgumentException();
+
             AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0));
 
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
