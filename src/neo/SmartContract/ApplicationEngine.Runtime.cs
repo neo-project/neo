@@ -104,6 +104,8 @@ namespace Neo.SmartContract
 
         protected internal bool CheckWitnessInternal(UInt160 hash)
         {
+            if (hash.Equals(CallingScriptHash)) return true;
+
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
