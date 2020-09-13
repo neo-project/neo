@@ -127,7 +127,7 @@ namespace Neo.Network.P2P
                 case Message msg:
                     if (msg.Command == MessageCommand.Ping && msg.Payload is PingPayload ping)
                     {
-                        if (LastHeightSent > ping.LastBlockIndex) return;
+                        if (LastHeightSent >= ping.LastBlockIndex) return;
                         LastHeightSent = ping.LastBlockIndex;
                     }
                     EnqueueMessage(msg);
