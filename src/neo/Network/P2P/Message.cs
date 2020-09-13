@@ -41,6 +41,8 @@ namespace Neo.Network.P2P
                 command == MessageCommand.Consensus ||
                 command == MessageCommand.Transaction ||
                 command == MessageCommand.Headers ||
+                command == MessageCommand.Addr ||
+                command == MessageCommand.MerkleBlock ||
                 command == MessageCommand.FilterLoad ||
                 command == MessageCommand.FilterAdd;
 
