@@ -125,14 +125,12 @@ namespace Neo.Network.P2P
                     RefreshPendingKnownHashes();
                     break;
                 case Message msg:
-                    EnqueueMessage(msg);
-                    break;
-                case PingPayload ping:
-                    if (LastHeightSent < ping.LastBlockIndex)
+                    if (msg.Command == MessageCommand.Ping && msg.Payload is PingPayload ping)
                     {
+                        if (LastHeightSent > ping.LastBlockIndex) return;
                         LastHeightSent = ping.LastBlockIndex;
-                        EnqueueMessage(Message.Create(MessageCommand.Ping, ping));
                     }
+                    EnqueueMessage(msg);
                     break;
                 case IInventory inventory:
                     OnSend(inventory);

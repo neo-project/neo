@@ -190,9 +190,6 @@ namespace Neo.Network.P2P
                 case Message msg:
                     BroadcastMessage(msg);
                     break;
-                case PingPayload ping:
-                    foreach (var connection in RemoteNodes.Keys) connection.Tell(ping);
-                    break;
                 case RelayDirectly relay:
                     OnRelayDirectly(relay.Inventory);
                     break;
