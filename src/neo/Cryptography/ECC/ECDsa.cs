@@ -1,4 +1,3 @@
-using Neo.IO;
 using System;
 using System.Numerics;
 using System.Security.Cryptography;
