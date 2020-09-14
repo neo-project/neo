@@ -1,3 +1,4 @@
+using Neo.IO;
 using System;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -22,8 +23,9 @@ namespace Neo.Cryptography.ECC
             this.curve = publicKey.Curve;
         }
 
-        private BigInteger CalculateE(BigInteger n, ReadOnlySpan<byte> message)
+        private BigInteger CalculateE(BigInteger n, UInt256 hash)
         {
+            var message = hash.ToArray();
             int messageBitLength = message.Length * 8;
             BigInteger trunc = new BigInteger(message, isUnsigned: true, isBigEndian: true);
             if (n.GetBitLength() < messageBitLength)
@@ -33,10 +35,10 @@ namespace Neo.Cryptography.ECC
             return trunc;
         }
 
-        public BigInteger[] GenerateSignature(ReadOnlySpan<byte> message)
+        public BigInteger[] GenerateSignature(UInt256 hash)
         {
             if (privateKey == null) throw new InvalidOperationException();
-            BigInteger e = CalculateE(curve.N, message);
+            BigInteger e = CalculateE(curve.N, hash);
             BigInteger d = new BigInteger(privateKey, isUnsigned: true, isBigEndian: true);
             BigInteger r, s;
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
@@ -91,11 +93,11 @@ namespace Neo.Cryptography.ECC
             return R;
         }
 
-        public bool VerifySignature(ReadOnlySpan<byte> message, BigInteger r, BigInteger s)
+        public bool VerifySignature(UInt256 hash, BigInteger r, BigInteger s)
         {
             if (r.Sign < 1 || s.Sign < 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
                 return false;
-            BigInteger e = CalculateE(curve.N, message);
+            BigInteger e = CalculateE(curve.N, hash);
             BigInteger c = s.ModInverse(curve.N);
             BigInteger u1 = (e * c).Mod(curve.N);
             BigInteger u2 = (r * c).Mod(curve.N);
