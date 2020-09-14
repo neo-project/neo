@@ -224,6 +224,7 @@ namespace Neo.Wallets
         {
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
+            if (tx is InvocationTransaction && fee < ProtocolSettings.Default.MinimumNetworkFee) fee = ProtocolSettings.Default.MinimumNetworkFee;
             fee += tx.SystemFee;
             var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : tx.Outputs).GroupBy(p => p.AssetId, (k, g) => new
             {
@@ -383,11 +384,16 @@ namespace Neo.Wallets
                 using (ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx))
                 {
                     if (engine.State.HasFlag(VMState.FAULT)) return null;
+                    Fixed8 freeGas;
+                    if (WalletHeight < Blockchain.FreeGasChangeHeight)
+                        freeGas = Fixed8.FromDecimal(10);
+                    else
+                        freeGas = Fixed8.FromDecimal(50);
                     tx = new InvocationTransaction
                     {
                         Version = itx.Version,
                         Script = itx.Script,
-                        Gas = InvocationTransaction.GetGas(engine.GasConsumed),
+                        Gas = InvocationTransaction.GetGas(engine.GasConsumed, freeGas),
                         Attributes = itx.Attributes,
                         Inputs = itx.Inputs,
                         Outputs = itx.Outputs
