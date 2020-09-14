@@ -51,19 +51,39 @@ namespace Neo.SmartContract
 
             Snapshot.Contracts.Add(hash, contract);
 
-            // Try to initialize
+            // Execute _deploy
 
-            var md = contract.Manifest.Abi.GetMethod("_initialize");
-            if (md == null) return contract;
+            var method = "_deploy";
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) return contract;
+
+            if (invocationCounter.TryGetValue(contract.ScriptHash, out var counter))
+            {
+                invocationCounter[contract.ScriptHash] = counter + 1;
+            }
+            else
+            {
+                invocationCounter[contract.ScriptHash] = 1;
+            }
+
+            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
 
+            var args = new Array();
+            if (args.Count != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = callingFlags;
+
+            for (int i = args.Count - 1; i >= 0; i--)
+                context_new.EvaluationStack.Push(args[i]);
+
+            md = contract.Manifest.Abi.GetMethod("_initialize");
+            if (md != null) LoadContext(context_new.Clone(md.Offset));
 
             return contract;
         }
@@ -104,22 +124,6 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
                     throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
-            }
-            if (script != null)
-            {
-                // Try to initialize
-
-                var md = contract.Manifest.Abi.GetMethod("_initialize");
-                if (md == null) return;
-
-                ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-                UInt160 callingScriptHash = state.ScriptHash;
-                CallFlags callingFlags = state.CallFlags;
-
-                ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
-                state = context_new.GetState<ExecutionContextState>();
-                state.CallingScriptHash = callingScriptHash;
-                state.CallFlags = callingFlags;
             }
         }
 
