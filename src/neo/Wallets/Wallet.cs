@@ -371,6 +371,21 @@ namespace Neo.Wallets
             foreach (UInt160 hash in hashes)
             {
                 byte[] witness_script = GetAccount(hash)?.Contract?.Script;
+
+                if (witness_script is null && tx.Witnesses != null)
+                {
+                    // Try to find the script in the witnesses
+
+                    foreach (var witness in tx.Witnesses)
+                    {
+                        if (witness.ScriptHash == hash)
+                        {
+                            witness_script = witness.VerificationScript;
+                            break;
+                        }
+                    }
+                }
+
                 if (witness_script is null)
                 {
                     var contract = snapshot.Contracts.TryGet(hash);
