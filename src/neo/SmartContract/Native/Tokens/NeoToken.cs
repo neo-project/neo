@@ -261,6 +261,7 @@ namespace Neo.SmartContract.Native.Tokens
                 else
                     item.Add(-state_account.Balance);
             }
+            DistributeGas(engine, account, state_account);
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state_account.VoteTo);
@@ -269,7 +270,6 @@ namespace Neo.SmartContract.Native.Tokens
                 state_validator.Votes -= state_account.Balance;
                 if (!state_validator.Registered && state_validator.Votes.IsZero)
                 {
-                    DistributeGas(engine, account, state_account);
                     UInt160 voteeAddr = Contract.CreateSignatureContract(state_account.VoteTo).ScriptHash;
                     foreach (var (rewardKey, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
                         engine.Snapshot.Storages.Delete(rewardKey);
