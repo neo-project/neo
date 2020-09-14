@@ -70,15 +70,10 @@ namespace Neo.SmartContract
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
 
-            var args = new Array();
-            if (args.Count != md.Parameters.Length) throw new InvalidOperationException($"Method {md.Name} Expects {md.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = callingFlags;
-
-            for (int i = args.Count - 1; i >= 0; i--)
-                context_new.EvaluationStack.Push(args[i]);
 
             md = contract.Manifest.Abi.GetMethod("_initialize");
             if (md != null) LoadContext(context_new.Clone(md.Offset));
