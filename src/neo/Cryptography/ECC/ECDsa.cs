@@ -23,7 +23,7 @@ namespace Neo.Cryptography.ECC
             this.curve = publicKey.Curve;
         }
 
-        private BigInteger CalculateE(BigInteger n, byte[] message)
+        private BigInteger CalculateE(BigInteger n, ReadOnlySpan<byte> message)
         {
             if (message.Length != UInt256.Length) throw new ArgumentException("Message must be a valid hash");
             int messageBitLength = message.Length * 8;
@@ -35,7 +35,7 @@ namespace Neo.Cryptography.ECC
             return trunc;
         }
 
-        public BigInteger[] GenerateSignature(byte[] message)
+        public BigInteger[] GenerateSignature(ReadOnlySpan<byte> message)
         {
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
@@ -93,7 +93,7 @@ namespace Neo.Cryptography.ECC
             return R;
         }
 
-        public bool VerifySignature(byte[] message, BigInteger r, BigInteger s)
+        public bool VerifySignature(ReadOnlySpan<byte> message, BigInteger r, BigInteger s)
         {
             if (r.Sign < 1 || s.Sign < 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
                 return false;
