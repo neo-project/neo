@@ -50,6 +50,21 @@ namespace Neo.SmartContract
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
 
             Snapshot.Contracts.Add(hash, contract);
+
+            // Try to initialize
+
+            var md = contract.Manifest.Abi.GetMethod("_initialize");
+            if (md == null) return contract;
+
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            UInt160 callingScriptHash = state.ScriptHash;
+            CallFlags callingFlags = state.CallFlags;
+
+            ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
+            state = context_new.GetState<ExecutionContextState>();
+            state.CallingScriptHash = callingScriptHash;
+            state.CallFlags = callingFlags;
+
             return contract;
         }
 
@@ -89,6 +104,22 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
                     throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
+            }
+            if (script != null)
+            {
+                // Try to initialize
+
+                var md = contract.Manifest.Abi.GetMethod("_initialize");
+                if (md == null) return;
+
+                ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+                UInt160 callingScriptHash = state.ScriptHash;
+                CallFlags callingFlags = state.CallFlags;
+
+                ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
+                state = context_new.GetState<ExecutionContextState>();
+                state.CallingScriptHash = callingScriptHash;
+                state.CallFlags = callingFlags;
             }
         }
 
