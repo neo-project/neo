@@ -56,7 +56,7 @@ namespace Neo.Cryptography
                 var ecdsa = new ECC.ECDsa(pubkey);
                 var r = new BigInteger(signature[..32], true, true);
                 var s = new BigInteger(signature[32..], true, true);
-                return ecdsa.VerifySignature(new UInt256(message.Sha256()), r, s);
+                return ecdsa.VerifySignature(message.Sha256(), r, s);
             }
         }
 
@@ -101,7 +101,7 @@ namespace Neo.Cryptography
                 var ecdsa = new ECC.ECDsa(ECC.ECPoint.DecodePoint(pubkey, curve));
                 var r = new BigInteger(signature[..32], true, true);
                 var s = new BigInteger(signature[32..], true, true);
-                return ecdsa.VerifySignature(new UInt256(message.Sha256()), r, s);
+                return ecdsa.VerifySignature(message.Sha256(), r, s);
             }
         }
     }
