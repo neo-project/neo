@@ -53,8 +53,7 @@ namespace Neo.SmartContract
 
             // Execute _deploy
 
-            var method = "_deploy";
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md is null) return contract;
 
             if (invocationCounter.TryGetValue(contract.ScriptHash, out var counter))
@@ -67,13 +66,12 @@ namespace Neo.SmartContract
             }
 
             GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
-
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
 
             var args = new Array();
-            if (args.Count != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Count} Arguments");
+            if (args.Count != md.Parameters.Length) throw new InvalidOperationException($"Method {md.Name} Expects {md.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
