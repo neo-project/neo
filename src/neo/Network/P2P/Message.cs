@@ -36,8 +36,18 @@ namespace Neo.Network.P2P
                 _payload_compressed = payload?.ToArray() ?? Array.Empty<byte>()
             };
 
+            bool tryCompression =
+                command == MessageCommand.Block ||
+                command == MessageCommand.Consensus ||
+                command == MessageCommand.Transaction ||
+                command == MessageCommand.Headers ||
+                command == MessageCommand.Addr ||
+                command == MessageCommand.MerkleBlock ||
+                command == MessageCommand.FilterLoad ||
+                command == MessageCommand.FilterAdd;
+
             // Try compression
-            if (message._payload_compressed.Length > CompressionMinSize)
+            if (tryCompression && message._payload_compressed.Length > CompressionMinSize)
             {
                 var compressed = message._payload_compressed.CompressLz4();
                 if (compressed.Length < message._payload_compressed.Length - CompressionThreshold)
