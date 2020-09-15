@@ -10,5 +10,6 @@ namespace Neo.Persistence
     {
         IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] key, SeekDirection direction);
         byte[] TryGet(byte table, byte[] key);
+        bool Contains(byte table, byte[] key);
     }
 }
