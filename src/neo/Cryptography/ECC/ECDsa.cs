@@ -24,14 +24,12 @@ namespace Neo.Cryptography.ECC
 
         private BigInteger CalculateE(BigInteger n, ReadOnlySpan<byte> message)
         {
-            if (message.Length != UInt256.Length) throw new ArgumentException("Message must be a valid hash");
             int messageBitLength = message.Length * 8;
-            BigInteger trunc = new BigInteger(message, isUnsigned: true, isBigEndian: true);
-            if (n.GetBitLength() < messageBitLength)
+            if (n.GetBitLength() != messageBitLength)
             {
-                trunc >>= messageBitLength - n.GetBitLength();
+                throw new ArgumentException($"Message must be {n.GetBitLength()} bit length");
             }
-            return trunc;
+            return new BigInteger(message, isUnsigned: true, isBigEndian: true);
         }
 
         public BigInteger[] GenerateSignature(ReadOnlySpan<byte> message)
