@@ -53,7 +53,7 @@ namespace Neo.SmartContract
 
             // We should push it onto the caller's stack.
 
-            Push(contract.ToStackItem(ReferenceCounter));
+            Push(Convert(contract));
 
             // Execute _deploy
 
