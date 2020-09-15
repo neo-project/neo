@@ -54,29 +54,8 @@ namespace Neo.SmartContract
             // Execute _deploy
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
-            if (md is null) return contract;
-
-            if (invocationCounter.TryGetValue(contract.ScriptHash, out var counter))
-            {
-                invocationCounter[contract.ScriptHash] = counter + 1;
-            }
-            else
-            {
-                invocationCounter[contract.ScriptHash] = 1;
-            }
-
-            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            UInt160 callingScriptHash = state.ScriptHash;
-            CallFlags callingFlags = state.CallFlags;
-
-            ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
-            state = context_new.GetState<ExecutionContextState>();
-            state.CallingScriptHash = callingScriptHash;
-            state.CallFlags = callingFlags;
-
-            md = contract.Manifest.Abi.GetMethod("_initialize");
-            if (md != null) LoadContext(context_new.Clone(md.Offset));
+            if (md != null)
+                CallContractInternal(contract, md, new Array(ReferenceCounter), CallFlags.All);
 
             return contract;
         }
@@ -149,12 +128,18 @@ namespace Neo.SmartContract
 
             ContractState contract = Snapshot.Contracts.TryGet(contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
 
             ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
-
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
+            CallContractInternal(contract, md, args, flags);
+        }
+
+        private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags)
+        {
             if (invocationCounter.TryGetValue(contract.ScriptHash, out var counter))
             {
                 invocationCounter[contract.ScriptHash] = counter + 1;
@@ -170,18 +155,16 @@ namespace Neo.SmartContract
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
 
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
-            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
-            if (args.Count != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadScript(contract.Script, md.Offset);
+            if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method.Name} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
+            ExecutionContext context_new = LoadScript(contract.Script, method.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = flags & callingFlags;
 
-            if (NativeContract.IsNative(contractHash))
+            if (NativeContract.IsNative(contract.ScriptHash))
             {
                 context_new.EvaluationStack.Push(args);
-                context_new.EvaluationStack.Push(method);
+                context_new.EvaluationStack.Push(method.Name);
             }
             else
             {
@@ -189,8 +172,8 @@ namespace Neo.SmartContract
                     context_new.EvaluationStack.Push(args[i]);
             }
 
-            md = contract.Manifest.Abi.GetMethod("_initialize");
-            if (md != null) LoadContext(context_new.Clone(md.Offset));
+            method = contract.Manifest.Abi.GetMethod("_initialize");
+            if (method != null) LoadContext(context_new.Clone(method.Offset));
         }
 
         protected internal bool IsStandardContract(UInt160 hash)
