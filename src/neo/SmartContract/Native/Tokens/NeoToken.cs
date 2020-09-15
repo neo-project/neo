@@ -48,18 +48,12 @@ namespace Neo.SmartContract.Native.Tokens
         {
             DistributeGas(engine, account, state);
             if (amount.IsZero) return;
-            if (state.VoteTo != null)
-            {
-                CandidateState state_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Candidate).Add(state.VoteTo)).GetInteroperable<CandidateState>();
-                state_validator.Votes += amount;
-                engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
-
-                if (state_validator.Votes == 0)
-                {
-                    foreach (var (key, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(state.VoteTo).ToArray()))
-                        engine.Snapshot.Storages.Delete(key);
-                }
-            }
+            if (state.VoteTo is null) return;
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
+            StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state.VoteTo);
+            CandidateState candidate = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<CandidateState>();
+            candidate.Votes += amount;
+            CheckCandidate(engine.Snapshot, key, candidate);
         }
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
@@ -113,6 +107,18 @@ namespace Neo.SmartContract.Native.Tokens
                 }
             }
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
+        }
+
+        private void CheckCandidate(StoreView snapshot, StorageKey key, CandidateState candidate)
+        {            
+            if (!candidate.Registered && candidate.Votes.IsZero)
+            {
+                ECPoint pubKey = ECPoint.FromBytes(key.Key.Skip(1).ToArray(), ECCurve.Secp256r1);
+                UInt160 voteeAddr = Contract.CreateSignatureContract(pubKey).ScriptHash;
+                foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
+                    snapshot.Storages.Delete(rewardKey);
+                snapshot.Storages.Delete(key);
+            }
         }
 
         private bool ShouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
@@ -233,10 +239,8 @@ namespace Neo.SmartContract.Native.Tokens
             if (engine.Snapshot.Storages.TryGet(key) is null) return true;
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key);
             CandidateState state = item.GetInteroperable<CandidateState>();
-            if (state.Votes.IsZero)
-                engine.Snapshot.Storages.Delete(key);
-            else
-                state.Registered = false;
+            state.Registered = false;
+            CheckCandidate(engine.Snapshot, key, state);
             return true;
         }
 
@@ -268,14 +272,7 @@ namespace Neo.SmartContract.Native.Tokens
                 StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes -= state_account.Balance;
-                if (!state_validator.Registered && state_validator.Votes.IsZero)
-                {
-                    UInt160 voteeAddr = Contract.CreateSignatureContract(state_account.VoteTo).ScriptHash;
-                    foreach (var (rewardKey, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
-                        engine.Snapshot.Storages.Delete(rewardKey);
-
-                    engine.Snapshot.Storages.Delete(key);
-                }
+                CheckCandidate(engine.Snapshot, key, state_validator);
             }
             state_account.VoteTo = voteTo;
             if (validator_new != null)
