@@ -110,7 +110,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         private void CheckCandidate(StoreView snapshot, StorageKey key, CandidateState candidate)
-        {            
+        {
             if (!candidate.Registered && candidate.Votes.IsZero)
             {
                 ECPoint pubKey = ECPoint.FromBytes(key.Key.Skip(1).ToArray(), ECCurve.Secp256r1);
