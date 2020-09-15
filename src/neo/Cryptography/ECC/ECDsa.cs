@@ -24,8 +24,7 @@ namespace Neo.Cryptography.ECC
 
         private BigInteger CalculateE(BigInteger n, ReadOnlySpan<byte> message)
         {
-            int messageBitLength = message.Length * 8;
-            if (n.GetBitLength() != messageBitLength)
+            if (n.GetBitLength() != (message.Length * 8))
             {
                 throw new ArgumentException($"Message must be {n.GetBitLength()} bit length");
             }
