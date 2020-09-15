@@ -55,7 +55,7 @@ namespace Neo.SmartContract
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
-                CallContractInternal(contract, md, new Array(ReferenceCounter), CallFlags.All);
+                CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All);
 
             return contract;
         }
@@ -96,6 +96,12 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
                     throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
+            }
+            if (script != null)
+            {
+                ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
+                if (md != null)
+                    CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.All);
             }
         }
 
