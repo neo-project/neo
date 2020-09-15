@@ -28,7 +28,7 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
-        protected internal ContractState CreateContract(byte[] script, byte[] manifest)
+        protected internal void CreateContract(byte[] script, byte[] manifest)
         {
             if (script.Length == 0 || script.Length > MaxContractLength)
                 throw new ArgumentException($"Invalid Script Length: {script.Length}");
@@ -51,13 +51,15 @@ namespace Neo.SmartContract
 
             Snapshot.Contracts.Add(hash, contract);
 
+            // We should push it onto the caller's stack.
+
+            Push(contract.ToStackItem(ReferenceCounter));
+
             // Execute _deploy
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All);
-
-            return contract;
         }
 
         protected internal void UpdateContract(byte[] script, byte[] manifest)
