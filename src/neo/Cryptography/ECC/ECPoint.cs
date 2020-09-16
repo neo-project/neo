@@ -135,7 +135,7 @@ namespace Neo.Cryptography.ECC
 
         /// <summary>
         /// Encode ECPoint to byte array
-        ///     Note: The return should never be modified because it could be cached
+        ///     Note: The return should't be modified because it could be cached
         /// </summary>
         /// <param name="commpressed">Compressed</param>
         /// <returns>Encoded point</returns>
