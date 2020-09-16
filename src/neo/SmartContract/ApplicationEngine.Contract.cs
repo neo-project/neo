@@ -60,6 +60,8 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, false);
+            else
+                GetInvocationState(CurrentContext).NeedCheckReturnValue = false;
         }
 
         protected internal void UpdateContract(byte[] script, byte[] manifest)
