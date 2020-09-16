@@ -201,7 +201,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
             var keyCount = snapshot.Storages.GetChangeSet().Count();
-            var point = Blockchain.StandbyValidators[0].EncodePoint(true).Clone() as byte[];
+            var point = Blockchain.StandbyValidators[0].EncodePoint(true, false);
 
             var ret = Check_RegisterValidator(snapshot, point); // Exists
             ret.State.Should().BeTrue();

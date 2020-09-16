@@ -133,18 +133,18 @@ namespace Neo.Cryptography.ECC
             }
         }
 
-        public byte[] EncodePoint(bool commpressed)
+        public byte[] EncodePoint(bool commpressed, bool allowCache = true)
         {
             if (IsInfinity) return new byte[1];
             byte[] data;
             if (commpressed)
             {
-                if (_compressedPoint != null) return _compressedPoint;
+                if (_compressedPoint != null) return allowCache ? _compressedPoint : (byte[])_compressedPoint.Clone();
                 data = new byte[33];
             }
             else
             {
-                if (_uncompressedPoint != null) return _uncompressedPoint;
+                if (_uncompressedPoint != null) return allowCache ? _uncompressedPoint : (byte[])_compressedPoint.Clone();
                 data = new byte[65];
                 byte[] yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);

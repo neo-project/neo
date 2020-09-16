@@ -358,7 +358,7 @@ namespace Neo.VM
                     stackItem = ((UInt256)parameter.Value).ToArray();
                     break;
                 case ContractParameterType.PublicKey:
-                    stackItem = ((ECPoint)parameter.Value).EncodePoint(true);
+                    stackItem = ((ECPoint)parameter.Value).EncodePoint(true, false);
                     break;
                 case ContractParameterType.String:
                     stackItem = (string)parameter.Value;
