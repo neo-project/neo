@@ -133,18 +133,24 @@ namespace Neo.Cryptography.ECC
             }
         }
 
-        public byte[] EncodePoint(bool commpressed, bool allowCache = true)
+        /// <summary>
+        /// Encode ECPoint to byte array
+        ///     Note: The return should never be modified because it could be cached
+        /// </summary>
+        /// <param name="commpressed">Compressed</param>
+        /// <returns>Encoded point</returns>
+        public byte[] EncodePoint(bool commpressed)
         {
             if (IsInfinity) return new byte[1];
             byte[] data;
             if (commpressed)
             {
-                if (_compressedPoint != null) return allowCache ? _compressedPoint : (byte[])_compressedPoint.Clone();
+                if (_compressedPoint != null) return _compressedPoint;
                 data = new byte[33];
             }
             else
             {
-                if (_uncompressedPoint != null) return allowCache ? _uncompressedPoint : (byte[])_compressedPoint.Clone();
+                if (_uncompressedPoint != null) return _uncompressedPoint;
                 data = new byte[65];
                 byte[] yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
@@ -152,11 +158,8 @@ namespace Neo.Cryptography.ECC
             byte[] xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
-            if (allowCache)
-            {
-                if (commpressed) _compressedPoint = data;
-                else _uncompressedPoint = data;
-            }
+            if (commpressed) _compressedPoint = data;
+            else _uncompressedPoint = data;
             return data;
         }
 
