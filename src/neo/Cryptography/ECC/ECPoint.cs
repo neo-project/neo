@@ -152,8 +152,8 @@ namespace Neo.Cryptography.ECC
             byte[] xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
-            if (commpressed) _compressedPoint = data;
-            else _uncompressedPoint = data;
+            if (commpressed) _compressedPoint = allowCache ? data : (byte[])data.Clone();
+            else _uncompressedPoint = allowCache ? data : (byte[])data.Clone();
             return data;
         }
 
