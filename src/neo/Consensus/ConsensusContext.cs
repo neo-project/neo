@@ -275,7 +275,7 @@ namespace Neo.Consensus
         /// <param name="txs">Ordered transactions</param>
         internal void EnsureMaxBlockLimitation(IEnumerable<Transaction> txs)
         {
-            uint maxBlockSize = Math.Min(Network.P2P.Message.PayloadMaxSize, NativeContract.Policy.GetMaxBlockSize(Snapshot));
+            uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
             long maxBlockSystemFee = NativeContract.Policy.GetMaxBlockSystemFee(Snapshot);
             uint maxTransactionsPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot);
 
