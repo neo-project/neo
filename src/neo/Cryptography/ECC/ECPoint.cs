@@ -10,6 +10,7 @@ namespace Neo.Cryptography.ECC
     {
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
+        private byte[] _compressedPoint, _uncompressedPoint;
 
         public bool IsInfinity
         {
@@ -51,6 +52,7 @@ namespace Neo.Cryptography.ECC
                         int yTilde = encoded[0] & 1;
                         BigInteger X1 = new BigInteger(encoded[1..], isUnsigned: true, isBigEndian: true);
                         p = DecompressPoint(yTilde, X1, curve);
+                        p._compressedPoint = encoded.ToArray();
                         break;
                     }
                 case 0x04: // uncompressed
@@ -59,7 +61,10 @@ namespace Neo.Cryptography.ECC
                             throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
                         BigInteger X1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
                         BigInteger Y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
-                        p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve);
+                        p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve)
+                        {
+                            _uncompressedPoint = encoded.ToArray()
+                        };
                         break;
                     }
                 default:
@@ -134,10 +139,12 @@ namespace Neo.Cryptography.ECC
             byte[] data;
             if (commpressed)
             {
+                if (_compressedPoint != null) return _compressedPoint;
                 data = new byte[33];
             }
             else
             {
+                if (_uncompressedPoint != null) return _uncompressedPoint;
                 data = new byte[65];
                 byte[] yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
@@ -145,6 +152,8 @@ namespace Neo.Cryptography.ECC
             byte[] xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
+            if (commpressed) _compressedPoint = data;
+            else _uncompressedPoint = data;
             return data;
         }
 
