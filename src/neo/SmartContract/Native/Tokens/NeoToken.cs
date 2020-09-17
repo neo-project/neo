@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state.VoteTo);
             CandidateState candidate = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<CandidateState>();
             candidate.Votes += amount;
-            CheckCandidate(engine.Snapshot, key, candidate);
+            CheckCandidate(engine.Snapshot, state.VoteTo, candidate);
         }
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
@@ -106,15 +106,14 @@ namespace Neo.SmartContract.Native.Tokens
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
-        private void CheckCandidate(StoreView snapshot, StorageKey key, CandidateState candidate)
+        private void CheckCandidate(StoreView snapshot, ECPoint pubkey, CandidateState candidate)
         {
             if (!candidate.Registered && candidate.Votes.IsZero)
             {
-                ECPoint pubKey = ECPoint.FromBytes(key.Key.Skip(1).ToArray(), ECCurve.Secp256r1);
-                UInt160 voteeAddr = Contract.CreateSignatureContract(pubKey).ScriptHash;
+                UInt160 voteeAddr = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
                 foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
                     snapshot.Storages.Delete(rewardKey);
-                snapshot.Storages.Delete(key);
+                snapshot.Storages.Delete(CreateStorageKey(Prefix_Candidate).Add(pubkey));
             }
         }
 
@@ -237,7 +236,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key);
             CandidateState state = item.GetInteroperable<CandidateState>();
             state.Registered = false;
-            CheckCandidate(engine.Snapshot, key, state);
+            CheckCandidate(engine.Snapshot, pubkey, state);
             return true;
         }
 
@@ -269,7 +268,7 @@ namespace Neo.SmartContract.Native.Tokens
                 StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(key);
                 CandidateState state_validator = storage_validator.GetInteroperable<CandidateState>();
                 state_validator.Votes -= state_account.Balance;
-                CheckCandidate(engine.Snapshot, key, state_validator);
+                CheckCandidate(engine.Snapshot, state_account.VoteTo, state_validator);
             }
             state_account.VoteTo = voteTo;
             if (validator_new != null)
