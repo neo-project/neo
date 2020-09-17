@@ -110,8 +110,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!candidate.Registered && candidate.Votes.IsZero)
             {
-                UInt160 voteeAddr = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-                foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteeAddr).ToArray()))
+                foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray()))
                     snapshot.Storages.Delete(rewardKey);
                 snapshot.Storages.Delete(CreateStorageKey(Prefix_Candidate).Add(pubkey));
             }
