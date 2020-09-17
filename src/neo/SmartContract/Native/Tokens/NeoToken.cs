@@ -74,21 +74,13 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
 
-            BigInteger startRewardPerNeo, endRewardPerNeo;
             StorageKey keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - end);
             StorageKey keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - start);
-            using (var enumerator = snapshot.Storages.FindRange(keyStart, keyEnd).GetEnumerator())
-            {
-                if (!enumerator.MoveNext()) return neoHolderReward;
-                endRewardPerNeo = enumerator.Current.Value;
-            }
-            using (var enumerator = snapshot.Storages.Seek(keyEnd.ToArray(), IO.Caching.SeekDirection.Backward).GetEnumerator())
-            {
-                if (enumerator.MoveNext())
-                    startRewardPerNeo = enumerator.Current.Value;
-                else
-                    startRewardPerNeo = BigInteger.Zero;
-            }
+            (_, var item) = snapshot.Storages.FindRange(keyStart, keyEnd).FirstOrDefault();
+            if (item is null) return neoHolderReward;
+            BigInteger endRewardPerNeo = item;
+            (_, item) = snapshot.Storages.Seek(keyEnd.ToArray(), IO.Caching.SeekDirection.Backward).FirstOrDefault();
+            BigInteger startRewardPerNeo = item ?? BigInteger.Zero;
             return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 100000000L;
         }
 
