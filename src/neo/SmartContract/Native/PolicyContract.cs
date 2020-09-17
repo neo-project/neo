@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
-            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
