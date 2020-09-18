@@ -113,13 +113,29 @@ namespace Neo.UnitTests.Cryptography.ECC
             byte[] result2 = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
                 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
             point.EncodePoint(false).Should().BeEquivalentTo(result2);
+            point.EncodePoint(false).Should().BeEquivalentTo(result2);
 
             byte[] result3 = { 2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152 };
+            point.EncodePoint(true).Should().BeEquivalentTo(result3);
             point.EncodePoint(true).Should().BeEquivalentTo(result3);
 
             point = ECCurve.Secp256r1.G;
             byte[] result4 = { 3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150 };
             point.EncodePoint(true).Should().BeEquivalentTo(result4);
+            point.EncodePoint(true).Should().BeEquivalentTo(result4);
+
+            // Test cache
+
+            point = ECPoint.DecodePoint(ECCurve.Secp256r1.G.EncodePoint(true), ECCurve.Secp256r1);
+            point.EncodePoint(true).Should().BeEquivalentTo(result4);
+            point.EncodePoint(true).Should().BeEquivalentTo(result4);
+
+            byte[] result5 = "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5".HexToBytes();
+            point = ECPoint.DecodePoint(ECCurve.Secp256r1.G.EncodePoint(false), ECCurve.Secp256r1);
+            point.EncodePoint(true).Should().BeEquivalentTo(result4);
+            point.EncodePoint(true).Should().BeEquivalentTo(result4);
+            point.EncodePoint(false).Should().BeEquivalentTo(result5);
+            point.EncodePoint(false).Should().BeEquivalentTo(result5);
         }
 
         [TestMethod]
