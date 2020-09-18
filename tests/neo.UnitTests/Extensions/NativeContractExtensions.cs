@@ -35,7 +35,6 @@ namespace Neo.UnitTests.Extensions
             {
                 Exception exception = engine.FaultException;
                 while (exception?.InnerException != null) exception = exception.InnerException;
-
                 throw exception ?? new InvalidOperationException();
             }
 
