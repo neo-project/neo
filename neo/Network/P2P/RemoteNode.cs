@@ -64,7 +64,6 @@ namespace Neo.Network.P2P
                 case "getblocks":
                 case "getheaders":
                 case "getroots":
-                case "roots":
                 case "mempool":
                 case "ping":
                 case "pong":
