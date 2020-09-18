@@ -683,7 +683,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var accountB = committee[ProtocolSettings.Default.CommitteeMembersCount - 1];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(accountA).ScriptHash).Should().Be(0);
 
-            StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(accountA).AddBigEndian(uint.MaxValue - 1));
+            StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(accountA).AddBigEndian(0));
             new BigInteger(storageItem.Value).Should().Be(25000000000);
 
             snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)).Should().BeNull();
@@ -695,7 +695,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash).Should().Be(0);
 
-            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[1]).AddBigEndian(uint.MaxValue - 1 - 1));
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[1]).AddBigEndian(1));
             new BigInteger(storageItem.Value).Should().Be(25000000000);
 
             // Next block
@@ -706,7 +706,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             accountA = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray()[2];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash).Should().Be(0);
 
-            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[2]).AddBigEndian(uint.MaxValue - 1 - 2));
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[2]).AddBigEndian(2));
             new BigInteger(storageItem.Value).Should().Be(25000000000);
 
 
@@ -717,7 +717,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Check_PostPersist(snapshot).Should().BeTrue();
 
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash).Should().Be(0);
-            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[2]).AddBigEndian(uint.MaxValue - 1 - 2 - 28));
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[2]).AddBigEndian(2 + 28));
             new BigInteger(storageItem.Value).Should().Be(25000000000 * 2);
 
             var account = Contract.CreateSignatureContract(committee[2]).ScriptHash;

@@ -2,6 +2,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
@@ -74,15 +75,17 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
 
-            StorageKey keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - end);
-            StorageKey keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(uint.MaxValue - start);
-            (var key, var item) = snapshot.Storages.FindRange(keyStart, keyEnd).FirstOrDefault();
-            if (item is null) return neoHolderReward;
-            BigInteger endRewardPerNeo = item;
-            (key, item) = snapshot.Storages.Seek(keyEnd.ToArray(), IO.Caching.SeekDirection.Forward).FirstOrDefault();
+            StorageKey keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start);
+            (var key, var item) = snapshot.Storages.Seek(keyStart.ToArray(), SeekDirection.Backward).FirstOrDefault();
             BigInteger startRewardPerNeo = BigInteger.Zero;
-            if (key.Id == Id && key.Key[0] == Prefix_VoterRewardPerCommittee)
+            if (key != null && key.Id == Id && key.Key[0] == Prefix_VoterRewardPerCommittee)
                 startRewardPerNeo = item;
+
+            StorageKey keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(end);
+            (key, item) = snapshot.Storages.Seek(keyEnd.ToArray(), SeekDirection.Backward).FirstOrDefault();
+            BigInteger endRewardPerNeo = BigInteger.Zero;
+            if (key != null && key.Id == Id && key.Key[0] == Prefix_VoterRewardPerCommittee)
+                endRewardPerNeo = item;
             return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 100000000L;
         }
 
@@ -173,7 +176,7 @@ namespace Neo.SmartContract.Native.Tokens
                 var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
                 if (enumerator.MoveNext())
                     voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(votee).AddBigEndian(uint.MaxValue - engine.Snapshot.PersistingBlock.Index - 1);
+                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(votee).AddBigEndian(engine.Snapshot.PersistingBlock.Index);
                 engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
             }
         }
