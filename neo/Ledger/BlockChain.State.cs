@@ -27,7 +27,7 @@ namespace Neo.Ledger
 
         public StateRootState GetStateRoot(uint index)
         {
-            return currentSnapshot.StateRoots.TryGet(index);
+            return Store.GetStateRoots().TryGet(index);
         }
 
         public bool GetStateProof(UInt256 root, StorageKey skey, out HashSet<byte[]> proof)
