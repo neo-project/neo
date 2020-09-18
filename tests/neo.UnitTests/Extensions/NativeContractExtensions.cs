@@ -33,7 +33,10 @@ namespace Neo.UnitTests.Extensions
 
             if (engine.Execute() != VMState.HALT)
             {
-                throw new InvalidOperationException();
+                Exception exception = engine.FaultException;
+                while (exception?.InnerException != null) exception = exception.InnerException;
+
+                throw exception ?? new InvalidOperationException();
             }
 
             return engine.ResultStack.Pop();
