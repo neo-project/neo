@@ -59,9 +59,7 @@ namespace Neo.SmartContract
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
-                CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, false);
-            else
-                GetInvocationState(CurrentContext).NeedCheckReturnValue = false;
+                CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
         }
 
         protected internal void UpdateContract(byte[] script, byte[] manifest)
@@ -105,7 +103,7 @@ namespace Neo.SmartContract
             {
                 ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
                 if (md != null)
-                    CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.All, false);
+                    CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
             }
         }
 
@@ -145,10 +143,10 @@ namespace Neo.SmartContract
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
-            CallContractInternal(contract, md, args, flags, true);
+            CallContractInternal(contract, md, args, flags, CheckReturnType.EnsureNotEmpty);
         }
 
-        private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, bool needCheckReturnValue)
+        private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, CheckReturnType checkReturnValue)
         {
             if (invocationCounter.TryGetValue(contract.ScriptHash, out var counter))
             {
@@ -159,7 +157,7 @@ namespace Neo.SmartContract
                 invocationCounter[contract.ScriptHash] = 1;
             }
 
-            GetInvocationState(CurrentContext).NeedCheckReturnValue = needCheckReturnValue;
+            GetInvocationState(CurrentContext).NeedCheckReturnValue = checkReturnValue;
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;
