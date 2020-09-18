@@ -201,7 +201,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
             var keyCount = snapshot.Storages.GetChangeSet().Count();
-            var point = Blockchain.StandbyValidators[0].EncodePoint(true);
+            var point = Blockchain.StandbyValidators[0].EncodePoint(true).Clone() as byte[];
 
             var ret = Check_RegisterValidator(snapshot, point); // Exists
             ret.State.Should().BeTrue();
@@ -343,7 +343,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
-
             byte[] to = new byte[20];
 
             var keyCount = snapshot.Storages.GetChangeSet().Count();
