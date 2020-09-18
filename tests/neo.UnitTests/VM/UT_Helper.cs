@@ -165,6 +165,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(0, h256Parameter.ToStackItem().GetInteger());
 
             ContractParameter pkParameter = new ContractParameter { Type = ContractParameterType.PublicKey, Value = ECPoint.Parse("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", ECCurve.Secp256r1) };
+            Assert.IsInstanceOfType(pkParameter.ToStackItem(), typeof(ByteString));
             Assert.AreEqual("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", pkParameter.ToStackItem().GetSpan().ToHexString());
 
             ContractParameter strParameter = new ContractParameter { Type = ContractParameterType.String, Value = "test😂👍" };
