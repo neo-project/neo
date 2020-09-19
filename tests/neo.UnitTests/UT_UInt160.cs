@@ -49,7 +49,7 @@ namespace Neo.UnitTests.IO
         public void TestParse()
         {
             Action action = () => UInt160.Parse(null);
-            action.Should().Throw<ArgumentNullException>();
+            action.Should().Throw<FormatException>();
             UInt160 result = UInt160.Parse("0x0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result);
             Action action1 = () => UInt160.Parse("000000000000000000000000000000000000000");
@@ -61,12 +61,14 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestTryParse()
         {
-            UInt160 temp = new UInt160();
-            Assert.AreEqual(false, UInt160.TryParse(null, out temp));
-            Assert.AreEqual(true, UInt160.TryParse("0x0000000000000000000000000000000000000000", out temp));
+            Assert.AreEqual(false, UInt160.TryParse(null, out _));
+            Assert.AreEqual(true, UInt160.TryParse("0x0000000000000000000000000000000000000000", out var temp));
+            Assert.AreEqual("0x0000000000000000000000000000000000000000", temp.ToString());
             Assert.AreEqual(UInt160.Zero, temp);
-            Assert.AreEqual(false, UInt160.TryParse("000000000000000000000000000000000000000", out temp));
-            Assert.AreEqual(false, UInt160.TryParse("0xKK00000000000000000000000000000000000000", out temp));
+            Assert.AreEqual(true, UInt160.TryParse("0x1230000000000000000000000000000000000000", out temp));
+            Assert.AreEqual("0x1230000000000000000000000000000000000000", temp.ToString());
+            Assert.AreEqual(false, UInt160.TryParse("000000000000000000000000000000000000000", out _));
+            Assert.AreEqual(false, UInt160.TryParse("0xKK00000000000000000000000000000000000000", out _));
         }
 
         [TestMethod]

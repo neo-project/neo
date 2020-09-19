@@ -89,17 +89,10 @@ namespace Neo
         /// Method Parse receives a big-endian hex string and stores as a UInt256 little-endian 32-bytes array
         /// Example: Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01") should create UInt256 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
         /// </summary>
-        public static UInt256 Parse(string s)
+        public static UInt256 Parse(string value)
         {
-            if (s == null)
-                throw new ArgumentNullException();
-            if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                s = s.Substring(2);
-            if (s.Length != Length * 2)
-                throw new FormatException();
-            byte[] data = s.HexToBytes();
-            Array.Reverse(data);
-            return new UInt256(data);
+            if (!TryParse(value, out var result)) throw new FormatException();
+            return result;
         }
 
         public void Serialize(BinaryWriter writer)
@@ -135,12 +128,11 @@ namespace Neo
             }
             byte[] data = new byte[Length];
             for (int i = 0; i < Length; i++)
-                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[i]))
+                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
                 {
                     result = null;
                     return false;
                 }
-            Array.Reverse(data);
             result = new UInt256(data);
             return true;
         }
