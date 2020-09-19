@@ -1,6 +1,8 @@
 #pragma warning disable IDE0051
 
 using Neo.Ledger;
+using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
@@ -87,8 +89,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
+            if (value > Message.PayloadMaxSize) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            if (Network.P2P.Message.PayloadMaxSize <= value) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -97,6 +99,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
+            if (value > Block.MaxTransactionsPerBlock) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
             storage.Set(value);
@@ -106,8 +109,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetMaxBlockSystemFee(ApplicationEngine engine, long value)
         {
+            if (value <= 4007600) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            if (value <= 4007600) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -116,6 +119,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
+            if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
