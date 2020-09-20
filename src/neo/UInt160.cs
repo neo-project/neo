@@ -86,15 +86,8 @@ namespace Neo
         /// </summary>
         public static UInt160 Parse(string value)
         {
-            if (value == null)
-                throw new ArgumentNullException();
-            if (value.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                value = value.Substring(2);
-            if (value.Length != Length * 2)
-                throw new FormatException();
-            byte[] data = value.HexToBytes();
-            Array.Reverse(data);
-            return new UInt160(data);
+            if (!TryParse(value, out var result)) throw new FormatException();
+            return result;
         }
 
         public void Serialize(BinaryWriter writer)
@@ -129,12 +122,11 @@ namespace Neo
             }
             byte[] data = new byte[Length];
             for (int i = 0; i < Length; i++)
-                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[i]))
+                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
                 {
                     result = null;
                     return false;
                 }
-            Array.Reverse(data);
             result = new UInt160(data);
             return true;
         }
