@@ -2,7 +2,6 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.Dispatch;
 using Akka.Dispatch.MessageQueues;
-using System.Collections;
 
 namespace Neo.IO.Actors
 {
@@ -15,10 +14,10 @@ namespace Neo.IO.Actors
 
         public override IMessageQueue Create(IActorRef owner, ActorSystem system)
         {
-            return new PriorityMessageQueue(ShallDrop, IsHighPriority);
+            if (this is IDropeable dropeable) return new PriorityMessageQueue(dropeable.ShallDrop, IsHighPriority);
+            return new PriorityMessageQueue(null, IsHighPriority);
         }
 
         internal protected virtual bool IsHighPriority(object message) => false;
-        internal protected virtual bool ShallDrop(object message, IEnumerable queue) => false;
     }
 }

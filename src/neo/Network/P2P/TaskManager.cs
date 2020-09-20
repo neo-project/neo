@@ -328,7 +328,7 @@ namespace Neo.Network.P2P
         }
     }
 
-    internal class TaskManagerMailbox : PriorityMailbox
+    internal class TaskManagerMailbox : PriorityMailbox, IDropeable
     {
         public TaskManagerMailbox(Akka.Actor.Settings settings, Config config)
             : base(settings, config)
@@ -351,7 +351,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        bool IDropeable.ShallDrop(object message, IEnumerable queue)
         {
             if (!(message is TaskManager.NewTasks tasks)) return false;
             // Remove duplicate tasks

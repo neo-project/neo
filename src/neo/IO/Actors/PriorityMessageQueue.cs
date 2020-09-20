@@ -34,7 +34,7 @@ namespace Neo.IO.Actors
         {
             Interlocked.Increment(ref idle);
             if (envelope.Message is Idle) return;
-            if (dropper(envelope.Message, high.Concat(low).Select(p => p.Message)))
+            if (dropper != null && dropper(envelope.Message, high.Concat(low).Select(p => p.Message)))
                 return;
             ConcurrentQueue<Envelope> queue = priority_generator(envelope.Message) ? high : low;
             queue.Enqueue(envelope);

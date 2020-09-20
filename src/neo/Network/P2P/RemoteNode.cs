@@ -201,7 +201,7 @@ namespace Neo.Network.P2P
         }
     }
 
-    internal class RemoteNodeMailbox : PriorityMailbox
+    internal class RemoteNodeMailbox : PriorityMailbox, IDropeable
     {
         public RemoteNodeMailbox(Settings settings, Config config) : base(settings, config) { }
 
@@ -232,7 +232,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        internal protected override bool ShallDrop(object message, IEnumerable queue)
+        bool IDropeable.ShallDrop(object message, IEnumerable queue)
         {
             if (!(message is Message msg)) return false;
             switch (msg.Command)
