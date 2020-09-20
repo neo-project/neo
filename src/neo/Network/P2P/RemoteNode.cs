@@ -232,7 +232,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        bool IDropeable.ShallDrop(object message, IEnumerable queue)
+        public bool ShallDrop(object message, IEnumerable queue)
         {
             if (!(message is Message msg)) return false;
             switch (msg.Command)
