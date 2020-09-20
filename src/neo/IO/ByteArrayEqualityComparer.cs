@@ -33,13 +33,30 @@ namespace Neo.IO
             return true;
         }
 
-        public int GetHashCode(byte[] obj)
+        public unsafe int GetHashCode(byte[] obj)
         {
+            if (obj is null) return -1;
+
             unchecked
             {
                 int hash = 17;
-                foreach (byte element in obj)
-                    hash = hash * 31 + element;
+                int len = obj.Length;
+                fixed (byte* xp = obj)
+                {
+                    int* xlp = (int*)xp;
+                    for (; len >= 4; len -= 4)
+                    {
+                        hash = hash * 31 + (*xlp);
+                        xlp++;
+                    }
+                    byte* xbp = (byte*)xlp;
+                    for (; len > 0; len--)
+                    {
+                        hash = hash * 31 + (*xbp);
+                        xbp++;
+                    }
+                }
+
                 return hash;
             }
         }
