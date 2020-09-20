@@ -9,6 +9,20 @@ namespace Neo.UnitTests.Persistence
     public class UT_ReadOnlyView
     {
         [TestMethod]
+        public void ReferenceEquals()
+        {
+            var r = new ReadOnlyView(new MemoryStore());
+            Assert.IsTrue(object.ReferenceEquals(r.Blocks, r.Blocks));
+            Assert.IsTrue(object.ReferenceEquals(r.Transactions, r.Transactions));
+            Assert.IsTrue(object.ReferenceEquals(r.Contracts, r.Contracts));
+            Assert.IsTrue(object.ReferenceEquals(r.Storages, r.Storages));
+            Assert.IsTrue(object.ReferenceEquals(r.HeaderHashList, r.HeaderHashList));
+            Assert.IsTrue(object.ReferenceEquals(r.BlockHashIndex, r.BlockHashIndex));
+            Assert.IsTrue(object.ReferenceEquals(r.HeaderHashIndex, r.HeaderHashIndex));
+            Assert.IsTrue(object.ReferenceEquals(r.ContractId, r.ContractId));
+        }
+
+        [TestMethod]
         public void CommitException()
         {
             var r = new ReadOnlyView(new MemoryStore());
