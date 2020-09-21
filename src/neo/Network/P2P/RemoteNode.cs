@@ -125,7 +125,7 @@ namespace Neo.Network.P2P
                     RefreshPendingKnownHashes();
                     break;
                 case Message msg:
-                    if (msg.Command == MessageCommand.Ping)
+                    if (msg.Command == MessageCommand.Ping || msg.Command == MessageCommand.Pong)
                     {
                         PingPayload payload = (PingPayload)msg.Payload;
                         if (LastHeightSent >= payload.LastBlockIndex) break;
