@@ -300,8 +300,6 @@ namespace Neo.Network.P2P
 
         private void SendPingMessage()
         {
-            if (sessions.Count == 0) return;
-
             TrimmedBlock block;
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
