@@ -340,7 +340,7 @@ namespace Neo.Network.P2P
             }
             if (hashes.Length == 0) return;
             foreach (UInt256 hash in hashes)
-                pendingKnownHashes.Add((hash, DateTime.UtcNow));
+                pendingKnownHashes.Add((hash, TimeProvider.Current.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
 
@@ -398,7 +398,7 @@ namespace Neo.Network.P2P
             while (pendingKnownHashes.Count > 0)
             {
                 var (_, time) = pendingKnownHashes[0];
-                if (DateTime.UtcNow - time <= PendingTimeout)
+                if (TimeProvider.Current.UtcNow - time <= PendingTimeout)
                     break;
                 pendingKnownHashes.RemoveAt(0);
             }

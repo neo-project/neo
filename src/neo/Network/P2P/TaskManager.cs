@@ -110,7 +110,7 @@ namespace Neo.Network.P2P
             foreach (UInt256 hash in hashes)
             {
                 IncrementGlobalTask(hash);
-                session.InvTasks[hash] = DateTime.UtcNow;
+                session.InvTasks[hash] = TimeProvider.Current.UtcNow;
             }
 
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
@@ -251,7 +251,7 @@ namespace Neo.Network.P2P
 
                 foreach (var task in session.InvTasks.ToArray())
                 {
-                    if (DateTime.UtcNow - task.Value > TaskTimeout)
+                    if (TimeProvider.Current.UtcNow - task.Value > TaskTimeout)
                     {
                         if (session.InvTasks.Remove(task.Key))
                             DecrementGlobalTask(task.Key);
