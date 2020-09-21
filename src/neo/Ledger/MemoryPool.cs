@@ -415,7 +415,7 @@ namespace Neo.Ledger
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
             SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, StoreView snapshot)
         {
-            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddMilliseconds(millisecondsTimeout);
+            DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
 
@@ -433,7 +433,7 @@ namespace Neo.Ledger
                     else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                         invalidItems.Add(item);
 
-                    if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
+                    if (TimeProvider.Current.UtcNow > reverifyCutOffTimeStamp) break;
                 }
 
                 int blocksTillRebroadcast = BlocksTillRebroadcast;
@@ -441,7 +441,7 @@ namespace Neo.Ledger
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-                var rebroadcastCutOffTime = DateTime.UtcNow.AddMilliseconds(
+                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(
                     -Blockchain.MillisecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
@@ -452,7 +452,7 @@ namespace Neo.Ledger
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
                         {
                             _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = item.Tx }, _system.Blockchain);
-                            item.LastBroadcastTimestamp = DateTime.UtcNow;
+                            item.LastBroadcastTimestamp = TimeProvider.Current.UtcNow;
                         }
                     }
                     else
