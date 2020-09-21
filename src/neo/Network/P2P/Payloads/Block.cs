@@ -145,8 +145,20 @@ namespace Neo.Network.P2P.Payloads
                 NextConsensus.ToArray(),
 
                 // Block properties
-                Transactions.Length
+                new InteropInterface(new BlockTransactions(Hash, Transactions.Length))
             });
+        }
+
+        public class BlockTransactions
+        {
+            public readonly UInt256 Hash;
+            public readonly int Length;
+
+            public BlockTransactions(UInt256 hash, int length)
+            {
+                Hash = hash;
+                Length = length;
+            }
         }
     }
 }

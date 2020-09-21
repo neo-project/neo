@@ -16,6 +16,8 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", nameof(GetTransactionHeight), 0_01000000, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", nameof(GetTransactionFromBlock), 0_01000000, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Blockchain_GetContract = Register("System.Blockchain.GetContract", nameof(GetContract), 0_01000000, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_BlockTransactions_GetLength = Register("System.BlockTransactions.GetLength", nameof(BlockTransactionsGetLength), 0, CallFlags.AllowStates, false);
+        public static readonly InteropDescriptor System_BlockTransactions_GetTransaction = Register("System.BlockTransactions.GetTransaction", nameof(BlockTransactionsGetTransaction), 0_01000000, CallFlags.AllowStates, false);
 
         protected internal uint GetBlockchainHeight()
         {
@@ -80,6 +82,26 @@ namespace Neo.SmartContract
             {
                 throw new ArgumentException();
             }
+            return GetTransactionHelper(hash,txIndex);
+        }
+
+        protected internal ContractState GetContract(UInt160 hash)
+        {
+            return Snapshot.Contracts.TryGet(hash);
+        }
+
+        protected internal int BlockTransactionsGetLength(Block.BlockTransactions blockTransactions)
+        {
+            return blockTransactions.Length;
+        }
+
+        protected internal Transaction BlockTransactionsGetTransaction(Block.BlockTransactions blockTransactions, int txIndex)
+        {
+            return GetTransactionHelper(blockTransactions.Hash, txIndex);
+        }
+
+        private Transaction GetTransactionHelper(UInt256 hash, int txIndex)
+        {
             if (hash is null) return null;
             TrimmedBlock block = Snapshot.Blocks.TryGet(hash);
             if (block is null) return null;
@@ -87,11 +109,6 @@ namespace Neo.SmartContract
             if (txIndex < 0 || txIndex >= block.Hashes.Length - 1)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));
             return Snapshot.GetTransaction(block.Hashes[txIndex + 1]);
-        }
-
-        protected internal ContractState GetContract(UInt160 hash)
-        {
-            return Snapshot.Contracts.TryGet(hash);
         }
 
         private static bool IsTraceableBlock(StoreView snapshot, uint index)
