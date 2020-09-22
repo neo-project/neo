@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using Neo.IO;
 
 namespace Neo
 {
@@ -10,7 +11,7 @@ namespace Neo
     /// Composed by ulong(64) + ulong(64) + ulong(64) + ulong(64) = UInt256(256)
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>
+    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable
     {
         public const int Length = 32;
         public static readonly UInt256 Zero = new UInt256();
@@ -19,8 +20,6 @@ namespace Neo
         [FieldOffset(8)] private ulong value2;
         [FieldOffset(16)] private ulong value3;
         [FieldOffset(24)] private ulong value4;
-
-        public int Size => Length;
 
         public UInt256()
         {
@@ -48,14 +47,6 @@ namespace Neo
             result = value2.CompareTo(other.value2);
             if (result != 0) return result;
             return value1.CompareTo(other.value1);
-        }
-
-        public void Deserialize(BinaryReader reader)
-        {
-            value1 = reader.ReadUInt64();
-            value2 = reader.ReadUInt64();
-            value3 = reader.ReadUInt64();
-            value4 = reader.ReadUInt64();
         }
 
         /// <summary>
@@ -92,14 +83,6 @@ namespace Neo
         {
             if (!TryParse(value, out var result)) throw new FormatException();
             return result;
-        }
-
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(value1);
-            writer.Write(value2);
-            writer.Write(value3);
-            writer.Write(value4);
         }
 
         public override string ToString()
@@ -142,6 +125,24 @@ namespace Neo
                 }
             result = new UInt256(data);
             return true;
+        }
+
+        int ISerializable.Size => Length;
+        
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write(value1);
+            writer.Write(value2);
+            writer.Write(value3);
+            writer.Write(value4);
+        }
+
+        void ISerializable.Deserialize(BinaryReader reader)
+        {
+            value1 = reader.ReadUInt64();
+            value2 = reader.ReadUInt64();
+            value3 = reader.ReadUInt64();
+            value4 = reader.ReadUInt64();
         }
 
         /// <summary>

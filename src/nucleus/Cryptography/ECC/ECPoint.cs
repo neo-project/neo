@@ -1,11 +1,12 @@
 using System;
 using System.IO;
 using System.Numerics;
+using Neo.IO;
 using static Neo.Extensions;
 
 namespace Neo.Cryptography.ECC
 {
-    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>
+    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable
     {
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
@@ -15,8 +16,6 @@ namespace Neo.Cryptography.ECC
         {
             get { return X == null && Y == null; }
         }
-
-        public int Size => IsInfinity ? 1 : 33;
 
         public ECPoint() : this(null, null, ECCurve.Secp256r1) { }
 
@@ -97,13 +96,20 @@ namespace Neo.Cryptography.ECC
             return new ECPoint(x, beta, curve);
         }
 
-        public void Deserialize(BinaryReader reader)
+        int ISerializable.Size => IsInfinity ? 1 : 33;
+
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             ECPoint p = DeserializeFrom(reader, Curve);
             X = p.X;
             Y = p.Y;
         }
 
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write(EncodePoint(true));
+        }
+        
         public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
             Span<byte> buffer = stackalloc byte[1 + curve.ExpectedECPointLength * 2];
@@ -301,11 +307,6 @@ namespace Neo.Cryptography.ECC
         public static ECPoint Parse(string value, ECCurve curve)
         {
             return DecodePoint(value.HexToBytes(), curve);
-        }
-
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(EncodePoint(true));
         }
 
         public override string ToString()

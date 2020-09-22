@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using Neo.IO;
 
 namespace Neo
 {
@@ -10,7 +11,7 @@ namespace Neo
     /// It is composed by ulong(64) + ulong(64) + uint(32) = UInt160(160)
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 20)]
-    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>
+    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable
     {
         public const int Length = 20;
         public static readonly UInt160 Zero = new UInt160();
@@ -18,8 +19,6 @@ namespace Neo
         [FieldOffset(0)] private ulong value1;
         [FieldOffset(8)] private ulong value2;
         [FieldOffset(16)] private uint value3;
-
-        public int Size => Length;
 
         public UInt160()
         {
@@ -45,13 +44,6 @@ namespace Neo
             result = value2.CompareTo(other.value2);
             if (result != 0) return result;
             return value1.CompareTo(other.value1);
-        }
-
-        public void Deserialize(BinaryReader reader)
-        {
-            value1 = reader.ReadUInt64();
-            value2 = reader.ReadUInt64();
-            value3 = reader.ReadUInt32();
         }
 
         /// <summary>
@@ -87,13 +79,6 @@ namespace Neo
         {
             if (!TryParse(value, out var result)) throw new FormatException();
             return result;
-        }
-
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(value1);
-            writer.Write(value2);
-            writer.Write(value3);
         }
 
         public override string ToString()
@@ -135,6 +120,22 @@ namespace Neo
                 }
             result = new UInt160(data);
             return true;
+        }
+
+        int ISerializable.Size => Length;
+        
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write(value1);
+            writer.Write(value2);
+            writer.Write(value3);
+        }
+
+        void ISerializable.Deserialize(BinaryReader reader)
+        {
+            value1 = reader.ReadUInt64();
+            value2 = reader.ReadUInt64();
+            value3 = reader.ReadUInt32();
         }
 
         /// <summary>
