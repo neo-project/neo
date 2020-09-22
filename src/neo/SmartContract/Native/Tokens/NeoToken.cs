@@ -76,7 +76,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (vote is null) return neoHolderReward;
 
             StorageKey keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start);
-            (var key, var item) = snapshot.Storages.Seek(keyStart.ToArray(), SeekDirection.Backward).FirstOrDefault();
+            var (key, item) = snapshot.Storages.Seek(keyStart.ToArray(), SeekDirection.Backward).FirstOrDefault();
             BigInteger startRewardPerNeo = BigInteger.Zero;
             if (key != null && key.Id == Id && key.Key[0] == Prefix_VoterRewardPerCommittee)
                 startRewardPerNeo = item;
