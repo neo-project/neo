@@ -7,7 +7,7 @@ namespace Neo.IO
     {
         public static readonly StructuralEqualityComparer<T> Default = new StructuralEqualityComparer<T>();
 
-        public unsafe bool Equals(byte[] x, byte[] y)
+        public bool Equals(byte[] x, byte[] y)
         {
             return StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
         }
