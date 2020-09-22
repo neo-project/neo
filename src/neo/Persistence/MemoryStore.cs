@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.IO.Caching;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +14,7 @@ namespace Neo.Persistence
         {
             innerData = new ConcurrentDictionary<byte[], byte[]>[256];
             for (int i = 0; i < innerData.Length; i++)
-                innerData[i] = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+                innerData[i] = new ConcurrentDictionary<byte[], byte[]>(StructuralEqualityComparer<byte[]>.Default);
         }
 
         public void Delete(byte table, byte[] key)

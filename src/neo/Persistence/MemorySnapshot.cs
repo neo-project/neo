@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.IO.Caching;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -17,10 +16,10 @@ namespace Neo.Persistence
         public MemorySnapshot(ConcurrentDictionary<byte[], byte[]>[] innerData)
         {
             this.innerData = innerData;
-            this.immutableData = innerData.Select(p => p.ToImmutableDictionary(ByteArrayEqualityComparer.Default)).ToArray();
+            this.immutableData = innerData.Select(p => p.ToImmutableDictionary(StructuralEqualityComparer<byte[]>.Default)).ToArray();
             this.writeBatch = new ConcurrentDictionary<byte[], byte[]>[innerData.Length];
             for (int i = 0; i < writeBatch.Length; i++)
-                writeBatch[i] = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+                writeBatch[i] = new ConcurrentDictionary<byte[], byte[]>(StructuralEqualityComparer<byte[]>.Default);
         }
 
         public void Commit()

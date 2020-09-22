@@ -11,7 +11,7 @@ namespace Neo.Cryptography.MPT
         {
             var path = ToNibbles(key.ToArray());
             if (path.Length == 0) return null;
-            HashSet<byte[]> set = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+            HashSet<byte[]> set = new HashSet<byte[]>(StructuralEqualityComparer<byte[]>.Default);
             if (!GetProof(ref root, path, set)) return null;
             return set;
         }
