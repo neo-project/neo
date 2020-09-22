@@ -6,7 +6,7 @@ using Neo.IO;
 
 namespace Neo.Models
 {
-    public class Transaction : ISerializable
+    public class Transaction : ISignable
     {
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
@@ -87,6 +87,14 @@ namespace Neo.Models
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
+            ((ISignable)this).SerializeUnsigned(writer);
+            writer.Write(Witnesses);
+        }
+
+        Witness[] ISignable.Witnesses => Witnesses;
+
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        {
             writer.Write(Version);
             writer.Write(Nonce);
             writer.Write(SystemFee);
@@ -99,7 +107,6 @@ namespace Neo.Models
                 Attributes[i].Serialize(writer);
             }
             writer.WriteVarBytes(Script);
-            writer.Write(Witnesses);
         }
     }
 }

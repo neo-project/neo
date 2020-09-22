@@ -4,7 +4,7 @@ using Neo.IO;
 
 namespace Neo.Models
 {
-    public class BlockHeader : ISerializable
+    public class BlockHeader : ISignable
     {
         public uint Version;
         public UInt256 PrevHash;
@@ -39,13 +39,20 @@ namespace Neo.Models
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
+            ((ISignable)this).SerializeUnsigned(writer);
+            writer.Write(new Witness[] { Witness });
+        }
+
+        Witness[] ISignable.Witnesses => new Witness[] { Witness };
+
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        {
             writer.Write(Version);
             writer.Write(PrevHash);
             writer.Write(MerkleRoot);
             writer.Write(Timestamp);
             writer.Write(Index);
             writer.Write(NextConsensus);
-            writer.Write(new Witness[] { Witness });
         }
     }
 }

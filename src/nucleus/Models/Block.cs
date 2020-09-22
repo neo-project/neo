@@ -5,7 +5,7 @@ using Neo.IO;
 
 namespace Neo.Models
 {
-    public class Block : ISerializable
+    public class Block : ISignable
     {
         public const int MaxContentsPerBlock = ushort.MaxValue;
         public const int MaxTransactionsPerBlock = MaxContentsPerBlock - 1;
@@ -44,8 +44,17 @@ namespace Neo.Models
             writer.Write(Header);
             writer.WriteVarInt(Transactions.Length + 1);
             writer.Write(ConsensusData);
-            foreach (Transaction tx in Transactions)
-                writer.Write(tx);
+            for (int i = 0; i < Transactions.Length; i++)
+            {
+                writer.Write(Transactions[i]);
+            }
         }
+
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        {
+            ((ISignable)Header).SerializeUnsigned(writer);
+        }
+
+        Witness[] ISignable.Witnesses => ((ISignable)Header).Witnesses;
     }
 }

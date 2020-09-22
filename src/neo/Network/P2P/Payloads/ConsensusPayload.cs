@@ -67,11 +67,6 @@ namespace Neo.Network.P2P.Payloads
             {
                 return new[] { Witness };
             }
-            set
-            {
-                if (value.Length != 1) throw new ArgumentException();
-                Witness = value[0];
-            }
         }
 
         public T GetDeserializedMessage<T>() where T : ConsensusMessage
