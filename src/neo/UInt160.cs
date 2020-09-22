@@ -99,7 +99,14 @@ namespace Neo
 
         public override string ToString()
         {
-            return "0x" + this.ToArray().ToHexString(reverse: true);
+            return string.Create(2 + (Length * 2), this, (buffer, that) =>
+            {
+                buffer[0] = '0';
+                buffer[1] = 'x';
+                value3.TryFormat(buffer[2..], out _, "x8");
+                value2.TryFormat(buffer[10..], out _, "x16");
+                value1.TryFormat(buffer[26..], out _, "x16");
+            });
         }
 
         /// <summary>

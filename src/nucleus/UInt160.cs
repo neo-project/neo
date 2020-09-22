@@ -1,4 +1,3 @@
-using Neo.IO;
 using System;
 using System.Globalization;
 using System.IO;
@@ -11,7 +10,7 @@ namespace Neo
     /// It is composed by ulong(64) + ulong(64) + uint(32) = UInt160(160)
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 20)]
-    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable
+    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>
     {
         public const int Length = 20;
         public static readonly UInt160 Zero = new UInt160();
@@ -99,8 +98,14 @@ namespace Neo
 
         public override string ToString()
         {
-            return "0x" + this.ToArray().ToHexString(reverse: true);
-        }
+            return string.Create(2 + (Length * 2), this, (buffer, that) =>
+            {
+                buffer[0] = '0';
+                buffer[1] = 'x';
+                value3.TryFormat(buffer[2..], out _, "x8");
+                value2.TryFormat(buffer[10..], out _, "x16");
+                value1.TryFormat(buffer[26..], out _, "x16");
+            });        }
 
         /// <summary>
         /// Method TryParse tries to parse a big-endian hex string and store it as a UInt160 little-endian 20-bytes array
