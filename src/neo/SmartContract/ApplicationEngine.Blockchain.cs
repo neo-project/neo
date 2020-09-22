@@ -82,7 +82,7 @@ namespace Neo.SmartContract
             {
                 throw new ArgumentException();
             }
-            return GetTransactionHelper(hash,txIndex);
+            return GetTransactionHelper(hash, txIndex);
         }
 
         protected internal ContractState GetContract(UInt160 hash)
