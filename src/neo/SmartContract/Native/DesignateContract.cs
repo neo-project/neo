@@ -12,10 +12,11 @@ using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
+    [Flags]
     public enum Role : byte
     {
-        StateValidator = 4,
-        Oracle = 8
+        StateValidator = 0b00000001,
+        Oracle = 0b00000010
     }
 
     public sealed class DesignateContract : NativeContract
@@ -39,13 +40,15 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role)
         {
+            if (!Enum.IsDefined(typeof(Role), role)) throw new ArgumentException(nameof(role));
             return snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeList>().ToArray();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void DesignateAsRole(ApplicationEngine engine, ECPoint[] nodes, Role role)
         {
-            if (nodes.Length == 0) throw new ArgumentException();
+            if (nodes.Length == 0) throw new ArgumentException(nameof(nodes));
+            if (!Enum.IsDefined(typeof(Role), role)) throw new ArgumentException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role)).GetInteroperable<NodeList>();
             list.Clear();
