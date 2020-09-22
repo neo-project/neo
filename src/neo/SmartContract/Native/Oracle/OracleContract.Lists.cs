@@ -22,19 +22,5 @@ namespace Neo.SmartContract.Native.Oracle
                 return new Array(referenceCounter, this.Select(p => (Integer)p));
             }
         }
-
-        private class NodeList : List<ECPoint>, IInteroperable
-        {
-            public void FromStackItem(StackItem stackItem)
-            {
-                foreach (StackItem item in (Array)stackItem)
-                    Add(ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1));
-            }
-
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
-            {
-                return new Array(referenceCounter, this.Select(p => (StackItem)p.ToArray()));
-            }
-        }
     }
 }
