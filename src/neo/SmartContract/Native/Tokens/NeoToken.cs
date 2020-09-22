@@ -1,5 +1,6 @@
 #pragma warning disable IDE0051
 
+using Microsoft.EntityFrameworkCore.Internal;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Caching;
@@ -78,13 +79,13 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start);
             var (key, item) = snapshot.Storages.Seek(keyStart.ToArray(), SeekDirection.Backward).FirstOrDefault();
             BigInteger startRewardPerNeo = BigInteger.Zero;
-            if (key != null && key.Id == Id && key.Key[0] == Prefix_VoterRewardPerCommittee)
+            if (key != null && key.Id == Id && key.Key.Take(1 + vote.Size).SequenceEqual(keyStart.Key.Take(1 + vote.Size)))
                 startRewardPerNeo = item;
 
             StorageKey keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(end);
             (key, item) = snapshot.Storages.Seek(keyEnd.ToArray(), SeekDirection.Backward).FirstOrDefault();
             BigInteger endRewardPerNeo = BigInteger.Zero;
-            if (key != null && key.Id == Id && key.Key[0] == Prefix_VoterRewardPerCommittee)
+            if (key != null && key.Id == Id && key.Key.Take(1 + vote.Size).SequenceEqual(keyEnd.Key.Take(1 + vote.Size)))
                 endRewardPerNeo = item;
             return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 100000000L;
         }

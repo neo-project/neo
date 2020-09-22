@@ -722,13 +722,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var account = Contract.CreateSignatureContract(committee[2]).ScriptHash;
             snapshot.Storages.Add(new KeyBuilder(-1, 20).Add(account), new StorageItem(new NeoAccountState
             {
-                BalanceHeight = 1,
+                BalanceHeight = 2,
                 Balance = 200 * 10000 - 2 * 100,
                 VoteTo = committee[2]
             }));
             NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(1999800);
             BigInteger value = NativeContract.NEO.UnclaimedGas(snapshot, account, 2 + 28 + 1);
-            value.Should().Be(1999800 * 25000000000 / 100000000L + (1999800L * 10 * 5 * 30 / 100));
+            value.Should().Be(1999800 * 25000000000 / 100000000L + (1999800L * 10 * 5 * 29 / 100));
         }
 
         [TestMethod]
