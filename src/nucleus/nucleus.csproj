@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Copyright>2015-2019 The Neo Project</Copyright>
+    <AssemblyTitle>NeoNucleus</AssemblyTitle>
+    <VersionPrefix>3.0.0</VersionPrefix>
+    <VersionSuffix>preview3</VersionSuffix>
+    <Authors>The Neo Project</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>NeoNucleus</AssemblyName>
+    <PackageId>Neo.Nucleus</PackageId>
+    <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
+    <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
+    <RootNamespace>Neo</RootNamespace>
+    <Company>The Neo Project</Company>
+    <Description>Neo</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00243" />
+  </ItemGroup>
+</Project>
