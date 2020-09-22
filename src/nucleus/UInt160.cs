@@ -105,7 +105,8 @@ namespace Neo
                 value3.TryFormat(buffer[2..], out _, "x8");
                 value2.TryFormat(buffer[10..], out _, "x16");
                 value1.TryFormat(buffer[26..], out _, "x16");
-            });        }
+            });
+        }
 
         /// <summary>
         /// Method TryParse tries to parse a big-endian hex string and store it as a UInt160 little-endian 20-bytes array
