@@ -50,5 +50,10 @@ namespace Neo
             }
             return dst;
         }
+
+        public static UInt160 ToScriptHash(this byte[] script)
+        {
+            return new UInt160(Cryptography.Crypto.Hash160(script));
+        }
     }
 }
