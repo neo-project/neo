@@ -30,18 +30,18 @@ namespace Neo.SmartContract.Native
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role)
-        {
-            return snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeList>().ToArray();
-        }
-
         internal override void Initialize(ApplicationEngine engine)
         {
             foreach (var role in Enum.GetValues(typeof(Role)))
             {
                 engine.Snapshot.Storages.Add(CreateStorageKey((byte)role), new StorageItem(new NodeList()));
             }
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role)
+        {
+            return snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeList>().ToArray();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
