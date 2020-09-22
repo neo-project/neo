@@ -32,7 +32,7 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => sizeof(int) + Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
+        int ISerializable.Size => sizeof(int) + Script.GetVarSize() + Manifest.Size;
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -82,7 +82,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Script, HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { Script, Manifest.ToString(), HasStorage, Payable });
         }
     }
 }

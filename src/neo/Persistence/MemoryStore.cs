@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Caching;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,16 +27,6 @@ namespace Neo.Persistence
         {
         }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Find(byte table, byte[] prefix)
-        {
-            IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData[table];
-            if (prefix?.Length > 0)
-                records = records.Where(p => p.Key.AsSpan().StartsWith(prefix));
-            records = records.OrderBy(p => p.Key, ByteArrayComparer.Default);
-            foreach (var pair in records)
-                yield return (pair.Key, pair.Value);
-        }
-
         public ISnapshot GetSnapshot()
         {
             return new MemorySnapshot(innerData);
@@ -46,10 +37,26 @@ namespace Neo.Persistence
             innerData[table][key.EnsureNotNull()] = value;
         }
 
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        {
+            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData[table];
+            if (keyOrPrefix?.Length > 0)
+                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+            records = records.OrderBy(p => p.Key, comparer);
+            foreach (var pair in records)
+                yield return (pair.Key, pair.Value);
+        }
+
         public byte[] TryGet(byte table, byte[] key)
         {
             innerData[table].TryGetValue(key.EnsureNotNull(), out byte[] value);
             return value;
+        }
+
+        public bool Contains(byte table, byte[] key)
+        {
+            return innerData[table].ContainsKey(key.EnsureNotNull());
         }
     }
 }

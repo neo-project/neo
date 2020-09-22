@@ -15,12 +15,13 @@ namespace Neo.Network.P2P
         public uint LastBlockIndex { get; set; }
         public uint TimeoutTimes = 0;
         public uint InvalidBlockCount = 0;
+        public DateTime ExpireTime = DateTime.MinValue;
 
         public TaskSession(VersionPayload version)
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
             this.IsFullNode = fullNode != null;
-            this.LastBlockIndex = fullNode.StartHeight;
+            this.LastBlockIndex = fullNode?.StartHeight ?? 0;
         }
     }
 }

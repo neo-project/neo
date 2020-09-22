@@ -86,7 +86,7 @@ namespace Neo.UnitTests.IO
         public void TestParse()
         {
             Action action = () => UInt256.Parse(null);
-            action.Should().Throw<ArgumentNullException>();
+            action.Should().Throw<FormatException>();
             UInt256 result = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000");
             Assert.AreEqual(UInt256.Zero, result);
             Action action1 = () => UInt256.Parse("000000000000000000000000000000000000000000000000000000000000000");
@@ -98,12 +98,13 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestTryParse()
         {
-            UInt256 temp = new UInt256();
-            Assert.AreEqual(false, UInt256.TryParse(null, out temp));
-            Assert.AreEqual(true, UInt256.TryParse("0x0000000000000000000000000000000000000000000000000000000000000000", out temp));
+            Assert.AreEqual(false, UInt256.TryParse(null, out _));
+            Assert.AreEqual(true, UInt256.TryParse("0x0000000000000000000000000000000000000000000000000000000000000000", out var temp));
             Assert.AreEqual(UInt256.Zero, temp);
-            Assert.AreEqual(false, UInt256.TryParse("000000000000000000000000000000000000000000000000000000000000000", out temp));
-            Assert.AreEqual(false, UInt256.TryParse("0xKK00000000000000000000000000000000000000000000000000000000000000", out temp));
+            Assert.AreEqual(true, UInt256.TryParse("0x1230000000000000000000000000000000000000000000000000000000000000", out temp));
+            Assert.AreEqual("0x1230000000000000000000000000000000000000000000000000000000000000", temp.ToString());
+            Assert.AreEqual(false, UInt256.TryParse("000000000000000000000000000000000000000000000000000000000000000", out _));
+            Assert.AreEqual(false, UInt256.TryParse("0xKK00000000000000000000000000000000000000000000000000000000000000", out _));
         }
 
         [TestMethod]

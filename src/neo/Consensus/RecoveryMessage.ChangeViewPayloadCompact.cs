@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.IO;
 
 namespace Neo.Consensus
@@ -8,20 +9,22 @@ namespace Neo.Consensus
     {
         public class ChangeViewPayloadCompact : ISerializable
         {
-            public ushort ValidatorIndex;
+            public byte ValidatorIndex;
             public byte OriginalViewNumber;
             public ulong Timestamp;
             public byte[] InvocationScript;
 
             int ISerializable.Size =>
-                sizeof(ushort) +                //ValidatorIndex
+                sizeof(byte) +                  //ValidatorIndex
                 sizeof(byte) +                  //OriginalViewNumber
                 sizeof(ulong) +                 //Timestamp
                 InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
-                ValidatorIndex = reader.ReadUInt16();
+                ValidatorIndex = reader.ReadByte();
+                if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
+                    throw new FormatException();
                 OriginalViewNumber = reader.ReadByte();
                 Timestamp = reader.ReadUInt64();
                 InvocationScript = reader.ReadVarBytes(1024);
