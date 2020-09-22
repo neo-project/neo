@@ -5,7 +5,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;

@@ -1,5 +1,3 @@
-using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections.Generic;

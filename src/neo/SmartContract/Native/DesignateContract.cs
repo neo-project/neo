@@ -1,5 +1,3 @@
-#pragma warning disable IDE0051
-
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
