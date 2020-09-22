@@ -19,6 +19,7 @@
     <Description>Neo</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Neo.VM" Version="3.0.0-CI00243" />
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00243"/>
+    <PackageReference Include="System.Text.Json" Version="4.7.2"/>
   </ItemGroup>
 </Project>
