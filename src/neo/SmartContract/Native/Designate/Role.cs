@@ -1,4 +1,3 @@
-
 namespace Neo.SmartContract.Native.Designate
 {
     public enum Role : byte
