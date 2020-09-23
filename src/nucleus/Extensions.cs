@@ -29,20 +29,18 @@ namespace Neo
 
         public static string ToHexString(this byte[] value, bool reverse = false)
         {
-            return string.Create<object>(value.Length * 2, null, (buffer, obj) =>
-            {
-                for (int i = 0; i < value.Length; i++)
-                {
-                    (reverse ? value[i] : value[^i]).TryFormat(buffer.Slice(i*2, 2), out _, "x2");
-                }
-            });
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < value.Length; i++)
+                sb.AppendFormat("{0:x2}", value[reverse ? value.Length - i - 1 : i]);
+            return sb.ToString();
         }
 
         public static string ToHexString(this ReadOnlySpan<byte> value)
         {
             StringBuilder sb = new StringBuilder();
-            foreach (byte b in value)
-                sb.AppendFormat("{0:x2}", b);
+            for (int i = 0; i < value.Length; i++)
+                sb.AppendFormat("{0:x2}", value[i]);
+
             return sb.ToString();
         }
 

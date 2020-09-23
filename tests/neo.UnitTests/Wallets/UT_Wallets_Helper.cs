@@ -15,9 +15,9 @@ namespace Neo.UnitTests.Wallets
         {
             byte[] array = { 0x01 };
             UInt160 scriptHash = new UInt160(Crypto.Hash160(array));
-            "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash().Should().Be(scriptHash);
+            "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(ProtocolSettings.Default.AddressVersion).Should().Be(scriptHash);
 
-            Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash();
+            Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash(ProtocolSettings.Default.AddressVersion);
             action.Should().Throw<FormatException>();
 
             var address = scriptHash.ToAddress();
@@ -26,7 +26,7 @@ namespace Neo.UnitTests.Wallets
             data[0] = 0x01;
             scriptHash.ToArray().CopyTo(data[1..]);
             address = Base58.Base58CheckEncode(data);
-            action = () => address.ToScriptHash();
+            action = () => address.ToScriptHash(ProtocolSettings.Default.AddressVersion);
             action.Should().Throw<FormatException>();
         }
     }
