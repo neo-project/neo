@@ -154,7 +154,10 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
 
-            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            var state = context.GetState<ExecutionContextState>();
+            state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            invocationCounter.TryAdd(state.ScriptHash, 1);
+
             base.LoadContext(context);
         }
 
