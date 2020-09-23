@@ -77,7 +77,7 @@ namespace Neo.Network.P2P
             if (session is null) return;
             session.IndexTasks.Remove(block.Index);
             receivedBlockIndex.TryAdd(block.Index, session);
-            RequestTasks();
+            RequestTasks(false);
         }
 
         private void OnInvalidBlock(Block invalidBlock)
@@ -167,7 +167,7 @@ namespace Neo.Network.P2P
             if (session.IsFullNode)
                 session.InvTasks.TryAdd(MemPoolTaskHash, TimeProvider.Current.UtcNow);
             sessions.TryAdd(Sender, session);
-            RequestTasks();
+            RequestTasks(true);
         }
 
         private void OnUpdate(Update update)
@@ -176,7 +176,7 @@ namespace Neo.Network.P2P
                 return;
             session.LastBlockIndex = update.LastBlockIndex;
             session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
-            if (update.RequestTasks) RequestTasks();
+            if (update.RequestTasks) RequestTasks(true);
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -258,7 +258,7 @@ namespace Neo.Network.P2P
                     }
                 }
             }
-            RequestTasks();
+            RequestTasks(true);
         }
 
         protected override void PostStop()
@@ -272,11 +272,11 @@ namespace Neo.Network.P2P
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
 
-        private void RequestTasks()
+        private void RequestTasks(bool sendPing)
         {
             if (sessions.Count() == 0) return;
 
-            SendPingMessage();
+            if (sendPing) SendPingMessage();
 
             while (failedSyncTasks.Count() > 0)
             {
@@ -300,8 +300,6 @@ namespace Neo.Network.P2P
 
         private void SendPingMessage()
         {
-            if (sessions.Count == 0) return;
-
             TrimmedBlock block;
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
