@@ -35,7 +35,8 @@ namespace Neo.SmartContract.Native.Designate
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role)
         {
-            if (!Enum.IsDefined(typeof(Role), role)) throw new ArgumentException(nameof(role));
+            if (!Enum.IsDefined(typeof(Role), role))
+                throw new ArgumentOutOfRangeException(nameof(role));
             return snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeList>().ToArray();
         }
 
