@@ -41,10 +41,11 @@ namespace Neo.SmartContract.Native.Designate
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        private void DesignateAsRole(ApplicationEngine engine, ECPoint[] nodes, Role role)
+        private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0) throw new ArgumentException(nameof(nodes));
-            if (!Enum.IsDefined(typeof(Role), role)) throw new ArgumentException(nameof(role));
+            if (!Enum.IsDefined(typeof(Role), role))
+                throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role)).GetInteroperable<NodeList>();
             list.Clear();
@@ -56,13 +57,13 @@ namespace Neo.SmartContract.Native.Designate
         {
             public void FromStackItem(StackItem stackItem)
             {
-                foreach (StackItem item in (Neo.VM.Types.Array)stackItem)
+                foreach (StackItem item in (VM.Types.Array)stackItem)
                     Add(ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1));
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                return new Neo.VM.Types.Array(referenceCounter, this.Select(p => (StackItem)p.ToArray()));
+                return new VM.Types.Array(referenceCounter, this.Select(p => (StackItem)p.ToArray()));
             }
         }
     }
