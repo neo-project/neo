@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Neo.IO;
+using Neo.IO.Json;
 
 namespace Neo.Models
 {
@@ -21,6 +22,12 @@ namespace Neo.Models
         public TransactionAttribute[] Attributes;
         public byte[] Script;
         public Witness[] Witnesses;
+
+        /// <summary>
+        /// The first signer is the sender of the transaction, regardless of its WitnessScope.
+        /// The sender will pay the fees of the transaction.
+        /// </summary>
+        public UInt160 Sender => Signers[0].Account;
 
         const int HeaderSize =
             sizeof(byte) +  //Version
@@ -107,6 +114,39 @@ namespace Neo.Models
                 Attributes[i].Serialize(writer);
             }
             writer.WriteVarBytes(Script);
+        }
+
+        public JObject ToJson(uint magic, byte addressVersion)
+        {
+            JObject json = new JObject();
+            json["hash"] = this.CalculateHash(magic).ToString();
+            json["size"] = Size;
+            json["version"] = Version;
+            json["nonce"] = Nonce;
+            json["sender"] = Sender.ToAddress(addressVersion);
+            json["sysfee"] = SystemFee.ToString();
+            json["netfee"] = NetworkFee.ToString();
+            json["validuntilblock"] = ValidUntilBlock;
+            json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
+            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
+            json["script"] = Convert.ToBase64String(Script);
+            json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
+            return json;
+        }
+
+        public static Transaction FromJson(JObject json, byte? addressVersion)
+        {
+            Transaction tx = new Transaction();
+            tx.Version = byte.Parse(json["version"].AsString());
+            tx.Nonce = uint.Parse(json["nonce"].AsString());
+            tx.Signers = ((JArray)json["signers"]).Select(p => Signer.FromJson(p, addressVersion)).ToArray();
+            tx.SystemFee = long.Parse(json["sysfee"].AsString());
+            tx.NetworkFee = long.Parse(json["netfee"].AsString());
+            tx.ValidUntilBlock = uint.Parse(json["validuntilblock"].AsString());
+            tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
+            tx.Script = Convert.FromBase64String(json["script"].AsString());
+            tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
+            return tx;
         }
     }
 }

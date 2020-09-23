@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Linq;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Json;
 
 namespace Neo.Models
 {
@@ -45,6 +47,29 @@ namespace Neo.Models
                 writer.Write(AllowedContracts);
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 writer.Write(AllowedGroups);
+        }
+
+        public JObject ToJson()
+        {
+            var json = new JObject();
+            json["account"] = Account.ToString();
+            json["scopes"] = Scopes;
+            if (Scopes.HasFlag(WitnessScope.CustomContracts))
+                json["allowedcontracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
+            if (Scopes.HasFlag(WitnessScope.CustomGroups))
+                json["allowedgroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+            return json;
+        }
+
+        public static Signer FromJson(JObject json, byte? addressVersion)
+        {
+            return new Signer
+            {
+                Account = json["account"].ToScriptHash(addressVersion),
+                Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scopes"].AsString()),
+                AllowedContracts = ((JArray)json["allowedContracts"])?.Select(p => p.ToScriptHash(addressVersion)).ToArray(),
+                AllowedGroups = ((JArray)json["allowedGroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
+            };
         }
     }
 }

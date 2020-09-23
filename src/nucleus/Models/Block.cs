@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Neo.IO;
+using Neo.IO.Json;
 
 namespace Neo.Models
 {
@@ -56,5 +57,22 @@ namespace Neo.Models
         }
 
         Witness[] ISignable.Witnesses => ((ISignable)Header).Witnesses;
+        
+        public JObject ToJson(uint magic, byte addressVersion)
+        {
+            JObject json = Header.ToJson(magic, addressVersion);
+            json["consensusdata"] = ConsensusData.ToJson();
+            json["tx"] = Transactions.Select(p => p.ToJson(magic, addressVersion)).ToArray();
+            return json;
+        }
+        
+        public static Block FromJson(JObject json, byte? addressVersion)
+        {
+            Block block = new Block();
+            block.Header = BlockHeader.FromJson(json, addressVersion);
+            block.ConsensusData = ConsensusData.FromJson(json["consensusdata"]);
+            block.Transactions = ((JArray)json["tx"]).Select(p => Transaction.FromJson(p, addressVersion)).ToArray();
+            return block;
+        }
     }
 }

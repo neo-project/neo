@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using Neo.IO;
+using Neo.IO.Json;
 
 namespace Neo.Models
 {
@@ -53,6 +55,36 @@ namespace Neo.Models
             writer.Write(Timestamp);
             writer.Write(Index);
             writer.Write(NextConsensus);
+        }
+
+        public JObject ToJson(uint magic, byte addressVersion)
+        {
+            JObject json = new JObject();
+            json["hash"] = this.CalculateHash(magic).ToString();
+            json["size"] = Size;
+            json["version"] = Version;
+            json["previousblockhash"] = PrevHash.ToString();
+            json["merkleroot"] = MerkleRoot.ToString();
+            json["time"] = Timestamp;
+            json["index"] = Index;
+            json["nextconsensus"] = NextConsensus.ToAddress(addressVersion);
+            json["witnesses"] = new JArray(Witness.ToJson());
+            return json;
+        }
+
+        public static BlockHeader FromJson(JObject json, byte? addressVersion)
+        {
+            BlockHeader header = new BlockHeader
+            {
+                Version = (uint)json["version"].AsNumber(),
+                PrevHash = UInt256.Parse(json["previousblockhash"].AsString()),
+                MerkleRoot = UInt256.Parse(json["merkleroot"].AsString()),
+                Timestamp = (ulong)json["time"].AsNumber(),
+                Index = (uint)json["index"].AsNumber(),
+                NextConsensus = json["nextconsensus"].ToScriptHash(addressVersion),
+                Witness = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).FirstOrDefault()
+            };
+            return header;
         }
     }
 }

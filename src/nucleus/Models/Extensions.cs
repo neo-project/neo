@@ -1,5 +1,6 @@
 using System.IO;
 using Neo.Cryptography;
+using Neo.IO.Json;
 
 namespace Neo.Models
 {
@@ -18,6 +19,14 @@ namespace Neo.Models
         public static UInt256 CalculateHash(this ISignable signable, uint magic)
         {
             return new UInt256(Crypto.Hash256(signable.GetHashData(magic)));
+        }
+
+        public static UInt160 ToScriptHash(this JObject value, byte? addressVersion)
+        {
+            var addressOrScriptHash = value.AsString();
+
+            return addressOrScriptHash.Length < 40 ?
+                addressOrScriptHash.ToScriptHash(addressVersion) : UInt160.Parse(addressOrScriptHash);
         }
     }
 }
