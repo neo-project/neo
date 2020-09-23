@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Designate;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native.Oracle
 {
-    public sealed partial class OracleContract : NativeContract
+    public sealed class OracleContract : NativeContract
     {
         private const int MaxUrlLength = 256;
         private const int MaxFilterLength = 128;
@@ -164,6 +165,20 @@ namespace Neo.SmartContract.Native.Oracle
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             return tx?.GetAttribute<OracleResponse>() != null;
+        }
+
+        private class IdList : List<ulong>, IInteroperable
+        {
+            public void FromStackItem(StackItem stackItem)
+            {
+                foreach (StackItem item in (VM.Types.Array)stackItem)
+                    Add((ulong)item.GetInteger());
+            }
+
+            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            {
+                return new VM.Types.Array(referenceCounter, this.Select(p => (Integer)p));
+            }
         }
     }
 }
