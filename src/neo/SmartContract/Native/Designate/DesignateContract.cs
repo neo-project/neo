@@ -1,3 +1,5 @@
+#pragma warning disable IDE0051
+
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -24,9 +26,9 @@ namespace Neo.SmartContract.Native.Designate
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            foreach (var role in Enum.GetValues(typeof(Role)))
+            foreach (byte role in Enum.GetValues(typeof(Role)))
             {
-                engine.Snapshot.Storages.Add(CreateStorageKey((byte)role), new StorageItem(new NodeList()));
+                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(new NodeList()));
             }
         }
 
