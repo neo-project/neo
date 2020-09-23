@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using Neo.IO;
@@ -6,7 +6,7 @@ using Neo.IO.Json;
 
 namespace Neo.Models
 {
-    public class BlockHeader : ISignable
+    public class Header : ISignable
     {
         public uint Version;
         public UInt256 PrevHash;
@@ -72,9 +72,9 @@ namespace Neo.Models
             return json;
         }
 
-        public static BlockHeader FromJson(JObject json, byte? addressVersion)
+        public static Header FromJson(JObject json, byte? addressVersion)
         {
-            BlockHeader header = new BlockHeader
+            Header header = new Header
             {
                 Version = (uint)json["version"].AsNumber(),
                 PrevHash = UInt256.Parse(json["previousblockhash"].AsString()),

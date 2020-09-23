@@ -11,7 +11,7 @@ namespace Neo.Models
         public const int MaxContentsPerBlock = ushort.MaxValue;
         public const int MaxTransactionsPerBlock = MaxContentsPerBlock - 1;
 
-        public BlockHeader Header;
+        public Header Header;
         public ConsensusData ConsensusData;
         public Transaction[] Transactions;
 
@@ -25,13 +25,13 @@ namespace Neo.Models
 
         int ISerializable.Size => 
             Header.Size                                         // Header
-            + BinaryFormat.GetVarSize(Transactions.Length + 1) // Content count
+            + BinaryFormat.GetVarSize(Transactions.Length + 1)  // Content count
             + ConsensusData.Size                                // ConsensusData
             + Transactions.Sum(p => p.Size);                    // Transactions
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Header = reader.ReadSerializable<BlockHeader>();
+            Header = reader.ReadSerializable<Header>();
             int count = (int)reader.ReadVarInt(MaxContentsPerBlock);
             if (count == 0) throw new FormatException();
             ConsensusData = reader.ReadSerializable<ConsensusData>();
@@ -69,7 +69,7 @@ namespace Neo.Models
         public static Block FromJson(JObject json, byte? addressVersion)
         {
             Block block = new Block();
-            block.Header = BlockHeader.FromJson(json, addressVersion);
+            block.Header = Header.FromJson(json, addressVersion);
             block.ConsensusData = ConsensusData.FromJson(json["consensusdata"]);
             block.Transactions = ((JArray)json["tx"]).Select(p => Transaction.FromJson(p, addressVersion)).ToArray();
             return block;
