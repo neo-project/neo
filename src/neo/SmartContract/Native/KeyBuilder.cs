@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native
 
         public KeyBuilder Add(ISerializable key)
         {
-            using (BinaryWriter writer = new BinaryWriter(stream, Utility.StrictUTF8, true))
+            using (BinaryWriter writer = new BinaryWriter(stream, Encoding.StrictUTF8, true))
             {
                 key.Serialize(writer);
                 writer.Flush();

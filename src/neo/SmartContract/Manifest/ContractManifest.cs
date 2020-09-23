@@ -24,8 +24,8 @@ namespace Neo.SmartContract.Manifest
         {
             get
             {
-                int size = Utility.StrictUTF8.GetByteCount(ToString());
-                return IO.Helper.GetVarSize(size) + size;
+                int size = Encoding.StrictUTF8.GetByteCount(ToString());
+                return BinaryFormat.GetVarSize(size) + size;
             }
         }
 

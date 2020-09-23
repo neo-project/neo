@@ -9,7 +9,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 HashStart;
         public short Count;
 
-        public int Size => sizeof(short) + HashStart.Size;
+        public int Size => sizeof(short) + UInt256.Length;
 
         public static GetBlocksPayload Create(UInt256 hash_start, short count = -1)
         {

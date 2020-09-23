@@ -808,7 +808,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 "00"); // no witnesses
 
             // try to deserialize
-            Transaction tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx);
+            Transaction tx2 = Neo.IO.BinaryFormat.AsSerializable<Transaction>(sTx);
 
             tx2.Version.Should().Be(0x00);
             tx2.Nonce.Should().Be(0x01020304);
@@ -867,7 +867,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
             Assert.ThrowsException<FormatException>(() =>
-                tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx)
+                tx2 = Neo.IO.BinaryFormat.AsSerializable<Transaction>(sTx)
             );
             Assert.IsNull(tx2);
         }
@@ -912,7 +912,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx1 = txCosigners1.ToArray();
 
             // back to transaction (should fail, due to non-distinct cosigners)
-            Transaction tx1 = Neo.IO.Helper.AsSerializable<Transaction>(sTx1);
+            Transaction tx1 = Neo.IO.BinaryFormat.AsSerializable<Transaction>(sTx1);
             Assert.IsNotNull(tx1);
 
             // ----------------------------
@@ -948,7 +948,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
             Assert.ThrowsException<FormatException>(() =>
-                tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx2)
+                tx2 = Neo.IO.BinaryFormat.AsSerializable<Transaction>(sTx2)
             );
             Assert.IsNull(tx2);
         }

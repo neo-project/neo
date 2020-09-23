@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.Block;
 
         public override int Size => base.Size
-            + IO.Helper.GetVarSize(Transactions.Length + 1) //Count
+            + BinaryFormat.GetVarSize(Transactions.Length + 1) //Count
             + ConsensusData.Size                            //ConsensusData
             + Transactions.Sum(p => p.Size);                //Transactions
 

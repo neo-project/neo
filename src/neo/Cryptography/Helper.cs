@@ -69,49 +69,12 @@ namespace Neo.Cryptography
             }
         }
 
-        public static byte[] RIPEMD160(this byte[] value)
-        {
-            using var ripemd160 = new RIPEMD160Managed();
-            return ripemd160.ComputeHash(value);
-        }
-
-        public static byte[] RIPEMD160(this ReadOnlySpan<byte> value)
-        {
-            byte[] source = value.ToArray();
-            return source.RIPEMD160();
-        }
-
         public static uint Murmur32(this byte[] value, uint seed)
         {
             using (Murmur3 murmur = new Murmur3(seed))
             {
                 return BinaryPrimitives.ReadUInt32LittleEndian(murmur.ComputeHash(value));
             }
-        }
-
-        public static byte[] Sha256(this byte[] value)
-        {
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(value);
-        }
-
-        public static byte[] Sha256(this byte[] value, int offset, int count)
-        {
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(value, offset, count);
-        }
-
-        public static byte[] Sha256(this ReadOnlySpan<byte> value)
-        {
-            byte[] buffer = new byte[32];
-            using var sha256 = SHA256.Create();
-            sha256.TryComputeHash(value, buffer, out _);
-            return buffer;
-        }
-
-        public static byte[] Sha256(this Span<byte> value)
-        {
-            return Sha256((ReadOnlySpan<byte>)value);
         }
 
         internal static bool Test(this BloomFilter filter, Transaction tx)

@@ -96,7 +96,7 @@ namespace Neo.Cryptography.ECC
             return new ECPoint(x, beta, curve);
         }
 
-        int ISerializable.Size => IsInfinity ? 1 : 33;
+        public int Size => IsInfinity ? 1 : 33;
 
         void ISerializable.Deserialize(BinaryReader reader)
         {

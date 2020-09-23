@@ -30,4 +30,8 @@
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00243" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\nucleus\nucleus.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -7,7 +7,7 @@ namespace Neo.Consensus
     {
         public UInt256 PreparationHash;
 
-        public override int Size => base.Size + PreparationHash.Size;
+        public override int Size => base.Size + UInt256.Length;
 
         public PrepareResponse()
             : base(ConsensusMessageType.PrepareResponse)

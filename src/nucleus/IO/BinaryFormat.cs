@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace Neo.IO
 {
-    public static class Extensions
+    public static class BinaryFormat
     {
         public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {

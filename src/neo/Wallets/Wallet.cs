@@ -366,7 +366,7 @@ namespace Neo.Wallets
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + BinaryFormat.GetVarSize(hashes.Length);
             long networkFee = 0;
             foreach (UInt160 hash in hashes)
             {
@@ -415,7 +415,7 @@ namespace Neo.Wallets
                 else if (witness_script.IsMultiSigContract(out int m, out int n))
                 {
                     int size_inv = 66 * m;
-                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
+                    size += BinaryFormat.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
                     networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
                     using (ScriptBuilder sb = new ScriptBuilder())
                         networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];

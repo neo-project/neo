@@ -38,7 +38,7 @@ namespace Neo.Models
 
         public int Size => HeaderSize +
             Signers.GetVarSize() +
-            IO.Extensions.GetVarSize(Attributes.Length) +
+            BinaryFormat.GetVarSize(Attributes.Length) +
             Attributes.Sum(a => a.Size) +
             Attributes.GetVarSize() +
             Script.GetVarSize() +

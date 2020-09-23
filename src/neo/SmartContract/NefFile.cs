@@ -118,7 +118,7 @@ namespace Neo.SmartContract
             Span<byte> header = stackalloc byte[HeaderSize];
             fixed (byte* p = header)
                 using (UnmanagedMemoryStream ms = new UnmanagedMemoryStream(p, HeaderSize, HeaderSize, FileAccess.Write))
-                using (BinaryWriter wr = new BinaryWriter(ms, Utility.StrictUTF8, false))
+                using (BinaryWriter wr = new BinaryWriter(ms, Encoding.StrictUTF8, false))
                 {
                     file.SerializeHeader(wr);
                     wr.Flush();

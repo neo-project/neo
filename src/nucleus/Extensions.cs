@@ -38,6 +38,14 @@ namespace Neo
             });
         }
 
+        public static string ToHexString(this ReadOnlySpan<byte> value)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in value)
+                sb.AppendFormat("{0:x2}", b);
+            return sb.ToString();
+        }
+
         public static byte[] Concat(params byte[][] buffers)
         {
             int length = 0;

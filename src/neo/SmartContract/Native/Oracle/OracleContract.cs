@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         private static byte[] GetUrlHash(string url)
         {
-            return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
+            return Crypto.Hash160(Encoding.StrictUTF8.GetBytes(url));
         }
 
         internal override void Initialize(ApplicationEngine engine)
@@ -134,9 +134,9 @@ namespace Neo.SmartContract.Native.Oracle
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
-            if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
-                || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
-                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
+            if (Encoding.StrictUTF8.GetByteCount(url) > MaxUrlLength
+                || (filter != null && Encoding.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
+                || Encoding.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 

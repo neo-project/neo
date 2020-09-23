@@ -9,7 +9,7 @@ namespace Neo.Ledger
         public UInt256 Hash = UInt256.Zero;
         public uint Index = uint.MaxValue;
 
-        int ISerializable.Size => Hash.Size + sizeof(uint);
+        int ISerializable.Size => UInt256.Length + sizeof(uint);
 
         HashIndexState ICloneable<HashIndexState>.Clone()
         {

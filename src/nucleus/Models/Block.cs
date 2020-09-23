@@ -25,7 +25,7 @@ namespace Neo.Models
 
         int ISerializable.Size => 
             Header.Size                                         // Header
-            + IO.Extensions.GetVarSize(Transactions.Length + 1) // Content count
+            + BinaryFormat.GetVarSize(Transactions.Length + 1) // Content count
             + ConsensusData.Size                                // ConsensusData
             + Transactions.Sum(p => p.Size);                    // Transactions
 

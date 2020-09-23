@@ -20,7 +20,7 @@ namespace Neo.Consensus
         public override int Size => base.Size
             + /* ChangeViewMessages */ ChangeViewMessages?.Values.GetVarSize() ?? 0
             + /* PrepareRequestMessage */ 1 + PrepareRequestMessage?.Size ?? 0
-            + /* PreparationHash */ PreparationHash?.Size ?? 0
+            + /* PreparationHash */ (PreparationHash != null ? UInt256.Length : 0)
             + /* PreparationMessages */ PreparationMessages?.Values.GetVarSize() ?? 0
             + /* CommitMessages */ CommitMessages?.Values.GetVarSize() ?? 0;
 
@@ -36,7 +36,7 @@ namespace Neo.Consensus
                 PrepareRequestMessage = reader.ReadSerializable<PrepareRequest>();
             else
             {
-                int preparationHashSize = UInt256.Zero.Size;
+                int preparationHashSize = UInt256.Length;
                 if (preparationHashSize == (int)reader.ReadVarInt((ulong)preparationHashSize))
                     PreparationHash = new UInt256(reader.ReadFixedBytes(preparationHashSize));
             }
