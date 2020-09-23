@@ -10,15 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract.Native.Designate
 {
-    [Flags]
-    public enum Role : byte
-    {
-        StateValidator = 0b00000001,
-        Oracle = 0b00000010
-    }
-
     public sealed class DesignateContract : NativeContract
     {
         public override string Name => "Designation";

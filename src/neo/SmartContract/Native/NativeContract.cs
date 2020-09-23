@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native.Designate;
 using Neo.SmartContract.Native.Oracle;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;

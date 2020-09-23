@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
+using Neo.SmartContract.Native.Designate;
 using Neo.VM;
 using System;
 using System.IO;
