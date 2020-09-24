@@ -375,8 +375,7 @@ namespace Neo.Wallets
                 var contract = snapshot.Contracts.TryGet(hash);
                 if (contract != null && witness_script != null)
                 {
-                    var md = contract.Manifest.Abi.GetMethod("verify");
-                    if (md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0 && md.Offset == 0)
+                    if (ContractParametersContext.IsValidVerificationSignature(contract.Manifest.Abi.GetMethod("verify")))
                     {
                         // We should use the stored verification script
                         witness_script = null;

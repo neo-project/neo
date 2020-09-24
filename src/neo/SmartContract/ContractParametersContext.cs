@@ -3,6 +3,7 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -228,15 +229,20 @@ namespace Neo.SmartContract
             return item.Script;
         }
 
-        public bool IsVerificationStored(UInt160 scriptHash, StoreView snapshot = null)
+        public static bool IsValidVerificationSignature(ContractMethodDescriptor md)
+        {
+            return md != null && md.Name == "verify" &&
+                md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0 && md.Offset == 0;
+        }
+
+        public static bool IsVerificationStored(UInt160 scriptHash, StoreView snapshot = null)
         {
             if (snapshot != null)
             {
                 var contract = snapshot.Contracts.TryGet(scriptHash);
                 if (contract != null)
                 {
-                    var md = contract.Manifest.Abi.GetMethod("verify");
-                    return md != null && md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0 && md.Offset == 0;
+                    return IsValidVerificationSignature(contract.Manifest.Abi.GetMethod("verify"));
                 }
             }
             return false;
