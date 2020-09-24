@@ -28,6 +28,11 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
+        private bool IsValidVerify(ContractMethodDescriptor md)
+        {
+            return md == null || (md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0 && md.Offset == 0);
+        }
+
         protected internal void CreateContract(byte[] script, byte[] manifest)
         {
             if (script.Length == 0 || script.Length > MaxContractLength)
@@ -48,8 +53,8 @@ namespace Neo.SmartContract
             };
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
-            if ((contract.Manifest.Abi.GetMethod("verify")?.Offset ?? 0) != 0)
-                throw new InvalidOperationException($"Verify must be in the offset 0");
+            if (!IsValidVerify(contract.Manifest.Abi.GetMethod("verify")))
+                throw new InvalidOperationException($"Invalid verify method");
 
             Snapshot.Contracts.Add(hash, contract);
 
@@ -96,8 +101,8 @@ namespace Neo.SmartContract
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
                 contract = Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                 contract.Manifest = ContractManifest.Parse(manifest);
-                if ((contract.Manifest.Abi.GetMethod("verify")?.Offset ?? 0) != 0)
-                    throw new InvalidOperationException($"Verify must be in the offset 0");
+                if (!IsValidVerify(contract.Manifest.Abi.GetMethod("verify")))
+                    throw new InvalidOperationException($"Invalid verify method");
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
