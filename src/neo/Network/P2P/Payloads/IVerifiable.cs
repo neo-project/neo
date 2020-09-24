@@ -1,5 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Models;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -41,6 +42,66 @@ namespace Neo.Network.P2P.Payloads
             return new[] { Contract.CreateSignatureRedeemScript(validators[payload.ValidatorIndex]).ToScriptHash() };
         }
 
+        public static VerifyResult VerifyStateDependent(this Transaction tx, StoreView snapshot, TransactionVerificationContext context)
+        {
+            if (tx.ValidUntilBlock <= snapshot.Height || tx.ValidUntilBlock > snapshot.Height + Transaction.MaxValidUntilBlockIncrement)
+                return VerifyResult.Expired;
+            UInt160[] hashes = GetScriptHashes(tx, snapshot);
+            if (NativeContract.Policy.IsAnyAccountBlocked(snapshot, hashes))
+                return VerifyResult.PolicyFail;
+            if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < tx.SystemFee)
+                return VerifyResult.PolicyFail;
+            if (!(context?.CheckTransaction(tx, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
+            foreach (TransactionAttribute attribute in tx.Attributes)
+                if (!attribute.Verify(snapshot, tx))
+                    return VerifyResult.Invalid;
+            long net_fee = tx.NetworkFee - tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (!tx.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent))
+                return VerifyResult.Invalid;
+            return VerifyResult.Succeed;
+        }
+
+        public static VerifyResult VerifyStateIndependent(this Transaction tx)
+        {
+            if (tx.Size > Transaction.MaxTransactionSize)
+                return VerifyResult.Invalid;
+            if (!tx.VerifyWitnesses(null, tx.NetworkFee, WitnessFlag.StateIndependent))
+                return VerifyResult.Invalid;
+            return VerifyResult.Succeed;
+        }
+
+        public static VerifyResult Verify(this Transaction tx, StoreView snapshot, TransactionVerificationContext context)
+        {
+            VerifyResult result = tx.VerifyStateIndependent();
+            if (result != VerifyResult.Succeed) return result;
+            result = tx.VerifyStateDependent(snapshot, context);
+            return result;
+        }
+
+        public static bool Verify(this TransactionAttribute @this, StoreView snapshot, Transaction tx)
+            => @this switch
+            {
+                HighPriorityAttribute highPriority => VerifyAttribute(highPriority, snapshot, tx),
+                OracleResponse oracleResponse => VerifyAttribute(oracleResponse, snapshot, tx),
+                _ => throw new Exception("Invalid TransactionAttribute")
+            };
+
+        private static bool VerifyAttribute(HighPriorityAttribute attrib, StoreView snapshot, Transaction tx)
+        {
+            UInt160 committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            return tx.Signers.Any(p => p.Account.Equals(committee));
+        }
+
+        private static bool VerifyAttribute(OracleResponse attrib, StoreView snapshot, Transaction tx)
+        {
+            if (tx.Signers.Any(p => p.Scopes != WitnessScope.None)) return false;
+            if (!tx.Script.AsSpan().SequenceEqual(FixedScript)) return false;
+            OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
+            if (request is null) return false;
+            if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
+            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, Role.Oracle));
+            return tx.Signers.Any(p => p.Account.Equals(oracleAccount));            
+        }    
     }
 }
 
