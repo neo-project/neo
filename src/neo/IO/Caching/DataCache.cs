@@ -156,12 +156,27 @@ namespace Neo.IO.Caching
                     yield return (key, value);
         }
 
-        public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end)
+        /// <summary>
+        /// Find the entries that between `start` and `end`
+        /// </summary>
+        /// <param name="direction">`SeekDirection.Forward` represents the entries between [start, end), `SeekDirection.Backward` represents the entries between (start, end] by descending order</param>
+        /// <returns>Entries found with the desired range</returns>
+        public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end, SeekDirection direction = SeekDirection.Forward)
         {
-            var endKey = end.ToArray();
-            foreach (var (key, value) in Seek(start.ToArray(), SeekDirection.Forward))
-                if (ByteArrayComparer.Default.Compare(key.ToArray(), endKey) < 0)
-                    yield return (key, value);
+            if (direction == SeekDirection.Forward)
+            {
+                var endKey = end.ToArray();
+                foreach (var (key, value) in Seek(start.ToArray(), SeekDirection.Forward))
+                    if (ByteArrayComparer.Default.Compare(key.ToArray(), endKey) < 0)
+                        yield return (key, value);
+            }
+            else
+            {
+                var startKey = start.ToArray();
+                foreach (var (key, value) in Seek(end.ToArray(), SeekDirection.Backward))
+                    if (ByteArrayComparer.Default.Compare(key.ToArray(), startKey) > 0)
+                        yield return (key, value);
+            }
         }
 
         public IEnumerable<Trackable> GetChangeSet()
