@@ -32,19 +32,6 @@ namespace Neo.IO
             }
         }
 
-        public static ISerializable AsSerializable(this byte[] value, Type type)
-        {
-            if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
-                throw new InvalidCastException();
-            ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
-            using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
-            {
-                serializable.Deserialize(reader);
-            }
-            return serializable;
-        }
-
         public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, false))

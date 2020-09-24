@@ -1,8 +1,9 @@
-using System.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Caching;
+using System;
+using System.IO;
 
 namespace Neo.UnitTests.IO.Caching
 {
@@ -24,6 +25,9 @@ namespace Neo.UnitTests.IO.Caching
 
         [ReflectionCache(typeof(TestItem2))]
         Item2 = 0x01,
+
+        [ReflectionCache(typeof(double))]
+        Item3 = 0x02,
     }
 
     public enum MyEmptyEnum : byte { }
@@ -46,7 +50,7 @@ namespace Neo.UnitTests.IO.Caching
             object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, null);
             (item2 is TestItem2).Should().BeTrue();
 
-            object item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, null);
+            object item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0xff, null);
             item3.Should().BeNull();
         }
 
@@ -59,8 +63,10 @@ namespace Neo.UnitTests.IO.Caching
             object item2 = ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item2, new byte[0]);
             (item2 is TestItem2).Should().BeTrue();
 
-            object item3 = ReflectionCache<MyTestEnum>.CreateSerializable((MyTestEnum)0x02, new byte[0]);
+            object item3 = ReflectionCache<MyTestEnum>.CreateSerializable((MyTestEnum)0xff, new byte[0]);
             item3.Should().BeNull();
+
+            Assert.ThrowsException<InvalidCastException>(() => ReflectionCache<MyTestEnum>.CreateSerializable(MyTestEnum.Item3, null));
         }
 
         [TestMethod]
@@ -70,7 +76,7 @@ namespace Neo.UnitTests.IO.Caching
             object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, defaultItem);
             (item2 is TestItem2).Should().BeTrue();
 
-            object item1 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, new TestItem1());
+            object item1 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0xff, new TestItem1());
             (item1 is TestItem1).Should().BeTrue();
         }
     }

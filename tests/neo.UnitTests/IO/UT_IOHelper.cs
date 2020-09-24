@@ -98,28 +98,6 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestAsSerializable()
-        {
-            for (int i = 0; i < 2; i++)
-            {
-                if (i == 0)
-                {
-                    byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00 };
-                    ISerializable result = Neo.IO.Helper.AsSerializable(caseArray, typeof(UInt160));
-                    Assert.AreEqual(UInt160.Zero, result);
-                }
-                else
-                {
-                    Action action = () => Neo.IO.Helper.AsSerializable(new byte[0], typeof(Double));
-                    action.Should().Throw<InvalidCastException>();
-                }
-            }
-        }
-
-        [TestMethod]
         public void TestCompression()
         {
             var data = new byte[] { 1, 2, 3, 4 };
