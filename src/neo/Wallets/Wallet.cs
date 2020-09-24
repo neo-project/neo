@@ -433,6 +433,40 @@ namespace Neo.Wallets
             return networkFee;
         }
 
+        internal static ContractState GetDefaultContractState(StoreView snapshot, byte[] verificationScript)
+        {
+            return new ContractState()
+            {
+                Id = snapshot.ContractId.GetAndChange().NextId++,
+                Script = verificationScript,
+                Manifest = new ContractManifest()
+                {
+                    Abi = new ContractAbi()
+                    {
+                        Methods = new ContractMethodDescriptor[]
+                                   {
+                                    new ContractMethodDescriptor()
+                                    {
+                                        Name = "verify",
+                                        Offset = 0,
+                                        Parameters = Array.Empty<ContractParameterDefinition>(),
+                                        ReturnType = ContractParameterType.Boolean
+                                    }
+                                   },
+                        Events = Array.Empty<ContractEventDescriptor>(),
+                        Hash = verificationScript.ToScriptHash()
+                    },
+                    Features = ContractFeatures.Payable,
+                    Groups = Array.Empty<ContractGroup>(),
+                    Permissions = Array.Empty<ContractPermission>(),
+                    SafeMethods = WildcardContainer<string>.CreateWildcard(),
+                    SupportedStandards = Array.Empty<string>(),
+                    Trusts = WildcardContainer<UInt160>.CreateWildcard(),
+                    Extra = null
+                }
+            };
+        }
+
         public bool Sign(ContractParametersContext context)
         {
             bool fSuccess = false;

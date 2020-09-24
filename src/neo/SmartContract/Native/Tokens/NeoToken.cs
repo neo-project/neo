@@ -6,6 +6,7 @@ using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,8 +121,26 @@ namespace Neo.SmartContract.Native.Tokens
             // Set next committee
             if (ShouldRefreshCommittee(engine.Snapshot.Height))
             {
+                var committee = ComputeCommitteeMembers(engine.Snapshot).ToArray();
                 StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
-                storageItem.Value = ComputeCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
+                storageItem.Value = committee.ToByteArray();
+
+                // Optimize committee and valdiator messages
+
+                foreach (var entry in committee)
+                {
+                    var entryContract = Contract.CreateSignatureContract(entry);
+
+                    if (engine.Snapshot.Contracts.Contains(entryContract.ScriptHash)) continue;
+
+                    // Create validator contract in order to save bytes
+
+                    var contract = Wallet.GetDefaultContractState(engine.Snapshot, entryContract.Script);
+                    if (contract.ScriptHash == entryContract.ScriptHash)
+                    {
+                        engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
+                    }
+                }
             }
         }
 
