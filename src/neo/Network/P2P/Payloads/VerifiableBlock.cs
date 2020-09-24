@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Neo.IO;
 using Neo.Ledger;
@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
                 ConsensusData = ConsensusData
             };
         }
-        
+
         public InventoryType InventoryType => InventoryType.Block;
 
         public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)

@@ -201,7 +201,7 @@ namespace Neo.SmartContract
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-                
+
             using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["hex"].AsString()), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8))
             {

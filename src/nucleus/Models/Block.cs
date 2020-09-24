@@ -20,20 +20,20 @@ namespace Neo.Models
         {
         }
 
-        private Lazy<Header> header  = null;
+        private Lazy<Header> header = null;
         public Header Header
         {
             get
             {
                 header ??= new Lazy<Header>(() => new Header(Magic)
-                    {
-                        PrevHash = PrevHash,
-                        MerkleRoot = MerkleRoot,
-                        Timestamp = Timestamp,
-                        Index = Index,
-                        NextConsensus = NextConsensus,
-                        Witness = Witness
-                    });
+                {
+                    PrevHash = PrevHash,
+                    MerkleRoot = MerkleRoot,
+                    Timestamp = Timestamp,
+                    Index = Index,
+                    NextConsensus = NextConsensus,
+                    Witness = Witness
+                });
                 return header.Value;
             }
         }

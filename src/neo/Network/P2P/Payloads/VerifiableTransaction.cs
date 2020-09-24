@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Models;
@@ -66,7 +66,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void FromStackItem(StackItem stackItem)
         {
-            throw new System.NotSupportedException ();
+            throw new System.NotSupportedException();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
