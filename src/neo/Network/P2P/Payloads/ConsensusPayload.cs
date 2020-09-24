@@ -11,14 +11,14 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class ConsensusPayload : IInventory
+    public class ConsensusPayload : IWitnessed
     {
-        public uint Version;
-        public UInt256 PrevHash;
-        public uint BlockIndex;
-        public byte ValidatorIndex;
-        public byte[] Data;
-        public Witness Witness;
+        private uint version;
+        private UInt256 prevHash;
+        private uint blockIndex;
+        private byte validatorIndex;
+        private byte[] data;
+        private Witness witness;
 
         private ConsensusMessage _deserializedMessage = null;
         public ConsensusMessage ConsensusMessage
@@ -39,20 +39,17 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        private UInt256 _hash = null;
+        private Lazy<UInt256> hash;
         public UInt256 Hash
         {
             get
             {
-                if (_hash == null)
-                {
-                    _hash = this.CalculateHash();
-                }
-                return _hash;
+                hash ??= new Lazy<UInt256>(() => this.CalculateHash(ProtocolSettings.Default.Magic));
+                return hash.Value;
             }
         }
 
-        InventoryType IInventory.InventoryType => InventoryType.Consensus;
+        // InventoryType IInventory.InventoryType => InventoryType.Consensus;
 
         public int Size =>
             sizeof(uint) +      //Version
@@ -62,13 +59,22 @@ namespace Neo.Network.P2P.Payloads
             Data.GetVarSize() + //Data
             1 + Witness.Size;   //Witness
 
-        Witness[] IVerifiable.Witnesses
+        private Lazy<Witness[]> witnesses;
+        Witness[] IWitnessed.Witnesses
         {
             get
             {
-                return new[] { Witness };
+                witnesses ??= new Lazy<Witness[]>(() => new[] { Witness });
+                return witnesses.Value;
             }
         }
+
+        public uint Version { get => version; set { version = value; hash = null; } }
+        public UInt256 PrevHash { get => prevHash; set { prevHash = value; hash = null; } }
+        public uint BlockIndex { get => blockIndex; set { blockIndex = value; hash = null; } }
+        public byte ValidatorIndex { get => validatorIndex; set { validatorIndex = value; hash = null; } }
+        public byte[] Data { get => data; set { data = value; hash = null; } }
+        public Witness Witness { get => witness; set { witness = value; witnesses = null; } }
 
         public T GetDeserializedMessage<T>() where T : ConsensusMessage
         {
@@ -77,13 +83,6 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ((IVerifiable)this).DeserializeUnsigned(reader);
-            if (reader.ReadByte() != 1) throw new FormatException();
-            Witness = reader.ReadSerializable<Witness>();
-        }
-
-        void IVerifiable.DeserializeUnsigned(BinaryReader reader)
-        {
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
@@ -91,23 +90,25 @@ namespace Neo.Network.P2P.Payloads
             if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
                 throw new FormatException();
             Data = reader.ReadVarBytes();
+            if (reader.ReadByte() != 1) throw new FormatException();
+            Witness = reader.ReadSerializable<Witness>();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
-        {
-            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
-            if (validators.Length <= ValidatorIndex)
-                throw new InvalidOperationException();
-            return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
-        }
+        // UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
+        // {
+        //     ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
+        //     if (validators.Length <= ValidatorIndex)
+        //         throw new InvalidOperationException();
+        //     return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
+        // }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            ((IVerifiable)this).SerializeUnsigned(writer);
+            ((ISignable)this).SerializeUnsigned(writer);
             writer.Write((byte)1); writer.Write(Witness);
         }
 
-        void IVerifiable.SerializeUnsigned(BinaryWriter writer)
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(PrevHash);
@@ -116,11 +117,11 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public bool Verify(StoreView snapshot)
-        {
-            if (BlockIndex <= snapshot.Height)
-                return false;
-            return this.VerifyWitnesses(snapshot, 0_02000000);
-        }
+        // public bool Verify(StoreView snapshot)
+        // {
+        //     if (BlockIndex <= snapshot.Height)
+        //         return false;
+        //     return this.VerifyWitnesses(snapshot, 0_02000000);
+        // }
     }
 }

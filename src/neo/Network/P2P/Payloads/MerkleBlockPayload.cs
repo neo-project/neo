@@ -13,14 +13,18 @@ namespace Neo.Network.P2P.Payloads
         public UInt256[] Hashes;
         public byte[] Flags;
 
+        public MerkleBlockPayload(uint magic) : base(magic)
+        {
+        }
+
         public override int Size => base.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
 
-        public static MerkleBlockPayload Create(Block block, BitArray flags)
+        public static MerkleBlockPayload Create(Block block, BitArray flags, uint? magic = null)
         {
             MerkleTree tree = new MerkleTree(block.Transactions.Select(p => p.Hash).Prepend(block.ConsensusData.Hash).ToArray());
             byte[] buffer = new byte[(flags.Length + 7) / 8];
             flags.CopyTo(buffer, 0);
-            return new MerkleBlockPayload
+            return new MerkleBlockPayload(magic ?? ProtocolSettings.Default.Magic)
             {
                 Version = block.Version,
                 PrevHash = block.PrevHash,

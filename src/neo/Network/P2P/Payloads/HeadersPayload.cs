@@ -22,7 +22,9 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Headers = reader.ReadSerializableArray<Header>(MaxHeadersCount);
+            Headers = reader.ReadSerializableArray(
+                () => new Header(ProtocolSettings.Default.Magic),
+                MaxHeadersCount);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

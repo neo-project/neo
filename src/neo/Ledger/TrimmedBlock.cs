@@ -17,7 +17,7 @@ namespace Neo.Ledger
 
         public Block GetBlock(DataCache<UInt256, TransactionState> cache)
         {
-            return new Block
+            return new Block(magic)
             {
                 Version = Version,
                 PrevHash = PrevHash,
@@ -32,13 +32,18 @@ namespace Neo.Ledger
         }
 
         private Header _header = null;
+
+        public TrimmedBlock() : base(ProtocolSettings.Default.Magic)
+        {
+        }
+
         public Header Header
         {
             get
             {
                 if (_header == null)
                 {
-                    _header = new Header
+                    _header = new Header(magic)
                     {
                         Version = Version,
                         PrevHash = PrevHash,
@@ -102,14 +107,6 @@ namespace Neo.Ledger
             writer.Write(Hashes);
             if (Hashes.Length > 0)
                 writer.Write(ConsensusData);
-        }
-
-        public override JObject ToJson()
-        {
-            JObject json = base.ToJson();
-            json["consensusdata"] = ConsensusData?.ToJson();
-            json["hashes"] = Hashes.Select(p => (JObject)p.ToString()).ToArray();
-            return json;
         }
     }
 }
