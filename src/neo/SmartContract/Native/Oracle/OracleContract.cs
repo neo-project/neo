@@ -1,12 +1,13 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native.Designate;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -15,14 +16,13 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native.Oracle
 {
-    public sealed partial class OracleContract : NativeContract
+    public sealed class OracleContract : NativeContract
     {
         private const int MaxUrlLength = 256;
         private const int MaxFilterLength = 128;
         private const int MaxCallbackLength = 32;
         private const int MaxUserDataLength = 512;
 
-        private const byte Prefix_NodeList = 8;
         private const byte Prefix_RequestId = 9;
         private const byte Prefix_Request = 7;
         private const byte Prefix_IdList = 6;
@@ -47,12 +47,6 @@ namespace Neo.SmartContract.Native.Oracle
             if (request == null) throw new ArgumentException("Oracle request was not found");
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
-        }
-
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public ECPoint[] GetOracleNodes(StoreView snapshot)
-        {
-            return snapshot.Storages[CreateStorageKey(Prefix_NodeList)].GetInteroperable<NodeList>().ToArray();
         }
 
         private UInt256 GetOriginalTxid(ApplicationEngine engine)
@@ -89,7 +83,6 @@ namespace Neo.SmartContract.Native.Oracle
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_NodeList), new StorageItem(new NodeList()));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
@@ -115,7 +108,7 @@ namespace Neo.SmartContract.Native.Oracle
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= GetOracleNodes(engine.Snapshot).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= NativeContract.Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
@@ -168,22 +161,25 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
-        private void SetOracleNodes(ApplicationEngine engine, ECPoint[] nodes)
-        {
-            if (nodes.Length == 0) throw new ArgumentException();
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NodeList)).GetInteroperable<NodeList>();
-            list.Clear();
-            list.AddRange(nodes);
-            list.Sort();
-        }
-
         [ContractMethod(0_01000000, CallFlags.None)]
         private bool Verify(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             return tx?.GetAttribute<OracleResponse>() != null;
+        }
+
+        private class IdList : List<ulong>, IInteroperable
+        {
+            public void FromStackItem(StackItem stackItem)
+            {
+                foreach (StackItem item in (VM.Types.Array)stackItem)
+                    Add((ulong)item.GetInteger());
+            }
+
+            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            {
+                return new VM.Types.Array(referenceCounter, this.Select(p => (Integer)p));
+            }
         }
     }
 }

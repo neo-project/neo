@@ -350,8 +350,6 @@ namespace Neo.Ledger
                     return VerifyResult.Invalid;
                 block_cache.TryAdd(block.Hash, block);
                 block_cache_unverified.Remove(block.Index);
-                // We can store the new block in block_cache and tell the new height to other nodes before Persist().
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height + 1)));
                 Persist(block);
                 SaveHeaderHashList();
                 if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
@@ -360,6 +358,8 @@ namespace Neo.Ledger
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
                 }
+                // We can store the new block in block_cache and tell the new height to other nodes after Persist().
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
             }
             return VerifyResult.Succeed;
         }

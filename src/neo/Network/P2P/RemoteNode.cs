@@ -30,6 +30,7 @@ namespace Neo.Network.P2P
         public int ListenerTcpPort { get; private set; } = 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; } = 0;
+        public uint LastHeightSent { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
@@ -125,6 +126,13 @@ namespace Neo.Network.P2P
                     RefreshPendingKnownHashes();
                     break;
                 case Message msg:
+                    if (msg.Payload is PingPayload payload)
+                    {
+                        if (payload.LastBlockIndex > LastHeightSent)
+                            LastHeightSent = payload.LastBlockIndex;
+                        else if (msg.Command == MessageCommand.Ping)
+                            break;
+                    }
                     EnqueueMessage(msg);
                     break;
                 case IWitnessed inventory:
