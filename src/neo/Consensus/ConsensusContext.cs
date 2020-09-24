@@ -225,7 +225,7 @@ namespace Neo.Consensus
                 return;
             }
             payload.Witness = sc.GetWitnesses(Snapshot)[0];
-            payload.Witness.VerificationScript = Array.Empty<byte>();
+            payload.Witness.VerificationScript = Array.Empty<byte>(); // Everyone should know the verification script with the ValidatorIndex
         }
 
         /// <summary>
