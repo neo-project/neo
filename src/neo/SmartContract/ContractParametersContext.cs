@@ -236,7 +236,7 @@ namespace Neo.SmartContract
                 if (contract != null)
                 {
                     var md = contract.Manifest.Abi.GetMethod("verify");
-                    return md != null && md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0;
+                    return md != null && md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0 && md.Offset == 0;
                 }
             }
             return false;
