@@ -123,7 +123,7 @@ namespace Neo
         }
 
         int ISerializable.Size => Length;
-        
+
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(value1);

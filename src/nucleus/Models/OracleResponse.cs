@@ -14,8 +14,8 @@ namespace Neo.Models
         public byte[] Result;
 
         public override bool AllowMultiple => false;
-        
-        public override int Size => 
+
+        public override int Size =>
             sizeof(byte) +                  // TransactionAttributeType
             sizeof(ulong) +                 // Id
             sizeof(OracleResponseCode) +    // ResponseCode

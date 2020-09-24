@@ -109,7 +109,7 @@ namespace Neo.Cryptography.ECC
         {
             writer.Write(EncodePoint(true));
         }
-        
+
         public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
             Span<byte> buffer = stackalloc byte[1 + curve.ExpectedECPointLength * 2];

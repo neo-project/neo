@@ -34,7 +34,7 @@ namespace Neo.Models
         }
 
         private Lazy<Witness[]> witnesses;
-        Witness[] IWitnessed.Witnesses 
+        Witness[] IWitnessed.Witnesses
         {
             get
             {
