@@ -38,20 +38,16 @@ namespace Neo.SmartContract
             AddGas(StoragePrice * (script.Length + manifest.Length));
 
             ContractManifest contractManifest = ContractManifest.Parse(manifest);
-            ContractMethodDescriptor md = contractManifest.Abi.GetMethod("verify");
-            UInt160 hash = script.ToScriptHash(md?.Offset ?? 0);
-            ContractState contract = Snapshot.Contracts.TryGet(hash);
-            if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
-            contract = new ContractState
+            ContractState contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
+                Manifest = contractManifest,
                 Script = script.ToArray(),
-                Manifest = contractManifest
             };
+            if (Snapshot.Contracts.TryGet(contract.ScriptHash) != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
+            if (!contract.Manifest.IsValid(contract.ScriptHash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
 
-            if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
-
-            Snapshot.Contracts.Add(hash, contract);
+            Snapshot.Contracts.Add(contract.ScriptHash, contract);
 
             // We should push it onto the caller's stack.
 
@@ -59,7 +55,7 @@ namespace Neo.SmartContract
 
             // Execute _deploy
 
-            md = contract.Manifest.Abi.GetMethod("_deploy");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
         }
