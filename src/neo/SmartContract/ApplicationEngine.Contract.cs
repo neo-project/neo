@@ -44,8 +44,8 @@ namespace Neo.SmartContract
                 Manifest = contractManifest,
                 Script = script.ToArray(),
             };
-            if (Snapshot.Contracts.TryGet(contract.ScriptHash) != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
-            if (!contract.Manifest.IsValid(contract.ScriptHash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
+            if (Snapshot.Contracts.TryGet(contract.ScriptHash) != null) throw new InvalidOperationException($"Contract Already Exists: {contract.ScriptHash}");
+            if (!contract.Manifest.IsValid(contract.ScriptHash)) throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
 
             Snapshot.Contracts.Add(contract.ScriptHash, contract);
 
