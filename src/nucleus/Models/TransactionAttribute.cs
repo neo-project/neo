@@ -5,7 +5,7 @@ using Neo.IO.Json;
 
 namespace Neo.Models
 {
-    public abstract class TransactionAttribute
+    public abstract class TransactionAttribute : ISerializable
     {
         public abstract bool AllowMultiple { get; }
 
@@ -27,5 +27,10 @@ namespace Neo.Models
         public abstract int Size { get; }
         public abstract void Serialize(BinaryWriter writer);
         protected abstract void Deserialize(TransactionAttributeType type, BinaryReader reader);
+
+        void ISerializable.Deserialize(BinaryReader reader)
+        {
+            throw new InvalidOperationException();
+        }
     }
 }

@@ -20,7 +20,7 @@ namespace Neo.UnitTests.SmartContract
             TestBlockchain.InitializeMockNeoSystem();
         }
 
-        [TestMethod]
+        [TestMethod, Ignore]
         public void System_Blockchain_GetBlock()
         {
             var tx = new Transaction(ProtocolSettings.Default.Magic)
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
-        [TestMethod]
+        [TestMethod, Ignore]
         public void System_ExecutionEngine_GetScriptContainer()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();

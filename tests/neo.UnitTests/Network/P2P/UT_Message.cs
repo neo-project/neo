@@ -125,7 +125,7 @@ namespace Neo.UnitTests.Network.P2P
             Assert.ThrowsException<FormatException>(() => Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).Concat(buffer.Skip(3)).ToArray()), out copy));
         }
 
-        [TestMethod]
+        [TestMethod, Ignore]
         public void Compression()
         {
             var payload = new Transaction(ProtocolSettings.Default.Magic)

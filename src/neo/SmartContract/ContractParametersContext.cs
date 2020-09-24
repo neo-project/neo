@@ -194,9 +194,17 @@ namespace Neo.SmartContract
         public static ContractParametersContext FromJson(JObject json)
         {
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
+            if (type == null)
+            {
+                type = typeof(UInt160).GetTypeInfo().Assembly.GetType(json["type"].AsString());
+            }
             if (!typeof(IWitnessed).IsAssignableFrom(type)) throw new FormatException();
 
-            var verifiable = (IWitnessed)Activator.CreateInstance(type);
+            var verifiable = type == typeof(Transaction) ? new Transaction(ProtocolSettings.Default.Magic)
+                : type == typeof(Block) ? new Block(ProtocolSettings.Default.Magic)
+                : type == typeof(Header) ? new Header(ProtocolSettings.Default.Magic)
+                : (IWitnessed)Activator.CreateInstance(type);
+                
             using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["hex"].AsString()), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8))
             {

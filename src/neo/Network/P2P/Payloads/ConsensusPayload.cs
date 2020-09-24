@@ -84,7 +84,6 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((IWitnessed)this).DeserializeUnsigned(reader);
-            Data = reader.ReadVarBytes();
             if (reader.ReadByte() != 1) throw new FormatException();
             Witness = reader.ReadSerializable<Witness>();
         }
