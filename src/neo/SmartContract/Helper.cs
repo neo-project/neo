@@ -162,7 +162,7 @@ namespace Neo.SmartContract
                     ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
                     if (cs is null) return false;
                     ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                    if (md is null) return false;
+                    if (md is null || md.Offset != 0) return false;
                     verification = cs.Script;
                     offset = md.Offset;
                     init = cs.Manifest.Abi.GetMethod("_initialize");

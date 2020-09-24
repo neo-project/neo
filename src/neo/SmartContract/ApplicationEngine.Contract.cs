@@ -48,8 +48,6 @@ namespace Neo.SmartContract
             };
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
-            if ((contract.Manifest.Abi.GetMethod("verify")?.Offset ?? 0) != 0)
-                throw new InvalidOperationException($"Verify must be in the offset 0");
 
             Snapshot.Contracts.Add(hash, contract);
 
@@ -96,8 +94,6 @@ namespace Neo.SmartContract
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
                 contract = Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                 contract.Manifest = ContractManifest.Parse(manifest);
-                if ((contract.Manifest.Abi.GetMethod("verify")?.Offset ?? 0) != 0)
-                    throw new InvalidOperationException($"Verify must be in the offset 0");
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
