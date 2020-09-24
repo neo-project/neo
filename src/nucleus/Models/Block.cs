@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 
@@ -16,6 +18,11 @@ namespace Neo.Models
 
         public Block(uint magic) : base(magic)
         {
+        }
+
+        public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, IEnumerable<UInt256> transactionHashes)
+        {
+            return MerkleTree.ComputeRoot(transactionHashes.Prepend(consensusDataHash).ToArray());
         }
 
         public override int Size => base.Size
@@ -35,12 +42,8 @@ namespace Neo.Models
                 Transactions[i] = reader.ReadSerializable(() => new Transaction(magic));
             }
 
-            if (Transactions.Distinct().Count() != Transactions.Length)
-            {
-                throw new FormatException();
-            }
-            // if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash)) != MerkleRoot)
-            //     throw new FormatException();
+            if (Transactions.Distinct().Count() != Transactions.Length) throw new FormatException();
+            if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash)) != MerkleRoot) throw new FormatException();
         }
 
         public bool Equals(Block other)
