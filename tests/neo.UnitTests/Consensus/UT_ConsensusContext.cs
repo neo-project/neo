@@ -4,6 +4,7 @@ using Moq;
 using Neo.Consensus;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
