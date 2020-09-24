@@ -5,6 +5,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
+using Neo.Models;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;

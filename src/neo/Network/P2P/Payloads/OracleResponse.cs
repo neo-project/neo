@@ -1,6 +1,7 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;

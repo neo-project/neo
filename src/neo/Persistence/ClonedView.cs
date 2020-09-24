@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.IO.Caching;
+using Neo.Models;
 using Neo.Ledger;
 
 namespace Neo.Persistence

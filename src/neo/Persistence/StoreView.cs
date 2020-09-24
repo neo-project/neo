@@ -1,6 +1,7 @@
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.Persistence

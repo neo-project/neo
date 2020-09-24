@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.Models;
 using System.Collections;
 using System.IO;
 using System.Linq;

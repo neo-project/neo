@@ -2,6 +2,7 @@ using Akka.Actor;
 using Neo.Cryptography;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;

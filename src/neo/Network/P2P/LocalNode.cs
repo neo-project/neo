@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Neo.IO;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;

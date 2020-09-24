@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Akka.Routing;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using System;
 

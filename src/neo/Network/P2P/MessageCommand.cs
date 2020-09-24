@@ -1,4 +1,5 @@
 using Neo.IO.Caching;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.Network.P2P

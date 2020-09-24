@@ -1,5 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using System.Linq;
 

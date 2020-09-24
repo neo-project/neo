@@ -1,5 +1,7 @@
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Models;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;

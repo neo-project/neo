@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using System.Collections.Generic;

@@ -1,6 +1,7 @@
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Json;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using System.IO;
 using System.Linq;

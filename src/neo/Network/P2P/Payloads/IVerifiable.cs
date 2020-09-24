@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Models;
 using Neo.Persistence;
 using System.IO;
 

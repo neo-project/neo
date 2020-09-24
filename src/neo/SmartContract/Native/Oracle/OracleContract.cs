@@ -3,6 +3,7 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;

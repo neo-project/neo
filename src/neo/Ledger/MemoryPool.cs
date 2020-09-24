@@ -1,6 +1,7 @@
 using Akka.Actor;
 using Akka.Util.Internal;
 using Neo.Network.P2P;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
