@@ -24,6 +24,7 @@ namespace Neo.Network.P2P.Payloads
         {
             StartIndex = reader.ReadUInt32();
             Count = reader.ReadUInt32();
+            if (Count == 0) throw new FormatException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

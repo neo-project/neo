@@ -175,10 +175,8 @@ namespace Neo.Network.P2P
                     break;
                 state_roots.Add(state.StateRoot);
             }
-            foreach (StateRootsPayload pl in StateRootsPayload.Create(state_roots))
-            {
-                Context.Parent.Tell(Message.Create("roots", pl));
-            }
+            if (state_roots.Count == 0) return;
+            Context.Parent.Tell(Message.Create("roots", StateRootsPayload.Create(state_roots.ToArray())));
         }
 
         private void OnStateRootsReceived(StateRootsPayload payload)
