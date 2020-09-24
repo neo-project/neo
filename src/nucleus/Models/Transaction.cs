@@ -7,21 +7,43 @@ using Neo.IO.Json;
 
 namespace Neo.Models
 {
-    public class Transaction : ISignable
+    public class Transaction : ISignable, IEquatable<Transaction>
     {
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
         public const int MaxTransactionAttributes = 16;
 
-        public byte Version;
-        public uint Nonce;
-        public long SystemFee;
-        public long NetworkFee;
-        public uint ValidUntilBlock;
-        public Signer[] Signers;
-        public TransactionAttribute[] Attributes;
-        public byte[] Script;
+        private readonly uint magic;
+        private byte version;
+        private uint nonce;
+        private long systemFee;
+        private long networkFee;
+        private uint validUntilBlock;
+        private Signer[] signers;
+        private TransactionAttribute[] attributes;
+        private byte[] script;
         public Witness[] Witnesses;
+
+        private Lazy<UInt256> hash;
+        public UInt256 Hash
+        {
+            get
+            {
+                hash ??= new Lazy<UInt256>(() => this.CalculateHash(magic));
+                return hash.Value;
+            }
+        }
+
+        public byte Version { get => version; set { version = value; hash = null; } }
+        public uint Nonce { get => nonce; set { nonce = value; hash = null; } }
+        public long SystemFee { get => systemFee; set { systemFee = value; hash = null; } }
+        public long NetworkFee { get => networkFee; set { networkFee = value; hash = null; } }
+        public uint ValidUntilBlock { get => validUntilBlock; set { validUntilBlock = value; hash = null; } }
+        public Signer[] Signers { get => signers; set { signers = value; hash = null; } }
+        public TransactionAttribute[] Attributes { get => attributes; set { attributes = value; hash = null; } }
+        public byte[] Script { get => script; set { script = value; hash = null; } }
+
+        Witness[] ISignable.Witnesses => Witnesses;
 
         /// <summary>
         /// The first signer is the sender of the transaction, regardless of its WitnessScope.
@@ -36,6 +58,28 @@ namespace Neo.Models
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
+        public Transaction(uint magic)
+        {
+            this.magic = magic;
+        }
+
+        public bool Equals(Transaction other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Hash.Equals(other.Hash);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Transaction);
+        }
+
+        public override int GetHashCode()
+        {
+            return Hash.GetHashCode();
+        }
+        
         public int Size => HeaderSize +
             Signers.GetVarSize() +
             BinaryFormat.GetVarSize(Attributes.Length) +
@@ -44,7 +88,7 @@ namespace Neo.Models
             Script.GetVarSize() +
             Witnesses.GetVarSize();
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
@@ -92,15 +136,13 @@ namespace Neo.Models
             return attributes;
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
             writer.Write(Witnesses);
         }
 
-        Witness[] ISignable.Witnesses => Witnesses;
-
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        public void SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(Nonce);
@@ -114,39 +156,6 @@ namespace Neo.Models
                 Attributes[i].Serialize(writer);
             }
             writer.WriteVarBytes(Script);
-        }
-
-        public JObject ToJson(uint magic, byte addressVersion)
-        {
-            JObject json = new JObject();
-            json["hash"] = this.CalculateHash(magic).ToString();
-            json["size"] = Size;
-            json["version"] = Version;
-            json["nonce"] = Nonce;
-            json["sender"] = Sender.ToAddress(addressVersion);
-            json["sysfee"] = SystemFee.ToString();
-            json["netfee"] = NetworkFee.ToString();
-            json["validuntilblock"] = ValidUntilBlock;
-            json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
-            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["script"] = Convert.ToBase64String(Script);
-            json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
-            return json;
-        }
-
-        public static Transaction FromJson(JObject json, byte? addressVersion)
-        {
-            Transaction tx = new Transaction();
-            tx.Version = byte.Parse(json["version"].AsString());
-            tx.Nonce = uint.Parse(json["nonce"].AsString());
-            tx.Signers = ((JArray)json["signers"]).Select(p => Signer.FromJson(p, addressVersion)).ToArray();
-            tx.SystemFee = long.Parse(json["sysfee"].AsString());
-            tx.NetworkFee = long.Parse(json["netfee"].AsString());
-            tx.ValidUntilBlock = uint.Parse(json["validuntilblock"].AsString());
-            tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
-            tx.Script = Convert.FromBase64String(json["script"].AsString());
-            tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
-            return tx;
         }
     }
 }

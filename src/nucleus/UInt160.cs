@@ -68,7 +68,7 @@ namespace Neo
 
         public override int GetHashCode()
         {
-            return (int)value1;
+            return HashCode.Combine(value1, value2, value3);
         }
 
         /// <summary>

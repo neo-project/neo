@@ -150,9 +150,24 @@ namespace Neo.IO
             return array;
         }
 
+        public static T[] ReadNullableArray<T>(this BinaryReader reader, Func<T> factory, int max = 0x1000000) where T : class, ISerializable
+        {
+            T[] array = new T[reader.ReadVarInt((ulong)max)];
+            for (int i = 0; i < array.Length; i++)
+                array[i] = reader.ReadBoolean() ? reader.ReadSerializable(factory) : null;
+            return array;
+        }
+
         public static T ReadSerializable<T>(this BinaryReader reader) where T : ISerializable, new()
         {
             T obj = new T();
+            obj.Deserialize(reader);
+            return obj;
+        }
+
+        public static T ReadSerializable<T>(this BinaryReader reader, Func<T> factory) where T : ISerializable
+        {
+            T obj = factory();
             obj.Deserialize(reader);
             return obj;
         }
@@ -163,6 +178,17 @@ namespace Neo.IO
             for (int i = 0; i < array.Length; i++)
             {
                 array[i] = new T();
+                array[i].Deserialize(reader);
+            }
+            return array;
+        }
+
+        public static T[] ReadSerializableArray<T>(this BinaryReader reader, Func<T> factory, int max = 0x1000000) where T : ISerializable
+        {
+            T[] array = new T[reader.ReadVarInt((ulong)max)];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = factory();
                 array[i].Deserialize(reader);
             }
             return array;
