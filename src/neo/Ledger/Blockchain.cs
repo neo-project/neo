@@ -451,7 +451,7 @@ namespace Neo.Ledger
                     {
                         // Create validator contract in order to save bytes
 
-                        snapshot.Contracts.Add(verificator, new ContractState()
+                        var contract = new ContractState()
                         {
                             Id = snapshot.ContractId.GetAndChange().NextId++,
                             Script = block.Witness.VerificationScript,
@@ -480,7 +480,12 @@ namespace Neo.Ledger
                                 Trusts = WildcardContainer<UInt160>.CreateWildcard(),
                                 Extra = null
                             }
-                        });
+                        };
+
+                        if (contract.ScriptHash == verificator)
+                        {
+                            snapshot.Contracts.Add(verificator, contract);
+                        }
                     }
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
