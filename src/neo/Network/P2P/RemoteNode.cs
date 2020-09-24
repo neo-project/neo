@@ -18,7 +18,7 @@ namespace Neo.Network.P2P
     public partial class RemoteNode : Connection
     {
         internal class StartProtocol { }
-        internal class Relay { public IInventory Inventory; }
+        internal class Relay { public IWitnessed Inventory; }
 
         private readonly NeoSystem system;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
@@ -127,7 +127,7 @@ namespace Neo.Network.P2P
                 case Message msg:
                     EnqueueMessage(msg);
                     break;
-                case IInventory inventory:
+                case IWitnessed inventory:
                     OnSend(inventory);
                     break;
                 case Relay relay:
@@ -139,26 +139,28 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnRelay(IInventory inventory)
+        private void OnRelay(IWitnessed inventory)
         {
             if (!IsFullNode) return;
-            if (inventory.InventoryType == InventoryType.TX)
+            var invType = inventory.GetInventoryType();
+            if (invType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
+            EnqueueMessage(MessageCommand.Inv, InvPayload.Create(invType, inventory.Hash));
         }
 
-        private void OnSend(IInventory inventory)
+        private void OnSend(IWitnessed inventory)
         {
             if (!IsFullNode) return;
-            if (inventory.InventoryType == InventoryType.TX)
+            var invType = inventory.GetInventoryType();
+            if (invType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
+            EnqueueMessage((MessageCommand)invType, inventory);
         }
 
         private void OnStartProtocol()

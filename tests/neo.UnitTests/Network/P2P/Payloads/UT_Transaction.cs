@@ -50,7 +50,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void InventoryType_Get()
         {
-            ((IInventory)uut).InventoryType.Should().Be(InventoryType.TX);
+            ((IWitnessed)uut).InventoryType.Should().Be(InventoryType.TX);
         }
 
         [TestMethod]

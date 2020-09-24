@@ -112,6 +112,24 @@ namespace Neo.Network.P2P.Payloads
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));        
         }
 
+        public static InventoryType GetInventoryType(this IWitnessed witnessed)
+            => witnessed switch
+            {
+                Block _ => InventoryType.Block,
+                Transaction _ => InventoryType.TX,
+                ConsensusPayload _ => InventoryType.Consensus,
+                _ => throw new Exception("Invalid IWitnessed")
+            };
+
+        public static bool Verify(this IWitnessed witnessed, StoreView snapshot)
+            => witnessed switch
+            {
+                Block block => Verify(block, snapshot),
+                Transaction tx => Verify(tx, snapshot),
+                ConsensusPayload payload => Verify(payload, snapshot),
+                _ => throw new Exception("Invalid IWitnessed")
+            };
+
         public static bool Verify(this BlockBase block, StoreView snapshot)
         {
             Header prev_header = snapshot.GetHeader(block.PrevHash);
@@ -128,6 +146,12 @@ namespace Neo.Network.P2P.Payloads
                 return false;
             return payload.VerifyWitnesses(snapshot, 0_02000000);
         }
+
+        public static bool Verify(this Transaction tx, StoreView snapshot)
+        {
+            return Verify(tx, snapshot, null) == VerifyResult.Succeed;
+        }
+
         private const long MaxVerificationGas = 0_50000000;
 
         internal static bool VerifyWitnesses(this IWitnessed verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)

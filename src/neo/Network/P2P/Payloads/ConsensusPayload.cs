@@ -49,7 +49,7 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        // InventoryType IInventory.InventoryType => InventoryType.Consensus;
+        // InventoryType IWitnessed.InventoryType => InventoryType.Consensus;
 
         public int Size =>
             sizeof(uint) +      //Version

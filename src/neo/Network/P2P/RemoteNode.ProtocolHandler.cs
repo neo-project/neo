@@ -249,7 +249,7 @@ namespace Neo.Network.P2P
                         }
                         break;
                     default:
-                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory))
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IWitnessed inventory))
                             EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
                         break;
                 }
@@ -285,7 +285,7 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
-        private void OnInventoryReceived(IInventory inventory)
+        private void OnInventoryReceived(IWitnessed inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
             switch (inventory)

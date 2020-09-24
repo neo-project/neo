@@ -29,7 +29,7 @@ namespace Neo.Ledger
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
         internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
-        public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
+        public class RelayResult { public IWitnessed Inventory; public VerifyResult Result; }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
@@ -322,7 +322,7 @@ namespace Neo.Ledger
             Sender.Tell(new FillCompleted());
         }
 
-        private void OnInventory(IInventory inventory, bool relay = true)
+        private void OnInventory(IWitnessed inventory, bool relay = true)
         {
             VerifyResult result = inventory switch
             {
@@ -364,7 +364,7 @@ namespace Neo.Ledger
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewInventory(IInventory inventory)
+        private VerifyResult OnNewInventory(IWitnessed inventory)
         {
             if (!inventory.Verify(currentSnapshot)) return VerifyResult.Invalid;
             RelayCache.Add(inventory);
@@ -405,7 +405,7 @@ namespace Neo.Ledger
                     // This message comes from a mempool's revalidation, already relayed
                     foreach (var tx in transactions) OnTransaction(tx, false);
                     break;
-                case IInventory inventory:
+                case IWitnessed inventory:
                     OnInventory(inventory);
                     break;
                 case PreverifyCompleted task:
@@ -550,7 +550,7 @@ namespace Neo.Ledger
             }
         }
 
-        private void SendRelayResult(IInventory inventory, VerifyResult result)
+        private void SendRelayResult(IWitnessed inventory, VerifyResult result)
         {
             RelayResult rr = new RelayResult
             {
