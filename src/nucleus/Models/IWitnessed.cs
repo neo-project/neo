@@ -1,7 +1,11 @@
+using System.IO;
+using Neo.IO;
+
 namespace Neo.Models
 {
-    public interface IWitnessed : ISignable
+    public interface IWitnessed : ISerializable
     {
         Witness[] Witnesses { get; }
+        void SerializeUnsigned(BinaryWriter writer);
     }
 }

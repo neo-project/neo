@@ -76,11 +76,11 @@ namespace Neo.Models
 
         public virtual void Serialize(BinaryWriter writer)
         {
-            ((ISignable)this).SerializeUnsigned(writer);
+            ((IWitnessed)this).SerializeUnsigned(writer);
             writer.Write(new Witness[] { Witness });
         }
 
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        void IWitnessed.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(PrevHash);

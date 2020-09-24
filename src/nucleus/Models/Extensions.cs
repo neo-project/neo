@@ -6,19 +6,19 @@ namespace Neo.Models
 {
     public static class Extensions
     {
-        public static byte[] GetHashData(this ISignable signable, uint magic)
+        public static byte[] GetHashData(this IWitnessed witnessed, uint magic)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
             writer.Write(magic);
-            signable.SerializeUnsigned(writer);
+            witnessed.SerializeUnsigned(writer);
             writer.Flush();
             return ms.ToArray();
         }
 
-        public static UInt256 CalculateHash(this ISignable signable, uint magic)
+        public static UInt256 CalculateHash(this IWitnessed witnessed, uint magic)
         {
-            return new UInt256(Crypto.Hash256(signable.GetHashData(magic)));
+            return new UInt256(Crypto.Hash256(witnessed.GetHashData(magic)));
         }
 
         public static UInt160 ToScriptHash(this JObject value, byte? addressVersion)

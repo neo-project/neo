@@ -158,7 +158,7 @@ namespace Neo.Models
 
         public void Serialize(BinaryWriter writer)
         {
-            ((ISignable)this).SerializeUnsigned(writer);
+            this.SerializeUnsigned(writer);
             writer.Write(Witnesses);
         }
 
