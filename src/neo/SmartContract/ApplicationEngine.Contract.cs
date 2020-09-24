@@ -93,12 +93,11 @@ namespace Neo.SmartContract
                         throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
                 }
 
-                UInt160 hash_new = contract.ScriptHash;
-                if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
-                    throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
+                if (contract.ScriptHash.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(contract.ScriptHash) != null)
+                    throw new InvalidOperationException($"Adding Contract Hash Already Exist: {contract.ScriptHash}");
 
-                contract.Manifest.Abi.Hash = hash_new;
-                Snapshot.Contracts.Add(hash_new, contract);
+                contract.Manifest.Abi.Hash = contract.ScriptHash;
+                Snapshot.Contracts.Add(contract.ScriptHash, contract);
                 Snapshot.Contracts.Delete(CurrentScriptHash);
             }
             else if (manifest != null)
