@@ -32,7 +32,7 @@ namespace Neo.Ledger
         {
             BlockIndex = reader.ReadUInt32();
             VMState = (VMState)reader.ReadByte();
-            Transaction = reader.ReadSerializable<Transaction>();
+            Transaction = reader.ReadSerializable(() => new Transaction(ProtocolSettings.Default.Magic));
         }
 
         void ICloneable<TransactionState>.FromReplica(TransactionState replica)

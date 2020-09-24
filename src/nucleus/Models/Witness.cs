@@ -10,6 +10,8 @@ namespace Neo.Models
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
+        public long GasConsumed { get; set; }
+
         public virtual UInt160 ScriptHash => VerificationScript.ToScriptHash();
         public bool StateDependent => VerificationScript.Length == 0;
 

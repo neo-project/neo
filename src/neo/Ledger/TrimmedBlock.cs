@@ -58,6 +58,22 @@ namespace Neo.Ledger
             }
         }
 
+        public static TrimmedBlock FromBlock(Block block)
+        {
+            return new TrimmedBlock
+            {
+                Version = block.Version,
+                PrevHash = block.PrevHash,
+                MerkleRoot = block.MerkleRoot,
+                Timestamp = block.Timestamp,
+                Index = block.Index,
+                NextConsensus = block.NextConsensus,
+                Witness = block.Witness,
+                Hashes = block.Transactions.Select(p => p.Hash).Prepend(block.ConsensusData.Hash).ToArray(),
+                ConsensusData = block.ConsensusData
+            };
+        }
+
         public override int Size => base.Size
             + Hashes.GetVarSize()           //Hashes
             + (ConsensusData?.Size ?? 0);   //ConsensusData

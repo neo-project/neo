@@ -37,7 +37,7 @@ namespace Neo.Ledger
         public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
         public static readonly ECPoint[] StandbyValidators = StandbyCommittee[0..ProtocolSettings.Default.ValidatorsCount];
 
-        public static readonly Block GenesisBlock = new Block
+        public static readonly Block GenesisBlock = new Block(ProtocolSettings.Default.Magic)
         {
             PrevHash = UInt256.Zero,
             Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
@@ -173,7 +173,7 @@ namespace Neo.Ledger
                 sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
                 script = sb.ToArray();
             }
-            return new Transaction
+            return new Transaction(ProtocolSettings.Default.Magic)
             {
                 Version = 0,
                 Script = script,
@@ -446,7 +446,7 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                snapshot.Blocks.Add(block.Hash, block.Trim());
+                snapshot.Blocks.Add(block.Hash, TrimmedBlock.FromBlock(block));
                 StoreView clonedSnapshot = snapshot.Clone();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)

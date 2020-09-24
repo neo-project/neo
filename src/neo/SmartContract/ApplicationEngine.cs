@@ -275,7 +275,7 @@ namespace Neo.SmartContract
         private static Block CreateDummyBlock(StoreView snapshot)
         {
             var currentBlock = snapshot.Blocks[snapshot.CurrentBlockHash];
-            return new Block
+            return new Block(ProtocolSettings.Default.Magic)
             {
                 Version = 0,
                 PrevHash = snapshot.CurrentBlockHash,

@@ -20,6 +20,24 @@ namespace Neo.Models
         {
         }
 
+        private Lazy<Header> header  = null;
+        public Header Header
+        {
+            get
+            {
+                header ??= new Lazy<Header>(() => new Header(magic)
+                    {
+                        PrevHash = PrevHash,
+                        MerkleRoot = MerkleRoot,
+                        Timestamp = Timestamp,
+                        Index = Index,
+                        NextConsensus = NextConsensus,
+                        Witness = Witness
+                    });
+                return header.Value;
+            }
+        }
+
         public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, IEnumerable<UInt256> transactionHashes)
         {
             return MerkleTree.ComputeRoot(transactionHashes.Prepend(consensusDataHash).ToArray());

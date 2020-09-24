@@ -40,9 +40,15 @@ namespace Neo.Models
         public long NetworkFee { get => networkFee; set { networkFee = value; hash = null; } }
         public uint ValidUntilBlock { get => validUntilBlock; set { validUntilBlock = value; hash = null; } }
         public Signer[] Signers { get => signers; set { signers = value; hash = null; } }
-        public TransactionAttribute[] Attributes { get => attributes; set { attributes = value; hash = null; } }
+        public TransactionAttribute[] Attributes { get => attributes; set { attributes = value; hash = null; attributesCache = null; } }
         public byte[] Script { get => script; set { script = value; hash = null; } }
 
+        /// <summary>
+        /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
+        /// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
+        /// </summary>
+        public long FeePerByte => NetworkFee / Size;
+        
         Witness[] IWitnessed.Witnesses => Witnesses;
 
         /// <summary>
@@ -51,7 +57,7 @@ namespace Neo.Models
         /// </summary>
         public UInt160 Sender => Signers[0].Account;
 
-        const int HeaderSize =
+        public const int HeaderSize =
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
             sizeof(long) +  //SystemFee
@@ -61,6 +67,20 @@ namespace Neo.Models
         public Transaction(uint magic)
         {
             this.magic = magic;
+        }
+
+        private Dictionary<Type, TransactionAttribute[]> attributesCache;
+
+        public T[] GetAttributes<T>() where T : TransactionAttribute
+        {
+            attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => (TransactionAttribute[])p.OfType<T>().ToArray());
+            attributesCache.TryGetValue(typeof(T), out var result);
+            return (T[])result;
+        }
+
+        public T GetAttribute<T>() where T : TransactionAttribute
+        {
+            return GetAttributes<T>()?.First();
         }
 
         public bool Equals(Transaction other)

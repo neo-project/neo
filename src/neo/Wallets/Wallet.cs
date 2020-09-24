@@ -336,7 +336,7 @@ namespace Neo.Wallets
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
             {
-                Transaction tx = new Transaction
+                Transaction tx = new Transaction(ProtocolSettings.Default.Magic)
                 {
                     Version = 0,
                     Nonce = (uint)rand.Next(),
