@@ -73,7 +73,7 @@ namespace Neo.Network.P2P.Payloads
             NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
+        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
         {
             if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
             Header prev_header = snapshot.GetHeader(PrevHash);

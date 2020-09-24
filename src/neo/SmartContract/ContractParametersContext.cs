@@ -228,13 +228,29 @@ namespace Neo.SmartContract
             return item.Script;
         }
 
-        public Witness[] GetWitnesses()
+        public bool IsVerificationStored(UInt160 scriptHash, StoreView snapshot = null)
+        {
+            if (snapshot != null)
+            {
+                var contract = snapshot.Contracts.TryGet(scriptHash);
+                if (contract != null)
+                {
+                    var md = contract.Manifest.Abi.GetMethod("verify");
+                    return md != null && md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0 && md.Offset == 0;
+                }
+            }
+            return false;
+        }
+
+        public Witness[] GetWitnesses(StoreView snapshot = null)
         {
             if (!Completed) throw new InvalidOperationException();
             Witness[] witnesses = new Witness[ScriptHashes.Count];
             for (int i = 0; i < ScriptHashes.Count; i++)
             {
-                ContextItem item = ContextItems[ScriptHashes[i]];
+                UInt160 scriptHash = ScriptHashes[i];
+                ContextItem item = ContextItems[scriptHash];
+
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     for (int j = item.Parameters.Length - 1; j >= 0; j--)
@@ -244,7 +260,7 @@ namespace Neo.SmartContract
                     witnesses[i] = new Witness
                     {
                         InvocationScript = sb.ToArray(),
-                        VerificationScript = item.Script ?? Array.Empty<byte>()
+                        VerificationScript = IsVerificationStored(scriptHash, snapshot) ? Array.Empty<byte>() : (item.Script ?? Array.Empty<byte>())
                     };
                 }
             }

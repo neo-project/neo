@@ -10,6 +10,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -444,6 +445,43 @@ namespace Neo.Ledger
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
+
+                    var verificator = block.GetScriptHashesForVerifying(snapshot)[0];
+                    if (!snapshot.Contracts.Contains(verificator))
+                    {
+                        // Create validator contract in order to save bytes
+
+                        snapshot.Contracts.Add(verificator, new ContractState()
+                        {
+                            Id = snapshot.ContractId.GetAndChange().NextId++,
+                            Script = block.Witness.VerificationScript,
+                            Manifest = new ContractManifest()
+                            {
+                                Abi = new ContractAbi()
+                                {
+                                    Methods = new ContractMethodDescriptor[]
+                                    {
+                                    new ContractMethodDescriptor()
+                                    {
+                                        Name = "verify",
+                                        Offset = 0,
+                                        Parameters = Array.Empty<ContractParameterDefinition>(),
+                                        ReturnType = ContractParameterType.Boolean
+                                    }
+                                    },
+                                    Events = Array.Empty<ContractEventDescriptor>(),
+                                    Hash = verificator
+                                },
+                                Features = ContractFeatures.Payable,
+                                Groups = Array.Empty<ContractGroup>(),
+                                Permissions = Array.Empty<ContractPermission>(),
+                                SafeMethods = WildcardContainer<string>.CreateWildcard(),
+                                SupportedStandards = Array.Empty<string>(),
+                                Trusts = WildcardContainer<UInt160>.CreateWildcard(),
+                                Extra = null
+                            }
+                        });
+                    }
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
