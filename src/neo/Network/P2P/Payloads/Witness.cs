@@ -32,8 +32,8 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            // This is designed to allow a MultiSig 11/21 (committee)
-            // Invocation = 21 * (64+2) = 726
+            // This is designed to allow a MultiSig 21/11 (committee)
+            // Invocation = 11 * (64 + 2) = 726
             InvocationScript = reader.ReadVarBytes(744);
             // Verification = m + (PUSH_PubKey * 11) + length + null + syscall = 1 + ((2+33) * 21) + 2 + 1 + 5 = 744
             VerificationScript = reader.ReadVarBytes(760);
