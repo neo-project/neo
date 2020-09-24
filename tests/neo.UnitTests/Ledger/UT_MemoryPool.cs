@@ -185,7 +185,7 @@ namespace Neo.UnitTests.Ledger
 
             _unit.SortedTxCount.Should().Be(70);
 
-            var block = new Block
+            var block = new Block(ProtocolSettings.Default.Magic)
             {
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
                     .Concat(_unit.GetSortedVerifiedTransactions().Take(5)).ToArray()
@@ -234,7 +234,7 @@ namespace Neo.UnitTests.Ledger
 
             _unit.SortedTxCount.Should().Be(70);
 
-            var block = new Block
+            var block = new Block(ProtocolSettings.Default.Magic)
             {
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10).ToArray()
             };
@@ -290,7 +290,7 @@ namespace Neo.UnitTests.Ledger
             VerifyTransactionsSortedDescending(sortedVerifiedTxs);
 
             // move all to unverified
-            var block = new Block { Transactions = new Transaction[0] };
+            var block = new Block(ProtocolSettings.Default.Magic) { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
             _unit.SortedTxCount.Should().Be(0);
@@ -311,7 +311,7 @@ namespace Neo.UnitTests.Ledger
                 var verifiedTxs = _unit.GetSortedVerifiedTransactions().ToArray();
                 verifiedTxs.Length.Should().Be(1);
                 verifiedTxs[0].Should().BeEquivalentTo(maxTransaction);
-                var blockWith2Tx = new Block { Transactions = new[] { maxTransaction, minTransaction } };
+                var blockWith2Tx = new Block(ProtocolSettings.Default.Magic) { Transactions = new[] { maxTransaction, minTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
                 _unit.InvalidateVerifiedTransactions();
@@ -351,7 +351,7 @@ namespace Neo.UnitTests.Ledger
             AddTransactions(99);
 
             // move all to unverified
-            var block = new Block { Transactions = new Transaction[0] };
+            var block = new Block(ProtocolSettings.Default.Magic) { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
 
             _unit.CanTransactionFitInPool(CreateTransaction()).Should().Be(true);
@@ -516,7 +516,7 @@ namespace Neo.UnitTests.Ledger
             Transaction[] transactions = { tx1, tx2 };
             _unit.TryAdd(tx1, snapshot);
 
-            var block = new Block { Transactions = transactions };
+            var block = new Block(ProtocolSettings.Default.Magic) { Transactions = transactions };
 
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.VerifiedCount.Should().Be(1);

@@ -25,7 +25,7 @@ namespace Neo.Models
         {
             get
             {
-                header ??= new Lazy<Header>(() => new Header(magic)
+                header ??= new Lazy<Header>(() => new Header(Magic)
                     {
                         PrevHash = PrevHash,
                         MerkleRoot = MerkleRoot,
@@ -62,7 +62,7 @@ namespace Neo.Models
             Transactions = new Transaction[count - 1];
             for (int i = 0; i < Transactions.Length; i++)
             {
-                Transactions[i] = reader.ReadSerializable(() => new Transaction(magic));
+                Transactions[i] = reader.ReadSerializable(() => new Transaction(Magic));
             }
 
             if (Transactions.Distinct().Count() != Transactions.Length) throw new FormatException();

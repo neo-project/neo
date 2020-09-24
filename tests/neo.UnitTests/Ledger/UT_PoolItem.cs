@@ -130,7 +130,7 @@ namespace Neo.UnitTests.Ledger
         // Generate Transaction with different sizes and prices
         public static Transaction GenerateTx(long networkFee, int size, byte[] overrideScriptBytes = null)
         {
-            Transaction tx = new Transaction
+            Transaction tx = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Nonce = (uint)TestRandom.Next(),
                 Script = overrideScriptBytes ?? new byte[0],

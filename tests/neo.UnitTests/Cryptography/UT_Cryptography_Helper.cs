@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Security;
@@ -149,7 +150,7 @@ namespace Neo.UnitTests.Cryptography
             uint nTweak = 123456;
             BloomFilter filter = new BloomFilter(m, n, nTweak);
 
-            Transaction tx = new Transaction
+            Transaction tx = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
                 SystemFee = 4200000000,

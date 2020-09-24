@@ -13,7 +13,7 @@ namespace Neo.Models
         public const uint MaxValidUntilBlockIncrement = 2102400;
         public const int MaxTransactionAttributes = 16;
 
-        private readonly uint magic;
+        public readonly uint Magic;
         private byte version;
         private uint nonce;
         private long systemFee;
@@ -29,7 +29,7 @@ namespace Neo.Models
         {
             get
             {
-                hash ??= new Lazy<UInt256>(() => this.CalculateHash(magic));
+                hash ??= new Lazy<UInt256>(() => this.CalculateHash(Magic));
                 return hash.Value;
             }
         }
@@ -66,7 +66,7 @@ namespace Neo.Models
 
         public Transaction(uint magic)
         {
-            this.magic = magic;
+            this.Magic = magic;
         }
 
         private Dictionary<Type, TransactionAttribute[]> attributesCache;

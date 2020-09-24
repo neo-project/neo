@@ -13,7 +13,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt256[] Hashes;
         public byte[] Flags;
 
-        public MerkleBlockPayload(uint magic) : base(magic)
+        public MerkleBlockPayload() : base(ProtocolSettings.Default.Magic)
         {
         }
 
@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
             MerkleTree tree = new MerkleTree(block.Transactions.Select(p => p.Hash).Prepend(block.ConsensusData.Hash).ToArray());
             byte[] buffer = new byte[(flags.Length + 7) / 8];
             flags.CopyTo(buffer, 0);
-            return new MerkleBlockPayload(magic ?? ProtocolSettings.Default.Magic)
+            return new MerkleBlockPayload()
             {
                 Version = block.Version,
                 PrevHash = block.PrevHash,

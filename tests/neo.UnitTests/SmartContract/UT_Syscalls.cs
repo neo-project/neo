@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
@@ -22,7 +23,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void System_Blockchain_GetBlock()
         {
-            var tx = new Transaction()
+            var tx = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Script = new byte[] { 0x01 },
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -35,7 +36,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
             };
 
-            var block = new Block()
+            var block = new Block(ProtocolSettings.Default.Magic)
             {
                 Index = 0,
                 Timestamp = 2,
@@ -75,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
 
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
-                blocks.Add(block.Hash, block.Trim());
+                blocks.Add(block.Hash, TrimmedBlock.FromBlock(block));
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
 
                 engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
@@ -236,7 +237,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // With tx
 
-                var tx = new Transaction()
+                var tx = new Transaction(ProtocolSettings.Default.Magic)
                 {
                     Script = new byte[] { 0x01 },
                     Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } },

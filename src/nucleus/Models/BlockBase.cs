@@ -9,7 +9,7 @@ namespace Neo.Models
 {
     public abstract class BlockBase : IWitnessed
     {
-        protected readonly uint magic;
+        public readonly uint Magic;
         private uint version;
         private UInt256 prevHash;
         private UInt256 merkleRoot;
@@ -20,7 +20,7 @@ namespace Neo.Models
 
         public BlockBase(uint magic)
         {
-            this.magic = magic;
+            this.Magic = magic;
         }
 
         private Lazy<UInt256> hash;
@@ -28,7 +28,7 @@ namespace Neo.Models
         {
             get
             {
-                hash ??= new Lazy<UInt256>(() => this.CalculateHash(magic));
+                hash ??= new Lazy<UInt256>(() => this.CalculateHash(Magic));
                 return hash.Value;
             }
         }

@@ -5,6 +5,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -40,7 +41,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Vote()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 
@@ -94,7 +95,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Vote_Sameaccounts()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
             var accountState = snapshot.Storages.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
@@ -121,7 +122,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Vote_ChangeVote()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000 };
             //from vote to G
             byte[] from = Blockchain.StandbyValidators[0].ToArray();
             var from_Account = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
@@ -152,7 +153,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Vote_VoteToNull()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000 };
 
             byte[] from = Blockchain.StandbyValidators[0].ToArray();
             var from_Account = Contract.CreateSignatureContract(Blockchain.StandbyValidators[0]).ScriptHash.ToArray();
@@ -182,7 +183,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_UnclaimedGas()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 
@@ -340,7 +341,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_Transfer()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
             byte[] to = new byte[20];
@@ -404,7 +405,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_CommitteeBonus()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block { Index = 1 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1 };
 
             using (ScriptBuilder sb = new ScriptBuilder())
             {
@@ -448,7 +449,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestCalculateBonus()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block { Index = 0 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 0 };
 
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
 
@@ -608,13 +609,13 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestEconomicParameter()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block { Index = 0 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 0 };
 
             (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
             result.Item2.Should().BeTrue();
             result.Item1.Should().Be(5 * NativeContract.GAS.Factor);
 
-            snapshot.PersistingBlock = new Block { Index = 10 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 10 };
             (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(snapshot, 10 * NativeContract.GAS.Factor);
             result1.Item2.Should().BeTrue();
             result1.Item1.GetBoolean().Should().BeTrue();

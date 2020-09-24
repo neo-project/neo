@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -35,7 +36,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void Check_BalanceOfTransferAndBurn()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 

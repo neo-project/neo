@@ -18,6 +18,13 @@ namespace Neo.IO
             return reader.ReadSerializable<T>();
         }
 
+        public static T AsSerializable<T>(this byte[] value, Func<T> factory, int start = 0) where T : ISerializable
+        {
+            using MemoryStream ms = new MemoryStream(value, start, value.Length - start, false);
+            using BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8);
+            return reader.ReadSerializable<T>(factory);
+        }
+
         public static unsafe T AsSerializable<T>(this ReadOnlySpan<byte> value) where T : ISerializable, new()
         {
             if (value.IsEmpty) throw new FormatException();
@@ -29,6 +36,16 @@ namespace Neo.IO
             }
         }
 
+        public static unsafe T AsSerializable<T>(this ReadOnlySpan<byte> value, Func<T> factory) where T : ISerializable
+        {
+            if (value.IsEmpty) throw new FormatException();
+            fixed (byte* pointer = value)
+            {
+                using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
+                using BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8);
+                return reader.ReadSerializable<T>(factory);
+            }
+        }
         public static ISerializable AsSerializable(this byte[] value, Type type)
         {
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
@@ -49,6 +66,13 @@ namespace Neo.IO
             return reader.ReadSerializableArray<T>(max);
         }
 
+        public static T[] AsSerializableArray<T>(this byte[] value, Func<T> factory, int max = 0x1000000) where T : ISerializable
+        {
+            using MemoryStream ms = new MemoryStream(value, false);
+            using BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8);
+            return reader.ReadSerializableArray<T>(factory, max);
+        }
+
         public static unsafe T[] AsSerializableArray<T>(this ReadOnlySpan<byte> value, int max = 0x1000000) where T : ISerializable, new()
         {
             if (value.IsEmpty) throw new FormatException();
@@ -57,6 +81,17 @@ namespace Neo.IO
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
                 using BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8);
                 return reader.ReadSerializableArray<T>(max);
+            }
+        }
+
+        public static unsafe T[] AsSerializableArray<T>(this ReadOnlySpan<byte> value, Func<T> factory, int max = 0x1000000) where T : ISerializable
+        {
+            if (value.IsEmpty) throw new FormatException();
+            fixed (byte* pointer = value)
+            {
+                using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, value.Length);
+                using BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8);
+                return reader.ReadSerializableArray<T>(factory, max);
             }
         }
 

@@ -4,6 +4,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -277,7 +278,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestRuntime_GetTime()
         {
-            Block block = new Block();
+            Block block = new Block(ProtocolSettings.Default.Magic);
             TestUtils.SetupBlockWithValues(block, UInt256.Zero, out _, out _, out _, out _, out _, out _, 0);
             var engine = GetEngine(true, true);
             engine.Snapshot.PersistingBlock = block;

@@ -8,6 +8,7 @@ using Neo.Consensus;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -92,7 +93,7 @@ namespace Neo.UnitTests.Consensus
              */
 
             // Creating a test block
-            Header header = new Header();
+            Header header = new Header(ProtocolSettings.Default.Magic);
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
             header.Size.Should().Be(105);
             Console.WriteLine($"header {header} hash {header.Hash} {header.PrevHash} timestamp {timestampVal}");
@@ -104,7 +105,7 @@ namespace Neo.UnitTests.Consensus
 
             var testPersistCompleted = new Blockchain.PersistCompleted
             {
-                Block = new Block
+                Block = new Block(ProtocolSettings.Default.Magic)
                 {
                     Version = header.Version,
                     PrevHash = header.PrevHash,
@@ -481,7 +482,7 @@ namespace Neo.UnitTests.Consensus
         {
             var consensusContext = new ConsensusContext(null, null)
             {
-                Block = new Block
+                Block = new Block(ProtocolSettings.Default.Magic)
                 {
                     PrevHash = Blockchain.GenesisBlock.Hash,
                     Index = 1,

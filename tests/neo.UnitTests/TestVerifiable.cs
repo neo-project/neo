@@ -18,6 +18,8 @@ namespace Neo.UnitTests
 
         public int Size => throw new NotImplementedException();
 
+        UInt256 IWitnessed.Hash => throw new NotImplementedException();
+
         public void Deserialize(BinaryReader reader)
         {
             throw new NotImplementedException();

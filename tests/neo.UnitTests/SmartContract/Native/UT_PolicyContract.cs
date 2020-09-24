@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -53,7 +54,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -102,7 +103,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -151,7 +152,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
@@ -186,7 +187,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
@@ -221,7 +222,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
@@ -279,7 +280,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.PersistingBlock = new Block(ProtocolSettings.Default.Magic) { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -20,7 +21,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetKeyForItem()
         {
-            Transaction tx = new Transaction()
+            Transaction tx = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Version = 0,
                 Nonce = 1,

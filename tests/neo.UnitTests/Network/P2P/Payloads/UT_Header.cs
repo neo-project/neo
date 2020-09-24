@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using System.IO;
@@ -15,7 +16,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestInitialize]
         public void TestSetup()
         {
-            uut = new Header();
+            uut = new Header(ProtocolSettings.Default.Magic);
         }
 
         [TestMethod]
@@ -41,7 +42,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
-            var trim = uut.Trim();
+            var trim = TrimmedBlock.FromHeader(uut);
 
             trim.Version.Should().Be(uut.Version);
             trim.PrevHash.Should().Be(uut.PrevHash);
@@ -57,7 +58,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Deserialize()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(new Header(ProtocolSettings.Default.Magic), val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
@@ -102,7 +103,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameHash()
         {
-            Header newHeader = new Header();
+            Header newHeader = new Header(ProtocolSettings.Default.Magic);
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
             TestUtils.SetupHeaderWithValues(newHeader, prevHash, out _, out _, out _, out _, out _);
             TestUtils.SetupHeaderWithValues(uut, prevHash, out _, out _, out _, out _, out _);

@@ -2,6 +2,7 @@ using Akka.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
+using Neo.Models;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
@@ -127,7 +128,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void Compression()
         {
-            var payload = new Transaction()
+            var payload = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Nonce = 1,
                 Version = 0,

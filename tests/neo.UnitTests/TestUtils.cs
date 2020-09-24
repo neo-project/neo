@@ -92,7 +92,7 @@ namespace Neo.UnitTests
 
         public static Transaction GetTransaction(UInt160 sender)
         {
-            return new Transaction
+            return new Transaction(ProtocolSettings.Default.Magic)
             {
                 Script = new byte[1],
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -192,7 +192,7 @@ namespace Neo.UnitTests
         {
             var randomBytes = new byte[16];
             TestRandom.NextBytes(randomBytes);
-            return new Transaction
+            return new Transaction(ProtocolSettings.Default.Magic)
             {
                 Script = randomBytes,
                 Attributes = Array.Empty<TransactionAttribute>(),

@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
@@ -119,25 +120,25 @@ namespace Neo.UnitTests.SmartContract
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             snapshot1.Blocks.Add(index1, new TrimmedBlock());
             snapshot1.Blocks.Delete(index1);
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, snapshot1, 100));
+            Assert.AreEqual(false, Verifier.VerifyWitnesses(new Header(ProtocolSettings.Default.Magic) { PrevHash = index1 }, snapshot1, 100));
 
             var snapshot2 = Blockchain.Singleton.GetSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new TrimmedBlock();
             block2.NextConsensus = UInt160.Zero;
             snapshot2.Blocks.Add(index2, block2);
-            Header header2 = new Header() { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
+            Header header2 = new Header(ProtocolSettings.Default.Magic) { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
 
             snapshot2.Contracts.Add(UInt160.Zero, new ContractState());
             snapshot2.Contracts.Delete(UInt160.Zero);
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, snapshot2, 100));
+            Assert.AreEqual(false, Verifier.VerifyWitnesses(header2, snapshot2, 100));
 
             var snapshot3 = Blockchain.Singleton.GetSnapshot();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block3 = new TrimmedBlock();
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
-            Header header3 = new Header()
+            Header header3 = new Header(ProtocolSettings.Default.Magic)
             {
                 PrevHash = index3,
                 Witness = new Witness
@@ -151,7 +152,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = Array.Empty<byte>(),
                 Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
+            Assert.AreEqual(false, Verifier.VerifyWitnesses(header3, snapshot3, 100));
 
             // Smart contract verification
 
@@ -166,7 +167,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] } }
             };
 
-            Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, snapshot3, 1000));
+            Assert.AreEqual(true, Verifier.VerifyWitnesses(tx, snapshot3, 1000));
         }
     }
 }

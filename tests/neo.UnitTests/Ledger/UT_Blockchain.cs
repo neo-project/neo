@@ -21,10 +21,14 @@ namespace Neo.UnitTests.Ledger
 {
     internal class TestBlock : Block
     {
-        public override bool Verify(StoreView snapshot)
+        public TestBlock() : base(ProtocolSettings.Default.Magic)
         {
-            return true;
         }
+
+        // public override bool Verify(StoreView snapshot)
+        // {
+        //     return true;
+        // }
 
         public static TestBlock Cast(Block input)
         {
@@ -34,10 +38,14 @@ namespace Neo.UnitTests.Ledger
 
     internal class TestHeader : Header
     {
-        public override bool Verify(StoreView snapshot)
+        public TestHeader() : base(ProtocolSettings.Default.Magic)
         {
-            return true;
         }
+
+        // public override bool Verify(StoreView snapshot)
+        // {
+        //     return true;
+        // }
 
         public static TestHeader Cast(Header input)
         {
@@ -139,7 +147,7 @@ namespace Neo.UnitTests.Ledger
         public void TestInvalidTransactionInPersist()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var tx = new Transaction()
+            var tx = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = Array.Empty<Signer>(),

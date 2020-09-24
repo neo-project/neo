@@ -122,7 +122,7 @@ namespace Neo.UnitTests.Consensus
         private Transaction CreateTransactionWithSize(int v)
         {
             var r = new Random();
-            var tx = new Transaction()
+            var tx = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
@@ -142,7 +142,7 @@ namespace Neo.UnitTests.Consensus
 
         private Transaction CreateTransactionWithSytemFee(long fee)
         {
-            var tx = new Transaction()
+            var tx = new Transaction(ProtocolSettings.Default.Magic)
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },

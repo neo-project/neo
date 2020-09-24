@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
