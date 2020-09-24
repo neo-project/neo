@@ -260,7 +260,7 @@ namespace Neo.SmartContract
                     witnesses[i] = new Witness
                     {
                         InvocationScript = sb.ToArray(),
-                        VerificationScript = IsVerificationStored(scriptHash, snapshot) ? Array.Empty<byte>() : (item.Script ?? Array.Empty<byte>())
+                        VerificationScript = item.Script == null || IsVerificationStored(scriptHash, snapshot) ? Array.Empty<byte>() : item.Script
                     };
                 }
             }
