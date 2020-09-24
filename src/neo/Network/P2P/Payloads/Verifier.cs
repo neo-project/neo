@@ -6,6 +6,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Designate;
 using Neo.SmartContract.Native.Oracle;
 using Neo.VM;
 using System;
@@ -108,7 +109,7 @@ namespace Neo.Network.P2P.Payloads
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, attrib.Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
-            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot));
+            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, Role.Oracle));
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));        
         }
 
