@@ -1,13 +1,16 @@
 ﻿using System.Linq;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Models;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class VerifiableTransaction : Transaction, IVerifiable
+    public class VerifiableTransaction : Transaction, IVerifiable, IInteroperable
     {
         public VerifiableTransaction() : base(ProtocolSettings.Default.Magic)
         {
@@ -61,9 +64,27 @@ namespace Neo.Network.P2P.Payloads
             return result;
         }
 
-        // public IWitnessed AsWitnessed()
-        // {
-        //     return transaction;
-        // }
+        public void FromStackItem(StackItem stackItem)
+        {
+            throw new System.NotSupportedException ();
+        }
+
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new Array(referenceCounter, new StackItem[]
+            {
+                // Computed properties
+                Hash.ToArray(),
+
+                // Transaction properties
+                (int)Version,
+                Nonce,
+                Sender.ToArray(),
+                SystemFee,
+                NetworkFee,
+                ValidUntilBlock,
+                Script,
+            });
+        }
     }
 }

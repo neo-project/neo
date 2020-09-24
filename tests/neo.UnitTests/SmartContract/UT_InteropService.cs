@@ -192,10 +192,10 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(notification, array[1].GetString());
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestExecutionEngine_GetScriptContainer()
         {
-            GetEngine(true).GetScriptContainer().Should().BeOfType<Transaction>();
+            GetEngine(true).GetScriptContainer().Should().BeOfType<VerifiableTransaction>();
         }
 
         [TestMethod]

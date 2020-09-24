@@ -450,7 +450,7 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                snapshot.Blocks.Add(block.Hash, TrimmedBlock.FromBlock(block));
+                snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (VerifiableTransaction tx in block.Transactions)

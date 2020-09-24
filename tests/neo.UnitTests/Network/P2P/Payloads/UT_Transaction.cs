@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Script.Should().BeNull();
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void FromStackItem()
         {
             Assert.ThrowsException<NotSupportedException>(() => ((IInteroperable)uut).FromStackItem(VM.Types.StackItem.Null));

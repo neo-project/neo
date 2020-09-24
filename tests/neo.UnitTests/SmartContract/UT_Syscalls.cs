@@ -20,7 +20,7 @@ namespace Neo.UnitTests.SmartContract
             TestBlockchain.InitializeMockNeoSystem();
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void System_Blockchain_GetBlock()
         {
             var tx = new VerifiableTransaction()
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
             };
 
-            var block = new Block(ProtocolSettings.Default.Magic)
+            var block = new VerifiableBlock()
             {
                 Index = 0,
                 Timestamp = 2,
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
 
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
-                blocks.Add(block.Hash, TrimmedBlock.FromBlock(block));
+                blocks.Add(block.Hash, block.Trim());
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
 
                 engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.SmartContract
             }
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void System_ExecutionEngine_GetScriptContainer()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();

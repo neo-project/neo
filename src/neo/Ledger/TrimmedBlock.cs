@@ -17,7 +17,7 @@ namespace Neo.Ledger
 
         public Block GetBlock(DataCache<UInt256, TransactionState> cache)
         {
-            return new Block(Magic)
+            return new VerifiableBlock()
             {
                 Version = Version,
                 PrevHash = PrevHash,
@@ -56,24 +56,6 @@ namespace Neo.Ledger
                 }
                 return _header;
             }
-        }
-
-        public static TrimmedBlock FromBlock(Block block)
-        {
-            if (block.Magic != ProtocolSettings.Default.Magic)
-                throw new System.Exception("Invalid Magic Value");
-            return new TrimmedBlock
-            {
-                Version = block.Version,
-                PrevHash = block.PrevHash,
-                MerkleRoot = block.MerkleRoot,
-                Timestamp = block.Timestamp,
-                Index = block.Index,
-                NextConsensus = block.NextConsensus,
-                Witness = block.Witness,
-                Hashes = block.Transactions.Select(p => p.Hash).Prepend(block.ConsensusData.Hash).ToArray(),
-                ConsensusData = block.ConsensusData
-            };
         }
 
         public static TrimmedBlock FromHeader(Header header)
