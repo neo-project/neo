@@ -28,8 +28,9 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
-        private bool IsValidVerify(ContractMethodDescriptor md)
+        private bool IsValidVerify(ContractAbi abi)
         {
+            var md = abi.GetMethod("verify");
             return md == null || (md.ReturnType == ContractParameterType.Boolean && md.Parameters.Length == 0 && md.Offset == 0);
         }
 
@@ -53,7 +54,7 @@ namespace Neo.SmartContract
             };
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
-            if (!IsValidVerify(contract.Manifest.Abi.GetMethod("verify")))
+            if (!IsValidVerify(contract.Manifest.Abi))
                 throw new InvalidOperationException($"Invalid verify method");
 
             Snapshot.Contracts.Add(hash, contract);
@@ -101,7 +102,7 @@ namespace Neo.SmartContract
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
                 contract = Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                 contract.Manifest = ContractManifest.Parse(manifest);
-                if (!IsValidVerify(contract.Manifest.Abi.GetMethod("verify")))
+                if (!IsValidVerify(contract.Manifest.Abi))
                     throw new InvalidOperationException($"Invalid verify method");
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
