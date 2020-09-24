@@ -1,8 +1,9 @@
+using Neo.Models;
 using Neo.Persistence;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public interface IInventory : IVerifiable
+    public interface IInventory : IWitnessed
     {
         UInt256 Hash { get; }
 

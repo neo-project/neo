@@ -110,19 +110,7 @@ namespace Neo.Models
 
         public void Deserialize(BinaryReader reader)
         {
-            Version = reader.ReadByte();
-            if (Version > 0) throw new FormatException();
-            Nonce = reader.ReadUInt32();
-            SystemFee = reader.ReadInt64();
-            if (SystemFee < 0) throw new FormatException();
-            NetworkFee = reader.ReadInt64();
-            if (NetworkFee < 0) throw new FormatException();
-            if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
-            ValidUntilBlock = reader.ReadUInt32();
-            Signers = DeserializeSigners(reader, MaxTransactionAttributes);
-            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length);
-            Script = reader.ReadVarBytes(ushort.MaxValue);
-            if (Script.Length == 0) throw new FormatException();
+            ((IWitnessed)this).DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
         }
 
@@ -154,6 +142,23 @@ namespace Neo.Models
                     throw new FormatException();
             }
             return attributes;
+        }
+
+        void IWitnessed.DeserializeUnsigned(BinaryReader reader)
+        {
+            Version = reader.ReadByte();
+            if (Version > 0) throw new FormatException();
+            Nonce = reader.ReadUInt32();
+            SystemFee = reader.ReadInt64();
+            if (SystemFee < 0) throw new FormatException();
+            NetworkFee = reader.ReadInt64();
+            if (NetworkFee < 0) throw new FormatException();
+            if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
+            ValidUntilBlock = reader.ReadUInt32();
+            Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
+            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
+            Script = reader.ReadVarBytes(ushort.MaxValue);
+            if (Script.Length == 0) throw new FormatException();
         }
 
         public void Serialize(BinaryWriter writer)

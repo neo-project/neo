@@ -11,7 +11,7 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
-        internal class ManualWitness : IVerifiable
+        internal class ManualWitness : IWitnessed
         {
             private readonly UInt160[] _hashForVerify;
 

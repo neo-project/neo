@@ -7,5 +7,6 @@ namespace Neo.Models
     {
         Witness[] Witnesses { get; }
         void SerializeUnsigned(BinaryWriter writer);
+        void DeserializeUnsigned(BinaryReader reader);
     }
 }

@@ -126,7 +126,9 @@ namespace Neo.Consensus
             Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
-            Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
+            Transaction[] transactions = reader.ReadSerializableArray<Transaction>(
+                () => new Transaction(ProtocolSettings.Default.Magic),
+                Block.MaxTransactionsPerBlock);
             PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
             CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
             ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
@@ -374,7 +376,7 @@ namespace Neo.Consensus
             {
                 Snapshot?.Dispose();
                 Snapshot = Blockchain.Singleton.GetSnapshot();
-                Block = new Block
+                Block = new Block(ProtocolSettings.Default.Magic)
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,

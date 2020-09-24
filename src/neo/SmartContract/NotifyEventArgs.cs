@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
@@ -9,12 +10,12 @@ namespace Neo.SmartContract
 {
     public class NotifyEventArgs : EventArgs, IInteroperable
     {
-        public IVerifiable ScriptContainer { get; }
+        public IWitnessed ScriptContainer { get; }
         public UInt160 ScriptHash { get; }
         public string EventName { get; }
         public Array State { get; }
 
-        public NotifyEventArgs(IVerifiable container, UInt160 script_hash, string eventName, Array state)
+        public NotifyEventArgs(IWitnessed container, UInt160 script_hash, string eventName, Array state)
         {
             this.ScriptContainer = container;
             this.ScriptHash = script_hash;

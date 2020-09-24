@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Neo.UnitTests
 {
-    public class TestVerifiable : IVerifiable
+    public class TestVerifiable : IWitnessed
     {
         private readonly string testStr = "testStr";
 

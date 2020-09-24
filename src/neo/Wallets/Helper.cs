@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.Models;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -8,12 +9,12 @@ namespace Neo.Wallets
 {
     public static class Helper
     {
-        public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
+        public static byte[] Sign(this IWitnessed verifiable, KeyPair key)
         {
             return Sign(verifiable, key, ProtocolSettings.Default.Magic);
         }
 
-        public static byte[] Sign(this IVerifiable verifiable, KeyPair key, uint magic)
+        public static byte[] Sign(this IWitnessed verifiable, KeyPair key, uint magic)
         {
             return Crypto.Sign(verifiable.GetHashData(magic), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
         }

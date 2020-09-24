@@ -1,7 +1,6 @@
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Models;
-using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
@@ -53,7 +52,7 @@ namespace Neo.SmartContract
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
         public TriggerType Trigger { get; }
-        public IVerifiable ScriptContainer { get; }
+        public IWitnessed ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => gas_amount - GasConsumed;
@@ -63,7 +62,7 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
+        protected ApplicationEngine(TriggerType trigger, IWitnessed container, StoreView snapshot, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -136,7 +135,7 @@ namespace Neo.SmartContract
             }
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas = TestModeGas)
+        public static ApplicationEngine Create(TriggerType trigger, IWitnessed container, StoreView snapshot, long gas = TestModeGas)
         {
             return applicationEngineProvider?.Create(trigger, container, snapshot, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, gas);
@@ -308,7 +307,7 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IWitnessed container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
         {
             SnapshotView disposable = null;
             if (snapshot is null)

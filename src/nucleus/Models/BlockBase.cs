@@ -63,15 +63,20 @@ namespace Neo.Models
 
         public virtual void Deserialize(BinaryReader reader)
         {
+            ((IWitnessed)this).DeserializeUnsigned(reader);
+            Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
+            if (witnesses.Length != 1) throw new FormatException();
+            Witness = witnesses[0];
+        }
+
+        void IWitnessed.DeserializeUnsigned(BinaryReader reader)
+        {
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
             MerkleRoot = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt64();
             Index = reader.ReadUInt32();
             NextConsensus = reader.ReadSerializable<UInt160>();
-            Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
-            if (witnesses.Length != 1) throw new FormatException();
-            Witness = witnesses[0];
         }
 
         public virtual void Serialize(BinaryWriter writer)

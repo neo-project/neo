@@ -10,7 +10,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGeneratorAndGet()
         {
-            IVerifiable container = new Header();
+            IWitnessed container = new Header();
             UInt160 scripthash = UInt160.Zero;
             string message = "lalala";
             LogEventArgs logEventArgs = new LogEventArgs(container, scripthash, message);

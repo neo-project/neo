@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.Models;
-using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using System.IO;

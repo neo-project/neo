@@ -59,7 +59,7 @@ namespace Neo.SmartContract
             }
         }
 
-        public readonly IVerifiable Verifiable;
+        public readonly IWitnessed Verifiable;
         private readonly Dictionary<UInt160, ContextItem> ContextItems;
 
         public bool Completed
@@ -103,7 +103,7 @@ namespace Neo.SmartContract
             }
         }
 
-        public ContractParametersContext(IVerifiable verifiable)
+        public ContractParametersContext(IWitnessed verifiable)
         {
             this.Verifiable = verifiable;
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
@@ -194,9 +194,9 @@ namespace Neo.SmartContract
         public static ContractParametersContext FromJson(JObject json)
         {
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
-            if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
+            if (!typeof(IWitnessed).IsAssignableFrom(type)) throw new FormatException();
 
-            var verifiable = (IVerifiable)Activator.CreateInstance(type);
+            var verifiable = (IWitnessed)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["hex"].AsString()), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.StrictUTF8))
             {

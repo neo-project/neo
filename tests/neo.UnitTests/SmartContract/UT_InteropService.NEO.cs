@@ -24,7 +24,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestCheckSig()
         {
             var engine = GetEngine(true);
-            IVerifiable iv = engine.ScriptContainer;
+            IWitnessed iv = engine.ScriptContainer;
             byte[] message = iv.GetHashData();
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
@@ -39,7 +39,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestCrypto_CheckMultiSig()
         {
             var engine = GetEngine(true);
-            IVerifiable iv = engine.ScriptContainer;
+            IWitnessed iv = engine.ScriptContainer;
             byte[] message = iv.GetHashData();
 
             byte[] privkey1 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,

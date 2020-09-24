@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
+using Neo.Models;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -129,7 +130,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
+        internal static bool VerifyWitnesses(this IWitnessed verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;

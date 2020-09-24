@@ -83,6 +83,14 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            ((IWitnessed)this).DeserializeUnsigned(reader);
+            Data = reader.ReadVarBytes();
+            if (reader.ReadByte() != 1) throw new FormatException();
+            Witness = reader.ReadSerializable<Witness>();
+        }
+
+        void IWitnessed.DeserializeUnsigned(BinaryReader reader)
+        {
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
@@ -90,17 +98,7 @@ namespace Neo.Network.P2P.Payloads
             if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
                 throw new FormatException();
             Data = reader.ReadVarBytes();
-            if (reader.ReadByte() != 1) throw new FormatException();
-            Witness = reader.ReadSerializable<Witness>();
         }
-
-        // UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
-        // {
-        //     ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
-        //     if (validators.Length <= ValidatorIndex)
-        //         throw new InvalidOperationException();
-        //     return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
-        // }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
