@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class ConsensusPayload : IWitnessed, IVerifiable
+    public class ConsensusPayload : IVerifiable
     {
         private uint version;
         private UInt256 prevHash;
@@ -48,8 +48,6 @@ namespace Neo.Network.P2P.Payloads
                 return hash.Value;
             }
         }
-
-        // InventoryType IWitnessed.InventoryType => InventoryType.Consensus;
 
         public int Size =>
             sizeof(uint) +      //Version

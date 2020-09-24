@@ -12,7 +12,7 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
-        internal class ManualWitness : IWitnessed
+        internal class ManualWitness : IVerifiable
         {
             private readonly UInt160[] _hashForVerify;
 
@@ -21,6 +21,8 @@ namespace Neo.UnitTests.Extensions
             public Witness[] Witnesses { get; set; }
 
             UInt256 IWitnessed.Hash => throw new System.NotImplementedException();
+
+            InventoryType IVerifiable.InventoryType => throw new System.NotImplementedException();
 
             public ManualWitness(params UInt160[] hashForVerify)
             {
@@ -36,6 +38,11 @@ namespace Neo.UnitTests.Extensions
             public void Serialize(BinaryWriter writer) { }
 
             public void SerializeUnsigned(BinaryWriter writer) { }
+
+            bool IVerifiable.Verify(StoreView snapshot)
+            {
+                throw new System.NotImplementedException();
+            }
         }
 
         public static bool Transfer(this NativeContract contract, StoreView snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)

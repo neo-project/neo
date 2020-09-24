@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod, Ignore]
         public void System_Blockchain_GetBlock()
         {
-            var tx = new Transaction(ProtocolSettings.Default.Magic)
+            var tx = new VerifiableTransaction()
             {
                 Script = new byte[] { 0x01 },
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -237,7 +237,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // With tx
 
-                var tx = new Transaction(ProtocolSettings.Default.Magic)
+                var tx = new VerifiableTransaction()
                 {
                     Script = new byte[] { 0x01 },
                     Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } },

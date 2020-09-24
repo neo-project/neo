@@ -242,7 +242,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
+        public VerifiableTransaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -313,7 +313,7 @@ namespace Neo.Wallets
             }
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null)
+        public VerifiableTransaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -331,12 +331,12 @@ namespace Neo.Wallets
             }
         }
 
-        private Transaction MakeTransaction(StoreView snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private VerifiableTransaction MakeTransaction(StoreView snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
             {
-                Transaction tx = new Transaction(ProtocolSettings.Default.Magic)
+                VerifiableTransaction tx = new VerifiableTransaction
                 {
                     Version = 0,
                     Nonce = (uint)rand.Next(),
@@ -362,7 +362,7 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public long CalculateNetworkFee(StoreView snapshot, Transaction tx)
+        public long CalculateNetworkFee(StoreView snapshot, VerifiableTransaction tx)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 

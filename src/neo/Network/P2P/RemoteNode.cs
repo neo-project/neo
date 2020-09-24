@@ -18,7 +18,7 @@ namespace Neo.Network.P2P
     public partial class RemoteNode : Connection
     {
         internal class StartProtocol { }
-        internal class Relay { public IWitnessed Inventory; }
+        internal class Relay { public IVerifiable Inventory; }
 
         private readonly NeoSystem system;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
@@ -135,7 +135,7 @@ namespace Neo.Network.P2P
                     }
                     EnqueueMessage(msg);
                     break;
-                case IWitnessed inventory:
+                case IVerifiable inventory:
                     OnSend(inventory);
                     break;
                 case Relay relay:
@@ -147,28 +147,26 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnRelay(IWitnessed inventory)
+        private void OnRelay(IVerifiable inventory)
         {
             if (!IsFullNode) return;
-            var invType = inventory.GetInventoryType();
-            if (invType == InventoryType.TX)
+            if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage(MessageCommand.Inv, InvPayload.Create(invType, inventory.Hash));
+            EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }
 
-        private void OnSend(IWitnessed inventory)
+        private void OnSend(IVerifiable inventory)
         {
             if (!IsFullNode) return;
-            var invType = inventory.GetInventoryType();
-            if (invType == InventoryType.TX)
+            if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage((MessageCommand)invType, inventory);
+            EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
         private void OnStartProtocol()

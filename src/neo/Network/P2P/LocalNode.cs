@@ -16,8 +16,8 @@ namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
-        internal class RelayDirectly { public IWitnessed Inventory; }
-        internal class SendDirectly { public IWitnessed Inventory; }
+        internal class RelayDirectly { public IVerifiable Inventory; }
+        internal class SendDirectly { public IVerifiable Inventory; }
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
@@ -200,7 +200,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnRelayDirectly(IWitnessed inventory)
+        private void OnRelayDirectly(IVerifiable inventory)
         {
             var message = new RemoteNode.Relay { Inventory = inventory };
             // When relaying a block, if the block's index is greater than 'LastBlockIndex' of the RemoteNode, relay the block;
@@ -217,7 +217,7 @@ namespace Neo.Network.P2P
                 SendToRemoteNodes(message);
         }
 
-        private void OnSendDirectly(IWitnessed inventory) => SendToRemoteNodes(inventory);
+        private void OnSendDirectly(IVerifiable inventory) => SendToRemoteNodes(inventory);
 
         protected override void OnTcpConnected(IActorRef connection)
         {

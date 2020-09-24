@@ -90,9 +90,9 @@ namespace Neo.UnitTests
             return new NEP6Wallet(wallet);
         }
 
-        public static Transaction GetTransaction(UInt160 sender)
+        public static VerifiableTransaction GetTransaction(UInt160 sender)
         {
-            return new Transaction(ProtocolSettings.Default.Magic)
+            return new VerifiableTransaction()
             {
                 Script = new byte[1],
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -188,11 +188,11 @@ namespace Neo.UnitTests
             bb.Witness = scriptVal;
         }
 
-        public static Transaction CreateRandomHashTransaction()
+        public static VerifiableTransaction CreateRandomHashTransaction()
         {
             var randomBytes = new byte[16];
             TestRandom.NextBytes(randomBytes);
-            return new Transaction(ProtocolSettings.Default.Magic)
+            return new VerifiableTransaction()
             {
                 Script = randomBytes,
                 Attributes = Array.Empty<TransactionAttribute>(),

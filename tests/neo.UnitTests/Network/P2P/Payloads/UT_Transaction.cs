@@ -20,13 +20,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Transaction
     {
-        Transaction uut;
+        VerifiableTransaction uut;
 
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            uut = new Transaction(ProtocolSettings.Default.Magic);
+            uut = new VerifiableTransaction();
         }
 
         [TestMethod]
@@ -51,7 +51,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void InventoryType_Get()
         {
-            uut.GetInventoryType().Should().Be(InventoryType.TX);
+            uut.InventoryType.Should().Be(InventoryType.TX);
         }
 
         [TestMethod]
@@ -754,7 +754,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Transaction_Reverify_Hashes_Length_Unequal_To_Witnesses_Length()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            Transaction txSimple = new Transaction(ProtocolSettings.Default.Magic)
+            VerifiableTransaction txSimple = new VerifiableTransaction()
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
@@ -1078,7 +1078,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Test_VerifyStateIndependent()
         {
-            var tx = new Transaction(ProtocolSettings.Default.Magic)
+            var tx = new VerifiableTransaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 NetworkFee = 0,
@@ -1151,7 +1151,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Test_VerifyStateDependent()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var tx = new Transaction(ProtocolSettings.Default.Magic)
+            var tx = new VerifiableTransaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 NetworkFee = 0,
@@ -1223,7 +1223,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Test_Verify()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var tx = new Transaction(ProtocolSettings.Default.Magic)
+            var tx = new VerifiableTransaction
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 NetworkFee = 0,

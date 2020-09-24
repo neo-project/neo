@@ -105,9 +105,9 @@ namespace Neo.UnitTests.Ledger
             pitem2.CompareTo((PoolItem)null).Should().Be(1);
         }
 
-        public Transaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, long networkFee, int size)
+        public VerifiableTransaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, long networkFee, int size)
         {
-            Transaction tx;
+            VerifiableTransaction tx;
             do
             {
                 tx = GenerateTx(networkFee, size);
@@ -116,9 +116,9 @@ namespace Neo.UnitTests.Ledger
             return tx;
         }
 
-        public Transaction GenerateTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, long networkFee, int size)
+        public VerifiableTransaction GenerateTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, long networkFee, int size)
         {
-            Transaction tx;
+            VerifiableTransaction tx;
             do
             {
                 tx = GenerateTx(networkFee, size);
@@ -128,9 +128,9 @@ namespace Neo.UnitTests.Ledger
         }
 
         // Generate Transaction with different sizes and prices
-        public static Transaction GenerateTx(long networkFee, int size, byte[] overrideScriptBytes = null)
+        public static VerifiableTransaction GenerateTx(long networkFee, int size, byte[] overrideScriptBytes = null)
         {
-            Transaction tx = new Transaction(ProtocolSettings.Default.Magic)
+            VerifiableTransaction tx = new VerifiableTransaction()
             {
                 Nonce = (uint)TestRandom.Next(),
                 Script = overrideScriptBytes ?? new byte[0],

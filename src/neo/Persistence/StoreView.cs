@@ -68,7 +68,7 @@ namespace Neo.Persistence
             return Blocks.TryGet(hash)?.Header;
         }
 
-        public Transaction GetTransaction(UInt256 hash)
+        public VerifiableTransaction GetTransaction(UInt256 hash)
         {
             return Transactions.TryGet(hash)?.Transaction;
         }

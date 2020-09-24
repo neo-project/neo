@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace Neo.Ledger
 {
-    public class MemoryPool : IReadOnlyCollection<Transaction>
+    public class MemoryPool : IReadOnlyCollection<VerifiableTransaction>
     {
         // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
@@ -135,7 +135,7 @@ namespace Neo.Ledger
             }
         }
 
-        public bool TryGetValue(UInt256 hash, out Transaction tx)
+        public bool TryGetValue(UInt256 hash, out VerifiableTransaction tx)
         {
             _txRwLock.EnterReadLock();
             try
@@ -152,7 +152,7 @@ namespace Neo.Ledger
         }
 
         // Note: This isn't used in Fill during consensus, fill uses GetSortedVerifiedTransactions()
-        public IEnumerator<Transaction> GetEnumerator()
+        public IEnumerator<VerifiableTransaction> GetEnumerator()
         {
             _txRwLock.EnterReadLock();
             try
@@ -170,7 +170,7 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerable<Transaction> GetVerifiedTransactions()
+        public IEnumerable<VerifiableTransaction> GetVerifiedTransactions()
         {
             _txRwLock.EnterReadLock();
             try
@@ -183,8 +183,8 @@ namespace Neo.Ledger
             }
         }
 
-        public void GetVerifiedAndUnverifiedTransactions(out IEnumerable<Transaction> verifiedTransactions,
-            out IEnumerable<Transaction> unverifiedTransactions)
+        public void GetVerifiedAndUnverifiedTransactions(out IEnumerable<VerifiableTransaction> verifiedTransactions,
+            out IEnumerable<VerifiableTransaction> unverifiedTransactions)
         {
             _txRwLock.EnterReadLock();
             try
@@ -198,7 +198,7 @@ namespace Neo.Ledger
             }
         }
 
-        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
+        public IEnumerable<VerifiableTransaction> GetSortedVerifiedTransactions()
         {
             _txRwLock.EnterReadLock();
             try
@@ -262,7 +262,7 @@ namespace Neo.Ledger
         /// <param name="hash"></param>
         /// <param name="tx"></param>
         /// <returns></returns>
-        internal VerifyResult TryAdd(Transaction tx, StoreView snapshot)
+        internal VerifyResult TryAdd(VerifiableTransaction tx, StoreView snapshot)
         {
             var poolItem = new PoolItem(tx);
 

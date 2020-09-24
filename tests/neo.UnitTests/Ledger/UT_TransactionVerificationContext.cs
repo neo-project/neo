@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Ledger
             Random random = new Random();
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
-            Mock<Transaction> mock = new Mock<Transaction>();
+            Mock<VerifiableTransaction> mock = new Mock<VerifiableTransaction>();
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);

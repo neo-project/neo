@@ -10,7 +10,7 @@ namespace Neo.Ledger
     {
         public uint BlockIndex;
         public VMState VMState;
-        public Transaction Transaction;
+        public VerifiableTransaction Transaction;
 
         int ISerializable.Size =>
             sizeof(uint) +      // BlockIndex
@@ -31,7 +31,7 @@ namespace Neo.Ledger
         {
             BlockIndex = reader.ReadUInt32();
             VMState = (VMState)reader.ReadByte();
-            Transaction = reader.ReadSerializable(() => new Transaction(ProtocolSettings.Default.Magic));
+            Transaction = reader.ReadSerializable<VerifiableTransaction>();
         }
 
         void ICloneable<TransactionState>.FromReplica(TransactionState replica)

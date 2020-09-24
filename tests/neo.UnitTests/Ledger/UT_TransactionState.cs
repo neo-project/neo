@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger
@@ -18,7 +19,7 @@ namespace Neo.UnitTests.Ledger
             {
                 BlockIndex = 1,
                 VMState = VM.VMState.NONE,
-                Transaction = Blockchain.GenesisBlock.Transactions[0]
+                Transaction = Blockchain.GenesisBlock.Transactions[0] as VerifiableTransaction ?? throw new System.Exception()
             };
         }
 

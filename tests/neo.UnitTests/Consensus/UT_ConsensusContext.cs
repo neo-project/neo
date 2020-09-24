@@ -59,13 +59,13 @@ namespace Neo.UnitTests.Consensus
             // Only one tx, is included
 
             var tx1 = CreateTransactionWithSize(200);
-            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1 });
+            _context.EnsureMaxBlockLimitation(new VerifiableTransaction[] { tx1 });
             EnsureContext(_context, tx1);
 
             // All txs included
 
             var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(_context.Snapshot);
-            var txs = new Transaction[max];
+            var txs = new VerifiableTransaction[max];
 
             for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
 
@@ -80,13 +80,13 @@ namespace Neo.UnitTests.Consensus
 
             var tx1 = CreateTransactionWithSize(200);
             var tx2 = CreateTransactionWithSize(256 * 1024);
-            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2 });
+            _context.EnsureMaxBlockLimitation(new VerifiableTransaction[] { tx1, tx2 });
             EnsureContext(_context, tx1);
 
             // Exceed txs number, just MaxTransactionsPerBlock included
 
             var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(_context.Snapshot);
-            var txs = new Transaction[max + 1];
+            var txs = new VerifiableTransaction[max + 1];
 
             for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
 
@@ -100,29 +100,29 @@ namespace Neo.UnitTests.Consensus
             var tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2);
 
             // Less than MaxBlockSystemFee
-            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1 });
-            EnsureContext(_context, new Transaction[] { tx1 });
+            _context.EnsureMaxBlockLimitation(new VerifiableTransaction[] { tx1 });
+            EnsureContext(_context, new VerifiableTransaction[] { tx1 });
 
             // Equal MaxBlockSystemFee
             tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 + 1);
             var tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 1);
 
-            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2 });
-            EnsureContext(_context, new Transaction[] { tx1, tx2 });
+            _context.EnsureMaxBlockLimitation(new VerifiableTransaction[] { tx1, tx2 });
+            EnsureContext(_context, new VerifiableTransaction[] { tx1, tx2 });
 
             // Exceed MaxBlockSystemFee
             tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 + 3);
             tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 3);
             var tx3 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 4);
 
-            _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2, tx3 });
+            _context.EnsureMaxBlockLimitation(new VerifiableTransaction[] { tx1, tx2, tx3 });
             EnsureContext(_context, new Transaction[] { tx1, tx2 });
         }
 
-        private Transaction CreateTransactionWithSize(int v)
+        private VerifiableTransaction CreateTransactionWithSize(int v)
         {
             var r = new Random();
-            var tx = new Transaction(ProtocolSettings.Default.Magic)
+            var tx = new VerifiableTransaction()
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
@@ -140,9 +140,9 @@ namespace Neo.UnitTests.Consensus
             return tx;
         }
 
-        private Transaction CreateTransactionWithSytemFee(long fee)
+        private VerifiableTransaction CreateTransactionWithSytemFee(long fee)
         {
-            var tx = new Transaction(ProtocolSettings.Default.Magic)
+            var tx = new VerifiableTransaction()
             {
                 Attributes = System.Array.Empty<TransactionAttribute>(),
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },

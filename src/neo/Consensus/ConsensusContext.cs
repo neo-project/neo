@@ -24,12 +24,12 @@ namespace Neo.Consensus
         /// </summary>
         private const byte ConsensusStatePrefix = 0xf4;
 
-        public Block Block;
+        public VerifiableBlock Block;
         public byte ViewNumber;
         public ECPoint[] Validators;
         public int MyIndex;
         public UInt256[] TransactionHashes;
-        public Dictionary<UInt256, Transaction> Transactions;
+        public Dictionary<UInt256, VerifiableTransaction> Transactions;
         public ConsensusPayload[] PreparationPayloads;
         public ConsensusPayload[] CommitPayloads;
         public ConsensusPayload[] ChangeViewPayloads;
@@ -126,9 +126,7 @@ namespace Neo.Consensus
             Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
-            Transaction[] transactions = reader.ReadSerializableArray<Transaction>(
-                () => new Transaction(ProtocolSettings.Default.Magic),
-                Block.MaxTransactionsPerBlock);
+            VerifiableTransaction[] transactions = reader.ReadSerializableArray<VerifiableTransaction>(Neo.Models.Block.MaxTransactionsPerBlock);
             PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
             CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
             ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
@@ -153,7 +151,10 @@ namespace Neo.Consensus
         {
             if (TransactionHashes == null) return null;
             if (Block.MerkleRoot is null)
-                Block.MerkleRoot = Block.CalculateMerkleRoot(Block.ConsensusData.Hash, TransactionHashes);
+            {
+                Block.MerkleRoot = Models.Block.CalculateMerkleRoot(Block.ConsensusData.Hash, TransactionHashes);
+            }
+
             return Block;
         }
 
@@ -276,7 +277,7 @@ namespace Neo.Consensus
         /// Prevent that block exceed the max size
         /// </summary>
         /// <param name="txs">Ordered transactions</param>
-        internal void EnsureMaxBlockLimitation(IEnumerable<Transaction> txs)
+        internal void EnsureMaxBlockLimitation(IEnumerable<VerifiableTransaction> txs)
         {
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
             long maxBlockSystemFee = NativeContract.Policy.GetMaxBlockSystemFee(Snapshot);
@@ -285,7 +286,7 @@ namespace Neo.Consensus
             // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
             txs = txs.Take((int)maxTransactionsPerBlock);
             List<UInt256> hashes = new List<UInt256>();
-            Transactions = new Dictionary<UInt256, Transaction>();
+            Transactions = new Dictionary<UInt256, VerifiableTransaction>();
             VerificationContext = new TransactionVerificationContext();
 
             // Expected block size
@@ -293,7 +294,7 @@ namespace Neo.Consensus
             var blockSystemFee = 0L;
 
             // Iterate transaction until reach the size or maximum system fee
-            foreach (Transaction tx in txs)
+            foreach (VerifiableTransaction tx in txs)
             {
                 // Check if maximum block size has been already exceeded with the current selected set
                 blockSize += tx.Size;
@@ -376,7 +377,7 @@ namespace Neo.Consensus
             {
                 Snapshot?.Dispose();
                 Snapshot = Blockchain.Singleton.GetSnapshot();
-                Block = new Block(ProtocolSettings.Default.Magic)
+                Block = new VerifiableBlock()
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,

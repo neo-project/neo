@@ -57,7 +57,7 @@ namespace Neo.UnitTests.Ledger
     public class UT_Blockchain : TestKit
     {
         private NeoSystem system;
-        Transaction txSample = Blockchain.GenesisBlock.Transactions[0];
+        VerifiableTransaction txSample = Blockchain.GenesisBlock.Transactions[0] as VerifiableTransaction ?? throw new Exception();
 
         [TestInitialize]
         public void Initialize()
@@ -147,7 +147,7 @@ namespace Neo.UnitTests.Ledger
         public void TestInvalidTransactionInPersist()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var tx = new Transaction(ProtocolSettings.Default.Magic)
+            var tx = new VerifiableTransaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = Array.Empty<Signer>(),

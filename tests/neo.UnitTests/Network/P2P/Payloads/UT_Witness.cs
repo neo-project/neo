@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(new Transaction(ProtocolSettings.Default.Magic)
+            var data = new ContractParametersContext(new VerifiableTransaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = new[] {new Signer()

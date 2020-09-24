@@ -105,7 +105,7 @@ namespace Neo.UnitTests.Consensus
 
             var testPersistCompleted = new Blockchain.PersistCompleted
             {
-                Block = new Block(ProtocolSettings.Default.Magic)
+                Block = new VerifiableBlock()
                 {
                     Version = header.Version,
                     PrevHash = header.PrevHash,
@@ -482,7 +482,7 @@ namespace Neo.UnitTests.Consensus
         {
             var consensusContext = new ConsensusContext(null, null)
             {
-                Block = new Block(ProtocolSettings.Default.Magic)
+                Block = new VerifiableBlock()
                 {
                     PrevHash = Blockchain.GenesisBlock.Hash,
                     Index = 1,
@@ -512,7 +512,7 @@ namespace Neo.UnitTests.Consensus
             int txCountToInlcude = 256;
             consensusContext.TransactionHashes = new UInt256[txCountToInlcude];
 
-            Transaction[] txs = new Transaction[txCountToInlcude];
+            VerifiableTransaction[] txs = new VerifiableTransaction[txCountToInlcude];
             for (int i = 0; i < txCountToInlcude; i++)
             {
                 txs[i] = TestUtils.CreateRandomHashTransaction();

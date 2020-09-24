@@ -23,21 +23,21 @@ namespace Neo.Ledger
     public sealed partial class Blockchain : UntypedActor
     {
         public partial class ApplicationExecuted { }
-        public class PersistCompleted { public Block Block; }
-        public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
+        public class PersistCompleted { public VerifiableBlock Block; }
+        public class Import { public IEnumerable<VerifiableBlock> Blocks; public bool Verify = true; }
         public class ImportCompleted { }
-        public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
+        public class FillMemoryPool { public IEnumerable<VerifiableTransaction> Transactions; }
         public class FillCompleted { }
-        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
-        public class RelayResult { public IWitnessed Inventory; public VerifyResult Result; }
-        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
+        internal class PreverifyCompleted { public VerifiableTransaction Transaction; public VerifyResult Result; public bool Relay; }
+        public class RelayResult { public IVerifiable Inventory; public VerifyResult Result; }
+        private class UnverifiedBlocksList { public LinkedList<VerifiableBlock> Blocks = new LinkedList<VerifiableBlock>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
         public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
         public static readonly ECPoint[] StandbyValidators = StandbyCommittee[0..ProtocolSettings.Default.ValidatorsCount];
 
-        public static readonly Block GenesisBlock = new Block(ProtocolSettings.Default.Magic)
+        public static readonly VerifiableBlock GenesisBlock = new VerifiableBlock()
         {
             PrevHash = UInt256.Zero,
             Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
@@ -165,7 +165,7 @@ namespace Neo.Ledger
             return View.ContainsTransaction(hash);
         }
 
-        private static Transaction DeployNativeContracts()
+        private static VerifiableTransaction DeployNativeContracts()
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -173,7 +173,7 @@ namespace Neo.Ledger
                 sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
                 script = sb.ToArray();
             }
-            return new Transaction(ProtocolSettings.Default.Magic)
+            return new VerifiableTransaction()
             {
                 Version = 0,
                 Script = script,
@@ -251,16 +251,16 @@ namespace Neo.Ledger
             return new SnapshotView(Store);
         }
 
-        public Transaction GetTransaction(UInt256 hash)
+        public VerifiableTransaction GetTransaction(UInt256 hash)
         {
-            if (MemPool.TryGetValue(hash, out Transaction transaction))
+            if (MemPool.TryGetValue(hash, out VerifiableTransaction transaction))
                 return transaction;
             return View.GetTransaction(hash);
         }
 
-        private void OnImport(IEnumerable<Block> blocks, bool verify)
+        private void OnImport(IEnumerable<VerifiableBlock> blocks, bool verify)
         {
-            foreach (Block block in blocks)
+            foreach (VerifiableBlock block in blocks)
             {
                 if (block.Index <= Height) continue;
                 if (block.Index != Height + 1)
@@ -273,7 +273,7 @@ namespace Neo.Ledger
             Sender.Tell(new ImportCompleted());
         }
 
-        private void AddUnverifiedBlockToCache(Block block)
+        private void AddUnverifiedBlockToCache(VerifiableBlock block)
         {
             // Check if any block proposal for height `block.Index` exists
             if (!block_cache_unverified.TryGetValue(block.Index, out var list))
@@ -302,7 +302,7 @@ namespace Neo.Ledger
             list.Blocks.AddLast(block);
         }
 
-        private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
+        private void OnFillMemoryPool(IEnumerable<VerifiableTransaction> transactions)
         {
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
             MemPool.InvalidateAllTransactions();
@@ -322,12 +322,12 @@ namespace Neo.Ledger
             Sender.Tell(new FillCompleted());
         }
 
-        private void OnInventory(IWitnessed inventory, bool relay = true)
+        private void OnInventory(IVerifiable inventory, bool relay = true)
         {
             VerifyResult result = inventory switch
             {
-                Block block => OnNewBlock(block),
-                Transaction transaction => OnNewTransaction(transaction),
+                VerifiableBlock block => OnNewBlock(block),
+                VerifiableTransaction transaction => OnNewTransaction(transaction),
                 _ => OnNewInventory(inventory)
             };
             if (relay && result == VerifyResult.Succeed)
@@ -335,7 +335,7 @@ namespace Neo.Ledger
             SendRelayResult(inventory, result);
         }
 
-        private VerifyResult OnNewBlock(Block block)
+        private VerifyResult OnNewBlock(VerifiableBlock block)
         {
             if (block.Index <= Height)
                 return VerifyResult.AlreadyExists;
@@ -364,14 +364,14 @@ namespace Neo.Ledger
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewInventory(IWitnessed inventory)
+        private VerifyResult OnNewInventory(IVerifiable inventory)
         {
             if (!inventory.Verify(currentSnapshot)) return VerifyResult.Invalid;
             RelayCache.Add(inventory);
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewTransaction(Transaction transaction)
+        private VerifyResult OnNewTransaction(VerifiableTransaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
             return MemPool.TryAdd(transaction, currentSnapshot);
@@ -395,17 +395,21 @@ namespace Neo.Ledger
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
                     break;
-                case Block block:
+                case VerifiableBlock block:
                     OnInventory(block, false);
                     break;
-                case Transaction tx:
+                case VerifiableTransaction tx:
                     OnTransaction(tx, true);
                     break;
-                case Transaction[] transactions:
+                case Block _:
+                    throw new Exception("received non-verifiable Block");
+                case Transaction _:
+                    throw new Exception("received non-verifiable Transaction");
+                case VerifiableTransaction[] transactions:
                     // This message comes from a mempool's revalidation, already relayed
                     foreach (var tx in transactions) OnTransaction(tx, false);
                     break;
-                case IWitnessed inventory:
+                case IVerifiable inventory:
                     OnInventory(inventory);
                     break;
                 case PreverifyCompleted task:
@@ -418,7 +422,7 @@ namespace Neo.Ledger
             }
         }
 
-        private void OnTransaction(Transaction tx, bool relay)
+        private void OnTransaction(VerifiableTransaction tx, bool relay)
         {
             if (ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
@@ -426,7 +430,7 @@ namespace Neo.Ledger
                 txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
         }
 
-        private void Persist(Block block)
+        private void Persist(VerifiableBlock block)
         {
             using (SnapshotView snapshot = GetSnapshot())
             {
@@ -449,7 +453,7 @@ namespace Neo.Ledger
                 snapshot.Blocks.Add(block.Hash, TrimmedBlock.FromBlock(block));
                 StoreView clonedSnapshot = snapshot.Clone();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
-                foreach (Transaction tx in block.Transactions)
+                foreach (VerifiableTransaction tx in block.Transactions)
                 {
                     var state = new TransactionState
                     {
@@ -550,7 +554,7 @@ namespace Neo.Ledger
             }
         }
 
-        private void SendRelayResult(IWitnessed inventory, VerifyResult result)
+        private void SendRelayResult(IVerifiable inventory, VerifyResult result)
         {
             RelayResult rr = new RelayResult
             {

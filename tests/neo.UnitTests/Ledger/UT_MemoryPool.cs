@@ -79,12 +79,12 @@ namespace Neo.UnitTests.Ledger
             return longRand % (max - min) + min;
         }
 
-        private Transaction CreateTransactionWithFee(long fee)
+        private VerifiableTransaction CreateTransactionWithFee(long fee)
         {
             Random random = new Random();
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
-            Mock<Transaction> mock = new Mock<Transaction>();
+            Mock<VerifiableTransaction> mock = new Mock<VerifiableTransaction>();
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
@@ -103,12 +103,12 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransactionWithFeeAndBalanceVerify(long fee)
+        private VerifiableTransaction CreateTransactionWithFeeAndBalanceVerify(long fee)
         {
             Random random = new Random();
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
-            Mock<Transaction> mock = new Mock<Transaction>();
+            Mock<VerifiableTransaction> mock = new Mock<VerifiableTransaction>();
             UInt160 sender = senderAccount;
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns((StoreView snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
@@ -128,7 +128,7 @@ namespace Neo.UnitTests.Ledger
             return mock.Object;
         }
 
-        private Transaction CreateTransaction(long fee = -1)
+        private VerifiableTransaction CreateTransaction(long fee = -1)
         {
             if (fee != -1)
                 return CreateTransactionWithFee(fee);
@@ -147,7 +147,7 @@ namespace Neo.UnitTests.Ledger
             Console.WriteLine($"created {count} tx");
         }
 
-        private void AddTransaction(Transaction txToAdd)
+        private void AddTransaction(VerifiableTransaction txToAdd)
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             _unit.TryAdd(txToAdd, snapshot);
@@ -234,7 +234,7 @@ namespace Neo.UnitTests.Ledger
 
             _unit.SortedTxCount.Should().Be(70);
 
-            var block = new Block(ProtocolSettings.Default.Magic)
+            var block = new VerifiableBlock()
             {
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10).ToArray()
             };
@@ -479,7 +479,7 @@ namespace Neo.UnitTests.Ledger
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = CreateTransaction();
             _unit.TryAdd(tx1, snapshot);
-            _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
+            _unit.TryGetValue(tx1.Hash, out VerifiableTransaction tx).Should().BeTrue();
             tx.Should().BeEquivalentTo(tx1);
 
             _unit.InvalidateVerifiedTransactions();

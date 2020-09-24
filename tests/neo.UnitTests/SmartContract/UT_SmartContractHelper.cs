@@ -120,14 +120,14 @@ namespace Neo.UnitTests.SmartContract
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             snapshot1.Blocks.Add(index1, new TrimmedBlock());
             snapshot1.Blocks.Delete(index1);
-            Assert.AreEqual(false, Verifier.VerifyWitnesses(new Header(ProtocolSettings.Default.Magic) { PrevHash = index1 }, snapshot1, 100));
+            Assert.AreEqual(false, Verifier.VerifyWitnesses(new VerifiableBlock { PrevHash = index1 }, snapshot1, 100));
 
             var snapshot2 = Blockchain.Singleton.GetSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new TrimmedBlock();
             block2.NextConsensus = UInt160.Zero;
             snapshot2.Blocks.Add(index2, block2);
-            Header header2 = new Header(ProtocolSettings.Default.Magic) { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
+            var header2 = new VerifiableBlock { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
 
             snapshot2.Contracts.Add(UInt160.Zero, new ContractState());
             snapshot2.Contracts.Delete(UInt160.Zero);
@@ -138,7 +138,7 @@ namespace Neo.UnitTests.SmartContract
             TrimmedBlock block3 = new TrimmedBlock();
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
-            Header header3 = new Header(ProtocolSettings.Default.Magic)
+            var header3 = new VerifiableBlock
             {
                 PrevHash = index3,
                 Witness = new Witness

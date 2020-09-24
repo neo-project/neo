@@ -21,7 +21,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetKeyForItem()
         {
-            Transaction tx = new Transaction(ProtocolSettings.Default.Magic)
+            VerifiableTransaction tx = new VerifiableTransaction()
             {
                 Version = 0,
                 Nonce = 1,
@@ -35,8 +35,8 @@ namespace Neo.UnitTests.IO.Caching
             };
             relayCache.Add(tx);
             relayCache.Contains(tx).Should().BeTrue();
-            relayCache.TryGet(tx.Hash, out IWitnessed tmp).Should().BeTrue();
-            (tmp is Transaction).Should().BeTrue();
+            relayCache.TryGet(tx.Hash, out IVerifiable tmp).Should().BeTrue();
+            (tmp is VerifiableTransaction).Should().BeTrue();
         }
     }
 }

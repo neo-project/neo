@@ -63,7 +63,7 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
+                    OnInventoryReceived((VerifiableBlock)msg.Payload);
                     break;
                 case MessageCommand.Consensus:
                     OnInventoryReceived((ConsensusPayload)msg.Payload);
@@ -106,7 +106,7 @@ namespace Neo.Network.P2P
                     break;
                 case MessageCommand.Transaction:
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived((Transaction)msg.Payload);
+                        OnInventoryReceived((VerifiableTransaction)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
@@ -249,7 +249,7 @@ namespace Neo.Network.P2P
                         }
                         break;
                     default:
-                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IWitnessed inventory))
+                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IVerifiable inventory))
                             EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
                         break;
                 }
@@ -285,7 +285,7 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
-        private void OnInventoryReceived(IWitnessed inventory)
+        private void OnInventoryReceived(IVerifiable inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
             switch (inventory)

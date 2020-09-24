@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetComplete()
         {
-            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
+            VerifiableTransaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
             var context = new ContractParametersContext(tx);
             context.Completed.Should().BeFalse();
         }
@@ -42,17 +42,17 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestToString()
         {
-            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
+            VerifiableTransaction tx = TestUtils.GetTransaction(UInt160.Parse("0x1bd5c777ec35768892bd3daab60fb7a1cb905066"));
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             string str = context.ToString();
-            str.Should().Be(@"{""type"":""Neo.Models.Transaction"",""hex"":""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAAQA="",""items"":{}}");
+            str.Should().Be(@"{""type"":""Neo.Network.P2P.Payloads.VerifiableTransaction"",""hex"":""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAAQA="",""items"":{}}");
         }
 
         [TestMethod]
         public void TestParse()
         {
-            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Models.Transaction\",\"hex\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAAQA=\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
+            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.VerifiableTransaction\",\"hex\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAAQA=\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}");
             ret.ScriptHashes[0].ToString().Should().Be("0x1bd5c777ec35768892bd3daab60fb7a1cb905066");
             ((Transaction)ret.Verifiable).Script.ToHexString().Should().Be(new byte[1].ToHexString());
         }
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestAdd()
         {
-            Transaction tx = TestUtils.GetTransaction(UInt160.Zero);
+            VerifiableTransaction tx = TestUtils.GetTransaction(UInt160.Zero);
             var context1 = new ContractParametersContext(tx);
             context1.Add(contract, 0, new byte[] { 0x01 }).Should().BeFalse();
 
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetParameter()
         {
-            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
+            VerifiableTransaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
             var context = new ContractParametersContext(tx);
             context.GetParameter(tx.Sender, 0).Should().BeNull();
 
@@ -93,7 +93,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetWitnesses()
         {
-            Transaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
+            VerifiableTransaction tx = TestUtils.GetTransaction(UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0"));
             var context = new ContractParametersContext(tx);
             context.Add(contract, 0, new byte[] { 0x01 });
             Witness[] witnesses = context.GetWitnesses();
@@ -106,7 +106,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestAddSignature()
         {
             var singleSender = UInt160.Parse("0x282646ee0afa5508bb999318f35074b84a17c9f0");
-            Transaction tx = TestUtils.GetTransaction(singleSender);
+            VerifiableTransaction tx = TestUtils.GetTransaction(singleSender);
 
             //singleSign
 

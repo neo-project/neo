@@ -15,7 +15,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Internal transaction for PoolItem
         /// </summary>
-        public readonly Transaction Tx;
+        public readonly VerifiableTransaction Tx;
 
         /// <summary>
         /// Timestamp when transaction was stored on PoolItem
@@ -27,7 +27,7 @@ namespace Neo.Ledger
         /// </summary>
         public DateTime LastBroadcastTimestamp;
 
-        internal PoolItem(Transaction tx)
+        internal PoolItem(VerifiableTransaction tx)
         {
             Tx = tx;
             Timestamp = TimeProvider.Current.UtcNow;

@@ -63,7 +63,7 @@ namespace Neo.Consensus
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
-        private bool AddTransaction(Transaction tx, bool verify)
+        private bool AddTransaction(VerifiableTransaction tx, bool verify)
         {
             if (verify)
             {
@@ -437,7 +437,7 @@ namespace Neo.Consensus
             context.Block.Timestamp = message.Timestamp;
             context.Block.ConsensusData.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
-            context.Transactions = new Dictionary<UInt256, Transaction>();
+            context.Transactions = new Dictionary<UInt256, VerifiableTransaction>();
             context.VerificationContext = new TransactionVerificationContext();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
@@ -457,11 +457,11 @@ namespace Neo.Consensus
                 return;
             }
 
-            Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
-            List<Transaction> unverified = new List<Transaction>();
+            Dictionary<UInt256, VerifiableTransaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
+            List<VerifiableTransaction> unverified = new List<VerifiableTransaction>();
             foreach (UInt256 hash in context.TransactionHashes)
             {
-                if (mempoolVerified.TryGetValue(hash, out Transaction tx))
+                if (mempoolVerified.TryGetValue(hash, out VerifiableTransaction tx))
                 {
                     if (!AddTransaction(tx, false))
                         return;
@@ -472,7 +472,7 @@ namespace Neo.Consensus
                         unverified.Add(tx);
                 }
             }
-            foreach (Transaction tx in unverified)
+            foreach (VerifiableTransaction tx in unverified)
                 if (!AddTransaction(tx, true))
                     return;
             if (context.Transactions.Count < context.TransactionHashes.Length)
@@ -521,9 +521,11 @@ namespace Neo.Consensus
                     case Timer timer:
                         OnTimer(timer);
                         break;
-                    case Transaction transaction:
+                    case VerifiableTransaction transaction:
                         OnTransaction(transaction);
                         break;
+                    case Transaction _:
+                        throw new Exception("received Unverifiable transaction");
                     case Blockchain.PersistCompleted completed:
                         OnPersistCompleted(completed.Block);
                         break;
@@ -598,7 +600,7 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnTransaction(Transaction transaction)
+        private void OnTransaction(VerifiableTransaction transaction)
         {
             if (!context.IsBackup || context.NotAcceptingPayloadsDueToViewChanging || !context.RequestSentOrReceived || context.ResponseSent || context.BlockSent)
                 return;
