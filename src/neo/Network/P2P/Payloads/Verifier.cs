@@ -5,6 +5,8 @@ using Neo.Models;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Oracle;
+using Neo.VM;
 using System;
 using System.Linq;
 
@@ -92,15 +94,21 @@ namespace Neo.Network.P2P.Payloads
             return tx.Signers.Any(p => p.Account.Equals(committee));
         }
 
+        static readonly Lazy<byte[]> fixedScript = new Lazy<byte[]>(() => {
+            using ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitAppCall(NativeContract.Oracle.Hash, "finish");
+            return sb.ToArray();
+        });
+
         private static bool VerifyAttribute(OracleResponse attrib, StoreView snapshot, Transaction tx)
         {
             if (tx.Signers.Any(p => p.Scopes != WitnessScope.None)) return false;
-            if (!tx.Script.AsSpan().SequenceEqual(FixedScript)) return false;
-            OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
+            if (!tx.Script.AsSpan().SequenceEqual(fixedScript.Value)) return false;
+            OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, attrib.Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
-            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, Role.Oracle));
-            return tx.Signers.Any(p => p.Account.Equals(oracleAccount));            
+            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot));
+            return tx.Signers.Any(p => p.Account.Equals(oracleAccount));        
         }    
     }
 }
