@@ -372,19 +372,9 @@ namespace Neo.Wallets
             {
                 byte[] witness_script = GetAccount(hash)?.Contract?.Script;
 
-                var contract = snapshot.Contracts.TryGet(hash);
-                if (contract != null && witness_script != null)
-                {
-                    if (ContractParametersContext.IsValidVerificationSignature(contract.Manifest.Abi.GetMethod("verify")))
-                    {
-                        // We should use the stored verification script
-                        witness_script = null;
-                    }
-                }
-
                 if (witness_script is null && tx.Witnesses != null)
                 {
-                    // Try to find the script in the witnesses (required for rpc)
+                    // Try to find the script in the witnesses
 
                     foreach (var witness in tx.Witnesses)
                     {
@@ -398,6 +388,7 @@ namespace Neo.Wallets
 
                 if (witness_script is null)
                 {
+                    var contract = snapshot.Contracts.TryGet(hash);
                     if (contract is null) continue;
 
                     // Empty invocation and verification scripts
