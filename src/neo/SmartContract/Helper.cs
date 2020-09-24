@@ -119,14 +119,14 @@ namespace Neo.SmartContract
             return script.IsSignatureContract() || script.IsMultiSigContract();
         }
 
-        public static UInt160 ToScriptHash(this byte[] script)
+        public static UInt160 ToScriptHash(this byte[] script, int verificationOffset = 0)
         {
-            return new UInt160(Crypto.Hash160(script));
+            return new UInt160(Crypto.Hash160(Neo.Helper.Concat(script, BitConverter.GetBytes(verificationOffset))));
         }
 
-        public static UInt160 ToScriptHash(this ReadOnlySpan<byte> script)
+        public static UInt160 ToScriptHash(this ReadOnlySpan<byte> script, int verificationOffset = 0)
         {
-            return new UInt160(Crypto.Hash160(script));
+            return new UInt160(Crypto.Hash160(Neo.Helper.Concat(script, BitConverter.GetBytes(verificationOffset))));
         }
 
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)

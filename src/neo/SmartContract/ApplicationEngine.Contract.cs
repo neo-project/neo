@@ -37,14 +37,16 @@ namespace Neo.SmartContract
 
             AddGas(StoragePrice * (script.Length + manifest.Length));
 
-            UInt160 hash = script.ToScriptHash();
+            ContractManifest contractManifest = ContractManifest.Parse(manifest);
+            ContractMethodDescriptor md = contractManifest.Abi.GetMethod("verify");
+            UInt160 hash = script.ToScriptHash(md?.Offset ?? 0);
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
             contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
                 Script = script.ToArray(),
-                Manifest = ContractManifest.Parse(manifest)
+                Manifest = contractManifest
             };
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
@@ -57,7 +59,7 @@ namespace Neo.SmartContract
 
             // Execute _deploy
 
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
+            md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
         }
@@ -75,25 +77,44 @@ namespace Neo.SmartContract
             {
                 if (script.Length == 0 || script.Length > MaxContractLength)
                     throw new ArgumentException($"Invalid Script Length: {script.Length}");
-                UInt160 hash_new = script.ToScriptHash();
-                if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
-                    throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
+
                 contract = new ContractState
                 {
                     Id = contract.Id,
                     Script = script.ToArray(),
                     Manifest = contract.Manifest
                 };
+
+                if (manifest != null)
+                {
+                    if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
+                        throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
+
+                    contract.Manifest = ContractManifest.Parse(manifest);
+                    if (!contract.Manifest.IsValid(contract.ScriptHash))
+                        throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
+                    if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
+                        throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
+                }
+
+                UInt160 hash_new = contract.ScriptHash;
+                if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
+                    throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
+
                 contract.Manifest.Abi.Hash = hash_new;
                 Snapshot.Contracts.Add(hash_new, contract);
                 Snapshot.Contracts.Delete(CurrentScriptHash);
             }
-            if (manifest != null)
+            else if (manifest != null)
             {
                 if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
+
                 contract = Snapshot.Contracts.GetAndChange(contract.ScriptHash);
+                var originalVerifyOffset = contract.Manifest.Abi.GetMethod("verify")?.Offset ?? 0;
                 contract.Manifest = ContractManifest.Parse(manifest);
+                if (originalVerifyOffset != (contract.Manifest.Abi.GetMethod("verify")?.Offset ?? 0))
+                    throw new InvalidOperationException($"Verification offset cannot be changed without change the script");
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())

@@ -26,7 +26,8 @@ namespace Neo.Ledger
             {
                 if (_scriptHash == null)
                 {
-                    _scriptHash = Script.ToScriptHash();
+                    ContractMethodDescriptor md = Manifest.Abi.GetMethod("verify");
+                    _scriptHash = Script.ToScriptHash(md?.Offset ?? 0);
                 }
                 return _scriptHash;
             }
