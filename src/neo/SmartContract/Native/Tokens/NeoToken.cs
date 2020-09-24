@@ -120,9 +120,8 @@ namespace Neo.SmartContract.Native.Tokens
             // Set next committee
             if (ShouldRefreshCommittee(engine.Snapshot.Height))
             {
-                var committee = ComputeCommitteeMembers(engine.Snapshot).ToArray();
                 StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
-                storageItem.Value = committee.ToByteArray();
+                storageItem.Value = ComputeCommitteeMembers(engine.Snapshot).ToArray().ToByteArray();
             }
         }
 
