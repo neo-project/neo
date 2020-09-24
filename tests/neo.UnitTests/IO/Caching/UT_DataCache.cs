@@ -319,7 +319,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
 
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4")); // if we cache first the key4 it will fail
+            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
 
             items = myDataCache.FindRange(new MyKey("key3"), new MyKey("key5")).ToArray();
@@ -335,7 +335,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
 
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4")); // if we cache first the key4 it will fail
+            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
             myDataCache.InnerDict.Add(new MyKey("key5"), new MyValue("value5"));
 
