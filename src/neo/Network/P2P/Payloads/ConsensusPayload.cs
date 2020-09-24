@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class ConsensusPayload : IWitnessed
+    public class ConsensusPayload : IWitnessed, IVerifiable
     {
         private uint version;
         private UInt256 prevHash;
@@ -76,6 +76,13 @@ namespace Neo.Network.P2P.Payloads
         public byte[] Data { get => data; set { data = value; hash = null; } }
         public Witness Witness { get => witness; set { witness = value; witnesses = null; } }
 
+        public InventoryType InventoryType => InventoryType.Consensus;
+
+        public IWitnessed AsWitnessed()
+        {
+            return this;
+        }
+
         public T GetDeserializedMessage<T>() where T : ConsensusMessage
         {
             return (T)ConsensusMessage;
@@ -114,11 +121,19 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        // public bool Verify(StoreView snapshot)
-        // {
-        //     if (BlockIndex <= snapshot.Height)
-        //         return false;
-        //     return this.VerifyWitnesses(snapshot, 0_02000000);
-        // }
+        public bool Verify(StoreView snapshot)
+        {
+            if (BlockIndex <= snapshot.Height)
+                return false;
+            return this.VerifyWitnesses(snapshot, 0_02000000);
+        }
+
+        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
+        {
+            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
+            if (validators.Length <= ValidatorIndex)
+                throw new InvalidOperationException();
+            return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
+        }
     }
 }
