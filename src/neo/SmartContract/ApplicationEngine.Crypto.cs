@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Models;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.VM.Types;

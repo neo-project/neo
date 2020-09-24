@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Models;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using Neo.VM;
@@ -109,7 +110,83 @@ namespace Neo.Network.P2P.Payloads
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
             UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Oracle.GetOracleNodes(snapshot));
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));        
-        }    
+        }
+
+        public static bool Verify(this BlockBase block, StoreView snapshot)
+        {
+            Header prev_header = snapshot.GetHeader(block.PrevHash);
+            if (prev_header == null) return false;
+            if (prev_header.Index + 1 != block.Index) return false;
+            if (prev_header.Timestamp >= block.Timestamp) return false;
+            if (!block.VerifyWitnesses(snapshot, 1_00000000)) return false;
+            return true;
+        }
+
+        public static bool Verify(this ConsensusPayload payload, StoreView snapshot)
+        {
+            if (payload.BlockIndex <= snapshot.Height)
+                return false;
+            return payload.VerifyWitnesses(snapshot, 0_02000000);
+        }
+        private const long MaxVerificationGas = 0_50000000;
+
+        internal static bool VerifyWitnesses(this IWitnessed verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
+        {
+            if (gas < 0) return false;
+            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
+
+            UInt160[] hashes;
+            try
+            {
+                hashes = verifiable.GetScriptHashesForVerifying(snapshot);
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            if (hashes.Length != verifiable.Witnesses.Length) return false;
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
+                if (!filter.HasFlag(flag))
+                {
+                    gas -= verifiable.Witnesses[i].GasConsumed;
+                    if (gas < 0) return false;
+                    continue;
+                }
+
+                int offset;
+                ContractMethodDescriptor init = null;
+                byte[] verification = verifiable.Witnesses[i].VerificationScript;
+                if (verification.Length == 0)
+                {
+                    ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
+                    if (cs is null) return false;
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
+                    if (md is null) return false;
+                    verification = cs.Script;
+                    offset = md.Offset;
+                    init = cs.Manifest.Abi.GetMethod("_initialize");
+                }
+                else
+                {
+                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+                    offset = 0;
+                }
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
+                {
+                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
+                    ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
+                    if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
+                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
+                    if (engine.Execute() == VMState.FAULT) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                    gas -= engine.GasConsumed;
+                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
+                }
+            }
+            return true;
+        }
     }
 }
 

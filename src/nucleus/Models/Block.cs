@@ -43,6 +43,11 @@ namespace Neo.Models
             return MerkleTree.ComputeRoot(transactionHashes.Prepend(consensusDataHash).ToArray());
         }
 
+        public void RebuildMerkleRoot()
+        {
+            MerkleRoot = CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash));
+        }
+
         public override int Size => base.Size
             + BinaryFormat.GetVarSize(Transactions.Length + 1)  // Content count
             + ConsensusData.Size                                // ConsensusData

@@ -14,8 +14,6 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        private const long MaxVerificationGas = 0_50000000;
-
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
             return context.GetState<ExecutionContextState>().ScriptHash;
@@ -128,64 +126,6 @@ namespace Neo.SmartContract
         public static UInt160 ToScriptHash(this ReadOnlySpan<byte> script)
         {
             return new UInt160(Crypto.Hash160(script));
-        }
-
-        internal static bool VerifyWitnesses(this IWitnessed verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
-        {
-            if (gas < 0) return false;
-            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
-
-            UInt160[] hashes;
-            try
-            {
-                hashes = verifiable.GetScriptHashesForVerifying(snapshot);
-            }
-            catch (InvalidOperationException)
-            {
-                return false;
-            }
-            if (hashes.Length != verifiable.Witnesses.Length) return false;
-            for (int i = 0; i < hashes.Length; i++)
-            {
-                WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
-                if (!filter.HasFlag(flag))
-                {
-                    gas -= verifiable.Witnesses[i].GasConsumed;
-                    if (gas < 0) return false;
-                    continue;
-                }
-
-                int offset;
-                ContractMethodDescriptor init = null;
-                byte[] verification = verifiable.Witnesses[i].VerificationScript;
-                if (verification.Length == 0)
-                {
-                    ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
-                    if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                    if (md is null) return false;
-                    verification = cs.Script;
-                    offset = md.Offset;
-                    init = cs.Manifest.Abi.GetMethod("_initialize");
-                }
-                else
-                {
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-                    offset = 0;
-                }
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
-                {
-                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
-                    ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
-                    if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) return false;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
-                    gas -= engine.GasConsumed;
-                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
-                }
-            }
-            return true;
         }
     }
 }
