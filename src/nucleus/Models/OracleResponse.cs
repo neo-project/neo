@@ -42,29 +42,5 @@ namespace Neo.Models
             if (Code != OracleResponseCode.Success && Result.Length > 0)
                 throw new FormatException();
         }
-
-        public override JObject ToJson()
-        {
-            var json = new JObject();
-            json["type"] = TransactionAttributeType.OracleResponse;
-            json["id"] = Id.ToString();
-            json["code"] = Code;
-            json["result"] = Result.ToHexString();
-            return json;
-        }
-
-        protected override void FromJson(TransactionAttributeType type, JObject json)
-        {
-            if (type != TransactionAttributeType.HighPriority)
-                throw new FormatException();
-
-            Id = ulong.Parse(json["id"].AsString());
-            Code = Enum.Parse<OracleResponseCode>(json["type"].AsString());
-            if (!Enum.IsDefined(typeof(OracleResponseCode), Code))
-                throw new FormatException();
-            Result = json["result"].AsString().HexToBytes();
-            if (Code != OracleResponseCode.Success && Result.Length > 0)
-                throw new FormatException();
-        }
     }
 }

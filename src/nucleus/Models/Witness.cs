@@ -29,22 +29,5 @@ namespace Neo.Models
             writer.WriteVarBytes(InvocationScript);
             writer.WriteVarBytes(VerificationScript);
         }
-
-        public JObject ToJson()
-        {
-            JObject json = new JObject();
-            json["invocation"] = Convert.ToBase64String(InvocationScript);
-            json["verification"] = Convert.ToBase64String(VerificationScript);
-            return json;
-        }
-
-        public static Witness FromJson(JObject json)
-        {
-            return new Witness
-            {
-                InvocationScript = Convert.FromBase64String(json["invocation"].AsString()),
-                VerificationScript = Convert.FromBase64String(json["verification"].AsString())
-            };
-        }
     }
 }

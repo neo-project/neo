@@ -25,19 +25,7 @@ namespace Neo.Models
         };
 
         public abstract int Size { get; }
-
         public abstract void Serialize(BinaryWriter writer);
         protected abstract void Deserialize(TransactionAttributeType type, BinaryReader reader);
-        protected abstract void FromJson(TransactionAttributeType type, JObject json);
-
-        public abstract JObject ToJson();
-
-        public static TransactionAttribute FromJson(JObject json)
-        {
-            var type = Enum.Parse<TransactionAttributeType>(json["type"].AsString());
-            var attribute = CreateAttribute(type);
-            attribute.FromJson(type, json);
-            return attribute;
-        }
     }
 }

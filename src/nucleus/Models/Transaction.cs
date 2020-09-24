@@ -7,7 +7,7 @@ using Neo.IO.Json;
 
 namespace Neo.Models
 {
-    public class Transaction : ISignable, IEquatable<Transaction>
+    public class Transaction : IWitnessed, IEquatable<Transaction>
     {
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;
@@ -43,7 +43,7 @@ namespace Neo.Models
         public TransactionAttribute[] Attributes { get => attributes; set { attributes = value; hash = null; } }
         public byte[] Script { get => script; set { script = value; hash = null; } }
 
-        Witness[] ISignable.Witnesses => Witnesses;
+        Witness[] IWitnessed.Witnesses => Witnesses;
 
         /// <summary>
         /// The first signer is the sender of the transaction, regardless of its WitnessScope.
@@ -79,7 +79,7 @@ namespace Neo.Models
         {
             return Hash.GetHashCode();
         }
-        
+
         public int Size => HeaderSize +
             Signers.GetVarSize() +
             BinaryFormat.GetVarSize(Attributes.Length) +

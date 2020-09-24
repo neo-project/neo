@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Neo.Models
 {
-    public abstract class BlockBase : ISignable
+    public abstract class BlockBase : IWitnessed
     {
         protected readonly uint magic;
         private uint version;
@@ -16,7 +16,7 @@ namespace Neo.Models
         private ulong timestamp;
         private uint index;
         private UInt160 nextConsensus;
-        public Witness Witness;
+        private Witness witness;
 
         public BlockBase(uint magic)
         {
@@ -33,6 +33,16 @@ namespace Neo.Models
             }
         }
 
+        private Lazy<Witness[]> witnesses;
+        Witness[] IWitnessed.Witnesses 
+        {
+            get
+            {
+                witnesses ??= new Lazy<Witness[]>(() => new Witness[] { witness });
+                return witnesses.Value;
+            }
+        }
+
         public virtual int Size =>
             sizeof(uint) +       //Version
             UInt256.Length +     //PrevHash
@@ -43,14 +53,13 @@ namespace Neo.Models
             1 +                  //Witness array count
             Witness.Size;        //Witness   
 
-        Witness[] ISignable.Witnesses => new[] { Witness };
-
         public uint Version { get => version; set { version = value; hash = null; } }
         public UInt256 PrevHash { get => prevHash; set { prevHash = value; hash = null; } }
         public UInt256 MerkleRoot { get => merkleRoot; set { merkleRoot = value; hash = null; } }
         public ulong Timestamp { get => timestamp; set { timestamp = value; hash = null; } }
         public uint Index { get => index; set { index = value; hash = null; } }
         public UInt160 NextConsensus { get => nextConsensus; set { nextConsensus = value; hash = null; } }
+        public Witness Witness { get => witness; set { witness = value; witnesses = null; } }
 
         public virtual void Deserialize(BinaryReader reader)
         {
@@ -80,20 +89,5 @@ namespace Neo.Models
             writer.Write(Index);
             writer.Write(NextConsensus);
         }
-
-        // public virtual JObject ToJson()
-        // {
-        //     JObject json = new JObject();
-        //     json["hash"] = Hash.ToString();
-        //     json["size"] = Size;
-        //     json["version"] = Version;
-        //     json["previousblockhash"] = PrevHash.ToString();
-        //     json["merkleroot"] = MerkleRoot.ToString();
-        //     json["time"] = Timestamp;
-        //     json["index"] = Index;
-        //     // json["nextconsensus"] = NextConsensus.ToAddress();
-        //     json["witnesses"] = new JArray(Witness.ToJson());
-        //     return json;
-        // }
     }
 }
