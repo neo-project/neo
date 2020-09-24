@@ -94,7 +94,7 @@ namespace Neo.UnitTests.Ledger
             tblock.Size.Should().Be(146);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestDeserialize()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.Ledger
             // tblock.ToJson().ToString().Should().Be(newBlock.ToJson().ToString());
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestClone()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.Ledger
             // clonedBlock.ToJson().ToString().Should().Be(tblock.ToJson().ToString());
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestFromReplica()
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();

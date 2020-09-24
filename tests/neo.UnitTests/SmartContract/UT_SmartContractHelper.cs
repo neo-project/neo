@@ -113,7 +113,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsStandardContract(script2));
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestVerifyWitnesses()
         {
             var snapshot1 = Blockchain.Singleton.GetSnapshot();

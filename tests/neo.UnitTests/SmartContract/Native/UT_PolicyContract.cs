@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ((VM.Types.Array)ret).Count.Should().Be(0);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_SetMaxBlockSize()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(1024);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_SetMaxBlockSystemFee()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -145,7 +145,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(1024 * (long)NativeContract.GAS.Factor);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_SetMaxTransactionsPerBlock()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -180,7 +180,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(1);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_SetFeePerByte()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -215,7 +215,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(1);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_BlockAccount()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -273,7 +273,7 @@ namespace Neo.UnitTests.SmartContract.Native
             (ret as VM.Types.Array)[1].GetSpan().ToHexString().Should().Be("01ff00ff00ff00ff00ff00ff00ff00ff00ff00b4");
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_Block_UnblockAccount()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();

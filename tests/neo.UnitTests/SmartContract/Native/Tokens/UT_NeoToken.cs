@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_Decimals() => NativeContract.NEO.Decimals().Should().Be(0);
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_Vote()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_Vote_Sameaccounts()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -118,7 +118,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             stateValidator.Votes.Should().Be(300);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_Vote_ChangeVote()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -149,7 +149,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             from_stateValidator.Votes.Should().Be(100);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_Vote_VoteToNull()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -196,7 +196,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.State.Should().BeFalse();
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_RegisterValidator()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -224,7 +224,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             Assert.AreEqual(2, members.Length);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_UnregisterCandidate()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -282,7 +282,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             accountState.VoteTo.Should().Be(Blockchain.StandbyValidators[0]);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_GetCommittee()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -337,7 +337,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             committeemembers.Contains(Blockchain.StandbyCommittee[ProtocolSettings.Default.CommitteeMembersCount - 1]).Should().BeFalse();
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_Transfer()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -605,7 +605,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             NativeContract.NEO.TotalSupply(snapshot).Should().Be(new BigInteger(100000000));
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestEconomicParameter()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -630,7 +630,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestVote()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();

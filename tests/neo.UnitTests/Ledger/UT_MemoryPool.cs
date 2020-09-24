@@ -26,7 +26,7 @@ namespace Neo.UnitTests.Ledger
         public void TransactionsRemoved(MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions) { }
     }
 
-    [TestClass, Ignore]
+    [TestClass]
     public class UT_MemoryPool
     {
         private static NeoSystem testBlockchain;
@@ -473,7 +473,7 @@ namespace Neo.UnitTests.Ledger
             _unit2.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestTryGetValue()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -490,7 +490,7 @@ namespace Neo.UnitTests.Ledger
             _unit.TryGetValue(tx2.Hash, out tx).Should().BeFalse();
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TestUpdatePoolForBlockPersisted()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();

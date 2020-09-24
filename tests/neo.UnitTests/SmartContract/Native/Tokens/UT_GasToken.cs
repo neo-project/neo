@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void Check_Decimals() => NativeContract.GAS.Decimals().Should().Be(8);
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Check_BalanceOfTransferAndBurn()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
