@@ -311,7 +311,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_GetInvocationCounter()
         {
             var engine = GetEngine();
-            Assert.ThrowsException<InvalidOperationException>(() => engine.GetInvocationCounter());
+            Assert.AreEqual(1, engine.GetInvocationCounter());
         }
 
         [TestMethod]
