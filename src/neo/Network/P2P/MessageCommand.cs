@@ -35,9 +35,9 @@ namespace Neo.Network.P2P
         [ReflectionCache(typeof(GetBlockByIndexPayload))]
         GetBlockByIndex = 0x29,
         NotFound = 0x2a,
-        [ReflectionCache(typeof(Transaction))]
+        [ReflectionCache(typeof(VerifiableTransaction))]
         Transaction = 0x2b,
-        [ReflectionCache(typeof(Block))]
+        [ReflectionCache(typeof(VerifiableBlock))]
         Block = 0x2c,
         [ReflectionCache(typeof(ConsensusPayload))]
         Consensus = 0x2d,
