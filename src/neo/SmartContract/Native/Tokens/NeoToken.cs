@@ -1,6 +1,5 @@
 #pragma warning disable IDE0051
 
-using Microsoft.EntityFrameworkCore.Internal;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Caching;
@@ -76,13 +75,13 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
 
-            var border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).ToArray();
-            StorageKey keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start);
-            (_, var item) = snapshot.Storages.FindRange(keyStart.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
+            byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).ToArray();
+            byte[] keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start).ToArray();
+            (_, var item) = snapshot.Storages.FindRange(keyStart, border, SeekDirection.Backward).FirstOrDefault();
             BigInteger startRewardPerNeo = item ?? BigInteger.Zero;
 
-            StorageKey keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(end);
-            (_, item) = snapshot.Storages.FindRange(keyEnd.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
+            byte[] keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(end).ToArray();
+            (_, item) = snapshot.Storages.FindRange(keyEnd, border, SeekDirection.Backward).FirstOrDefault();
             BigInteger endRewardPerNeo = item ?? BigInteger.Zero;
 
             return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 100000000L;
