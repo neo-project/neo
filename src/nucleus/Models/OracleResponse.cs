@@ -10,35 +10,25 @@ namespace Neo.Models
     {
         private const int MaxResultSize = 1024;
 
+        public static readonly byte[] FixedScript;
+
         public ulong Id;
         public OracleResponseCode Code;
         public byte[] Result;
 
+        public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
         public override bool AllowMultiple => false;
 
-        public override int Size =>
-            sizeof(byte) +                  // TransactionAttributeType
-            sizeof(ulong) +                 // Id
-            sizeof(OracleResponseCode) +    // ResponseCode
-            Result.GetVarSize();            // Result
+        public override int Size => base.Size +
+            sizeof(ulong) +                 //Id
+            sizeof(OracleResponseCode) +    //ResponseCode
+            Result.GetVarSize();            //Result
 
-        public override void Serialize(BinaryWriter writer)
+        protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            writer.Write((byte)TransactionAttributeType.OracleResponse);
-            writer.Write(Id);
-            writer.Write((byte)Code);
-            writer.WriteVarBytes(Result);
-        }
-
-        protected override void Deserialize(TransactionAttributeType type, BinaryReader reader)
-        {
-            if (type != TransactionAttributeType.OracleResponse)
-                throw new FormatException();
-
             Id = reader.ReadUInt64();
             Code = (OracleResponseCode)reader.ReadByte();
             Result = reader.ReadVarBytes(MaxResultSize);
-
             ValidateDeserialized();
         }
 
@@ -48,6 +38,13 @@ namespace Neo.Models
                 throw new FormatException();
             if (Code != OracleResponseCode.Success && Result.Length > 0)
                 throw new FormatException();
+        }
+
+        protected override void SerializeWithoutType(BinaryWriter writer)
+        {
+            writer.Write(Id);
+            writer.Write((byte)Code);
+            writer.WriteVarBytes(Result);
         }
 
         public override JObject ToJson()
@@ -61,15 +58,11 @@ namespace Neo.Models
             };
         }
 
-        protected override void DeserializeJson(TransactionAttributeType type, JObject json)
+        protected override void DeserializeJson(JObject json)
         {
-            if (type != TransactionAttributeType.OracleResponse)
-                throw new FormatException();
-
             Id = ulong.Parse(json["id"].AsString(), NumberStyles.HexNumber);
             Code = (OracleResponseCode)Enum.Parse(typeof(OracleResponseCode), json["code"].AsString(), false);
             Result = Convert.FromBase64String(json["result"].AsString());
-
             ValidateDeserialized();
         }
     }

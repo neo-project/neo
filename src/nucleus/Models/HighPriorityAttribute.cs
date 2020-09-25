@@ -7,32 +7,18 @@ namespace Neo.Models
     public class HighPriorityAttribute : TransactionAttribute
     {
         public override bool AllowMultiple => false;
+        public override TransactionAttributeType Type => TransactionAttributeType.HighPriority;
 
-        public override int Size => sizeof(byte);
-
-        public override void Serialize(BinaryWriter writer)
+        protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            writer.Write((byte)TransactionAttributeType.HighPriority);
         }
 
-        protected override void Deserialize(TransactionAttributeType type, BinaryReader reader)
+        protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            if (type != TransactionAttributeType.HighPriority)
-                throw new FormatException();
         }
 
-        public override JObject ToJson()
+        protected override void DeserializeJson(JObject json)
         {
-            return new JObject
-            {
-                ["type"] = TransactionAttributeType.HighPriority
-            };
-        }
-
-        protected override void DeserializeJson(TransactionAttributeType type, JObject json)
-        {
-            if (type != TransactionAttributeType.HighPriority)
-                throw new FormatException();
         }
     }
 }
