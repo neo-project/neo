@@ -18,11 +18,18 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
+        private enum CheckReturnType : byte
+        {
+            None = 0,
+            EnsureIsEmpty = 1,
+            EnsureNotEmpty = 2
+        }
+
         private class InvocationState
         {
             public Type ReturnType;
             public Delegate Callback;
-            public bool NeedCheckReturnValue;
+            public CheckReturnType NeedCheckReturnValue;
         }
 
         /// <summary>
@@ -97,11 +104,23 @@ namespace Neo.SmartContract
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            if (state.NeedCheckReturnValue)
-                if (context.EvaluationStack.Count == 0)
-                    Push(StackItem.Null);
-                else if (context.EvaluationStack.Count > 1)
-                    throw new InvalidOperationException();
+            switch (state.NeedCheckReturnValue)
+            {
+                case CheckReturnType.EnsureIsEmpty:
+                    {
+                        if (context.EvaluationStack.Count != 0)
+                            throw new InvalidOperationException();
+                        break;
+                    }
+                case CheckReturnType.EnsureNotEmpty:
+                    {
+                        if (context.EvaluationStack.Count == 0)
+                            Push(StackItem.Null);
+                        else if (context.EvaluationStack.Count > 1)
+                            throw new InvalidOperationException();
+                        break;
+                    }
+            }
             switch (state.Callback)
             {
                 case null:
@@ -135,14 +154,17 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
 
-            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            var state = context.GetState<ExecutionContextState>();
+            state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            invocationCounter.TryAdd(state.ScriptHash, 1);
+
             base.LoadContext(context);
         }
 
         internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
             if (checkReturnValue)
-                GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
+                GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
             LoadContext(context);
         }
 

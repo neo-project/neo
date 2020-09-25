@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using System;
 using System.Security;
 using System.Text;
@@ -153,7 +154,7 @@ namespace Neo.UnitTests.Cryptography
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
                 SystemFee = 4200000000,
-                Signers = Array.Empty<Signer>(),
+                Signers = new Signer[] { new Signer() { Account = (new byte[0]).ToScriptHash() } },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {

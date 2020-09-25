@@ -161,7 +161,9 @@ namespace Neo.SmartContract
         protected internal int GetInvocationCounter()
         {
             if (!invocationCounter.TryGetValue(CurrentScriptHash, out var counter))
-                throw new InvalidOperationException();
+            {
+                invocationCounter[CurrentScriptHash] = counter = 1;
+            }
             return counter;
         }
 
