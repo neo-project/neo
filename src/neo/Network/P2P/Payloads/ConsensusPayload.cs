@@ -124,6 +124,14 @@ namespace Neo.Network.P2P.Payloads
         {
             if (BlockIndex <= snapshot.Height)
                 return false;
+            if (Witness.VerificationScript.Length == 0)
+            {
+                // If we don't have the verification script, it could be read from storage
+                ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
+                if (validators.Length <= ValidatorIndex)
+                    return false;
+                Witness.VerificationScript = Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]);
+            }
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }
     }
