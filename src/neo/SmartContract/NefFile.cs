@@ -1,6 +1,5 @@
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Json;
 using Neo.SmartContract.Manifest;
 using System;
 using System.IO;
@@ -61,12 +60,12 @@ namespace Neo.SmartContract
         private const int StaticSize =
             sizeof(uint) +      // Magic
             32 +                // Compiler
-            (sizeof(int) * 4);  // Version
+            (sizeof(int) * 4) + // Version
+            sizeof(uint);       // Checksum
 
         public int Size =>
             StaticSize +
             Abi.ToJson().ToString().GetVarSize() +  // Abi
-            sizeof(uint) +                          // Checksum
             Script.GetVarSize();                    // Script
 
         public void Serialize(BinaryWriter writer)
