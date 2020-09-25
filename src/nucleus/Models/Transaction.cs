@@ -188,7 +188,7 @@ namespace Neo.Models
             json["size"] = Size;
             json["version"] = Version;
             json["nonce"] = Nonce;
-            json["sender"] = Sender.ToAddress(addressVersion); 
+            json["sender"] = Sender.ToAddress(addressVersion);
             json["sysfee"] = SystemFee.ToString();
             json["netfee"] = NetworkFee.ToString();
             json["validuntilblock"] = ValidUntilBlock;

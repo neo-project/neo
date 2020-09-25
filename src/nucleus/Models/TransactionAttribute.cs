@@ -31,7 +31,7 @@ namespace Neo.Models
         public static TransactionAttribute DeserializeFrom(BinaryReader reader)
         {
             TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
-            TransactionAttribute attribute = type switch 
+            TransactionAttribute attribute = type switch
             {
                 TransactionAttributeType.HighPriority => new HighPriorityAttribute(),
                 TransactionAttributeType.OracleResponse => new OracleResponse(),
