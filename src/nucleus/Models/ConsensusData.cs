@@ -38,5 +38,23 @@ namespace Neo.Models
             writer.Write(PrimaryIndex);
             writer.Write(Nonce);
         }
+
+        public JObject ToJson()
+        {
+            return new JObject()
+            {
+                ["primary"] = PrimaryIndex,
+                ["nonce"] = Nonce.ToString("x16")
+            };
+        }
+
+        public static ConsensusData FromJson(JObject json)
+        {
+            return new ConsensusData()
+            {
+                PrimaryIndex = (byte)json["primary"].AsNumber(),
+                Nonce = ulong.Parse(json["nonce"].AsString(), NumberStyles.HexNumber)
+            };
+        }
     }
 }

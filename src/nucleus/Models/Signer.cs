@@ -51,24 +51,27 @@ namespace Neo.Models
 
         public JObject ToJson()
         {
-            var json = new JObject();
-            json["account"] = Account.ToString();
-            json["scopes"] = Scopes;
-            if (Scopes.HasFlag(WitnessScope.CustomContracts))
-                json["allowedcontracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
-            if (Scopes.HasFlag(WitnessScope.CustomGroups))
-                json["allowedgroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
-            return json;
+            return new JObject()
+            {
+                ["account"] = Account.ToString(),
+                ["scopes"] = Scopes,
+                ["allowedcontracts"] = Scopes.HasFlag(WitnessScope.CustomContracts)
+                    ? AllowedContracts.Select(p => (JObject)p.ToString()).ToArray()
+                    : JObject.Null,
+                ["allowedgroups"] = Scopes.HasFlag(WitnessScope.CustomGroups)
+                    ? AllowedGroups.Select(p => (JObject)p.ToString()).ToArray()
+                    : JObject.Null,
+            };
         }
 
-        public static Signer FromJson(JObject json, byte? addressVersion)
+        public static Signer FromJson(JObject json, byte addressVersion)
         {
             return new Signer
             {
                 Account = json["account"].ToScriptHash(addressVersion),
                 Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scopes"].AsString()),
-                AllowedContracts = ((JArray)json["allowedContracts"])?.Select(p => p.ToScriptHash(addressVersion)).ToArray(),
-                AllowedGroups = ((JArray)json["allowedGroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
+                AllowedContracts = (json["allowedContracts"] as JArray)?.Select(p => p.ToScriptHash(addressVersion)).ToArray(),
+                AllowedGroups = (json["allowedGroups"] as JArray)?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray()
             };
         }
     }

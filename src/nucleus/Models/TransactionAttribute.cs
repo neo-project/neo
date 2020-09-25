@@ -17,16 +17,27 @@ namespace Neo.Models
             return attribute;
         }
 
-        private static TransactionAttribute CreateAttribute(TransactionAttributeType type) => type switch
+        public static TransactionAttribute FromJson(JObject json)
         {
-            TransactionAttributeType.HighPriority => new HighPriorityAttribute(),
-            TransactionAttributeType.OracleResponse => new OracleResponse(),
-            _ => throw new FormatException(),
-        };
+            TransactionAttributeType type = Enum.Parse<TransactionAttributeType>(json["type"].AsString());
+            var attribute = CreateAttribute(type);
+            attribute.DeserializeJson(type, json);
+            return attribute;
+        }
+
+        private static TransactionAttribute CreateAttribute(TransactionAttributeType type) 
+            => type switch
+            {
+                TransactionAttributeType.HighPriority => new HighPriorityAttribute(),
+                TransactionAttributeType.OracleResponse => new OracleResponse(),
+                _ => throw new FormatException(),
+            };
 
         public abstract int Size { get; }
         public abstract void Serialize(BinaryWriter writer);
         protected abstract void Deserialize(TransactionAttributeType type, BinaryReader reader);
+        public abstract JObject ToJson();
+        protected abstract void DeserializeJson(TransactionAttributeType type, JObject json);
 
         void ISerializable.Deserialize(BinaryReader reader)
         {

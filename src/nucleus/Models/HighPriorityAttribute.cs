@@ -20,5 +20,19 @@ namespace Neo.Models
             if (type != TransactionAttributeType.HighPriority)
                 throw new FormatException();
         }
+
+        public override JObject ToJson()
+        {
+            return new JObject
+            {
+                ["type"] = TransactionAttributeType.HighPriority
+            };
+        }
+
+        protected override void DeserializeJson(TransactionAttributeType type, JObject json)
+        {
+            if (type != TransactionAttributeType.HighPriority)
+                throw new FormatException();
+        }
     }
 }

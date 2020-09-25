@@ -42,5 +42,12 @@ namespace Neo.Models
             base.Serialize(writer);
             writer.Write((byte)0);
         }
+
+        public static Header FromJson(JObject json, uint magic, byte addressVersion)
+        {
+            Header header = new Header(magic);
+            header.DeserializeJson(json, addressVersion);
+            return header;
+        }
     }
 }

@@ -4,6 +4,7 @@ using Neo.IO.Json;
 
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Models
 {
@@ -93,6 +94,32 @@ namespace Neo.Models
             writer.Write(Timestamp);
             writer.Write(Index);
             writer.Write(NextConsensus);
+        }
+
+        public virtual JObject ToJson(byte addressVersion)
+        {
+            JObject json = new JObject();
+            json["hash"] = Hash.ToString();
+            json["size"] = Size;
+            json["version"] = Version;
+            json["previousblockhash"] = PrevHash.ToString();
+            json["merkleroot"] = MerkleRoot.ToString();
+            json["time"] = Timestamp;
+            json["index"] = Index;
+            json["nextconsensus"] = NextConsensus.ToAddress(addressVersion);
+            json["witnesses"] = new JArray(Witness.ToJson());
+            return json;
+        }
+
+        protected void DeserializeJson(JObject json, byte addressVersion)
+        {
+            Version = (uint)json["version"].AsNumber();
+            PrevHash = UInt256.Parse(json["previousblockhash"].AsString());
+            MerkleRoot = UInt256.Parse(json["merkleroot"].AsString());
+            Timestamp = (ulong)json["time"].AsNumber();
+            Index = (uint)json["index"].AsNumber();
+            NextConsensus = json["nextconsensus"].ToScriptHash(addressVersion);
+            Witness = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).FirstOrDefault();
         }
     }
 }

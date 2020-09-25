@@ -180,5 +180,39 @@ namespace Neo.Models
             }
             writer.WriteVarBytes(Script);
         }
+
+        public JObject ToJson(byte addressVersion)
+        {
+            JObject json = new JObject();
+            json["hash"] = Hash.ToString();
+            json["size"] = Size;
+            json["version"] = Version;
+            json["nonce"] = Nonce;
+            json["sender"] = Sender.ToAddress(addressVersion); 
+            json["sysfee"] = SystemFee.ToString();
+            json["netfee"] = NetworkFee.ToString();
+            json["validuntilblock"] = ValidUntilBlock;
+            json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
+            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
+            json["script"] = Convert.ToBase64String(Script);
+            json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
+            return json;
+        }
+
+        public static Transaction FromJson(JObject json, uint magic, byte addressVersion)
+        {
+            return new Transaction(magic)
+            {
+                Version = byte.Parse(json["version"].AsString()),
+                Nonce = uint.Parse(json["nonce"].AsString()),
+                Signers = ((JArray)json["signers"]).Select(p => Signer.FromJson(p, addressVersion)).ToArray(),
+                SystemFee = long.Parse(json["sysfee"].AsString()),
+                NetworkFee = long.Parse(json["netfee"].AsString()),
+                ValidUntilBlock = uint.Parse(json["validuntilblock"].AsString()),
+                Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray(),
+                Script = Convert.FromBase64String(json["script"].AsString()),
+                Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray()
+            };
+        }
     }
 }

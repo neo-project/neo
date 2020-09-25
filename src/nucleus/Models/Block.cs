@@ -96,5 +96,22 @@ namespace Neo.Models
                 writer.Write(Transactions[i]);
             }
         }
+
+        public override JObject ToJson(byte addressVersion)
+        {
+            JObject json = base.ToJson(addressVersion);
+            json["consensusdata"] = ConsensusData.ToJson();
+            json["tx"] = Transactions.Select(p => p.ToJson(addressVersion)).ToArray();
+            return json;
+        }
+
+        public static Block FromJson(JObject json, uint magic, byte addressVersion)
+        {
+            Block block = new Block(magic);
+            block.DeserializeJson(json, addressVersion);
+            block.ConsensusData = ConsensusData.FromJson(json["consensusdata"]);
+            block.Transactions = ((JArray)json["tx"]).Select(p => Transaction.FromJson(p, magic, addressVersion)).ToArray();
+            return block;
+        }
     }
 }

@@ -61,15 +61,15 @@ namespace Neo
 
         public static UInt160 ToScriptHash(this byte[] script)
         {
-            return new UInt160(Cryptography.Crypto.Hash160(script));
+            return new UInt160(Crypto.Hash160(script));
         }
 
-        public static UInt160 ToScriptHash(this string address, byte? addressVersion = null)
+        public static UInt160 ToScriptHash(this string address, byte addressVersion)
         {
             byte[] data = address.Base58CheckDecode();
             if (data.Length != 21)
                 throw new FormatException();
-            if (addressVersion.HasValue && data[0] != addressVersion.Value)
+            if (data[0] != addressVersion)
                 throw new FormatException();
             return new UInt160(data.AsSpan(1));
         }

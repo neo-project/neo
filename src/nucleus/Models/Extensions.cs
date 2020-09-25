@@ -21,7 +21,7 @@ namespace Neo.Models
             return new UInt256(Crypto.Hash256(witnessed.GetHashData(magic)));
         }
 
-        public static UInt160 ToScriptHash(this JObject value, byte? addressVersion)
+        public static UInt160 ToScriptHash(this JObject value, byte addressVersion)
         {
             var addressOrScriptHash = value.AsString();
 
