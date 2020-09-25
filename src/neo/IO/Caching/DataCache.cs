@@ -156,11 +156,18 @@ namespace Neo.IO.Caching
                     yield return (key, value);
         }
 
-        public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end)
+        /// <summary>
+        /// Find the entries that between [start, end)
+        /// </summary>
+        /// <param name="direction">The search direction.</param>
+        /// <returns>Entries found with the desired range</returns>
+        public IEnumerable<(TKey Key, TValue Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
         {
-            var endKey = end.ToArray();
-            foreach (var (key, value) in Seek(start.ToArray(), SeekDirection.Forward))
-                if (ByteArrayComparer.Default.Compare(key.ToArray(), endKey) < 0)
+            ByteArrayComparer comparer = direction == SeekDirection.Forward
+                ? ByteArrayComparer.Default
+                : ByteArrayComparer.Reverse;
+            foreach (var (key, value) in Seek(start, direction))
+                if (comparer.Compare(key.ToArray(), end) < 0)
                     yield return (key, value);
         }
 
