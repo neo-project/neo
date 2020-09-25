@@ -306,7 +306,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
             myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
 
-            var items = myDataCache.FindRange(new MyKey("key3"), new MyKey("key5")).ToArray();
+            var items = myDataCache.FindRange(new MyKey("key3").ToArray(), new MyKey("key5").ToArray()).ToArray();
             items[0].Key.Should().Be(new MyKey("key3"));
             items[0].Value.Should().Be(new MyValue("value3"));
             items[1].Key.Should().Be(new MyKey("key4"));
@@ -322,7 +322,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
 
-            items = myDataCache.FindRange(new MyKey("key3"), new MyKey("key5")).ToArray();
+            items = myDataCache.FindRange(new MyKey("key3").ToArray(), new MyKey("key5").ToArray()).ToArray();
             items[0].Key.Should().Be(new MyKey("key3"));
             items[0].Value.Should().Be(new MyValue("value3"));
             items[1].Key.Should().Be(new MyKey("key4"));
@@ -339,7 +339,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
             myDataCache.InnerDict.Add(new MyKey("key5"), new MyValue("value5"));
 
-            items = myDataCache.FindRange(new MyKey("key3"), new MyKey("key5"), SeekDirection.Backward).ToArray();
+            items = myDataCache.FindRange(new MyKey("key5").ToArray(), new MyKey("key3").ToArray(), SeekDirection.Backward).ToArray();
             items[0].Key.Should().Be(new MyKey("key5"));
             items[0].Value.Should().Be(new MyValue("value5"));
             items[1].Key.Should().Be(new MyKey("key4"));
