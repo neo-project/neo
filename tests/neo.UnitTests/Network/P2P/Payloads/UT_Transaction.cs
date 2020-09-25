@@ -1048,31 +1048,31 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             }
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void ToJson()
         {
-            // uut.Script = TestUtils.GetByteArray(32, 0x42);
-            // uut.SystemFee = 4200000000;
-            // uut.Signers = new Signer[] { new Signer() { Account = UInt160.Zero } };
-            // uut.Attributes = Array.Empty<TransactionAttribute>();
-            // uut.Witnesses = new[]
-            // {
-            //     new Witness
-            //     {
-            //         InvocationScript = new byte[0],
-            //         VerificationScript = new byte[0]
-            //     }
-            // };
+            uut.Script = TestUtils.GetByteArray(32, 0x42);
+            uut.SystemFee = 4200000000;
+            uut.Signers = new Signer[] { new Signer() { Account = UInt160.Zero } };
+            uut.Attributes = Array.Empty<TransactionAttribute>();
+            uut.Witnesses = new[]
+            {
+                new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                }
+            };
 
-            // JObject jObj = uut.ToJson();
-            // jObj.Should().NotBeNull();
-            // jObj["hash"].AsString().Should().Be("0xe17382d26702bde77b00a9f23ea156b77c418764cbc45b2692088b5fde0336e3");
-            // jObj["size"].AsNumber().Should().Be(84);
-            // jObj["version"].AsNumber().Should().Be(0);
-            // ((JArray)jObj["attributes"]).Count.Should().Be(0);
-            // jObj["netfee"].AsString().Should().Be("0");
-            // jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
-            // jObj["sysfee"].AsString().Should().Be("4200000000");
+            JObject jObj = uut.ToJson(ProtocolSettings.Default.AddressVersion);
+            jObj.Should().NotBeNull();
+            jObj["hash"].AsString().Should().Be("0xe17382d26702bde77b00a9f23ea156b77c418764cbc45b2692088b5fde0336e3");
+            jObj["size"].AsNumber().Should().Be(84);
+            jObj["version"].AsNumber().Should().Be(0);
+            ((JArray)jObj["attributes"]).Count.Should().Be(0);
+            jObj["netfee"].AsString().Should().Be("0");
+            jObj["script"].AsString().Should().Be("QiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=");
+            jObj["sysfee"].AsString().Should().Be("4200000000");
         }
 
         [TestMethod]
