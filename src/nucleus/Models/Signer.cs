@@ -51,17 +51,17 @@ namespace Neo.Models
 
         public JObject ToJson()
         {
-            return new JObject()
+            var json = new JObject()
             {
                 ["account"] = Account.ToString(),
                 ["scopes"] = Scopes,
-                ["allowedcontracts"] = Scopes.HasFlag(WitnessScope.CustomContracts)
-                    ? AllowedContracts.Select(p => (JObject)p.ToString()).ToArray()
-                    : JObject.Null,
-                ["allowedgroups"] = Scopes.HasFlag(WitnessScope.CustomGroups)
-                    ? AllowedGroups.Select(p => (JObject)p.ToString()).ToArray()
-                    : JObject.Null,
             };
+
+            if (Scopes.HasFlag(WitnessScope.CustomContracts))
+                json["allowedcontracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
+            if (Scopes.HasFlag(WitnessScope.CustomGroups))
+                json["allowedgroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+            return json;
         }
 
         public static Signer FromJson(JObject json, byte addressVersion)
