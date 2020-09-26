@@ -126,7 +126,7 @@ namespace Neo.Network.P2P.Payloads
                 return false;
             if (Witness.VerificationScript.Length == 0)
             {
-                // If we don't have the verification script, it could be read from storage
+                // If we don't have the verification script, we can read it from the storage
                 ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
                 if (validators.Length <= ValidatorIndex)
                     return false;
