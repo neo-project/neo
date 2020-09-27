@@ -37,7 +37,7 @@ namespace Neo.Network.P2P
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
-
+        private uint StateRootSentIndex;
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
 
@@ -49,6 +49,7 @@ namespace Neo.Network.P2P
             this.pendingKnownHashes = new PendingKnownHashesCollection();
             this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
             this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.StateRootSentIndex = ProtocolSettings.Default.StateRootEnableIndex;
         }
 
         protected override void OnReceive(object message)
@@ -166,16 +167,21 @@ namespace Neo.Network.P2P
 
         private void OnGetStateRootsReceived(GetStateRootsPayload payload)
         {
+            var start_index = Math.Max(StateRootSentIndex, payload.StartIndex);
             var count = Math.Min(payload.Count, StateRootsPayload.MaxStateRootsCount);
+            var end_index = payload.StartIndex + count;
+            if (end_index <= start_index) return;
             var state_roots = new List<StateRoot>();
-            for (uint i = 0; i < count; i++)
+            var cache = Blockchain.Singleton.Store.GetStateRoots();
+            for (uint i = start_index; i < end_index; i++)
             {
-                var state = Blockchain.Singleton.GetStateRoot(payload.StartIndex + i);
+                var state = cache.TryGet(i);
                 if (state is null || state.Flag != StateRootVerifyFlag.Verified)
                     break;
                 state_roots.Add(state.StateRoot);
             }
             if (state_roots.Count == 0) return;
+            StateRootSentIndex += (uint)(start_index + state_roots.Count);
             Context.Parent.Tell(Message.Create("roots", StateRootsPayload.Create(state_roots.ToArray())));
         }
 
