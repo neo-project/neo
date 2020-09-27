@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        private bool ShouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
+        private bool ShouldRefreshCommittee(uint height) => height % ProtocolSettings.Default.CommitteeMembersCount == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {
@@ -154,7 +154,9 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Distribute GAS for committee
 
-            int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)ProtocolSettings.Default.CommitteeMembersCount);
+            int m = ProtocolSettings.Default.CommitteeMembersCount;
+            int n = ProtocolSettings.Default.ValidatorsCount;
+            int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             var committee = GetCommittee(engine.Snapshot);
             var pubkey = committee[index];
@@ -163,18 +165,16 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Record the cumulative reward of the voters of committee
 
-            var m = ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount;
-            var cindex = engine.Snapshot.PersistingBlock.Index % m % ProtocolSettings.Default.CommitteeMembersCount;
-            var votee = committee[cindex];
-            CandidateState candidate = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(votee))?.GetInteroperable<CandidateState>();
+            var factor = index < n ? 2 : 1;
+            CandidateState candidate = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubkey))?.GetInteroperable<CandidateState>();
             if (candidate?.Votes > 0)
             {
-                BigInteger voterSumRewardPerNEO = gasPerBlock * 100000000L / candidate.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
-                var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(votee);
+                BigInteger voterSumRewardPerNEO = factor * gasPerBlock * VoterRewardRatio * 100000000L *  m / (m + n) / 100 / candidate.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey);
                 var enumerator = engine.Snapshot.Storages.Find(voterRewardKeyPrefix.ToArray()).GetEnumerator();
                 if (enumerator.MoveNext())
                     voterSumRewardPerNEO += new BigInteger(enumerator.Current.Value.Value);
-                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(votee).AddBigEndian(engine.Snapshot.PersistingBlock.Index);
+                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).AddBigEndian(engine.Snapshot.PersistingBlock.Index);
                 engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem() { Value = voterSumRewardPerNEO.ToByteArray() });
             }
         }
