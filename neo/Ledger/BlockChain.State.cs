@@ -27,7 +27,7 @@ namespace Neo.Ledger
 
         public StateRootState GetStateRoot(uint index)
         {
-            return currentSnapshot.StateRoots.TryGet(index);
+            return Store.GetStateRoots().TryGet(index);
         }
 
         public bool GetStateProof(UInt256 root, StorageKey skey, out HashSet<byte[]> proof)
@@ -54,20 +54,18 @@ namespace Neo.Ledger
                 stateRootCache.Add(stateRoot.Index, stateRoot);
                 return RelayResultReason.Succeed;
             }
-            using (Snapshot snapshot = GetSnapshot())
+
+            while (stateRoot.Index <= Height)
             {
-                while (stateRoot.Index <= Height)
+                stateRootCache.Remove(stateRoot.Index);
+                if (!stateRoot.Verify(currentSnapshot)) break;
+                if (PersistCnStateRoot(stateRoot) == StateRootVerifyFlag.Invalid)
+                    break;
+                if (stateRoot.Index + 3 > HeaderHeight)
                 {
-                    stateRootCache.Remove(stateRoot.Index);
-                    if (!stateRoot.Verify(currentSnapshot)) break;
-                    if (PersistCnStateRoot(stateRoot) == StateRootVerifyFlag.Invalid)
-                        break;
-                    if (stateRoot.Index + 3 > HeaderHeight)
-                    {
-                        system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateRoot });
-                    }
-                    if (!stateRootCache.TryGetValue(stateRoot.Index + 1, out stateRoot)) break;
+                    system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = stateRoot });
                 }
+                if (!stateRootCache.TryGetValue(stateRoot.Index + 1, out stateRoot)) break;
             }
             return RelayResultReason.Succeed;
         }

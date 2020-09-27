@@ -284,6 +284,9 @@ namespace Neo.Network.P2P
             {
                 if (Blockchain.Singleton.ExpectStateRootIndex < Blockchain.Singleton.Height)
                 {
+                    var state_root_state = Blockchain.Singleton.GetStateRoot(Blockchain.Singleton.ExpectStateRootIndex);
+                    if (state_root_state is null || state_root_state.Flag == StateRootVerifyFlag.Invalid)
+                        return;
                     var start_index = Blockchain.Singleton.ExpectStateRootIndex;
                     var count = Math.Min(Blockchain.Singleton.Height - start_index, StateRootsPayload.MaxStateRootsCount);
                     StateRootSyncTime = DateTime.UtcNow;
