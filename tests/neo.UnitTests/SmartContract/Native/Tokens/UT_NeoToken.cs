@@ -418,7 +418,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 engine.Execute();
                 engine.State.Should().Be(VM.VMState.HALT);
 
-                var committee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
+                var committee = Blockchain.StandbyCommittee;
                 NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(25000000);
                 NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(25000000);
                 NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash.ToArray()).Should().Be(0);
@@ -677,7 +677,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.PersistingBlock = new Block { Index = 0 };
             Check_PostPersist(snapshot).Should().BeTrue();
 
-            var committee = NativeContract.NEO.GetCommittee(snapshot);
+            var committee = Blockchain.StandbyCommittee;
             var accountA = committee[0];
             var accountB = committee[ProtocolSettings.Default.CommitteeMembersCount - 1];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(accountA).ScriptHash).Should().Be(0);
