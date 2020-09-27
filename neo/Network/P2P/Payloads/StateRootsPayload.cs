@@ -7,7 +7,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class StateRootsPayload : ISerializable
     {
-        public const int MaxStateRootsCount = 2000;
+        public const int MaxStateRootsCount = 200;
 
         public StateRoot[] StateRoots;
 
