@@ -4,7 +4,6 @@ using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -22,67 +21,26 @@ namespace Neo.UnitTests.SmartContract
         {
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                InteropService.GetPrice(InteropService.Runtime.CheckWitness, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_00030000L);
+                ApplicationEngine.System_Runtime_CheckWitness.FixedPrice.Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
             byte[] SyscallSystemStorageGetContextHash = new byte[] { 0x68, 0x9b, 0xf6, 0x67, 0xce };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                InteropService.GetPrice(InteropService.Storage.GetContext, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_00000400L);
+                ApplicationEngine.System_Storage_GetContext.FixedPrice.Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
             byte[] SyscallSystemStorageGetHash = new byte[] { 0x68, 0x92, 0x5d, 0xe8, 0x31 };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                InteropService.GetPrice(InteropService.Storage.Get, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_01000000L);
-            }
-        }
-
-        [TestMethod]
-        public void ApplicationEngineVariablePrices()
-        {
-            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash00 = new byte[] { (byte)OpCode.PUSHDATA1, 0x01, 0x00, (byte)OpCode.PUSHDATA1, 0x02, 0x00, 0x00, (byte)OpCode.SYSCALL, 0xf6, 0x6c, 0xa5, 0x6e };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallContractCreateHash00);
-                debugger.StepInto(); // PUSHDATA1
-                debugger.StepInto(); // PUSHDATA1
-                InteropService.GetPrice(InteropService.Contract.Create, ae.CurrentContext.EvaluationStack, ae.Snapshot).Should().Be(0_00300000L);
-            }
-
-            // System.Storage.Put: e63f1884 (requires push key and value)
-            byte[] SyscallStoragePutHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0xe6, 0x3f, 0x18, 0x84 };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallStoragePutHash);
-                debugger.StepInto(); // push 03 (length 1)
-                debugger.StepInto(); // push 03 (length 1)
-                debugger.StepInto(); // push 00
-                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                act.Should().Throw<InvalidCastException>();
-            }
-
-            // System.Storage.PutEx: 73e19b3a (requires push key and value)
-            byte[] SyscallStoragePutExHash = new byte[] { (byte)OpCode.PUSH3, (byte)OpCode.PUSH3, (byte)OpCode.PUSH0, (byte)OpCode.SYSCALL, 0x73, 0xe1, 0x9b, 0x3a };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallStoragePutExHash);
-                debugger.StepInto(); // push 03 (length 1)
-                debugger.StepInto(); // push 03 (length 1)
-                debugger.StepInto(); // push 00
-                Action act = () => InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                act.Should().Throw<InvalidCastException>();
+                ApplicationEngine.System_Storage_Get.FixedPrice.Should().Be(0_01000000L);
             }
         }
 
@@ -107,7 +65,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -115,11 +73,8 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var defaultDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                defaultDataPrice.Should().Be(InteropService.Storage.GasPerByte * value.Length);
-                var expectedCost = defaultDataPrice + setupPrice;
                 debugger.Execute();
-                ae.GasConsumed.Should().Be(expectedCost);
+                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * value.Length);
             }
         }
 
@@ -144,7 +99,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine applicationEngine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {
                 Debugger debugger = new Debugger(applicationEngine);
                 applicationEngine.LoadScript(script);
@@ -152,11 +107,8 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = applicationEngine.GasConsumed;
-                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, applicationEngine.CurrentContext.EvaluationStack, applicationEngine.Snapshot);
-                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.Execute();
-                var expectedCost = reusedDataPrice + setupPrice;
-                applicationEngine.GasConsumed.Should().Be(expectedCost);
+                (applicationEngine.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice);
             }
         }
 
@@ -183,7 +135,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
@@ -191,12 +143,9 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
                 debugger.StepInto();
-                var expectedCost = reusedDataPrice + setupPrice;
                 debugger.StepInto();
-                ae.GasConsumed.Should().Be(expectedCost);
+                (ae.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice);
             }
         }
 
@@ -223,24 +172,20 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(skey, sItem);
             snapshot.Contracts.Add(script.ToScriptHash(), contractState);
 
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, testMode: true))
+            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(script);
-                debugger.StepInto(); //push key
                 debugger.StepInto(); //push value
+                debugger.StepInto(); //push key
+                debugger.StepInto(); //syscall Storage.GetContext
+                debugger.StepInto(); //syscall Storage.Put
+                debugger.StepInto(); //push value
+                debugger.StepInto(); //push key
                 debugger.StepInto(); //syscall Storage.GetContext
                 var setupPrice = ae.GasConsumed;
-                var incrementDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                incrementDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte);
-                debugger.StepInto(); // syscall Storage.Put
-
-                debugger.StepInto(); //push key
-                debugger.StepInto(); //push value
-                debugger.StepInto();
-                setupPrice = ae.GasConsumed;
-                var reusedDataPrice = InteropService.GetPrice(InteropService.Storage.Put, ae.CurrentContext.EvaluationStack, ae.Snapshot);
-                reusedDataPrice.Should().Be(1 * InteropService.Storage.GasPerByte); // = PUT basic fee
+                debugger.StepInto(); //syscall Storage.Put
+                (ae.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice); // = PUT basic fee
             }
         }
 
@@ -252,8 +197,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 scriptBuilder.EmitPush(value);
                 scriptBuilder.EmitPush(key);
-                scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-                scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+                scriptBuilder.EmitSysCall(ApplicationEngine.System_Storage_GetContext);
+                scriptBuilder.EmitSysCall(ApplicationEngine.System_Storage_Put);
             }
 
             return scriptBuilder.ToArray();
@@ -264,8 +209,8 @@ namespace Neo.UnitTests.SmartContract
             var scriptBuilder = new ScriptBuilder();
             scriptBuilder.EmitPush(value);
             scriptBuilder.EmitPush(key);
-            scriptBuilder.EmitSysCall(InteropService.Storage.GetContext);
-            scriptBuilder.EmitSysCall(InteropService.Storage.Put);
+            scriptBuilder.EmitSysCall(ApplicationEngine.System_Storage_GetContext);
+            scriptBuilder.EmitSysCall(ApplicationEngine.System_Storage_Put);
             return scriptBuilder.ToArray();
         }
     }

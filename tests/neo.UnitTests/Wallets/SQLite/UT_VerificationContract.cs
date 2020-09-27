@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.SQLite;
@@ -113,18 +114,13 @@ namespace Neo.UnitTests
                 Script = Neo.SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            contract1.Serialize(writer);
-            stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
-            stream.Read(byteArray, 0, (int)stream.Length);
+            byte[] byteArray = contract1.ToArray();
             byte[] script = Neo.SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey);
-            byte[] result = new byte[64];
-            result[20] = 0x01;
-            result[21] = 0x00;
-            result[22] = 0x29;
-            Array.Copy(script, 0, result, 23, 41);
+            byte[] result = new byte[44];
+            result[0] = 0x01;
+            result[1] = (byte)ContractParameterType.Signature;
+            result[2] = 0x29;
+            Array.Copy(script, 0, result, 3, 41);
             CollectionAssert.AreEqual(result, byteArray);
         }
 
@@ -142,7 +138,7 @@ namespace Neo.UnitTests
                 Script = Neo.SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
-            Assert.AreEqual(64, contract1.Size);
+            Assert.AreEqual(44, contract1.Size);
         }
     }
 }

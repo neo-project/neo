@@ -1,11 +1,13 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
+using System.Numerics;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -24,59 +26,105 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestInitialize()
         {
-            ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0);
+            testNativeContract.Initialize(ae);
+        }
 
-            testNativeContract.Initialize(ae).Should().BeTrue();
+        private class DummyNative : NativeContract
+        {
+            public override string Name => "Dummy";
+            public override int Id => 1;
 
-            ae = new ApplicationEngine(TriggerType.System, null, null, 0);
-            Action action = () => testNativeContract.Initialize(ae);
-            action.Should().Throw<InvalidOperationException>();
+            [ContractMethod(0, CallFlags.None)]
+            public void NetTypes(
+                    bool p1, sbyte p2, byte p3, short p4, ushort p5, int p6, uint p7, long p8, ulong p9, BigInteger p10,
+                    byte[] p11, string p12, IInteroperable p13, ISerializable p14, int[] p15, ContractParameterType p16,
+                    object p17)
+            { }
+
+            [ContractMethod(0, CallFlags.None)]
+            public void VMTypes(
+                    VM.Types.Boolean p1, VM.Types.Integer p2, VM.Types.ByteString p3, VM.Types.Buffer p4,
+                    VM.Types.Array p5, VM.Types.Struct p6, VM.Types.Map p7, VM.Types.StackItem p8
+                )
+            { }
+        }
+
+        [TestMethod]
+        public void TestToParameter()
+        {
+            var manifest = new DummyNative().Manifest;
+            var netTypes = manifest.Abi.GetMethod("netTypes");
+
+            Assert.AreEqual(netTypes.ReturnType, ContractParameterType.Void);
+            Assert.AreEqual(netTypes.Parameters[0].Type, ContractParameterType.Boolean);
+            Assert.AreEqual(netTypes.Parameters[1].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[2].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[3].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[4].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[5].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[6].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[7].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[8].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[9].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[10].Type, ContractParameterType.ByteArray);
+            Assert.AreEqual(netTypes.Parameters[11].Type, ContractParameterType.String);
+            Assert.AreEqual(netTypes.Parameters[12].Type, ContractParameterType.Array);
+            Assert.AreEqual(netTypes.Parameters[13].Type, ContractParameterType.ByteArray);
+            Assert.AreEqual(netTypes.Parameters[14].Type, ContractParameterType.Array);
+            Assert.AreEqual(netTypes.Parameters[15].Type, ContractParameterType.Integer);
+            Assert.AreEqual(netTypes.Parameters[16].Type, ContractParameterType.Any);
+
+            var vmTypes = manifest.Abi.GetMethod("vMTypes");
+
+            Assert.AreEqual(vmTypes.ReturnType, ContractParameterType.Void);
+            Assert.AreEqual(vmTypes.Parameters[0].Type, ContractParameterType.Boolean);
+            Assert.AreEqual(vmTypes.Parameters[1].Type, ContractParameterType.Integer);
+            Assert.AreEqual(vmTypes.Parameters[2].Type, ContractParameterType.ByteArray);
+            Assert.AreEqual(vmTypes.Parameters[3].Type, ContractParameterType.ByteArray);
+            Assert.AreEqual(vmTypes.Parameters[4].Type, ContractParameterType.Array);
+            Assert.AreEqual(vmTypes.Parameters[5].Type, ContractParameterType.Array);
+            Assert.AreEqual(vmTypes.Parameters[6].Type, ContractParameterType.Map);
+            Assert.AreEqual(vmTypes.Parameters[7].Type, ContractParameterType.Any);
+        }
+
+        [TestMethod]
+        public void TestGetContract()
+        {
+            Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Name));
+            Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Hash));
         }
 
         [TestMethod]
         public void TestInvoke()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-
-            ScriptBuilder sb1 = new ScriptBuilder();
-
-            sb1.EmitSysCall("null".ToInteropMethodHash());
-            engine1.LoadScript(sb1.ToArray());
-            testNativeContract.Invoke(engine1).Should().BeFalse();
-
-            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-
-            ScriptBuilder sb2 = new ScriptBuilder();
-            sb2.EmitSysCall("test".ToInteropMethodHash());
-            engine2.LoadScript(sb2.ToArray());
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0);
+            engine.LoadScript(testNativeContract.Script);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             VMArray args1 = new VMArray();
-            engine2.CurrentContext.EvaluationStack.Push(args1);
-            engine2.CurrentContext.EvaluationStack.Push(method1);
-            testNativeContract.Invoke(engine2).Should().BeFalse();
+            engine.CurrentContext.EvaluationStack.Push(args1);
+            engine.CurrentContext.EvaluationStack.Push(method1);
+            Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine));
 
             ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("onPersist"));
             VMArray args2 = new VMArray();
-            engine2.CurrentContext.EvaluationStack.Push(args2);
-            engine2.CurrentContext.EvaluationStack.Push(method2);
-            testNativeContract.Invoke(engine2).Should().BeTrue();
+            engine.CurrentContext.EvaluationStack.Push(args2);
+            engine.CurrentContext.EvaluationStack.Push(method2);
+            testNativeContract.Invoke(engine);
         }
 
         [TestMethod]
         public void TestOnPersistWithArgs()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine1 = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
-            VMArray args = new VMArray();
 
-            VM.Types.Boolean result1 = new VM.Types.Boolean(false);
-            testNativeContract.TestOnPersist(engine1, args).Should().Be(result1);
+            ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
+            Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestOnPersist(engine1));
 
-            ApplicationEngine engine2 = new ApplicationEngine(TriggerType.System, null, snapshot, 0);
-            VM.Types.Boolean result2 = new VM.Types.Boolean(true);
-            testNativeContract.TestOnPersist(engine2, args).Should().Be(result2);
+            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0);
+            testNativeContract.TestOnPersist(engine2);
         }
 
         [TestMethod]
@@ -89,13 +137,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
     public class TestNativeContract : NativeContract
     {
-        public override string ServiceName => "test";
+        public override string Name => "test";
 
         public override int Id => 0x10000006;
 
-        public StackItem TestOnPersist(ApplicationEngine engine, VMArray args)
+        public void TestOnPersist(ApplicationEngine engine)
         {
-            return OnPersist(engine, args);
+            OnPersist(engine);
         }
     }
 }

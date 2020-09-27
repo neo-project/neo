@@ -75,6 +75,12 @@ namespace Neo.Cryptography
             return ripemd160.ComputeHash(value);
         }
 
+        public static byte[] RIPEMD160(this ReadOnlySpan<byte> value)
+        {
+            byte[] source = value.ToArray();
+            return source.RIPEMD160();
+        }
+
         public static uint Murmur32(this byte[] value, uint seed)
         {
             using (Murmur3 murmur = new Murmur3(seed))
@@ -111,7 +117,7 @@ namespace Neo.Cryptography
         internal static bool Test(this BloomFilter filter, Transaction tx)
         {
             if (filter.Check(tx.Hash.ToArray())) return true;
-            if (tx.Witnesses.Any(p => filter.Check(p.ScriptHash.ToArray())))
+            if (tx.Signers.Any(p => filter.Check(p.Account.ToArray())))
                 return true;
             return false;
         }

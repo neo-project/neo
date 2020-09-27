@@ -1,43 +1,31 @@
-using Neo.Persistence;
-using Neo.VM;
+using Neo.Cryptography;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace Neo.SmartContract
 {
     public class InteropDescriptor
     {
-        public string Method { get; }
+        public string Name { get; }
         public uint Hash { get; }
-        internal Func<ApplicationEngine, bool> Handler { get; }
-        public long Price { get; }
-        public Func<EvaluationStack, StoreView, long> PriceCalculator { get; }
-        public TriggerType AllowedTriggers { get; }
+        internal MethodInfo Handler { get; }
+        public IReadOnlyList<InteropParameterDescriptor> Parameters { get; }
+        public long FixedPrice { get; }
         public CallFlags RequiredCallFlags { get; }
+        public bool AllowCallback { get; }
 
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-            : this(method, handler, allowedTriggers, requiredCallFlags)
+        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback)
         {
-            this.Price = price;
-        }
-
-        internal InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, Func<EvaluationStack, StoreView, long> priceCalculator, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-            : this(method, handler, allowedTriggers, requiredCallFlags)
-        {
-            this.PriceCalculator = priceCalculator;
-        }
-
-        private InteropDescriptor(string method, Func<ApplicationEngine, bool> handler, TriggerType allowedTriggers, CallFlags requiredCallFlags)
-        {
-            this.Method = method;
-            this.Hash = method.ToInteropMethodHash();
+            this.Name = name;
+            this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(name).Sha256(), 0);
             this.Handler = handler;
-            this.AllowedTriggers = allowedTriggers;
+            this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
+            this.FixedPrice = fixedPrice;
             this.RequiredCallFlags = requiredCallFlags;
-        }
-
-        public long GetPrice(EvaluationStack stack, StoreView snapshot)
-        {
-            return PriceCalculator is null ? Price : PriceCalculator(stack, snapshot);
+            this.AllowCallback = allowCallback;
         }
 
         public static implicit operator uint(InteropDescriptor descriptor)

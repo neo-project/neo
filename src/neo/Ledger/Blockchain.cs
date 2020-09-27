@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Akka.Configuration;
+using Akka.IO;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Actors;
@@ -26,16 +27,14 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
+        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
+        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
-        public const uint DecrementInterval = 2000000;
-        public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
-        public static readonly byte CommitteeMembersCount = (byte)ProtocolSettings.Default.StandbyCommittee.Length;
-        public static readonly byte ValidatorsCount = ProtocolSettings.Default.ValidatorsCount;
         public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
-        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[..ValidatorsCount];
+        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[0..ProtocolSettings.Default.ValidatorsCount];
 
         public static readonly Block GenesisBlock = new Block
         {
@@ -56,15 +55,16 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private readonly static Script onPersistNativeContractScript;
+        private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
+        private readonly IActorRef txrouter;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
-        private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
+        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
+        internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
         public IStore Store { get; }
@@ -89,19 +89,30 @@ namespace Neo.Ledger
         {
             GenesisBlock.RebuildMerkleRoot();
 
-            NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (NativeContract contract in contracts)
+                foreach (NativeContract contract in new NativeContract[] { NativeContract.GAS, NativeContract.NEO })
+                {
                     sb.EmitAppCall(contract.Hash, "onPersist");
-
-                onPersistNativeContractScript = sb.ToArray();
+                    sb.Emit(OpCode.DROP);
+                }
+                onPersistScript = sb.ToArray();
+            }
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                foreach (NativeContract contract in new NativeContract[] { NativeContract.NEO, NativeContract.Oracle })
+                {
+                    sb.EmitAppCall(contract.Hash, "postPersist");
+                    sb.Emit(OpCode.DROP);
+                }
+                postPersistScript = sb.ToArray();
             }
         }
 
         public Blockchain(NeoSystem system, IStore store)
         {
             this.system = system;
+            this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
             this.View = new ReadOnlyView(store);
@@ -158,15 +169,22 @@ namespace Neo.Ledger
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(InteropService.Native.Deploy);
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
                 script = sb.ToArray();
             }
             return new Transaction
             {
                 Version = 0,
                 Script = script,
-                Sender = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
                 SystemFee = 0,
+                Signers = new[]
+                {
+                    new Signer
+                    {
+                        Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
+                        Scopes = WitnessScope.None
+                    }
+                },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
@@ -256,13 +274,31 @@ namespace Neo.Ledger
 
         private void AddUnverifiedBlockToCache(Block block)
         {
-            if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
+            // Check if any block proposal for height `block.Index` exists
+            if (!block_cache_unverified.TryGetValue(block.Index, out var list))
             {
-                blocks = new LinkedList<Block>();
-                block_cache_unverified.Add(block.Index, blocks);
+                // There are no blocks, a new UnverifiedBlocksList is created and, consequently, the current block is added to the list
+                list = new UnverifiedBlocksList();
+                block_cache_unverified.Add(block.Index, list);
+            }
+            else
+            {
+                // Check if any block with the hash being added already exists on possible candidates to be processed
+                foreach (var unverifiedBlock in list.Blocks)
+                {
+                    if (block.Hash == unverifiedBlock.Hash)
+                        return;
+                }
+
+                if (!list.Nodes.Add(Sender))
+                {
+                    // Same index with different hash
+                    Sender.Tell(Tcp.Abort.Instance);
+                    return;
+                }
             }
 
-            blocks.AddLast(block);
+            list.Blocks.AddLast(block);
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -275,15 +311,10 @@ namespace Neo.Ledger
             {
                 if (View.ContainsTransaction(tx.Hash))
                     continue;
-                if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
-                    continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
-                // Verify the the transaction
-                if (tx.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
-                    continue;
                 // Add to the memory pool
-                MemPool.TryAdd(tx.Hash, tx);
+                MemPool.TryAdd(tx, currentSnapshot);
             }
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
@@ -292,146 +323,65 @@ namespace Neo.Ledger
 
         private void OnInventory(IInventory inventory, bool relay = true)
         {
-            RelayResult rr = new RelayResult
+            VerifyResult result = inventory switch
             {
-                Inventory = inventory,
-                Result = inventory switch
-                {
-                    Block block => OnNewBlock(block),
-                    Transaction transaction => OnNewTransaction(transaction),
-                    ConsensusPayload payload => OnNewConsensus(payload),
-                    _ => VerifyResult.Unknown
-                }
+                Block block => OnNewBlock(block),
+                Transaction transaction => OnNewTransaction(transaction),
+                _ => OnNewInventory(inventory)
             };
-            if (relay && rr.Result == VerifyResult.Succeed)
+            if (relay && result == VerifyResult.Succeed)
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
-            Sender.Tell(rr);
-            Context.System.EventStream.Publish(rr);
+            SendRelayResult(inventory, result);
         }
 
         private VerifyResult OnNewBlock(Block block)
         {
             if (block.Index <= Height)
                 return VerifyResult.AlreadyExists;
-            if (block_cache.ContainsKey(block.Hash))
-                return VerifyResult.AlreadyExists;
-            if (block.Index - 1 >= header_index.Count)
+            if (block.Index - 1 > Height)
             {
                 AddUnverifiedBlockToCache(block);
                 return VerifyResult.UnableToVerify;
             }
-            if (block.Index == header_index.Count)
+            if (block.Index == Height + 1)
             {
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
-            }
-            else
-            {
-                if (!block.Hash.Equals(header_index[(int)block.Index]))
-                    return VerifyResult.Invalid;
-            }
-            block_cache.TryAdd(block.Hash, block);
-            if (block.Index == Height + 1)
-            {
-                Block block_persist = block;
-                List<Block> blocksToPersistList = new List<Block>();
-                while (true)
-                {
-                    blocksToPersistList.Add(block_persist);
-                    if (block_persist.Index + 1 >= header_index.Count) break;
-                    UInt256 hash = header_index[(int)block_persist.Index + 1];
-                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
-                }
-
-                int blocksPersisted = 0;
-                foreach (Block blockToPersist in blocksToPersistList)
-                {
-                    block_cache_unverified.Remove(blockToPersist.Index);
-                    Persist(blockToPersist);
-
-                    // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                    uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
-
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
-                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
-                    // Increase in the rate of 1 block per second in configurations with faster blocks
-
-                    if (blockToPersist.Index + 100 >= header_index.Count)
-                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
-                }
+                block_cache.TryAdd(block.Hash, block);
+                block_cache_unverified.Remove(block.Index);
+                Persist(block);
                 SaveHeaderHashList();
-
-                if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
+                if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
                 {
-                    foreach (var unverifiedBlock in unverifiedBlocks)
+                    foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
                 }
-            }
-            else
-            {
-                if (block.Index + 100 >= header_index.Count)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
-                if (block.Index == header_index.Count)
-                {
-                    header_index.Add(block.Hash);
-                    using (SnapshotView snapshot = GetSnapshot())
-                    {
-                        snapshot.Blocks.Add(block.Hash, block.Header.Trim());
-                        snapshot.HeaderHashIndex.GetAndChange().Set(block);
-                        SaveHeaderHashList(snapshot);
-                        snapshot.Commit();
-                    }
-                    UpdateCurrentSnapshot();
-                }
+                // We can store the new block in block_cache and tell the new height to other nodes after Persist().
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
             }
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewConsensus(ConsensusPayload payload)
+        private VerifyResult OnNewInventory(IInventory inventory)
         {
-            if (!payload.Verify(currentSnapshot)) return VerifyResult.Invalid;
-            system.Consensus?.Tell(payload);
-            ConsensusRelayCache.Add(payload);
+            if (!inventory.Verify(currentSnapshot)) return VerifyResult.Invalid;
+            RelayCache.Add(inventory);
             return VerifyResult.Succeed;
-        }
-
-        private void OnNewHeaders(Header[] headers)
-        {
-            using (SnapshotView snapshot = GetSnapshot())
-            {
-                foreach (Header header in headers)
-                {
-                    if (header.Index - 1 >= header_index.Count) break;
-                    if (header.Index < header_index.Count) continue;
-                    if (!header.Verify(snapshot)) break;
-                    header_index.Add(header.Hash);
-                    snapshot.Blocks.Add(header.Hash, header.Trim());
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = header.Index;
-                }
-                SaveHeaderHashList(snapshot);
-                snapshot.Commit();
-            }
-            UpdateCurrentSnapshot();
-            system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
-            if (!MemPool.CanTransactionFitInPool(transaction)) return VerifyResult.OutOfMemory;
-            VerifyResult reason = transaction.Verify(currentSnapshot, MemPool.SendersFeeMonitor.GetSenderFee(transaction.Sender));
-            if (reason != VerifyResult.Succeed) return reason;
-            if (!MemPool.TryAdd(transaction.Hash, transaction)) return VerifyResult.OutOfMemory;
-            return VerifyResult.Succeed;
+            return MemPool.TryAdd(transaction, currentSnapshot);
         }
 
-        private void OnPersistCompleted(Block block)
+        private void OnPreverifyCompleted(PreverifyCompleted task)
         {
-            block_cache.Remove(block.PrevHash);
-            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
-            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            if (task.Result == VerifyResult.Succeed)
+                OnInventory(task.Transaction, task.Relay);
+            else
+                SendRelayResult(task.Transaction, task.Result);
         }
 
         protected override void OnReceive(object message)
@@ -444,23 +394,21 @@ namespace Neo.Ledger
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
                     break;
-                case Header[] headers:
-                    OnNewHeaders(headers);
-                    break;
                 case Block block:
                     OnInventory(block, false);
                     break;
-                case Transaction[] transactions:
-                    {
-                        // This message comes from a mempool's revalidation, already relayed
-                        foreach (var tx in transactions) OnInventory(tx, false);
-                        break;
-                    }
-                case Transaction transaction:
-                    OnInventory(transaction);
+                case Transaction tx:
+                    OnTransaction(tx, true);
                     break;
-                case ConsensusPayload payload:
-                    OnInventory(payload);
+                case Transaction[] transactions:
+                    // This message comes from a mempool's revalidation, already relayed
+                    foreach (var tx in transactions) OnTransaction(tx, false);
+                    break;
+                case IInventory inventory:
+                    OnInventory(inventory);
+                    break;
+                case PreverifyCompleted task:
+                    OnPreverifyCompleted(task);
                     break;
                 case Idle _:
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
@@ -469,24 +417,37 @@ namespace Neo.Ledger
             }
         }
 
+        private void OnTransaction(Transaction tx, bool relay)
+        {
+            if (ContainsTransaction(tx.Hash))
+                SendRelayResult(tx, VerifyResult.AlreadyExists);
+            else
+                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
+        }
+
         private void Persist(Block block)
         {
             using (SnapshotView snapshot = GetSnapshot())
             {
+                if (block.Index == header_index.Count)
+                {
+                    header_index.Add(block.Hash);
+                    snapshot.HeaderHashIndex.GetAndChange().Set(block);
+                }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
-                    {
-                        engine.LoadScript(onPersistNativeContractScript);
-                        if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                        ApplicationExecuted application_executed = new ApplicationExecuted(engine);
-                        Context.System.EventStream.Publish(application_executed);
-                        all_application_executed.Add(application_executed);
-                    }
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
+                    engine.LoadScript(onPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
+                StoreView clonedSnapshot = snapshot.Clone();
+                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
                     var state = new TransactionState
@@ -495,15 +456,20 @@ namespace Neo.Ledger
                         Transaction = tx
                     };
 
-                    snapshot.Transactions.Add(tx.Hash, state);
+                    clonedSnapshot.Transactions.Add(tx.Hash, state);
+                    clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
                         if (state.VMState == VMState.HALT)
                         {
-                            engine.Snapshot.Commit();
+                            clonedSnapshot.Commit();
+                        }
+                        else
+                        {
+                            clonedSnapshot = snapshot.Clone();
                         }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
@@ -511,10 +477,13 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
-                if (block.Index == header_index.Count)
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot))
                 {
-                    header_index.Add(block.Hash);
-                    snapshot.HeaderHashIndex.GetAndChange().Set(block);
+                    engine.LoadScript(postPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
@@ -540,7 +509,9 @@ namespace Neo.Ledger
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
-            OnPersistCompleted(block);
+            block_cache.Remove(block.PrevHash);
+            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
         protected override void PostStop()
@@ -578,6 +549,17 @@ namespace Neo.Ledger
             }
         }
 
+        private void SendRelayResult(IInventory inventory, VerifyResult result)
+        {
+            RelayResult rr = new RelayResult
+            {
+                Inventory = inventory,
+                Result = result
+            };
+            Sender.Tell(rr);
+            Context.System.EventStream.Publish(rr);
+        }
+
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
@@ -595,7 +577,6 @@ namespace Neo.Ledger
         {
             switch (message)
             {
-                case Header[] _:
                 case Block _:
                 case ConsensusPayload _:
                 case Terminated _:

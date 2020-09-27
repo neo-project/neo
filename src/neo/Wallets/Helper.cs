@@ -10,7 +10,12 @@ namespace Neo.Wallets
     {
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
         {
-            return Crypto.Sign(verifiable.GetHashData(), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
+            return Sign(verifiable, key, ProtocolSettings.Default.Magic);
+        }
+
+        public static byte[] Sign(this IVerifiable verifiable, KeyPair key, uint magic)
+        {
+            return Crypto.Sign(verifiable.GetHashData(magic), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
         }
 
         public static string ToAddress(this UInt160 scriptHash)

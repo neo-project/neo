@@ -3,6 +3,9 @@ using Akka.Event;
 using Microsoft.Extensions.Configuration;
 using Neo.Plugins;
 using System;
+using System.IO;
+using System.Reflection;
+using System.Text;
 
 namespace Neo
 {
@@ -17,6 +20,15 @@ namespace Neo
             }
         }
 
+        public static Encoding StrictUTF8 { get; }
+
+        static Utility()
+        {
+            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
+            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
+            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
+        }
+
         /// <summary>
         /// Load configuration with different Environment Variable
         /// </summary>
@@ -26,8 +38,27 @@ namespace Neo
         {
             var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
             var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
+
+            // Working directory
+            var file = Path.Combine(Environment.CurrentDirectory, configFile);
+            if (!File.Exists(file))
+            {
+                // EntryPoint folder
+                file = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), configFile);
+                if (!File.Exists(file))
+                {
+                    // neo.dll folder
+                    file = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), configFile);
+                    if (!File.Exists(file))
+                    {
+                        // default config
+                        return new ConfigurationBuilder().Build();
+                    }
+                }
+            }
+
             return new ConfigurationBuilder()
-                .AddJsonFile(configFile, true)
+                .AddJsonFile(file, true)
                 .Build();
         }
 

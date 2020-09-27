@@ -6,7 +6,6 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract
@@ -114,24 +113,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestToInteropMethodHash()
-        {
-            byte[] temp1 = Encoding.ASCII.GetBytes("AAAA");
-            byte[] temp2 = Neo.Cryptography.Helper.Sha256(temp1);
-            uint result = BitConverter.ToUInt32(temp2, 0);
-            Assert.AreEqual(result, Neo.SmartContract.Helper.ToInteropMethodHash("AAAA"));
-        }
-
-        [TestMethod]
-        public void TestToScriptHash()
-        {
-            byte[] temp1 = Encoding.ASCII.GetBytes("AAAA");
-            byte[] temp2 = Neo.Cryptography.Helper.Sha256(temp1);
-            uint result = BitConverter.ToUInt32(temp2, 0);
-            Assert.AreEqual(result, Neo.SmartContract.Helper.ToInteropMethodHash("AAAA"));
-        }
-
-        [TestMethod]
         public void TestVerifyWitnesses()
         {
             var snapshot1 = Blockchain.Singleton.GetSnapshot();
@@ -156,12 +137,36 @@ namespace Neo.UnitTests.SmartContract
             TrimmedBlock block3 = new TrimmedBlock();
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
-            Header header3 = new Header() { PrevHash = index3, Witness = new Witness { VerificationScript = new byte[0] } };
+            Header header3 = new Header()
+            {
+                PrevHash = index3,
+                Witness = new Witness
+                {
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
+                }
+            };
             snapshot3.Contracts.Add(UInt160.Zero, new ContractState()
             {
-                Manifest = TestUtils.CreateDefaultManifest(UInt160.Zero, "verify"),
+                Script = Array.Empty<byte>(),
+                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
+
+            // Smart contract verification
+
+            var contract = new ContractState()
+            {
+                Script = "11".HexToBytes(), // 17 PUSH1
+                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
+            };
+            snapshot3.Contracts.Add(contract.ScriptHash, contract);
+            var tx = new Extensions.Nep5NativeContractExtensions.ManualWitness(contract.ScriptHash)
+            {
+                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] } }
+            };
+
+            Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, snapshot3, 1000));
         }
     }
 }
