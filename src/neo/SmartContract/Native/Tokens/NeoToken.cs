@@ -158,8 +158,7 @@ namespace Neo.SmartContract.Native.Tokens
             int n = ProtocolSettings.Default.ValidatorsCount;
             int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            var committee = GetCommittee(engine.Snapshot);
-            var pubkey = committee[index];
+            var pubkey = GetCommitteeFromCache(engine.Snapshot).ElementAt(index);
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
