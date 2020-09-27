@@ -166,7 +166,8 @@ namespace Neo.SmartContract.Native.Tokens
 
             var factor = index < n ? 2 : 1;
             CandidateState candidate = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubkey))?.GetInteroperable<CandidateState>();
-            if (candidate?.Votes > 0)
+            if (candidate is null) return;
+            if (candidate.Registered && candidate.Votes > 0)
             {
                 BigInteger voterSumRewardPerNEO = factor * gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100 / candidate.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 var voterRewardKeyPrefix = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey);
