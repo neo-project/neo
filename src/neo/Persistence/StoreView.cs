@@ -70,7 +70,13 @@ namespace Neo.Persistence
 
         public Header GetHeader(UInt256 hash)
         {
-            return Blocks.TryGet(hash)?.Header;
+            TrimmedBlock state = Blocks.TryGet(hash);
+            if (state == null) return null;
+            if (state.Witness.VerificationScript.Length == 0)
+            {
+                state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]);
+            }
+            return state.Header;
         }
 
         public Transaction GetTransaction(UInt256 hash)
