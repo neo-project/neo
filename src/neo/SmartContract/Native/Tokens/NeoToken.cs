@@ -9,6 +9,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -123,7 +124,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Committee), new StorageItem(Blockchain.StandbyCommittee.ToByteArray()));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Committee), new StorageItem(Blockchain.StandbyCommittee.Select(p => new CommitteeState { PublicKey = p }).ToArray().ToByteArray()));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
 
             // Initialize economic parameters
@@ -158,18 +159,17 @@ namespace Neo.SmartContract.Native.Tokens
             int n = ProtocolSettings.Default.ValidatorsCount;
             int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            var pubkey = GetCommitteeFromCache(engine.Snapshot).ElementAt(index);
+            var committeeState = GetCommitteeFromCache(engine.Snapshot).ElementAt(index);
+            var pubkey = committeeState.PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
             // Record the cumulative reward of the voters of committee
 
             var factor = index < n ? 2 : 1;
-            CandidateState candidate = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubkey))?.GetInteroperable<CandidateState>();
-            if (candidate is null) return;
-            if (candidate.Registered && candidate.Votes > 0)
+            if (committeeState.Votes > 0)
             {
-                BigInteger voterSumRewardPerNEO = factor * gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100 / candidate.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                BigInteger voterSumRewardPerNEO = factor * gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100 / committeeState.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).AddBigEndian(engine.Snapshot.PersistingBlock.Index);
                 byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray();
                 (_, var item) = engine.Snapshot.Storages.FindRange(voterRewardKey.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
@@ -293,7 +293,7 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCommitteeFromCache(snapshot).OrderBy(p => p).ToArray();
+            return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
 
         public UInt160 GetCommitteeAddress(StoreView snapshot)
@@ -302,26 +302,26 @@ namespace Neo.SmartContract.Native.Tokens
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private IEnumerable<ECPoint> GetCommitteeFromCache(StoreView snapshot)
+        private IEnumerable<CommitteeState> GetCommitteeFromCache(StoreView snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetSerializableList<ECPoint>();
+            return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetSerializableList<CommitteeState>();
         }
 
         internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
         {
-            return ComputeCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+            return ComputeCommitteeMembers(snapshot).Select(p => p.PublicKey).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        private IEnumerable<ECPoint> ComputeCommitteeMembers(StoreView snapshot)
+        private IEnumerable<CommitteeState> ComputeCommitteeMembers(StoreView snapshot)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
             decimal VoterTurnout = votersCount / (decimal)TotalAmount;
             if (VoterTurnout < EffectiveVoterTurnout)
-                return Blockchain.StandbyCommittee;
+                return Blockchain.StandbyCommittee.Select(p => new CommitteeState { PublicKey = p });
             var candidates = GetCandidates(snapshot);
             if (candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
-                return Blockchain.StandbyCommittee;
-            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
+                return Blockchain.StandbyCommittee.Select(p => new CommitteeState { PublicKey = p });
+            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => new CommitteeState { PublicKey = p.PublicKey, Votes = p.Votes }).Take(ProtocolSettings.Default.CommitteeMembersCount);
         }
 
         [ContractMethod(1_00000000, CallFlags.AllowStates)]
@@ -329,6 +329,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             return GetCommitteeFromCache(snapshot)
                 .Take(ProtocolSettings.Default.ValidatorsCount)
+                .Select(p => p.PublicKey)
                 .OrderBy(p => p)
                 .ToArray();
         }
@@ -387,6 +388,26 @@ namespace Neo.SmartContract.Native.Tokens
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
                 return new Array(referenceCounter, this.Select(p => new Struct(referenceCounter, new StackItem[] { p.Index, p.GasPerBlock })));
+            }
+        }
+
+        private sealed class CommitteeState : ISerializable
+        {
+            public ECPoint PublicKey;
+            public BigInteger Votes = BigInteger.Zero;
+
+            public int Size => PublicKey.Size + sizeof(long);
+
+            public void Deserialize(BinaryReader reader)
+            {
+                PublicKey = reader.ReadSerializable<ECPoint>();
+                Votes = reader.ReadInt64();
+            }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                writer.Write(PublicKey);
+                writer.WriteVarInt((long)Votes);
             }
         }
     }
