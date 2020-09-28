@@ -123,8 +123,9 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot2 = Blockchain.Singleton.GetSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-            TrimmedBlock block2 = new TrimmedBlock();
+            TrimmedBlock block2 = new TrimmedBlock() { Witness = new Witness { VerificationScript = new byte[0] } };
             block2.NextConsensus = UInt160.Zero;
+            block2.PrevHash = Blockchain.GenesisBlock.Hash;
             snapshot2.Blocks.Add(index2, block2);
             Header header2 = new Header() { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
 
@@ -134,7 +135,8 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot3 = Blockchain.Singleton.GetSnapshot();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-            TrimmedBlock block3 = new TrimmedBlock();
+            TrimmedBlock block3 = new TrimmedBlock() { Witness = new Witness { VerificationScript = new byte[0] } };
+            block2.PrevHash = Blockchain.GenesisBlock.Hash;
             block3.NextConsensus = UInt160.Zero;
             snapshot3.Blocks.Add(index3, block3);
             Header header3 = new Header()
