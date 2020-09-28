@@ -12,6 +12,7 @@ namespace Neo.Persistence
         public const byte IX_CurrentBlock = 0xc0;
         public const byte IX_CurrentHeader = 0xc1;
         public const byte IX_ContractId = 0xc2;
+        public const byte IX_CachedScripts = 0xc3;
 
         /* Prefixes 0xf0 to 0xff are reserved for external use.
          *

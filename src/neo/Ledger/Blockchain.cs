@@ -436,6 +436,7 @@ namespace Neo.Ledger
                 }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
+                TrimmedBlock trimmedBlock = block.Trim();
                 if (block.Index > 0)
                 {
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
@@ -444,8 +445,16 @@ namespace Neo.Ledger
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
+
+                    var verificator = block.GetScriptHashesForVerifying(snapshot)[0];
+                    if (block.Witness.VerificationScript.Length > 0 && !snapshot.CachedScripts.Contains(verificator))
+                    {
+                        // Create validator contract in order to save bytes
+                        snapshot.CachedScripts.Add(verificator, block.Witness.VerificationScript);
+                    }
+                    trimmedBlock.Witness.VerificationScript = Array.Empty<byte>();
                 }
-                snapshot.Blocks.Add(block.Hash, block.Trim());
+                snapshot.Blocks.Add(block.Hash, trimmedBlock);
                 StoreView clonedSnapshot = snapshot.Clone();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)

@@ -15,6 +15,7 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
+        public abstract DataCache<UInt160, ByteArraySerializable> CachedScripts { get; }
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
@@ -36,6 +37,7 @@ namespace Neo.Persistence
             Transactions.Commit();
             Contracts.Commit();
             Storages.Commit();
+            CachedScripts.Commit();
             HeaderHashList.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
@@ -59,6 +61,7 @@ namespace Neo.Persistence
             TrimmedBlock state = Blocks.TryGet(hash);
             if (state == null) return null;
             if (!state.IsBlock) return null;
+            state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]);
             return state.GetBlock(Transactions);
         }
 
