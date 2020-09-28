@@ -61,7 +61,10 @@ namespace Neo.Persistence
             TrimmedBlock state = Blocks.TryGet(hash);
             if (state == null) return null;
             if (!state.IsBlock) return null;
-            state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]);
+            if (state.Witness.VerificationScript.Length == 0)
+            {
+                state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]);
+            }
             return state.GetBlock(Transactions);
         }
 
