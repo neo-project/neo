@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using System;
 
 namespace Neo.Persistence
 {
@@ -63,7 +64,7 @@ namespace Neo.Persistence
             if (!state.IsBlock) return null;
             if (state.Witness.VerificationScript.Length == 0)
             {
-                state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]);
+                state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]) ?? Array.Empty<byte>();
             }
             return state.GetBlock(Transactions);
         }
@@ -74,7 +75,7 @@ namespace Neo.Persistence
             if (state == null) return null;
             if (state.Witness.VerificationScript.Length == 0)
             {
-                state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]);
+                state.Witness.VerificationScript = CachedScripts.TryGet(state.GetScriptHashesForVerifying(this)[0]) ?? Array.Empty<byte>();
             }
             return state.Header;
         }
