@@ -291,7 +291,7 @@ namespace Neo.UnitTests.SmartContract
             engine.BinarySerialize(100).ToHexString().Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
 
             //Larger than MaxItemSize
-            Assert.ThrowsException<InvalidOperationException>(() => engine.BinarySerialize(new byte[1024 * 1024 * 2]));
+            Assert.ThrowsException<FormatException>(() => engine.BinarySerialize(new byte[1024 * 1024 * 2]));
 
             //NotSupportedException
             Assert.ThrowsException<NotSupportedException>(() => engine.BinarySerialize(new InteropInterface(new object())));
