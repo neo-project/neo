@@ -27,7 +27,6 @@ namespace Neo.UnitTests.SmartContract
                 Methods = Array.Empty<ContractMethodDescriptor>(),
                 Hash = file.Script.ToScriptHash()
             };
-            file.CheckSum = NefFile.ComputeChecksum(file);
         }
 
         [TestMethod]
@@ -47,19 +46,6 @@ namespace Neo.UnitTests.SmartContract
                 action.Should().Throw<FormatException>();
             }
 
-            file.CheckSum = 0;
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                ((ISerializable)file).Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
-                ISerializable newFile = new NefFile();
-                Action action = () => newFile.Deserialize(reader);
-                action.Should().Throw<FormatException>();
-            }
-
-            file.CheckSum = NefFile.ComputeChecksum(file);
             file.Abi.Hash = new byte[] { 0x01 }.ToScriptHash();
             using (MemoryStream ms = new MemoryStream(1024))
             using (BinaryWriter writer = new BinaryWriter(ms))
@@ -78,14 +64,13 @@ namespace Neo.UnitTests.SmartContract
             newFile1.Version.Should().Be(file.Version);
             newFile1.Compiler.Should().Be(file.Compiler);
             newFile1.ScriptHash.Should().Be(file.ScriptHash);
-            newFile1.CheckSum.Should().Be(file.CheckSum);
             newFile1.Script.Should().BeEquivalentTo(file.Script);
         }
 
         [TestMethod]
         public void TestGetSize()
         {
-            file.Size.Should().Be(4 + 32 + 16 + file.Abi.ToJson().ToString().GetVarSize() + 4 + 4);
+            file.Size.Should().Be(4 + 32 + 16 + file.Abi.ToJson().ToString().GetVarSize() + 4);
         }
 
         [TestMethod]
@@ -105,7 +90,6 @@ namespace Neo.UnitTests.SmartContract
             };
 
             file.Abi.Hash = file.Script.ToScriptHash();
-            file.CheckSum = NefFile.ComputeChecksum(file);
 
             var data = file.ToArray();
             file = data.AsSerializable<NefFile>();
@@ -129,8 +113,7 @@ namespace Neo.UnitTests.SmartContract
                     Events = Array.Empty<ContractEventDescriptor>(),
                     Methods = Array.Empty<ContractMethodDescriptor>(),
                     Hash = new byte[1024 * 1024].ToScriptHash()
-                },
-                CheckSum = 0
+                }
             };
 
             // Wrong compiler
@@ -150,14 +133,6 @@ namespace Neo.UnitTests.SmartContract
 
             file.Script = new byte[1024 * 1024];
             data = file.ToArray();
-
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
-
-            // Wrong checksum
-
-            file.Script = new byte[1024];
-            data = file.ToArray();
-            file.CheckSum = NefFile.ComputeChecksum(file) + 1;
 
             Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
         }
