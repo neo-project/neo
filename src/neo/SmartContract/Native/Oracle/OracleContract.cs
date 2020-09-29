@@ -153,7 +153,7 @@ namespace Neo.SmartContract.Native.Oracle
                 Filter = filter,
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
-                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
+                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength, engine.MaxStackSize, engine.MaxItemSize)
             }));
 
             //Add the id to the IdList

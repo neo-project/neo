@@ -132,16 +132,16 @@ namespace Neo.SmartContract
             return stack_temp.Peek();
         }
 
-        public static byte[] Serialize(StackItem item, uint maxSize)
+        public static byte[] Serialize(StackItem item, uint maxSize, uint maxArraySize, uint maxItemSize)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
-            Serialize(item, writer, maxSize);
+            Serialize(item, writer, maxSize, maxArraySize, maxItemSize);
             writer.Flush();
             return ms.ToArray();
         }
 
-        private static void Serialize(StackItem item, BinaryWriter writer, uint maxSize)
+        private static void Serialize(StackItem item, BinaryWriter writer, uint maxSize, uint maxArraySize, uint maxItemSize)
         {
             List<CompoundType> serialized = new List<CompoundType>();
             Stack<StackItem> unserialized = new Stack<StackItem>();
@@ -158,13 +158,24 @@ namespace Neo.SmartContract
                         writer.Write(item.GetBoolean());
                         break;
                     case Integer _:
+                        {
+                            var span = item.GetSpan();
+                            if (span.Length > Integer.MaxSize) throw new FormatException();
+                            writer.WriteVarBytes(item.GetSpan());
+                            break;
+                        }
                     case ByteString _:
                     case Buffer _:
-                        writer.WriteVarBytes(item.GetSpan());
-                        break;
+                        {
+                            var span = item.GetSpan();
+                            if (span.Length > maxItemSize) throw new FormatException();
+                            writer.WriteVarBytes(span);
+                            break;
+                        }
                     case Array array:
                         if (serialized.Any(p => ReferenceEquals(p, array)))
                             throw new NotSupportedException();
+                        if (array.Count > maxArraySize) throw new FormatException();
                         serialized.Add(array);
                         writer.WriteVarInt(array.Count);
                         for (int i = array.Count - 1; i >= 0; i--)
@@ -173,6 +184,7 @@ namespace Neo.SmartContract
                     case Map map:
                         if (serialized.Any(p => ReferenceEquals(p, map)))
                             throw new NotSupportedException();
+                        if (map.Count > maxArraySize) throw new FormatException();
                         serialized.Add(map);
                         writer.WriteVarInt(map.Count);
                         foreach (var pair in map.Reverse())
