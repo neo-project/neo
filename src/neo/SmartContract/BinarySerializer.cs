@@ -161,7 +161,7 @@ namespace Neo.SmartContract
                         {
                             var span = item.GetSpan();
                             if (span.Length > Integer.MaxSize) throw new FormatException();
-                            writer.WriteVarBytes(item.GetSpan());
+                            writer.WriteVarBytes(span);
                             break;
                         }
                     case ByteString _:
