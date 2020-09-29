@@ -662,22 +662,27 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             // Initialize block
             snapshot.Storages.Add(CreateStorageKey(1), new StorageItem(new BigInteger(30000000)));
 
+            ECPoint[] standbyCommittee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
+            CachedCommittee cachedCommittee = new CachedCommittee();
             for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
             {
-                ECPoint member = Blockchain.StandbyCommittee[i];
+                ECPoint member = standbyCommittee[i];
                 snapshot.Storages.Add(new KeyBuilder(-1, 33).Add(member), new StorageItem(new CandidateState()
                 {
                     Registered = true,
                     Votes = 200 * 10000
                 }));
+                cachedCommittee.Add((member, 200 * 10000));
             }
+            snapshot.Storages[new KeyBuilder(-1, 14)].Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096);
+
             var item = snapshot.Storages.GetAndChange(new KeyBuilder(-1, 1), () => new StorageItem());
             item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
 
             snapshot.PersistingBlock = new Block { Index = 0 };
             Check_PostPersist(snapshot).Should().BeTrue();
 
-            var committee = Blockchain.StandbyCommittee;
+            var committee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
             var accountA = committee[0];
             var accountB = committee[ProtocolSettings.Default.CommitteeMembersCount - 1];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(accountA).ScriptHash).Should().Be(0);
