@@ -58,11 +58,7 @@ namespace Neo.Consensus
                     ViewNumber = p.OriginalViewNumber,
                     Timestamp = p.Timestamp
                 },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
+                InvocationScript = p.InvocationScript,
             }).ToArray();
         }
 
@@ -79,11 +75,7 @@ namespace Neo.Consensus
                     ViewNumber = p.ViewNumber,
                     Signature = p.Signature
                 },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
+                InvocationScript = p.InvocationScript,
             }).ToArray();
         }
 
@@ -99,11 +91,7 @@ namespace Neo.Consensus
                 BlockIndex = payload.BlockIndex,
                 ValidatorIndex = context.Block.ConsensusData.PrimaryIndex,
                 ConsensusMessage = PrepareRequestMessage,
-                Witness = new Witness
-                {
-                    InvocationScript = compact.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[context.Block.ConsensusData.PrimaryIndex])
-                }
+                InvocationScript = compact.InvocationScript,
             };
         }
 
@@ -122,11 +110,7 @@ namespace Neo.Consensus
                     ViewNumber = ViewNumber,
                     PreparationHash = preparationHash
                 },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
+                InvocationScript = p.InvocationScript,
             }).ToArray();
         }
 

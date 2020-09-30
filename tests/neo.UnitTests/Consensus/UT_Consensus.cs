@@ -473,7 +473,7 @@ namespace Neo.UnitTests.Consensus
             {
                 return;
             }
-            payload.Witness = sc.GetWitnesses()[0];
+            payload.InvocationScript = sc.GetWitnesses()[0].InvocationScript;
         }
 
         [TestMethod]
@@ -909,11 +909,7 @@ namespace Neo.UnitTests.Consensus
                 BlockIndex = context.Block.Index,
                 ValidatorIndex = validatorIndex,
                 ConsensusMessage = message,
-                Witness = new Witness
-                {
-                    InvocationScript = witnessInvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[validatorIndex])
-                }
+                InvocationScript = witnessInvocationScript,
             };
         }
 

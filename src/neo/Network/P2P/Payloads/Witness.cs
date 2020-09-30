@@ -8,6 +8,9 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Witness : ISerializable
     {
+        public const int MaxInvocationScript = 663;
+        public const int MaxVerificationScript = 361;
+
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
@@ -34,9 +37,9 @@ namespace Neo.Network.P2P.Payloads
         {
             // This is designed to allow a MultiSig 10/10 (around 1003 bytes) ~1024 bytes
             // Invocation = 10 * 64 + 10 = 650 ~ 664  (exact is 653)
-            InvocationScript = reader.ReadVarBytes(663);
+            InvocationScript = reader.ReadVarBytes(MaxInvocationScript);
             // Verification = 10 * 33 + 10 = 340 ~ 360   (exact is 351)
-            VerificationScript = reader.ReadVarBytes(361);
+            VerificationScript = reader.ReadVarBytes(MaxVerificationScript);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

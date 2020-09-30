@@ -224,7 +224,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            payload.Witness = sc.GetWitnesses()[0];
+            payload.InvocationScript = sc.GetWitnesses()[0].InvocationScript;
         }
 
         /// <summary>

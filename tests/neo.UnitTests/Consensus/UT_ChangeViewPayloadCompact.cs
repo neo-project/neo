@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Consensus
             {
                 Data = new ChangeView() { Timestamp = 1, ViewNumber = 3 }.ToArray(),
                 ValidatorIndex = 2,
-                Witness = new Witness() { InvocationScript = new byte[] { 1, 2, 3 } }
+                InvocationScript = new byte[] { 1, 2, 3 }
             });
 
             Assert.AreEqual(test.Timestamp, clone.Timestamp);

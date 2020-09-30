@@ -38,7 +38,7 @@ namespace Neo.Consensus
                     ViewNumber = message.ViewNumber,
                     ValidatorIndex = payload.ValidatorIndex,
                     Signature = message.Signature,
-                    InvocationScript = payload.Witness.InvocationScript
+                    InvocationScript = payload.InvocationScript
                 };
             }
 

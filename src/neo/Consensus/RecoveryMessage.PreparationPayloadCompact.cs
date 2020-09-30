@@ -29,7 +29,7 @@ namespace Neo.Consensus
                 return new PreparationPayloadCompact
                 {
                     ValidatorIndex = payload.ValidatorIndex,
-                    InvocationScript = payload.Witness.InvocationScript
+                    InvocationScript = payload.InvocationScript
                 };
             }
 
