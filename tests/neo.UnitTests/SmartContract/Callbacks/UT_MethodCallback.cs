@@ -42,7 +42,7 @@ namespace Neo.UnitTests.SmartContract.Callbacks
                 },
                 Script = new byte[] { 1, 2, 3 },
             };
-            contract.Manifest.Abi.Hash = contract.ScriptHash;
+            contract.Manifest.Hash = contract.ScriptHash;
             engine.LoadScript(contract.Script);
             snapshot.Contracts.Add(contract.ScriptHash, contract);
 

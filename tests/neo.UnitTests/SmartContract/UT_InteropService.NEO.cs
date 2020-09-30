@@ -144,7 +144,7 @@ namespace Neo.UnitTests.SmartContract
             var manifest_zeroLength = new byte[] { };
             Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(script, manifest_zeroLength));
 
-            manifest.Abi.Hash = script.ToScriptHash();
+            manifest.Hash = script.ToScriptHash();
             engine.CreateContract(script, manifest.ToJson().ToByteArray(false));
 
             var snapshot = Blockchain.Singleton.GetSnapshot();

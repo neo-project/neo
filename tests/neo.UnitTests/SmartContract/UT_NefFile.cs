@@ -24,8 +24,7 @@ namespace Neo.UnitTests.SmartContract
             file.Abi = new ContractAbi()
             {
                 Events = Array.Empty<ContractEventDescriptor>(),
-                Methods = Array.Empty<ContractMethodDescriptor>(),
-                Hash = file.Script.ToScriptHash()
+                Methods = Array.Empty<ContractMethodDescriptor>()
             };
         }
 
@@ -46,24 +45,10 @@ namespace Neo.UnitTests.SmartContract
                 action.Should().Throw<FormatException>();
             }
 
-            file.Abi.Hash = new byte[] { 0x01 }.ToScriptHash();
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                ((ISerializable)file).Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
-                ISerializable newFile = new NefFile();
-                Action action = () => newFile.Deserialize(reader);
-                action.Should().Throw<FormatException>();
-            }
-
-            file.Abi.Hash = file.Script.ToScriptHash();
             var data = file.ToArray();
             var newFile1 = data.AsSerializable<NefFile>();
             newFile1.Version.Should().Be(file.Version);
             newFile1.Compiler.Should().Be(file.Compiler);
-            newFile1.ScriptHash.Should().Be(file.ScriptHash);
             newFile1.Script.Should().BeEquivalentTo(file.Script);
         }
 
@@ -84,19 +69,15 @@ namespace Neo.UnitTests.SmartContract
                 Abi = new ContractAbi()
                 {
                     Events = Array.Empty<ContractEventDescriptor>(),
-                    Methods = Array.Empty<ContractMethodDescriptor>(),
-                    Hash = new byte[] { 0x01, 0x02, 0x03 }.ToScriptHash()
+                    Methods = Array.Empty<ContractMethodDescriptor>()
                 }
             };
-
-            file.Abi.Hash = file.Script.ToScriptHash();
 
             var data = file.ToArray();
             file = data.AsSerializable<NefFile>();
 
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
             Assert.AreEqual(new Version(1, 2, 3, 4), file.Version);
-            Assert.AreEqual(file.Script.ToScriptHash(), file.ScriptHash);
             CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script);
         }
 
@@ -111,8 +92,7 @@ namespace Neo.UnitTests.SmartContract
                 Abi = new ContractAbi()
                 {
                     Events = Array.Empty<ContractEventDescriptor>(),
-                    Methods = Array.Empty<ContractMethodDescriptor>(),
-                    Hash = new byte[1024 * 1024].ToScriptHash()
+                    Methods = Array.Empty<ContractMethodDescriptor>()
                 }
             };
 
@@ -124,15 +104,7 @@ namespace Neo.UnitTests.SmartContract
 
             file.Compiler = "";
             file.Script = new byte[(1024 * 1024) + 1];
-            file.Abi.Hash = file.Script.ToScriptHash();
             var data = file.ToArray();
-
-            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
-
-            // Wrong script hash
-
-            file.Script = new byte[1024 * 1024];
-            data = file.ToArray();
 
             Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
         }

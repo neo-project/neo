@@ -45,11 +45,6 @@ namespace Neo.SmartContract
         /// </summary>
         public byte[] Script { get; set; }
 
-        /// <summary>
-        /// Script Hash
-        /// </summary>
-        public UInt160 ScriptHash => Abi.Hash;
-
         private const int StaticSize =
             sizeof(uint) +      // Magic
             32 +                // Compiler
@@ -86,11 +81,6 @@ namespace Neo.SmartContract
             Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             Abi = ContractAbi.FromJson(JObject.Parse(reader.ReadVarString()));
             Script = reader.ReadVarBytes(1024 * 1024);
-
-            if (Script.ToScriptHash() != Abi.Hash)
-            {
-                throw new FormatException("Abi hash doesn't match with the script");
-            }
         }
     }
 }

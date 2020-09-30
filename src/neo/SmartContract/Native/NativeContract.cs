@@ -62,12 +62,12 @@ namespace Neo.SmartContract.Native
             }
             this.Manifest = new ContractManifest
             {
+                Hash = Hash,
                 Groups = System.Array.Empty<ContractGroup>(),
                 Features = ContractFeatures.NoProperty,
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
-                    Hash = Hash,
                     Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },

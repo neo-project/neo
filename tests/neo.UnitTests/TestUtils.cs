@@ -22,12 +22,12 @@ namespace Neo.UnitTests
         {
             return new ContractManifest()
             {
+                Hash = hash,
                 Groups = new ContractGroup[0],
                 Features = ContractFeatures.NoProperty,
                 SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
-                    Hash = hash,
                     Events = new ContractEventDescriptor[0],
                     Methods = new ContractMethodDescriptor[0]
                 },

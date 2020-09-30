@@ -84,7 +84,7 @@ namespace Neo.SmartContract
                     Script = script.ToArray(),
                     Manifest = contract.Manifest
                 };
-                contract.Manifest.Abi.Hash = hash_new;
+                contract.Manifest.Hash = hash_new;
                 Snapshot.Contracts.Add(hash_new, contract);
                 Snapshot.Contracts.Delete(CurrentScriptHash);
             }

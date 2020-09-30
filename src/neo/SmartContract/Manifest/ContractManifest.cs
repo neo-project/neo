@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Contract hash
         /// </summary>
-        public UInt160 Hash => Abi.Hash;
+        public UInt160 Hash { get; set; }
 
         /// <summary>
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
@@ -115,6 +115,7 @@ namespace Neo.SmartContract.Manifest
         {
             return new JObject
             {
+                ["hash"] = Hash.ToString(),
                 ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
                 ["features"] = new JObject
                 {
@@ -138,6 +139,7 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractManifest
             {
+                Hash = Hash,
                 Groups = Groups.Select(p => p.Clone()).ToArray(),
                 Features = Features,
                 SupportedStandards = SupportedStandards[..],
@@ -167,6 +169,7 @@ namespace Neo.SmartContract.Manifest
 
         private void DeserializeFromJson(JObject json)
         {
+            Hash = UInt160.Parse(json["hash"].AsString());
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
             Features = ContractFeatures.NoProperty;
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
@@ -185,7 +188,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool IsValid(UInt160 hash)
         {
-            if (!Abi.Hash.Equals(hash)) return false;
+            if (!Hash.Equals(hash)) return false;
             return Groups.All(u => u.IsValid(hash));
         }
     }
