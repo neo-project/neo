@@ -13,8 +13,8 @@ namespace Neo.SmartContract
     /// | Magic      | 4 bytes   | Magic header                                               |
     /// | Compiler   | 32 bytes  | Compiler used                                              |
     /// | Version    | 16 bytes  | Compiler version (Mayor, Minor, Build, Version)            |
-    /// | Abi        | Varbytes  | Abi file                                                   |
     /// +------------+-----------+------------------------------------------------------------+
+    /// | Abi        | Var bytes | Abi file                                                   |
     /// | Script     | Var bytes | Var bytes for the payload                                  |
     /// +------------+-----------+------------------------------------------------------------+
     /// </summary>
