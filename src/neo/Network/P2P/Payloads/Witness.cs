@@ -12,8 +12,17 @@ namespace Neo.Network.P2P.Payloads
         public const int MaxVerificationScript = 361;
 
         public byte[] InvocationScript;
-        public byte[] VerificationScript;
+        private byte[] _VerificationScript;
 
+        public byte[] VerificationScript
+        {
+            get => _VerificationScript;
+            set
+            {
+                _VerificationScript = value;
+                _scriptHash = null;
+            }
+        }
         internal long GasConsumed { get; set; }
 
         private UInt160 _scriptHash;

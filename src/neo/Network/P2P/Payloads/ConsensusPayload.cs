@@ -105,9 +105,8 @@ namespace Neo.Network.P2P.Payloads
             ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
-            var script = Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]);
-            _witness.VerificationScript = script;
-            return new[] { script.ToScriptHash() };
+            _witness.VerificationScript = Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]);
+            return new[] { _witness.ScriptHash };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
