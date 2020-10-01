@@ -132,7 +132,7 @@ namespace Neo.UnitTests.Network.P2P
                 Nonce = 1,
                 Version = 0,
                 Attributes = new TransactionAttribute[0],
-                Script = new byte[75],
+                Script = new byte[83],
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 Witnesses = new Witness[0],
             };

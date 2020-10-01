@@ -99,7 +99,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(63);
+            uut.Size.Should().Be(55);
         }
 
         [TestMethod]
@@ -179,8 +179,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 Assert.AreEqual(2000810, verificationGas);
-                Assert.AreEqual(347000, sizeGas);
-                Assert.AreEqual(2347810, tx.NetworkFee);
+                Assert.AreEqual(339000l, sizeGas);
+                Assert.AreEqual(2339810u, tx.NetworkFee);
             }
         }
 
@@ -221,7 +221,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsNull(tx.Witnesses);
 
                 // check pre-computed network fee (already guessing signature sizes)
-                tx.NetworkFee.Should().Be(1244390u);
+                tx.NetworkFee.Should().Be(1236390u);
 
                 // ----
                 // Sign
@@ -263,12 +263,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // ------------------
                 // check tx_size cost
                 // ------------------
-                Assert.AreEqual(244, tx.Size);
+                Assert.AreEqual(236, tx.Size);
 
                 // will verify tx size, step by step
 
                 // Part I
-                Assert.AreEqual(25, Transaction.HeaderSize);
+                Assert.AreEqual(17, Transaction.HeaderSize);
                 // Part II
                 Assert.AreEqual(1, tx.Attributes.GetVarSize());
                 Assert.AreEqual(0, tx.Attributes.Length);
@@ -280,14 +280,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Part IV
                 Assert.AreEqual(110, tx.Witnesses.GetVarSize());
                 // I + II + III + IV
-                Assert.AreEqual(25 + 22 + 1 + 86 + 110, tx.Size);
+                Assert.AreEqual(17 + 22 + 1 + 86 + 110, tx.Size);
 
                 Assert.AreEqual(1000, NativeContract.Policy.GetFeePerByte(snapshot));
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
 
                 // final check: verification_cost and tx_size
-                Assert.AreEqual(244000, sizeGas);
-                Assert.AreEqual(1000390, verificationGas);
+                Assert.AreEqual(236000, sizeGas);
+                Assert.AreEqual(1000390u, verificationGas);
 
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
@@ -374,7 +374,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1244390, verificationGas + sizeGas);
+                Assert.AreEqual(1236390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -461,7 +461,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1265390, verificationGas + sizeGas);
+                Assert.AreEqual(1257390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -551,7 +551,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1265390, verificationGas + sizeGas);
+                Assert.AreEqual(1257390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -693,7 +693,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1285390, verificationGas + sizeGas);
+                Assert.AreEqual(1277390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -752,6 +752,29 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void Transaction_TotalFee()
+        {
+            Transaction txSimple = new Transaction
+            {
+                Version = 0x00,
+                SystemFee = uint.MaxValue,
+                NetworkFee = uint.MaxValue,
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = new[]{
+                    new Signer
+                    {
+                        Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
+                        Scopes = WitnessScope.Global
+                    }
+                },
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = new Witness[0] { }
+            };
+
+            Assert.AreEqual(8589934590, txSimple.TotalFee);
+        }
+
+        [TestMethod]
         public void Transaction_Reverify_Hashes_Length_Unequal_To_Witnesses_Length()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -801,8 +824,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             sTx.ToHexString().Should().Be(
                 "00" + // version
                 "04030201" + // nonce
-                "00e1f50500000000" + // system fee (1 GAS)
-                "0100000000000000" + // network fee (1 satoshi)
+                "00e1f505" + // system fee (1 GAS)
+                "01000000" + // network fee (1 satoshi)
                 "04030201" + // timelimit 
                 "01000000000000000000000000000000000000000000" + // empty signer
                 "00" + // no attributes
@@ -864,7 +887,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("000403020100e1f505000000000100000000000000040302010209080706050403020100090807060504030201008009080706050403020100090807060504030201000100011100");
+            sTx.ToHexString().Should().Be("000403020100e1f50501000000040302010209080706050403020100090807060504030201008009080706050403020100090807060504030201000100011100");
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
@@ -1043,7 +1066,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1244390, verificationGas + sizeGas);
+                Assert.AreEqual(1236390, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -1067,8 +1090,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0xe17382d26702bde77b00a9f23ea156b77c418764cbc45b2692088b5fde0336e3");
-            jObj["size"].AsNumber().Should().Be(84);
+            jObj["hash"].AsString().Should().Be("0xdd6b3a38fa10e65037d5648c0c2a6cbc0e7fbf0d0565bb7d5bb6f4cc8f173994");
+            jObj["size"].AsNumber().Should().Be(76);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["netfee"].AsString().Should().Be("0");

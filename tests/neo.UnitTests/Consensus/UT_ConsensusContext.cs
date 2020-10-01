@@ -44,6 +44,7 @@ namespace Neo.UnitTests.Consensus
                 Validators = _validatorKeys.Select(u => u.PublicKey).ToArray()
             };
             _context.Reset(0);
+            _context.Snapshot.Storages.Add(new StorageKey() { Id = NativeContract.Policy.Id, Key = new byte[] { 17 } }, new StorageItem(ushort.MaxValue));
         }
 
         [TestCleanup]
@@ -96,23 +97,24 @@ namespace Neo.UnitTests.Consensus
         [TestMethod]
         public void TestMaxBlockSytemFee()
         {
-            var tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2);
+            var snapshot = _context.Snapshot;
+            var tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(snapshot) / 2);
 
             // Less than MaxBlockSystemFee
             _context.EnsureMaxBlockLimitation(new Transaction[] { tx1 });
             EnsureContext(_context, new Transaction[] { tx1 });
 
             // Equal MaxBlockSystemFee
-            tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 + 1);
-            var tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 1);
+            tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(snapshot) / 2 + 1);
+            var tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(snapshot) / 2 - 1);
 
             _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2 });
             EnsureContext(_context, new Transaction[] { tx1, tx2 });
 
             // Exceed MaxBlockSystemFee
-            tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 + 3);
-            tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 3);
-            var tx3 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(_context.Snapshot) / 2 - 4);
+            tx1 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(snapshot) / 2 + 3);
+            tx2 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(snapshot) / 2 - 3);
+            var tx3 = CreateTransactionWithSytemFee(NativeContract.Policy.GetMaxBlockSystemFee(snapshot) / 2 - 4);
 
             _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2, tx3 });
             EnsureContext(_context, new Transaction[] { tx1, tx2 });
