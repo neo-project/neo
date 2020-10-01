@@ -86,7 +86,7 @@ namespace Neo.SmartContract
                 if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
                     throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
 
-                UInt160 hash_new = nef?.Script.ToScriptHash();
+                UInt160 hash_new = nef.Script.ToScriptHash();
                 if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
                     throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
                 contract = new ContractState
