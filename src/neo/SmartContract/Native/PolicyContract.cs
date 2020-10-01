@@ -22,6 +22,8 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
 
+        private const int MaxBlockedAccounts = 1_000;
+
         public PolicyContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
@@ -63,7 +65,7 @@ namespace Neo.SmartContract.Native
         public UInt160[] GetBlockedAccounts(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
+                ?.GetSerializableList<UInt160>(MaxBlockedAccounts).ToArray()
                 ?? Array.Empty<UInt160>();
         }
 
@@ -72,7 +74,7 @@ namespace Neo.SmartContract.Native
             if (hashes.Length == 0) return false;
 
             var blockedList = snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
+                ?.GetSerializableList<UInt160>(MaxBlockedAccounts).ToArray()
                 ?? Array.Empty<UInt160>();
 
             if (blockedList.Length > 0)
@@ -132,8 +134,10 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
+
+            List<UInt160> accounts = storage.GetSerializableList<UInt160>(MaxBlockedAccounts);
             if (accounts.Contains(account)) return false;
+            if ((accounts.Count + 1) > MaxBlockedAccounts) throw new ArgumentException("Maximum number of blocked accounts exceeded");
             engine.Snapshot.Storages.GetAndChange(key);
             accounts.Add(account);
             accounts.Sort();
@@ -147,7 +151,7 @@ namespace Neo.SmartContract.Native
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
             StorageItem storage = engine.Snapshot.Storages.TryGet(key);
             if (storage is null) return false;
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
+            List<UInt160> accounts = storage.GetSerializableList<UInt160>(MaxBlockedAccounts);
             int index = accounts.IndexOf(account);
             if (index < 0) return false;
             engine.Snapshot.Storages.GetAndChange(key);

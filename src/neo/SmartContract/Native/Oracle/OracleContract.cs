@@ -1,12 +1,12 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Designate;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         public IEnumerable<OracleRequest> GetRequestsByUrl(StoreView snapshot, string url)
         {
-            IdList list = snapshot.Storages.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
+            var list = snapshot.Storages.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetSerializableList<SerializableWrapper<ulong>>();
             if (list is null) yield break;
             foreach (ulong id in list)
                 yield return snapshot.Storages[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>();
@@ -102,12 +102,12 @@ namespace Neo.SmartContract.Native.Oracle
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
-                IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
+                var list = engine.Snapshot.Storages.GetAndChange(key).GetSerializableList<SerializableWrapper<ulong>>();
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= NativeContract.Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
@@ -157,7 +157,11 @@ namespace Neo.SmartContract.Native.Oracle
             }));
 
             //Add the id to the IdList
-            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
+            var list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new byte[1]))
+                .GetSerializableList<SerializableWrapper<ulong>>();
+            list.Add(id);
+            if (list.Count > 10_000)
+                throw new InvalidOperationException("There are a lot of pending responses for this url");
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]
@@ -165,20 +169,6 @@ namespace Neo.SmartContract.Native.Oracle
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             return tx?.GetAttribute<OracleResponse>() != null;
-        }
-
-        private class IdList : List<ulong>, IInteroperable
-        {
-            public void FromStackItem(StackItem stackItem)
-            {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                    Add((ulong)item.GetInteger());
-            }
-
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
-            {
-                return new VM.Types.Array(referenceCounter, this.Select(p => (Integer)p));
-            }
         }
     }
 }
