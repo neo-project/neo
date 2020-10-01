@@ -16,22 +16,22 @@ namespace Neo.Ledger
         public void AddTransaction(Transaction tx)
         {
             if (senderFee.TryGetValue(tx.Sender, out var value))
-                senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
+                senderFee[tx.Sender] = value + tx.TotalFee;
             else
-                senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
+                senderFee.Add(tx.Sender, tx.TotalFee);
         }
 
         public bool CheckTransaction(Transaction tx, StoreView snapshot)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
-            BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
+            BigInteger fee = tx.TotalFee + totalSenderFeeFromPool;
             return balance >= fee;
         }
 
         public void RemoveTransaction(Transaction tx)
         {
-            if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
+            if ((senderFee[tx.Sender] -= tx.TotalFee) == 0) senderFee.Remove(tx.Sender);
         }
     }
 }

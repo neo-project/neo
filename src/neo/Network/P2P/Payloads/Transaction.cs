@@ -27,8 +27,8 @@ namespace Neo.Network.P2P.Payloads
 
         private byte version;
         private uint nonce;
-        private long sysfee;
-        private long netfee;
+        private uint sysfee;
+        private uint netfee;
         private uint validUntilBlock;
         private Signer[] _signers;
         private TransactionAttribute[] attributes;
@@ -38,8 +38,8 @@ namespace Neo.Network.P2P.Payloads
         public const int HeaderSize =
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
-            sizeof(long) +  //SystemFee
-            sizeof(long) +  //NetworkFee
+            sizeof(uint) +  //SystemFee
+            sizeof(uint) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
         private Dictionary<Type, TransactionAttribute[]> _attributesCache;
@@ -70,10 +70,12 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
+        public long TotalFee => netfee + (long)sysfee;
+
         /// <summary>
         /// Distributed to consensus nodes.
         /// </summary>
-        public long NetworkFee
+        public uint NetworkFee
         {
             get => netfee;
             set { netfee = value; _hash = null; }
@@ -123,7 +125,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Fee to be burned.
         /// </summary>
-        public long SystemFee
+        public uint SystemFee
         {
             get => sysfee;
             set { sysfee = value; _hash = null; }
@@ -189,11 +191,8 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
-            SystemFee = reader.ReadInt64();
-            if (SystemFee < 0) throw new FormatException();
-            NetworkFee = reader.ReadInt64();
-            if (NetworkFee < 0) throw new FormatException();
-            if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
+            SystemFee = reader.ReadUInt32();
+            NetworkFee = reader.ReadUInt32();
             ValidUntilBlock = reader.ReadUInt32();
             Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
             Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();

@@ -352,16 +352,20 @@ namespace Neo.Wallets
                     {
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'", engine.FaultException);
                     }
-                    tx.SystemFee = engine.GasConsumed;
+                    if (engine.GasConsumed > uint.MaxValue)
+                    {
+                        throw new InvalidOperationException($"The fee {engine.GasConsumed} it's more than the maximum allowed");
+                    }
+                    tx.SystemFee = (uint)engine.GasConsumed;
                 }
 
                 tx.NetworkFee = CalculateNetworkFee(snapshot, tx);
-                if (value >= tx.SystemFee + tx.NetworkFee) return tx;
+                if (value >= tx.TotalFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public long CalculateNetworkFee(StoreView snapshot, Transaction tx)
+        public uint CalculateNetworkFee(StoreView snapshot, Transaction tx)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
@@ -430,7 +434,9 @@ namespace Neo.Wallets
                 }
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            return networkFee;
+            if (networkFee < 0 || networkFee > uint.MaxValue)
+                throw new InvalidOperationException($"The fee {networkFee} it's more than the maximum allowed");
+            return (uint)networkFee;
         }
 
         public bool Sign(ContractParametersContext context)

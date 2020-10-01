@@ -88,7 +88,7 @@ namespace Neo.UnitTests.Ledger
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
-            mock.Object.NetworkFee = fee;
+            mock.Object.NetworkFee = checked((uint)fee);
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
             mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
             mock.Object.Witnesses = new[]
@@ -113,7 +113,7 @@ namespace Neo.UnitTests.Ledger
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns((StoreView snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
-            mock.Object.NetworkFee = fee;
+            mock.Object.NetworkFee = checked((uint)fee);
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
             mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
             mock.Object.Witnesses = new[]

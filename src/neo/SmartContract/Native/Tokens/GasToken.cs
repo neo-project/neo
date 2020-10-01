@@ -26,10 +26,10 @@ namespace Neo.SmartContract.Native.Tokens
         {
             base.OnPersist(engine);
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
-                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                Burn(engine, tx.Sender, tx.TotalFee);
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
-            Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
+            Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => (long)p.NetworkFee));
         }
     }
 }

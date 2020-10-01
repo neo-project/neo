@@ -241,7 +241,7 @@ namespace Neo.Consensus
         /// </summary>
         internal long GetExpectedBlockSystemFee()
         {
-            return Transactions.Values.Sum(u => u.SystemFee);  // Sum Txs
+            return Transactions.Values.Sum(u => (long)u.SystemFee);  // Sum Txs
         }
 
         /// <summary>

@@ -32,8 +32,8 @@ namespace Neo.UnitTests.Ledger
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
-            mock.Object.NetworkFee = networkFee;
-            mock.Object.SystemFee = systemFee;
+            mock.Object.NetworkFee = checked((uint)networkFee);
+            mock.Object.SystemFee = checked((uint)systemFee);
             mock.Object.Signers = new[] { new Signer { Account = UInt160.Zero } };
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
             mock.Object.Witnesses = new[]

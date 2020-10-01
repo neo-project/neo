@@ -133,7 +133,7 @@ namespace Neo.UnitTests.Ledger
             {
                 Nonce = (uint)TestRandom.Next(),
                 Script = overrideScriptBytes ?? new byte[0],
-                NetworkFee = networkFee,
+                NetworkFee = checked((uint)networkFee),
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = Array.Empty<Signer>(),
                 Witnesses = new[]

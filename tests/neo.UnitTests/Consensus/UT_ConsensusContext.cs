@@ -148,7 +148,7 @@ namespace Neo.UnitTests.Consensus
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],
-                SystemFee = fee,
+                SystemFee = checked((uint)fee),
                 ValidUntilBlock = int.MaxValue,
                 Version = 0,
                 Witnesses = new Witness[0],
