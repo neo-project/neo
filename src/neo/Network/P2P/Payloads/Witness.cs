@@ -8,6 +8,17 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Witness : ISerializable
     {
+        /// <summary>
+        /// This is designed to allow a MultiSig 21/11 (committee)
+        /// Invocation = 11 * (64 + 2) = 726
+        /// </summary>
+        private const int MaxInvocationScript = 744;
+
+        /// <summary>
+        /// Verification = m + (PUSH_PubKey * 21) + length + null + syscall = 1 + ((2 + 33) * 21) + 2 + 1 + 5 = 744
+        /// </summary>
+        private const int MaxVerificationScript = 760;
+
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
@@ -32,11 +43,8 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            // This is designed to allow a MultiSig 21/11 (committee)
-            // Invocation = 11 * (64 + 2) = 726
-            InvocationScript = reader.ReadVarBytes(744);
-            // Verification = m + (PUSH_PubKey * 21) + length + null + syscall = 1 + ((2 + 33) * 21) + 2 + 1 + 5 = 744
-            VerificationScript = reader.ReadVarBytes(760);
+            InvocationScript = reader.ReadVarBytes(MaxInvocationScript);
+            VerificationScript = reader.ReadVarBytes(MaxVerificationScript);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
