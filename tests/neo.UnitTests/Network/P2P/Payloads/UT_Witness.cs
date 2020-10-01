@@ -100,18 +100,20 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void MaxSize_Error()
         {
-            var witness = PrepareDummyWitness(21, 12);
+            var witness = new Witness
+            {
+                InvocationScript = new byte[1025],
+                VerificationScript = new byte[10]
+            };
 
             // Check max size
 
-            Assert.IsTrue(witness.Size > 1024);
             Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
 
-            witness = PrepareDummyWitness(22, 11);
-
             // Check max size
 
-            Assert.IsTrue(witness.Size > 1024);
+            witness.InvocationScript = new byte[10];
+            witness.VerificationScript = new byte[1025];
             Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
         }
 
