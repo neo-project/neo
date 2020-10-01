@@ -15,6 +15,7 @@ namespace Neo.Ledger
         public int Id;
         public byte[] Script;
         public ContractManifest Manifest;
+        public ContractAbi Abi;
 
         public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
         public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
@@ -32,7 +33,7 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => sizeof(int) + Script.GetVarSize() + Manifest.Size;
+        int ISerializable.Size => sizeof(int) + Script.GetVarSize() + Abi.Size + Manifest.Size;
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -40,7 +41,8 @@ namespace Neo.Ledger
             {
                 Id = Id,
                 Script = Script,
-                Manifest = Manifest.Clone()
+                Abi = Abi.Clone(),
+                Manifest = Manifest.Clone(),
             };
         }
 
@@ -48,6 +50,7 @@ namespace Neo.Ledger
         {
             Id = reader.ReadInt32();
             Script = reader.ReadVarBytes();
+            Abi = reader.ReadSerializable<ContractAbi>();
             Manifest = reader.ReadSerializable<ContractManifest>();
         }
 
@@ -55,6 +58,7 @@ namespace Neo.Ledger
         {
             Id = replica.Id;
             Script = replica.Script;
+            Abi = replica.Abi.Clone();
             Manifest = replica.Manifest.Clone();
         }
 
@@ -67,6 +71,7 @@ namespace Neo.Ledger
         {
             writer.Write(Id);
             writer.WriteVarBytes(Script);
+            writer.Write(Abi);
             writer.Write(Manifest);
         }
 
@@ -76,13 +81,14 @@ namespace Neo.Ledger
             json["id"] = Id;
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
+            json["abi"] = Abi.ToJson();
             json["manifest"] = Manifest.ToJson();
             return json;
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Script, Manifest.ToString(), HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { Script, Abi.ToString(), Manifest.ToString(), HasStorage, Payable });
         }
     }
 }

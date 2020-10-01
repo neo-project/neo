@@ -23,7 +23,8 @@ namespace Neo.UnitTests.Ledger
             contract = new ContractState
             {
                 Script = script,
-                Manifest = manifest
+                Manifest = manifest,
+                Abi = TestUtils.CreateDefaultAbi("main", ContractParameterType.Any)
             };
         }
 
@@ -84,7 +85,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             ISerializable newContract = contract;
-            newContract.Size.Should().Be(265);
+            newContract.Size.Should().Be(318);
         }
 
         [TestMethod]

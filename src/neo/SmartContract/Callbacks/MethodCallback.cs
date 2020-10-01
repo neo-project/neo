@@ -22,7 +22,7 @@ namespace Neo.SmartContract.Callbacks
             ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
             if (currentManifest != null && !currentManifest.CanCall(this.contract.Manifest, method))
                 throw new InvalidOperationException();
-            this.method = this.contract.Manifest.Abi.Methods.First(p => p.Name == method);
+            this.method = this.contract.Abi.Methods.First(p => p.Name == method);
         }
 
         public override void LoadContext(ApplicationEngine engine, Array args)

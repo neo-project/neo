@@ -13,11 +13,10 @@ namespace Neo.UnitTests.SmartContract
         {
             var contract = new DeployedContract(new ContractState()
             {
-                Manifest = new Neo.SmartContract.Manifest.ContractManifest()
+                Manifest = new Neo.SmartContract.Manifest.ContractManifest(),
+                Abi = new Neo.SmartContract.Manifest.ContractAbi()
                 {
-                    Abi = new Neo.SmartContract.Manifest.ContractAbi()
-                    {
-                        Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
+                    Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
                          {
                              new Neo.SmartContract.Manifest.ContractMethodDescriptor()
                              {
@@ -25,7 +24,6 @@ namespace Neo.UnitTests.SmartContract
                                   Parameters=new Neo.SmartContract.Manifest.ContractParameterDefinition[0]
                              }
                          }
-                    }
                 },
                 Script = new byte[] { 1, 2, 3 }
             });
@@ -40,11 +38,10 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsException<ArgumentNullException>(() => new DeployedContract(null));
             Assert.ThrowsException<NotSupportedException>(() => new DeployedContract(new ContractState()
             {
-                Manifest = new Neo.SmartContract.Manifest.ContractManifest()
+                Manifest = new Neo.SmartContract.Manifest.ContractManifest(),
+                Abi = new Neo.SmartContract.Manifest.ContractAbi()
                 {
-                    Abi = new Neo.SmartContract.Manifest.ContractAbi()
-                    {
-                        Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
+                    Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
                          {
                              new Neo.SmartContract.Manifest.ContractMethodDescriptor()
                              {
@@ -52,7 +49,6 @@ namespace Neo.UnitTests.SmartContract
                                   Parameters=new Neo.SmartContract.Manifest.ContractParameterDefinition[0]
                              }
                          }
-                    }
                 },
                 Script = new byte[] { 1, 2, 3 }
             }));

@@ -50,11 +50,6 @@ namespace Neo.SmartContract.Manifest
         public string[] SupportedStandards { get; set; }
 
         /// <summary>
-        /// For technical details of ABI, please refer to NEP-3: NeoContract ABI. (https://github.com/neo-project/proposals/blob/master/nep-3.mediawiki)
-        /// </summary>
-        public ContractAbi Abi { get; set; }
-
-        /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
         public ContractPermission[] Permissions { get; set; }
@@ -123,7 +118,6 @@ namespace Neo.SmartContract.Manifest
                     ["payable"] = Features.HasFlag(ContractFeatures.Payable)
                 },
                 ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
-                ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
                 ["trusts"] = Trusts.ToJson(),
                 ["safemethods"] = SafeMethods.ToJson(),
@@ -143,7 +137,6 @@ namespace Neo.SmartContract.Manifest
                 Groups = Groups.Select(p => p.Clone()).ToArray(),
                 Features = Features,
                 SupportedStandards = SupportedStandards[..],
-                Abi = Abi.Clone(),
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
                 SafeMethods = SafeMethods,
@@ -175,7 +168,6 @@ namespace Neo.SmartContract.Manifest
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
             SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
-            Abi = ContractAbi.FromJson(json["abi"]);
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());

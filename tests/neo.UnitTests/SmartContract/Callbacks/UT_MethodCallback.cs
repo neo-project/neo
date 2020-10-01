@@ -31,14 +31,14 @@ namespace Neo.UnitTests.SmartContract.Callbacks
                     Permissions = new ContractPermission[0],
                     Groups = new ContractGroup[0],
                     Trusts = WildcardContainer<UInt160>.Create(),
-                    Abi = new ContractAbi()
+                },
+                Abi = new ContractAbi()
+                {
+                    Methods = new ContractMethodDescriptor[]
                     {
-                        Methods = new ContractMethodDescriptor[]
-                        {
-                            new ContractMethodDescriptor(){ Name="test", Parameters=new ContractParameterDefinition[0]}
-                        },
-                        Events = new ContractEventDescriptor[0],
+                        new ContractMethodDescriptor(){ Name="test", Parameters=new ContractParameterDefinition[0]}
                     },
+                    Events = new ContractEventDescriptor[0],
                 },
                 Script = new byte[] { 1, 2, 3 },
             };

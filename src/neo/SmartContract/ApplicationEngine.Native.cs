@@ -19,6 +19,7 @@ namespace Neo.SmartContract
                 {
                     Id = contract.Id,
                     Script = contract.Script,
+                    Abi = contract.Abi,
                     Manifest = contract.Manifest
                 });
                 contract.Initialize(this);

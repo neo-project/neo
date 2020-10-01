@@ -395,9 +395,9 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() * 2;
 
                     // Check verify cost
-                    ContractMethodDescriptor verify = contract.Manifest.Abi.GetMethod("verify");
+                    ContractMethodDescriptor verify = contract.Abi.GetMethod("verify");
                     if (verify is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
-                    ContractMethodDescriptor init = contract.Manifest.Abi.GetMethod("_initialize");
+                    ContractMethodDescriptor init = contract.Abi.GetMethod("_initialize");
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
                     ExecutionContext context = engine.LoadScript(contract.Script, CallFlags.None, verify.Offset);
                     if (init != null) engine.LoadContext(context.Clone(init.Offset), false);

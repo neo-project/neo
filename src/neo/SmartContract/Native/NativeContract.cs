@@ -34,6 +34,7 @@ namespace Neo.SmartContract.Native
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
+        public ContractAbi Abi { get; }
 
         protected NativeContract()
         {
@@ -66,15 +67,15 @@ namespace Neo.SmartContract.Native
                 Groups = System.Array.Empty<ContractGroup>(),
                 Features = ContractFeatures.NoProperty,
                 SupportedStandards = new string[0],
-                Abi = new ContractAbi()
-                {
-                    Events = System.Array.Empty<ContractEventDescriptor>(),
-                    Methods = descriptors.ToArray()
-                },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
                 SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
                 Extra = null
+            };
+            this.Abi = new ContractAbi()
+            {
+                Events = System.Array.Empty<ContractEventDescriptor>(),
+                Methods = descriptors.ToArray()
             };
             contractsList.Add(this);
             contractsNameDictionary.Add(Name, this);

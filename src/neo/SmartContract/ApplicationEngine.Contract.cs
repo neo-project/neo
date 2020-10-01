@@ -28,22 +28,29 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
-        protected internal void CreateContract(byte[] script, byte[] manifest)
+        protected internal void CreateContract(byte[] nefFile, byte[] manifest)
         {
-            if (script.Length == 0 || script.Length > MaxContractLength)
-                throw new ArgumentException($"Invalid Script Length: {script.Length}");
+            if (nefFile.Length == 0)
+                throw new ArgumentException($"Invalid NefFile");
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
-            AddGas(StoragePrice * (script.Length + manifest.Length));
+            NefFile nef = nefFile.AsSerializable<NefFile>();
+            if (nef.Script.Length > MaxContractLength)
+                throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
+            if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
+                throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
 
-            UInt160 hash = script.ToScriptHash();
+            AddGas(StoragePrice * (nef.Script.Length + nef.Abi.Length + manifest.Length));
+
+            UInt160 hash = nef.Script.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
             contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
-                Script = script.ToArray(),
+                Script = nef.Script.ToArray(),
+                Abi = nef.Abi,
                 Manifest = ContractManifest.Parse(manifest)
             };
 
@@ -57,31 +64,36 @@ namespace Neo.SmartContract
 
             // Execute _deploy
 
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
+            ContractMethodDescriptor md = contract.Abi.GetMethod("_deploy");
             if (md != null)
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
         }
 
-        protected internal void UpdateContract(byte[] script, byte[] manifest)
+        protected internal void UpdateContract(byte[] nefFile, byte[] manifest)
         {
-            if (script is null && manifest is null) throw new ArgumentException();
+            if (nefFile is null && manifest is null) throw new ArgumentException();
 
-            AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0));
+            NefFile nef = nefFile?.AsSerializable<NefFile>();
+            AddGas(StoragePrice * (nef is null ? manifest.Length : nef.Script.Length + nef.Abi.Length + (manifest?.Length ?? 0)));
 
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {CurrentScriptHash}");
 
-            if (script != null)
+            if (nef?.Script != null)
             {
-                if (script.Length == 0 || script.Length > MaxContractLength)
-                    throw new ArgumentException($"Invalid Script Length: {script.Length}");
-                UInt160 hash_new = script.ToScriptHash();
+                if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
+                    throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
+                if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
+                    throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
+
+                UInt160 hash_new = nef?.Script.ToScriptHash();
                 if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
                     throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
                 contract = new ContractState
                 {
                     Id = contract.Id,
-                    Script = script.ToArray(),
+                    Script = nef?.Script.ToArray(),
+                    Abi = nef.Abi,
                     Manifest = contract.Manifest
                 };
                 contract.Manifest.Hash = hash_new;
@@ -99,9 +111,9 @@ namespace Neo.SmartContract
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
                     throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
             }
-            if (script != null)
+            if (nef?.Script != null)
             {
-                ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
+                ContractMethodDescriptor md = contract.Abi.GetMethod("_deploy");
                 if (md != null)
                     CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
             }
@@ -136,7 +148,7 @@ namespace Neo.SmartContract
 
             ContractState contract = Snapshot.Contracts.TryGet(contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            ContractMethodDescriptor md = contract.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
 
             ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
@@ -180,7 +192,7 @@ namespace Neo.SmartContract
                     context_new.EvaluationStack.Push(args[i]);
             }
 
-            method = contract.Manifest.Abi.GetMethod("_initialize");
+            method = contract.Abi.GetMethod("_initialize");
             if (method != null) LoadContext(context_new.Clone(method.Offset));
         }
 

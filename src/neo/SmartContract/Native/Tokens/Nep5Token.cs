@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native.Tokens
             Manifest.Features = ContractFeatures.HasStorage;
             Manifest.SupportedStandards = new[] { "NEP-5" };
 
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            var events = new List<ContractEventDescriptor>(Abi.Events)
             {
                 new ContractEventDescriptor
                 {
@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native.Tokens
                 }
             };
 
-            Manifest.Abi.Events = events.ToArray();
+            Abi.Events = events.ToArray();
         }
 
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)

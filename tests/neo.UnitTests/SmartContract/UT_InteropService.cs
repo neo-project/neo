@@ -52,7 +52,8 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.Contracts.Add(scriptHash2, new ContractState()
                 {
                     Script = script.ToArray(),
-                    Manifest = TestUtils.CreateManifest(scriptHash2, "test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
+                    Manifest = TestUtils.CreateDefaultManifest(scriptHash2),
+                    Abi = TestUtils.CreateDefaultAbi("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
                 });
             }
 
@@ -214,7 +215,8 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Manifest = TestUtils.CreateManifest(scriptA.ToArray().ToScriptHash(), "test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
+                Manifest = TestUtils.CreateDefaultManifest(scriptA.ToArray().ToScriptHash()),
+                Abi = TestUtils.CreateDefaultAbi("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
                 Script = scriptA.ToArray()
             };
             engine = GetEngine(true, true, false);

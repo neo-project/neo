@@ -26,11 +26,6 @@ namespace Neo.UnitTests
                 Groups = new ContractGroup[0],
                 Features = ContractFeatures.NoProperty,
                 SupportedStandards = Array.Empty<string>(),
-                Abi = new ContractAbi()
-                {
-                    Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
-                },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
                 SafeMethods = WildcardContainer<string>.Create(),
@@ -38,23 +33,26 @@ namespace Neo.UnitTests
             };
         }
 
-        public static ContractManifest CreateManifest(UInt160 hash, string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
+        public static ContractAbi CreateDefaultAbi(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
         {
-            ContractManifest manifest = CreateDefaultManifest(hash);
-            manifest.Abi.Methods = new ContractMethodDescriptor[]
+            var abi = new ContractAbi()
             {
-                new ContractMethodDescriptor()
+                Events = Array.Empty<ContractMethodDescriptor>(),
+                Methods = new ContractMethodDescriptor[]
                 {
-                    Name = method,
-                    Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                    new ContractMethodDescriptor()
                     {
-                        Name = $"p{i}",
-                        Type = p
-                    }).ToArray(),
-                    ReturnType = returnType
+                        Name = method,
+                        Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                        {
+                            Name = $"p{i}",
+                            Type = p
+                        }).ToArray(),
+                        ReturnType = returnType
+                    }
                 }
             };
-            return manifest;
+            return abi;
         }
 
         public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
@@ -114,7 +112,8 @@ namespace Neo.UnitTests
             {
                 Id = 0x43000000,
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
-                Manifest = CreateManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
+                Manifest = CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")),
+                Abi = CreateDefaultAbi(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
 
@@ -124,7 +123,8 @@ namespace Neo.UnitTests
             {
                 Id = 1,
                 Script = script,
-                Manifest = CreateDefaultManifest(script.ToScriptHash())
+                Manifest = CreateDefaultManifest(script.ToScriptHash()),
+                Abi = CreateDefaultAbi("main", ContractParameterType.Any)
             };
         }
 
