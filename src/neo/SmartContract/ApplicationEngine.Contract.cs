@@ -92,7 +92,7 @@ namespace Neo.SmartContract
                 contract = new ContractState
                 {
                     Id = contract.Id,
-                    Script = nef?.Script.ToArray(),
+                    Script = nef.Script.ToArray(),
                     Abi = nef.Abi,
                     Manifest = contract.Manifest
                 };
