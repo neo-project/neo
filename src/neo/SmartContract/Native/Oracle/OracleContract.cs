@@ -45,7 +45,8 @@ namespace Neo.SmartContract.Native.Oracle
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             if (request == null) throw new ArgumentException("Oracle request was not found");
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.MaxStackSize, engine.MaxItemSize, engine.ReferenceCounter);
-            engine.CallFromNativeContract(request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
+            var args = new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { request.Url, userData, (int)response.Code, response.Result });
+            engine.CallContract(request.CallbackContract, request.CallbackMethod, args);
         }
 
         private UInt256 GetOriginalTxid(ApplicationEngine engine)

@@ -27,7 +27,6 @@ namespace Neo.SmartContract
 
         private class InvocationState
         {
-            public Type ReturnType;
             public CheckReturnType NeedCheckReturnValue;
         }
 
@@ -79,20 +78,6 @@ namespace Neo.SmartContract
         {
             FaultException = e;
             base.OnFault(e);
-        }
-
-        internal void CallFromNativeContract(UInt160 hash, string method, params StackItem[] args)
-        {
-            InvocationState state = GetInvocationState(CurrentContext);
-            state.ReturnType = typeof(void);
-            CallContract(hash, method, new VMArray(args));
-        }
-
-        internal void CallFromNativeContract<T>(UInt160 hash, string method, params StackItem[] args)
-        {
-            InvocationState state = GetInvocationState(CurrentContext);
-            state.ReturnType = typeof(T);
-            CallContract(hash, method, new VMArray(args));
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
