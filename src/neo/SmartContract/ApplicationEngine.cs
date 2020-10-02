@@ -28,7 +28,6 @@ namespace Neo.SmartContract
         private class InvocationState
         {
             public Type ReturnType;
-            public Delegate Callback;
             public CheckReturnType NeedCheckReturnValue;
         }
 
@@ -82,19 +81,17 @@ namespace Neo.SmartContract
             base.OnFault(e);
         }
 
-        internal void CallFromNativeContract(Action onComplete, UInt160 hash, string method, params StackItem[] args)
+        internal void CallFromNativeContract(UInt160 hash, string method, params StackItem[] args)
         {
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(void);
-            state.Callback = onComplete;
             CallContract(hash, method, new VMArray(args));
         }
 
-        internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
+        internal void CallFromNativeContract<T>(UInt160 hash, string method, params StackItem[] args)
         {
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(T);
-            state.Callback = onComplete;
             CallContract(hash, method, new VMArray(args));
         }
 
@@ -120,17 +117,6 @@ namespace Neo.SmartContract
                             throw new InvalidOperationException();
                         break;
                     }
-            }
-            switch (state.Callback)
-            {
-                case null:
-                    break;
-                case Action action:
-                    action();
-                    break;
-                default:
-                    state.Callback.DynamicInvoke(Convert(Pop(), new InteropParameterDescriptor(state.ReturnType)));
-                    break;
             }
         }
 
