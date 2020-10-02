@@ -10,12 +10,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual void FromStackItem(StackItem stackItem)
         {
-            Balance = ((Struct)stackItem)[0].GetInteger();
+            Balance = ((Integer)stackItem).GetInteger();
         }
 
         public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter) { Balance };
+            return Balance;
         }
     }
 }
