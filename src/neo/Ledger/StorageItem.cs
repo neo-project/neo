@@ -86,7 +86,7 @@ namespace Neo.Ledger
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, 16, 34));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, 16, byte.MaxValue));
                 cache = interoperable;
             }
             value = null;
