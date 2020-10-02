@@ -299,15 +299,16 @@ namespace Neo.SmartContract.Native.Tokens
 
             public override void FromStackItem(StackItem stackItem)
             {
-                base.FromStackItem(stackItem);
                 Struct @struct = (Struct)stackItem;
+                base.FromStackItem(@struct[0]);
                 BalanceHeight = (uint)@struct[1].GetInteger();
                 VoteTo = @struct[2].IsNull ? null : @struct[2].GetSpan().AsSerializable<ECPoint>();
             }
 
             public override StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+                Struct @struct = new Struct(referenceCounter);
+                @struct.Add(base.ToStackItem(referenceCounter));
                 @struct.Add(BalanceHeight);
                 @struct.Add(VoteTo?.ToArray() ?? StackItem.Null);
                 return @struct;
